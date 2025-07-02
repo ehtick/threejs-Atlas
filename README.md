@@ -5,6 +5,20 @@
   <img src="https://img.shields.io/github/stars/SurceBeats/Atlas?style=social" alt="stars badge"/>
 </div>
 
+<div align="center">
+
+<a href="https://the-atlas.koyeb.app/">
+  <img src="https://img.shields.io/badge/Live%20Demo-Click%20Here%20(Slow)-blue?style=for-the-badge" alt="Live Demo">
+</a>
+<br>
+<a href="https://hub.docker.com/r/bansheetech/atlas">
+  <img src="https://img.shields.io/badge/Docker%20Image-bansheetech/atlas-blue?logo=docker&style=for-the-badge" alt="Docker Image">
+</a>
+
+</div>
+
+---
+
 ## About The Atlas
 
 **The Atlas** is a procedural generation engine designed to create vast, complex galaxies and universes. Built with advanced algorithms and inspired by real astrophysical phenomena, _The Atlas_ offers an unparalleled toolset for generating realistic and immersive cosmic environments. It draws inspiration from the team behind _No Man's Sky_ and pushes the boundaries of space simulation.
