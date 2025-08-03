@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,28 +7,25 @@
     {% include 'partials/_favicon.html' %}
     {% include 'partials/_preamble.html' %}
 
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}" />
     {{ vitecss('global') | safe }}
     <title>The Atlas</title>
   </head>
-  <body>
+  <body class="h-full m-0 p-0 font-sans bg-slate-900 text-gray-200 leading-relaxed">
     <!-- Original form hidden, React component will handle this -->
-    <div style="display: none">
+    <!-- <div style="display: none">
       <form action="{{ url_for('navigate') }}" method="POST" id="legacy-form">
         <input type="hidden" name="x" value="1000000" />
         <input type="hidden" name="y" value="1000000" />
         <input type="hidden" name="z" value="1000000" />
       </form>
-    </div>
+    </div> -->
 
     {% if error %}
-    <p class="error">{{ error }}</p>
+    <div class="text-red-400 text-center p-4 bg-red-900/20 border border-red-800 rounded-lg m-4">{{ error }}</div>
     {% endif %}
 
     <!-- React Integration Test -->
-    <div id="atlas-react-root"></div>
-
-    <p class="p-version">Atlas Version {{ version }} · Created by Claudio González for <a target="_blank" href="https://www.banshee.pro/">Banshee</a></p>
+    <div id="atlas-react-root" class="w-full h-full"></div>
 
     <!-- Legacy scripts removed - functionality moved to React components -->
     {{ vitejs('__main__') | safe }}
