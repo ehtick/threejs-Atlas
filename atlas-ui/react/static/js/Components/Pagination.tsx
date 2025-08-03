@@ -18,26 +18,26 @@ const Pagination: React.FC<PaginationProps> = ({ page, prevPage, nextPage, finis
         
         {/* First page */}
         {page !== 1 && (
-          <a 
-            href="/galaxy?page=1" 
+          <button 
+            onClick={() => window.location.href = '/galaxy/1'}
             className={`${baseClasses} ${inactiveClasses}`}
             title="First page"
           >
             <span className="hidden sm:inline">First</span>
             <span className="sm:hidden">«</span>
-          </a>
+          </button>
         )}
 
         {/* Previous page */}
         {prevPage && (
-          <a 
-            href={`/galaxy?page=${prevPage}`} 
+          <button 
+            onClick={() => window.location.href = `/galaxy/${prevPage}`}
             className={`${baseClasses} ${inactiveClasses}`}
             title="Previous page"
           >
             <span className="hidden sm:inline">Previous</span>
             <span className="sm:hidden">‹</span>
-          </a>
+          </button>
         )}
 
         {/* Page numbers around current page */}
@@ -50,13 +50,13 @@ const Pagination: React.FC<PaginationProps> = ({ page, prevPage, nextPage, finis
           // Add ellipsis at the beginning if needed
           if (start > 1) {
             pages.push(
-              <a 
+              <button 
                 key={1}
-                href="/galaxy?page=1" 
+                onClick={() => window.location.href = '/galaxy/1'}
                 className={`${baseClasses} ${inactiveClasses}`}
               >
                 1
-              </a>
+              </button>
             );
             if (start > 2) {
               pages.push(
@@ -69,17 +69,26 @@ const Pagination: React.FC<PaginationProps> = ({ page, prevPage, nextPage, finis
 
           // Add page numbers in range
           for (let i = start; i <= end; i++) {
-            pages.push(
-              <a
-                key={i}
-                href={i === page ? undefined : `/galaxy?page=${i}`}
-                className={`${baseClasses} ${i === page ? activeClasses : inactiveClasses} ${
-                  i === page ? 'cursor-default' : 'cursor-pointer'
-                }`}
-              >
-                {i}
-              </a>
-            );
+            if (i === page) {
+              pages.push(
+                <span
+                  key={i}
+                  className={`${baseClasses} ${activeClasses} cursor-default`}
+                >
+                  {i}
+                </span>
+              );
+            } else {
+              pages.push(
+                <button
+                  key={i}
+                  onClick={() => window.location.href = `/galaxy/${i}`}
+                  className={`${baseClasses} ${inactiveClasses} cursor-pointer`}
+                >
+                  {i}
+                </button>
+              );
+            }
           }
 
           // Add ellipsis at the end if needed
@@ -92,13 +101,13 @@ const Pagination: React.FC<PaginationProps> = ({ page, prevPage, nextPage, finis
               );
             }
             pages.push(
-              <a 
+              <button 
                 key={finish}
-                href={`/galaxy?page=${finish}`} 
+                onClick={() => window.location.href = `/galaxy/${finish}`}
                 className={`${baseClasses} ${inactiveClasses}`}
               >
                 {finish}
-              </a>
+              </button>
             );
           }
 
@@ -107,26 +116,26 @@ const Pagination: React.FC<PaginationProps> = ({ page, prevPage, nextPage, finis
 
         {/* Next page */}
         {nextPage && (
-          <a 
-            href={`/galaxy?page=${nextPage}`} 
+          <button 
+            onClick={() => window.location.href = `/galaxy/${nextPage}`}
             className={`${baseClasses} ${inactiveClasses}`}
             title="Next page"
           >
             <span className="hidden sm:inline">Next</span>
             <span className="sm:hidden">›</span>
-          </a>
+          </button>
         )}
 
         {/* Last page */}
         {page !== finish && (
-          <a 
-            href={`/galaxy?page=${finish}`} 
+          <button 
+            onClick={() => window.location.href = `/galaxy/${finish}`}
             className={`${baseClasses} ${inactiveClasses}`}
             title="Last page"
           >
             <span className="hidden sm:inline">Last</span>
             <span className="sm:hidden">»</span>
-          </a>
+          </button>
         )}
       </div>
 

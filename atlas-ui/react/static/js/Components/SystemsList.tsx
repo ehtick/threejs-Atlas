@@ -70,9 +70,9 @@ const SystemsList: React.FC<SystemsListProps> = ({ systems, coordinates }) => {
               />
             )}
             
-            <a
-              href={`/system/${system.index}`}
-              className="block p-4 text-gray-200 hover:text-white transition-colors duration-300 rounded-lg"
+            <button
+              onClick={() => window.location.href = `/system/${system.index}`}
+              className="w-full text-left block p-4 text-gray-200 hover:text-white transition-colors duration-300 rounded-lg"
             >
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
@@ -104,7 +104,7 @@ const SystemsList: React.FC<SystemsListProps> = ({ systems, coordinates }) => {
               
               {/* Hover effect overlay */}
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            </a>
+            </button>
           </div>
         ))}
       </div>

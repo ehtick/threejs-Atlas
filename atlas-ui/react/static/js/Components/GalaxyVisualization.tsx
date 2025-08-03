@@ -123,6 +123,41 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, im
     };
   }, []);
 
+  // Handle galaxy image loading
+  useEffect(() => {
+    if (imageUrl) {
+      console.log('Loading galaxy image:', imageUrl);
+      const highResImg = new Image();
+      
+      highResImg.onload = () => {
+        console.log('Galaxy image loaded successfully');
+        if (imageRef.current) {
+          imageRef.current.src = imageUrl;
+          setImageLoaded(true);
+          setCanvasHidden(true);
+        }
+      };
+      
+      highResImg.onerror = () => {
+        console.error('Failed to load galaxy image:', imageUrl);
+        // Fallback - just show placeholder
+        setTimeout(() => {
+          setImageLoaded(true);
+          setCanvasHidden(true);
+        }, 1500);
+      };
+      
+      highResImg.src = imageUrl;
+    } else {
+      console.log('No imageUrl provided, using placeholder');
+      // No imageUrl - just show placeholder after delay
+      setTimeout(() => {
+        setImageLoaded(true);
+        setCanvasHidden(true);
+      }, 1500);
+    }
+  }, [imageUrl]);
+
   // Stargate Animation
   useEffect(() => {
     const animationShown = sessionStorage.getItem('stargateAnimationShown');
@@ -207,26 +242,6 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, im
           }`}
           src="/static/images/placeholder-min.jpg"
           alt="Galaxy visualization"
-          onLoad={() => {
-            // Load the high-res galaxy image if available
-            if (imageUrl) {
-              const highResImg = new Image();
-              highResImg.onload = () => {
-                if (imageRef.current) {
-                  imageRef.current.src = imageUrl;
-                  setImageLoaded(true);
-                  setCanvasHidden(true);
-                }
-              };
-              highResImg.src = imageUrl;
-            } else {
-              // Fallback - just show placeholder
-              setTimeout(() => {
-                setImageLoaded(true);
-                setCanvasHidden(true);
-              }, 1500);
-            }
-          }}
         />
       </div>
 
@@ -246,12 +261,7 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, im
           </span>
           
           {/* Animated border effect */}
-          <div 
-            className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-50 animate-pulse"
-            style={{
-              animation: 'borderAnimation 2s linear infinite'
-            }}
-          />
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-50 animate-pulse" />
         </a>
         
         <div className="mt-4 text-xs text-gray-400 max-w-md mx-auto">
@@ -259,16 +269,6 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, im
         </div>
       </div>
 
-      <style jsx>{`
-        @keyframes borderAnimation {
-          0% {
-            transform: translateX(-100%);
-          }
-          100% {
-            transform: translateX(100%);
-          }
-        }
-      `}</style>
     </div>
   );
 };
