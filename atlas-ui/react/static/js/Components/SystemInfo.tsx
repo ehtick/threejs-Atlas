@@ -18,11 +18,22 @@ interface System {
 }
 
 
-interface SystemInfoProps {
-  system: System;
+interface Galaxy {
+  name: string;
+  coordinates: number[];
 }
 
-const SystemInfo: React.FC<SystemInfoProps> = ({ system }) => {
+interface SystemInfoProps {
+  system: System;
+  galaxy: Galaxy;
+  systemIndex: number;
+}
+
+const SystemInfo: React.FC<SystemInfoProps> = ({ system, galaxy, systemIndex }) => {
+  
+  const formatName = (name: string) => {
+    return name.replace(/_/g, ' ');
+  };
 
   return (
     <div className="h-full flex flex-col">
@@ -55,6 +66,29 @@ const SystemInfo: React.FC<SystemInfoProps> = ({ system }) => {
               <div className="text-xs text-gray-300">{star.Color} • {star.Size}</div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Technical Data - Always visible */}
+      <div className="mt-4 pt-3 border-t border-white/10">
+        <div className="text-xs text-gray-400 mb-2">Technical Data</div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 text-xs">
+          <div className="bg-white/5 rounded p-2">
+            <span className="text-gray-400">System:</span>
+            <div className="text-white truncate font-medium">{formatName(system.name)}</div>
+          </div>
+          <div className="bg-white/5 rounded p-2">
+            <span className="text-gray-400">System ID:</span>
+            <div className="text-white font-medium">#{systemIndex + 1}</div>
+          </div>
+          <div className="bg-white/5 rounded p-2">
+            <span className="text-gray-400">Galaxy:</span>
+            <div className="text-white truncate font-medium">{formatName(galaxy.name)}</div>
+          </div>
+          <div className="bg-white/5 rounded p-2">
+            <span className="text-gray-400">Coordinates:</span>
+            <div className="text-white font-medium">{galaxy.coordinates.join(', ')}</div>
+          </div>
         </div>
       </div>
     </div>

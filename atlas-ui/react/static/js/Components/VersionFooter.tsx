@@ -19,7 +19,7 @@ const VersionFooter: React.FC<VersionFooterProps> = ({ version }) => {
           </div>
           
           <div className="text-xs sm:text-sm text-gray-400">
-            Created by Claudio González for{" "}
+            Created by Claudio González (SurceBeats) at{" "}
             <a 
               target="_blank" 
               href="https://www.banshee.pro/" 

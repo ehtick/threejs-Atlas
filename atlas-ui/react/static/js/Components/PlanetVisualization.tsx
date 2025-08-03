@@ -240,7 +240,7 @@ const PlanetVisualization: React.FC<PlanetVisualizationProps> = ({ planetUrl, im
 
   return (
     <div className="h-full flex flex-col">
-      <h3 className="text-xl sm:text-2xl font-bold text-white mb-4">Planet Visualization</h3>
+      <h3 className="text-lg sm:text-xl font-bold text-white mb-3">Planet Visualization</h3>
       
       {/* Planet Image Container */}
       <div className="relative w-full max-w-80 sm:max-w-96 aspect-square mx-auto bg-black/50 flex justify-center items-center rounded-xl overflow-hidden border-2 border-blue-400/30 mb-4">

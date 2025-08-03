@@ -1,5 +1,10 @@
 # Changelog
 
+
+## [1.0.0] - 2025-08-04
+
+- Added our own Vite-Fusion module to connect React with Flask, pre-ThreeJS and Semantic Kernel build.
+
 ## [0.9.98sm1] - 2024-09-12
 
 - Fixed an inconsistency in the calculation of the planet's eccentricity. Now, `planet.eccentricity_factor` is used consistently when drawing the system and in the calculation of rotation periods.

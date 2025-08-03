@@ -19,12 +19,28 @@ interface Planet {
 }
 
 
-interface PlanetInfoProps {
-  planet: Planet;
+interface System {
+  name: string;
+  index: number;
 }
 
-const PlanetInfo: React.FC<PlanetInfoProps> = ({ planet }) => {
+interface Galaxy {
+  name: string;
+  coordinates: number[];
+}
+
+interface PlanetInfoProps {
+  planet: Planet;
+  system: System;
+  galaxy: Galaxy;
+}
+
+const PlanetInfo: React.FC<PlanetInfoProps> = ({ planet, system, galaxy }) => {
   const [showAllElements, setShowAllElements] = useState(false);
+
+  const formatName = (name: string) => {
+    return name.replace(/_/g, ' ');
+  };
 
   const formatPeriod = (seconds: number) => {
     const days = seconds / (60 * 60 * 24);
@@ -154,6 +170,33 @@ const PlanetInfo: React.FC<PlanetInfoProps> = ({ planet }) => {
                 {element}
               </span>
             ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Technical Data - Always visible */}
+      <div className="mt-4 pt-3 border-t border-white/10">
+        <div className="text-xs text-gray-400 mb-2">Technical Data</div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 text-xs">
+          <div className="bg-white/5 rounded p-2">
+            <span className="text-gray-400">Planet:</span>
+            <div className="text-white truncate font-medium">{formatName(planet.name)}</div>
+          </div>
+          <div className="bg-white/5 rounded p-2">
+            <span className="text-gray-400">System:</span>
+            <div className="text-white truncate font-medium">{formatName(system.name)}</div>
+          </div>
+          <div className="bg-white/5 rounded p-2">
+            <span className="text-gray-400">System ID:</span>
+            <div className="text-white font-medium">#{system.index + 1}</div>
+          </div>
+          <div className="bg-white/5 rounded p-2">
+            <span className="text-gray-400">Galaxy:</span>
+            <div className="text-white truncate font-medium">{formatName(galaxy.name)}</div>
+          </div>
+          <div className="bg-white/5 rounded p-2">
+            <span className="text-gray-400">Coordinates:</span>
+            <div className="text-white font-medium">{galaxy.coordinates.join(', ')}</div>
           </div>
         </div>
       </div>

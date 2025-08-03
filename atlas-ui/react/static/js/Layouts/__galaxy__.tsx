@@ -4,7 +4,6 @@ import GalaxyInfo from '../Components/GalaxyInfo.tsx';
 import GalaxyVisualization from '../Components/GalaxyVisualization.tsx';
 import SystemsList from '../Components/SystemsList.tsx';
 import Pagination from '../Components/Pagination.tsx';
-import TechnicalData from '../Components/TechnicalData.tsx';
 import VersionFooter from '../Components/VersionFooter.tsx';
 
 interface Galaxy {
@@ -82,12 +81,15 @@ const GalaxyLayout: React.FC<GalaxyLayoutProps> = ({
 
           {/* Galaxy Information & Visualization */}
           <div className="bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 mb-8 shadow-2xl p-4 sm:p-6">
-            <div className="flex flex-col lg:grid lg:grid-cols-[400px_1fr] gap-6 lg:gap-8">
+            <div className="flex flex-col lg:grid lg:grid-cols-[400px_1fr] gap-6 lg:gap-8 relative">
               
               {/* Mobile/Desktop: Galaxy Image - Fixed width for image */}
               <div className="order-1 lg:order-1">
                 <GalaxyVisualization galaxyUrl={galaxy_url} imageUrl={image_url} />
               </div>
+              
+              {/* Vertical separator - Desktop only */}
+              <div className="hidden lg:block absolute left-[416px] top-0 bottom-0 w-1 rounded-full bg-white/10 -translate-x-1.5"></div>
               
               {/* Mobile/Desktop: Galaxy Info - Takes remaining space */}
               <div className="order-2 lg:order-2">
@@ -95,12 +97,6 @@ const GalaxyLayout: React.FC<GalaxyLayoutProps> = ({
               </div>
               
             </div>
-            
-            {/* Technical Data - Always visible below main content */}
-            <TechnicalData 
-              galaxyName={galaxy.name}
-              galaxyCoordinates={galaxy.coordinates}
-            />
           </div>
 
           {/* Systems List */}

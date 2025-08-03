@@ -3,7 +3,6 @@ import Header from '../Components/Header.tsx';
 import SystemInfo from '../Components/SystemInfo.tsx';
 import SystemVisualization from '../Components/SystemVisualization.tsx';
 import PlanetsList from '../Components/PlanetsList.tsx';
-import TechnicalData from '../Components/TechnicalData.tsx';
 import VersionFooter from '../Components/VersionFooter.tsx';
 
 interface System {
@@ -86,27 +85,22 @@ const SystemLayout: React.FC<SystemLayoutProps> = ({
 
           {/* System Information & Visualization */}
           <div className="bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 mb-8 shadow-2xl p-4 sm:p-6">
-            <div className="flex flex-col lg:grid lg:grid-cols-[400px_1fr] gap-6 lg:gap-8">
+            <div className="flex flex-col lg:grid lg:grid-cols-[400px_1fr] gap-6 lg:gap-8 relative">
               
               {/* Mobile/Desktop: System Image - Fixed width for image */}
               <div className="order-1 lg:order-1">
                 <SystemVisualization systemUrl={system_url} imageUrl={image_url} />
               </div>
               
+              {/* Vertical separator - Desktop only */}
+              <div className="hidden lg:block absolute left-[416px] top-0 bottom-0 w-1 rounded-full bg-white/10 -translate-x-1.5"></div>
+              
               {/* Mobile/Desktop: System Info - Takes remaining space */}
               <div className="order-2 lg:order-2">
-                <SystemInfo system={system} />
+                <SystemInfo system={system} galaxy={galaxy} systemIndex={system_index} />
               </div>
               
             </div>
-            
-            {/* Technical Data - Always visible below main content */}
-            <TechnicalData 
-              systemName={system.name}
-              systemIndex={system_index}
-              galaxyName={galaxy.name}
-              galaxyCoordinates={galaxy.coordinates}
-            />
           </div>
 
           {/* Planets List */}
