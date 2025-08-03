@@ -316,17 +316,17 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({
       }, 3000);
     };
 
-    // Time control with scroll wheel
-    const handleWheel = (event: WheelEvent) => {
-      event.preventDefault();
-      if (event.deltaY > 0) {
-        // Advance time by 1 day (86400 seconds = 24 hours)
-        setCurrentTime(prev => prev + 86400);
-      } else {
-        // Go back 1 day
-        setCurrentTime(prev => Math.max(0, prev - 86400));
-      }
-    };
+    // // Time control with scroll wheel
+    // const handleWheel = (event: WheelEvent) => {
+    //   event.preventDefault();
+    //   if (event.deltaY > 0) {
+    //     // Advance time by 1 day (86400 seconds = 24 hours)
+    //     setCurrentTime(prev => prev + 86400);
+    //   } else {
+    //     // Go back 1 day
+    //     setCurrentTime(prev => Math.max(0, prev - 86400));
+    //   }
+    // };
 
     // Combined wheel handler - zoom without ctrl, time with ctrl
     const handleKeyWheel = (event: WheelEvent) => {
