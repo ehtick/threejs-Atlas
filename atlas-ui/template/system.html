@@ -18,7 +18,19 @@
     <script type="application/json" id="system-data">
       {% set planets_list = [] %}
       {% for planet in system.planets.values() %}
-        {% set _ = planets_list.append({"name": planet.name}) %}
+        {% set _ = planets_list.append({
+          "name": planet.name,
+          "planet_type": planet.planet_type,
+          "diameter": planet.diameter,
+          "orbital_radius": planet.orbital_radius,
+          "orbital_period_seconds": planet.orbital_period_seconds,
+          "orbital_speed": planet.orbital_speed,
+          "axial_tilt": planet.axial_tilt,
+          "rotation_period_seconds": planet.rotation_period_seconds,
+          "initial_orbital_angle": planet.initial_orbital_angle,
+          "eccentricity_factor": planet.eccentricity_factor,
+          "mass": planet.mass
+        }) %}
       {% endfor %}
       {{ {
         "name": system.name,
@@ -43,7 +55,8 @@
         "version": version,
         "system_index": system_index,
         "image_url": url_for('system_blob'),
-        "page": page
+        "page": page,
+        "cosmic_origin_time": cosmic_origin_time
       } | tojson }}
     </script>
 

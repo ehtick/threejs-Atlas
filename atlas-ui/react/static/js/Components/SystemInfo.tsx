@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import SolarSystem3DViewer from './SolarSystem3DViewer.tsx';
 
 interface Star {
   Type: string;
@@ -14,6 +15,16 @@ interface System {
   stars: Star[];
   planets: Array<{
     name: string;
+    planet_type: string;
+    diameter: number;
+    orbital_radius: number;
+    orbital_period_seconds: number;
+    orbital_speed: number;
+    axial_tilt: number;
+    rotation_period_seconds: number;
+    initial_orbital_angle: number;
+    eccentricity_factor: number;
+    mass: number;
   }>;
 }
 
@@ -27,9 +38,10 @@ interface SystemInfoProps {
   system: System;
   galaxy: Galaxy;
   systemIndex: number;
+  cosmicOriginTime: number;
 }
 
-const SystemInfo: React.FC<SystemInfoProps> = ({ system, galaxy, systemIndex }) => {
+const SystemInfo: React.FC<SystemInfoProps> = ({ system, galaxy, systemIndex, cosmicOriginTime }) => {
   
   const formatName = (name: string) => {
     return name.replace(/_/g, ' ');
@@ -53,6 +65,16 @@ const SystemInfo: React.FC<SystemInfoProps> = ({ system, galaxy, systemIndex }) 
           <div className="text-xs text-gray-200">Stars</div>
           <div className="text-sm font-bold text-orange-300">{system.stars.length}</div>
         </div>
+      </div>
+
+      {/* Solar System 3D Viewer - Full width */}
+      <div className="bg-white/10 rounded-lg p-3 border border-gray-500/30 mb-3 col-span-3">
+        <SolarSystem3DViewer 
+          planets={system.planets} 
+          stars={system.stars} 
+          systemName={system.name}
+          cosmicOriginTime={cosmicOriginTime}
+        />
       </div>
 
       {/* Stellar Composition - Compact grid */}

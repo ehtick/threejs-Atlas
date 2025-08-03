@@ -1,0 +1,471 @@
+import React, { useRef, useEffect, useState } from "react";
+import * as THREE from "three";
+
+interface Planet {
+  name: string;
+  planet_type: string;
+  diameter: number;
+  orbital_radius: number;
+  orbital_period_seconds: number;
+  orbital_speed: number;
+  axial_tilt: number;
+  rotation_period_seconds: number;
+  initial_orbital_angle: number;
+  eccentricity_factor: number;
+  mass: number;
+}
+
+interface Star {
+  Type: string;
+  Size: string;
+  Color: string;
+}
+
+interface SolarSystem3DViewerProps {
+  planets: Planet[];
+  stars: Star[];
+  systemName: string;
+  cosmicOriginTime: number;
+}
+
+const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({ 
+  planets, 
+  stars, 
+  systemName,
+  cosmicOriginTime
+}) => {
+  const mountRef = useRef<HTMLDivElement>(null);
+  const sceneRef = useRef<THREE.Scene | null>(null);
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const animationIdRef = useRef<number | null>(null);
+  const planetsRef = useRef<THREE.Mesh[]>([]);
+  const orbitsRef = useRef<THREE.Line[]>([]);
+  
+  // Use real current time like Python does
+  const realCurrentTime = Math.floor(Date.now() / 1000); // Current Unix timestamp
+  const [timeOffset, setTimeOffset] = useState(0); // User time adjustment
+  const currentTime = realCurrentTime - cosmicOriginTime + timeOffset;
+
+  useEffect(() => {
+    if (!mountRef.current) return;
+
+    const container = mountRef.current;
+    const containerWidth = container.clientWidth;
+    const isMobile = containerWidth < 640;
+    
+    // Scene setup
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x000011);
+    sceneRef.current = scene;
+
+    // Camera setup
+    const camera = new THREE.PerspectiveCamera(
+      45, // FOV
+      containerWidth / (isMobile ? 120 : 140), // Aspect ratio
+      0.1, // Near
+      10000 // Far - need bigger for large orbits
+    );
+    camera.position.set(0, 80, 120); // Higher and further back
+    camera.lookAt(0, 0, 0);
+
+    // Renderer setup
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(containerWidth, isMobile ? 120 : 140);
+    renderer.setClearColor(0x000011, 1);
+    rendererRef.current = renderer;
+    container.appendChild(renderer.domElement);
+
+    // Planet type colors (from Python code)
+    const planetColors: { [key: string]: string } = {
+      "Gas Giant": "#FFA500",
+      "Anomaly": "#FFFFFF",
+      "Rocky": "#808080",
+      "Icy": "#ADD8E6",
+      "Oceanic": "#0000FF",
+      "Desert": "#FFD700",
+      "Lava": "#FF0000",
+      "Arid": "#800000",
+      "Swamp": "#008000",
+      "Tundra": "#F0F8FF",
+      "Forest": "#006400",
+      "Savannah": "#F4A460",
+      "Cave": "#D1D1D1",
+      "Crystalline": "#00FFFF",
+      "Metallic": "#C0C0C0",
+      "Toxic": "#800080",
+      "Radioactive": "#00FF00",
+      "Magma": "#FF4500",
+      "Molten Core": "#FF8C00",
+      "Carbon": "#090909",
+      "Diamond": "#87CEFA",
+      "Super Earth": "#90EE90",
+      "Sub Earth": "#006400",
+      "Frozen Gas Giant": "#ADD8E6",
+      "Nebulous": "#FFC0CB"
+    };
+
+    // Star colors
+    const starColors: { [key: string]: string } = {
+      "Red": "#FF4444",
+      "Orange": "#FF8844",
+      "Yellow": "#FFFF44",
+      "White": "#FFFFFF",
+      "Blue": "#4488FF",
+      "Blue-White": "#88AAFF"
+    };
+
+    // Add stars at center
+    const starGroup = new THREE.Group();
+    stars.forEach((star, index) => {
+      const starRadius = parseFloat(star.Size) * 3; // Bigger stars for visibility
+      const starGeometry = new THREE.SphereGeometry(starRadius, 16, 16);
+      const starColor = starColors[star.Color] || "#FFFF44";
+      const starMaterial = new THREE.MeshBasicMaterial({ 
+        color: starColor,
+        transparent: true,
+        opacity: 0.9
+      });
+      
+      const starMesh = new THREE.Mesh(starGeometry, starMaterial);
+      
+      // Position multiple stars in binary/tertiary systems
+      if (stars.length === 1) {
+        starMesh.position.set(0, 0, 0);
+      } else if (stars.length === 2) {
+        starMesh.position.set(index === 0 ? -starRadius * 2 : starRadius * 2, 0, 0);
+      } else {
+        // Tertiary system
+        if (index === 0) starMesh.position.set(-starRadius * 2, 0, 0);
+        else if (index === 1) starMesh.position.set(starRadius * 2, 0, 0);
+        else starMesh.position.set(0, starRadius * 2, 0);
+      }
+      
+      // Add glow effect
+      const glowGeometry = new THREE.SphereGeometry(starRadius * 1.5, 16, 16);
+      const glowMaterial = new THREE.MeshBasicMaterial({
+        color: starColor,
+        transparent: true,
+        opacity: 0.3
+      });
+      const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+      starMesh.add(glow);
+      
+      starGroup.add(starMesh);
+    });
+    scene.add(starGroup);
+
+    // Find max orbital radius for scaling
+    const maxOrbitalRadius = Math.max(...planets.map(p => p.orbital_radius));
+    const scaleFactor = 80; // Fixed scale factor
+
+    // Create orbital paths and planets
+    planets.forEach((planet, index) => {
+      // Calculate orbital radius exactly like Python
+      const relativeOrbitRadius = planet.orbital_radius / maxOrbitalRadius;
+      const orbitRadius = 20 + (relativeOrbitRadius * scaleFactor); // min_orbit_radius + scaled
+      
+      // Debug: Uncomment for troubleshooting
+      // console.log(`Planet ${index}: ${planet.name}, angle: ${planet.initial_orbital_angle}, time: ${currentTime}`);
+      
+      const eccentricity = planet.eccentricity_factor;
+      
+      // Calculate ellipse parameters exactly like Python
+      const semiMajorAxis = orbitRadius;
+      const semiMinorAxis = semiMajorAxis * Math.sqrt(1 - eccentricity * eccentricity);
+      
+      // Create dashed orbital path exactly like Python code
+      const numSegments = 360;
+      const dashLength = 2;  // Python: dash_length = 2
+      const gapLength = 4;   // Python: gap_length = 4
+      
+      for (let k = 0; k < numSegments; k += dashLength + gapLength) {
+        const dashPoints = [];
+        for (let j = k; j < Math.min(k + dashLength, numSegments - 1); j++) {
+          // Python: angle_start = (j / num_segments) * 2 * math.pi
+          const angle = (j / numSegments) * 2 * Math.PI;
+          
+          // Python: x_start = center_x + semi_major_axis * math.cos(angle_start)
+          // Python: y_start = center_y + semi_minor_axis * math.sin(angle_start)
+          const x = semiMajorAxis * Math.cos(angle);
+          const z = semiMinorAxis * Math.sin(angle);
+          dashPoints.push(new THREE.Vector3(x, 0, z));
+        }
+        
+        if (dashPoints.length > 1) {
+          const dashGeometry = new THREE.BufferGeometry().setFromPoints(dashPoints);
+          const dashMaterial = new THREE.LineBasicMaterial({
+            color: 0x708090, // Python: "slategray"
+            transparent: true,
+            opacity: 0.6
+          });
+          const dashLine = new THREE.Line(dashGeometry, dashMaterial);
+          scene.add(dashLine);
+          orbitsRef.current.push(dashLine);
+        }
+      }
+
+      // Create planet - bigger points
+      const planetRadius = Math.max(planet.diameter / 15000, 1.5); // Even bigger scale and minimum size
+      const planetGeometry = new THREE.SphereGeometry(planetRadius, 16, 16);
+      const planetColor = planetColors[planet.planet_type] || "#808080";
+      const planetMaterial = new THREE.MeshBasicMaterial({ 
+        color: planetColor,
+        transparent: true,
+        opacity: 0.9
+      });
+      
+      const planetMesh = new THREE.Mesh(planetGeometry, planetMaterial);
+      
+      // Add glow effect to planet
+      const planetGlow = new THREE.Mesh(
+        new THREE.SphereGeometry(planetRadius * 1.5, 16, 16),
+        new THREE.MeshBasicMaterial({
+          color: planetColor,
+          transparent: true,
+          opacity: 0.2
+        })
+      );
+      planetMesh.add(planetGlow);
+      
+      scene.add(planetMesh);
+      planetsRef.current.push(planetMesh);
+
+      // Store planet data on mesh for animation
+      (planetMesh as any).planetData = planet;
+      (planetMesh as any).orbitRadius = orbitRadius;
+      (planetMesh as any).semiMajorAxis = semiMajorAxis;
+      (planetMesh as any).semiMinorAxis = semiMinorAxis;
+    });
+
+    // Ambient lighting
+    const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+    scene.add(ambientLight);
+
+    // Point light from star
+    const pointLight = new THREE.PointLight(0xffffff, 1, 1000);
+    pointLight.position.set(0, 0, 0);
+    scene.add(pointLight);
+
+    // Mouse controls
+    let isMouseDown = false;
+    let mouseX = 0;
+    let mouseY = 0;
+    let autoRotate = false; // Start paused
+
+    const handleMouseDown = (event: MouseEvent) => {
+      isMouseDown = true;
+      autoRotate = false;
+      mouseX = event.clientX;
+      mouseY = event.clientY;
+    };
+
+    const handleMouseMove = (event: MouseEvent) => {
+      if (!isMouseDown) return;
+      
+      const deltaX = event.clientX - mouseX;
+      const deltaY = event.clientY - mouseY;
+      
+      // Rotate around the solar system like in Universe3DViewer
+      const spherical = new THREE.Spherical();
+      spherical.setFromVector3(camera.position);
+      
+      spherical.theta -= deltaX * 0.01;
+      spherical.phi += deltaY * 0.01;
+      
+      // Clamp phi to prevent flipping
+      spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));
+      
+      camera.position.setFromSpherical(spherical);
+      camera.lookAt(0, 0, 0);
+      
+      mouseX = event.clientX;
+      mouseY = event.clientY;
+    };
+
+    const handleMouseUp = () => {
+      isMouseDown = false;
+      setTimeout(() => {
+        if (!isMouseDown) autoRotate = true;
+      }, 3000);
+    };
+
+    // Time control with scroll wheel
+    const handleWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      if (event.deltaY > 0) {
+        // Advance time by 1 day (86400 seconds = 24 hours)
+        setCurrentTime(prev => prev + 86400);
+      } else {
+        // Go back 1 day
+        setCurrentTime(prev => Math.max(0, prev - 86400));
+      }
+    };
+
+    // Combined wheel handler - zoom without ctrl, time with ctrl
+    const handleKeyWheel = (event: WheelEvent) => {
+      if (event.ctrlKey) {
+        // Time control with Ctrl+scroll - adjust offset
+        event.preventDefault();
+        if (event.deltaY > 0) {
+          setTimeOffset(prev => prev + 86400); // +1 day
+        } else {
+          setTimeOffset(prev => prev - 86400); // -1 day
+        }
+      } else {
+        // Zoom with normal scroll (like Universe3DViewer)
+        event.preventDefault();
+        const zoomSpeed = 0.1;
+        const currentDistance = camera.position.distanceTo(new THREE.Vector3(0, 0, 0));
+        
+        if (event.deltaY > 0 && currentDistance < 500) {
+          camera.position.multiplyScalar(1 + zoomSpeed);
+        } else if (event.deltaY < 0 && currentDistance > 20) {
+          camera.position.multiplyScalar(1 - zoomSpeed);
+        }
+      }
+    };
+
+    // Add event listeners
+    const canvas = renderer.domElement;
+    canvas.style.cursor = "grab";
+    canvas.style.borderRadius = "8px";
+    
+    canvas.addEventListener("mousedown", (e) => {
+      canvas.style.cursor = "grabbing";
+      handleMouseDown(e);
+    });
+    canvas.addEventListener("mousemove", handleMouseMove);
+    canvas.addEventListener("mouseup", () => {
+      canvas.style.cursor = "grab";
+      handleMouseUp();
+    });
+    canvas.addEventListener("mouseleave", () => {
+      canvas.style.cursor = "grab";
+      handleMouseUp();
+    });
+    canvas.addEventListener("wheel", handleKeyWheel);
+
+    // Animation loop
+    const animate = () => {
+      animationIdRef.current = requestAnimationFrame(animate);
+
+      // No auto rotation by default (paused)
+
+      // Update planet positions based on current time (exact Python calculation)
+      planetsRef.current.forEach((planetMesh, index) => {
+        const planet = (planetMesh as any).planetData;
+        const semiMajorAxis = (planetMesh as any).semiMajorAxis;
+        const semiMinorAxis = (planetMesh as any).semiMinorAxis;
+        
+        // Calculate orbital angle exactly like Python
+        const orbitalPeriod = planet.orbital_period_seconds;
+        const angleVelocityOrbit = (2 * Math.PI) / orbitalPeriod;
+        
+        // Python: angle_orbit = (initial_orbital_angle + time_elapsed * angle_velocity_orbit) % (2π)
+        const angleOrbit = (planet.initial_orbital_angle + currentTime * angleVelocityOrbit) % (2 * Math.PI);
+        
+        // Position planet exactly like Python
+        // Python: planet_x = center_x + semi_major_axis * cos(angle_orbit)
+        // Python: planet_y = center_y + semi_minor_axis * sin(angle_orbit)
+        planetMesh.position.x = semiMajorAxis * Math.cos(angleOrbit);
+        planetMesh.position.z = semiMinorAxis * Math.sin(angleOrbit);
+        planetMesh.position.y = 0; // Keep on orbital plane
+        
+        // Planet rotation exactly like Python
+        const rotationPeriodSeconds = planet.rotation_period_seconds;
+        const angleVelocityRotation = (2 * Math.PI) / rotationPeriodSeconds;
+        planetMesh.rotation.y = (currentTime * angleVelocityRotation) % (2 * Math.PI);
+      });
+
+      renderer.render(scene, camera);
+    };
+
+    animate();
+
+    // Handle resize
+    const handleResize = () => {
+      const newWidth = container.clientWidth;
+      const newHeight = newWidth < 640 ? 120 : 140;
+      
+      camera.aspect = newWidth / newHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(newWidth, newHeight);
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      
+      canvas.removeEventListener("mousedown", handleMouseDown);
+      canvas.removeEventListener("mousemove", handleMouseMove);
+      canvas.removeEventListener("mouseup", handleMouseUp);
+      canvas.removeEventListener("mouseleave", handleMouseUp);
+      canvas.removeEventListener("wheel", handleKeyWheel);
+      
+      if (animationIdRef.current) {
+        cancelAnimationFrame(animationIdRef.current);
+      }
+      
+      if (container && renderer.domElement) {
+        container.removeChild(renderer.domElement);
+      }
+      
+      renderer.dispose();
+      
+      // Clean up refs
+      planetsRef.current = [];
+      orbitsRef.current = [];
+    };
+  }, [planets, stars, currentTime, timeOffset, cosmicOriginTime]);
+
+  const formatTime = (seconds: number) => {
+    const years = Math.floor(seconds / (365.25 * 24 * 3600));
+    const days = Math.floor((seconds % (365.25 * 24 * 3600)) / (24 * 3600));
+    const hours = Math.floor((seconds % (24 * 3600)) / 3600);
+    
+    if (years > 0) return `${years}y ${days}d ${hours}h`;
+    if (days > 0) return `${days}d ${hours}h`;
+    return `${hours}h`;
+  };
+
+  const formatName = (name: string) => {
+    return name.replace(/_/g, " ");
+  };
+
+  return (
+    <div className="flex flex-col items-center w-full">
+      <div className="text-xs text-gray-300 mb-2">Solar System Simulation</div>
+      
+      <div 
+        ref={mountRef} 
+        className="w-full border border-white/20 rounded bg-black/20"
+        style={{ height: "auto" }}
+      />
+      
+      <div className="text-xs text-gray-400 mt-2 w-full">
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
+              <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+              <span className="text-[10px]">Star(s)</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+              <span className="text-[10px]">{planets.length} Planets</span>
+            </div>
+          </div>
+          <div className="text-[10px] text-gray-500">
+            Time: {formatTime(currentTime)}
+          </div>
+        </div>
+        <div className="text-center text-[10px] text-gray-500">
+          Scroll: Zoom • Ctrl+Scroll: +1day/-1day • Drag: Rotate View
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default SolarSystem3DViewer;

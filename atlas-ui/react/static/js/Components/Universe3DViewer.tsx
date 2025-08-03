@@ -162,41 +162,41 @@ const Universe3DViewer: React.FC<Universe3DViewerProps> = ({ coordinates, galaxy
     // Add X, Y, Z axis labels
     // Create simple text sprites for better performance
     const createTextSprite = (text: string, color: number) => {
-      const canvas = document.createElement('canvas');
-      const context = canvas.getContext('2d');
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
       if (!context) return null;
-      
+
       canvas.width = 32;
       canvas.height = 32;
-      
-      context.fillStyle = `#${color.toString(16).padStart(6, '0')}`;
-      context.font = 'bold 24px Arial';
-      context.textAlign = 'center';
-      context.textBaseline = 'middle';
+
+      context.fillStyle = `#${color.toString(16).padStart(6, "0")}`;
+      context.font = "bold 24px Arial";
+      context.textAlign = "center";
+      context.textBaseline = "middle";
       context.fillText(text, 16, 16);
-      
+
       const texture = new THREE.CanvasTexture(canvas);
       const spriteMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true, opacity: 0.8 });
       const sprite = new THREE.Sprite(spriteMaterial);
       sprite.scale.set(0.8, 0.8, 1);
-      
+
       return sprite;
     };
 
     // Add axis labels at cube corners
-    const xLabel = createTextSprite('X', 0xff6b6b);
+    const xLabel = createTextSprite("X", 0xff6b6b);
     if (xLabel) {
       xLabel.position.set(4.2, -3.8, -3.8); // Bottom right front corner
       rotatingGroup.add(xLabel);
     }
 
-    const yLabel = createTextSprite('Y', 0x6bff6b);
+    const yLabel = createTextSprite("Y", 0x6bff6b);
     if (yLabel) {
       yLabel.position.set(-3.8, 4.2, -3.8); // Top left front corner
       rotatingGroup.add(yLabel);
     }
 
-    const zLabel = createTextSprite('Z', 0x6b6bff);
+    const zLabel = createTextSprite("Z", 0x6b6bff);
     if (zLabel) {
       zLabel.position.set(-3.8, -3.8, 4.2); // Bottom left back corner
       rotatingGroup.add(zLabel);

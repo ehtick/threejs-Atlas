@@ -240,6 +240,7 @@ def view_system(system_index):
             version=VERSION,
             versionHash=VERSION_HASH,
             page=page,
+            cosmic_origin_time=config.cosmic_origin_time,
         )
     except ValueError as e:
         return render_template("error.html", message=str(e))

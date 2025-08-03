@@ -28,6 +28,7 @@ interface SystemProps {
   system_index: number;
   image_url?: string;
   page: number;
+  cosmic_origin_time: number;
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -55,7 +56,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       version: metaData.version,
       system_index: metaData.system_index,
       image_url: metaData.image_url,
-      page: metaData.page || 1
+      page: metaData.page || 1,
+      cosmic_origin_time: metaData.cosmic_origin_time
     };
 
     // Render React app

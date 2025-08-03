@@ -17,6 +17,16 @@ interface System {
   }>;
   planets: Array<{
     name: string;
+    planet_type: string;
+    diameter: number;
+    orbital_radius: number;
+    orbital_period_seconds: number;
+    orbital_speed: number;
+    axial_tilt: number;
+    rotation_period_seconds: number;
+    initial_orbital_angle: number;
+    eccentricity_factor: number;
+    mass: number;
   }>;
 }
 
@@ -33,6 +43,7 @@ interface SystemLayoutProps {
   system_index: number;
   image_url?: string;
   page: number;
+  cosmic_origin_time: number;
 }
 
 const SystemLayout: React.FC<SystemLayoutProps> = ({
@@ -42,7 +53,8 @@ const SystemLayout: React.FC<SystemLayoutProps> = ({
   version,
   system_index,
   image_url,
-  page
+  page,
+  cosmic_origin_time
 }) => {
   const [coordinates] = useState<string>(galaxy.coordinates.join(','));
 
@@ -97,7 +109,7 @@ const SystemLayout: React.FC<SystemLayoutProps> = ({
               
               {/* Mobile/Desktop: System Info - Takes remaining space */}
               <div className="order-2 lg:order-2">
-                <SystemInfo system={system} galaxy={galaxy} systemIndex={system_index} />
+                <SystemInfo system={system} galaxy={galaxy} systemIndex={system_index} cosmicOriginTime={cosmic_origin_time} />
               </div>
               
             </div>
