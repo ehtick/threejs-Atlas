@@ -27,7 +27,7 @@ export default defineConfig(({ mode }) => ({
         global: resolve(__dirname, "atlas-ui/react/static/css/global.css"),
         __main__: resolve(__dirname, "atlas-ui/react/static/js/MountPoints/__main__.ts"),
         __galaxy__: resolve(__dirname, "atlas-ui/react/static/js/MountPoints/__galaxy__.js"),
-        __system__: resolve(__dirname, "atlas-ui/react/static/js/MountPoints/__system__.js"),
+        __system__: resolve(__dirname, "atlas-ui/react/static/js/MountPoints/__system__.ts"),
         __planet__: resolve(__dirname, "atlas-ui/react/static/js/MountPoints/__planet__.js"),
       },
       output: {
