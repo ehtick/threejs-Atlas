@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from "react";
 
-const CoordinateSelector = ({ onCoordinateChange }) => {
+interface Coordinates {
+  x: number;
+  y: number;
+  z: number;
+}
+
+interface CoordinateSelectorProps {
+  onCoordinateChange?: (coordinates: Coordinates) => void;
+}
+
+const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateChange }) => {
   const [coordinates, setCoordinates] = useState({
     x: 1000000,
     y: 1000000,

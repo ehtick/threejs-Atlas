@@ -4,10 +4,7 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig(({ mode }) => ({
   base: mode === "production" ? "/atlas-ui/react/dist/" : "/",
-  plugins: [react({ 
-    fastRefresh: false,
-    jsxRuntime: 'classic'
-  })],
+  plugins: [react()],
   css: {
     postcss: './postcss.config.js',
   },
@@ -28,7 +25,7 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       input: {
         global: resolve(__dirname, "atlas-ui/react/static/css/global.css"),
-        __main__: resolve(__dirname, "atlas-ui/react/static/js/MountPoints/__main__.js"),
+        __main__: resolve(__dirname, "atlas-ui/react/static/js/MountPoints/__main__.ts"),
         __galaxy__: resolve(__dirname, "atlas-ui/react/static/js/MountPoints/__galaxy__.js"),
         __system__: resolve(__dirname, "atlas-ui/react/static/js/MountPoints/__system__.js"),
         __planet__: resolve(__dirname, "atlas-ui/react/static/js/MountPoints/__planet__.js"),
@@ -37,7 +34,7 @@ export default defineConfig(({ mode }) => ({
         chunkFileNames: "atlas_[hash:21].js",
         entryFileNames: "atlas_[hash:21].js",
         assetFileNames: (assetInfo) => {
-          const ext = (assetInfo.name ?? "").split(".").pop();
+          const ext = assetInfo.name?.split(".").pop();
           return `atlas_[hash:21].${ext}`;
         },
       },

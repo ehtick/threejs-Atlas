@@ -1,6 +1,6 @@
 import React from "react";
 
-const Header = () => {
+const Header: React.FC = () => {
   return (
     <header className="interfaceinit">
       <img src="/static/atlas-logo.jpg" alt="Atlas Logo" className="logo" />
