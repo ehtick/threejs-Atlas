@@ -7,6 +7,7 @@
     {% include 'partials/_favicon.html' %}
 
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}" />
+    {{ vitecss('styles') | safe }}
     <title>The Atlas</title>
   </head>
   <body>
@@ -84,9 +85,13 @@
     <p class="error">{{ error }}</p>
     {% endif %}
 
+    <!-- React Integration Test -->
+    <div id="atlas-react-root"></div>
+
     <p class="p-version">Atlas Version {{ version }} · Created by Claudio González for <a target="_blank" href="https://www.banshee.pro/">Banshee</a></p>
 
     <script src="{{ url_for('static', filename='vjs/script.js') }}?v={{ versionHash }}"></script>
     <script src="{{ url_for('static', filename='vjs/atlasRuntimeFactor.js') }}?v={{ versionHash }}"></script>
+    {{ vitejs('main') | safe }}
   </body>
 </html>

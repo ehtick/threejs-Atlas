@@ -3,8 +3,8 @@
 import hashlib
 
 
-PORT = 5000
-RUN = "PROD"
+PORT = 80
+RUN = "DEV"
 VERSION = "0.9.98sm1"
 VERSION_HASH = hashlib.sha256(VERSION.encode("utf-8")).hexdigest()
 MAX_PILLOW_WORKERS = 4

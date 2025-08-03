@@ -6,3 +6,5 @@
 
 # Excluir el atlas.ini, se genera en auto
 /atlas.ini
+/venv
+/node_modules

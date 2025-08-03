@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    {% include 'partials/_favicon.html' %}
+
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}" />
+    {{ vitecss('global') | safe }}
+    <title>Planet: {{ planet.name.replace("_", " ") }}</title>
+  </head>
+  <body data-coordinates="{{ galaxy.coordinates | join(',') }}" data-system-index="{{ system.index }}" data-planet-name="{{ planet.name.lower() }}">
+    <h1>Planet '{{ planet.name.replace("_", " ") }}'</h1>
+
+    <div class="planet-info">
+      <p><strong>Type:</strong> {{ planet.planet_type }}</p>
+      <p><strong>Atmosphere:</strong> {{ planet.atmosphere }}</p>
+      <p><strong>Life Forms:</strong> {{ planet.life_forms }}</p>
+      <p><strong>Mass:</strong> {{ "{:.2e}".format(planet.mass) }} kg</p>
+      <p><strong>Diameter:</strong> {{ "{:,.2f}".format(planet.diameter) }} km</p>
+      <p><strong>Density:</strong> {{ "{:,.2f}".format(planet.density) }} kg/m³</p>
+      <p><strong>Gravity:</strong> {{ "{:.2f}".format(planet.gravity) }} m/s²</p>
+      <p><strong>Orbital Radius:</strong> {{ "{:,.2f}".format(planet.orbital_radius) }} AU</p>
+      <p><strong>Orbital Period:</strong>
+        {% set seconds = planet.orbital_period_seconds %}
+        {% set days = seconds / (60 * 60 * 24) %}
+        {% if days < 30 %}
+            {{ "{:,.2f}".format(days) }} days
+        {% elif days < 365 %}
+            {{ "{:,.2f}".format(days / 30) }} months
+        {% else %}
+            {{ "{:,.2f}".format(days / 365) }} years
+        {% endif %}
+      </p>
+      <p><strong>Orbital Speed:</strong> {{ "{:,.2f}".format(planet.orbital_speed) }} m/s</p>
+      <p><strong>Axial Tilt:</strong> {{ "{:,.2f}".format(planet.axial_tilt) }} degrees</p>
+      <p><strong>Rotation Period:</strong> 
+        {% set seconds = planet.rotation_period_seconds %}
+        {% set days = seconds / (60 * 60 * 24) %}
+        {% if days < 30 %}
+            {{ "{:,.2f}".format(days) }} days
+        {% elif days < 365 %}
+            {{ "{:,.2f}".format(days / 30) }} months
+        {% else %}
+            {{ "{:,.2f}".format(days / 365) }} years
+        {% endif %}
+      </p>
+      <p><strong>Surface:</strong> {{ "{:,.2f}".format(planet.surface_temperature) }} °C ({{ "{:,.2f}".format(planet.surface_temperature * 9/5 + 32) }} °F)</p>
+      <p><strong>Elements:</strong> {{ ", ".join(planet.elements) }}</p>
+      <div id="localization-content" class="localization-content">
+        <p><strong class="localize">Planet:</strong> {{ planet.name.replace("_", " ") }}</p>
+        <p><strong class="localize">System:</strong> {{ system.name }}</p>
+        <p><strong class="localize">System ID:</strong> #{{ system.index + 1 }}</p>
+        <p><strong class="localize">Galaxy:</strong> {{ galaxy.name.replace("_", " ") }}</p>
+        <p><strong class="localize">Coordinates:</strong> X: {{ galaxy.coordinates[0] }}, Y: {{ galaxy.coordinates[1] }}, Z: {{ galaxy.coordinates[2] }}</p>
+      </div>
+      <button class="dropdown-btn" onclick="toggleLocalization()">View Localization</button>
+    </div>
+
+    <div class="planet-info">
+      <div class="blob-image-container">
+        <canvas id="canvas"></canvas>
+        <img class="blob-image" data-high-res-url="{{ url_for('planet_blob', planet_name=planet.name) }}" src="{{ url_for('static', filename='images/placeholder-min.jpg') }}" id="blob-image" />
+      </div>
+      <div class="stargate-container">
+        <a class="stargate" href="{{ planet_url }}"><span id="stargate-text">Aligning Stargate...</span></a>
+        <div class="tooltip">Right-click and select 'Copy Link' to save this Stargate location</div>
+      </div>
+    </div>
+
+    <div class="planet-info">
+      <a href="{{ url_for('view_system', system_index=system.index, page=request.args.get('page')) }}">
+        <button class="back-button">Go Back to System '{{ system.name }}'</button>
+      </a>
+    </div>
+
+    <!-- React Integration for Planet -->
+    <div id="atlas-react-root"></div>
+
+    <!-- Legacy scripts removed - functionality moved to React components -->
+    {{ vitejs('__planet__') | safe }}
+  </body>
+</html>

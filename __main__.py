@@ -9,7 +9,9 @@ from io import BytesIO
 from hypercorn.asyncio import serve
 from hypercorn.config import Config
 
-from flask import Flask, render_template, request, redirect, url_for, send_file, session
+from flask import Flask, render_template, request, redirect, url_for, send_file, session, g, send_from_directory
+
+from vite_fusion import register_vite_assets
 
 from pymodules.__atlas_fixed_vars import VERSION, VERSION_HASH, PORT, RUN
 from pymodules.__atlas_cache import get_cached_image_path
@@ -27,10 +29,23 @@ from pymodules.__universe_constants import PhysicalConstants
 from pymodules.__universe_base import Universe
 
 from pymodules.__drawer_base import handle_image_generation
+from pymodules.__atlas_ui_file_delivery import send_static_images, send_static_favicon, send_src_static, send_src_dist
 
 
-app = Flask(__name__)
+template_folder = os.path.join(os.getcwd(), "atlas-ui", "template")
+
+app = Flask(__name__, static_folder=None, template_folder=template_folder)
 app.secret_key = os.urandom(24)
+
+register_vite_assets(
+    app,
+    dev_mode=(RUN == "DEV"),
+    dev_server_url="http://localhost:5173",
+    dist_path="/atlas-ui/react/dist",
+    manifest_path="atlas-ui/react/dist/.vite/manifest.json",
+    nonce_provider=lambda: g.get("nonce"),
+    logger=None
+)
 
 universe = None
 constants = PhysicalConstants()
@@ -380,6 +395,31 @@ def stargate(encoded_url):
     except Exception as e:
         print(f"Error: {e}")
         return redirect(url_for("index", error=str(e)))
+
+
+@app.route("/atlas-ui/static/images/<path:path>")
+def atlas_ui_static_images(path):
+    return send_static_images(path)
+
+
+@app.route("/atlas-ui/static/favicon/<path:path>")
+def atlas_ui_static_favicon(path):
+    return send_static_favicon(path)
+
+
+@app.route("/atlas-ui/react/static/<path:path>")
+def atlas_ui_src_static(path):
+    return send_src_static(path)
+
+
+@app.route("/atlas-ui/react/dist/<path:path>")
+def atlas_ui_src_dist(path):
+    return send_src_dist(path)
+
+
+@app.route("/static/<path:filename>", endpoint='static')
+def send_static_files(filename):
+    return send_from_directory("static", filename)
 
 
 if __name__ == "__main__":

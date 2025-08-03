@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    {% include 'partials/_favicon.html' %}
+
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}" />
+    {{ vitecss('global') | safe }}
+    <title>The Atlas</title>
+  </head>
+  <body>
+    <header class="interfaceinit">
+      <img src="/static/atlas-logo.jpg" alt="Atlas Logo" class="logo" />
+    </header>
+
+    <!-- Original form hidden, React component will handle this -->
+    <div style="display: none">
+      <form action="{{ url_for('navigate') }}" method="POST" id="legacy-form">
+        <input type="hidden" name="x" value="1000000" />
+        <input type="hidden" name="y" value="1000000" />
+        <input type="hidden" name="z" value="1000000" />
+      </form>
+    </div>
+
+    {% if error %}
+    <p class="error">{{ error }}</p>
+    {% endif %}
+
+    <!-- React Integration Test -->
+    <div id="atlas-react-root"></div>
+
+    <p class="p-version">Atlas Version {{ version }} · Created by Claudio González for <a target="_blank" href="https://www.banshee.pro/">Banshee</a></p>
+
+    <!-- Legacy scripts removed - functionality moved to React components -->
+    {{ vitejs('__main__') | safe }}
+  </body>
+</html>

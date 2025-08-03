@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    {% include 'partials/_favicon.html' %}
+
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}" />
+    {{ vitecss('global') | safe }}
+    <title>System: {{ system.name.replace("_", " ") }}</title>
+  </head>
+  <body data-coordinates="{{ galaxy.coordinates | join(',') }}" data-system-index="{{ system_index }}">
+    <h1>System: '{{ system.name }}' at Galaxy '{{ galaxy.name.replace("_", " ") }}'</h1>
+
+    <div class="solar-system-info">
+      <p><strong>Star System Type:</strong> {{ summary['Star System Type'] }}</p>
+      <p><strong>Number of Planets:</strong> {{ summary['Number of Planets'] }}</p>
+
+      <p><strong>Stars ({{ summary['Stars']|length }}):</strong></p>
+      {% for star in summary['Stars'] %}
+
+      <p><strong class="info-bulked">Star Type {{ loop.index }}:</strong> {{ star['Type'] }}</p>
+      <p><strong class="info-bulked">Star Size {{ loop.index }}:</strong> {{ star['Size'] }}</p>
+      <p><strong class="info-bulked">Star Color {{ loop.index }}:</strong> {{ star['Color'] }}</p>
+      {% endfor %}
+
+      <div id="localization-content" class="localization-content">
+        <p><strong class="localize">System:</strong> {{ system.name }}</p>
+        <p><strong class="localize">System ID:</strong> #{{ system_index + 1}}</p>
+        <p><strong class="localize">Galaxy:</strong> {{ galaxy.name.replace("_", " ") }}</p>
+        <p><strong class="localize">Coordinates:</strong> X: {{ galaxy.coordinates[0] }}, Y: {{ galaxy.coordinates[1] }}, Z: {{ galaxy.coordinates[2] }}</p>
+      </div>
+      <button class="dropdown-btn" onclick="toggleLocalization()">View Localization</button>
+    </div>
+
+    <div class="solar-system-info">
+      <div>
+        <div class="blob-image-container">
+          <canvas id="canvas"></canvas>
+          <img class="blob-image" data-high-res-url="{{ url_for('system_blob') }}" src="{{ url_for('static', filename='images/placeholder-min.jpg') }}" id="blob-image" />
+        </div>
+        <div class="stargate-container">
+          <a class="stargate" href="{{ system_url }}"><span id="stargate-text">Aligning Stargate...</span></a>
+          <div class="tooltip">Right-click and select 'Copy Link' to save this Stargate location</div>
+        </div>
+      </div>
+    </div>
+
+    <h2>Planets in '{{ system.name }}':</h2>
+    <div class="solar-system-info">
+      <ul class="planets-list">
+        {% for planet in system.planets.values() %}
+        <li class="planet-item">
+          <div class="seen-indicator" data-planet="{{ planet.name.lower() }}"></div>
+          <a href="{{ url_for('view_planet', planet_name=planet.name.lower(), page=request.args.get('page')) }}">
+            <span>{{ planet.name.replace("_", " ") }}</span>
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="solar-system-info">
+      <a href="{{ url_for('view_galaxy', page=page) }}">
+        <button class="back-button">Back to Galaxy '{{ galaxy.name.replace("_", " ") }}'</button>
+      </a>
+    </div>
+
+    <!-- React Integration for System -->
+    <div id="atlas-react-root"></div>
+
+    <!-- Legacy scripts removed - functionality moved to React components -->
+    {{ vitejs('__system__') | safe }}
+  </body>
+</html>
