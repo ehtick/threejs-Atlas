@@ -1,5 +1,5 @@
 import React from 'react';
-import UniverseLocationViewer from './UniverseLocationViewer.tsx';
+import Universe3DViewer from './Universe3DViewer.tsx';
 
 interface Galaxy {
   name: string;
@@ -38,7 +38,7 @@ const GalaxyInfo: React.FC<GalaxyInfoProps> = ({ galaxy }) => {
 
       {/* Universe Location Viewer - Full width */}
       <div className="bg-white/10 rounded-lg p-3 border border-gray-500/30 mb-3 col-span-2">
-        <UniverseLocationViewer coordinates={galaxy.coordinates} galaxyName={galaxy.name} />
+        <Universe3DViewer coordinates={galaxy.coordinates} galaxyName={galaxy.name} />
       </div>
 
       {/* Cosmic Objects - Compact grid */}
