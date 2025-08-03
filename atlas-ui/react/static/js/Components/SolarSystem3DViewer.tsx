@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from "react";
 import * as THREE from "three";
+import SolarSystem3DViewerFullscreen from './SolarSystem3DViewerFullscreen.tsx';
 
 interface Planet {
   name: string;
@@ -44,7 +45,29 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({
   // Use real current time like Python does
   const realCurrentTime = Math.floor(Date.now() / 1000); // Current Unix timestamp
   const [timeOffset, setTimeOffset] = useState(0); // User time adjustment
+  const [isFullscreen, setIsFullscreen] = useState(false); // Fullscreen modal state
   const currentTime = realCurrentTime - cosmicOriginTime + timeOffset;
+
+  // Handle ESC key to close fullscreen
+  useEffect(() => {
+    const handleCloseFullscreen = () => {
+      setIsFullscreen(false);
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isFullscreen) {
+        setIsFullscreen(false);
+      }
+    };
+
+    document.addEventListener('solar-system-close-fullscreen', handleCloseFullscreen);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('solar-system-close-fullscreen', handleCloseFullscreen);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isFullscreen]);
 
   useEffect(() => {
     if (!mountRef.current) return;
@@ -75,10 +98,10 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({
     rendererRef.current = renderer;
     container.appendChild(renderer.domElement);
 
-    // Planet type colors (from Python code)
+    // Planet type colors (exact copy from Python code)
     const planetColors: { [key: string]: string } = {
       "Gas Giant": "#FFA500",
-      "Anomaly": "#FFFFFF",
+      "Anomaly": "#FFFFFF", 
       "Rocky": "#808080",
       "Icy": "#ADD8E6",
       "Oceanic": "#0000FF",
@@ -101,17 +124,19 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({
       "Super Earth": "#90EE90",
       "Sub Earth": "#006400",
       "Frozen Gas Giant": "#ADD8E6",
-      "Nebulous": "#FFC0CB"
+      "Nebulous": "#FFC0CB",
+      "Aquifer": "#00FFFF",
+      "Exotic": "#FF00FF"
     };
 
-    // Star colors
+    // Star colors (exact copy from Python code)
     const starColors: { [key: string]: string } = {
-      "Red": "#FF4444",
-      "Orange": "#FF8844",
-      "Yellow": "#FFFF44",
-      "White": "#FFFFFF",
-      "Blue": "#4488FF",
-      "Blue-White": "#88AAFF"
+      "red": "#FF4444",
+      "orange": "#FF8844", 
+      "yellow": "#FFFF44",
+      "white": "#FFFFFF",
+      "blue": "#4488FF",
+      "purple": "#8844FF"
     };
 
     // Add stars at center
@@ -196,7 +221,8 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({
           const dashMaterial = new THREE.LineBasicMaterial({
             color: 0x708090, // Python: "slategray"
             transparent: true,
-            opacity: 0.6
+            opacity: 0.8,
+            linewidth: 2 // Thicker lines
           });
           const dashLine = new THREE.Line(dashGeometry, dashMaterial);
           scene.add(dashLine);
@@ -204,10 +230,11 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({
         }
       }
 
-      // Create planet - bigger points
-      const planetRadius = Math.max(planet.diameter / 15000, 1.5); // Even bigger scale and minimum size
+      // Create planet - with size limits
+      const basePlanetRadius = planet.diameter / 15000;
+      const planetRadius = Math.max(Math.min(basePlanetRadius, 4.0), 1.5); // Min 1.5, Max 4.0
       const planetGeometry = new THREE.SphereGeometry(planetRadius, 16, 16);
-      const planetColor = planetColors[planet.planet_type] || "#808080";
+      const planetColor = planetColors[planet.planet_type] || "#FFFFFF"; // Python fallback: "white"
       const planetMaterial = new THREE.MeshBasicMaterial({ 
         color: planetColor,
         transparent: true,
@@ -435,36 +462,116 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({
   };
 
   return (
-    <div className="flex flex-col items-center w-full">
-      <div className="text-xs text-gray-300 mb-2">Solar System Simulation</div>
-      
-      <div 
-        ref={mountRef} 
-        className="w-full border border-white/20 rounded bg-black/20"
-        style={{ height: "auto" }}
-      />
-      
-      <div className="text-xs text-gray-400 mt-2 w-full">
-        <div className="flex items-center justify-between mb-1">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
-              <span className="text-[10px]">Star(s)</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-              <span className="text-[10px]">{planets.length} Planets</span>
-            </div>
-          </div>
-          <div className="text-[10px] text-gray-500">
-            Time: {formatTime(currentTime)}
-          </div>
+    <>
+      <div className="flex flex-col items-center w-full">
+        <div className="text-xs text-gray-300 mb-2">Solar System Simulation</div>
+        
+        <div className="relative w-full">
+          <div 
+            ref={mountRef} 
+            className="w-full border border-white/20 rounded bg-black/20"
+            style={{ height: "auto" }}
+          />
+          
+          {/* Expand button overlaid on canvas */}
+          <button
+            onClick={() => setIsFullscreen(true)}
+            className="absolute top-2 right-2 p-2 bg-black/60 hover:bg-black/80 border border-white/30 rounded-lg transition-all duration-200 flex items-center gap-1 backdrop-blur-sm shadow-lg z-10"
+            title="Expand to fullscreen"
+          >
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+            </svg>
+            <span className="text-xs text-white hidden sm:inline">Expand</span>
+          </button>
         </div>
-        <div className="text-center text-[10px] text-gray-500">
-          Scroll: Zoom • Ctrl+Scroll: +1day/-1day • Drag: Rotate View
+        
+        <div className="text-xs text-gray-400 mt-2 w-full">
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                <span className="text-[10px]">Star(s)</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                <span className="text-[10px]">{planets.length} Planets</span>
+              </div>
+            </div>
+            <div className="text-[10px] text-gray-500">
+              Time: {formatTime(currentTime)}
+            </div>
+          </div>
+          <div className="text-center text-[10px] text-gray-500">
+            Scroll: Zoom • Ctrl+Scroll: +1day/-1day • Drag: Rotate View
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Fullscreen Modal */}
+      {isFullscreen && (
+        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl flex items-center justify-center">
+          <div className="w-full h-full flex flex-col p-2 sm:p-4">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between mb-2 sm:mb-4">
+              <div className="flex items-center gap-2 sm:gap-4">
+                <h2 className="text-lg sm:text-xl font-bold text-white truncate">
+                  {formatName(systemName)}
+                </h2>
+                <div className="hidden sm:flex items-center gap-3">
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
+                    <span className="text-sm text-gray-300">Star(s)</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
+                    <span className="text-sm text-gray-300">{planets.length} Planets</span>
+                  </div>
+                  <div className="text-sm text-gray-400">
+                    Time: {formatTime(currentTime)}
+                  </div>
+                </div>
+                {/* Mobile info */}
+                <div className="sm:hidden text-xs text-gray-400">
+                  {planets.length}P • {formatTime(currentTime)}
+                </div>
+              </div>
+              <button
+                onClick={() => setIsFullscreen(false)}
+                className="p-1.5 sm:p-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded-lg transition-colors duration-200 text-red-400 hover:text-red-300 flex-shrink-0"
+                title="Close fullscreen (ESC)"
+              >
+                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Content - Full Size 3D Viewer */}
+            <div className="flex-1 border border-white/20 rounded-lg bg-black/20 overflow-hidden min-h-0">
+              <SolarSystem3DViewerFullscreen 
+                planets={planets} 
+                stars={stars} 
+                systemName={systemName}
+                cosmicOriginTime={cosmicOriginTime}
+                currentTime={currentTime}
+                onTimeOffsetChange={(delta) => setTimeOffset(prev => prev + delta)}
+              />
+            </div>
+
+            {/* Modal Footer */}
+            <div className="mt-2 sm:mt-4 text-center text-xs sm:text-sm text-gray-400">
+              <div className="hidden sm:block">
+                Scroll: Zoom • Ctrl+Scroll: +1day/-1day • Drag: Rotate View • ESC: Close
+              </div>
+              <div className="sm:hidden">
+                Pinch: Zoom • Drag: Rotate • ESC: Close
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
