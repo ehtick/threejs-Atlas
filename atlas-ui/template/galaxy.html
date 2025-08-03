@@ -4,37 +4,44 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    {% include 'partials/_favicon.html' %}
-    {% include 'partials/_preamble.html' %}
-
-    {{ vitecss('global') | safe }}
+    {% include 'partials/_favicon.html' %} {% include 'partials/_preamble.html' %} {{ vitecss('global') | safe }}
     <title>Galaxy: {{ galaxy.name.replace("_", " ") }}</title>
   </head>
   <body class="h-full m-0 p-0 font-sans bg-slate-900 text-gray-200 leading-relaxed">
-    <!-- Galaxy props for React -->
-    <script>
-      window.galaxyProps = {
-        galaxy: {
-          name: "{{ galaxy.name }}",
-          coordinates: {{ galaxy.coordinates | tojson }},
-          galaxy_type: "{{ galaxy.galaxy_type }}",
-          num_systems: {{ galaxy.num_systems }},
-          black_holes: {{ galaxy.black_holes }},
-          pulsars: {{ galaxy.pulsars }},
-          quasars: {{ galaxy.quasars }}
-        },
-        systems: {{ systems | tojson }},
-        galaxy_url: "{{ galaxy_url }}",
-        version: "{{ version }}",
-        page: {{ page }},
-        prev_page: {{ prev_page | default('null') }},
-        next_page: {{ next_page | default('null') }},
-        finish: {{ finish }}
-      };
+    <div id="atlas-react-root" class="w-full h-full"></div>
+
+    <script id="data-galaxy" type="application/json">
+      {{ {
+        "name": galaxy.name,
+        "coordinates": galaxy.coordinates,
+        "galaxy_type": galaxy.galaxy_type,
+        "num_systems": galaxy.num_systems,
+        "black_holes": galaxy.black_holes,
+        "pulsars": galaxy.pulsars,
+        "quasars": galaxy.quasars
+      } | tojson }}
     </script>
 
-    <!-- React Integration for Galaxy -->
-    <div id="atlas-react-root" class="w-full h-full"></div>
+    <script id="data-systems" type="application/json">
+      {{ systems | tojson }}
+    </script>
+
+    <script id="data-navigation" type="application/json">
+      {{ {
+        "galaxy_url": galaxy_url,
+        "page": page,
+        "prev_page": prev_page,
+        "next_page": next_page,
+        "finish": finish
+      } | tojson }}
+    </script>
+
+    <script id="data-common" type="application/json">
+      {{ {
+        "version": version,
+        "image_url": image_url
+      } | tojson }}
+    </script>
 
     <!-- React Galaxy Component -->
     {{ vitejs('__galaxy__') | safe }}

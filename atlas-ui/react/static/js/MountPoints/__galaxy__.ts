@@ -14,26 +14,75 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  // Extract props from window or data attributes
-  const props = (window as any).galaxyProps || {
-    galaxy: {
-      name: 'Unknown Galaxy',
-      coordinates: [0, 0, 0],
-      galaxy_type: 'Unknown',
-      num_systems: 0,
-      black_holes: 0,
-      pulsars: 0,
-      quasars: 0
-    },
-    systems: [],
-    galaxy_url: '#',
-    version: '1.0.0',
-    page: 1,
-    finish: 1
+  // Helper function to parse JSON data from script tags
+  const getDataFromScript = (id: string) => {
+    const script = document.getElementById(id);
+    if (!script || !script.textContent) return null;
+    
+    try {
+      return JSON.parse(script.textContent.trim());
+    } catch (error) {
+      console.error(`Error parsing data from script ${id}:`, error);
+      return null;
+    }
   };
 
-  const root = createRoot(rootElement);
-  root.render(React.createElement(GalaxyLayout, props));
-  
-  console.log('Galaxy React component mounted successfully!');
+  // Extract props from JSON scripts (HomeDockOS pattern)
+  try {
+    const galaxyData = getDataFromScript('data-galaxy') || {};
+    const systemsData = getDataFromScript('data-systems') || [];
+    const navigationData = getDataFromScript('data-navigation') || {};
+    const commonData = getDataFromScript('data-common') || {};
+
+    const props = {
+      galaxy: {
+        name: galaxyData.name || 'Unknown Galaxy',
+        coordinates: galaxyData.coordinates || [0, 0, 0],
+        galaxy_type: galaxyData.galaxy_type || 'Unknown',
+        num_systems: galaxyData.num_systems || 0,
+        black_holes: galaxyData.black_holes || 0,
+        pulsars: galaxyData.pulsars || 0,
+        quasars: galaxyData.quasars || 0
+      },
+      systems: systemsData,
+      galaxy_url: navigationData.galaxy_url || '#',
+      version: commonData.version || '1.0.0',
+      page: navigationData.page || 1,
+      prev_page: navigationData.prev_page,
+      next_page: navigationData.next_page,
+      finish: navigationData.finish || 1,
+      image_url: commonData.image_url || ''
+    };
+
+    console.log('Galaxy props loaded from JSON scripts:', props);
+
+    const root = createRoot(rootElement);
+    root.render(React.createElement(GalaxyLayout, props));
+    
+    console.log('Galaxy React component mounted successfully!');
+  } catch (error) {
+    console.error('Error parsing galaxy data:', error);
+    
+    // Fallback props
+    const fallbackProps = {
+      galaxy: {
+        name: 'Unknown Galaxy',
+        coordinates: [0, 0, 0],
+        galaxy_type: 'Unknown',
+        num_systems: 0,
+        black_holes: 0,
+        pulsars: 0,
+        quasars: 0
+      },
+      systems: [],
+      galaxy_url: '#',
+      version: '1.0.0',
+      page: 1,
+      finish: 1,
+      image_url: ''
+    };
+
+    const root = createRoot(rootElement);
+    root.render(React.createElement(GalaxyLayout, fallbackProps));
+  }
 });

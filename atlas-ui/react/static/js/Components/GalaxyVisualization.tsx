@@ -2,9 +2,10 @@ import React, { useEffect, useRef, useState } from 'react';
 
 interface GalaxyVisualizationProps {
   galaxyUrl: string;
+  imageUrl?: string;
 }
 
-const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl }) => {
+const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, imageUrl }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const [stargateText, setStargateText] = useState('Aligning Stargate...');
@@ -207,11 +208,24 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl }) 
           src="/static/images/placeholder-min.jpg"
           alt="Galaxy visualization"
           onLoad={() => {
-            // Simulate loading high-res image
-            setTimeout(() => {
-              setImageLoaded(true);
-              setCanvasHidden(true);
-            }, 1500);
+            // Load the high-res galaxy image if available
+            if (imageUrl) {
+              const highResImg = new Image();
+              highResImg.onload = () => {
+                if (imageRef.current) {
+                  imageRef.current.src = imageUrl;
+                  setImageLoaded(true);
+                  setCanvasHidden(true);
+                }
+              };
+              highResImg.src = imageUrl;
+            } else {
+              // Fallback - just show placeholder
+              setTimeout(() => {
+                setImageLoaded(true);
+                setCanvasHidden(true);
+              }, 1500);
+            }
           }}
         />
       </div>

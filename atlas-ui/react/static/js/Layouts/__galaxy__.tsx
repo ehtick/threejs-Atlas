@@ -31,6 +31,7 @@ interface GalaxyLayoutProps {
   prev_page?: number;
   next_page?: number;
   finish: number;
+  image_url?: string;
 }
 
 const GalaxyLayout: React.FC<GalaxyLayoutProps> = ({
@@ -41,7 +42,8 @@ const GalaxyLayout: React.FC<GalaxyLayoutProps> = ({
   page,
   prev_page,
   next_page,
-  finish
+  finish,
+  image_url
 }) => {
   const [coordinates] = useState<string>(galaxy.coordinates.join(','));
 
@@ -81,7 +83,7 @@ const GalaxyLayout: React.FC<GalaxyLayoutProps> = ({
           <GalaxyInfo galaxy={galaxy} />
 
           {/* Galaxy Visualization */}
-          <GalaxyVisualization galaxyUrl={galaxy_url} />
+          <GalaxyVisualization galaxyUrl={galaxy_url} imageUrl={image_url} />
 
           {/* Systems List */}
           <div className="mb-8">
