@@ -61,7 +61,7 @@ const SystemInfo: React.FC<SystemInfoProps> = ({ system, galaxy, systemIndex }) 
         {/* Stars Information - Spans remaining columns */}
         <div className="bg-white/10 rounded-lg p-2 sm:p-3 border border-yellow-500/30 col-span-2 lg:col-span-3">
           <div className="text-xs sm:text-lg text-gray-300 mb-2">Stellar Composition</div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mb-3">
             {system.stars.map((star, index) => (
               <div key={index} className="bg-white/5 rounded p-2 border border-yellow-500/20">
                 <div className="text-xs text-gray-400">Star {index + 1}</div>
@@ -71,39 +71,37 @@ const SystemInfo: React.FC<SystemInfoProps> = ({ system, galaxy, systemIndex }) 
               </div>
             ))}
           </div>
-        </div>
-
-        {/* Localization Toggle */}
-        <div className="bg-white/10 rounded-lg p-2 sm:p-3 border border-gray-500/30 col-span-2 lg:col-span-3">
-          <button 
-            onClick={() => setShowLocalization(!showLocalization)}
-            className="w-full text-left text-xs sm:text-sm text-gray-400 hover:text-gray-200 transition-colors duration-300"
-          >
-            {showLocalization ? 'Hide' : 'View'} Localization Information
-          </button>
           
-          {showLocalization && (
-            <div className="mt-3 pt-3 border-t border-gray-600/30 space-y-2">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                <div>
-                  <span className="text-gray-400">System:</span>
-                  <span className="text-white ml-2">{formatName(system.name)}</span>
+          {/* Localization Toggle - Inside Stellar Composition */}
+          <div className="border-t border-yellow-500/20 pt-2">
+            <button 
+              onClick={() => setShowLocalization(!showLocalization)}
+              className="text-xs text-gray-500 hover:text-gray-300 transition-colors duration-300"
+            >
+              {showLocalization ? '▼' : '▶'} Technical Data
+            </button>
+            
+            {showLocalization && (
+              <div className="mt-2 grid grid-cols-2 lg:grid-cols-4 gap-2 text-xs">
+                <div className="bg-white/5 rounded p-1">
+                  <span className="text-yellow-400">System:</span>
+                  <div className="text-white truncate">{formatName(system.name)}</div>
                 </div>
-                <div>
-                  <span className="text-gray-400">System ID:</span>
-                  <span className="text-white ml-2">#{systemIndex + 1}</span>
+                <div className="bg-white/5 rounded p-1">
+                  <span className="text-yellow-400">ID:</span>
+                  <div className="text-white">#{systemIndex + 1}</div>
                 </div>
-                <div>
-                  <span className="text-gray-400">Galaxy:</span>
-                  <span className="text-white ml-2">{formatName(galaxy.name)}</span>
+                <div className="bg-white/5 rounded p-1">
+                  <span className="text-yellow-400">Galaxy:</span>
+                  <div className="text-white truncate">{formatName(galaxy.name)}</div>
                 </div>
-                <div>
-                  <span className="text-gray-400">Coordinates:</span>
-                  <span className="text-white ml-2">X: {galaxy.coordinates[0]}, Y: {galaxy.coordinates[1]}, Z: {galaxy.coordinates[2]}</span>
+                <div className="bg-white/5 rounded p-1">
+                  <span className="text-yellow-400">Coords:</span>
+                  <div className="text-white">{galaxy.coordinates.join(', ')}</div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>

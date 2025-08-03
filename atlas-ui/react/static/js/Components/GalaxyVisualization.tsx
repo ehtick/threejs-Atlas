@@ -244,7 +244,7 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, im
       <h3 className="text-xl sm:text-2xl font-bold text-white mb-4">Galaxy Visualization</h3>
       
       {/* Galaxy Image Container */}
-      <div className="relative w-96 h-96 mx-auto bg-black/50 flex justify-center items-center rounded-xl overflow-hidden border-2 border-blue-400/30 mb-4">
+      <div className="relative w-full max-w-80 sm:max-w-96 aspect-square mx-auto bg-black/50 flex justify-center items-center rounded-xl overflow-hidden border-2 border-blue-400/30 mb-4">
         
         {/* Canvas for space animation */}
         <canvas
@@ -271,8 +271,9 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, im
                   src={imageUrl}
                   alt="Galaxy visualization"
                   style={{ 
-                    width: '400px', 
-                    height: '400px',
+                    width: '100%', 
+                    height: '100%',
+                    objectFit: 'contain',
                     backgroundColor: 'transparent'
                   }}
                 />
