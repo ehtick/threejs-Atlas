@@ -134,10 +134,10 @@ def view_galaxy(page):
 
         galaxy_url = generate_galaxy_url(current_galaxy.coordinates, page)
 
-        per_page = 50
+        per_page = 150
         start = (page - 1) * per_page
         end = start + per_page
-        finish = (current_galaxy.num_systems - 1) // 50 + 1
+        finish = (current_galaxy.num_systems - 1) // 150 + 1
 
         systems = [
             {

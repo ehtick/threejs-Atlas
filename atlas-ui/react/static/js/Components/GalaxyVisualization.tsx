@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
+import Zoom from 'react-medium-image-zoom';
+import 'react-medium-image-zoom/dist/styles.css';
 
 interface GalaxyVisualizationProps {
   galaxyUrl: string;
@@ -96,18 +98,6 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, im
       animationId = requestAnimationFrame(animate);
     }
 
-    // Handle image loading
-    const handleImageLoad = () => {
-      decelerate = true;
-      setImageLoaded(true);
-      setCanvasHidden(true);
-      
-      setTimeout(() => {
-        if (canvas) {
-          canvas.style.display = 'none';
-        }
-      }, 2500);
-    };
 
     init();
 
@@ -220,10 +210,41 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, im
     animate();
   }, []);
 
+  // Add custom styles for react-medium-image-zoom
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      [data-rmiz-modal-overlay="visible"] {
+        background-color: rgba(0, 0, 0, 0.8) !important;
+        backdrop-filter: blur(20px) !important;
+        -webkit-backdrop-filter: blur(20px) !important;
+        transition: backdrop-filter 0.3s ease-in-out !important;
+      }
+      
+      [data-rmiz-modal-img] {
+        border-radius: 1rem !important;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8) !important;
+      }
+      
+      [data-rmiz-modal-overlay="hidden"] {
+        backdrop-filter: blur(0px) !important;
+        -webkit-backdrop-filter: blur(0px) !important;
+        transition: backdrop-filter 0.3s ease-in-out !important;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
   return (
-    <div className="bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 mb-8 shadow-2xl overflow-hidden">
+    <div className="h-full flex flex-col">
+      <h3 className="text-xl sm:text-2xl font-bold text-white mb-4">Galaxy Visualization</h3>
+      
       {/* Galaxy Image Container */}
-      <div className="relative w-full h-96 sm:h-[500px] lg:h-[600px] bg-black/50 flex justify-center items-center rounded-2xl overflow-hidden border-2 border-blue-400/30">
+      <div className="relative w-96 h-96 mx-auto bg-black/50 flex justify-center items-center rounded-xl overflow-hidden border-2 border-blue-400/30 mb-4">
         
         {/* Canvas for space animation */}
         <canvas
@@ -234,38 +255,64 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, im
           style={{ filter: canvasHidden ? 'blur(50px)' : 'none' }}
         />
         
-        {/* Galaxy Image */}
-        <img
-          ref={imageRef}
-          className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 ${
-            imageLoaded ? 'opacity-100 blur-0' : 'opacity-0 blur-[25px]'
-          }`}
-          src="/static/images/placeholder-min.jpg"
-          alt="Galaxy visualization"
-        />
+        {/* Galaxy Image with Zoom */}
+        <div className={`absolute inset-0 w-full h-full transition-all duration-500 ${
+          imageLoaded ? 'opacity-100 blur-0' : 'opacity-0 blur-[25px]'
+        }`}>
+          {imageLoaded && imageUrl ? (
+            <div className="w-full h-full flex items-center justify-center">
+              <Zoom 
+                zoomMargin={20}
+                classDialog="backdrop-blur-3xl"
+              >
+                <img
+                  ref={imageRef}
+                  className="max-w-full max-h-full object-contain rounded-xl shadow-2xl shadow-blue-500/20"
+                  src={imageUrl}
+                  alt="Galaxy visualization"
+                  style={{ 
+                    width: '400px', 
+                    height: '400px',
+                    backgroundColor: 'transparent'
+                  }}
+                />
+              </Zoom>
+            </div>
+          ) : (
+            <img
+              ref={imageRef}
+              className="w-full h-full object-cover"
+              src="/static/images/placeholder-min.jpg"
+              alt="Galaxy visualization"
+            />
+          )}
+        </div>
       </div>
 
       {/* Stargate Container */}
-      <div className="p-6 text-center">
+      <div className="text-center mt-auto">
         <a 
           href={galaxyUrl}
-          className={`inline-block px-8 py-4 bg-gradient-to-r from-cyan-500 via-blue-500 to-cyan-500 text-white font-bold text-lg rounded-full border-2 border-cyan-400 shadow-lg hover:shadow-cyan-400/50 transition-all duration-300 transform hover:scale-105 relative overflow-hidden ${
+          className={`inline-block px-4 py-2 bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 text-gray-200 font-medium text-sm rounded-lg border border-slate-600 hover:border-slate-500 shadow-md hover:shadow-lg transition-all duration-300 relative overflow-hidden group ${
             isAnimating ? 'animate-pulse' : ''
           }`}
           style={{
-            boxShadow: '0 0 15px rgba(34, 211, 238, 0.5)',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
           }}
         >
-          <span className="relative z-10 font-mono">
+          <span className="relative z-10 font-mono flex items-center gap-2">
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.736 6.979C9.208 6.193 9.696 6 10 6s.792.193 1.264.979a1 1 0 001.715-1.029C12.279 4.784 11.232 4 10 4s-2.279.784-2.979 1.95a1 1 0 001.715 1.029zM8.5 10a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM10 14c-.304 0-.792-.193-1.264-.979a1 1 0 00-1.715 1.029C7.721 15.216 8.768 16 10 16s2.279-.784 2.979-1.95a1 1 0 00-1.715-1.029C10.792 13.807 10.304 14 10 14z" clipRule="evenodd" />
+            </svg>
             {stargateText}
           </span>
           
-          {/* Animated border effect */}
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-50 animate-pulse" />
+          {/* Subtle glow effect */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         </a>
         
-        <div className="mt-4 text-xs text-gray-400 max-w-md mx-auto">
-          Right-click and select 'Copy Link' to save this Stargate location
+        <div className="mt-2 text-xs text-gray-500 text-center">
+          Gateway to the stars
         </div>
       </div>
 

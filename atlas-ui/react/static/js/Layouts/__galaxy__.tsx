@@ -79,11 +79,22 @@ const GalaxyLayout: React.FC<GalaxyLayoutProps> = ({
             </p>
           </div>
 
-          {/* Galaxy Information */}
-          <GalaxyInfo galaxy={galaxy} />
-
-          {/* Galaxy Visualization */}
-          <GalaxyVisualization galaxyUrl={galaxy_url} imageUrl={image_url} />
+          {/* Galaxy Information & Visualization */}
+          <div className="bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 mb-8 shadow-2xl p-4 sm:p-6">
+            <div className="flex flex-col lg:grid lg:grid-cols-[400px_1fr] gap-6 lg:gap-8">
+              
+              {/* Mobile/Desktop: Galaxy Image - Fixed width for image */}
+              <div className="order-1 lg:order-1">
+                <GalaxyVisualization galaxyUrl={galaxy_url} imageUrl={image_url} />
+              </div>
+              
+              {/* Mobile/Desktop: Galaxy Info - Takes remaining space */}
+              <div className="order-2 lg:order-2">
+                <GalaxyInfo galaxy={galaxy} />
+              </div>
+              
+            </div>
+          </div>
 
           {/* Systems List */}
           <div className="mb-8">

@@ -54,7 +54,7 @@ const SystemsList: React.FC<SystemsListProps> = ({ systems, coordinates }) => {
 
   return (
     <div className="bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 shadow-2xl p-4 sm:p-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
         {systems.map((system) => (
           <div
             key={system.index}
@@ -72,33 +72,14 @@ const SystemsList: React.FC<SystemsListProps> = ({ systems, coordinates }) => {
             
             <button
               onClick={() => window.location.href = `/system/${system.index}`}
-              className="w-full text-left block p-4 text-gray-200 hover:text-white transition-colors duration-300 rounded-lg"
+              className="w-full text-left block p-2 sm:p-3 text-gray-200 hover:text-white transition-colors duration-300 rounded-lg"
             >
-              <div className="flex items-center justify-between">
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm text-gray-400 mb-1">
-                    System #{system.number}
-                  </div>
-                  <div className="text-lg font-semibold text-white truncate group-hover:text-blue-300 transition-colors duration-300">
-                    {system.name}
-                  </div>
+              <div className="text-center">
+                <div className="text-xs text-gray-400 mb-1">
+                  #{system.number}
                 </div>
-                
-                {/* Arrow indicator */}
-                <div className="ml-3 text-gray-400 group-hover:text-blue-400 transition-colors duration-300 transform group-hover:translate-x-1">
-                  <svg 
-                    className="w-5 h-5" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M9 5l7 7-7 7"
-                    />
-                  </svg>
+                <div className="text-sm font-semibold text-white truncate group-hover:text-blue-300 transition-colors duration-300">
+                  {system.name}
                 </div>
               </div>
               
@@ -110,7 +91,7 @@ const SystemsList: React.FC<SystemsListProps> = ({ systems, coordinates }) => {
       </div>
       
       {systems.length === 0 && (
-        <div className="text-center py-12">
+        <div className="col-span-full text-center py-12">
           <div className="text-gray-400 text-lg mb-2">No systems found</div>
           <div className="text-gray-500 text-sm">This galaxy appears to be empty</div>
         </div>
