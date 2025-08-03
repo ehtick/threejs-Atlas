@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,70 +7,36 @@
     {% include 'partials/_favicon.html' %}
     {% include 'partials/_preamble.html' %}
 
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}" />
     {{ vitecss('global') | safe }}
     <title>Galaxy: {{ galaxy.name.replace("_", " ") }}</title>
   </head>
-  <body data-coordinates="{{ galaxy.coordinates | join(',') }}">
-    <h1>Galaxy '{{ galaxy.name.replace("_", " ") }}' at Coordinates {{ galaxy.coordinates }}</h1>
+  <body class="h-full m-0 p-0 font-sans bg-slate-900 text-gray-200 leading-relaxed">
+    <!-- Galaxy props for React -->
+    <script>
+      window.galaxyProps = {
+        galaxy: {
+          name: "{{ galaxy.name }}",
+          coordinates: {{ galaxy.coordinates | tojson }},
+          galaxy_type: "{{ galaxy.galaxy_type }}",
+          num_systems: {{ galaxy.num_systems }},
+          black_holes: {{ galaxy.black_holes }},
+          pulsars: {{ galaxy.pulsars }},
+          quasars: {{ galaxy.quasars }}
+        },
+        systems: {{ systems | tojson }},
+        galaxy_url: "{{ galaxy_url }}",
+        version: "{{ version }}",
+        page: {{ page }},
+        prev_page: {{ prev_page | default('null') }},
+        next_page: {{ next_page | default('null') }},
+        finish: {{ finish }}
+      };
+    </script>
 
-    <div class="galaxy-info">
-      <p><strong>Type:</strong> {{ galaxy.galaxy_type }}</p>
-      <p><strong>Number of Solar Systems:</strong> {{ galaxy.num_systems }}</p>
-      <p><strong>Black Holes:</strong> {{ galaxy.black_holes }}</p>
-      <p><strong>Pulsars:</strong> {{ galaxy.pulsars }}</p>
-      <p><strong>Quasars:</strong> {{ galaxy.quasars }}</p>
-      <p><strong style="font-size: xx-small">*Black holes are grouped depending its position</strong></p>
-    </div>
-
-    <div class="galaxy-info">
-      <div class="blob-image-container">
-        <canvas id="canvas"></canvas>
-        <img class="blob-image" data-high-res-url="{{ url_for('galaxy_blob') }}" src="{{ url_for('static', filename='images/placeholder-min.jpg') }}" id="blob-image" />
-      </div>
-      <div class="stargate-container">
-        <a class="stargate" href="{{ galaxy_url }}"><span id="stargate-text">Aligning Stargate...</span></a>
-        <div class="tooltip">Right-click and select 'Copy Link' to save this Stargate location</div>
-      </div>
-    </div>
-
-    <h2>Systems in '{{ galaxy.name.replace("_", " ") }}'</h2>
-    <div class="galaxy-info">
-      <ul class="solar-systems-list">
-        {% for system in systems %}
-        <li class="system-item">
-          <div class="seen-indicator" data-system="{{ system.index }}"></div>
-          <a href="{{ url_for('view_system', system_index=system.index) }}">
-            <span class="system-text">#{{ system.number }} {{ system.name }}</span>
-          </a>
-        </li>
-        {% endfor %}
-      </ul>
-    </div>
-
-    <div class="galaxy-info">
-      <a href="/"><button class="back-button">Go Back to Planetary Index</button></a>
-    </div>
-
-    <div class="page-navigation">
-      {% if not page==1 %}
-      <a href="{{ url_for('view_galaxy', page=1) }}">«</a>
-      {% endif %} {% if prev_page %}
-      <a href="{{ url_for('view_galaxy', page=prev_page) }}">◃</a>
-      {% endif %}
-
-      <span>{{page}}</span>
-
-      {% if next_page %}
-      <a href="{{ url_for('view_galaxy', page=next_page) }}">▹</a>
-      {% endif %} {% if page != finish %}
-      <a href="{{ url_for('view_galaxy', page=finish) }}">»</a>
-      {% endif %}
-    </div>
     <!-- React Integration for Galaxy -->
-    <div id="atlas-react-root"></div>
+    <div id="atlas-react-root" class="w-full h-full"></div>
 
-    <!-- Legacy scripts removed - functionality moved to React components -->
+    <!-- React Galaxy Component -->
     {{ vitejs('__galaxy__') | safe }}
   </body>
 </html>
