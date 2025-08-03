@@ -4,6 +4,7 @@ import GalaxyInfo from '../Components/GalaxyInfo.tsx';
 import GalaxyVisualization from '../Components/GalaxyVisualization.tsx';
 import SystemsList from '../Components/SystemsList.tsx';
 import Pagination from '../Components/Pagination.tsx';
+import TechnicalData from '../Components/TechnicalData.tsx';
 import VersionFooter from '../Components/VersionFooter.tsx';
 
 interface Galaxy {
@@ -94,6 +95,12 @@ const GalaxyLayout: React.FC<GalaxyLayoutProps> = ({
               </div>
               
             </div>
+            
+            {/* Technical Data - Always visible below main content */}
+            <TechnicalData 
+              galaxyName={galaxy.name}
+              galaxyCoordinates={galaxy.coordinates}
+            />
           </div>
 
           {/* Systems List */}

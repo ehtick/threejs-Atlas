@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Header from '../Components/Header.tsx';
 import PlanetInfo from '../Components/PlanetInfo.tsx';
 import PlanetVisualization from '../Components/PlanetVisualization.tsx';
+import TechnicalData from '../Components/TechnicalData.tsx';
 import VersionFooter from '../Components/VersionFooter.tsx';
 
 interface Planet {
@@ -107,10 +108,19 @@ const PlanetLayout: React.FC<PlanetLayoutProps> = ({
               
               {/* Mobile/Desktop: Planet Info - Takes remaining space */}
               <div className="order-2 lg:order-2">
-                <PlanetInfo planet={planet} system={system} galaxy={galaxy} />
+                <PlanetInfo planet={planet} />
               </div>
               
             </div>
+            
+            {/* Technical Data - Always visible below main content */}
+            <TechnicalData 
+              planetName={planet.name}
+              systemName={system.name}
+              systemIndex={system.index}
+              galaxyName={galaxy.name}
+              galaxyCoordinates={galaxy.coordinates}
+            />
           </div>
 
           {/* Back Button */}

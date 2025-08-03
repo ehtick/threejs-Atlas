@@ -3,6 +3,7 @@ import Header from '../Components/Header.tsx';
 import SystemInfo from '../Components/SystemInfo.tsx';
 import SystemVisualization from '../Components/SystemVisualization.tsx';
 import PlanetsList from '../Components/PlanetsList.tsx';
+import TechnicalData from '../Components/TechnicalData.tsx';
 import VersionFooter from '../Components/VersionFooter.tsx';
 
 interface System {
@@ -94,10 +95,18 @@ const SystemLayout: React.FC<SystemLayoutProps> = ({
               
               {/* Mobile/Desktop: System Info - Takes remaining space */}
               <div className="order-2 lg:order-2">
-                <SystemInfo system={system} galaxy={galaxy} systemIndex={system_index} />
+                <SystemInfo system={system} />
               </div>
               
             </div>
+            
+            {/* Technical Data - Always visible below main content */}
+            <TechnicalData 
+              systemName={system.name}
+              systemIndex={system_index}
+              galaxyName={galaxy.name}
+              galaxyCoordinates={galaxy.coordinates}
+            />
           </div>
 
           {/* Planets List */}
