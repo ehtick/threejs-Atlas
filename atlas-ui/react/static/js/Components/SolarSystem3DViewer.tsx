@@ -49,12 +49,22 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({
   const realCurrentTime = Math.floor(Date.now() / 1000); // Current Unix timestamp
   const [timeOffset, setTimeOffset] = useState(0); // User time adjustment
   const [isFullscreen, setIsFullscreen] = useState(false); // Fullscreen modal state
+  const [isClosing, setIsClosing] = useState(false); // Closing animation state
+  const [isEntering, setIsEntering] = useState(false); // Entering animation state
   const [sliderTimeOffset, setSliderTimeOffset] = useState(0); // Slider time offset for fullscreen
   const currentTime = realCurrentTime - cosmicOriginTime + timeOffset;
   
   // Update time reference for animation loop
   currentTimeRef.current = currentTime;
 
+  // Function to handle closing fullscreen with animation
+  const handleCloseFullscreen = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsFullscreen(false);
+      setIsClosing(false);
+    }, 300);
+  };
 
   // Function to create text sprite for planet names
   const createTextSprite = (text: string, color: string = '#ffffff') => {
@@ -97,13 +107,9 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({
 
   // Handle ESC key to close fullscreen and sync slider when opening
   useEffect(() => {
-    const handleCloseFullscreen = () => {
-      setIsFullscreen(false);
-    };
-
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && isFullscreen) {
-        setIsFullscreen(false);
+        handleCloseFullscreen();
       }
     };
 
@@ -111,6 +117,7 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({
     if (isFullscreen) {
       setSliderTimeOffset(timeOffset);
     }
+
 
     document.addEventListener('solar-system-close-fullscreen', handleCloseFullscreen);
     document.addEventListener('keydown', handleKeyDown);
@@ -120,6 +127,16 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [isFullscreen, timeOffset]);
+
+  // Handle entry animation
+  useEffect(() => {
+    if (isFullscreen && isEntering) {
+      const timer = setTimeout(() => {
+        setIsEntering(false);
+      }, 50); // Short delay to trigger CSS transition
+      return () => clearTimeout(timer);
+    }
+  }, [isFullscreen, isEntering]);
 
   useEffect(() => {
     if (!mountRef.current) return;
@@ -551,7 +568,10 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({
           
           {/* Expand button overlaid on canvas */}
           <button
-            onClick={() => setIsFullscreen(true)}
+            onClick={() => {
+              setIsFullscreen(true);
+              setIsEntering(true);
+            }}
             className="absolute top-2 right-2 p-2 bg-black/60 hover:bg-black/80 border border-white/30 rounded-lg transition-all duration-200 flex items-center gap-1 backdrop-blur-sm shadow-lg z-10"
             title="Expand to fullscreen"
           >
@@ -586,15 +606,27 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({
 
       {/* Fullscreen Modal - rendered outside container using portal */}
       {isFullscreen && createPortal(
-        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl">
-          <div className="w-full h-full flex flex-col p-1 sm:p-2">
+        <div className={`fixed inset-0 z-50 bg-black/95 backdrop-blur-xl transition-all duration-300 ${
+          isClosing ? 'opacity-0 scale-95' : isEntering ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
+        }`}>
+          <div className={`w-full h-full flex flex-col p-1 sm:p-2 transition-all duration-300 delay-75 ${
+            isClosing ? 'opacity-0 translate-y-4' : isEntering ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'
+          }`}>
             {/* Modal Header */}
             <div className="flex items-center justify-between mb-2 sm:mb-4">
-              <div className="flex items-center gap-2 sm:gap-4">
-                <h2 className="text-lg sm:text-xl font-bold text-white truncate">
+              {/* Mobile: Ultra minimal */}
+              <div className="block sm:hidden">
+                <h2 className="text-xs font-medium text-white">
                   {formatName(systemName)}
                 </h2>
-                <div className="hidden sm:flex items-center gap-3">
+              </div>
+              
+              {/* Desktop: Full info */}
+              <div className="hidden sm:flex items-center gap-4 flex-1">
+                <h2 className="text-xl font-bold text-white">
+                  {formatName(systemName)}
+                </h2>
+                <div className="flex items-center gap-3">
                   <div className="flex items-center gap-1">
                     <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
                     <span className="text-sm text-gray-300">Star(s)</span>
@@ -607,17 +639,14 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({
                     Time: {formatTime(realCurrentTime - cosmicOriginTime + sliderTimeOffset)}
                   </div>
                 </div>
-                {/* Mobile info */}
-                <div className="sm:hidden text-xs text-gray-400">
-                  {planets.length}P • {formatTime(realCurrentTime - cosmicOriginTime + sliderTimeOffset)}
-                </div>
               </div>
+              
               <button
-                onClick={() => setIsFullscreen(false)}
-                className="p-1.5 sm:p-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded-lg transition-colors duration-200 text-red-400 hover:text-red-300 flex-shrink-0"
-                title="Close fullscreen (ESC)"
+                onClick={handleCloseFullscreen}
+                className="p-0.5 sm:p-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded transition-colors duration-200 text-red-400 hover:text-red-300"
+                title="Close"
               >
-                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3 h-3 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>

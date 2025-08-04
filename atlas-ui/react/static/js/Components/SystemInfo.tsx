@@ -48,8 +48,13 @@ const SystemInfo: React.FC<SystemInfoProps> = ({ system, galaxy, systemIndex, co
   };
 
   return (
-    <div className="h-full flex flex-col">
-      <h3 className="text-lg sm:text-xl font-bold text-white mb-3">System Information</h3>
+    <div className="h-full flex flex-col relative">
+      {/* VISITED Badge */}
+      <div className="absolute top-0 right-0 bg-green-500/20 border border-green-500/50 text-green-400 text-[10px] px-1.5 py-0.5 rounded z-10">
+        VISITED
+      </div>
+      
+      <h3 className="text-lg sm:text-xl font-bold text-white mb-3 pr-16">System Information</h3>
       
       {/* Main characteristics - Compact row */}
       <div className="grid grid-cols-3 gap-2 mb-3">
@@ -94,7 +99,11 @@ const SystemInfo: React.FC<SystemInfoProps> = ({ system, galaxy, systemIndex, co
       {/* Technical Data - Always visible */}
       <div className="mt-4 pt-3 border-t border-white/10">
         <div className="text-xs text-gray-400 mb-2">Technical Data</div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 text-xs">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 text-xs">
+          <div className="bg-white/5 rounded p-2">
+            <span className="text-gray-400">Status:</span>
+            <div className="text-green-400 font-medium">Visited</div>
+          </div>
           <div className="bg-white/5 rounded p-2">
             <span className="text-gray-400">System:</span>
             <div className="text-white truncate font-medium">{formatName(system.name)}</div>

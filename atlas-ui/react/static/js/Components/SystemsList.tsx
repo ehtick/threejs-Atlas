@@ -62,12 +62,9 @@ const SystemsList: React.FC<SystemsListProps> = ({ systems, coordinates }) => {
           >
             {/* Visited indicator */}
             {visitedSystems.has(system.index) && (
-              <div 
-                className="absolute left-0 top-0 w-1 h-full bg-cyan-400 rounded-l-lg opacity-100 transition-opacity duration-300"
-                style={{
-                  background: 'linear-gradient(180deg, #00d4ff 0%, #00a0ff 100%)'
-                }}
-              />
+              <div className="absolute top-1 right-1 bg-green-500/20 border border-green-500/50 text-green-400 text-[10px] px-1.5 py-0.5 rounded z-10">
+                VISITED
+              </div>
             )}
             
             <button
