@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getStorageStats } from '../Utils/VisitHistory.ts';
 import { LocationBookmarks, SavedLocation } from '../Utils/LocationBookmarks.ts';
+import ProgressBar from './ProgressBar.tsx';
 
 interface SpaceshipPanelProps {
   currentLocation?: {
@@ -121,19 +122,40 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
               <div className="space-y-4">
                 {/* Exploration Stats */}
                 <div>
-                  <h4 className="text-white font-semibold mb-2 text-sm">🌌 Exploration Progress</h4>
+                  <h4 className="text-white font-semibold mb-3 text-sm">🌌 Exploration Progress</h4>
+                  
+                  {/* Progress bars for exploration milestones */}
+                  <div className="space-y-3 mb-4">
+                    <ProgressBar
+                      value={stats?.galaxies || 0}
+                      max={10}
+                      label={`Galaxies Explored: ${stats?.galaxies || 0}/10`}
+                      color="indigo"
+                      showPercentage={true}
+                    />
+                    
+                    <ProgressBar
+                      value={stats?.systems || 0}
+                      max={100}
+                      label={`Systems Visited: ${stats?.systems || 0}/100`}
+                      color="blue"
+                      showPercentage={true}
+                    />
+                    
+                    <ProgressBar
+                      value={stats?.planets || 0}
+                      max={500}
+                      label={`Planets Discovered: ${stats?.planets || 0}/500`}
+                      color="purple"
+                      showPercentage={true}
+                    />
+                  </div>
+
+                  {/* Compact stats grid */}
                   <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="bg-white/5 rounded-lg p-2 border border-blue-500/20">
-                      <div className="text-gray-400">Galaxies</div>
-                      <div className="text-blue-400 font-bold">{stats?.galaxies || 0}</div>
-                    </div>
-                    <div className="bg-white/5 rounded-lg p-2 border border-purple-500/20">
-                      <div className="text-gray-400">Systems</div>
-                      <div className="text-purple-400 font-bold">{stats?.systems || 0}</div>
-                    </div>
-                    <div className="bg-white/5 rounded-lg p-2 border border-cyan-500/20">
-                      <div className="text-gray-400">Planets</div>
-                      <div className="text-cyan-400 font-bold">{stats?.planets || 0}</div>
+                    <div className="bg-white/5 rounded-lg p-2 border border-indigo-500/20">
+                      <div className="text-gray-400">Total Visited</div>
+                      <div className="text-indigo-400 font-bold">{(stats?.galaxies || 0) + (stats?.systems || 0) + (stats?.planets || 0)}</div>
                     </div>
                     <div className="bg-white/5 rounded-lg p-2 border border-green-500/20">
                       <div className="text-gray-400">Archive Size</div>
@@ -144,20 +166,33 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
 
                 {/* Bookmarks Stats */}
                 <div>
-                  <h4 className="text-white font-semibold mb-2 text-sm">📍 Saved Locations</h4>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    {locationStats && (
-                      <>
-                        <div className="bg-white/5 rounded-lg p-2">
-                          <div className="text-gray-400">Total</div>
-                          <div className="text-white font-bold">{locationStats.total}</div>
-                        </div>
-                        <div className="bg-white/5 rounded-lg p-2">
-                          <div className="text-gray-400">Planets</div>
-                          <div className="text-cyan-400 font-bold">{locationStats.planets}</div>
-                        </div>
-                      </>
-                    )}
+                  <h4 className="text-white font-semibold mb-3 text-sm">📍 Saved Locations</h4>
+                  
+                  {/* Bookmarks progress bar */}
+                  <div className="mb-3">
+                    <ProgressBar
+                      value={locationStats?.total || 0}
+                      max={50}
+                      label={`Saved Locations: ${locationStats?.total || 0}/50`}
+                      color="cyan"
+                      showPercentage={true}
+                    />
+                  </div>
+
+                  {/* Compact breakdown */}
+                  <div className="grid grid-cols-3 gap-1 text-xs">
+                    <div className="bg-white/5 rounded p-1.5 text-center">
+                      <div className="text-gray-400 text-[10px]">Galaxies</div>
+                      <div className="text-indigo-400 font-bold text-xs">{locationStats?.galaxies || 0}</div>
+                    </div>
+                    <div className="bg-white/5 rounded p-1.5 text-center">
+                      <div className="text-gray-400 text-[10px]">Systems</div>
+                      <div className="text-blue-400 font-bold text-xs">{locationStats?.systems || 0}</div>
+                    </div>
+                    <div className="bg-white/5 rounded p-1.5 text-center">
+                      <div className="text-gray-400 text-[10px]">Planets</div>
+                      <div className="text-purple-400 font-bold text-xs">{locationStats?.planets || 0}</div>
+                    </div>
                   </div>
                 </div>
               </div>
