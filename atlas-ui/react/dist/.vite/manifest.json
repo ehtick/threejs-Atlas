@@ -29,11 +29,20 @@
     "name": "three.module"
   },
   "atlas-ui/react/static/css/global.css": {
-    "file": "atlas_CTt_ZTmdJgeeplTh_h5hs.css",
+    "file": "atlas_sIxdi1CRzPxvCmkTc9ugb.css",
     "src": "atlas-ui/react/static/css/global.css",
     "isEntry": true,
     "names": [
       "global.css"
+    ]
+  },
+  "atlas-ui/react/static/js/MountPoints/__error__.ts": {
+    "file": "atlas_CUd08rH8a4gQjMws4Ft9G.js",
+    "name": "__error__",
+    "src": "atlas-ui/react/static/js/MountPoints/__error__.ts",
+    "isEntry": true,
+    "imports": [
+      "_atlas_BbN-uIjV0wYM8qO8tvbuH.js"
     ]
   },
   "atlas-ui/react/static/js/MountPoints/__galaxy__.ts": {
@@ -59,7 +68,7 @@
     ]
   },
   "atlas-ui/react/static/js/MountPoints/__onboarding__.ts": {
-    "file": "atlas_CLUYuJvEgqfP6ndquh7Fz.js",
+    "file": "atlas_CzhFdGhdYnOEafnpLR4HM.js",
     "name": "__onboarding__",
     "src": "atlas-ui/react/static/js/MountPoints/__onboarding__.ts",
     "isEntry": true,

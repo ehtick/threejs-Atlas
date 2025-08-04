@@ -5,13 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     {% include 'partials/_favicon.html' %} {% include 'partials/_preamble.html' %} {{ vitecss('global') | safe }}
+
+    <meta name="atlas-version" content="{{ version }}" />
+    <meta name="atlas-version-hash" content="{{ versionHash }}" />
+
     <title>Planet: {{ planet.name.replace("_", " ") }}</title>
   </head>
   <body class="h-full w-full bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-    <!-- React Integration for Planet -->
     <div id="atlas-react-root" class="h-full w-full"></div>
 
-    <!-- Data Scripts for React -->
     <script type="application/json" id="planet-data">
       {{ {
         "name": planet.name,

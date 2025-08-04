@@ -117,3 +117,17 @@ html.nprogress-busy * {
 #nprogress .spinner {
   display: none !important;
 }
+
+/* Fade-in animation for universe canvas */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 1s ease-in-out forwards;
+}

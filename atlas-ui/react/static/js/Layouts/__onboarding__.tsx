@@ -78,7 +78,11 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({ version }) => {
   return (
     <>
       {/* Animation Canvas - Covers entire screen when active */}
-      {animationType && <UniverseAnimationCanvas animationType={animationType} onAnimationComplete={handleAnimationComplete} />}
+      {animationType && (
+        <div className="fixed inset-0 bg-black z-50 opacity-0 animate-fade-in">
+          <UniverseAnimationCanvas animationType={animationType} onAnimationComplete={handleAnimationComplete} />
+        </div>
+      )}
 
       {/* Main UI - Hidden when animations are running */}
       <div className={`w-full h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white overflow-auto transition-opacity duration-500 ${animationState !== "selection" ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
@@ -120,7 +124,7 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({ version }) => {
                       onClick={() => handleCardClick(option.value)}
                       className={`
                         relative group cursor-pointer transition-all duration-500 transform hover:scale-105
-                        ${selectedUniverse === option.value ? "ring-2 ring-cyan-400 shadow-2xl shadow-cyan-400/25 scale-105" : "hover:shadow-xl hover:shadow-blue-500/20"}
+                        ${selectedUniverse === option.value ? "shadow-2xl shadow-cyan-400/25 scale-105" : "hover:shadow-xl hover:shadow-blue-500/20"}
                       `}
                     >
                       <div className="bg-gradient-to-br from-slate-800/80 via-slate-700/80 to-slate-800/80 backdrop-blur-lg rounded-2xl border border-white/10 p-6 sm:p-8 h-full">
@@ -172,9 +176,8 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({ version }) => {
                     {/* Button glow effect */}
                     {selectedUniverse && animationState === "selection" && <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 opacity-20 group-hover:opacity-40 transition-opacity duration-300"></div>}
 
-                    <span className="relative z-10 flex items-center justify-center space-x-3">
+                    <span className="relative z-10">
                       <span>{selectedUniverse ? "Initialize Protocol" : "Select Universe Type"}</span>
-                      {selectedUniverse && animationState === "selection" && <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin opacity-0 group-hover:opacity-100 transition-opacity duration-300 group-active:opacity-100"></div>}
                     </span>
                   </button>
                 </div>

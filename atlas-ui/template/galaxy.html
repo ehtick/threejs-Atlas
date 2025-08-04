@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     {% include 'partials/_favicon.html' %} {% include 'partials/_preamble.html' %} {{ vitecss('global') | safe }}
+
+    <meta name="atlas-version" content="{{ version }}" />
+    <meta name="atlas-version-hash" content="{{ versionHash }}" />
+
     <title>Galaxy: {{ galaxy.name.replace("_", " ") }}</title>
   </head>
   <body class="h-full m-0 p-0 font-sans bg-slate-900 text-gray-200 leading-relaxed">
@@ -43,7 +47,6 @@
       } | tojson }}
     </script>
 
-    <!-- React Galaxy Component -->
     {{ vitejs('__galaxy__') | safe }}
   </body>
 </html>
