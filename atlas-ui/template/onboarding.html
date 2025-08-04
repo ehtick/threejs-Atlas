@@ -1,42 +1,21 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    {% include 'partials/_favicon.html' %} {% include 'partials/_preamble.html' %} {{ vitecss('global') | safe }}
     <title>Atlas Initialization Protocol</title>
-    {% include 'partials/_preamble.html' %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+
+    <!-- Atlas React metadata -->
+    <meta name="atlas-version" content="{{ version }}" />
+    <meta name="atlas-version-hash" content="{{ versionHash }}" />
   </head>
-  <body class="sci-fi-background">
-    <header class="interfaceinit">
-      <img src="/static/atlas-logo.jpg" alt="Atlas Logo" class="logo animated-logo" />
-      <h1>Atlas Initialization Protocol</h1>
-    </header>
+  <body class="h-full m-0 p-0 font-sans bg-slate-900 text-gray-200 leading-relaxed">
+    <!-- React root container -->
+    <div id="atlas-react-root" class="w-full h-full"></div>
 
-    <form id="universe-form" action="{{ url_for('onboarding') }}" method="POST">
-      <p class="intro-text">Will you journey through a shared universe or forge a new one of your own?</p>
-
-      <div class="card-wrapper">
-        <div class="option-card" data-value="default">
-          <div class="card-button">
-            <h2>The Core Continuum</h2>
-            <p>Venture into the primordial universe where time and space converge for you, exploring the vast cosmos we all traverse as a single entity.</p>
-          </div>
-        </div>
-        <div class="option-card" data-value="custom">
-          <div class="card-button">
-            <h2>Design the Multiverse</h2>
-            <p>Generate a personal universe with its own seed and cosmic origin time, a completely unique creation entirely shaped by your decision.</p>
-          </div>
-        </div>
-      </div>
-
-      <input type="hidden" id="universe_type" name="universe_type" value="" />
-
-      <button id="start-protocol" class="start-button" disabled>Initialize Protocol</button>
-    </form>
-
-    <p class="p-version">Atlas Version {{ version }} · Created by Claudio González for <a target="_blank" href="https://www.banshee.pro/">Banshee</a></p>
-    <script src="{{ url_for('static', filename='vjs/atlasInitializationProtocol.js') }}?v={{ versionHash }}"></script>
+    <!-- React app script -->
+    {{ vitejs('__onboarding__') | safe }}
   </body>
 </html>

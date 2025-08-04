@@ -29,6 +29,7 @@ export default defineConfig(({ mode }) => ({
         __galaxy__: resolve(__dirname, "atlas-ui/react/static/js/MountPoints/__galaxy__.js"),
         __system__: resolve(__dirname, "atlas-ui/react/static/js/MountPoints/__system__.ts"),
         __planet__: resolve(__dirname, "atlas-ui/react/static/js/MountPoints/__planet__.js"),
+        __onboarding__: resolve(__dirname, "atlas-ui/react/static/js/MountPoints/__onboarding__.ts"),
       },
       output: {
         chunkFileNames: "atlas_[hash:21].js",
