@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getStorageStats } from '../Utils/VisitHistory.ts';
 import { LocationBookmarks, SavedLocation } from '../Utils/LocationBookmarks.ts';
+import { DailyChallengesManager, DailyChallenges } from '../Utils/DailyChallenges.ts';
 import ProgressBar from './ProgressBar.tsx';
 
 interface SpaceshipPanelProps {
@@ -19,6 +20,7 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
   const [stats, setStats] = useState<any>(null);
   const [savedLocations, setSavedLocations] = useState<SavedLocation[]>([]);
   const [locationStats, setLocationStats] = useState<any>(null);
+  const [dailyChallenges, setDailyChallenges] = useState<DailyChallenges | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -26,6 +28,10 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
       setStats(getStorageStats());
       setSavedLocations(LocationBookmarks.getLocations());
       setLocationStats(LocationBookmarks.getLocationStats());
+      
+      // Load and update daily challenges
+      const challenges = DailyChallengesManager.updateProgress();
+      setDailyChallenges(challenges);
     }
   }, [isOpen]);
 
@@ -53,10 +59,10 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
   return (
     <>
       {/* Spaceship Button */}
-      <div className="fixed bottom-6 right-6 z-50">
+      <div className="fixed bottom-4 sm:bottom-6 right-4 sm:right-6 z-50">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="w-14 h-14 bg-gradient-to-br from-blue-600 via-purple-600 to-blue-800 hover:from-blue-500 hover:via-purple-500 hover:to-blue-700 text-white rounded-full shadow-2xl border-2 border-blue-400/30 transition-all duration-300 transform hover:scale-105 backdrop-blur-sm"
+          className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-blue-600 via-purple-600 to-blue-800 hover:from-blue-500 hover:via-purple-500 hover:to-blue-700 text-white rounded-full shadow-2xl border-2 border-blue-400/30 transition-all duration-300 transform hover:scale-105 backdrop-blur-sm"
           title="Spaceship Control Panel"
         >
           <div className="flex items-center justify-center">
@@ -73,7 +79,7 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
 
       {/* Spaceship Panel */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 w-96 max-h-96 bg-black/90 backdrop-blur-xl rounded-2xl border border-blue-400/30 shadow-2xl z-40 overflow-hidden">
+        <div className="fixed bottom-20 sm:bottom-24 right-2 sm:right-6 w-[calc(100vw-1rem)] sm:w-96 max-w-md max-h-[70vh] sm:max-h-96 bg-black/90 backdrop-blur-xl rounded-2xl border border-blue-400/30 shadow-2xl z-40 overflow-hidden">
           {/* Header */}
           <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 p-4 border-b border-white/10">
             <div className="flex items-center justify-between">
@@ -122,46 +128,65 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
               <div className="space-y-4">
                 {/* Exploration Stats */}
                 <div>
-                  <h4 className="text-white font-semibold mb-3 text-sm">🌌 Exploration Progress</h4>
+                  {/* Daily challenges header */}
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-white font-semibold text-sm">🌟 Daily Challenges</h4>
+                    {dailyChallenges && (
+                      <div className="text-xs text-indigo-400 font-medium">
+                        Day {dailyChallenges.dayNumber} • x{Math.pow(2, dailyChallenges.dayNumber - 1)}
+                      </div>
+                    )}
+                  </div>
                   
-                  {/* Progress bars for exploration milestones */}
-                  <div className="space-y-3 mb-4">
-                    <ProgressBar
-                      value={stats?.galaxies || 0}
-                      max={10}
-                      label={`Galaxies Explored: ${stats?.galaxies || 0}/10`}
-                      color="indigo"
-                      showPercentage={true}
-                    />
-                    
-                    <ProgressBar
-                      value={stats?.systems || 0}
-                      max={100}
-                      label={`Systems Visited: ${stats?.systems || 0}/100`}
-                      color="blue"
-                      showPercentage={true}
-                    />
-                    
-                    <ProgressBar
-                      value={stats?.planets || 0}
-                      max={500}
-                      label={`Planets Discovered: ${stats?.planets || 0}/500`}
-                      color="purple"
-                      showPercentage={true}
-                    />
-                  </div>
+                  {/* Daily challenge progress bars */}
+                  {dailyChallenges && (
+                    <div className="space-y-3 mb-4">
+                      {dailyChallenges.challenges.map((challenge) => {
+                        const colors = {
+                          galaxies: 'indigo' as const,
+                          systems: 'blue' as const,
+                          planets: 'purple' as const
+                        };
+                        
+                        const labels = {
+                          galaxies: 'Galaxies Explored',
+                          systems: 'Systems Visited', 
+                          planets: 'Planets Discovered'
+                        };
 
-                  {/* Compact stats grid */}
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="bg-white/5 rounded-lg p-2 border border-indigo-500/20">
-                      <div className="text-gray-400">Total Visited</div>
-                      <div className="text-indigo-400 font-bold">{(stats?.galaxies || 0) + (stats?.systems || 0) + (stats?.planets || 0)}</div>
+                        return (
+                          <div key={challenge.type} className="relative">
+                            <ProgressBar
+                              value={challenge.current}
+                              max={challenge.target}
+                              label={`${labels[challenge.type]}: ${challenge.current}/${challenge.target}`}
+                              color={colors[challenge.type]}
+                              showPercentage={true}
+                            />
+                            {challenge.completed && (
+                              <div className="absolute right-0 top-0 text-green-400 text-xs">✓</div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
-                    <div className="bg-white/5 rounded-lg p-2 border border-green-500/20">
-                      <div className="text-gray-400">Archive Size</div>
-                      <div className="text-green-400 font-bold">{stats ? formatBytes(stats.size) : '0 B'}</div>
+                  )}
+
+                  {/* Challenge completion status */}
+                  {dailyChallenges && (
+                    <div className="grid grid-cols-2 gap-2 text-xs mb-4">
+                      <div className="bg-white/5 rounded-lg p-2 border border-indigo-500/20">
+                        <div className="text-gray-400">Completed</div>
+                        <div className="text-indigo-400 font-bold">
+                          {dailyChallenges.challenges.filter(c => c.completed).length}/{dailyChallenges.challenges.length}
+                        </div>
+                      </div>
+                      <div className="bg-white/5 rounded-lg p-2 border border-green-500/20">
+                        <div className="text-gray-400">Archive Size</div>
+                        <div className="text-green-400 font-bold">{stats ? formatBytes(stats.size) : '0 B'}</div>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* Bookmarks Stats */}
