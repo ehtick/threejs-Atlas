@@ -6,10 +6,7 @@ interface Universe3DViewerFullscreenProps {
   galaxyName: string;
 }
 
-const Universe3DViewerFullscreen: React.FC<Universe3DViewerFullscreenProps> = ({ 
-  coordinates, 
-  galaxyName 
-}) => {
+const Universe3DViewerFullscreen: React.FC<Universe3DViewerFullscreenProps> = ({ coordinates, galaxyName }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -22,56 +19,43 @@ const Universe3DViewerFullscreen: React.FC<Universe3DViewerFullscreenProps> = ({
     const containerWidth = container.clientWidth;
     const containerHeight = container.clientHeight;
 
-    // Scene setup
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0a0a0a);
     sceneRef.current = scene;
 
-    // Camera setup - wider FOV for fullscreen
-    const camera = new THREE.PerspectiveCamera(
-      45, // Wider FOV for fullscreen
-      containerWidth / containerHeight,
-      0.1,
-      1000
-    );
-    camera.position.set(20, 15, 20); // Further back for better view
+    const camera = new THREE.PerspectiveCamera(45, containerWidth / containerHeight, 0.1, 1000);
+    camera.position.set(20, 15, 20);
     camera.lookAt(0, 0, 0);
 
-    // Renderer setup - fullscreen size
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(containerWidth, containerHeight);
     renderer.setClearColor(0x000000, 0.2);
     rendererRef.current = renderer;
     container.appendChild(renderer.domElement);
 
-    // Universe bounds
     const MIN_COORD = 0;
     const MAX_COORD = 10000000;
     const BIT_BANG = 5000000;
 
-    // Extract and normalize coordinates (bigger scale for fullscreen)
     const [x, y, z] = coordinates;
-    const normalizedX = ((x - MIN_COORD) / (MAX_COORD - MIN_COORD) - 0.5) * 16; // Bigger scale
+    const normalizedX = ((x - MIN_COORD) / (MAX_COORD - MIN_COORD) - 0.5) * 16;
     const normalizedY = ((y - MIN_COORD) / (MAX_COORD - MIN_COORD) - 0.5) * 16;
     const normalizedZ = ((z - MIN_COORD) / (MAX_COORD - MIN_COORD) - 0.5) * 16;
 
-    // Create a group for all rotating elements
     const rotatingGroup = new THREE.Group();
     scene.add(rotatingGroup);
 
-    // Create wireframe cube (universe boundary) - bigger for fullscreen
-    const cubeGeometry = new THREE.BoxGeometry(16, 16, 16); // Bigger cube
+    const cubeGeometry = new THREE.BoxGeometry(16, 16, 16);
     const cubeEdges = new THREE.EdgesGeometry(cubeGeometry);
     const cubeMaterial = new THREE.LineBasicMaterial({
       color: 0xffffff,
       opacity: 0.4,
       transparent: true,
-      linewidth: 2 // Thicker lines for fullscreen
+      linewidth: 2,
     });
     const cubeWireframe = new THREE.LineSegments(cubeEdges, cubeMaterial);
     rotatingGroup.add(cubeWireframe);
 
-    // Create grid planes for reference - bigger to match cube
     const gridHelper1 = new THREE.GridHelper(16, 16, 0xffffff, 0xffffff);
     gridHelper1.material.opacity = 0.1;
     gridHelper1.material.transparent = true;
@@ -92,8 +76,7 @@ const Universe3DViewerFullscreen: React.FC<Universe3DViewerFullscreenProps> = ({
     gridHelper3.position.z = -8;
     rotatingGroup.add(gridHelper3);
 
-    // Create Bit Bang (center point) - bigger for fullscreen
-    const bitBangGeometry = new THREE.SphereGeometry(0.5, 32, 32); // Bigger and higher quality
+    const bitBangGeometry = new THREE.SphereGeometry(0.5, 32, 32);
     const bitBangMaterial = new THREE.MeshBasicMaterial({
       color: 0xffffff,
       transparent: true,
@@ -103,9 +86,8 @@ const Universe3DViewerFullscreen: React.FC<Universe3DViewerFullscreenProps> = ({
     bitBang.position.set(0, 0, 0);
     rotatingGroup.add(bitBang);
 
-    // Add glow effect to Bit Bang
     const bitBangGlow = new THREE.Mesh(
-      new THREE.SphereGeometry(0.8, 32, 32), // Bigger glow
+      new THREE.SphereGeometry(0.8, 32, 32),
       new THREE.MeshBasicMaterial({
         color: 0xffffff,
         transparent: true,
@@ -114,8 +96,7 @@ const Universe3DViewerFullscreen: React.FC<Universe3DViewerFullscreenProps> = ({
     );
     bitBang.add(bitBangGlow);
 
-    // Create Galaxy - bigger for fullscreen
-    const galaxyGeometry = new THREE.SphereGeometry(0.4, 32, 32); // Bigger and higher quality
+    const galaxyGeometry = new THREE.SphereGeometry(0.4, 32, 32);
     const galaxyMaterial = new THREE.MeshBasicMaterial({
       color: 0x64c8ff,
       transparent: true,
@@ -125,9 +106,8 @@ const Universe3DViewerFullscreen: React.FC<Universe3DViewerFullscreenProps> = ({
     galaxy.position.set(normalizedX, normalizedY, normalizedZ);
     rotatingGroup.add(galaxy);
 
-    // Add glow effect to Galaxy
     const galaxyGlow = new THREE.Mesh(
-      new THREE.SphereGeometry(0.7, 32, 32), // Bigger glow
+      new THREE.SphereGeometry(0.7, 32, 32),
       new THREE.MeshBasicMaterial({
         color: 0x64c8ff,
         transparent: true,
@@ -136,7 +116,6 @@ const Universe3DViewerFullscreen: React.FC<Universe3DViewerFullscreenProps> = ({
     );
     galaxy.add(galaxyGlow);
 
-    // Create connection line if close to Bit Bang
     const distance = Math.sqrt(Math.pow(x - BIT_BANG, 2) + Math.pow(y - BIT_BANG, 2) + Math.pow(z - BIT_BANG, 2));
 
     if (distance < 2000000) {
@@ -144,37 +123,34 @@ const Universe3DViewerFullscreen: React.FC<Universe3DViewerFullscreenProps> = ({
       const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
       const lineMaterial = new THREE.LineDashedMaterial({
         color: 0xffc864,
-        dashSize: 0.6, // Bigger dashes for fullscreen
+        dashSize: 0.6,
         gapSize: 0.6,
         opacity: 0.4,
         transparent: true,
-        linewidth: 2 // Thicker line
+        linewidth: 2,
       });
       const line = new THREE.Line(lineGeometry, lineMaterial);
       line.computeLineDistances();
       rotatingGroup.add(line);
     }
 
-    // Add ambient lighting
     const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
     scene.add(ambientLight);
 
-    // Add directional light
     const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
     directionalLight.position.set(10, 10, 10);
     scene.add(directionalLight);
 
-    // Add X, Y, Z axis labels (bigger for fullscreen)
     const createTextSprite = (text: string, color: number) => {
       const canvas = document.createElement("canvas");
       const context = canvas.getContext("2d");
       if (!context) return null;
 
-      canvas.width = 64; // Bigger canvas for fullscreen
+      canvas.width = 64;
       canvas.height = 64;
 
       context.fillStyle = `#${color.toString(16).padStart(6, "0")}`;
-      context.font = "bold 48px Arial"; // Bigger font for fullscreen
+      context.font = "bold 48px Arial";
       context.textAlign = "center";
       context.textBaseline = "middle";
       context.fillText(text, 32, 32);
@@ -182,31 +158,29 @@ const Universe3DViewerFullscreen: React.FC<Universe3DViewerFullscreenProps> = ({
       const texture = new THREE.CanvasTexture(canvas);
       const spriteMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true, opacity: 0.8 });
       const sprite = new THREE.Sprite(spriteMaterial);
-      sprite.scale.set(1.6, 1.6, 1); // Bigger labels for fullscreen
+      sprite.scale.set(1.6, 1.6, 1);
 
       return sprite;
     };
 
-    // Add axis labels at cube corners (adjusted for bigger cube)
     const xLabel = createTextSprite("X", 0xff6b6b);
     if (xLabel) {
-      xLabel.position.set(8.4, -7.6, -7.6); // Adjusted for bigger cube
+      xLabel.position.set(8.4, -7.6, -7.6);
       rotatingGroup.add(xLabel);
     }
 
     const yLabel = createTextSprite("Y", 0x6bff6b);
     if (yLabel) {
-      yLabel.position.set(-7.6, 8.4, -7.6); // Adjusted for bigger cube
+      yLabel.position.set(-7.6, 8.4, -7.6);
       rotatingGroup.add(yLabel);
     }
 
     const zLabel = createTextSprite("Z", 0x6b6bff);
     if (zLabel) {
-      zLabel.position.set(-7.6, -7.6, 8.4); // Adjusted for bigger cube
+      zLabel.position.set(-7.6, -7.6, 8.4);
       rotatingGroup.add(zLabel);
     }
 
-    // Mouse and touch controls
     let isMouseDown = false;
     let mouseX = 0;
     let mouseY = 0;
@@ -240,7 +214,6 @@ const Universe3DViewerFullscreen: React.FC<Universe3DViewerFullscreenProps> = ({
       }, 3000);
     };
 
-    // Zoom with scroll wheel
     const handleWheel = (event: WheelEvent) => {
       event.preventDefault();
       const zoomSpeed = 0.1;
@@ -253,25 +226,20 @@ const Universe3DViewerFullscreen: React.FC<Universe3DViewerFullscreenProps> = ({
       }
     };
 
-    // ESC key to close fullscreen
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        // This will be handled by parent component
-        document.dispatchEvent(new CustomEvent('universe-close-fullscreen'));
+      if (event.key === "Escape") {
+        document.dispatchEvent(new CustomEvent("universe-close-fullscreen"));
       }
     };
 
-    // Touch controls for mobile
     const handleTouchStart = (event: TouchEvent) => {
       event.preventDefault();
       if (event.touches.length === 1) {
-        // Single touch - rotation
         isMouseDown = true;
         autoRotate = false;
         mouseX = event.touches[0].clientX;
         mouseY = event.touches[0].clientY;
       } else if (event.touches.length === 2) {
-        // Two finger touch - zoom
         const dx = event.touches[0].clientX - event.touches[1].clientX;
         const dy = event.touches[0].clientY - event.touches[1].clientY;
         lastTouchDistance = Math.sqrt(dx * dx + dy * dy);
@@ -281,33 +249,31 @@ const Universe3DViewerFullscreen: React.FC<Universe3DViewerFullscreenProps> = ({
     const handleTouchMove = (event: TouchEvent) => {
       event.preventDefault();
       if (event.touches.length === 1 && isMouseDown) {
-        // Single touch move - rotation
         const deltaX = event.touches[0].clientX - mouseX;
         const deltaY = event.touches[0].clientY - mouseY;
-        
+
         rotatingGroup.rotation.y += deltaX * 0.01;
         rotatingGroup.rotation.x += deltaY * 0.01;
-        
+
         mouseX = event.touches[0].clientX;
         mouseY = event.touches[0].clientY;
       } else if (event.touches.length === 2) {
-        // Two finger move - zoom
         const dx = event.touches[0].clientX - event.touches[1].clientX;
         const dy = event.touches[0].clientY - event.touches[1].clientY;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        
+
         if (lastTouchDistance > 0) {
           const zoomSpeed = 0.01;
           const scale = distance / lastTouchDistance;
           const currentDistance = camera.position.distanceTo(new THREE.Vector3(0, 0, 0));
-          
+
           if (scale > 1 && currentDistance > 10) {
             camera.position.multiplyScalar(1 - zoomSpeed);
           } else if (scale < 1 && currentDistance < 50) {
             camera.position.multiplyScalar(1 + zoomSpeed);
           }
         }
-        
+
         lastTouchDistance = distance;
       }
     };
@@ -321,10 +287,9 @@ const Universe3DViewerFullscreen: React.FC<Universe3DViewerFullscreenProps> = ({
       }, 3000);
     };
 
-    // Add event listeners
     const canvas = renderer.domElement;
     canvas.style.cursor = "grab";
-    
+
     canvas.addEventListener("mousedown", (e) => {
       canvas.style.cursor = "grabbing";
       handleMouseDown(e);
@@ -344,21 +309,17 @@ const Universe3DViewerFullscreen: React.FC<Universe3DViewerFullscreenProps> = ({
     canvas.addEventListener("touchend", handleTouchEnd, { passive: false });
     document.addEventListener("keydown", handleKeyDown);
 
-    // Animation loop
     const animate = () => {
       animationIdRef.current = requestAnimationFrame(animate);
 
-      // Smooth rotation for the entire group (only when auto-rotate is enabled)
       if (autoRotate) {
         rotatingGroup.rotation.y += 0.002;
         rotatingGroup.rotation.x += 0.001;
       }
 
-      // Pulsing effect for Bit Bang
       const time = Date.now() * 0.005;
       bitBang.scale.setScalar(1 + Math.sin(time) * 0.1);
 
-      // Subtle rotation for galaxy
       galaxy.rotation.y += 0.01;
 
       renderer.render(scene, camera);
@@ -366,11 +327,10 @@ const Universe3DViewerFullscreen: React.FC<Universe3DViewerFullscreenProps> = ({
 
     animate();
 
-    // Handle resize
     const handleResize = () => {
       const newWidth = container.clientWidth;
       const newHeight = container.clientHeight;
-      
+
       camera.aspect = newWidth / newHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(newWidth, newHeight);
@@ -378,11 +338,10 @@ const Universe3DViewerFullscreen: React.FC<Universe3DViewerFullscreenProps> = ({
 
     window.addEventListener("resize", handleResize);
 
-    // Cleanup
     return () => {
       window.removeEventListener("resize", handleResize);
       document.removeEventListener("keydown", handleKeyDown);
-      
+
       canvas.removeEventListener("mousedown", handleMouseDown);
       canvas.removeEventListener("mousemove", handleMouseMove);
       canvas.removeEventListener("mouseup", handleMouseUp);
@@ -391,18 +350,17 @@ const Universe3DViewerFullscreen: React.FC<Universe3DViewerFullscreenProps> = ({
       canvas.removeEventListener("touchstart", handleTouchStart);
       canvas.removeEventListener("touchmove", handleTouchMove);
       canvas.removeEventListener("touchend", handleTouchEnd);
-      
+
       if (animationIdRef.current) {
         cancelAnimationFrame(animationIdRef.current);
       }
-      
+
       if (container && renderer.domElement) {
         container.removeChild(renderer.domElement);
       }
-      
+
       renderer.dispose();
-      
-      // Dispose geometries and materials
+
       cubeGeometry.dispose();
       cubeEdges.dispose();
       cubeMaterial.dispose();
@@ -413,12 +371,7 @@ const Universe3DViewerFullscreen: React.FC<Universe3DViewerFullscreenProps> = ({
     };
   }, [coordinates, galaxyName]);
 
-  return (
-    <div 
-      ref={mountRef} 
-      className="w-full h-full"
-    />
-  );
+  return <div ref={mountRef} className="w-full h-full" />;
 };
 
 export default Universe3DViewerFullscreen;

@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
-import Zoom from 'react-medium-image-zoom';
-import 'react-medium-image-zoom/dist/styles.css';
+import React, { useEffect, useRef, useState } from "react";
+import Zoom from "react-medium-image-zoom";
+import "react-medium-image-zoom/dist/styles.css";
 
 interface SystemVisualizationProps {
   systemUrl: string;
@@ -10,14 +10,13 @@ interface SystemVisualizationProps {
 const SystemVisualization: React.FC<SystemVisualizationProps> = ({ systemUrl, imageUrl }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
-  const [stargateText, setStargateText] = useState('Aligning Stargate...');
+  const [stargateText, setStargateText] = useState("Aligning Stargate...");
   const [isAnimating, setIsAnimating] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [canvasHidden, setCanvasHidden] = useState(false);
 
-  // Add custom styles for react-medium-image-zoom
   useEffect(() => {
-    const style = document.createElement('style');
+    const style = document.createElement("style");
     style.textContent = `
       [data-rmiz-modal-overlay="visible"] {
         background-color: rgba(0, 0, 0, 0.8) !important;
@@ -38,21 +37,20 @@ const SystemVisualization: React.FC<SystemVisualizationProps> = ({ systemUrl, im
       }
     `;
     document.head.appendChild(style);
-    
+
     return () => {
       document.head.removeChild(style);
     };
   }, []);
 
-  // Space Travel Animation
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    let stars: Array<{x: number, y: number, z: number, o: number}> = [];
+    let stars: Array<{ x: number; y: number; z: number; o: number }> = [];
     const numStars = 800;
     let centerX: number, centerY: number;
     const maxCanvasSize = 800;
@@ -63,10 +61,10 @@ const SystemVisualization: React.FC<SystemVisualizationProps> = ({ systemUrl, im
     function resizeCanvas() {
       const container = canvas?.parentElement;
       if (!container || !canvas) return;
-      
+
       const containerWidth = container.clientWidth;
       const containerHeight = container.clientHeight;
-      
+
       canvas.width = Math.min(containerWidth, maxCanvasSize);
       canvas.height = Math.min(containerHeight, maxCanvasSize);
 
@@ -129,46 +127,42 @@ const SystemVisualization: React.FC<SystemVisualizationProps> = ({ systemUrl, im
 
     init();
 
-    // Add resize listener
     const handleResize = () => resizeCanvas();
-    window.addEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
 
     return () => {
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener("resize", handleResize);
       if (animationId) {
         cancelAnimationFrame(animationId);
       }
     };
   }, []);
 
-  // Handle system image loading
   useEffect(() => {
     if (imageUrl) {
-      console.log('Loading system image:', imageUrl);
+      console.log("Loading system image:", imageUrl);
       const highResImg = new Image();
-      
+
       highResImg.onload = () => {
-        console.log('System image loaded successfully');
+        console.log("System image loaded successfully");
         if (imageRef.current) {
           imageRef.current.src = imageUrl;
           setImageLoaded(true);
           setCanvasHidden(true);
         }
       };
-      
+
       highResImg.onerror = () => {
-        console.error('Failed to load system image:', imageUrl);
-        // Fallback - just show placeholder
+        console.error("Failed to load system image:", imageUrl);
         setTimeout(() => {
           setImageLoaded(true);
           setCanvasHidden(true);
         }, 1500);
       };
-      
+
       highResImg.src = imageUrl;
     } else {
-      console.log('No imageUrl provided, using placeholder');
-      // No imageUrl - just show placeholder after delay
+      console.log("No imageUrl provided, using placeholder");
       setTimeout(() => {
         setImageLoaded(true);
         setCanvasHidden(true);
@@ -176,27 +170,26 @@ const SystemVisualization: React.FC<SystemVisualizationProps> = ({ systemUrl, im
     }
   }, [imageUrl]);
 
-  // Stargate Animation
   useEffect(() => {
-    const animationShown = sessionStorage.getItem('stargateAnimationShown');
-    
+    const animationShown = sessionStorage.getItem("stargateAnimationShown");
+
     if (animationShown) {
-      setStargateText('Stargate system aligned');
+      setStargateText("Stargate system aligned");
       return;
     }
 
-    sessionStorage.setItem('stargateAnimationShown', 'true');
+    sessionStorage.setItem("stargateAnimationShown", "true");
     setIsAnimating(true);
 
     const getRandomString = (chars: string, length: number) => {
-      return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+      return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
     };
 
     const phases = [
-      { chars: '01', duration: 40, iterations: 20 },
-      { chars: '0123456789', duration: 25, iterations: 30 },
-      { chars: '0123456789ABCDEF', duration: 20, iterations: 40 },
-      { chars: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{}|;:\\\'",.<>?/`~', duration: 10, iterations: 100 }
+      { chars: "01", duration: 40, iterations: 20 },
+      { chars: "0123456789", duration: 25, iterations: 30 },
+      { chars: "0123456789ABCDEF", duration: 20, iterations: 40 },
+      { chars: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{}|;:\\'\",.<>?/`~", duration: 10, iterations: 100 },
     ];
 
     let currentPhase = 0;
@@ -204,11 +197,10 @@ const SystemVisualization: React.FC<SystemVisualizationProps> = ({ systemUrl, im
 
     const animate = () => {
       if (currentPhase >= phases.length) {
-        // Final message typing
-        const finalMessage = 'Stargate system aligned';
+        const finalMessage = "Stargate system aligned";
         let charIndex = 0;
-        setStargateText('');
-        
+        setStargateText("");
+
         const typeChar = () => {
           if (charIndex < finalMessage.length) {
             setStargateText(finalMessage.substring(0, charIndex + 1));
@@ -218,7 +210,7 @@ const SystemVisualization: React.FC<SystemVisualizationProps> = ({ systemUrl, im
             setIsAnimating(false);
           }
         };
-        
+
         typeChar();
         return;
       }
@@ -241,63 +233,40 @@ const SystemVisualization: React.FC<SystemVisualizationProps> = ({ systemUrl, im
   return (
     <div className="h-full flex flex-col">
       <h3 className="text-lg sm:text-xl font-bold text-white mb-3">System Visualization</h3>
-      
-      {/* System Image Container */}
+
       <div className="relative w-full max-w-80 sm:max-w-96 aspect-square mx-auto bg-black/50 flex justify-center items-center rounded-xl overflow-hidden border-2 border-blue-400/30 mb-4">
-        
-        {/* Canvas for space animation */}
-        <canvas
-          ref={canvasRef}
-          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[2500ms] ${
-            canvasHidden ? 'opacity-0' : 'opacity-100'
-          }`}
-          style={{ filter: canvasHidden ? 'blur(50px)' : 'none' }}
-        />
-        
-        {/* System Image with Zoom */}
-        <div className={`absolute inset-0 w-full h-full transition-all duration-500 ${
-          imageLoaded ? 'opacity-100 blur-0' : 'opacity-0 blur-[25px]'
-        }`}>
+        <canvas ref={canvasRef} className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[2500ms] ${canvasHidden ? "opacity-0" : "opacity-100"}`} style={{ filter: canvasHidden ? "blur(50px)" : "none" }} />
+
+        <div className={`absolute inset-0 w-full h-full transition-all duration-500 ${imageLoaded ? "opacity-100 blur-0" : "opacity-0 blur-[25px]"}`}>
           {imageLoaded && imageUrl ? (
             <div className="w-full h-full flex items-center justify-center">
-              <Zoom 
-                zoomMargin={20}
-                classDialog="backdrop-blur-3xl"
-              >
+              <Zoom zoomMargin={20} classDialog="backdrop-blur-3xl">
                 <img
                   ref={imageRef}
                   className="max-w-full max-h-full object-contain rounded-xl shadow-2xl shadow-blue-500/20"
                   src={imageUrl}
                   alt="System visualization"
-                  style={{ 
-                    width: '100%', 
-                    height: '100%',
-                    objectFit: 'contain',
-                    backgroundColor: 'transparent'
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "contain",
+                    backgroundColor: "transparent",
                   }}
                 />
               </Zoom>
             </div>
           ) : (
-            <img
-              ref={imageRef}
-              className="w-full h-full object-cover"
-              src="/static/images/placeholder-min.jpg"
-              alt="System visualization"
-            />
+            <img ref={imageRef} className="w-full h-full object-cover" src="/static/images/placeholder-min.jpg" alt="System visualization" />
           )}
         </div>
       </div>
 
-      {/* Stargate Container */}
       <div className="text-center mt-auto">
-        <a 
+        <a
           href={systemUrl}
-          className={`inline-block px-4 py-2 bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 text-gray-200 font-medium text-sm rounded-lg border border-slate-600 hover:border-slate-500 shadow-md hover:shadow-lg transition-all duration-300 relative overflow-hidden group ${
-            isAnimating ? 'animate-pulse' : ''
-          }`}
+          className={`inline-block px-4 py-2 bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 text-gray-200 font-medium text-sm rounded-lg border border-slate-600 hover:border-slate-500 shadow-md hover:shadow-lg transition-all duration-300 relative overflow-hidden group ${isAnimating ? "animate-pulse" : ""}`}
           style={{
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)",
           }}
         >
           <span className="relative z-10 font-mono flex items-center gap-2">
@@ -306,16 +275,12 @@ const SystemVisualization: React.FC<SystemVisualizationProps> = ({ systemUrl, im
             </svg>
             {stargateText}
           </span>
-          
-          {/* Subtle glow effect */}
+
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         </a>
-        
-        <div className="mt-2 text-xs text-gray-500 text-center">
-          Gateway to the stars
-        </div>
-      </div>
 
+        <div className="mt-2 text-xs text-gray-500 text-center">Gateway to the stars</div>
+      </div>
     </div>
   );
 };

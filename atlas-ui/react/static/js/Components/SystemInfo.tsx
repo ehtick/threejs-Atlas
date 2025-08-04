@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import SolarSystem3DViewer from './SolarSystem3DViewer.tsx';
-import SaveLocationButton from './SaveLocationButton.tsx';
+import React, { useState } from "react";
+import SolarSystem3DViewer from "./SolarSystem3DViewer.tsx";
+import SaveLocationButton from "./SaveLocationButton.tsx";
 
 interface Star {
   Type: string;
@@ -29,7 +29,6 @@ interface System {
   }>;
 }
 
-
 interface Galaxy {
   name: string;
   coordinates: number[];
@@ -43,30 +42,19 @@ interface SystemInfoProps {
 }
 
 const SystemInfo: React.FC<SystemInfoProps> = ({ system, galaxy, systemIndex, cosmicOriginTime }) => {
-  
   const formatName = (name: string) => {
-    return name.replace(/_/g, ' ');
+    return name.replace(/_/g, " ");
   };
 
   return (
     <div className="h-full flex flex-col relative">
-      {/* VISITED Badge */}
-      <div className="absolute top-0 right-0 bg-green-500/20 border border-green-500/50 text-green-400 text-[10px] px-1.5 py-0.5 rounded z-10">
-        VISITED
-      </div>
-      
+      <div className="absolute top-0 right-0 bg-green-500/20 border border-green-500/50 text-green-400 text-[10px] px-1.5 py-0.5 rounded z-10">VISITED</div>
+
       <div className="flex items-center justify-between mb-3 pr-16">
         <h3 className="text-lg sm:text-xl font-bold text-white">System Information</h3>
-        <SaveLocationButton
-          type="system"
-          name={system.name}
-          coordinates={galaxy.coordinates.join(',')}
-          systemIndex={systemIndex}
-          className="text-xs"
-        />
+        <SaveLocationButton type="system" name={system.name} coordinates={galaxy.coordinates.join(",")} systemIndex={systemIndex} className="text-xs" />
       </div>
-      
-      {/* Main characteristics - Compact row */}
+
       <div className="grid grid-cols-3 gap-2 mb-3">
         <div className="bg-white/10 rounded-lg p-2 border border-blue-500/30">
           <div className="text-xs text-gray-200">System Type</div>
@@ -82,17 +70,10 @@ const SystemInfo: React.FC<SystemInfoProps> = ({ system, galaxy, systemIndex, co
         </div>
       </div>
 
-      {/* Solar System 3D Viewer - Full width */}
       <div className="bg-white/10 rounded-lg p-3 border border-gray-500/30 mb-3 col-span-3">
-        <SolarSystem3DViewer 
-          planets={system.planets} 
-          stars={system.stars} 
-          systemName={system.name}
-          cosmicOriginTime={cosmicOriginTime}
-        />
+        <SolarSystem3DViewer planets={system.planets} stars={system.stars} systemName={system.name} cosmicOriginTime={cosmicOriginTime} />
       </div>
 
-      {/* Stellar Composition - Compact grid */}
       <div className="bg-white/10 rounded-lg p-2 border border-yellow-500/30">
         <div className="text-xs text-gray-200 mb-2">Stellar Composition</div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1">
@@ -100,13 +81,14 @@ const SystemInfo: React.FC<SystemInfoProps> = ({ system, galaxy, systemIndex, co
             <div key={index} className="bg-white/5 rounded p-1.5 border border-yellow-500/20">
               <div className="text-xs text-gray-300">Star {index + 1}</div>
               <div className="text-xs font-bold text-yellow-300">{star.Type}</div>
-              <div className="text-xs text-gray-300">{star.Color} • {star.Size}</div>
+              <div className="text-xs text-gray-300">
+                {star.Color} • {star.Size}
+              </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Technical Data - Always visible */}
       <div className="mt-4 pt-3 border-t border-white/10">
         <div className="text-xs text-gray-400 mb-2">Technical Data</div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 text-xs">
@@ -128,7 +110,7 @@ const SystemInfo: React.FC<SystemInfoProps> = ({ system, galaxy, systemIndex, co
           </div>
           <div className="bg-white/5 rounded p-2">
             <span className="text-gray-400">Coordinates:</span>
-            <div className="text-white font-medium">{galaxy.coordinates.join(', ')}</div>
+            <div className="text-white font-medium">{galaxy.coordinates.join(", ")}</div>
           </div>
         </div>
       </div>

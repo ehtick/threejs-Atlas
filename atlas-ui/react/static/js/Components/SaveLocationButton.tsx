@@ -44,7 +44,6 @@ const SaveLocationButton: React.FC<SaveLocationButtonProps> = ({ type, name, coo
   };
 
   useEffect(() => {
-    // Check if location is already saved using the stargate URL
     const savedLocations = LocationBookmarks.getLocations();
     const stargateUrl = generateStargateUrl();
     const exists = savedLocations.some((loc) => loc.stargateUrl === stargateUrl);
@@ -65,7 +64,6 @@ const SaveLocationButton: React.FC<SaveLocationButtonProps> = ({ type, name, coo
 
       setIsSaved(true);
 
-      // Show brief feedback
       setTimeout(() => {
         setIsLoading(false);
       }, 300);

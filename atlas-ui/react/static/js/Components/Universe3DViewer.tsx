@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import * as THREE from "three";
-import Universe3DViewerFullscreen from './Universe3DViewerFullscreen.tsx';
+import Universe3DViewerFullscreen from "./Universe3DViewerFullscreen.tsx";
 
 interface Universe3DViewerProps {
   coordinates: number[];
@@ -13,11 +13,10 @@ const Universe3DViewer: React.FC<Universe3DViewerProps> = ({ coordinates, galaxy
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const animationIdRef = useRef<number | null>(null);
-  const [isFullscreen, setIsFullscreen] = useState(false); // Fullscreen modal state
-  const [isClosing, setIsClosing] = useState(false); // Closing animation state
-  const [isEntering, setIsEntering] = useState(false); // Entering animation state
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+  const [isEntering, setIsEntering] = useState(false);
 
-  // Function to handle closing fullscreen with animation
   const handleCloseFullscreen = () => {
     setIsClosing(true);
     setTimeout(() => {
@@ -26,33 +25,30 @@ const Universe3DViewer: React.FC<Universe3DViewerProps> = ({ coordinates, galaxy
     }, 300);
   };
 
-  // Handle ESC key to close fullscreen
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && isFullscreen) {
+      if (event.key === "Escape" && isFullscreen) {
         handleCloseFullscreen();
       }
     };
 
-    document.addEventListener('universe-close-fullscreen', handleCloseFullscreen);
-    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener("universe-close-fullscreen", handleCloseFullscreen);
+    document.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      document.removeEventListener('universe-close-fullscreen', handleCloseFullscreen);
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener("universe-close-fullscreen", handleCloseFullscreen);
+      document.removeEventListener("keydown", handleKeyDown);
     };
   }, [isFullscreen]);
 
-  // Handle entry animation
   useEffect(() => {
     if (isFullscreen && isEntering) {
       const timer = setTimeout(() => {
         setIsEntering(false);
-      }, 50); // Short delay to trigger CSS transition
+      }, 50);
       return () => clearTimeout(timer);
     }
   }, [isFullscreen, isEntering]);
-
 
   useEffect(() => {
     if (!mountRef.current) return;
@@ -61,45 +57,33 @@ const Universe3DViewer: React.FC<Universe3DViewerProps> = ({ coordinates, galaxy
     const containerWidth = container.clientWidth;
     const isMobile = containerWidth < 640;
 
-    // Scene setup
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0a0a0a);
     sceneRef.current = scene;
 
-    // Camera setup
-    const camera = new THREE.PerspectiveCamera(
-      30, // FOV
-      containerWidth / (isMobile ? 120 : 120), // Aspect ratio - smaller height
-      0.1, // Near
-      1000 // Far
-    );
-    camera.position.set(12, 8, 12); // Closer to the cube
+    const camera = new THREE.PerspectiveCamera(30, containerWidth / (isMobile ? 120 : 120), 0.1, 1000);
+    camera.position.set(12, 8, 12);
     camera.lookAt(0, 0, 0);
 
-    // Renderer setup
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(containerWidth, isMobile ? 120 : 120); // Smaller height
+    renderer.setSize(containerWidth, isMobile ? 120 : 120);
     renderer.setClearColor(0x000000, 0.2);
     rendererRef.current = renderer;
     container.appendChild(renderer.domElement);
 
-    // Universe bounds
     const MIN_COORD = 0;
     const MAX_COORD = 10000000;
     const BIT_BANG = 5000000;
 
-    // Extract and normalize coordinates (adjusted for smaller cube)
     const [x, y, z] = coordinates;
     const normalizedX = ((x - MIN_COORD) / (MAX_COORD - MIN_COORD) - 0.5) * 8;
     const normalizedY = ((y - MIN_COORD) / (MAX_COORD - MIN_COORD) - 0.5) * 8;
     const normalizedZ = ((z - MIN_COORD) / (MAX_COORD - MIN_COORD) - 0.5) * 8;
 
-    // Create a group for all rotating elements
     const rotatingGroup = new THREE.Group();
     scene.add(rotatingGroup);
 
-    // Create wireframe cube (universe boundary) - smaller
-    const cubeGeometry = new THREE.BoxGeometry(8, 8, 8); // Smaller cube
+    const cubeGeometry = new THREE.BoxGeometry(8, 8, 8);
     const cubeEdges = new THREE.EdgesGeometry(cubeGeometry);
     const cubeMaterial = new THREE.LineBasicMaterial({
       color: 0xffffff,
@@ -109,7 +93,6 @@ const Universe3DViewer: React.FC<Universe3DViewerProps> = ({ coordinates, galaxy
     const cubeWireframe = new THREE.LineSegments(cubeEdges, cubeMaterial);
     rotatingGroup.add(cubeWireframe);
 
-    // Create grid planes for reference - smaller to match cube
     const gridHelper1 = new THREE.GridHelper(8, 8, 0xffffff, 0xffffff);
     gridHelper1.material.opacity = 0.1;
     gridHelper1.material.transparent = true;
@@ -130,8 +113,7 @@ const Universe3DViewer: React.FC<Universe3DViewerProps> = ({ coordinates, galaxy
     gridHelper3.position.z = -4;
     rotatingGroup.add(gridHelper3);
 
-    // Create Bit Bang (center point) - bigger
-    const bitBangGeometry = new THREE.SphereGeometry(0.25, 16, 16); // Bigger
+    const bitBangGeometry = new THREE.SphereGeometry(0.25, 16, 16);
     const bitBangMaterial = new THREE.MeshBasicMaterial({
       color: 0xffffff,
       transparent: true,
@@ -141,9 +123,8 @@ const Universe3DViewer: React.FC<Universe3DViewerProps> = ({ coordinates, galaxy
     bitBang.position.set(0, 0, 0);
     rotatingGroup.add(bitBang);
 
-    // Add glow effect to Bit Bang
     const bitBangGlow = new THREE.Mesh(
-      new THREE.SphereGeometry(0.45, 16, 16), // Bigger glow
+      new THREE.SphereGeometry(0.45, 16, 16),
       new THREE.MeshBasicMaterial({
         color: 0xffffff,
         transparent: true,
@@ -152,8 +133,7 @@ const Universe3DViewer: React.FC<Universe3DViewerProps> = ({ coordinates, galaxy
     );
     bitBang.add(bitBangGlow);
 
-    // Create Galaxy - bigger
-    const galaxyGeometry = new THREE.SphereGeometry(0.2, 16, 16); // Bigger
+    const galaxyGeometry = new THREE.SphereGeometry(0.2, 16, 16);
     const galaxyMaterial = new THREE.MeshBasicMaterial({
       color: 0x64c8ff,
       transparent: true,
@@ -163,9 +143,8 @@ const Universe3DViewer: React.FC<Universe3DViewerProps> = ({ coordinates, galaxy
     galaxy.position.set(normalizedX, normalizedY, normalizedZ);
     rotatingGroup.add(galaxy);
 
-    // Add glow effect to Galaxy
     const galaxyGlow = new THREE.Mesh(
-      new THREE.SphereGeometry(0.35, 16, 16), // Bigger glow
+      new THREE.SphereGeometry(0.35, 16, 16),
       new THREE.MeshBasicMaterial({
         color: 0x64c8ff,
         transparent: true,
@@ -174,7 +153,6 @@ const Universe3DViewer: React.FC<Universe3DViewerProps> = ({ coordinates, galaxy
     );
     galaxy.add(galaxyGlow);
 
-    // Create connection line if close to Bit Bang
     const distance = Math.sqrt(Math.pow(x - BIT_BANG, 2) + Math.pow(y - BIT_BANG, 2) + Math.pow(z - BIT_BANG, 2));
 
     if (distance < 2000000) {
@@ -192,17 +170,13 @@ const Universe3DViewer: React.FC<Universe3DViewerProps> = ({ coordinates, galaxy
       rotatingGroup.add(line);
     }
 
-    // Add ambient lighting
     const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
     scene.add(ambientLight);
 
-    // Add directional light
     const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
     directionalLight.position.set(5, 5, 5);
     scene.add(directionalLight);
 
-    // Add X, Y, Z axis labels
-    // Create simple text sprites for better performance
     const createTextSprite = (text: string, color: number) => {
       const canvas = document.createElement("canvas");
       const context = canvas.getContext("2d");
@@ -225,26 +199,24 @@ const Universe3DViewer: React.FC<Universe3DViewerProps> = ({ coordinates, galaxy
       return sprite;
     };
 
-    // Add axis labels at cube corners
     const xLabel = createTextSprite("X", 0xff6b6b);
     if (xLabel) {
-      xLabel.position.set(4.2, -3.8, -3.8); // Bottom right front corner
+      xLabel.position.set(4.2, -3.8, -3.8);
       rotatingGroup.add(xLabel);
     }
 
     const yLabel = createTextSprite("Y", 0x6bff6b);
     if (yLabel) {
-      yLabel.position.set(-3.8, 4.2, -3.8); // Top left front corner
+      yLabel.position.set(-3.8, 4.2, -3.8);
       rotatingGroup.add(yLabel);
     }
 
     const zLabel = createTextSprite("Z", 0x6b6bff);
     if (zLabel) {
-      zLabel.position.set(-3.8, -3.8, 4.2); // Bottom left back corner
+      zLabel.position.set(-3.8, -3.8, 4.2);
       rotatingGroup.add(zLabel);
     }
 
-    // Mouse controls
     let isMouseDown = false;
     let mouseX = 0;
     let mouseY = 0;
@@ -252,7 +224,7 @@ const Universe3DViewer: React.FC<Universe3DViewerProps> = ({ coordinates, galaxy
 
     const handleMouseDown = (event: MouseEvent) => {
       isMouseDown = true;
-      autoRotate = false; // Stop auto rotation when user interacts
+      autoRotate = false;
       mouseX = event.clientX;
       mouseY = event.clientY;
     };
@@ -272,28 +244,23 @@ const Universe3DViewer: React.FC<Universe3DViewerProps> = ({ coordinates, galaxy
 
     const handleMouseUp = () => {
       isMouseDown = false;
-      // Resume auto rotation after 3 seconds of no interaction
       setTimeout(() => {
         if (!isMouseDown) autoRotate = true;
       }, 3000);
     };
 
-    // Zoom with scroll wheel
     const handleWheel = (event: WheelEvent) => {
       event.preventDefault();
       const zoomSpeed = 0.1;
       const currentDistance = camera.position.distanceTo(new THREE.Vector3(0, 0, 0));
 
       if (event.deltaY > 0 && currentDistance < 25) {
-        // Zoom out
         camera.position.multiplyScalar(1 + zoomSpeed);
       } else if (event.deltaY < 0 && currentDistance > 5) {
-        // Zoom in
         camera.position.multiplyScalar(1 - zoomSpeed);
       }
     };
 
-    // Add event listeners
     const canvas = renderer.domElement;
     canvas.style.cursor = "grab";
     canvas.style.borderRadius = "8px";
@@ -310,24 +277,20 @@ const Universe3DViewer: React.FC<Universe3DViewerProps> = ({ coordinates, galaxy
     canvas.addEventListener("mouseleave", () => {
       canvas.style.cursor = "grab";
       handleMouseUp();
-    }); // Stop dragging when mouse leaves
+    });
     canvas.addEventListener("wheel", handleWheel);
 
-    // Animation loop
     const animate = () => {
       animationIdRef.current = requestAnimationFrame(animate);
 
-      // Smooth rotation for the entire group (only when auto-rotate is enabled)
       if (autoRotate) {
         rotatingGroup.rotation.y += 0.002;
         rotatingGroup.rotation.x += 0.001;
       }
 
-      // Pulsing effect for Bit Bang
       const time = Date.now() * 0.005;
       bitBang.scale.setScalar(1 + Math.sin(time) * 0.1);
 
-      // Subtle rotation for galaxy
       galaxy.rotation.y += 0.01;
 
       renderer.render(scene, camera);
@@ -335,10 +298,9 @@ const Universe3DViewer: React.FC<Universe3DViewerProps> = ({ coordinates, galaxy
 
     animate();
 
-    // Handle resize
     const handleResize = () => {
       const newWidth = container.clientWidth;
-      const newHeight = newWidth < 640 ? 150 : 160; // Updated heights
+      const newHeight = newWidth < 640 ? 150 : 160;
 
       camera.aspect = newWidth / newHeight;
       camera.updateProjectionMatrix();
@@ -347,11 +309,9 @@ const Universe3DViewer: React.FC<Universe3DViewerProps> = ({ coordinates, galaxy
 
     window.addEventListener("resize", handleResize);
 
-    // Cleanup
     return () => {
       window.removeEventListener("resize", handleResize);
 
-      // Remove mouse event listeners
       canvas.removeEventListener("mousedown", handleMouseDown);
       canvas.removeEventListener("mousemove", handleMouseMove);
       canvas.removeEventListener("mouseup", handleMouseUp);
@@ -368,7 +328,6 @@ const Universe3DViewer: React.FC<Universe3DViewerProps> = ({ coordinates, galaxy
 
       renderer.dispose();
 
-      // Dispose geometries and materials
       cubeGeometry.dispose();
       cubeEdges.dispose();
       cubeMaterial.dispose();
@@ -397,13 +356,8 @@ const Universe3DViewer: React.FC<Universe3DViewerProps> = ({ coordinates, galaxy
         <div className="text-xs text-gray-300 mb-2">Galaxy Location</div>
 
         <div className="relative w-full">
-          <div 
-            ref={mountRef} 
-            className="w-full border border-white/20 rounded bg-black/20" 
-            style={{ height: "auto" }} 
-          />
-          
-          {/* Expand button overlaid on canvas */}
+          <div ref={mountRef} className="w-full border border-white/20 rounded bg-black/20" style={{ height: "auto" }} />
+
           <button
             onClick={() => {
               setIsFullscreen(true);
@@ -435,81 +389,55 @@ const Universe3DViewer: React.FC<Universe3DViewerProps> = ({ coordinates, galaxy
               {formatCoord(x)}, {formatCoord(y)}, {formatCoord(z)}
             </div>
           </div>
-          <div className="text-center text-[10px] text-gray-500">
-            Scroll: Zoom • Drag: Rotate View
-          </div>
+          <div className="text-center text-[10px] text-gray-500">Scroll: Zoom • Drag: Rotate View</div>
         </div>
       </div>
 
-      {/* Fullscreen Modal - rendered outside container using portal */}
-      {isFullscreen && createPortal(
-        <div className={`fixed inset-0 z-50 bg-black/95 backdrop-blur-xl transition-all duration-300 ${
-          isClosing ? 'opacity-0 scale-95' : isEntering ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
-        }`}>
-          <div className={`w-full h-full flex flex-col p-1 sm:p-2 transition-all duration-300 delay-75 ${
-            isClosing ? 'opacity-0 translate-y-4' : isEntering ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'
-          }`}>
-            {/* Modal Header */}
-            <div className="flex items-center justify-between mb-2 sm:mb-4">
-              {/* Mobile: Ultra minimal */}
-              <div className="block sm:hidden">
-                <h2 className="text-xs font-medium text-white">
-                  {formatName(galaxyName)}
-                </h2>
-              </div>
-              
-              {/* Desktop: Full info */}
-              <div className="hidden sm:flex items-center gap-4 flex-1">
-                <h2 className="text-xl font-bold text-white">
-                  {formatName(galaxyName)} - Galaxy Location
-                </h2>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 bg-white rounded-full opacity-90"></div>
-                    <span className="text-sm text-gray-300">Bit Bang</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
-                    <span className="text-sm text-gray-300">Galaxy</span>
-                  </div>
-                  <div className="text-sm text-gray-400">
-                    {formatCoord(x)}, {formatCoord(y)}, {formatCoord(z)}
+      {isFullscreen &&
+        createPortal(
+          <div className={`fixed inset-0 z-50 bg-black/95 backdrop-blur-xl transition-all duration-300 ${isClosing ? "opacity-0 scale-95" : isEntering ? "opacity-0 scale-95" : "opacity-100 scale-100"}`}>
+            <div className={`w-full h-full flex flex-col p-1 sm:p-2 transition-all duration-300 delay-75 ${isClosing ? "opacity-0 translate-y-4" : isEntering ? "opacity-0 translate-y-4" : "opacity-100 translate-y-0"}`}>
+              <div className="flex items-center justify-between mb-2 sm:mb-4">
+                <div className="block sm:hidden">
+                  <h2 className="text-xs font-medium text-white">{formatName(galaxyName)}</h2>
+                </div>
+
+                <div className="hidden sm:flex items-center gap-4 flex-1">
+                  <h2 className="text-xl font-bold text-white">{formatName(galaxyName)} - Galaxy Location</h2>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 bg-white rounded-full opacity-90"></div>
+                      <span className="text-sm text-gray-300">Bit Bang</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
+                      <span className="text-sm text-gray-300">Galaxy</span>
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      {formatCoord(x)}, {formatCoord(y)}, {formatCoord(z)}
+                    </div>
                   </div>
                 </div>
-              </div>
-              
-              <button
-                onClick={handleCloseFullscreen}
-                className="p-0.5 sm:p-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded transition-colors duration-200 text-red-400 hover:text-red-300"
-                title="Close"
-              >
-                <svg className="w-3 h-3 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
 
-            {/* Modal Content - Full Size Universe 3D Viewer */}
-            <div className="flex-1 border border-white/20 rounded-lg bg-black/20 overflow-hidden min-h-0">
-              <Universe3DViewerFullscreen 
-                coordinates={coordinates} 
-                galaxyName={galaxyName}
-              />
-            </div>
+                <button onClick={handleCloseFullscreen} className="p-0.5 sm:p-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded transition-colors duration-200 text-red-400 hover:text-red-300" title="Close">
+                  <svg className="w-3 h-3 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
 
-            {/* Modal Footer */}
-            <div className="mt-2 sm:mt-4 text-center text-xs sm:text-sm text-gray-400">
-              <div className="hidden sm:block">
-                Scroll: Zoom • Drag: Rotate View • ESC: Close
+              <div className="flex-1 border border-white/20 rounded-lg bg-black/20 overflow-hidden min-h-0">
+                <Universe3DViewerFullscreen coordinates={coordinates} galaxyName={galaxyName} />
               </div>
-              <div className="sm:hidden">
-                Pinch: Zoom • Drag: Rotate • ESC: Close
+
+              <div className="mt-2 sm:mt-4 text-center text-xs sm:text-sm text-gray-400">
+                <div className="hidden sm:block">Scroll: Zoom • Drag: Rotate View • ESC: Close</div>
+                <div className="sm:hidden">Pinch: Zoom • Drag: Rotate • ESC: Close</div>
               </div>
             </div>
-          </div>
-        </div>,
-        document.body
-      )}
+          </div>,
+          document.body
+        )}
     </>
   );
 };

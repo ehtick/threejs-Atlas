@@ -10,20 +10,19 @@ const NavigationForm = ({ error }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    // Create a form and submit it to match the original Flask behavior
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = '/navigate';
-    
+
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = "/navigate";
+
     Object.entries(coordinates).forEach(([key, value]) => {
-      const input = document.createElement('input');
-      input.type = 'hidden';
+      const input = document.createElement("input");
+      input.type = "hidden";
       input.name = key;
-      input.value = value;
+      input.value = value.toString();
       form.appendChild(input);
     });
-    
+
     document.body.appendChild(form);
     form.submit();
   };

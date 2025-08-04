@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 interface PaginationProps {
   page: number;
@@ -15,46 +15,29 @@ const Pagination: React.FC<PaginationProps> = ({ page, prevPage, nextPage, finis
   return (
     <div className="bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 shadow-2xl p-4 sm:p-6 mb-8">
       <div className="flex justify-center items-center gap-2 sm:gap-4 flex-wrap">
-        
-        {/* First page */}
         {page !== 1 && (
-          <button 
-            onClick={() => window.location.href = '/galaxy/1'}
-            className={`${baseClasses} ${inactiveClasses}`}
-            title="First page"
-          >
+          <button onClick={() => (window.location.href = "/galaxy/1")} className={`${baseClasses} ${inactiveClasses}`} title="First page">
             <span className="hidden sm:inline">First</span>
             <span className="sm:hidden">«</span>
           </button>
         )}
 
-        {/* Previous page */}
         {prevPage && (
-          <button 
-            onClick={() => window.location.href = `/galaxy/${prevPage}`}
-            className={`${baseClasses} ${inactiveClasses}`}
-            title="Previous page"
-          >
+          <button onClick={() => (window.location.href = `/galaxy/${prevPage}`)} className={`${baseClasses} ${inactiveClasses}`} title="Previous page">
             <span className="hidden sm:inline">Previous</span>
             <span className="sm:hidden">‹</span>
           </button>
         )}
 
-        {/* Page numbers around current page */}
         {(() => {
           const pages = [];
-          const range = 2; // Show 2 pages before and after current page
+          const range = 2;
           const start = Math.max(1, page - range);
           const end = Math.min(finish, page + range);
 
-          // Add ellipsis at the beginning if needed
           if (start > 1) {
             pages.push(
-              <button 
-                key={1}
-                onClick={() => window.location.href = '/galaxy/1'}
-                className={`${baseClasses} ${inactiveClasses}`}
-              >
+              <button key={1} onClick={() => (window.location.href = "/galaxy/1")} className={`${baseClasses} ${inactiveClasses}`}>
                 1
               </button>
             );
@@ -67,31 +50,22 @@ const Pagination: React.FC<PaginationProps> = ({ page, prevPage, nextPage, finis
             }
           }
 
-          // Add page numbers in range
           for (let i = start; i <= end; i++) {
             if (i === page) {
               pages.push(
-                <span
-                  key={i}
-                  className={`${baseClasses} ${activeClasses} cursor-default`}
-                >
+                <span key={i} className={`${baseClasses} ${activeClasses} cursor-default`}>
                   {i}
                 </span>
               );
             } else {
               pages.push(
-                <button
-                  key={i}
-                  onClick={() => window.location.href = `/galaxy/${i}`}
-                  className={`${baseClasses} ${inactiveClasses} cursor-pointer`}
-                >
+                <button key={i} onClick={() => (window.location.href = `/galaxy/${i}`)} className={`${baseClasses} ${inactiveClasses} cursor-pointer`}>
                   {i}
                 </button>
               );
             }
           }
 
-          // Add ellipsis at the end if needed
           if (end < finish) {
             if (end < finish - 1) {
               pages.push(
@@ -101,11 +75,7 @@ const Pagination: React.FC<PaginationProps> = ({ page, prevPage, nextPage, finis
               );
             }
             pages.push(
-              <button 
-                key={finish}
-                onClick={() => window.location.href = `/galaxy/${finish}`}
-                className={`${baseClasses} ${inactiveClasses}`}
-              >
+              <button key={finish} onClick={() => (window.location.href = `/galaxy/${finish}`)} className={`${baseClasses} ${inactiveClasses}`}>
                 {finish}
               </button>
             );
@@ -114,32 +84,21 @@ const Pagination: React.FC<PaginationProps> = ({ page, prevPage, nextPage, finis
           return pages;
         })()}
 
-        {/* Next page */}
         {nextPage && (
-          <button 
-            onClick={() => window.location.href = `/galaxy/${nextPage}`}
-            className={`${baseClasses} ${inactiveClasses}`}
-            title="Next page"
-          >
+          <button onClick={() => (window.location.href = `/galaxy/${nextPage}`)} className={`${baseClasses} ${inactiveClasses}`} title="Next page">
             <span className="hidden sm:inline">Next</span>
             <span className="sm:hidden">›</span>
           </button>
         )}
 
-        {/* Last page */}
         {page !== finish && (
-          <button 
-            onClick={() => window.location.href = `/galaxy/${finish}`}
-            className={`${baseClasses} ${inactiveClasses}`}
-            title="Last page"
-          >
+          <button onClick={() => (window.location.href = `/galaxy/${finish}`)} className={`${baseClasses} ${inactiveClasses}`} title="Last page">
             <span className="hidden sm:inline">Last</span>
             <span className="sm:hidden">»</span>
           </button>
         )}
       </div>
 
-      {/* Page info */}
       <div className="text-center mt-4 text-sm text-gray-400">
         Page {page} of {finish}
       </div>

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import SaveLocationButton from './SaveLocationButton.tsx';
+import React, { useState } from "react";
+import SaveLocationButton from "./SaveLocationButton.tsx";
 
 interface Planet {
   name: string;
@@ -18,7 +18,6 @@ interface Planet {
   surface_temperature: number;
   elements: string[];
 }
-
 
 interface System {
   name: string;
@@ -40,7 +39,7 @@ const PlanetInfo: React.FC<PlanetInfoProps> = ({ planet, system, galaxy }) => {
   const [showAllElements, setShowAllElements] = useState(false);
 
   const formatName = (name: string) => {
-    return name.replace(/_/g, ' ');
+    return name.replace(/_/g, " ");
   };
 
   const formatPeriod = (seconds: number) => {
@@ -55,7 +54,7 @@ const PlanetInfo: React.FC<PlanetInfoProps> = ({ planet, system, galaxy }) => {
   };
 
   const formatTemperature = (celsius: number) => {
-    const fahrenheit = celsius * 9/5 + 32;
+    const fahrenheit = (celsius * 9) / 5 + 32;
     return `${celsius.toFixed(1)}°C (${fahrenheit.toFixed(1)}°F)`;
   };
 
@@ -72,24 +71,13 @@ const PlanetInfo: React.FC<PlanetInfoProps> = ({ planet, system, galaxy }) => {
 
   return (
     <div className="h-full flex flex-col relative">
-      {/* VISITED Badge */}
-      <div className="absolute top-0 right-0 bg-green-500/20 border border-green-500/50 text-green-400 text-[10px] px-1.5 py-0.5 rounded z-10">
-        VISITED
-      </div>
-      
+      <div className="absolute top-0 right-0 bg-green-500/20 border border-green-500/50 text-green-400 text-[10px] px-1.5 py-0.5 rounded z-10">VISITED</div>
+
       <div className="flex items-center justify-between mb-3 pr-16">
         <h3 className="text-lg sm:text-xl font-bold text-white">Planet Information</h3>
-        <SaveLocationButton
-          type="planet"
-          name={planet.name}
-          coordinates={galaxy.coordinates.join(',')}
-          systemIndex={system.index}
-          planetName={planet.name}
-          className="text-xs"
-        />
+        <SaveLocationButton type="planet" name={planet.name} coordinates={galaxy.coordinates.join(",")} systemIndex={system.index} planetName={planet.name} className="text-xs" />
       </div>
-      
-      {/* Main characteristics - Compact row */}
+
       <div className="grid grid-cols-3 gap-2 mb-3">
         <div className="bg-white/10 rounded-lg p-2 border border-blue-500/30">
           <div className="text-xs text-gray-200">Type</div>
@@ -105,7 +93,6 @@ const PlanetInfo: React.FC<PlanetInfoProps> = ({ planet, system, galaxy }) => {
         </div>
       </div>
 
-      {/* Physical Properties - Compact grid */}
       <div className="bg-white/10 rounded-lg p-2 border border-orange-500/30 mb-3">
         <div className="text-xs text-gray-200 mb-2">Physical Properties</div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-1">
@@ -128,7 +115,6 @@ const PlanetInfo: React.FC<PlanetInfoProps> = ({ planet, system, galaxy }) => {
         </div>
       </div>
 
-      {/* Orbital Properties - Compact grid */}
       <div className="bg-white/10 rounded-lg p-2 border border-cyan-500/30 mb-3">
         <div className="text-xs text-gray-200 mb-2">Orbital Properties</div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-1">
@@ -151,7 +137,6 @@ const PlanetInfo: React.FC<PlanetInfoProps> = ({ planet, system, galaxy }) => {
         </div>
       </div>
 
-      {/* Surface & Elements - Combined row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
         <div className="bg-white/10 rounded-lg p-2 border border-red-500/30">
           <div className="text-xs text-gray-200 mb-2">Surface Conditions</div>
@@ -171,15 +156,12 @@ const PlanetInfo: React.FC<PlanetInfoProps> = ({ planet, system, galaxy }) => {
           <div className="flex items-center justify-between mb-2">
             <div className="text-xs text-gray-200">Elements ({planet.elements.length})</div>
             {planet.elements.length > 4 && (
-              <button 
-                onClick={() => setShowAllElements(!showAllElements)}
-                className="text-xs text-yellow-400 hover:text-yellow-300 transition-colors duration-300"
-              >
-                {showAllElements ? '▲ Less' : '▼ All'}
+              <button onClick={() => setShowAllElements(!showAllElements)} className="text-xs text-yellow-400 hover:text-yellow-300 transition-colors duration-300">
+                {showAllElements ? "▲ Less" : "▼ All"}
               </button>
             )}
           </div>
-          
+
           <div className="flex flex-wrap gap-1">
             {(showAllElements ? planet.elements : planet.elements.slice(0, 4)).map((element, index) => (
               <span key={index} className="text-xs bg-yellow-500/20 text-yellow-300 px-1.5 py-0.5 rounded border border-yellow-500/30">
@@ -190,7 +172,6 @@ const PlanetInfo: React.FC<PlanetInfoProps> = ({ planet, system, galaxy }) => {
         </div>
       </div>
 
-      {/* Technical Data - Always visible */}
       <div className="mt-4 pt-3 border-t border-white/10">
         <div className="text-xs text-gray-400 mb-2">Technical Data</div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-xs">
@@ -216,7 +197,7 @@ const PlanetInfo: React.FC<PlanetInfoProps> = ({ planet, system, galaxy }) => {
           </div>
           <div className="bg-white/5 rounded p-2">
             <span className="text-gray-400">Coordinates:</span>
-            <div className="text-white font-medium">{galaxy.coordinates.join(', ')}</div>
+            <div className="text-white font-medium">{galaxy.coordinates.join(", ")}</div>
           </div>
         </div>
       </div>

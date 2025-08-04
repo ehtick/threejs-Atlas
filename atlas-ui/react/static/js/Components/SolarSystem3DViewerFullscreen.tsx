@@ -30,14 +30,7 @@ interface SolarSystem3DViewerFullscreenProps {
   onTimeOffsetChange: (offset: number) => void;
 }
 
-const SolarSystem3DViewerFullscreen: React.FC<SolarSystem3DViewerFullscreenProps> = ({ 
-  planets, 
-  stars, 
-  systemName, 
-  cosmicOriginTime, 
-  currentTime, 
-  onTimeOffsetChange
-}) => {
+const SolarSystem3DViewerFullscreen: React.FC<SolarSystem3DViewerFullscreenProps> = ({ planets, stars, systemName, cosmicOriginTime, currentTime, onTimeOffsetChange }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -47,47 +40,39 @@ const SolarSystem3DViewerFullscreen: React.FC<SolarSystem3DViewerFullscreenProps
   const planetLabelsRef = useRef<THREE.Sprite[]>([]);
   const currentTimeRef = useRef<number>(0);
 
-
-  // Function to create text sprite for planet names
-  const createTextSprite = (text: string, color: string = '#ffffff') => {
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
+  const createTextSprite = (text: string, color: string = "#ffffff") => {
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
     if (!context) return null;
 
-    // Set canvas size (bigger for fullscreen)
     canvas.width = 768;
     canvas.height = 192;
 
-    // Add background for better visibility
-    context.fillStyle = 'rgba(0, 0, 0, 0.8)';
+    context.fillStyle = "rgba(0, 0, 0, 0.8)";
     context.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Draw border
-    context.strokeStyle = '#ffffff';
+    context.strokeStyle = "#ffffff";
     context.lineWidth = 3;
     context.strokeRect(3, 3, canvas.width - 6, canvas.height - 6);
 
-    // Draw text (bigger for fullscreen)
     context.fillStyle = color;
-    context.font = 'bold 48px Arial';
-    context.textAlign = 'center';
-    context.textBaseline = 'middle';
+    context.font = "bold 48px Arial";
+    context.textAlign = "center";
+    context.textBaseline = "middle";
     context.fillText(text, 384, 96);
 
-    // Create texture and sprite
     const texture = new THREE.CanvasTexture(canvas);
-    const spriteMaterial = new THREE.SpriteMaterial({ 
-      map: texture, 
+    const spriteMaterial = new THREE.SpriteMaterial({
+      map: texture,
       transparent: true,
-      alphaTest: 0.1
+      alphaTest: 0.1,
     });
     const sprite = new THREE.Sprite(spriteMaterial);
-    sprite.scale.set(30, 7.5, 1); // Much bigger scale for fullscreen
-    
+    sprite.scale.set(30, 7.5, 1);
+
     return sprite;
   };
 
-  // Update time reference for animation loop
   currentTimeRef.current = currentTime;
 
   useEffect(() => {
@@ -97,29 +82,20 @@ const SolarSystem3DViewerFullscreen: React.FC<SolarSystem3DViewerFullscreenProps
     const containerWidth = container.clientWidth;
     const containerHeight = container.clientHeight;
 
-    // Scene setup
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x000011);
     sceneRef.current = scene;
 
-    // Camera setup - wider FOV for fullscreen
-    const camera = new THREE.PerspectiveCamera(
-      60, // Wider FOV for fullscreen
-      containerWidth / containerHeight,
-      0.1,
-      10000
-    );
-    camera.position.set(0, 120, 180); // Further back for better view
+    const camera = new THREE.PerspectiveCamera(60, containerWidth / containerHeight, 0.1, 10000);
+    camera.position.set(0, 120, 180);
     camera.lookAt(0, 0, 0);
 
-    // Renderer setup - fullscreen size
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(containerWidth, containerHeight);
     renderer.setClearColor(0x000011, 1);
     rendererRef.current = renderer;
     container.appendChild(renderer.domElement);
 
-    // Planet type colors (exact copy from Python code)
     const planetColors: { [key: string]: string } = {
       "Gas Giant": "#FFA500",
       Anomaly: "#FFFFFF",
@@ -150,7 +126,6 @@ const SolarSystem3DViewerFullscreen: React.FC<SolarSystem3DViewerFullscreenProps
       Exotic: "#FF00FF",
     };
 
-    // Star colors (exact copy from Python code)
     const starColors: { [key: string]: string } = {
       red: "#FF4444",
       orange: "#FF8844",
@@ -160,11 +135,10 @@ const SolarSystem3DViewerFullscreen: React.FC<SolarSystem3DViewerFullscreenProps
       purple: "#8844FF",
     };
 
-    // Add stars at center - bigger for fullscreen
     const starGroup = new THREE.Group();
     stars.forEach((star, index) => {
-      const starRadius = parseFloat(star.Size) * 4; // Bigger for fullscreen
-      const starGeometry = new THREE.SphereGeometry(starRadius, 32, 32); // Higher quality
+      const starRadius = parseFloat(star.Size) * 4;
+      const starGeometry = new THREE.SphereGeometry(starRadius, 32, 32);
       const starColor = starColors[star.Color] || "#FFFF44";
       const starMaterial = new THREE.MeshBasicMaterial({
         color: starColor,
@@ -174,19 +148,16 @@ const SolarSystem3DViewerFullscreen: React.FC<SolarSystem3DViewerFullscreenProps
 
       const starMesh = new THREE.Mesh(starGeometry, starMaterial);
 
-      // Position multiple stars in binary/tertiary systems
       if (stars.length === 1) {
         starMesh.position.set(0, 0, 0);
       } else if (stars.length === 2) {
         starMesh.position.set(index === 0 ? -starRadius * 2 : starRadius * 2, 0, 0);
       } else {
-        // Tertiary system
         if (index === 0) starMesh.position.set(-starRadius * 2, 0, 0);
         else if (index === 1) starMesh.position.set(starRadius * 2, 0, 0);
         else starMesh.position.set(0, starRadius * 2, 0);
       }
 
-      // Add glow effect
       const glowGeometry = new THREE.SphereGeometry(starRadius * 1.5, 32, 32);
       const glowMaterial = new THREE.MeshBasicMaterial({
         color: starColor,
@@ -200,23 +171,18 @@ const SolarSystem3DViewerFullscreen: React.FC<SolarSystem3DViewerFullscreenProps
     });
     scene.add(starGroup);
 
-    // Find max orbital radius for scaling - bigger for fullscreen
     const maxOrbitalRadius = Math.max(...planets.map((p) => p.orbital_radius));
-    const scaleFactor = 150; // Bigger scale for fullscreen
+    const scaleFactor = 150;
 
-    // Create orbital paths and planets
     planets.forEach((planet, index) => {
-      // Calculate orbital radius exactly like Python
       const relativeOrbitRadius = planet.orbital_radius / maxOrbitalRadius;
-      const orbitRadius = 30 + relativeOrbitRadius * scaleFactor; // Bigger orbits
+      const orbitRadius = 30 + relativeOrbitRadius * scaleFactor;
 
       const eccentricity = planet.eccentricity_factor;
 
-      // Calculate ellipse parameters exactly like Python
       const semiMajorAxis = orbitRadius;
       const semiMinorAxis = semiMajorAxis * Math.sqrt(1 - eccentricity * eccentricity);
 
-      // Create dashed orbital path exactly like Python code
       const numSegments = 360;
       const dashLength = 2;
       const gapLength = 4;
@@ -236,7 +202,7 @@ const SolarSystem3DViewerFullscreen: React.FC<SolarSystem3DViewerFullscreenProps
             color: 0x708090,
             transparent: true,
             opacity: 0.8,
-            linewidth: 2, // Thicker lines
+            linewidth: 2,
           });
           const dashLine = new THREE.Line(dashGeometry, dashMaterial);
           scene.add(dashLine);
@@ -244,11 +210,10 @@ const SolarSystem3DViewerFullscreen: React.FC<SolarSystem3DViewerFullscreenProps
         }
       }
 
-      // Create planet - bigger for fullscreen with size limits
       const basePlanetRadius = planet.diameter / 8000;
-      const planetRadius = Math.max(Math.min(basePlanetRadius, 8.0), 2.5); // Min 2.5, Max 8.0 for fullscreen
-      const planetGeometry = new THREE.SphereGeometry(planetRadius, 32, 32); // Higher quality
-      const planetColor = planetColors[planet.planet_type] || "#FFFFFF"; // Python fallback: "white"
+      const planetRadius = Math.max(Math.min(basePlanetRadius, 8.0), 2.5);
+      const planetGeometry = new THREE.SphereGeometry(planetRadius, 32, 32);
+      const planetColor = planetColors[planet.planet_type] || "#FFFFFF";
       const planetMaterial = new THREE.MeshBasicMaterial({
         color: planetColor,
         transparent: true,
@@ -257,7 +222,6 @@ const SolarSystem3DViewerFullscreen: React.FC<SolarSystem3DViewerFullscreenProps
 
       const planetMesh = new THREE.Mesh(planetGeometry, planetMaterial);
 
-      // Add glow effect to planet
       const planetGlow = new THREE.Mesh(
         new THREE.SphereGeometry(planetRadius * 1.5, 32, 32),
         new THREE.MeshBasicMaterial({
@@ -271,38 +235,31 @@ const SolarSystem3DViewerFullscreen: React.FC<SolarSystem3DViewerFullscreenProps
       scene.add(planetMesh);
       planetsRef.current.push(planetMesh);
 
-      // Store planet data on mesh for animation
       (planetMesh as any).planetData = planet;
       (planetMesh as any).orbitRadius = orbitRadius;
       (planetMesh as any).semiMajorAxis = semiMajorAxis;
       (planetMesh as any).semiMinorAxis = semiMinorAxis;
 
-      // Create planet name label (bigger for fullscreen)
       const planetName = planet.name.replace(/_/g, " ");
-      const nameSprite = createTextSprite(planetName, '#ffffff');
+      const nameSprite = createTextSprite(planetName, "#ffffff");
       if (nameSprite) {
-        // Position label above planet (higher offset for fullscreen)
         nameSprite.position.copy(planetMesh.position);
         nameSprite.position.y += planetRadius + 10;
-        
-        // Store planet data on sprite for reference
+
         (nameSprite as any).planetData = planet;
-        
+
         scene.add(nameSprite);
         planetLabelsRef.current.push(nameSprite);
       }
     });
 
-    // Ambient lighting
     const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
     scene.add(ambientLight);
 
-    // Point light from star
     const pointLight = new THREE.PointLight(0xffffff, 1, 2000);
     pointLight.position.set(0, 0, 0);
     scene.add(pointLight);
 
-    // Mouse and touch controls
     let isMouseDown = false;
     let mouseX = 0;
     let mouseY = 0;
@@ -316,14 +273,12 @@ const SolarSystem3DViewerFullscreen: React.FC<SolarSystem3DViewerFullscreenProps
       mouseY = event.clientY;
     };
 
-
     const handleMouseMove = (event: MouseEvent) => {
       if (!isMouseDown) return;
 
       const deltaX = event.clientX - mouseX;
       const deltaY = event.clientY - mouseY;
 
-      // Rotate around the solar system
       const spherical = new THREE.Spherical();
       spherical.setFromVector3(camera.position);
 
@@ -346,18 +301,15 @@ const SolarSystem3DViewerFullscreen: React.FC<SolarSystem3DViewerFullscreenProps
       }, 3000);
     };
 
-    // Combined wheel handler
     const handleKeyWheel = (event: WheelEvent) => {
       if (event.ctrlKey) {
-        // Time control with Ctrl+scroll
         event.preventDefault();
         if (event.deltaY > 0) {
-          onTimeOffsetChange(604800); // +1 week (7 days)
+          onTimeOffsetChange(604800);
         } else {
-          onTimeOffsetChange(-604800); // -1 week (7 days)
+          onTimeOffsetChange(-604800);
         }
       } else {
-        // Zoom with normal scroll
         event.preventDefault();
         const zoomSpeed = 0.1;
         const currentDistance = camera.position.distanceTo(new THREE.Vector3(0, 0, 0));
@@ -370,25 +322,20 @@ const SolarSystem3DViewerFullscreen: React.FC<SolarSystem3DViewerFullscreenProps
       }
     };
 
-    // ESC key to close fullscreen
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        // This will be handled by parent component
         document.dispatchEvent(new CustomEvent("solar-system-close-fullscreen"));
       }
     };
 
-    // Touch controls for mobile
     const handleTouchStart = (event: TouchEvent) => {
       event.preventDefault();
       if (event.touches.length === 1) {
-        // Single touch - rotation
         isMouseDown = true;
         autoRotate = false;
         mouseX = event.touches[0].clientX;
         mouseY = event.touches[0].clientY;
       } else if (event.touches.length === 2) {
-        // Two finger touch - zoom
         const dx = event.touches[0].clientX - event.touches[1].clientX;
         const dy = event.touches[0].clientY - event.touches[1].clientY;
         lastTouchDistance = Math.sqrt(dx * dx + dy * dy);
@@ -398,7 +345,6 @@ const SolarSystem3DViewerFullscreen: React.FC<SolarSystem3DViewerFullscreenProps
     const handleTouchMove = (event: TouchEvent) => {
       event.preventDefault();
       if (event.touches.length === 1 && isMouseDown) {
-        // Single touch move - rotation
         const deltaX = event.touches[0].clientX - mouseX;
         const deltaY = event.touches[0].clientY - mouseY;
 
@@ -415,7 +361,6 @@ const SolarSystem3DViewerFullscreen: React.FC<SolarSystem3DViewerFullscreenProps
         mouseX = event.touches[0].clientX;
         mouseY = event.touches[0].clientY;
       } else if (event.touches.length === 2) {
-        // Two finger move - zoom
         const dx = event.touches[0].clientX - event.touches[1].clientX;
         const dy = event.touches[0].clientY - event.touches[1].clientY;
         const distance = Math.sqrt(dx * dx + dy * dy);
@@ -445,7 +390,6 @@ const SolarSystem3DViewerFullscreen: React.FC<SolarSystem3DViewerFullscreenProps
       }, 3000);
     };
 
-    // Add event listeners
     const canvas = renderer.domElement;
     canvas.style.cursor = "grab";
 
@@ -468,32 +412,26 @@ const SolarSystem3DViewerFullscreen: React.FC<SolarSystem3DViewerFullscreenProps
     canvas.addEventListener("touchend", handleTouchEnd, { passive: false });
     document.addEventListener("keydown", handleKeyDown);
 
-    // Animation loop
     const animate = () => {
       animationIdRef.current = requestAnimationFrame(animate);
 
-      // Update planet positions based on current time
       planetsRef.current.forEach((planetMesh, index) => {
         const planet = (planetMesh as any).planetData;
         const semiMajorAxis = (planetMesh as any).semiMajorAxis;
         const semiMinorAxis = (planetMesh as any).semiMinorAxis;
 
-        // Calculate orbital angle exactly like Python using current time reference
         const orbitalPeriod = planet.orbital_period_seconds;
         const angleVelocityOrbit = (2 * Math.PI) / orbitalPeriod;
         const angleOrbit = (planet.initial_orbital_angle + currentTimeRef.current * angleVelocityOrbit) % (2 * Math.PI);
 
-        // Position planet exactly like Python
         planetMesh.position.x = semiMajorAxis * Math.cos(angleOrbit);
         planetMesh.position.z = semiMinorAxis * Math.sin(angleOrbit);
         planetMesh.position.y = 0;
 
-        // Planet rotation using current time reference
         const rotationPeriodSeconds = planet.rotation_period_seconds;
         const angleVelocityRotation = (2 * Math.PI) / rotationPeriodSeconds;
         planetMesh.rotation.y = (currentTimeRef.current * angleVelocityRotation) % (2 * Math.PI);
 
-        // Update planet label position
         if (planetLabelsRef.current[index]) {
           const planetRadius = (planetMesh.geometry as THREE.SphereGeometry).parameters?.radius || 2;
           planetLabelsRef.current[index].position.copy(planetMesh.position);
@@ -506,7 +444,6 @@ const SolarSystem3DViewerFullscreen: React.FC<SolarSystem3DViewerFullscreenProps
 
     animate();
 
-    // Handle resize
     const handleResize = () => {
       const newWidth = container.clientWidth;
       const newHeight = container.clientHeight;
@@ -518,7 +455,6 @@ const SolarSystem3DViewerFullscreen: React.FC<SolarSystem3DViewerFullscreenProps
 
     window.addEventListener("resize", handleResize);
 
-    // Cleanup
     return () => {
       window.removeEventListener("resize", handleResize);
       document.removeEventListener("keydown", handleKeyDown);
@@ -542,12 +478,11 @@ const SolarSystem3DViewerFullscreen: React.FC<SolarSystem3DViewerFullscreenProps
 
       renderer.dispose();
 
-      // Clean up refs
       planetsRef.current = [];
       orbitsRef.current = [];
       planetLabelsRef.current = [];
     };
-  }, [planets, stars, cosmicOriginTime]); // Remove currentTime from dependencies
+  }, [planets, stars, cosmicOriginTime]);
 
   return <div ref={mountRef} className="w-full h-full" />;
 };

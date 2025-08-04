@@ -29,31 +29,26 @@ const StargateAnimation = ({ stargateUrl }) => {
   const runAnimation = async () => {
     setIsAnimating(true);
 
-    // Phase 1: Binary
     for (let i = 0; i < 20; i++) {
       setDisplayText(getRandomBinary(32));
       await sleep(40);
     }
 
-    // Phase 2: Decimal
     for (let i = 0; i < 30; i++) {
       setDisplayText(getRandomDecimal(32));
       await sleep(25);
     }
 
-    // Phase 3: Hexadecimal
     for (let i = 0; i < 40; i++) {
       setDisplayText(getRandomHexadecimal(32));
       await sleep(20);
     }
 
-    // Phase 4: Alphanumeric chaos
     for (let i = 0; i < 100; i++) {
       setDisplayText(getRandomAlphanumericSymbols(32));
       await sleep(10);
     }
 
-    // Phase 5: Type final message
     const finalMessage = "Stargate system aligned";
     setDisplayText("");
 
@@ -62,7 +57,6 @@ const StargateAnimation = ({ stargateUrl }) => {
       await sleep(30);
     }
 
-    // Animate button
     setIsScaled(true);
     setTimeout(() => setIsScaled(false), 300);
 

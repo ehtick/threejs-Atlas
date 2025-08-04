@@ -1,21 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { getStorageStats } from '../Utils/VisitHistory.ts';
+import React, { useState, useEffect } from "react";
+import { getStorageStats } from "../Utils/VisitHistory.ts";
 
 const StorageDebug: React.FC = () => {
   const [stats, setStats] = useState<any>(null);
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    // Only show in development or when ?debug=storage is in URL
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('debug') === 'storage' || process.env.NODE_ENV === 'development') {
+    if (urlParams.get("debug") === "storage" || process.env.NODE_ENV === "development") {
       setShow(true);
       const updateStats = () => {
         setStats(getStorageStats());
       };
       updateStats();
-      
-      // Update every 5 seconds
+
       const interval = setInterval(updateStats, 5000);
       return () => clearInterval(interval);
     }
@@ -24,18 +22,18 @@ const StorageDebug: React.FC = () => {
   if (!show || !stats) return null;
 
   const formatBytes = (bytes: number): string => {
-    if (bytes === 0) return '0 B';
+    if (bytes === 0) return "0 B";
     const k = 1024;
-    const sizes = ['B', 'KB', 'MB'];
+    const sizes = ["B", "KB", "MB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
   const getStorageColor = (size: number): string => {
     const mbSize = size / (1024 * 1024);
-    if (mbSize > 4) return 'text-red-400';
-    if (mbSize > 2) return 'text-yellow-400';
-    return 'text-green-400';
+    if (mbSize > 4) return "text-red-400";
+    if (mbSize > 2) return "text-yellow-400";
+    return "text-green-400";
   };
 
   return (
@@ -44,13 +42,13 @@ const StorageDebug: React.FC = () => {
       <div className="grid grid-cols-2 gap-2 text-gray-300">
         <div>Size:</div>
         <div className={getStorageColor(stats.size)}>{formatBytes(stats.size)}</div>
-        
+
         <div>Galaxies:</div>
         <div className="text-blue-400">{stats.galaxies.toLocaleString()}</div>
-        
+
         <div>Systems:</div>
         <div className="text-purple-400">{stats.systems.toLocaleString()}</div>
-        
+
         <div>Planets:</div>
         <div className="text-cyan-400">{stats.planets.toLocaleString()}</div>
       </div>

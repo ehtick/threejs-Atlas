@@ -1,6 +1,6 @@
-import React from 'react';
-import Universe3DViewer from './Universe3DViewer.tsx';
-import SaveLocationButton from './SaveLocationButton.tsx';
+import React from "react";
+import Universe3DViewer from "./Universe3DViewer.tsx";
+import SaveLocationButton from "./SaveLocationButton.tsx";
 
 interface Galaxy {
   name: string;
@@ -17,28 +17,18 @@ interface GalaxyInfoProps {
 }
 
 const GalaxyInfo: React.FC<GalaxyInfoProps> = ({ galaxy }) => {
-  
   const formatName = (name: string) => {
-    return name.replace(/_/g, ' ');
+    return name.replace(/_/g, " ");
   };
   return (
     <div className="h-full flex flex-col relative">
-      {/* VISITED Badge */}
-      <div className="absolute top-0 right-0 bg-green-500/20 border border-green-500/50 text-green-400 text-[10px] px-1.5 py-0.5 rounded z-10">
-        VISITED
-      </div>
-      
+      <div className="absolute top-0 right-0 bg-green-500/20 border border-green-500/50 text-green-400 text-[10px] px-1.5 py-0.5 rounded z-10">VISITED</div>
+
       <div className="flex items-center justify-between mb-3 pr-16">
         <h3 className="text-lg sm:text-xl font-bold text-white">Galaxy Information</h3>
-        <SaveLocationButton
-          type="galaxy"
-          name={galaxy.name}
-          coordinates={galaxy.coordinates.join(',')}
-          className="text-xs"
-        />
+        <SaveLocationButton type="galaxy" name={galaxy.name} coordinates={galaxy.coordinates.join(",")} className="text-xs" />
       </div>
-      
-      {/* Galaxy Type & Systems - Compact row */}
+
       <div className="grid grid-cols-2 gap-2 mb-3">
         <div className="bg-white/10 rounded-lg p-2 border border-blue-500/30">
           <div className="text-xs text-gray-200">Type</div>
@@ -50,12 +40,10 @@ const GalaxyInfo: React.FC<GalaxyInfoProps> = ({ galaxy }) => {
         </div>
       </div>
 
-      {/* Universe Location Viewer - Full width */}
       <div className="bg-white/10 rounded-lg p-3 border border-gray-500/30 mb-3 col-span-2">
         <Universe3DViewer coordinates={galaxy.coordinates} galaxyName={galaxy.name} />
       </div>
 
-      {/* Cosmic Objects - Compact grid */}
       <div className="bg-white/10 rounded-lg p-2 border border-gray-500/30">
         <div className="text-xs text-gray-200 mb-2">Cosmic Objects</div>
         <div className="grid grid-cols-3 gap-1">
@@ -74,7 +62,6 @@ const GalaxyInfo: React.FC<GalaxyInfoProps> = ({ galaxy }) => {
         </div>
       </div>
 
-      {/* Technical Data - Always visible */}
       <div className="mt-4 pt-3 border-t border-white/10">
         <div className="text-xs text-gray-400 mb-2">Technical Data</div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
@@ -88,7 +75,7 @@ const GalaxyInfo: React.FC<GalaxyInfoProps> = ({ galaxy }) => {
           </div>
           <div className="bg-white/5 rounded p-2">
             <span className="text-gray-400">Coordinates:</span>
-            <div className="text-white font-medium">{galaxy.coordinates.join(', ')}</div>
+            <div className="text-white font-medium">{galaxy.coordinates.join(", ")}</div>
           </div>
         </div>
       </div>
