@@ -67,9 +67,6 @@ const SaveLocationButton: React.FC<SaveLocationButtonProps> = ({
       LocationBookmarks.saveLocation({
         name,
         type,
-        coordinates,
-        systemIndex,
-        planetName: planetName?.toLowerCase(),
         stargateUrl
       });
 

@@ -1,5 +1,4 @@
 import React from "react";
-import StorageDebug from "./StorageDebug.tsx";
 
 const Header: React.FC = () => {
   return (
@@ -27,7 +26,6 @@ const Header: React.FC = () => {
           </div>
         </div>
       </div>
-      <StorageDebug />
     </header>
   );
 };

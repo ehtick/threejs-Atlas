@@ -4,9 +4,6 @@ export interface SavedLocation {
   id: string;
   name: string;
   type: 'galaxy' | 'system' | 'planet';
-  coordinates: string;
-  systemIndex?: number;
-  planetName?: string;
   timestamp: number;
   stargateUrl: string;
 }
