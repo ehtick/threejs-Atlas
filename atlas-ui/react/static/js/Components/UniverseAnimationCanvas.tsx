@@ -155,7 +155,7 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
       galaxyGeometry.setAttribute("size", new THREE.BufferAttribute(galaxySizes, 1));
 
       const galaxyMaterial = new THREE.PointsMaterial({
-        size: 0.2,
+        size: 0.1,
         vertexColors: true,
         blending: THREE.AdditiveBlending,
         transparent: true,
@@ -170,12 +170,15 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
       let startTime = Date.now();
       const animate = () => {
         const elapsed = (Date.now() - startTime) / 1000;
+        const slowedElapsed = elapsed * 0.5;
+
         const progress = Math.min(elapsed / 7, 1);
 
-        const timeAcceleration = Math.pow(elapsed * 0.8, 3);
+        const timeAcceleration = Math.pow(slowedElapsed * 0.8, 3);
         const expansionAcceleration = Math.pow(progress, 2) * 20;
         const totalAcceleration = 1 + timeAcceleration + expansionAcceleration;
-        const rotationSpeed = elapsed * 0.05 * totalAcceleration;
+
+        const rotationSpeed = slowedElapsed * 0.05 * totalAcceleration;
 
         universeCube.rotation.x = Math.sin(rotationSpeed * 0.7) * 0.2;
         universeCube.rotation.y = rotationSpeed * 0.5;
@@ -183,9 +186,9 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
 
         galaxies.rotation.copy(universeCube.rotation);
 
-        const pulse = 3 + Math.sin(elapsed * 8) * 2;
+        const pulse = 3 + Math.sin(slowedElapsed * 8) * 2;
         bigBangMaterial.size = pulse;
-        bigBangMaterial.opacity = 0.8 + Math.sin(elapsed * 10) * 0.2;
+        bigBangMaterial.opacity = 0.8 + Math.sin(slowedElapsed * 10) * 0.2;
 
         const maxCubeDistance = Math.sqrt(5 * 5 + 5 * 5 + 5 * 5);
         const expansionRadius = progress * maxCubeDistance;
@@ -193,7 +196,6 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
 
         for (let i = 0; i < maxGalaxies; i++) {
           const galaxyDistance = galaxyDistances[i];
-
           if (galaxyDistance <= expansionRadius) {
             visibleGalaxies++;
           }
@@ -202,13 +204,13 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
         galaxyGeometry.setDrawRange(0, visibleGalaxies);
         galaxyMaterial.opacity = 1.0;
 
-        const baseRadius = 15 + Math.sin(elapsed * 0.5) * 3;
-        const zoomFactor = 1 - progress * 0.6;
+        const baseRadius = 15 + Math.sin(slowedElapsed * 0.5) * 3;
+        const zoomFactor = 1 - progress * 0.8;
         const radius = baseRadius * zoomFactor;
 
-        camera.position.x = Math.cos(elapsed * 0.2) * radius;
-        camera.position.y = Math.sin(elapsed * 0.15) * radius * 0.5;
-        camera.position.z = Math.sin(elapsed * 0.2) * radius;
+        camera.position.x = Math.cos(slowedElapsed * 0.2) * radius;
+        camera.position.y = Math.sin(slowedElapsed * 0.15) * radius * 0.5;
+        camera.position.z = Math.sin(slowedElapsed * 0.2) * radius;
         camera.lookAt(0, 0, 0);
 
         renderer.render(scene, camera);

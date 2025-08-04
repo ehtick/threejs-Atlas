@@ -80,7 +80,7 @@ const VersionFooter: React.FC<VersionFooterProps> = ({ version }) => {
               <a href="https://github.com/BansheeTech/vite_fusion" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors duration-200 font-medium">
                 vite-fusion
               </a>
-              , a core pip package created to connect Vite with Python/Flask initially developed for{" "}
+              , a core pip package created to connect Vite with Python/Flask, initially developed for{" "}
               <a href="https://github.com/BansheeTech/HomeDockOS" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors duration-200 font-medium">
                 HomeDock OS
               </a>
