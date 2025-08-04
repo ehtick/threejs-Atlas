@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import SaveLocationButton from "./SaveLocationButton.tsx";
+import Planet3DViewer from "./Planet3DViewer.tsx";
 
 interface Planet {
   name: string;
@@ -91,6 +92,10 @@ const PlanetInfo: React.FC<PlanetInfoProps> = ({ planet, system, galaxy }) => {
           <div className="text-xs text-gray-200">Life Forms</div>
           <div className="text-sm font-bold text-green-300 capitalize">{planet.life_forms}</div>
         </div>
+      </div>
+
+      <div className="bg-white/10 rounded-lg p-3 border border-gray-500/30 mb-3 col-span-2">
+        <Planet3DViewer planetType={planet.planet_type} planetName={planet.name} />
       </div>
 
       <div className="bg-white/10 rounded-lg p-2 border border-orange-500/30 mb-3">
