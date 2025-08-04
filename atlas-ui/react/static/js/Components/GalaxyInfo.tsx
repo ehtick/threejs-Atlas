@@ -1,5 +1,6 @@
 import React from 'react';
 import Universe3DViewer from './Universe3DViewer.tsx';
+import SaveLocationButton from './SaveLocationButton.tsx';
 
 interface Galaxy {
   name: string;
@@ -27,7 +28,15 @@ const GalaxyInfo: React.FC<GalaxyInfoProps> = ({ galaxy }) => {
         VISITED
       </div>
       
-      <h3 className="text-lg sm:text-xl font-bold text-white mb-3 pr-16">Galaxy Information</h3>
+      <div className="flex items-center justify-between mb-3 pr-16">
+        <h3 className="text-lg sm:text-xl font-bold text-white">Galaxy Information</h3>
+        <SaveLocationButton
+          type="galaxy"
+          name={galaxy.name}
+          coordinates={galaxy.coordinates.join(',')}
+          className="text-xs"
+        />
+      </div>
       
       {/* Galaxy Type & Systems - Compact row */}
       <div className="grid grid-cols-2 gap-2 mb-3">

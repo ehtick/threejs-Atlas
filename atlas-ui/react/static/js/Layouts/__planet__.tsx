@@ -4,6 +4,7 @@ import PlanetInfo from '../Components/PlanetInfo.tsx';
 import PlanetVisualization from '../Components/PlanetVisualization.tsx';
 import PlanetNavigation from '../Components/PlanetNavigation.tsx';
 import VersionFooter from '../Components/VersionFooter.tsx';
+import SpaceshipPanel from '../Components/SpaceshipPanel.tsx';
 import { markPlanetAsVisited, markSystemAsVisited } from '../Utils/VisitHistory.ts';
 
 interface Planet {
@@ -146,6 +147,17 @@ const PlanetLayout: React.FC<PlanetLayoutProps> = ({
         
         <VersionFooter version={version} />
       </div>
+      
+      {/* Spaceship Panel */}
+      <SpaceshipPanel
+        currentLocation={{
+          type: 'planet',
+          name: planet.name,
+          coordinates: galaxy.coordinates.join(','),
+          systemIndex: system.index,
+          planetName: planet.name
+        }}
+      />
     </div>
   );
 };

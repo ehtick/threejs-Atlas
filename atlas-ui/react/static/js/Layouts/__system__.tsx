@@ -5,6 +5,7 @@ import SystemVisualization from '../Components/SystemVisualization.tsx';
 import PlanetsList from '../Components/PlanetsList.tsx';
 import SystemNavigation from '../Components/SystemNavigation.tsx';
 import VersionFooter from '../Components/VersionFooter.tsx';
+import SpaceshipPanel from '../Components/SpaceshipPanel.tsx';
 import { markSystemAsVisited } from '../Utils/VisitHistory.ts';
 
 interface System {
@@ -147,6 +148,16 @@ const SystemLayout: React.FC<SystemLayoutProps> = ({
         
         <VersionFooter version={version} />
       </div>
+      
+      {/* Spaceship Panel */}
+      <SpaceshipPanel
+        currentLocation={{
+          type: 'system',
+          name: system.name,
+          coordinates: galaxy.coordinates.join(','),
+          systemIndex: system.index
+        }}
+      />
     </div>
   );
 };

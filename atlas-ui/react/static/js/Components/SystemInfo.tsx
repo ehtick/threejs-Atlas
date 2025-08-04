@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import SolarSystem3DViewer from './SolarSystem3DViewer.tsx';
+import SaveLocationButton from './SaveLocationButton.tsx';
 
 interface Star {
   Type: string;
@@ -54,7 +55,16 @@ const SystemInfo: React.FC<SystemInfoProps> = ({ system, galaxy, systemIndex, co
         VISITED
       </div>
       
-      <h3 className="text-lg sm:text-xl font-bold text-white mb-3 pr-16">System Information</h3>
+      <div className="flex items-center justify-between mb-3 pr-16">
+        <h3 className="text-lg sm:text-xl font-bold text-white">System Information</h3>
+        <SaveLocationButton
+          type="system"
+          name={system.name}
+          coordinates={galaxy.coordinates.join(',')}
+          systemIndex={systemIndex}
+          className="text-xs"
+        />
+      </div>
       
       {/* Main characteristics - Compact row */}
       <div className="grid grid-cols-3 gap-2 mb-3">

@@ -6,6 +6,7 @@ import SystemsList from '../Components/SystemsList.tsx';
 import GalaxyNavigation from '../Components/GalaxyNavigation.tsx';
 import Pagination from '../Components/Pagination.tsx';
 import VersionFooter from '../Components/VersionFooter.tsx';
+import SpaceshipPanel from '../Components/SpaceshipPanel.tsx';
 
 interface Galaxy {
   name: string;
@@ -134,6 +135,15 @@ const GalaxyLayout: React.FC<GalaxyLayoutProps> = ({
         
         <VersionFooter version={version} />
       </div>
+      
+      {/* Spaceship Panel */}
+      <SpaceshipPanel
+        currentLocation={{
+          type: 'galaxy',
+          name: galaxy.name,
+          coordinates: galaxy.coordinates.join(',')
+        }}
+      />
     </div>
   );
 };

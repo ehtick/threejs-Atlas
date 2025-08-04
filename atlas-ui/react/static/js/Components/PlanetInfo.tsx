@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import SaveLocationButton from './SaveLocationButton.tsx';
 
 interface Planet {
   name: string;
@@ -76,7 +77,17 @@ const PlanetInfo: React.FC<PlanetInfoProps> = ({ planet, system, galaxy }) => {
         VISITED
       </div>
       
-      <h3 className="text-lg sm:text-xl font-bold text-white mb-3 pr-16">Planet Information</h3>
+      <div className="flex items-center justify-between mb-3 pr-16">
+        <h3 className="text-lg sm:text-xl font-bold text-white">Planet Information</h3>
+        <SaveLocationButton
+          type="planet"
+          name={planet.name}
+          coordinates={galaxy.coordinates.join(',')}
+          systemIndex={system.index}
+          planetName={planet.name}
+          className="text-xs"
+        />
+      </div>
       
       {/* Main characteristics - Compact row */}
       <div className="grid grid-cols-3 gap-2 mb-3">
