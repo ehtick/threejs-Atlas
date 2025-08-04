@@ -3,6 +3,7 @@ import Header from '../Components/Header.tsx';
 import GalaxyInfo from '../Components/GalaxyInfo.tsx';
 import GalaxyVisualization from '../Components/GalaxyVisualization.tsx';
 import SystemsList from '../Components/SystemsList.tsx';
+import GalaxyNavigation from '../Components/GalaxyNavigation.tsx';
 import Pagination from '../Components/Pagination.tsx';
 import VersionFooter from '../Components/VersionFooter.tsx';
 
@@ -78,6 +79,11 @@ const GalaxyLayout: React.FC<GalaxyLayoutProps> = ({
               at Coordinates {galaxy.coordinates.join(', ')}
             </p>
           </div>
+
+          {/* Galaxy Navigation */}
+          <GalaxyNavigation 
+            currentGalaxy={galaxy}
+          />
 
           {/* Galaxy Information & Visualization */}
           <div className="bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 mb-8 shadow-2xl p-4 sm:p-6">

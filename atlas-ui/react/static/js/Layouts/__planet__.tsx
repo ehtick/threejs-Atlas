@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Header from '../Components/Header.tsx';
 import PlanetInfo from '../Components/PlanetInfo.tsx';
 import PlanetVisualization from '../Components/PlanetVisualization.tsx';
+import PlanetNavigation from '../Components/PlanetNavigation.tsx';
 import VersionFooter from '../Components/VersionFooter.tsx';
 
 interface Planet {
@@ -25,6 +26,9 @@ interface Planet {
 interface System {
   name: string;
   index: number;
+  planets?: Array<{
+    name: string;
+  }>;
 }
 
 interface Galaxy {
@@ -95,6 +99,14 @@ const PlanetLayout: React.FC<PlanetLayoutProps> = ({
               Coordinates {galaxy.coordinates.join(', ')}
             </p>
           </div>
+
+          {/* Planet Navigation */}
+          <PlanetNavigation 
+            currentPlanet={planet.name} 
+            system={system} 
+            galaxy={galaxy}
+            systemPlanets={system.planets || []}
+          />
 
           {/* Planet Information & Visualization */}
           <div className="bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 mb-8 shadow-2xl p-4 sm:p-6">

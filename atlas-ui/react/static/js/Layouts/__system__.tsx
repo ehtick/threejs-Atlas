@@ -3,6 +3,7 @@ import Header from '../Components/Header.tsx';
 import SystemInfo from '../Components/SystemInfo.tsx';
 import SystemVisualization from '../Components/SystemVisualization.tsx';
 import PlanetsList from '../Components/PlanetsList.tsx';
+import SystemNavigation from '../Components/SystemNavigation.tsx';
 import VersionFooter from '../Components/VersionFooter.tsx';
 
 interface System {
@@ -94,6 +95,12 @@ const SystemLayout: React.FC<SystemLayoutProps> = ({
               at Galaxy '{formatGalaxyName(galaxy.name)}' - Coordinates {galaxy.coordinates.join(', ')}
             </p>
           </div>
+
+          {/* System Navigation */}
+          <SystemNavigation 
+            currentSystem={{ name: system.name, index: system_index }} 
+            galaxy={galaxy}
+          />
 
           {/* System Information & Visualization */}
           <div className="bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 mb-8 shadow-2xl p-4 sm:p-6">

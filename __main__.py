@@ -9,7 +9,7 @@ from io import BytesIO
 from hypercorn.asyncio import serve
 from hypercorn.config import Config
 
-from flask import Flask, render_template, request, redirect, url_for, send_file, session, g, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, send_file, session, g, send_from_directory, jsonify
 
 from vite_fusion import register_vite_assets
 
@@ -229,6 +229,24 @@ def view_system(system_index):
             "Stars": star_summary,
         }
 
+        # Check if JSON is requested
+        if request.headers.get('Accept') == 'application/json':
+            planets_list = []
+            for planet in current_system.planets.values():
+                planets_list.append({"name": planet.name})
+            
+            return jsonify({
+                "system": {
+                    "name": current_system.name,
+                    "index": current_system.index,
+                    "planets": planets_list
+                },
+                "galaxy": {
+                    "name": current_galaxy.name,
+                    "coordinates": current_galaxy.coordinates
+                }
+            })
+        
         return render_template(
             "system.html",
             system=current_system,

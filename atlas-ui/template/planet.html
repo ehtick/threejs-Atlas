@@ -36,9 +36,14 @@
     </script>
 
     <script type="application/json" id="system-data">
+      {% set planets_list = [] %}
+      {% for planet_obj in system.planets.values() %}
+        {% set _ = planets_list.append({"name": planet_obj.name}) %}
+      {% endfor %}
       {{ {
         "name": system.name,
-        "index": system.index
+        "index": system.index,
+        "planets": planets_list
       } | tojson }}
     </script>
 
