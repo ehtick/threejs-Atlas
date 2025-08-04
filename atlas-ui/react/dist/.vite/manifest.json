@@ -7,8 +7,8 @@
     "file": "atlas_DVrnBBsgS-kH5xseABxRO.js",
     "name": "VersionFooter"
   },
-  "_atlas_DdIyEKupHT2ojzuWLksqt.js": {
-    "file": "atlas_DdIyEKupHT2ojzuWLksqt.js",
+  "_atlas_DqRtME8mRGQ884g5YHdoX.js": {
+    "file": "atlas_DqRtME8mRGQ884g5YHdoX.js",
     "name": "SpaceshipPanel",
     "imports": [
       "_atlas_DVrnBBsgS-kH5xseABxRO.js"
@@ -22,7 +22,7 @@
     "name": "three.module"
   },
   "atlas-ui/react/static/css/global.css": {
-    "file": "atlas_d6kOccwn7h_w2o1UeBPUi.css",
+    "file": "atlas_2asHj1Y2X2BKd5eZjWi59.css",
     "src": "atlas-ui/react/static/css/global.css",
     "isEntry": true,
     "names": [
@@ -30,13 +30,13 @@
     ]
   },
   "atlas-ui/react/static/js/MountPoints/__galaxy__.ts": {
-    "file": "atlas_C_xO6MiIGABqQ0NFUId_E.js",
+    "file": "atlas_Cm92q_rxNK_ZZWIp_-eH9.js",
     "name": "__galaxy__",
     "src": "atlas-ui/react/static/js/MountPoints/__galaxy__.ts",
     "isEntry": true,
     "imports": [
       "_atlas_DVrnBBsgS-kH5xseABxRO.js",
-      "_atlas_DdIyEKupHT2ojzuWLksqt.js",
+      "_atlas_DqRtME8mRGQ884g5YHdoX.js",
       "_atlas_JzQmrLPlfVl9nkKnI5Ba8.js"
     ]
   },
@@ -50,23 +50,23 @@
     ]
   },
   "atlas-ui/react/static/js/MountPoints/__planet__.ts": {
-    "file": "atlas_FJP6dsOZA2fZi7r7_ovCo.js",
+    "file": "atlas_Mt1fXqjwAZFSs2nzp8etf.js",
     "name": "__planet__",
     "src": "atlas-ui/react/static/js/MountPoints/__planet__.ts",
     "isEntry": true,
     "imports": [
       "_atlas_DVrnBBsgS-kH5xseABxRO.js",
-      "_atlas_DdIyEKupHT2ojzuWLksqt.js"
+      "_atlas_DqRtME8mRGQ884g5YHdoX.js"
     ]
   },
   "atlas-ui/react/static/js/MountPoints/__system__.ts": {
-    "file": "atlas_BYBdMJr2KFuZ9K9bZd8qx.js",
+    "file": "atlas_Wcms2tCUctlBEjxbHfDfx.js",
     "name": "__system__",
     "src": "atlas-ui/react/static/js/MountPoints/__system__.ts",
     "isEntry": true,
     "imports": [
       "_atlas_DVrnBBsgS-kH5xseABxRO.js",
-      "_atlas_DdIyEKupHT2ojzuWLksqt.js",
+      "_atlas_DqRtME8mRGQ884g5YHdoX.js",
       "_atlas_JzQmrLPlfVl9nkKnI5Ba8.js"
     ]
   }
