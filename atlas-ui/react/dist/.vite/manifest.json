@@ -22,7 +22,7 @@
     ]
   },
   "atlas-ui/react/static/css/global.css": {
-    "file": "atlas_DOivHN84lCXoLcQDzIlr1.css",
+    "file": "atlas_5o0lPrkAC1I5Ulx0fgA13.css",
     "src": "atlas-ui/react/static/css/global.css",
     "isEntry": true,
     "names": [
@@ -30,7 +30,7 @@
     ]
   },
   "atlas-ui/react/static/js/MountPoints/__galaxy__.ts": {
-    "file": "atlas_BuO5p1MqE42pOUiSV1GO-.js",
+    "file": "atlas_DywDppmNytJ-7KN9G0iUW.js",
     "name": "__galaxy__",
     "src": "atlas-ui/react/static/js/MountPoints/__galaxy__.ts",
     "isEntry": true,
@@ -60,7 +60,7 @@
     ]
   },
   "atlas-ui/react/static/js/MountPoints/__system__.ts": {
-    "file": "atlas_KSQNbb3wYzhEjmdpAcT8l.js",
+    "file": "atlas_D97QUWOlw6zyqu7_hGl5I.js",
     "name": "__system__",
     "src": "atlas-ui/react/static/js/MountPoints/__system__.ts",
     "isEntry": true,

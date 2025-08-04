@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import * as THREE from "three";
 import SolarSystem3DViewerFullscreen from './SolarSystem3DViewerFullscreen.tsx';
 
@@ -41,14 +42,60 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({
   const animationIdRef = useRef<number | null>(null);
   const planetsRef = useRef<THREE.Mesh[]>([]);
   const orbitsRef = useRef<THREE.Line[]>([]);
+  const planetLabelsRef = useRef<THREE.Sprite[]>([]);
+  const currentTimeRef = useRef<number>(0);
   
   // Use real current time like Python does
   const realCurrentTime = Math.floor(Date.now() / 1000); // Current Unix timestamp
   const [timeOffset, setTimeOffset] = useState(0); // User time adjustment
   const [isFullscreen, setIsFullscreen] = useState(false); // Fullscreen modal state
+  const [sliderTimeOffset, setSliderTimeOffset] = useState(0); // Slider time offset for fullscreen
   const currentTime = realCurrentTime - cosmicOriginTime + timeOffset;
+  
+  // Update time reference for animation loop
+  currentTimeRef.current = currentTime;
 
-  // Handle ESC key to close fullscreen
+
+  // Function to create text sprite for planet names
+  const createTextSprite = (text: string, color: string = '#ffffff') => {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    if (!context) return null;
+
+    // Set canvas size - much bigger
+    canvas.width = 512;
+    canvas.height = 128;
+
+    // Add background for better visibility
+    context.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw border
+    context.strokeStyle = '#ffffff';
+    context.lineWidth = 2;
+    context.strokeRect(2, 2, canvas.width - 4, canvas.height - 4);
+
+    // Draw text - much bigger
+    context.fillStyle = color;
+    context.font = 'bold 32px Arial';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.fillText(text, 256, 64);
+
+    // Create texture and sprite
+    const texture = new THREE.CanvasTexture(canvas);
+    const spriteMaterial = new THREE.SpriteMaterial({ 
+      map: texture, 
+      transparent: true,
+      alphaTest: 0.1
+    });
+    const sprite = new THREE.Sprite(spriteMaterial);
+    sprite.scale.set(20, 5, 1); // Much bigger scale
+    
+    return sprite;
+  };
+
+  // Handle ESC key to close fullscreen and sync slider when opening
   useEffect(() => {
     const handleCloseFullscreen = () => {
       setIsFullscreen(false);
@@ -60,6 +107,11 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({
       }
     };
 
+    // Sync slider with current time when opening fullscreen
+    if (isFullscreen) {
+      setSliderTimeOffset(timeOffset);
+    }
+
     document.addEventListener('solar-system-close-fullscreen', handleCloseFullscreen);
     document.addEventListener('keydown', handleKeyDown);
 
@@ -67,7 +119,7 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({
       document.removeEventListener('solar-system-close-fullscreen', handleCloseFullscreen);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isFullscreen]);
+  }, [isFullscreen, timeOffset]);
 
   useEffect(() => {
     if (!mountRef.current) return;
@@ -262,6 +314,21 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({
       (planetMesh as any).orbitRadius = orbitRadius;
       (planetMesh as any).semiMajorAxis = semiMajorAxis;
       (planetMesh as any).semiMinorAxis = semiMinorAxis;
+
+      // Create planet name label
+      const planetName = planet.name.replace(/_/g, " ");
+      const nameSprite = createTextSprite(planetName, '#ffffff');
+      if (nameSprite) {
+        // Position label above planet (higher up)
+        nameSprite.position.copy(planetMesh.position);
+        nameSprite.position.y += planetRadius + 6;
+        
+        // Store planet data on sprite for reference
+        (nameSprite as any).planetData = planet;
+        
+        scene.add(nameSprite);
+        planetLabelsRef.current.push(nameSprite);
+      }
     });
 
     // Ambient lighting
@@ -285,6 +352,7 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({
       mouseX = event.clientX;
       mouseY = event.clientY;
     };
+
 
     const handleMouseMove = (event: MouseEvent) => {
       if (!isMouseDown) return;
@@ -334,9 +402,9 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({
         // Time control with Ctrl+scroll - adjust offset
         event.preventDefault();
         if (event.deltaY > 0) {
-          setTimeOffset(prev => prev + 86400); // +1 day
+          setTimeOffset(prev => prev + 604800); // +1 week (7 days)
         } else {
-          setTimeOffset(prev => prev - 86400); // -1 day
+          setTimeOffset(prev => prev - 604800); // -1 week (7 days)
         }
       } else {
         // Zoom with normal scroll (like Universe3DViewer)
@@ -384,12 +452,12 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({
         const semiMajorAxis = (planetMesh as any).semiMajorAxis;
         const semiMinorAxis = (planetMesh as any).semiMinorAxis;
         
-        // Calculate orbital angle exactly like Python
+        // Calculate orbital angle exactly like Python using current time reference
         const orbitalPeriod = planet.orbital_period_seconds;
         const angleVelocityOrbit = (2 * Math.PI) / orbitalPeriod;
         
         // Python: angle_orbit = (initial_orbital_angle + time_elapsed * angle_velocity_orbit) % (2π)
-        const angleOrbit = (planet.initial_orbital_angle + currentTime * angleVelocityOrbit) % (2 * Math.PI);
+        const angleOrbit = (planet.initial_orbital_angle + currentTimeRef.current * angleVelocityOrbit) % (2 * Math.PI);
         
         // Position planet exactly like Python
         // Python: planet_x = center_x + semi_major_axis * cos(angle_orbit)
@@ -398,10 +466,17 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({
         planetMesh.position.z = semiMinorAxis * Math.sin(angleOrbit);
         planetMesh.position.y = 0; // Keep on orbital plane
         
-        // Planet rotation exactly like Python
+        // Planet rotation exactly like Python using current time reference
         const rotationPeriodSeconds = planet.rotation_period_seconds;
         const angleVelocityRotation = (2 * Math.PI) / rotationPeriodSeconds;
-        planetMesh.rotation.y = (currentTime * angleVelocityRotation) % (2 * Math.PI);
+        planetMesh.rotation.y = (currentTimeRef.current * angleVelocityRotation) % (2 * Math.PI);
+
+        // Update planet label position
+        if (planetLabelsRef.current[index]) {
+          const planetRadius = (planetMesh.geometry as THREE.SphereGeometry).parameters?.radius || 2;
+          planetLabelsRef.current[index].position.copy(planetMesh.position);
+          planetLabelsRef.current[index].position.y += planetRadius + 6;
+        }
       });
 
       renderer.render(scene, camera);
@@ -444,8 +519,9 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({
       // Clean up refs
       planetsRef.current = [];
       orbitsRef.current = [];
+      planetLabelsRef.current = [];
     };
-  }, [planets, stars, currentTime, timeOffset, cosmicOriginTime]);
+  }, [planets, stars, cosmicOriginTime]); // Remove currentTime and timeOffset from dependencies
 
   const formatTime = (seconds: number) => {
     const years = Math.floor(seconds / (365.25 * 24 * 3600));
@@ -462,7 +538,7 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({
   };
 
   return (
-    <>
+    <>      
       <div className="flex flex-col items-center w-full">
         <div className="text-xs text-gray-300 mb-2">Solar System Simulation</div>
         
@@ -503,15 +579,15 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({
             </div>
           </div>
           <div className="text-center text-[10px] text-gray-500">
-            Scroll: Zoom • Ctrl+Scroll: +1day/-1day • Drag: Rotate View
+            Scroll: Zoom • Ctrl+Scroll: +1week/-1week • Drag: Rotate View
           </div>
         </div>
       </div>
 
-      {/* Fullscreen Modal */}
-      {isFullscreen && (
-        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl flex items-center justify-center">
-          <div className="w-full h-full flex flex-col p-2 sm:p-4">
+      {/* Fullscreen Modal - rendered outside container using portal */}
+      {isFullscreen && createPortal(
+        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl">
+          <div className="w-full h-full flex flex-col p-1 sm:p-2">
             {/* Modal Header */}
             <div className="flex items-center justify-between mb-2 sm:mb-4">
               <div className="flex items-center gap-2 sm:gap-4">
@@ -528,12 +604,12 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({
                     <span className="text-sm text-gray-300">{planets.length} Planets</span>
                   </div>
                   <div className="text-sm text-gray-400">
-                    Time: {formatTime(currentTime)}
+                    Time: {formatTime(realCurrentTime - cosmicOriginTime + sliderTimeOffset)}
                   </div>
                 </div>
                 {/* Mobile info */}
                 <div className="sm:hidden text-xs text-gray-400">
-                  {planets.length}P • {formatTime(currentTime)}
+                  {planets.length}P • {formatTime(realCurrentTime - cosmicOriginTime + sliderTimeOffset)}
                 </div>
               </div>
               <button
@@ -547,6 +623,40 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({
               </button>
             </div>
 
+            {/* Time Slider */}
+            <div className="mb-2 sm:mb-4 px-2 sm:px-4">
+              <div className="flex items-center gap-2 sm:gap-4">
+                <span className="text-xs sm:text-sm text-gray-400 min-w-fit">-15y</span>
+                <div className="flex-1 relative">
+                  <input
+                    type="range"
+                    min={-15 * 365.25 * 24 * 3600} // -15 years in seconds
+                    max={15 * 365.25 * 24 * 3600}  // +15 years in seconds
+                    step={604800} // 1 week steps
+                    value={sliderTimeOffset}
+                    onChange={(e) => setSliderTimeOffset(Number(e.target.value))}
+                    className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer 
+                               [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 
+                               [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-400 
+                               [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-blue-600
+                               [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-lg"
+                  />
+                  <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-0.5 h-2 bg-yellow-400 rounded"></div>
+                </div>
+                <span className="text-xs sm:text-sm text-gray-400 min-w-fit">+15y</span>
+                <button
+                  onClick={() => setSliderTimeOffset(0)}
+                  className="px-2 py-1 text-xs bg-gray-600 hover:bg-gray-500 text-white rounded transition-colors duration-200"
+                  title="Reset to current time"
+                >
+                  Now
+                </button>
+              </div>
+              <div className="text-center text-xs text-gray-500 mt-1">
+                Time Travel: {sliderTimeOffset === 0 ? 'Present' : sliderTimeOffset > 0 ? `+${Math.abs(sliderTimeOffset / (365.25 * 24 * 3600)).toFixed(1)} years` : `-${Math.abs(sliderTimeOffset / (365.25 * 24 * 3600)).toFixed(1)} years`} • Range: 30 years
+              </div>
+            </div>
+
             {/* Modal Content - Full Size 3D Viewer */}
             <div className="flex-1 border border-white/20 rounded-lg bg-black/20 overflow-hidden min-h-0">
               <SolarSystem3DViewerFullscreen 
@@ -554,22 +664,23 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({
                 stars={stars} 
                 systemName={systemName}
                 cosmicOriginTime={cosmicOriginTime}
-                currentTime={currentTime}
-                onTimeOffsetChange={(delta) => setTimeOffset(prev => prev + delta)}
+                currentTime={realCurrentTime - cosmicOriginTime + sliderTimeOffset}
+                onTimeOffsetChange={(delta) => setSliderTimeOffset(prev => prev + delta)}
               />
             </div>
 
             {/* Modal Footer */}
             <div className="mt-2 sm:mt-4 text-center text-xs sm:text-sm text-gray-400">
               <div className="hidden sm:block">
-                Scroll: Zoom • Ctrl+Scroll: +1day/-1day • Drag: Rotate View • ESC: Close
+                Scroll: Zoom • Ctrl+Scroll: +1week/-1week • Drag: Rotate View • ESC: Close
               </div>
               <div className="sm:hidden">
                 Pinch: Zoom • Drag: Rotate • ESC: Close
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

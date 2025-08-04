@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import * as THREE from "three";
 import Universe3DViewerFullscreen from './Universe3DViewerFullscreen.tsx';
 
@@ -419,10 +420,10 @@ const Universe3DViewer: React.FC<Universe3DViewerProps> = ({ coordinates, galaxy
         </div>
       </div>
 
-      {/* Fullscreen Modal */}
-      {isFullscreen && (
-        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl flex items-center justify-center">
-          <div className="w-full h-full flex flex-col p-2 sm:p-4">
+      {/* Fullscreen Modal - rendered outside container using portal */}
+      {isFullscreen && createPortal(
+        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl">
+          <div className="w-full h-full flex flex-col p-1 sm:p-2">
             {/* Modal Header */}
             <div className="flex items-center justify-between mb-2 sm:mb-4">
               <div className="flex items-center gap-2 sm:gap-4">
@@ -476,7 +477,8 @@ const Universe3DViewer: React.FC<Universe3DViewerProps> = ({ coordinates, galaxy
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

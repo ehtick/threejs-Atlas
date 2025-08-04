@@ -30,13 +30,65 @@ interface SolarSystem3DViewerFullscreenProps {
   onTimeOffsetChange: (offset: number) => void;
 }
 
-const SolarSystem3DViewerFullscreen: React.FC<SolarSystem3DViewerFullscreenProps> = ({ planets, stars, systemName, cosmicOriginTime, currentTime, onTimeOffsetChange }) => {
+const SolarSystem3DViewerFullscreen: React.FC<SolarSystem3DViewerFullscreenProps> = ({ 
+  planets, 
+  stars, 
+  systemName, 
+  cosmicOriginTime, 
+  currentTime, 
+  onTimeOffsetChange
+}) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const animationIdRef = useRef<number | null>(null);
   const planetsRef = useRef<THREE.Mesh[]>([]);
   const orbitsRef = useRef<THREE.Line[]>([]);
+  const planetLabelsRef = useRef<THREE.Sprite[]>([]);
+  const currentTimeRef = useRef<number>(0);
+
+
+  // Function to create text sprite for planet names
+  const createTextSprite = (text: string, color: string = '#ffffff') => {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    if (!context) return null;
+
+    // Set canvas size (bigger for fullscreen)
+    canvas.width = 768;
+    canvas.height = 192;
+
+    // Add background for better visibility
+    context.fillStyle = 'rgba(0, 0, 0, 0.8)';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw border
+    context.strokeStyle = '#ffffff';
+    context.lineWidth = 3;
+    context.strokeRect(3, 3, canvas.width - 6, canvas.height - 6);
+
+    // Draw text (bigger for fullscreen)
+    context.fillStyle = color;
+    context.font = 'bold 48px Arial';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.fillText(text, 384, 96);
+
+    // Create texture and sprite
+    const texture = new THREE.CanvasTexture(canvas);
+    const spriteMaterial = new THREE.SpriteMaterial({ 
+      map: texture, 
+      transparent: true,
+      alphaTest: 0.1
+    });
+    const sprite = new THREE.Sprite(spriteMaterial);
+    sprite.scale.set(30, 7.5, 1); // Much bigger scale for fullscreen
+    
+    return sprite;
+  };
+
+  // Update time reference for animation loop
+  currentTimeRef.current = currentTime;
 
   useEffect(() => {
     if (!mountRef.current) return;
@@ -224,6 +276,21 @@ const SolarSystem3DViewerFullscreen: React.FC<SolarSystem3DViewerFullscreenProps
       (planetMesh as any).orbitRadius = orbitRadius;
       (planetMesh as any).semiMajorAxis = semiMajorAxis;
       (planetMesh as any).semiMinorAxis = semiMinorAxis;
+
+      // Create planet name label (bigger for fullscreen)
+      const planetName = planet.name.replace(/_/g, " ");
+      const nameSprite = createTextSprite(planetName, '#ffffff');
+      if (nameSprite) {
+        // Position label above planet (higher offset for fullscreen)
+        nameSprite.position.copy(planetMesh.position);
+        nameSprite.position.y += planetRadius + 10;
+        
+        // Store planet data on sprite for reference
+        (nameSprite as any).planetData = planet;
+        
+        scene.add(nameSprite);
+        planetLabelsRef.current.push(nameSprite);
+      }
     });
 
     // Ambient lighting
@@ -248,6 +315,7 @@ const SolarSystem3DViewerFullscreen: React.FC<SolarSystem3DViewerFullscreenProps
       mouseX = event.clientX;
       mouseY = event.clientY;
     };
+
 
     const handleMouseMove = (event: MouseEvent) => {
       if (!isMouseDown) return;
@@ -284,9 +352,9 @@ const SolarSystem3DViewerFullscreen: React.FC<SolarSystem3DViewerFullscreenProps
         // Time control with Ctrl+scroll
         event.preventDefault();
         if (event.deltaY > 0) {
-          onTimeOffsetChange(86400); // +1 day
+          onTimeOffsetChange(604800); // +1 week (7 days)
         } else {
-          onTimeOffsetChange(-86400); // -1 day
+          onTimeOffsetChange(-604800); // -1 week (7 days)
         }
       } else {
         // Zoom with normal scroll
@@ -410,20 +478,27 @@ const SolarSystem3DViewerFullscreen: React.FC<SolarSystem3DViewerFullscreenProps
         const semiMajorAxis = (planetMesh as any).semiMajorAxis;
         const semiMinorAxis = (planetMesh as any).semiMinorAxis;
 
-        // Calculate orbital angle exactly like Python
+        // Calculate orbital angle exactly like Python using current time reference
         const orbitalPeriod = planet.orbital_period_seconds;
         const angleVelocityOrbit = (2 * Math.PI) / orbitalPeriod;
-        const angleOrbit = (planet.initial_orbital_angle + currentTime * angleVelocityOrbit) % (2 * Math.PI);
+        const angleOrbit = (planet.initial_orbital_angle + currentTimeRef.current * angleVelocityOrbit) % (2 * Math.PI);
 
         // Position planet exactly like Python
         planetMesh.position.x = semiMajorAxis * Math.cos(angleOrbit);
         planetMesh.position.z = semiMinorAxis * Math.sin(angleOrbit);
         planetMesh.position.y = 0;
 
-        // Planet rotation
+        // Planet rotation using current time reference
         const rotationPeriodSeconds = planet.rotation_period_seconds;
         const angleVelocityRotation = (2 * Math.PI) / rotationPeriodSeconds;
-        planetMesh.rotation.y = (currentTime * angleVelocityRotation) % (2 * Math.PI);
+        planetMesh.rotation.y = (currentTimeRef.current * angleVelocityRotation) % (2 * Math.PI);
+
+        // Update planet label position
+        if (planetLabelsRef.current[index]) {
+          const planetRadius = (planetMesh.geometry as THREE.SphereGeometry).parameters?.radius || 2;
+          planetLabelsRef.current[index].position.copy(planetMesh.position);
+          planetLabelsRef.current[index].position.y += planetRadius + 10;
+        }
       });
 
       renderer.render(scene, camera);
@@ -470,8 +545,9 @@ const SolarSystem3DViewerFullscreen: React.FC<SolarSystem3DViewerFullscreenProps
       // Clean up refs
       planetsRef.current = [];
       orbitsRef.current = [];
+      planetLabelsRef.current = [];
     };
-  }, [planets, stars, currentTime, cosmicOriginTime]);
+  }, [planets, stars, cosmicOriginTime]); // Remove currentTime from dependencies
 
   return <div ref={mountRef} className="w-full h-full" />;
 };
