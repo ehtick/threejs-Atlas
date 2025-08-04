@@ -20,15 +20,6 @@ const Planet3DViewer: React.FC<Planet3DViewerProps> = ({ planetType = "Rocky", p
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x000011);
 
-    const camera = new THREE.PerspectiveCamera(50, containerWidth / containerHeight, 0.1, 1000);
-    camera.position.set(0, 0, planetRadius * 3);
-    camera.lookAt(0, 0, 0);
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(containerWidth, containerHeight);
-    renderer.setClearColor(0x000011, 1);
-    container.appendChild(renderer.domElement);
-
     const planetColors: { [key: string]: string } = {
       "Gas Giant": "#FFA500",
       Anomaly: "#FFFFFF",
@@ -59,7 +50,16 @@ const Planet3DViewer: React.FC<Planet3DViewerProps> = ({ planetType = "Rocky", p
       Exotic: "#FF00FF",
     };
 
-    const planetRadius = (containerWidth * 3) / 16;
+    const planetRadius = 75;
+
+    const camera = new THREE.PerspectiveCamera(50, containerWidth / containerHeight, 0.1, 1000);
+    camera.position.set(0, 0, 250);
+    camera.lookAt(0, 0, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(containerWidth, containerHeight);
+    renderer.setClearColor(0x000011, 1);
+    container.appendChild(renderer.domElement);
     const planetGeometry = new THREE.SphereGeometry(planetRadius, 32, 32);
     const planetColor = planetColors[planetType] || "#808080";
     const planetMaterial = new THREE.MeshLambertMaterial({
