@@ -28,12 +28,24 @@ export class StargateGenerator {
     return `${window.location.origin}/stargate/${encodedData}`;
   }
 
-  // Get current page from URL parameters or default to 1
+  // Get current page from URL path or parameters
   public static getCurrentPage(): number {
     try {
+      // First try URL parameters (?page=N)
       const urlParams = new URLSearchParams(window.location.search);
-      const page = urlParams.get('page');
-      return page ? parseInt(page, 10) : 1;
+      const pageParam = urlParams.get('page');
+      if (pageParam) {
+        return parseInt(pageParam, 10);
+      }
+      
+      // Then try galaxy page from path (/galaxy/N)
+      const pathMatch = window.location.pathname.match(/\/galaxy\/(\d+)/);
+      if (pathMatch) {
+        return parseInt(pathMatch[1], 10);
+      }
+      
+      // Default to page 1
+      return 1;
     } catch (error) {
       return 1;
     }
