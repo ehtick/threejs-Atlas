@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { markSystemAsVisited } from '../Utils/VisitHistory.ts';
 
 interface System {
   name: string;
@@ -32,11 +33,17 @@ const SystemNavigation: React.FC<SystemNavigationProps> = ({
 
   const handlePrevious = async () => {
     if (currentSystem.index > 0) {
+      const coordinates = galaxy.coordinates.join(',');
+      // Mark the destination system as visited before navigating
+      markSystemAsVisited(coordinates, currentSystem.index - 1);
       window.location.href = `/system/${currentSystem.index - 1}`;
     }
   };
 
   const handleNext = async () => {
+    const coordinates = galaxy.coordinates.join(',');
+    // Mark the destination system as visited before navigating
+    markSystemAsVisited(coordinates, currentSystem.index + 1);
     window.location.href = `/system/${currentSystem.index + 1}`;
   };
 

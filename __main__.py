@@ -144,6 +144,7 @@ def view_galaxy(page):
                 "index": i,
                 "number": i + 1,
                 "name": current_galaxy.get_solar_system(i).name,
+                "num_planets": current_galaxy.get_solar_system(i).num_planets,
             }
             for i in range(start, min(end, current_galaxy.num_systems))
         ]

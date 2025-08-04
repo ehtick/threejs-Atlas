@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
+import { getSystemVisitStatus } from '../Utils/VisitHistory.ts';
 
 interface System {
   index: number;
   number: number;
   name: string;
+  num_planets?: number;
 }
 
 interface SystemsListProps {
@@ -12,45 +14,27 @@ interface SystemsListProps {
 }
 
 const SystemsList: React.FC<SystemsListProps> = ({ systems, coordinates }) => {
-  const [visitedSystems, setVisitedSystems] = useState<Set<number>>(new Set());
+  const [systemVisitStates, setSystemVisitStates] = useState<Map<number, 'none' | 'partial' | 'complete'>>(new Map());
 
   useEffect(() => {
-    // Load historical data from localStorage
+    // Load historical data and determine visit states
     const loadHistoricalData = () => {
       try {
-        const viewedPlanets = JSON.parse(localStorage.getItem('atlasHistoricalData') || '{}');
-        const coordsData = viewedPlanets[coordinates] || {};
-        const visited = new Set<number>();
+        const states = new Map<number, 'none' | 'partial' | 'complete'>();
         
-        Object.keys(coordsData).forEach(systemId => {
-          visited.add(parseInt(systemId));
+        systems.forEach(system => {
+          const visitStatus = getSystemVisitStatus(coordinates, system.index, system.num_planets || 1);
+          states.set(system.index, visitStatus);
         });
         
-        setVisitedSystems(visited);
+        setSystemVisitStates(states);
       } catch (error) {
         console.error('Error loading historical data:', error);
       }
     };
 
     loadHistoricalData();
-
-    // Mark current location as viewed
-    const markLocationAsViewed = () => {
-      try {
-        let viewedPlanets = JSON.parse(localStorage.getItem('atlasHistoricalData') || '{}');
-        
-        if (!viewedPlanets[coordinates]) {
-          viewedPlanets[coordinates] = {};
-        }
-        
-        localStorage.setItem('atlasHistoricalData', JSON.stringify(viewedPlanets));
-      } catch (error) {
-        console.error('Error saving historical data:', error);
-      }
-    };
-
-    markLocationAsViewed();
-  }, [coordinates]);
+  }, [coordinates, systems]);
 
   return (
     <div className="bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 shadow-2xl p-4 sm:p-6">
@@ -60,12 +44,24 @@ const SystemsList: React.FC<SystemsListProps> = ({ systems, coordinates }) => {
             key={system.index}
             className="relative bg-white/10 rounded-lg border border-white/20 hover:bg-white/20 hover:border-white/40 transition-all duration-300 group"
           >
-            {/* Visited indicator */}
-            {visitedSystems.has(system.index) && (
-              <div className="absolute top-1 right-1 bg-green-500/20 border border-green-500/50 text-green-400 text-[10px] px-1.5 py-0.5 rounded z-10">
-                VISITED
-              </div>
-            )}
+            {/* Visit status indicator */}
+            {(() => {
+              const visitStatus = systemVisitStates.get(system.index) || 'none';
+              if (visitStatus === 'complete') {
+                return (
+                  <div className="absolute top-1 right-1 bg-green-500/20 border border-green-500/50 text-green-400 text-[10px] px-1.5 py-0.5 rounded z-10">
+                    VISITED
+                  </div>
+                );
+              } else if (visitStatus === 'partial') {
+                return (
+                  <div className="absolute top-1 right-1 bg-yellow-500/20 border border-yellow-500/50 text-yellow-400 text-[10px] px-1.5 py-0.5 rounded z-10">
+                    PARTIAL
+                  </div>
+                );
+              }
+              return null;
+            })()}
             
             <button
               onClick={() => window.location.href = `/system/${system.index}`}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { markPlanetAsVisited, markSystemAsVisited } from '../Utils/VisitHistory.ts';
 
 interface Planet {
   name: string;
@@ -83,6 +84,8 @@ const PlanetNavigation: React.FC<PlanetNavigationProps> = ({
 
 
   const handlePrevious = async () => {
+    const coordinates = galaxy.coordinates.join(',');
+    
     if (prevPlanet === '__prev_system__') {
       // Navigate to the last planet of the previous system
       try {
@@ -94,7 +97,13 @@ const PlanetNavigation: React.FC<PlanetNavigationProps> = ({
           const data = await response.json();
           if (data.system && data.system.planets && data.system.planets.length > 0) {
             const lastPlanet = data.system.planets[data.system.planets.length - 1];
-            window.location.href = `/planet/${lastPlanet.name.toLowerCase()}`;
+            const planetName = lastPlanet.name.toLowerCase();
+            
+            // Mark the destination planet and system as visited before navigating
+            markPlanetAsVisited(coordinates, system.index - 1, planetName, data.system.planets);
+            markSystemAsVisited(coordinates, system.index - 1);
+            
+            window.location.href = `/planet/${planetName}`;
             return;
           }
         }
@@ -105,11 +114,15 @@ const PlanetNavigation: React.FC<PlanetNavigationProps> = ({
         window.location.href = `/system/${system.index - 1}`;
       }
     } else if (prevPlanet) {
+      // Mark the destination planet as visited before navigating
+      markPlanetAsVisited(coordinates, system.index, prevPlanet, systemPlanets);
       window.location.href = `/planet/${prevPlanet}`;
     }
   };
 
   const handleNext = async () => {
+    const coordinates = galaxy.coordinates.join(',');
+    
     if (nextPlanet === '__next_system__') {
       // Navigate to the first planet of the next system
       try {
@@ -121,7 +134,13 @@ const PlanetNavigation: React.FC<PlanetNavigationProps> = ({
           const data = await response.json();
           if (data.system && data.system.planets && data.system.planets.length > 0) {
             const firstPlanet = data.system.planets[0];
-            window.location.href = `/planet/${firstPlanet.name.toLowerCase()}`;
+            const planetName = firstPlanet.name.toLowerCase();
+            
+            // Mark the destination planet and system as visited before navigating
+            markPlanetAsVisited(coordinates, system.index + 1, planetName, data.system.planets);
+            markSystemAsVisited(coordinates, system.index + 1);
+            
+            window.location.href = `/planet/${planetName}`;
             return;
           }
         }
@@ -132,6 +151,8 @@ const PlanetNavigation: React.FC<PlanetNavigationProps> = ({
         window.location.href = `/system/${system.index + 1}`;
       }
     } else if (nextPlanet) {
+      // Mark the destination planet as visited before navigating
+      markPlanetAsVisited(coordinates, system.index, nextPlanet, systemPlanets);
       window.location.href = `/planet/${nextPlanet}`;
     }
   };

@@ -4,6 +4,7 @@ import PlanetInfo from '../Components/PlanetInfo.tsx';
 import PlanetVisualization from '../Components/PlanetVisualization.tsx';
 import PlanetNavigation from '../Components/PlanetNavigation.tsx';
 import VersionFooter from '../Components/VersionFooter.tsx';
+import { markPlanetAsVisited, markSystemAsVisited } from '../Utils/VisitHistory.ts';
 
 interface Planet {
   name: string;
@@ -60,6 +61,10 @@ const PlanetLayout: React.FC<PlanetLayoutProps> = ({
     document.body.setAttribute('data-coordinates', coordinates);
     document.body.setAttribute('data-system-index', system.index.toString());
     document.body.setAttribute('data-planet-name', planet.name.toLowerCase());
+    
+    // Auto-mark planet and system as visited when viewing
+    markPlanetAsVisited(coordinates, system.index, planet.name, system.planets || []);
+    markSystemAsVisited(coordinates, system.index);
   }, [coordinates, system.index, planet.name]);
 
   const formatPlanetName = (name: string) => {

@@ -5,6 +5,7 @@ import SystemVisualization from '../Components/SystemVisualization.tsx';
 import PlanetsList from '../Components/PlanetsList.tsx';
 import SystemNavigation from '../Components/SystemNavigation.tsx';
 import VersionFooter from '../Components/VersionFooter.tsx';
+import { markSystemAsVisited } from '../Utils/VisitHistory.ts';
 
 interface System {
   name: string;
@@ -63,6 +64,9 @@ const SystemLayout: React.FC<SystemLayoutProps> = ({
     // Set coordinates and system index for historical data system
     document.body.setAttribute('data-coordinates', coordinates);
     document.body.setAttribute('data-system-index', system_index.toString());
+    
+    // Auto-mark system as visited when viewing
+    markSystemAsVisited(coordinates, system_index);
   }, [coordinates, system_index]);
 
   const formatSystemName = (name: string) => {

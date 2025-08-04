@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { getVisitedPlanets, markPlanetAsVisited } from '../Utils/VisitHistory.ts';
 
 interface Planet {
   name: string;
@@ -14,15 +15,13 @@ const PlanetsList: React.FC<PlanetsListProps> = ({ planets, coordinates, systemI
   const [visitedPlanets, setVisitedPlanets] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    // Load historical data from localStorage
+    // Load historical data using optimized storage
     const loadHistoricalData = () => {
       try {
-        const viewedPlanets = JSON.parse(localStorage.getItem('atlasHistoricalData') || '{}');
-        const coordsData = viewedPlanets[coordinates] || {};
-        const systemData = coordsData[systemIndex.toString()] || [];
+        const visitedPlanetNames = getVisitedPlanets(coordinates, systemIndex, planets);
         const visited = new Set<string>();
         
-        systemData.forEach((planetName: string) => {
+        visitedPlanetNames.forEach((planetName: string) => {
           visited.add(planetName.toLowerCase());
         });
         
@@ -33,51 +32,16 @@ const PlanetsList: React.FC<PlanetsListProps> = ({ planets, coordinates, systemI
     };
 
     loadHistoricalData();
-
-    // Mark current location as viewed
-    const markLocationAsViewed = () => {
-      try {
-        let viewedPlanets = JSON.parse(localStorage.getItem('atlasHistoricalData') || '{}');
-        
-        if (!viewedPlanets[coordinates]) {
-          viewedPlanets[coordinates] = {};
-        }
-        
-        if (!viewedPlanets[coordinates][systemIndex.toString()]) {
-          viewedPlanets[coordinates][systemIndex.toString()] = [];
-        }
-        
-        localStorage.setItem('atlasHistoricalData', JSON.stringify(viewedPlanets));
-      } catch (error) {
-        console.error('Error saving historical data:', error);
-      }
-    };
-
-    markLocationAsViewed();
-  }, [coordinates, systemIndex]);
+  }, [coordinates, systemIndex, planets]);
 
   const formatPlanetName = (name: string) => {
     return name.replace(/_/g, ' ');
   };
 
   const handlePlanetClick = (planetName: string) => {
-    // Mark planet as visited when clicked
+    // Mark planet as visited using optimized storage
     try {
-      let viewedPlanets = JSON.parse(localStorage.getItem('atlasHistoricalData') || '{}');
-      
-      if (!viewedPlanets[coordinates]) {
-        viewedPlanets[coordinates] = {};
-      }
-      
-      if (!viewedPlanets[coordinates][systemIndex.toString()]) {
-        viewedPlanets[coordinates][systemIndex.toString()] = [];
-      }
-      
-      const planetKey = planetName.toLowerCase();
-      if (!viewedPlanets[coordinates][systemIndex.toString()].includes(planetKey)) {
-        viewedPlanets[coordinates][systemIndex.toString()].push(planetKey);
-        localStorage.setItem('atlasHistoricalData', JSON.stringify(viewedPlanets));
-      }
+      markPlanetAsVisited(coordinates, systemIndex, planetName, planets);
     } catch (error) {
       console.error('Error marking planet as visited:', error);
     }
