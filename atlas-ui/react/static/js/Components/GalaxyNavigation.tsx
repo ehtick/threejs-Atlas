@@ -129,12 +129,12 @@ const GalaxyNavigation: React.FC<GalaxyNavigationProps> = ({
   }
 
   return (
-    <div className="flex items-center justify-center gap-2 mb-4">
+    <div className="flex items-center justify-between mb-4">
       {/* Previous Button */}
       <button
         onClick={handlePrevious}
         disabled={!hasPrev}
-        className={`flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200 ${
+        className={`flex items-center justify-center px-3 py-1.5 rounded-lg transition-all duration-200 ${
           hasPrev
             ? 'bg-white/10 hover:bg-white/20 border border-white/20 text-white hover:text-blue-300'
             : 'bg-white/5 border border-white/10 text-gray-600 cursor-not-allowed'
@@ -149,7 +149,7 @@ const GalaxyNavigation: React.FC<GalaxyNavigationProps> = ({
       <button
         onClick={handleNext}
         disabled={!hasNext}
-        className={`flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200 ${
+        className={`flex items-center justify-center px-3 py-1.5 rounded-lg transition-all duration-200 ${
           hasNext
             ? 'bg-white/10 hover:bg-white/20 border border-white/20 text-white hover:text-blue-300'
             : 'bg-white/5 border border-white/10 text-gray-600 cursor-not-allowed'
