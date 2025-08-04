@@ -3,7 +3,7 @@
 
 ## [1.0.0] - 2025-08-04
 
-- Added our own Vite-Fusion module to connect React with Flask, pre-ThreeJS and Semantic Kernel build.
+- Integrated our custom Vite-Fusion module to seamlessly connect React and Flask, enabling rich Three.js-powered 3D experiences. This is the foundation for the upcoming Semantic Kernel integration, the dawn of an AI-powered evolution engine designed to reprogram the universe in real time. I usually only work on this during August vacations... But that needs to change!
 
 ## [0.9.98sm1] - 2024-09-12
 
