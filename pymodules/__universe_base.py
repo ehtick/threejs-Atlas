@@ -257,12 +257,11 @@ class Planet:
         self.correct_temperature_orbital_distance()
 
     def generate_planet_seed(self):
-        return int(
-            hashlib.sha256(
-                f"{self.seed}-{self.name}-{seedmaster(4)}".encode()
-            ).hexdigest(),
-            16,
-        )
+        seedmaster_4 = seedmaster(4)
+        seed_input = f"{self.seed}-{self.name}-{seedmaster_4}"
+        seed_hex = hashlib.sha256(seed_input.encode()).hexdigest()
+        seed_int = int(seed_hex, 16)
+        return seed_int
 
     def choose_planet_type(self):
         return random.choice(
@@ -890,7 +889,9 @@ class Planet:
         ) * 20
         ring_probability = min(ring_probability, 7)
 
-        decision = random.uniform(0, 100) <= ring_probability
+        random_roll = random.uniform(0, 100)
+        decision = random_roll <= ring_probability
+        
         return decision
 
     def correct_temperature_orbital_distance(self):

@@ -21,6 +21,7 @@ interface PlanetProps {
     rotation_period_seconds: number;
     surface_temperature: number;
     elements: string[];
+    index?: number; // Planet index within the system
   };
   system: {
     name: string;
@@ -33,6 +34,8 @@ interface PlanetProps {
   planet_url: string;
   version: string;
   image_url?: string;
+  cosmic_origin_time: number;
+  initial_angle_rotation: number;
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -61,7 +64,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       galaxy: galaxyData,
       planet_url: metaData.planet_url,
       version: metaData.version,
-      image_url: metaData.image_url
+      image_url: metaData.image_url,
+      cosmic_origin_time: metaData.cosmic_origin_time,
+      initial_angle_rotation: metaData.initial_angle_rotation
     };
 
     // Render React app

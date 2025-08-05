@@ -45,6 +45,8 @@ interface PlanetLayoutProps {
   planet_url: string;
   version: string;
   image_url?: string;
+  cosmic_origin_time: number;
+  initial_angle_rotation: number;
 }
 
 const PlanetLayout: React.FC<PlanetLayoutProps> = ({
@@ -53,7 +55,9 @@ const PlanetLayout: React.FC<PlanetLayoutProps> = ({
   galaxy,
   planet_url,
   version,
-  image_url
+  image_url,
+  cosmic_origin_time,
+  initial_angle_rotation
 }) => {
   const [coordinates] = useState<string>(galaxy.coordinates.join(','));
 
@@ -120,7 +124,13 @@ const PlanetLayout: React.FC<PlanetLayoutProps> = ({
               
               {/* Mobile/Desktop: Planet Image - Fixed width for image */}
               <div className="order-1 lg:order-1">
-                <PlanetVisualization planetUrl={planet_url} imageUrl={image_url} />
+                <PlanetVisualization 
+                  planetUrl={planet_url} 
+                  imageUrl={image_url} 
+                  planet={planet} 
+                  cosmicOriginTime={cosmic_origin_time}
+                  initialAngleRotation={initial_angle_rotation}
+                />
               </div>
               
               {/* Vertical separator - Desktop only */}
@@ -128,7 +138,13 @@ const PlanetLayout: React.FC<PlanetLayoutProps> = ({
               
               {/* Mobile/Desktop: Planet Info - Takes remaining space */}
               <div className="order-2 lg:order-2">
-                <PlanetInfo planet={planet} system={system} galaxy={galaxy} />
+                <PlanetInfo 
+                  planet={planet} 
+                  system={system} 
+                  galaxy={galaxy} 
+                  cosmicOriginTime={cosmic_origin_time}
+                  initialAngleRotation={initial_angle_rotation}
+                />
               </div>
               
             </div>

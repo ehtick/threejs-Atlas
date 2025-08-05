@@ -30,6 +30,7 @@ from pymodules.__universe_base import Universe
 
 from pymodules.__drawer_base import handle_image_generation
 from pymodules.__atlas_ui_file_delivery import send_static_images, send_static_favicon, send_src_static, send_src_dist
+from pymodules.__frontendAPI_location_data import register_location_api
 
 
 template_folder = os.path.join(os.getcwd(), "atlas-ui", "template")
@@ -46,6 +47,9 @@ register_vite_assets(
     nonce_provider=lambda: g.get("nonce"),
     logger=None
 )
+
+# Register complete location data API
+register_location_api(app)
 
 universe = None
 constants = PhysicalConstants()
@@ -302,7 +306,7 @@ def view_planet(planet_name):
 
     page = session.get(f"page_{current_galaxy.coordinates}", 1)
 
-    for planet in current_system.planets.values():
+    for planet_index, planet in current_system.planets.items():
         if planet.name.lower() == planet_name:
             image_url = url_for("planet_blob", planet_name=planet_name)
             planet_url = generate_planet_url(
@@ -325,6 +329,7 @@ def view_planet(planet_name):
             return render_template(
                 "planet.html",
                 planet=planet,
+                planet_index=planet_index,  # Pass the planet index to template
                 system=current_system,
                 galaxy=current_galaxy,
                 image_url=image_url,
@@ -332,6 +337,8 @@ def view_planet(planet_name):
                 planet_url=planet_url,
                 version=VERSION,
                 versionHash=VERSION_HASH,
+                cosmic_origin_time=config.cosmic_origin_time,
+                initial_angle_rotation=planet.initial_angle_rotation,
             )
 
     return redirect(url_for("view_system", system_index=current_system.index))

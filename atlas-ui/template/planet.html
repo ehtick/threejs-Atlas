@@ -30,7 +30,10 @@
         "axial_tilt": planet.axial_tilt,
         "rotation_period_seconds": planet.rotation_period_seconds,
         "surface_temperature": planet.surface_temperature,
-        "elements": planet.elements
+        "elements": planet.elements,
+        "seed": planet.seed,
+        "orbital_radius_m": planet.orbital_radius_m,
+        "index": planet_index
       } | tojson }}
     </script>
 
@@ -57,7 +60,9 @@
       {{ {
         "planet_url": planet_url,
         "version": version,
-        "image_url": url_for('planet_blob', planet_name=planet.name)
+        "image_url": url_for('planet_blob', planet_name=planet.name),
+        "cosmic_origin_time": cosmic_origin_time,
+        "initial_angle_rotation": initial_angle_rotation
       } | tojson }}
     </script>
 

@@ -1,13 +1,35 @@
 import React, { useEffect, useRef, useState } from "react";
 import Zoom from "react-medium-image-zoom";
 import "react-medium-image-zoom/dist/styles.css";
+import Planet3DViewer from "./Planet3DViewer";
+
+interface Planet {
+  name: string;
+  planet_type: string;
+  atmosphere: string;
+  life_forms: string;
+  mass: number;
+  diameter: number;
+  density: number;
+  gravity: number;
+  orbital_radius: number;
+  orbital_period_seconds: number;
+  orbital_speed: number;
+  axial_tilt: number;
+  rotation_period_seconds: number;
+  surface_temperature: number;
+  elements: string[];
+}
 
 interface PlanetVisualizationProps {
   planetUrl: string;
   imageUrl?: string;
+  planet?: Planet;
+  cosmicOriginTime?: number;
+  initialAngleRotation?: number;
 }
 
-const PlanetVisualization: React.FC<PlanetVisualizationProps> = ({ planetUrl, imageUrl }) => {
+const PlanetVisualization: React.FC<PlanetVisualizationProps> = ({ planetUrl, imageUrl, planet, cosmicOriginTime, initialAngleRotation }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const [stargateText, setStargateText] = useState("Aligning Stargate...");
@@ -260,6 +282,7 @@ const PlanetVisualization: React.FC<PlanetVisualizationProps> = ({ planetUrl, im
           )}
         </div>
       </div>
+      
 
       <div className="text-center mt-auto">
         <a

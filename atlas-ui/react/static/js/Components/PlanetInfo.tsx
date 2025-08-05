@@ -34,9 +34,11 @@ interface PlanetInfoProps {
   planet: Planet;
   system: System;
   galaxy: Galaxy;
+  cosmicOriginTime?: number;
+  initialAngleRotation?: number;
 }
 
-const PlanetInfo: React.FC<PlanetInfoProps> = ({ planet, system, galaxy }) => {
+const PlanetInfo: React.FC<PlanetInfoProps> = ({ planet, system, galaxy, cosmicOriginTime, initialAngleRotation }) => {
   const [showAllElements, setShowAllElements] = useState(false);
 
   const formatName = (name: string) => {
@@ -95,7 +97,31 @@ const PlanetInfo: React.FC<PlanetInfoProps> = ({ planet, system, galaxy }) => {
       </div>
 
       <div className="bg-white/10 rounded-lg p-3 border border-gray-500/30 mb-3 col-span-2">
-        <Planet3DViewer planetType={planet.planet_type} planetName={planet.name} />
+        <Planet3DViewer 
+          planetType={planet.planet_type} 
+          planetName={planet.name}
+          planetData={{
+            diameter: planet.diameter,
+            density: planet.density,
+            gravity: planet.gravity,
+            mass: planet.mass,
+            orbital_radius: planet.orbital_radius,
+            rotation_period_seconds: planet.rotation_period_seconds,
+            surface_temperature: planet.surface_temperature,
+            axial_tilt: planet.axial_tilt,
+            seed: system.index // Use system index as the base seed
+          }}
+          cosmicOriginTime={cosmicOriginTime}
+          initialAngleRotation={initialAngleRotation}
+          system={{
+            index: system.index,
+            name: system.name
+          }}
+          galaxy={{
+            coordinates: galaxy.coordinates,
+            name: galaxy.name
+          }}
+        />
       </div>
 
       <div className="bg-white/10 rounded-lg p-2 border border-orange-500/30 mb-3">

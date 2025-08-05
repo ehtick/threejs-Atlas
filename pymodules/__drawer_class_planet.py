@@ -60,6 +60,7 @@ from pymodules.__drawer_cplanet_life import (
 def generate_planet_image(planet):
     spaced_planet_name = planet.name.replace("_", " ")
     planet_type = planet.planet_type.replace("_", " ")
+    
 
     img_size = 800
     image = Image.new("RGBA", (img_size, img_size), "black")
@@ -183,6 +184,7 @@ def generate_planet_image(planet):
     ring_inner_radius = planet_radius + rng.randint(120, 160)
     ring_outer_radius = ring_inner_radius + rng.randint(20, 40)
 
+    
     if planet.planet_rings:
         draw_full_ring(
             image,
