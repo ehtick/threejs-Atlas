@@ -6,14 +6,114 @@ This replaces template-based data passing with a proper API approach.
 
 from flask import Flask, jsonify, session
 from pymodules.__atlas_config import config
-from pymodules.__atlas_seedmaster import seedmaster
+from pymodules.__atlas_seedmaster import seedmaster, consistent_hash
 from pymodules.__universe_constants import PhysicalConstants
 from pymodules.__universe_base import Universe
 import sys
 import os
+import math
+import random
 
 # Add current directory to path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+def generate_ring_data(planet):
+    """
+    Generate exact ring data as Python does in __drawer_class_planet.py
+    """
+    if not planet.planet_rings:
+        return None
+        
+    # Generate exact same seed as in __drawer_class_planet.py line 88-89
+    spaced_planet_name = planet.name.replace("_", " ")
+    planet_type = planet.planet_type.replace("_", " ")
+    
+    shape_seed = consistent_hash(
+        f"{config.seed}-{spaced_planet_name}-{planet_type}-{planet.diameter}-{planet.density}-{planet.gravity}-_safe_shaper"
+    )
+    
+    rng = random.Random(shape_seed)
+    
+    # Planet radius as used in Pillow (line 91)
+    planet_radius = int(200 * (planet.diameter / max(planet.diameter, 1)))
+    
+    # Ring radii calculations (lines 184-185)
+    ring_inner_radius = planet_radius + rng.randint(120, 160)
+    ring_outer_radius = ring_inner_radius + rng.randint(20, 40)
+    
+    # Calculate tilt factor (line 87)
+    tilt_factor = math.sin(math.radians(planet.axial_tilt))
+    
+    # Generate full ring particles (1.5x more for better 3D density)
+    base_num_full_ring_points = rng.randint(500, 1500)
+    num_full_ring_points = int(base_num_full_ring_points * 1.5)
+    full_ring_particles = []
+    
+    for _ in range(num_full_ring_points):
+        angle = rng.uniform(math.pi, 2 * math.pi)  # Bottom half of ring
+        distance = rng.uniform(ring_inner_radius, ring_outer_radius)
+        
+        x = distance * math.cos(angle)
+        y = distance * tilt_factor * math.sin(angle)
+        
+        point_size = rng.choices(
+            [0.5, 1.0, 1.5, 2.0], weights=[0.4, 0.3, 0.2, 0.1], k=1
+        )[0]
+        gray_value = rng.randint(20, 50)
+        
+        full_ring_particles.append({
+            "x": x,
+            "y": y,
+            "z": 0,  # Will be calculated from x,y and angle
+            "size": point_size,
+            "color": [gray_value, gray_value, gray_value],
+            "angle": angle,
+            "distance": distance
+        })
+    
+    # Generate ontop ring particles (1.5x more for better 3D density)
+    base_num_ontop_ring_points = rng.randint(500, 1500) 
+    num_ontop_ring_points = int(base_num_ontop_ring_points * 1.5)
+    ontop_ring_particles = []
+    
+    for _ in range(num_ontop_ring_points):
+        angle = rng.uniform(0, math.pi)  # Top half of ring
+        distance = rng.uniform(ring_inner_radius, ring_outer_radius)
+        
+        x = distance * math.cos(angle)
+        y = distance * tilt_factor * math.sin(angle)
+        
+        point_size = rng.choices(
+            [0.5, 1.0, 1.5, 2.0], weights=[0.4, 0.3, 0.2, 0.1], k=1
+        )[0]
+        gray_value = rng.randint(20, 50)
+        
+        ontop_ring_particles.append({
+            "x": x,
+            "y": y,
+            "z": 0,  # Will be calculated from x,y and angle
+            "size": point_size,
+            "color": [gray_value, gray_value, gray_value],
+            "angle": angle,
+            "distance": distance
+        })
+    
+    return {
+        "has_rings": True,
+        "shape_seed": shape_seed,
+        "planet_radius": planet_radius,
+        "ring_inner_radius": ring_inner_radius,
+        "ring_outer_radius": ring_outer_radius,
+        "tilt_factor": tilt_factor,
+        "full_ring": {
+            "num_particles": num_full_ring_points,
+            "particles": full_ring_particles
+        },
+        "ontop_ring": {
+            "num_particles": num_ontop_ring_points,
+            "particles": ontop_ring_particles
+        }
+    }
 
 def get_complete_location_data(planet_name):
     """
@@ -72,6 +172,9 @@ def get_complete_location_data(planet_name):
         # Calculate ring decision seed (same as Planet.generate_planet_seed)
         ring_decision_seed = planet.generate_planet_seed()
         
+        # Generate complete ring data if planet has rings
+        ring_data = generate_ring_data(planet)
+        
         # Return COMPLETE universe location data
         return {
             "success": True,
@@ -119,6 +222,7 @@ def get_complete_location_data(planet_name):
                 "initial_angle_rotation": planet.initial_angle_rotation,
                 "initial_orbital_angle": planet.initial_orbital_angle
             },
+            "rings": ring_data,
             "seeds": {
                 "config_seed": config.seed,
                 "galaxy_seed": galaxy.seed,

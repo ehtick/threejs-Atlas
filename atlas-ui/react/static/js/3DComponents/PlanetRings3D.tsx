@@ -29,194 +29,200 @@ interface PlanetRings3DProps {
   };
 }
 
-// Python-compatible RNG that matches Python's random module exactly
-class PythonCompatibleRNG {
-  private mt: number[] = new Array(624);
-  private mti: number = 625;
+// Simple RNG for visual enhancements (not affecting core Python synchronization)
+class VisualRNG {
+  private seed: number;
 
-  constructor(seedInput: number | string | bigint) {
-    let seed: number;
-    if (typeof seedInput === 'string') {
-      const bigIntSeed = BigInt('0x' + seedInput);
-      seed = Number(bigIntSeed % BigInt(4294967296)); // 2^32
-    } else if (typeof seedInput === 'bigint') {
-      seed = Number(seedInput % BigInt(4294967296));
-    } else {
-      seed = seedInput >>> 0;
-    }
-    
-    this.initGenrand(seed);
+  constructor(baseSeed: number) {
+    this.seed = baseSeed;
   }
 
-  private initGenrand(s: number): void {
-    this.mt[0] = s >>> 0;
-    for (this.mti = 1; this.mti < 624; this.mti++) {
-      this.mt[this.mti] = (1812433253 * (this.mt[this.mti - 1] ^ (this.mt[this.mti - 1] >>> 30)) + this.mti) >>> 0;
-    }
-  }
-
-  private genrandInt32(): number {
-    let y: number;
-    const mag01 = [0x0, 0x9908b0df];
-
-    if (this.mti >= 624) {
-      let kk: number;
-
-      if (this.mti === 625) {
-        this.initGenrand(5489);
-      }
-
-      for (kk = 0; kk < 227; kk++) {
-        y = (this.mt[kk] & 0x80000000) | (this.mt[kk + 1] & 0x7fffffff);
-        this.mt[kk] = this.mt[kk + 397] ^ (y >>> 1) ^ mag01[y & 0x1];
-      }
-      for (; kk < 623; kk++) {
-        y = (this.mt[kk] & 0x80000000) | (this.mt[kk + 1] & 0x7fffffff);
-        this.mt[kk] = this.mt[kk - 227] ^ (y >>> 1) ^ mag01[y & 0x1];
-      }
-      y = (this.mt[623] & 0x80000000) | (this.mt[0] & 0x7fffffff);
-      this.mt[623] = this.mt[396] ^ (y >>> 1) ^ mag01[y & 0x1];
-
-      this.mti = 0;
-    }
-
-    y = this.mt[this.mti++];
-    y ^= y >>> 11;
-    y ^= (y << 7) & 0x9d2c5680;
-    y ^= (y << 15) & 0xefc60000;
-    y ^= y >>> 18;
-
-    return y >>> 0;
-  }
-
-  private random(): number {
-    const a = this.genrandInt32() >>> 5;
-    const b = this.genrandInt32() >>> 6;
-    return (a * 67108864.0 + b) * (1.0 / 9007199254740992.0);
+  private next(): number {
+    this.seed = (this.seed * 16807) % 2147483647;
+    return (this.seed - 1) / 2147483646;
   }
 
   uniform(min: number, max: number): number {
-    return min + (max - min) * this.random();
+    return min + (max - min) * this.next();
   }
 
-  randint(min: number, max: number): number {
-    return Math.floor(this.uniform(min, max + 1));
-  }
-
-  choices<T>(items: T[], weights: number[]): T {
-    const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
-    let randomValue = this.uniform(0, totalWeight);
-    
-    for (let i = 0; i < items.length; i++) {
-      randomValue -= weights[i];
-      if (randomValue <= 0) {
-        return items[i];
-      }
-    }
-    return items[items.length - 1];
+  choice<T>(items: T[]): T {
+    return items[Math.floor(this.next() * items.length)];
   }
 }
 
-// SHA256 hash function to match Python's implementation
-async function sha256(message: string): Promise<string> {
-  const msgBuffer = new TextEncoder().encode(message);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  return hashHex;
-}
 
-// Implement seedmaster function to match Python
-function seedmaster(configSeedBigInt: bigint, iterations: number): string {
-  if (iterations === 0) {
-    return configSeedBigInt.toString();
-  }
+// Create ring system using exact data from Python API
+function createRingSystemFromAPI(scene: THREE.Scene, planetMesh: THREE.Mesh, planetRadius: number, planetData: any, ringsData: any) {
+  // Use exact ring data from Python API instead of generating
+  const { full_ring, ontop_ring, ring_inner_radius, ring_outer_radius, tilt_factor } = ringsData;
   
-  let result = configSeedBigInt.toString();
-  for (let i = 0; i < iterations; i++) {
-    // Convert to base64 like Python
-    result = btoa(result);
-  }
-  return result;
-}
-
-
-// Create ring system
-function createRingSystem(scene: THREE.Scene, planetMesh: THREE.Mesh, planetRadius: number, planetData: any, rng: PythonCompatibleRNG) {
-  // Ring parameters - exactly as in Pillow
-  const ringInnerRadius = planetRadius + rng.randint(120, 160);
-  const ringOuterRadius = ringInnerRadius + rng.randint(20, 40);
+  // Combine full ring (bottom half) and ontop ring (top half) particles
+  const allParticles = [...full_ring.particles, ...ontop_ring.particles];
+  const totalParticles = allParticles.length;
   
-  // Create geometry for ring particles - exactly as in Pillow
-  const numParticles = rng.randint(500, 1500);
+  // Create visual RNG for 3D enhancements using Python's shape_seed
+  const visualRNG = new VisualRNG(ringsData.shape_seed);
   
+  // Create geometry using exact particle data from Python + 3D enhancements
   const particles = new THREE.BufferGeometry();
-  const positions = new Float32Array(numParticles * 3);
-  const colors = new Float32Array(numParticles * 3);
-  const sizes = new Float32Array(numParticles);
+  const positions = new Float32Array(totalParticles * 3);
+  const colors = new Float32Array(totalParticles * 3);
+  const sizes = new Float32Array(totalParticles);
   
-  for (let i = 0; i < numParticles; i++) {
-    // Complete ring: angle = rng.uniform(0, 2 * math.pi)
-    const angle = rng.uniform(0, Math.PI * 2);
-    const distance = rng.uniform(ringInnerRadius, ringOuterRadius);
-    const tiltFactor = 0.3; // Exact value from Pillow
+  // Define darker, more realistic gray variations
+  const grayVariations = [
+    { baseGray: 0.18, variation: 0.04, name: 'dark' },     // Darker rings
+    { baseGray: 0.25, variation: 0.06, name: 'medium' },   // Medium dark rings  
+    { baseGray: 0.32, variation: 0.06, name: 'light' },    // Light but still subdued
+    { baseGray: 0.25, variation: 0.08, name: 'mixed' }     // Controlled variation
+  ];
+  
+  const chosenGrayVariation = visualRNG.choice(grayVariations);
+  
+  for (let i = 0; i < totalParticles; i++) {
+    const particle = allParticles[i];
     
-    // Position with tilt as in Pillow
-    const x = distance * Math.cos(angle);
-    const z = distance * Math.sin(angle);
-    const y = distance * tiltFactor * Math.sin(angle);
+    // Convert from Pillow 2D coordinates to ThreeJS 3D coordinates
+    // In Pillow: x,y are relative to center (200,200) with planet_radius ~200
+    // In ThreeJS: we need to scale to our planetRadius
+    const scale = planetRadius / ringsData.planet_radius;
     
-    positions[i * 3] = x;
-    positions[i * 3 + 1] = y;
-    positions[i * 3 + 2] = z;
+    // Generate proper 3D ring coordinates centered on planet axis
+    // Ignore Pillow's 2D x,y coordinates and generate true 3D ring positions
     
-    // Color variation for each particle - exactly as in Pillow
-    const grayValue = rng.randint(20, 50) / 255; // Exact range from Pillow
-    colors[i * 3] = grayValue;
-    colors[i * 3 + 1] = grayValue;
-    colors[i * 3 + 2] = grayValue;
+    // Generate per-particle variations using deterministic seed for consistency
+    const particleSeed = ringsData.shape_seed + i;
+    const particleRNG = new VisualRNG(particleSeed);
     
-    // Exact sizes from Pillow
-    const sizeOptions = [0.5, 1.0, 1.5, 2.0];
-    const sizeWeights = [0.4, 0.3, 0.2, 0.1];
-    sizes[i] = rng.choices(sizeOptions, sizeWeights);
+    // Use only the distance and angle from Python data, but recalculate positions properly
+    const distance = particle.distance * scale;
+    const angle = particle.angle;
+    
+    // Create proper ring geometry centered on planet (0,0,0)
+    const baseX = distance * Math.cos(angle);
+    const baseZ = distance * Math.sin(angle);
+    const baseY = 0; // Start with flat ring, apply tilt later
+    
+    // Apply tilt factor to create the tilted ring plane
+    // Tilt around X-axis to match planet's axial tilt effect
+    const tiltAngle = Math.asin(tilt_factor); // Convert tilt_factor back to angle
+    const tiltedY = baseZ * Math.sin(tiltAngle);
+    const tiltedZ = baseZ * Math.cos(tiltAngle);
+    
+    // Add volumetric depth - rings should have significant thickness for 3D effect
+    const ringThickness = (ring_outer_radius - ring_inner_radius) * scale * 0.4; // Increased thickness
+    
+    // Random spread for strong volumetric effect (more altitude variation)
+    const ySpread = particleRNG.uniform(-ringThickness * 0.8, ringThickness * 0.8); // Much more vertical spread
+    const radialSpread = particleRNG.uniform(-ringThickness * 0.3, ringThickness * 0.3);
+    const angularSpread = particleRNG.uniform(-0.08, 0.08); // Slightly more angular spread
+    
+    // Final position with spreads applied
+    const finalDistance = distance + radialSpread;
+    const finalAngle = angle + angularSpread;
+    
+    positions[i * 3] = finalDistance * Math.cos(finalAngle);                    // x
+    positions[i * 3 + 1] = tiltedY + ySpread;                                  // y with tilt and significant spread
+    positions[i * 3 + 2] = tiltedZ + particleRNG.uniform(-ringThickness * 0.4, ringThickness * 0.4); // z with tilt and more spread for depth
+    
+    // Natural gray-based coloring system for realistic rings
+    const pythonGrayValue = particle.color[0] / 255; // Original Python gray (0.08-0.2)
+    
+    // Create distance-based gradient for depth perception
+    const distanceFromCenter = particle.distance;
+    const normalizedDistance = (distanceFromCenter - ring_inner_radius) / (ring_outer_radius - ring_inner_radius);
+    
+    // Generate natural gray variations
+    const baseGray = chosenGrayVariation.baseGray;
+    const variation = chosenGrayVariation.variation;
+    
+    // Per-particle gray variation (darker, more realistic range)
+    const grayVariation = particleRNG.uniform(-variation, variation);
+    const finalGray = Math.max(0.12, Math.min(0.45, baseGray + grayVariation));
+    
+    // Distance-based gradient (inner vs outer rings)
+    const distanceGradient = 0.8 + normalizedDistance * 0.4; // 0.8 to 1.2
+    
+    // Controlled brightness variation (tighter range)
+    const brightnessVariation = particleRNG.uniform(0.85, 1.15);
+    
+    // Add very subtle sparkle effect to few particles (even more controlled)
+    const sparkleChance = particleRNG.uniform(0, 1);
+    const sparkleMultiplier = sparkleChance < 0.03 ? particleRNG.uniform(1.1, 1.3) : 1.0; // Only 3% sparkle, more subtle
+    
+    // Final gray value
+    const finalGrayValue = finalGray * distanceGradient * brightnessVariation * sparkleMultiplier;
+    
+    // Apply same gray to RGB for natural, darker look
+    const clampedGrayValue = Math.max(0.10, Math.min(0.55, finalGrayValue));
+    colors[i * 3] = clampedGrayValue;     // r
+    colors[i * 3 + 1] = clampedGrayValue; // g  
+    colors[i * 3 + 2] = clampedGrayValue; // b
+    
+    // Enhanced sizes for better 3D visibility
+    const baseSizeMultiplier = particleRNG.uniform(1.0, 1.8); // Slightly larger particles
+    const sparkleSize = sparkleChance < 0.1 ? particleRNG.uniform(1.2, 2.0) : 1.0;
+    sizes[i] = particle.size * baseSizeMultiplier * sparkleSize;
   }
   
   particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   particles.setAttribute('color', new THREE.BufferAttribute(colors, 3));
   particles.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
   
-  // Particle material
+  // Enhanced particle material for darker, realistic rings
   const particleMaterial = new THREE.ShaderMaterial({
     uniforms: {
-      time: { value: 0.0 }
+      brightness: { value: 2.2 } // Compensate for darker base colors
     },
     vertexShader: `
       attribute float size;
       varying vec3 vColor;
+      varying float vDistance;
       
       void main() {
         vColor = color;
         vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-        gl_PointSize = size * (200.0 / -mvPosition.z);
+        vDistance = -mvPosition.z;
+        
+        // Dynamic size based on distance for better depth perception
+        gl_PointSize = size * (300.0 / vDistance);
         gl_Position = projectionMatrix * mvPosition;
       }
     `,
     fragmentShader: `
+      uniform float brightness;
       varying vec3 vColor;
+      varying float vDistance;
       
       void main() {
-        float distance = length(gl_PointCoord - vec2(0.5));
+        vec2 center = gl_PointCoord - vec2(0.5);
+        float distance = length(center);
+        
         if (distance > 0.5) discard;
         
-        float alpha = (1.0 - distance) * 1.0; // Full opacity as in Pillow
-        gl_FragColor = vec4(vColor, alpha);
+        // Create soft circular particle with gentle falloff
+        float alpha = (1.0 - distance * 2.0);
+        alpha = smoothstep(0.0, 1.0, alpha);
+        
+        // Add subtle glow effect
+        float glow = 1.0 - distance;
+        glow = pow(glow, 1.5);
+        
+        // No sparkle animation - colors should be static
+        // Final color with brightness and glow (no time-based changes)
+        vec3 finalColor = vColor * brightness * glow;
+        
+        // Distance-based alpha fade for depth
+        float depthAlpha = clamp(200.0 / vDistance, 0.3, 1.0);
+        
+        gl_FragColor = vec4(finalColor, alpha * depthAlpha);
       }
     `,
     transparent: true,
     vertexColors: true,
-    depthWrite: false, // Para evitar problemas de profundidad
-    blending: THREE.NormalBlending
+    depthWrite: false,
+    blending: THREE.NormalBlending // Normal blending for natural gray particles
   });
   
   // Create the point system
@@ -250,7 +256,7 @@ function createRingSystem(scene: THREE.Scene, planetMesh: THREE.Mesh, planetRadi
   const animate = () => {
     // Calculate and apply current rotation based on absolute real time (same as planet)
     ringSystem.rotation.y = calculateCurrentRotation();
-    particleMaterial.uniforms.time.value += 0.01;
+    // No more time uniform updates - colors are now static
     requestAnimationFrame(animate);
   };
   animate();
@@ -276,20 +282,14 @@ const PlanetRings3D = {
       }
       
       // Extract all needed data from API
-      const { universe, galaxy, system, planet, seeds } = locationData;
+      const { universe, galaxy, system, planet, rings } = locationData;
       
       // Use the authoritative ring decision from Python
-      if (!planet.has_rings) {
+      if (!planet.has_rings || !rings) {
         return;
       }
       
-      // Create ring system using Python-generated seed
-      const spacedPlanetName = planet.name.replace(/_/g, ' ');
-      const shapeSeedString = `${seeds.config_seed}-${spacedPlanetName}-rings-${planet.diameter}-${planet.density}-${planet.gravity}-_safe_shaper`;
-      const shapeSeedHex = await sha256(shapeSeedString);
-      const rng = new PythonCompatibleRNG(shapeSeedHex);
-      
-      // Use planet data from API
+      // Use planet data from API for rotation calculations
       const apiPlanetData = {
         diameter: planet.diameter,
         density: planet.density,
@@ -303,7 +303,8 @@ const PlanetRings3D = {
         initialAngleRotation: planet.initial_angle_rotation
       };
       
-      createRingSystem(scene, planetMesh, planetRadius, apiPlanetData, rng);
+      // Create ring system using exact data from Python API
+      createRingSystemFromAPI(scene, planetMesh, planetRadius, apiPlanetData, rings);
       
     } catch (error) {
       // Fallback: don't show rings if API fails
