@@ -1,0 +1,235 @@
+{
+  "modular_effects_test_data": {
+    "test_rocky_planet": {
+      "planet_info": {
+        "name": "test_rocky_planet",
+        "type": "Rocky",
+        "base_color": "#8B4513",
+        "radius": 100
+      },
+      "surface_elements": {
+        "type": "rocky",
+        "mountains": [
+          {
+            "position": [
+              0.3,
+              0.2
+            ],
+            "width": 0.15,
+            "height": 0.8,
+            "angle": 0.5
+          },
+          {
+            "position": [
+              -0.4,
+              -0.1
+            ],
+            "width": 0.2,
+            "height": 0.6,
+            "angle": 1.2
+          }
+        ],
+        "clouds": [
+          {
+            "position": [
+              0.1,
+              0.5
+            ],
+            "radius": 0.3
+          },
+          {
+            "position": [
+              -0.3,
+              -0.4
+            ],
+            "radius": 0.2
+          }
+        ],
+        "crater": {
+          "position": [
+            0.0,
+            -0.6
+          ],
+          "radius": 0.25
+        }
+      }
+    },
+    "test_icy_planet": {
+      "planet_info": {
+        "name": "test_icy_planet",
+        "type": "Icy",
+        "base_color": "#B0E0E6",
+        "radius": 100
+      },
+      "surface_elements": {
+        "type": "icy",
+        "crystals": [
+          {
+            "position": [
+              0.4,
+              0.3
+            ],
+            "length": 0.12,
+            "width": 0.06,
+            "angle": 0.8
+          },
+          {
+            "position": [
+              -0.2,
+              0.5
+            ],
+            "length": 0.08,
+            "width": 0.04,
+            "angle": 2.1
+          }
+        ],
+        "cracks": [
+          {
+            "angle": 0.0,
+            "length": 0.6
+          },
+          {
+            "angle": 1.57,
+            "length": 0.4
+          },
+          {
+            "angle": 3.14,
+            "length": 0.8
+          }
+        ],
+        "ice_caps": [
+          {
+            "position": [
+              0.0,
+              0.8
+            ],
+            "radius": 0.3
+          },
+          {
+            "position": [
+              0.0,
+              -0.8
+            ],
+            "radius": 0.25
+          }
+        ]
+      }
+    },
+    "test_oceanic_planet": {
+      "planet_info": {
+        "name": "test_oceanic_planet",
+        "type": "Oceanic",
+        "base_color": "#1E90FF",
+        "radius": 100
+      },
+      "surface_elements": {
+        "type": "oceanic",
+        "wave_intensity": 0.4,
+        "wave_speed": 2.5,
+        "ocean_color": [
+          0.1,
+          0.3,
+          0.6
+        ]
+      }
+    },
+    "test_metallic_planet": {
+      "planet_info": {
+        "name": "test_metallic_planet",
+        "type": "Metallic",
+        "base_color": "#708090",
+        "radius": 100
+      },
+      "surface_elements": {
+        "type": "metallic",
+        "effects_3d": [
+          {
+            "type": "metallic_surface",
+            "params": {
+              "color": [
+                0.4,
+                0.4,
+                0.45
+              ],
+              "roughness": 0.7,
+              "metalness": 0.9,
+              "fragmentationIntensity": 0.6
+            },
+            "priority": 0
+          },
+          {
+            "type": "fragmentation",
+            "params": {
+              "fragmentCount": 25,
+              "size": 0.06,
+              "distribution": "edge"
+            },
+            "priority": 5
+          }
+        ]
+      },
+      "atmosphere": {
+        "halo": {
+          "color": [
+            0.6,
+            0.1,
+            0.9,
+            0.8
+          ],
+          "intensity": 1.2,
+          "scale": 1.15
+        },
+        "streaks": {
+          "color": [
+            0.95,
+            0.95,
+            1.0,
+            0.6
+          ],
+          "particleCount": 120
+        }
+      }
+    },
+    "test_gas_giant": {
+      "planet_info": {
+        "name": "test_gas_giant",
+        "type": "Gas Giant",
+        "base_color": "#FFA500",
+        "radius": 150
+      },
+      "surface_elements": {
+        "type": "gas_giant",
+        "cloud_bands": {
+          "num_bands": 8,
+          "positions": [
+            -0.8,
+            -0.4,
+            -0.1,
+            0.2,
+            0.4,
+            0.6,
+            0.75,
+            0.9
+          ],
+          "widths": [
+            0.15,
+            0.12,
+            0.08,
+            0.1,
+            0.14,
+            0.11,
+            0.09,
+            0.13
+          ],
+          "rotation": 0.3
+        }
+      },
+      "rings": {
+        "has_rings": true,
+        "inner_radius": 180,
+        "outer_radius": 280,
+        "tilt_factor": 0.3
+      }
+    }
+  }
+}

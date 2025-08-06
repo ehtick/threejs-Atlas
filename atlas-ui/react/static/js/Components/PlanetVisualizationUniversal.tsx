@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import Zoom from "react-medium-image-zoom";
 import "react-medium-image-zoom/dist/styles.css";
-import { HybridPlanet3DRenderer } from "../3DComponents/HybridPlanet3DRenderer";
+import { ModularPlanetRendererWrapper } from "../3DComponents/ModularPlanetRendererWrapper";
 
 interface Planet {
   name: string;
@@ -19,9 +19,10 @@ interface Planet {
   rotation_period_seconds: number;
   surface_temperature: number;
   elements: string[];
+  seed?: number;
 }
 
-interface PlanetVisualizationProps {
+interface PlanetVisualizationUniversalProps {
   planetUrl: string;
   imageUrl?: string;
   planet?: Planet;
@@ -29,7 +30,13 @@ interface PlanetVisualizationProps {
   initialAngleRotation?: number;
 }
 
-const PlanetVisualization: React.FC<PlanetVisualizationProps> = ({ planetUrl, imageUrl, planet, cosmicOriginTime, initialAngleRotation }) => {
+const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> = ({ 
+  planetUrl, 
+  imageUrl, 
+  planet, 
+  cosmicOriginTime, 
+  initialAngleRotation 
+}) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const [stargateText, setStargateText] = useState("Aligning Stargate...");
@@ -37,7 +44,7 @@ const PlanetVisualization: React.FC<PlanetVisualizationProps> = ({ planetUrl, im
   const [imageLoaded, setImageLoaded] = useState(false);
   const [canvasHidden, setCanvasHidden] = useState(false);
   const [view3D, setView3D] = useState(true); // 3D por defecto
-  const [enable3D, setEnable3D] = useState(true);
+  const [enable3D, setEnable3D] = useState(true); // Enable 3D by default
   const [renderingData, setRenderingData] = useState<any>(null);
   const [renderingError, setRenderingError] = useState<string | null>(null);
 
@@ -268,7 +275,7 @@ const PlanetVisualization: React.FC<PlanetVisualizationProps> = ({ planetUrl, im
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-lg sm:text-xl font-bold text-white">Planet Visualization</h3>
         
-        {enable3D && planet && (
+        {enable3D && (
           <div className="flex items-center gap-2">
             <button
               onClick={toggleView}
@@ -294,12 +301,12 @@ const PlanetVisualization: React.FC<PlanetVisualizationProps> = ({ planetUrl, im
           style={{ filter: canvasHidden ? "blur(50px)" : "none" }} 
         />
 
-        {/* 3D View - Hybrid Planet 3D Renderer */}
+        {/* 3D View - Direct ModularPlanetRenderer */}
         {view3D && imageLoaded && planet && (
           <div className={`absolute inset-0 w-full h-full transition-all duration-500 ${
             imageLoaded ? "opacity-100 blur-0" : "opacity-0 blur-[25px]"
           }`}>
-            <HybridPlanet3DRenderer
+            <ModularPlanetRendererWrapper
               planetName={planet.name}
               containerClassName="w-full h-full"
               autoRotate={true}
@@ -322,11 +329,11 @@ const PlanetVisualization: React.FC<PlanetVisualizationProps> = ({ planetUrl, im
               initialAngleRotation={initialAngleRotation}
               onDataLoaded={(data) => {
                 setRenderingData(data);
-                console.log('🌍 Hybrid Planet data loaded:', data);
+                console.log('🌍 Planet data loaded:', data);
               }}
               onError={(errorMessage) => {
                 setRenderingError(errorMessage);
-                console.error('❌ Hybrid Planet rendering error:', errorMessage);
+                console.error('❌ Planet rendering error:', errorMessage);
               }}
             />
           </div>
@@ -361,13 +368,12 @@ const PlanetVisualization: React.FC<PlanetVisualizationProps> = ({ planetUrl, im
         )}
         
         {/* View indicator */}
-        {enable3D && planet && (
+        {enable3D && (
           <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-xs">
             {view3D ? '🌍 3D' : '🖼️ 2D'}
           </div>
         )}
       </div>
-      
 
       <div className="text-center mt-auto">
         <a
@@ -405,4 +411,4 @@ const PlanetVisualization: React.FC<PlanetVisualizationProps> = ({ planetUrl, im
   );
 };
 
-export default PlanetVisualization;
+export default PlanetVisualizationUniversal;

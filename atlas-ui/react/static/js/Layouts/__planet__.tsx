@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Header from '../Components/Header.tsx';
 import PlanetInfo from '../Components/PlanetInfo.tsx';
 import PlanetVisualization from '../Components/PlanetVisualization.tsx';
+import PlanetVisualizationUniversal from '../Components/PlanetVisualizationUniversal.tsx';
 import PlanetNavigation from '../Components/PlanetNavigation.tsx';
 import VersionFooter from '../Components/VersionFooter.tsx';
 import SpaceshipPanel from '../Components/SpaceshipPanel.tsx';
@@ -99,15 +100,20 @@ const PlanetLayout: React.FC<PlanetLayoutProps> = ({
           
           {/* Planet Header */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-2">
-              Planet '{formatPlanetName(planet.name)}'
-            </h1>
+            <div className="flex items-center justify-center gap-4 mb-4">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                Planet '{formatPlanetName(planet.name)}'
+              </h1>
+              
+            </div>
+            
             <p className="text-lg sm:text-xl text-gray-300">
               in System '{formatSystemName(system.name)}' - Galaxy '{formatGalaxyName(galaxy.name)}'
             </p>
             <p className="text-sm sm:text-base text-gray-400">
               Coordinates {galaxy.coordinates.join(', ')}
             </p>
+            
           </div>
 
           {/* Planet Navigation */}
@@ -124,7 +130,7 @@ const PlanetLayout: React.FC<PlanetLayoutProps> = ({
               
               {/* Mobile/Desktop: Planet Image - Fixed width for image */}
               <div className="order-1 lg:order-1">
-                <PlanetVisualization 
+                <PlanetVisualizationUniversal 
                   planetUrl={planet_url} 
                   imageUrl={image_url} 
                   planet={planet} 
