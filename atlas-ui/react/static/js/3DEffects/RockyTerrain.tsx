@@ -316,11 +316,40 @@ export class RockyTerrainEffect {
 
 // Función de utilidad para crear desde datos de Python
 export function createRockyTerrainFromPythonData(pythonData: any): RockyTerrainEffect {
+  // Extraer datos de superficie o usar pythonData directamente
+  const surfaceData = pythonData.surface_elements || pythonData.surface || pythonData;
+  
+  // Usar el base_color de Python si está disponible
+  let baseColor = [0.8, 0.8, 0.8]; // Default rocky
+  const pythonBaseColor = pythonData.planet_info?.base_color || pythonData.base_color;
+  
+  if (pythonBaseColor && typeof pythonBaseColor === 'string') {
+    const hex = pythonBaseColor.replace('#', '');
+    baseColor = [
+      parseInt(hex.substr(0, 2), 16) / 255,
+      parseInt(hex.substr(2, 2), 16) / 255,
+      parseInt(hex.substr(4, 2), 16) / 255
+    ];
+  } else if (Array.isArray(pythonBaseColor)) {
+    baseColor = pythonBaseColor;
+  }
+  
+  console.log('⛰️ Creating rocky terrain effect with color from Python:', {
+    base_color: pythonData.planet_info?.base_color,
+    final_color: baseColor
+  });
+  
   const params: RockyTerrainParams = {
-    mountains: pythonData.mountains || [],
-    clouds: pythonData.clouds || [],
-    crater: pythonData.crater,
-    baseTextureIntensity: 0.4
+    mountains: surfaceData.mountains || [],
+    clouds: surfaceData.clouds || [],
+    crater: surfaceData.crater,
+    baseTextureIntensity: 0.4,
+    // Usar el color de Python para las montañas (un poco más claro)
+    mountainColor: new THREE.Color(baseColor[0] * 1.1, baseColor[1] * 1.1, baseColor[2] * 1.1),
+    // Nubes un poco más claras
+    cloudColor: new THREE.Color(baseColor[0] * 0.9, baseColor[1] * 0.9, baseColor[2] * 0.9),
+    // Cráteres más oscuros
+    craterColor: new THREE.Color(baseColor[0] * 0.3, baseColor[1] * 0.3, baseColor[2] * 0.3)
   };
 
   return new RockyTerrainEffect(params);

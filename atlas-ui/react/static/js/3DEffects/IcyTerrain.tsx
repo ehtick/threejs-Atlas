@@ -339,11 +339,44 @@ export class IcyTerrainEffect {
 
 // Función de utilidad para crear desde datos de Python
 export function createIcyTerrainFromPythonData(pythonData: any): IcyTerrainEffect {
+  // Extraer datos de superficie o usar pythonData directamente
+  const surfaceData = pythonData.surface_elements || pythonData.surface || pythonData;
+  
+  // Usar el base_color de Python si está disponible
+  let baseColor = [0.9, 0.95, 1.0]; // Default icy
+  const pythonBaseColor = pythonData.planet_info?.base_color || pythonData.base_color;
+  
+  if (pythonBaseColor && typeof pythonBaseColor === 'string') {
+    const hex = pythonBaseColor.replace('#', '');
+    baseColor = [
+      parseInt(hex.substr(0, 2), 16) / 255,
+      parseInt(hex.substr(2, 2), 16) / 255,
+      parseInt(hex.substr(4, 2), 16) / 255
+    ];
+    // Para planetas helados, añadir un tinte azulado frío
+    baseColor = [
+      Math.min(baseColor[0] + 0.1, 1.0),
+      Math.min(baseColor[1] + 0.15, 1.0),
+      Math.min(baseColor[2] + 0.2, 1.0)
+    ];
+  } else if (Array.isArray(pythonBaseColor)) {
+    baseColor = pythonBaseColor;
+  }
+  
+  console.log('❄️ Creating icy terrain effect with color from Python:', {
+    base_color: pythonData.planet_info?.base_color,
+    final_color: baseColor
+  });
+  
   const params: IcyTerrainParams = {
-    crystals: pythonData.crystals || [],
-    cracks: pythonData.cracks || [],
-    iceCaps: pythonData.ice_caps || [],
-    baseTextureIntensity: 0.3
+    crystals: surfaceData.crystals || [],
+    cracks: surfaceData.cracks || [],
+    iceCaps: surfaceData.ice_caps || [],
+    baseTextureIntensity: 0.3,
+    // Usar colores basados en el color de Python
+    crystalColor: new THREE.Color(baseColor[0] * 0.8, baseColor[1] * 0.9, baseColor[2] * 1.0),
+    crackColor: new THREE.Color(baseColor[0] * 0.3, baseColor[1] * 0.3, baseColor[2] * 0.4),
+    iceCapColor: new THREE.Color(baseColor[0] * 1.1, baseColor[1] * 1.1, baseColor[2] * 1.0)
   };
 
   return new IcyTerrainEffect(params);

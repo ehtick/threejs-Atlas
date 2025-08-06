@@ -377,7 +377,8 @@ export class DenseAtmosphereEffect {
     };
 
     const atmosphereRadius = planetRadius + (this.params.width! / 200);
-    this.geometry = new THREE.SphereGeometry(atmosphereRadius, 32, 32);
+    // Usar geometría de alta resolución para evitar líneas meridionales
+    this.geometry = new THREE.SphereGeometry(atmosphereRadius, 64, 32);
     
     this.material = new THREE.MeshLambertMaterial({
       color: new THREE.Color(
@@ -387,7 +388,7 @@ export class DenseAtmosphereEffect {
       ),
       transparent: true,
       opacity: this.params.opacity! * this.params.density!,
-      side: THREE.DoubleSide
+      side: THREE.FrontSide // Usar solo FrontSide para evitar artefactos
     });
 
     this.mesh = new THREE.Mesh(this.geometry, this.material);
@@ -401,8 +402,8 @@ export class DenseAtmosphereEffect {
   }
 
   update(deltaTime: number): void {
-    // Rotación lenta de la atmósfera
-    this.mesh.rotation.y += deltaTime * 0.05;
+    // Rotación muy lenta para evitar líneas visibles
+    this.mesh.rotation.y += deltaTime * 0.01;
   }
 
   updateParams(newParams: Partial<AtmosphereParams>): void {

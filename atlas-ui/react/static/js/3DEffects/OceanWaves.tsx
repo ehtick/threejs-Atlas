@@ -288,10 +288,44 @@ export class OceanWavesEffect {
 
 // Función de utilidad para crear desde datos de Python
 export function createOceanWavesFromPythonData(pythonData: any): OceanWavesEffect {
+  // Usar el base_color de Python si está disponible, sino usar color oceánico por defecto
+  let oceanColor = [0.1, 0.3, 0.6]; // Default oceanic
+  
+  if (pythonData.ocean_color) {
+    // Si hay un ocean_color específico, usarlo
+    if (typeof pythonData.ocean_color === 'string') {
+      // Si es un string hex como "#0000FF", convertirlo
+      const hex = pythonData.ocean_color.replace('#', '');
+      oceanColor = [
+        parseInt(hex.substr(0, 2), 16) / 255,
+        parseInt(hex.substr(2, 2), 16) / 255,
+        parseInt(hex.substr(4, 2), 16) / 255
+      ];
+    } else if (Array.isArray(pythonData.ocean_color)) {
+      oceanColor = pythonData.ocean_color;
+    }
+  } else if (pythonData.base_color) {
+    // Si no hay ocean_color pero sí base_color, usarlo
+    if (typeof pythonData.base_color === 'string') {
+      const hex = pythonData.base_color.replace('#', '');
+      oceanColor = [
+        parseInt(hex.substr(0, 2), 16) / 255,
+        parseInt(hex.substr(2, 2), 16) / 255,
+        parseInt(hex.substr(4, 2), 16) / 255
+      ];
+    }
+  }
+  
+  console.log('🌊 Creating ocean effect with color from Python:', {
+    base_color: pythonData.base_color,
+    ocean_color: pythonData.ocean_color,
+    final_color: oceanColor
+  });
+  
   const params: OceanWavesParams = {
     waveIntensity: pythonData.wave_intensity || 0.3,
     waveSpeed: pythonData.wave_speed || 2.0,
-    oceanColor: pythonData.ocean_color || [0.1, 0.3, 0.6]
+    oceanColor: oceanColor
   };
 
   return new OceanWavesEffect(params);

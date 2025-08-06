@@ -111,9 +111,30 @@ export class EffectRegistry {
     this.registerEffect(EffectType.METALLIC_SURFACE, {
       create: (params, planetRadius, mesh) => new MetallicSurfaceEffect(params),
       fromPythonData: (data, planetRadius, mesh) => {
-        // Crear efecto metálico desde datos de Python
+        // Usar el base_color correcto de Python
+        let color = [0.4, 0.4, 0.45]; // Default
+        
+        const baseColor = data.planet_info?.base_color || data.surface?.base_color;
+        if (baseColor && typeof baseColor === 'string') {
+          // Convertir hex a RGB
+          const hex = baseColor.replace('#', '');
+          color = [
+            parseInt(hex.substr(0, 2), 16) / 255,
+            parseInt(hex.substr(2, 2), 16) / 255,
+            parseInt(hex.substr(4, 2), 16) / 255
+          ];
+        } else if (Array.isArray(baseColor)) {
+          color = baseColor;
+        }
+        
+        console.log('⚙️ Creating metallic effect with color from Python:', {
+          base_color: data.planet_info?.base_color,
+          surface_color: data.surface?.base_color,
+          final_color: color
+        });
+        
         return new MetallicSurfaceEffect({
-          color: data.surface?.base_color || [0.4, 0.4, 0.45],
+          color: color,
           roughness: data.surface?.roughness || 0.7,
           metalness: data.surface?.metalness || 0.9,
           fragmentationIntensity: data.surface?.fragmentation || 0.5
@@ -166,17 +187,17 @@ export class EffectRegistry {
     // Nuevos efectos de terreno
     this.registerEffect(EffectType.ROCKY_TERRAIN, {
       create: (params, planetRadius, mesh) => new RockyTerrainEffect(params),
-      fromPythonData: (data, planetRadius, mesh) => createRockyTerrainFromPythonData(data.surface || {})
+      fromPythonData: (data, planetRadius, mesh) => createRockyTerrainFromPythonData(data) // Pasar todos los datos
     });
 
     this.registerEffect(EffectType.ICY_TERRAIN, {
       create: (params, planetRadius, mesh) => new IcyTerrainEffect(params),
-      fromPythonData: (data, planetRadius, mesh) => createIcyTerrainFromPythonData(data.surface || {})
+      fromPythonData: (data, planetRadius, mesh) => createIcyTerrainFromPythonData(data) // Pasar todos los datos
     });
 
     this.registerEffect(EffectType.OCEAN_WAVES, {
       create: (params, planetRadius, mesh) => new OceanWavesEffect(params),
-      fromPythonData: (data, planetRadius, mesh) => createOceanWavesFromPythonData(data.surface || {})
+      fromPythonData: (data, planetRadius, mesh) => createOceanWavesFromPythonData(data) // Pasar todos los datos
     });
 
     // Efectos futuros (placeholders)
@@ -366,7 +387,13 @@ export class EffectRegistry {
         case 'metallic_3d':
           const metallicEffect = this.createEffectFromPythonData(
             EffectType.METALLIC_SURFACE,
-            pythonData,
+            {
+              ...pythonData,
+              surface: {
+                ...pythonData.surface,
+                base_color: pythonData.planet_info?.base_color || pythonData.surface?.base_color
+              }
+            },
             planetRadius,
             mesh,
             0
@@ -377,7 +404,14 @@ export class EffectRegistry {
         case 'rocky':
           const rockyEffect = this.createEffectFromPythonData(
             EffectType.ROCKY_TERRAIN,
-            pythonData,
+            {
+              ...pythonData,
+              base_color: pythonData.planet_info?.base_color,
+              surface: {
+                ...pythonData.surface,
+                base_color: pythonData.planet_info?.base_color
+              }
+            },
             planetRadius,
             mesh,
             0
@@ -391,7 +425,14 @@ export class EffectRegistry {
         case 'icy':
           const icyEffect = this.createEffectFromPythonData(
             EffectType.ICY_TERRAIN,
-            pythonData,
+            {
+              ...pythonData,
+              base_color: pythonData.planet_info?.base_color,
+              surface: {
+                ...pythonData.surface,
+                base_color: pythonData.planet_info?.base_color
+              }
+            },
             planetRadius,
             mesh,
             0
@@ -405,7 +446,11 @@ export class EffectRegistry {
         case 'oceanic':
           const oceanEffect = this.createEffectFromPythonData(
             EffectType.OCEAN_WAVES,
-            pythonData,
+            {
+              ...pythonData,
+              base_color: pythonData.planet_info?.base_color, // Usar el color específico de Python
+              ocean_color: pythonData.planet_info?.base_color // El color del océano debe ser el base_color de Python
+            },
             planetRadius,
             mesh,
             0
@@ -450,11 +495,24 @@ export class EffectRegistry {
         }
       }
 
-      // Atmósfera densa (sistema anterior)
+      // Atmósfera densa (sistema anterior) - ARREGLADA para evitar líneas meridionales
+      // Para planetas oceánicos, reducir la opacidad atmosférica para no ocultar el océano
       if (pythonData.atmosphere.type && pythonData.atmosphere.type !== 'None') {
+        const planetType = pythonData.planet_info?.type?.toLowerCase() || pythonData.surface_elements?.type?.toLowerCase();
+        
+        // Ajustar parámetros atmosféricos según el tipo de planeta
+        const atmosphereData = { ...pythonData.atmosphere };
+        if (planetType === 'oceanic') {
+          // Para planetas oceánicos, usar atmósfera muy sutil
+          atmosphereData.opacity = Math.min(atmosphereData.opacity || 0.3, 0.15);
+          atmosphereData.width = Math.min(atmosphereData.width || 15, 8);
+          
+          console.log('🌊 Applying subtle atmosphere for oceanic planet:', atmosphereData);
+        }
+        
         const atmosphereEffect = this.createEffectFromPythonData(
           EffectType.DENSE_ATMOSPHERE,
-          pythonData.atmosphere,
+          atmosphereData,
           planetRadius,
           mesh,
           5
