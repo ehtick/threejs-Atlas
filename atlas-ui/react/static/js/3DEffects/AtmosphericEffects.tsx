@@ -359,13 +359,52 @@ export class AtmosphericStreaksEffect {
 }
 
 /**
- * Efecto de Atmósfera Densa - Replicando el efecto de las estrellas
+ * Efecto de Atmósfera Densa - Con gradiente fresnel como la atmósfera de fallback
  */
 export class DenseAtmosphereEffect {
   private mesh: THREE.Mesh;
-  private material: THREE.MeshBasicMaterial;
+  private material: THREE.ShaderMaterial;
   private geometry: THREE.SphereGeometry;
   private params: AtmosphereParams;
+
+  private static readonly vertexShader = `
+    varying vec3 vNormal;
+    varying vec3 vViewPosition;
+    
+    void main() {
+      vNormal = normalize(normalMatrix * normal);
+      
+      vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+      vViewPosition = -mvPosition.xyz;
+      
+      gl_Position = projectionMatrix * mvPosition;
+    }
+  `;
+
+  private static readonly fragmentShader = `
+    uniform vec3 atmosphereColor;
+    uniform float atmosphereOpacity;
+    uniform float fresnelPower;
+    
+    varying vec3 vNormal;
+    varying vec3 vViewPosition;
+    
+    void main() {
+      vec3 normal = normalize(vNormal);
+      vec3 viewDir = normalize(vViewPosition);
+      
+      // Efecto Fresnel - opaco en bordes, transparente en el centro
+      float fresnel = pow(1.0 - abs(dot(normal, viewDir)), fresnelPower);
+      
+      // Color de la atmósfera
+      vec3 color = atmosphereColor;
+      
+      // Alpha con efecto fresnel
+      float alpha = fresnel * atmosphereOpacity;
+      
+      gl_FragColor = vec4(color, alpha);
+    }
+  `;
 
   constructor(planetRadius: number, params: AtmosphereParams = {}) {
     this.params = {
@@ -394,14 +433,22 @@ export class DenseAtmosphereEffect {
     
     console.log('THREE.Color created:', atmosphereColor, 'from RGB:', [this.params.color![0], this.params.color![1], this.params.color![2]]); // Debug
     
-    // Usar MeshBasicMaterial como las estrellas, pero con la opacidad de la atmósfera
-    this.material = new THREE.MeshBasicMaterial({
-      color: atmosphereColor,
+    // Usar ShaderMaterial con efecto fresnel como la atmósfera de fallback
+    this.material = new THREE.ShaderMaterial({
+      vertexShader: DenseAtmosphereEffect.vertexShader,
+      fragmentShader: DenseAtmosphereEffect.fragmentShader,
+      uniforms: {
+        atmosphereColor: { value: atmosphereColor },
+        atmosphereOpacity: { value: this.params.opacity! },
+        fresnelPower: { value: 2.0 }
+      },
       transparent: true,
-      opacity: this.params.opacity! // Usar la opacidad de la atmósfera, no fija
+      blending: THREE.AdditiveBlending,
+      side: THREE.BackSide,
+      depthWrite: false
     });
 
-    console.log('Material created with color:', this.material.color, 'opacity:', this.material.opacity); // Debug
+    console.log('Material created with shader and color:', atmosphereColor, 'opacity:', this.params.opacity); // Debug
 
     this.mesh = new THREE.Mesh(this.geometry, this.material);
   }
@@ -422,18 +469,18 @@ export class DenseAtmosphereEffect {
 
     if (newParams.color) {
       console.log('Updating color to:', newParams.color); // Debug
-      this.material.color.setRGB(
+      const atmosphereColor = new THREE.Color(
         newParams.color[0],
         newParams.color[1],
         newParams.color[2]
       );
+      this.material.uniforms.atmosphereColor.value = atmosphereColor;
     }
-    // Usar la opacidad del parámetro, no fija en 0.3
     if (newParams.opacity !== undefined) {
-      this.material.opacity = newParams.opacity;
+      this.material.uniforms.atmosphereOpacity.value = newParams.opacity;
     }
     if (newParams.density !== undefined) {
-      this.material.opacity = (this.params.opacity || 0.3) * newParams.density;
+      this.material.uniforms.atmosphereOpacity.value = (this.params.opacity || 0.3) * newParams.density;
     }
   }
 
