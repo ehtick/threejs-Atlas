@@ -303,7 +303,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
     controls.minDistance = 1.5;
     controls.maxDistance = 10;
     controls.autoRotate = autoRotate;
-    controls.autoRotateSpeed = 0.5;
+    controls.autoRotateSpeed = 0.1; // Más lento para no interferir visualmente con rotación del planeta
     controls.enablePan = true;
     controls.enableZoom = true;
     controlsRef.current = controls;
@@ -466,9 +466,41 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       console.error('Error updating effects:', error);
     }
 
-    // Rotación del planeta si no hay controles
-    if (planetMeshRef.current && !enableControls) {
-      planetMeshRef.current.rotation.y += deltaTime * 0.1;
+    // Rotación del planeta REAL basada en datos de Python (SIEMPRE, independiente de controles)
+    if (planetMeshRef.current && planetData) {
+      // Calcular rotación EXACTA como en Pillow
+      const currentTime = Date.now() / 1000; // Tiempo actual en segundos Unix
+      const cosmicOriginTime = planetData.debug?.cosmic_origin_time || planetData.cosmic_origin_time || currentTime - 3600;
+      const rotationPeriod = planetData.planet_info?.rotation_period || planetData.rotation_period_seconds || 86400;
+      const initialAngleRotation = planetData.debug?.initial_angle_rotation || planetData.initial_angle_rotation || 0;
+      
+      // Debug: mostrar datos de rotación una vez
+      if (!window.rotationDataLogged) {
+        console.log('🌍 Real Planet Rotation Data:', {
+          rotationPeriod: rotationPeriod,
+          rotationPeriodDays: (rotationPeriod / 86400).toFixed(2) + ' days',
+          rotationPeriodMonths: (rotationPeriod / (86400 * 30.44)).toFixed(2) + ' months',
+          cosmicOriginTime: new Date(cosmicOriginTime * 1000).toISOString(),
+          initialAngle: initialAngleRotation + ' radians'
+        });
+        window.rotationDataLogged = true;
+      }
+      
+      const timeElapsedSeconds = currentTime - cosmicOriginTime;
+      const angleVelocityRotation = (2 * Math.PI) / rotationPeriod;
+      const currentRotationAngle = (initialAngleRotation + timeElapsedSeconds * angleVelocityRotation) % (2 * Math.PI);
+      
+      // Aplicar rotación REAL del planeta (independiente de OrbitControls)
+      planetMeshRef.current.rotation.y = currentRotationAngle;
+      
+      // Debug: mostrar rotación actual ocasionalmente
+      if (Math.random() < 0.001) { // Cada ~1000 frames
+        console.log('🌍 Current planet rotation:', {
+          angle: currentRotationAngle,
+          degrees: (currentRotationAngle * 180 / Math.PI).toFixed(2) + '°',
+          timeElapsed: (timeElapsedSeconds / 86400).toFixed(2) + ' days'
+        });
+      }
     }
 
     // Actualizar uniforms de shaders de los efectos activos
