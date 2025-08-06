@@ -314,8 +314,12 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
     const sunDistance = 10;
     const actualSunAngle = sunAngle + Math.PI;
     
+    // Calcular posición 3D de la luz considerando variación vertical
+    // Usar el orbital_angle para variar la altura (componente Y) - DRAMÁTICO para que sea visible
+    const orbitalVariationY = Math.sin(sunAngle) * 5; // Variación MÁS DRAMÁTICA en Y
+    
     const sunX = sunDistance * Math.cos(actualSunAngle);
-    const sunY = 0;
+    const sunY = orbitalVariationY; // Ya no fijo en 0
     const sunZ = sunDistance * Math.sin(actualSunAngle);
     
     // Actualizar posición de luz principal
@@ -366,8 +370,12 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
     
     // Luz principal (sol) en dirección OPUESTA a donde apunta la línea amarilla
     const sunLight = new THREE.DirectionalLight(0xffffff, 2.0);
+    // Calcular posición 3D de la luz considerando variación vertical
+    // Usar el orbital_angle para variar la altura (componente Y) - DRAMÁTICO para que sea visible
+    const orbitalVariationY = Math.sin(sunAngle) * 5; // Variación MÁS DRAMÁTICA en Y
+    
     const sunX = sunDistance * Math.cos(actualSunAngle);
-    const sunY = 0;
+    const sunY = orbitalVariationY; // Ya no fijo en 0
     const sunZ = sunDistance * Math.sin(actualSunAngle);
     
     sunLight.position.set(sunX, sunY, sunZ);
@@ -382,7 +390,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
     console.log('   🟡 Yellow line (shadow) points to:', (shadowAngle * 180 / Math.PI).toFixed(1) + '°');
     console.log('   ☀️ Sun light positioned at:', (actualSunAngle * 180 / Math.PI).toFixed(1) + '°');
     console.log('   🌑 Dark side should be at:', (shadowAngle * 180 / Math.PI).toFixed(1) + '°');
-    console.log('   📍 Sun light coords: x=' + sunX.toFixed(2) + ', y=' + sunY.toFixed(2) + ', z=' + sunZ.toFixed(2));
+    console.log('   📍 Sun light coords: x=' + sunX.toFixed(2) + ', y=' + sunY.toFixed(2) + ', z=' + sunZ.toFixed(2) + ' (Y varies with orbital position)');
     console.log('   📍 Expected shadow coords: x=' + (Math.cos(shadowAngle) * 2).toFixed(2) + ', z=' + (Math.sin(shadowAngle) * 2).toFixed(2));
     console.log('   🎯 Planet name:', planetData.planet_info?.name || 'unknown');
 
@@ -398,19 +406,6 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       scene.add(ambientLight);
     }
 
-    // Añadir helper para debug (solo si está habilitado)
-    if (showDebugInfo) {
-      const sunLightHelper = new THREE.DirectionalLightHelper(sunLight, 1);
-      scene.add(sunLightHelper);
-      
-      // TEST: Crear una pequeña esfera en la posición del sol para verificar
-      const sunIndicatorGeometry = new THREE.SphereGeometry(0.1, 8, 8);
-      const sunIndicatorMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-      const sunIndicator = new THREE.Mesh(sunIndicatorGeometry, sunIndicatorMaterial);
-      sunIndicator.position.set(sunX / sunDistance * 2, sunY / sunDistance * 2, sunZ / sunDistance * 2);
-      scene.add(sunIndicator);
-      console.log('🔸 Sun indicator sphere placed at:', sunIndicator.position);
-    }
   };
 
   /**

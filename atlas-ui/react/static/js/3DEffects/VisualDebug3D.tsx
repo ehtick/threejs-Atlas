@@ -66,25 +66,27 @@ export class VisualDebug3DEffect {
   }
 
   /**
-   * Crear línea amarilla desde el centro hacia la SOMBRA (parte más oscura)
-   * Replica exactamente lo que hace Pillow: draw_debug.line((center_x, center_y, sun_x, sun_y), fill="yellow", width=3)
-   * CORREGIDO: La línea apunta hacia la SOMBRA, no hacia el sol
+   * Crear línea amarilla desde el centro hacia la SOMBRA (dirección opuesta al sol)
+   * La línea apunta hacia donde está la sombra, mientras la esfera está donde está el sol
    */
   private createSunLine(): void {
-    // Calcular posición de la sombra basándose en los datos disponibles
+    // Calcular posición basándose en los datos disponibles
     const sunAngle = this.calculateSunAngle();
     
-    // LÍNEA AMARILLA: Desde el centro hacia la SOMBRA (parte más oscura del planeta)
-    const sceneRadius = this.planetRadius * 20; // Extender hasta el borde de la escena
-    const shadowAngle = sunAngle; // En Pillow, sunAngle apunta hacia la sombra
+    // LÍNEA AMARILLA: Desde el centro hacia la SOMBRA (dirección opuesta al sol)
+    const lineDistance = this.planetRadius * 3; // Más corta para que se vea la esfera
+    const shadowAngle = sunAngle; // Apunta hacia la sombra (sin inversión)
+    
+    // Calcular componente Y basándose en posición orbital
+    const shadowX = lineDistance * Math.cos(shadowAngle);
+    const shadowZ = lineDistance * Math.sin(shadowAngle);
+    const shadowY = shadowZ * 0.8; // Y proporcional a Z para variación vertical
     
     // Crear geometría de línea real (no cilindro)
     const lineGeometry = new THREE.BufferGeometry();
     const positions = new Float32Array([
       0, 0, 0,  // Centro del planeta (núcleo)
-      sceneRadius * Math.cos(shadowAngle), // Hacia donde está la SOMBRA
-      0, // Mantener en plano ecuatorial
-      sceneRadius * Math.sin(shadowAngle)  // Dirección hacia la sombra
+      shadowX, shadowY, shadowZ // Hacia donde está la SOMBRA
     ]);
     
     lineGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
@@ -92,17 +94,51 @@ export class VisualDebug3DEffect {
     // Material amarillo brillante para línea
     const lineMaterial = new THREE.LineBasicMaterial({
       color: 0xFFFF00, // Amarillo brillante
-      linewidth: 3,
+      linewidth: 5, // Más gruesa
       transparent: false
     });
     
     this.sunLine = new THREE.Line(lineGeometry, lineMaterial);
     this.debugGroup.add(this.sunLine);
     
+    // AÑADIR ESFERA DEL SOL usando la misma lógica que ModularPlanetRenderer
+    // La esfera debe estar en actualSunAngle = sunAngle + Math.PI
+    const actualSunAngle = sunAngle + Math.PI; // Misma lógica que ModularPlanetRenderer
+    const sunSphereDistance = lineDistance * 0.7; // Posición intermedia
+    
+    const sunSphereX = sunSphereDistance * Math.cos(actualSunAngle);
+    const sunSphereY = 0; // Mantener en el plano horizontal para alineación visual
+    const sunSphereZ = sunSphereDistance * Math.sin(actualSunAngle);
+    
+    const sunSphereGeometry = new THREE.SphereGeometry(this.planetRadius * 0.15, 16, 16);
+    const sunSphereMaterial = new THREE.MeshBasicMaterial({ 
+      color: 0xFFFF00, 
+      transparent: false, 
+      opacity: 1.0 
+    });
+    const sunSphere = new THREE.Mesh(sunSphereGeometry, sunSphereMaterial);
+    sunSphere.position.set(sunSphereX, sunSphereY, sunSphereZ);
+    this.debugGroup.add(sunSphere);
+    
+    // ESFERAS DE TEST para verificar visibilidad
+    this.createTestSpheres();
+    
     console.log('🔍 VISUAL DEBUG ANALYSIS:');
     console.log('   📡 Raw orbital_angle from params:', (this.params.orbitalAngle || 0) * 180 / Math.PI + '°');
-    console.log('   🟡 Yellow line angle (should point to shadow):', (shadowAngle * 180 / Math.PI).toFixed(1) + '°');
-    console.log('   🔍 Yellow line endpoint: x=' + (sceneRadius * Math.cos(shadowAngle)).toFixed(2) + ', z=' + (sceneRadius * Math.sin(shadowAngle)).toFixed(2));
+    console.log('   🟡 Yellow line angle (points to shadow):', (shadowAngle * 180 / Math.PI).toFixed(1) + '°');
+    console.log('   🟡 Yellow line direction (shadow): x=' + shadowX.toFixed(2) + ', y=' + shadowY.toFixed(2) + ', z=' + shadowZ.toFixed(2));
+    console.log('   ☀️ Actual sun angle (shadow + 180°):', (actualSunAngle * 180 / Math.PI).toFixed(1) + '°');
+    console.log('   ☀️ Sun sphere position (horizontal plane): x=' + sunSphereX.toFixed(2) + ', y=' + sunSphereY.toFixed(2) + ', z=' + sunSphereZ.toFixed(2));
+  }
+  
+  /**
+   * Ya no es necesario - las esferas de test han sido eliminadas
+   * La esfera del sol ya se crea correctamente en createSunLine()
+   */
+  private createTestSpheres(): void {
+    // Todas las esferas de test removidas según solicitud del usuario
+    // Solo mantenemos la esfera amarilla del sol que se crea en createSunLine()
+    console.log('⭐ Test spheres removed - only sun sphere remains');
   }
 
   /**
@@ -143,18 +179,18 @@ export class VisualDebug3DEffect {
 
   /**
    * Calcular el ángulo hacia la SOMBRA basándose en la posición ORBITAL (no rotación)
-   * CORREGIDO: En Pillow, este ángulo apunta hacia la SOMBRA, no hacia el sol
+   * Este ángulo apunta hacia donde está la sombra del planeta
    */
   private calculateSunAngle(): number {
     if (this.params.sunAngle !== undefined) {
       return this.params.sunAngle;
     }
     
-    // En Pillow, sun_angle = orbital_angle y apunta hacia la SOMBRA
-    // El nombre es confuso, pero la línea amarilla apunta hacia la parte oscura
+    // El orbital_angle apunta hacia la sombra
+    // La línea amarilla sigue esta dirección, mientras la esfera del sol está en la opuesta
     const orbitalAngle = this.params.orbitalAngle || 0;
     
-    return orbitalAngle; // Esto apunta hacia la SOMBRA
+    return orbitalAngle; // Apunta hacia la sombra
   }
 
   /**
@@ -203,13 +239,13 @@ export class VisualDebug3DEffect {
   }
 
   /**
-   * Actualizar posición de la línea hacia la SOMBRA (como Pillow)
+   * Actualizar posición de la línea hacia la SOMBRA (dirección opuesta al sol)
    */
   private updateSunLine(): void {
     if (!this.sunLine) return;
     
     const sunAngle = this.calculateSunAngle();
-    const shadowAngle = sunAngle; // En Pillow, sunAngle apunta hacia la sombra
+    const shadowAngle = sunAngle; // Apunta hacia la sombra (sin inversión)
     const sceneRadius = this.planetRadius * 20;
     
     const geometry = this.sunLine.geometry as THREE.BufferGeometry;

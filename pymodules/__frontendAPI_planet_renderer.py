@@ -161,6 +161,7 @@ class PlanetRenderingTranslator:
             "timing": {
                 "current_rotation_angle": angle_rotation,
                 "orbital_angle": orbital_angle,
+                "initial_orbital_angle": planet.initial_orbital_angle,  # AÑADIDO: posición estática inicial
                 "tilt_factor": tilt_factor,
                 "cosmic_origin_time": config.cosmic_origin_time,
                 "time_elapsed_seconds": time_elapsed_seconds
