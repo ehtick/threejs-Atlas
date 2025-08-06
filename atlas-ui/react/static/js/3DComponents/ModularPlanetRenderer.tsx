@@ -223,8 +223,8 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       mountRef.current.appendChild(renderer.domElement);
       rendererRef.current = renderer;
 
-      // Configurar iluminación realista
-      setupLighting(scene);
+      // Configurar iluminación básica inicial (se actualizará cuando lleguen datos de la API)
+      setupLighting(scene, null); // null = usar iluminación por defecto temporal
 
       // Crear planeta base
       createBasePlanet(scene);
@@ -242,36 +242,174 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
   }, []); // Sin dependencias para evitar recreación
 
   /**
-   * Configurar iluminación de la escena
+   * Calcular ángulo del sol basándose en la posición ORBITAL del planeta (no rotación)
+   * CORREGIDO: Usar la misma lógica que Pillow donde sun_angle = orbital_angle
    */
-  const setupLighting = (scene: THREE.Scene) => {
-    // Luz principal (sol)
+  const calculateSunAngle = (planetData?: any): number => {
+    // ⚠️ VERIFICAR DATOS CRÍTICOS
+    if (!planetData) {
+      console.error('❌ calculateSunAngle: NO planetData provided!');
+      return 0;
+    }
+    
+    // Si Python envía sun_angle explícitamente, usarlo
+    const explicitSunAngle = planetData.sun_angle || planetData.lighting?.sun_angle;
+    if (explicitSunAngle !== undefined) {
+      console.log('✅ Using explicit sun_angle from Python:', explicitSunAngle);
+      return explicitSunAngle;
+    }
+    
+    // VERIFICAR que orbital_angle existe
+    const orbitalAngle = planetData.timing?.orbital_angle;
+    if (orbitalAngle === undefined || orbitalAngle === null) {
+      console.error('❌ CRITICAL: orbital_angle missing for planet:', planetData.planet_info?.name);
+      console.error('   Full timing data:', planetData.timing);
+      return 0; // Valor por defecto problemático
+    }
+    
+    const sunAngle = orbitalAngle;
+    
+    console.log('☀️ Sun angle calculated from orbital position:', {
+      planetName: planetData.planet_info?.name,
+      orbitalAngle: (orbitalAngle * 180 / Math.PI).toFixed(1) + '°',
+      sunAngle: (sunAngle * 180 / Math.PI).toFixed(1) + '°',
+      hasTimingData: !!planetData.timing,
+      fullTimingKeys: planetData.timing ? Object.keys(planetData.timing) : 'NONE'
+    });
+    
+    return sunAngle;
+  };
+
+  // Referencias para luces que necesitan ser actualizadas
+  const sunLightRef = useRef<THREE.DirectionalLight | null>(null);
+  const fillLightRef = useRef<THREE.DirectionalLight | null>(null);
+
+  /**
+   * Configurar propiedades de sombra para una luz direccional
+   */
+  const setupShadowProperties = (light: THREE.DirectionalLight) => {
+    light.castShadow = true;
+    light.shadow.mapSize.width = 2048;
+    light.shadow.mapSize.height = 2048;
+    light.shadow.camera.near = 0.5;
+    light.shadow.camera.far = 50;
+    light.shadow.camera.left = -10;
+    light.shadow.camera.right = 10;
+    light.shadow.camera.top = 10;
+    light.shadow.camera.bottom = -10;
+  };
+
+  /**
+   * ACTUALIZAR iluminación cuando lleguen datos reales de la API
+   */
+  const updateLightingWithRealData = (planetData: any) => {
+    if (!sunLightRef.current || !sceneRef.current) {
+      console.error('❌ Cannot update lighting: missing light references');
+      return;
+    }
+
+    console.log('🔄 UPDATING LIGHTING with real data from API...');
+    
+    const sunAngle = calculateSunAngle(planetData);
+    const sunDistance = 10;
+    const actualSunAngle = sunAngle + Math.PI;
+    
+    const sunX = sunDistance * Math.cos(actualSunAngle);
+    const sunY = 0;
+    const sunZ = sunDistance * Math.sin(actualSunAngle);
+    
+    // Actualizar posición de luz principal
+    sunLightRef.current.position.set(sunX, sunY, sunZ);
+    sunLightRef.current.target.position.set(0, 0, 0);
+    if (!sceneRef.current.children.includes(sunLightRef.current.target)) {
+      sceneRef.current.add(sunLightRef.current.target);
+    }
+    
+    // Actualizar luz de relleno
+    if (fillLightRef.current) {
+      fillLightRef.current.position.set(-sunX * 0.5, 0, -sunZ * 0.5);
+    }
+
+    console.log('✅ LIGHTING UPDATED with orbital_angle:', (sunAngle * 180 / Math.PI).toFixed(1) + '°');
+  };
+
+  /**
+   * Configurar iluminación de la escena basada en datos reales de Python
+   */
+  const setupLighting = (scene: THREE.Scene, planetData?: any) => {
+    // Si no hay datos, usar iluminación por defecto temporal
+    if (!planetData) {
+      console.log('⚠️ Setting up DEFAULT lighting (waiting for API data...)');
+      const defaultSunLight = new THREE.DirectionalLight(0xffffff, 2.0);
+      defaultSunLight.position.set(10, 0, 0); // Por defecto desde la derecha
+      defaultSunLight.castShadow = true;
+      setupShadowProperties(defaultSunLight);
+      scene.add(defaultSunLight);
+      sunLightRef.current = defaultSunLight;
+
+      const defaultFillLight = new THREE.DirectionalLight(0x4466ff, 0.05);
+      defaultFillLight.position.set(-5, 0, 0);
+      scene.add(defaultFillLight);
+      fillLightRef.current = defaultFillLight;
+
+      const ambientLight = new THREE.AmbientLight(0x222244, 0.1);
+      scene.add(ambientLight);
+      return;
+    }
+
+    // Calcular posición real del sol basándose en datos de Python
+    const sunAngle = calculateSunAngle(planetData);
+    const sunDistance = 10;
+    
+    const shadowAngle = sunAngle; // Línea amarilla apunta hacia aquí (SOMBRA)
+    const actualSunAngle = sunAngle + Math.PI; // Sol está en dirección OPUESTA
+    
+    // Luz principal (sol) en dirección OPUESTA a donde apunta la línea amarilla
     const sunLight = new THREE.DirectionalLight(0xffffff, 2.0);
-    sunLight.position.set(5, 3, 5);
-    sunLight.castShadow = true;
-    sunLight.shadow.mapSize.width = 2048;
-    sunLight.shadow.mapSize.height = 2048;
-    sunLight.shadow.camera.near = 0.5;
-    sunLight.shadow.camera.far = 50;
-    sunLight.shadow.camera.left = -10;
-    sunLight.shadow.camera.right = 10;
-    sunLight.shadow.camera.top = 10;
-    sunLight.shadow.camera.bottom = -10;
+    const sunX = sunDistance * Math.cos(actualSunAngle);
+    const sunY = 0;
+    const sunZ = sunDistance * Math.sin(actualSunAngle);
+    
+    sunLight.position.set(sunX, sunY, sunZ);
+    sunLight.target.position.set(0, 0, 0);
+    scene.add(sunLight.target);
+    setupShadowProperties(sunLight);
     scene.add(sunLight);
+    sunLightRef.current = sunLight;
+    
+    console.log('🔍 DEBUGGING ILLUMINATION:');
+    console.log('   📡 Raw orbital_angle from Python:', (planetData.timing?.orbital_angle || 0) * 180 / Math.PI + '°');
+    console.log('   🟡 Yellow line (shadow) points to:', (shadowAngle * 180 / Math.PI).toFixed(1) + '°');
+    console.log('   ☀️ Sun light positioned at:', (actualSunAngle * 180 / Math.PI).toFixed(1) + '°');
+    console.log('   🌑 Dark side should be at:', (shadowAngle * 180 / Math.PI).toFixed(1) + '°');
+    console.log('   📍 Sun light coords: x=' + sunX.toFixed(2) + ', y=' + sunY.toFixed(2) + ', z=' + sunZ.toFixed(2));
+    console.log('   📍 Expected shadow coords: x=' + (Math.cos(shadowAngle) * 2).toFixed(2) + ', z=' + (Math.sin(shadowAngle) * 2).toFixed(2));
+    console.log('   🎯 Planet name:', planetData.planet_info?.name || 'unknown');
 
-    // Luz de relleno fría
-    const fillLight = new THREE.DirectionalLight(0x4466ff, 0.4);
-    fillLight.position.set(-5, -3, -5);
+    // Luz de relleno MUY sutil
+    const fillLight = new THREE.DirectionalLight(0x4466ff, 0.05);
+    fillLight.position.set(-sunX * 0.5, 0, -sunZ * 0.5);
     scene.add(fillLight);
+    fillLightRef.current = fillLight;
 
-    // Luz ambiental suave
-    const ambientLight = new THREE.AmbientLight(0x222244, 0.3);
-    scene.add(ambientLight);
+    // Luz ambiental MUY suave para hacer las sombras más evidentes
+    if (!scene.children.find(child => child instanceof THREE.AmbientLight)) {
+      const ambientLight = new THREE.AmbientLight(0x222244, 0.1);
+      scene.add(ambientLight);
+    }
 
     // Añadir helper para debug (solo si está habilitado)
     if (showDebugInfo) {
       const sunLightHelper = new THREE.DirectionalLightHelper(sunLight, 1);
       scene.add(sunLightHelper);
+      
+      // TEST: Crear una pequeña esfera en la posición del sol para verificar
+      const sunIndicatorGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+      const sunIndicatorMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+      const sunIndicator = new THREE.Mesh(sunIndicatorGeometry, sunIndicatorMaterial);
+      sunIndicator.position.set(sunX / sunDistance * 2, sunY / sunDistance * 2, sunZ / sunDistance * 2);
+      scene.add(sunIndicator);
+      console.log('🔸 Sun indicator sphere placed at:', sunIndicator.position);
     }
   };
 
@@ -280,10 +418,14 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
    */
   const createBasePlanet = (scene: THREE.Scene) => {
     const planetGeometry = new THREE.SphereGeometry(1, 128, 64);
+    // Usar material básico temporalmente para verificar iluminación
     const planetMaterial = new THREE.MeshStandardMaterial({
       color: 0x808080,
       metalness: 0.1,
-      roughness: 0.8
+      roughness: 0.8,
+      // Asegurar que responde a la luz direccional
+      transparent: false,
+      opacity: 1.0
     });
 
     const planetMesh = new THREE.Mesh(planetGeometry, planetMaterial);
@@ -291,6 +433,8 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
     planetMesh.receiveShadow = true;
     scene.add(planetMesh);
     planetMeshRef.current = planetMesh;
+    
+    console.log('🪐 Base planet created with material that should respond to directional lighting');
   };
 
   /**
@@ -345,10 +489,20 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       const data: PlanetRenderingData = result.rendering_data;
       setRenderingData(data);
 
-      // DEBUG: Log planet data
-      if (showDebugInfo || true) { // Siempre mostrar por ahora para debugging
-        console.group(`🔍 DEBUG: Planet Data for ${data.planet_info.name}`);
-        console.log('Full data from API:', data);
+      // ⚠️ VERIFICACIÓN CRÍTICA: ¿Tiene orbital_angle?
+      console.group(`🔍 PLANET DATA VERIFICATION: ${data.planet_info.name}`);
+      console.log('📊 Timing data received:', data.timing);
+      
+      if (!data.timing?.orbital_angle && data.timing?.orbital_angle !== 0) {
+        console.error('❌ CRITICAL: Missing orbital_angle for planet:', data.planet_info.name);
+        console.error('   This will cause incorrect lighting for ALL planets!');
+      } else {
+        console.log('✅ orbital_angle present:', (data.timing.orbital_angle * 180 / Math.PI).toFixed(1) + '°');
+      }
+      
+      // Full debug info
+      if (showDebugInfo || true) { 
+        console.log('📡 Full API response:', data);
         if (data.surface_elements?.type === 'oceanic') {
           console.log('🌊 Oceanic specific data:', {
             green_patches: data.surface_elements.green_patches,
@@ -356,14 +510,17 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
             base_color: data.planet_info.base_color
           });
         }
-        console.groupEnd();
       }
+      console.groupEnd();
 
       EffectsLogger.log('API data loaded successfully', {
         planet: data.planet_info.name,
         type: data.planet_info.type,
         hasEffects: !!data.surface_elements
       });
+
+      // 🔄 ACTUALIZAR ILUMINACIÓN con datos reales de la API
+      updateLightingWithRealData(data);
 
       // Apply modular effects using the 3DEffects system
       await applyProceduralShadersFromAPI(data);
@@ -480,6 +637,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
           rotationPeriod: rotationPeriod,
           rotationPeriodDays: (rotationPeriod / 86400).toFixed(2) + ' days',
           rotationPeriodMonths: (rotationPeriod / (86400 * 30.44)).toFixed(2) + ' months',
+          axialTilt: (planetData.planet_info?.axial_tilt || 0).toFixed(2) + '°',
           cosmicOriginTime: new Date(cosmicOriginTime * 1000).toISOString(),
           initialAngle: initialAngleRotation + ' radians'
         });
@@ -492,6 +650,10 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       
       // Aplicar rotación REAL del planeta (independiente de OrbitControls)
       planetMeshRef.current.rotation.y = currentRotationAngle;
+      
+      // Aplicar inclinación axial REAL del planeta
+      const axialTilt = planetData.planet_info?.axial_tilt || 0; // En grados
+      planetMeshRef.current.rotation.z = axialTilt * (Math.PI / 180); // Convertir a radianes
       
       // Debug: mostrar rotación actual ocasionalmente
       if (Math.random() < 0.001) { // Cada ~1000 frames

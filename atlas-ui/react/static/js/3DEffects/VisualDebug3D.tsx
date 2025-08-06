@@ -11,6 +11,7 @@ import * as THREE from 'three';
 
 export interface VisualDebug3DParams {
   sunAngle?: number;
+  orbitalAngle?: number;
   planetRotation?: number;
   currentTime?: number;
   cosmicOriginTime?: number;
@@ -65,24 +66,25 @@ export class VisualDebug3DEffect {
   }
 
   /**
-   * Crear línea amarilla desde el centro hacia la posición del sol
+   * Crear línea amarilla desde el centro hacia la SOMBRA (parte más oscura)
    * Replica exactamente lo que hace Pillow: draw_debug.line((center_x, center_y, sun_x, sun_y), fill="yellow", width=3)
+   * CORREGIDO: La línea apunta hacia la SOMBRA, no hacia el sol
    */
   private createSunLine(): void {
-    // Calcular posición del sol basándose en los datos disponibles
+    // Calcular posición de la sombra basándose en los datos disponibles
     const sunAngle = this.calculateSunAngle();
     
-    // LÍNEA AMARILLA: Desde el centro hacia el lado OPUESTO al sol (dirección de la sombra)
+    // LÍNEA AMARILLA: Desde el centro hacia la SOMBRA (parte más oscura del planeta)
     const sceneRadius = this.planetRadius * 20; // Extender hasta el borde de la escena
-    const shadowAngle = sunAngle + Math.PI; // Lado opuesto al sol
+    const shadowAngle = sunAngle; // En Pillow, sunAngle apunta hacia la sombra
     
     // Crear geometría de línea real (no cilindro)
     const lineGeometry = new THREE.BufferGeometry();
     const positions = new Float32Array([
       0, 0, 0,  // Centro del planeta (núcleo)
-      sceneRadius * Math.cos(shadowAngle), // Hacia el borde de la escena
+      sceneRadius * Math.cos(shadowAngle), // Hacia donde está la SOMBRA
       0, // Mantener en plano ecuatorial
-      sceneRadius * Math.sin(shadowAngle)  // Dirección opuesta al sol
+      sceneRadius * Math.sin(shadowAngle)  // Dirección hacia la sombra
     ]);
     
     lineGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
@@ -97,7 +99,10 @@ export class VisualDebug3DEffect {
     this.sunLine = new THREE.Line(lineGeometry, lineMaterial);
     this.debugGroup.add(this.sunLine);
     
-    console.log('🟡 Shadow direction line created - pointing away from sun at angle:', (shadowAngle * 180 / Math.PI).toFixed(1) + '°');
+    console.log('🔍 VISUAL DEBUG ANALYSIS:');
+    console.log('   📡 Raw orbital_angle from params:', (this.params.orbitalAngle || 0) * 180 / Math.PI + '°');
+    console.log('   🟡 Yellow line angle (should point to shadow):', (shadowAngle * 180 / Math.PI).toFixed(1) + '°');
+    console.log('   🔍 Yellow line endpoint: x=' + (sceneRadius * Math.cos(shadowAngle)).toFixed(2) + ', z=' + (sceneRadius * Math.sin(shadowAngle)).toFixed(2));
   }
 
   /**
@@ -137,21 +142,19 @@ export class VisualDebug3DEffect {
   }
 
   /**
-   * Calcular el ángulo del sol basándose en los datos disponibles
-   * Si no hay sun_angle explícito, calcularlo basándose en la rotación planetaria
+   * Calcular el ángulo hacia la SOMBRA basándose en la posición ORBITAL (no rotación)
+   * CORREGIDO: En Pillow, este ángulo apunta hacia la SOMBRA, no hacia el sol
    */
   private calculateSunAngle(): number {
     if (this.params.sunAngle !== undefined) {
       return this.params.sunAngle;
     }
     
-    // Calcular basándose en la rotación actual del planeta
-    // Esto es una aproximación - el sol debería estar en dirección opuesta a la rotación
-    const currentRotation = this.calculateCurrentRotation();
+    // En Pillow, sun_angle = orbital_angle y apunta hacia la SOMBRA
+    // El nombre es confuso, pero la línea amarilla apunta hacia la parte oscura
+    const orbitalAngle = this.params.orbitalAngle || 0;
     
-    // El sol está en la dirección "opuesta" para crear el efecto de iluminación
-    // Añadir π/4 para un efecto de iluminación lateral más dramático
-    return currentRotation + Math.PI + (Math.PI / 4);
+    return orbitalAngle; // Esto apunta hacia la SOMBRA
   }
 
   /**
@@ -200,19 +203,19 @@ export class VisualDebug3DEffect {
   }
 
   /**
-   * Actualizar posición de la línea del sol (dirección de sombra)
+   * Actualizar posición de la línea hacia la SOMBRA (como Pillow)
    */
   private updateSunLine(): void {
     if (!this.sunLine) return;
     
     const sunAngle = this.calculateSunAngle();
-    const shadowAngle = sunAngle + Math.PI; // Lado opuesto al sol
+    const shadowAngle = sunAngle; // En Pillow, sunAngle apunta hacia la sombra
     const sceneRadius = this.planetRadius * 20;
     
     const geometry = this.sunLine.geometry as THREE.BufferGeometry;
     const positions = geometry.attributes.position.array as Float32Array;
     
-    // Actualizar línea hacia la dirección de la sombra
+    // Actualizar línea hacia donde está la SOMBRA
     positions[3] = sceneRadius * Math.cos(shadowAngle);
     positions[4] = 0; // Plano ecuatorial
     positions[5] = sceneRadius * Math.sin(shadowAngle);
@@ -321,7 +324,8 @@ export function createVisualDebug3DFromPythonData(planetData: any, planetRadius:
     initialAngleRotation: planetData.debug?.initial_angle_rotation || planetData.timing?.initial_angle_rotation || planetData.initialAngleRotation || 0,
     planetRadius: planetRadius,
     
-    // Si Python envía sun_angle explícitamente, usarlo
+    // Datos ORBITALES para posición del sol
+    orbitalAngle: planetData.timing?.orbital_angle || 0,
     sunAngle: planetData.sun_angle || planetData.lighting?.sun_angle,
     
     showSunLine: true,
