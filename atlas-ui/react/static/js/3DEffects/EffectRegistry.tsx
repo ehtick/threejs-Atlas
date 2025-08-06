@@ -29,6 +29,12 @@ import { RockyTerrainEffect, createRockyTerrainFromPythonData } from './RockyTer
 import { IcyTerrainEffect, createIcyTerrainFromPythonData } from './IcyTerrain';
 // OceanWaves eliminado - no respeta los datos de Python
 
+// Importar efectos de debug
+import { VisualDebug3DEffect, createVisualDebug3DFromPythonData } from './VisualDebug3D';
+
+// VISUAL DEBUG FLAG - Controla si se muestra debug visual 3D
+const VISUAL_DEBUG = true; // Cambiar a false para desactivar
+
 export interface EffectInstance {
   id: string;
   type: string;
@@ -74,7 +80,10 @@ export enum EffectType {
   // Efectos de iluminación
   CITY_LIGHTS = 'city_lights',
   BIOLUMINESCENCE = 'bioluminescence',
-  THERMAL_EMISSIONS = 'thermal_emissions'
+  THERMAL_EMISSIONS = 'thermal_emissions',
+  
+  // Efectos de debug
+  VISUAL_DEBUG_3D = 'visual_debug_3d'
 }
 
 // Interfaz para creadores de efectos
@@ -208,6 +217,12 @@ export class EffectRegistry {
         console.warn('Crystal formations effect not implemented yet');
         return null;
       }
+    });
+
+    // Efectos de debug
+    this.registerEffect(EffectType.VISUAL_DEBUG_3D, {
+      create: (params, planetRadius) => new VisualDebug3DEffect(planetRadius, params),
+      fromPythonData: (data, planetRadius) => createVisualDebug3DFromPythonData(data, planetRadius)
     });
 
     // Más efectos pueden añadirse aquí fácilmente
@@ -541,6 +556,36 @@ export class EffectRegistry {
       if (fragmentationEffect) {
         effects.push(fragmentationEffect);
         fragmentationEffect.effect.addToScene(scene, mesh.position);
+      }
+    }
+
+    // 5. Efecto de debug visual (controlado por VISUAL_DEBUG flag)
+    if (VISUAL_DEBUG) {
+      console.log('🐛 Activating Visual Debug 3D mode - VISUAL_DEBUG =', VISUAL_DEBUG);
+      console.log('🐛 Planet data for debug:', {
+        name: pythonData.planet_info?.name,
+        rotation: pythonData.timing?.current_rotation_angle,
+        cosmic_origin: pythonData.debug?.cosmic_origin_time
+      });
+      
+      const debugEffect = this.createEffectFromPythonData(
+        EffectType.VISUAL_DEBUG_3D,
+        pythonData,
+        planetRadius,
+        mesh,
+        100 // Prioridad alta para render encima
+      );
+      
+      if (debugEffect) {
+        effects.push(debugEffect);
+        debugEffect.effect.addToScene(scene, mesh.position);
+        
+        // Log info de debug en consola
+        const debugInfo = debugEffect.effect.getDebugInfo();
+        console.log('🐛 Debug Effect Created! Info:', debugInfo);
+        console.log('🐛 Sun Line Object:', debugEffect.effect.getObject3D());
+      } else {
+        console.error('❌ Failed to create debug effect!');
       }
     }
 

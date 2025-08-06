@@ -15,6 +15,7 @@ from typing import Dict, List, Any, Optional, Tuple
 
 from pymodules.__atlas_config import config
 from pymodules.__atlas_seedmaster import consistent_hash
+from pymodules.__atlas_fixed_vars import VISUAL_DEBUG
 from pymodules.__drawer_cplanet_type import get_planet_color_map
 from pymodules.__drawer_cplanet_inside import (
     generate_noise_texture,
@@ -146,6 +147,11 @@ class PlanetRenderingTranslator:
                 "axial_tilt": planet.axial_tilt,
                 "rotation_period": planet.rotation_period_seconds,
                 "orbital_period": planet.orbital_period_seconds
+            },
+            "debug": {
+                "visual_debug": VISUAL_DEBUG,
+                "cosmic_origin_time": config.cosmic_origin_time,
+                "initial_angle_rotation": planet.initial_angle_rotation
             },
             "seeds": {
                 "shape_seed": shape_seed,
