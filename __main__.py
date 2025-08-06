@@ -455,6 +455,30 @@ def send_static_files(filename):
 
 if __name__ == "__main__":
 
+    # Manejar debug de planetas
+    if "--debug" in sys.argv:
+        from pymodules.__atlas_debug_flag import AtlasDebugger
+        
+        # Buscar el argumento después de --debug
+        debug_index = sys.argv.index("--debug")
+        if debug_index + 1 < len(sys.argv):
+            stargate_url = sys.argv[debug_index + 1]
+            
+            debugger = AtlasDebugger()
+            
+            # Verificar si también se solicita JSON export
+            if "--json" in sys.argv:
+                output_file = debugger.export_to_json(stargate_url)
+                print(f"💾 Debug data exported to: {output_file}")
+            else:
+                debugger.debug_planet_rendering(stargate_url)
+            
+            exit("Debug complete!")
+        else:
+            print("❌ Error: --debug requires a stargate URL")
+            print("Usage: python __main__.py --debug 'stargate_url' [--json]")
+            exit(1)
+
     if RunAtlasProtocol():
         if "--observer" in sys.argv:
             observer(universe)

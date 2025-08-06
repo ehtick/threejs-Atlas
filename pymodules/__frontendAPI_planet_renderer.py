@@ -101,6 +101,24 @@ class PlanetRenderingTranslator:
                 planet_radius, rng, config.seed, spaced_planet_name
             )
         
+        # Si no se generaron comandos específicos, crear comando básico con base_color
+        if not planet_specific_data or planet_specific_data.get('type') != 'rendering_commands':
+            planet_specific_data = {
+                "type": "rendering_commands",
+                "commands": [{
+                    "command": "apply_material",
+                    "target": "planet_mesh",
+                    "material_type": "phong",
+                    "properties": {
+                        "color": base_color,
+                        "shininess": 50,
+                        "specular": "#222222"
+                    }
+                }],
+                "fallback": True,
+                "original_type": planet_specific_data.get('type', 'unknown')
+            }
+        
         # Generate atmosphere data
         atmosphere_data = self._translate_atmosphere(planet.atmosphere)
         
@@ -722,31 +740,90 @@ class PlanetRenderingTranslator:
                 "seed": f"{planet_name}_cloud_{i}"
             })
         
+        # Convertir datos específicos a órdenes de renderizado genéricas
+        rendering_commands = []
+        
+        # 1. Comando para aplicar material base
+        rendering_commands.append({
+            "command": "apply_material",
+            "target": "planet_mesh",
+            "material_type": "phong",
+            "properties": {
+                "color": "#0000FF",  # Azul oceánico
+                "shininess": 100,
+                "specular": "#222222"
+            }
+        })
+        
+        # 2. Comandos para renderizar parches verdes
+        for i, patch in enumerate(green_patches):
+            rendering_commands.append({
+                "command": "create_surface_element",
+                "element_type": "circular_patch",
+                "id": f"green_patch_{i}",
+                "position": patch["position"],
+                "size": patch["size"],
+                "color": patch["color"],
+                "geometry": {
+                    "type": "circle",
+                    "segments": patch["sides"],
+                    "elevation": 0.001  # Ligeramente elevado sobre superficie
+                }
+            })
+        
+        # 3. Comandos para renderizar tierras abstractas
+        for i, land in enumerate(abstract_lands):
+            rendering_commands.append({
+                "command": "create_surface_element", 
+                "element_type": "abstract_land",
+                "id": f"abstract_land_{i}",
+                "color": land["color"],
+                "geometry": {
+                    "type": "irregular_polygon",
+                    "points_min": land["points_min"],
+                    "points_max": land["points_max"],
+                    "seed": land["seed"],
+                    "elevation": 0.0005
+                }
+            })
+        
+        # 4. Comandos para renderizar nubes
+        for i, cloud in enumerate(clouds):
+            rendering_commands.append({
+                "command": "create_surface_element",
+                "element_type": "cloud",
+                "id": f"cloud_{i}",
+                "position": cloud["position"],
+                "radius": cloud["radius"],
+                "color": cloud["color"],
+                "geometry": {
+                    "type": "sphere",
+                    "elevation": 0.02  # Elevado sobre superficie
+                }
+            })
+        
         return {
-            "type": "oceanic",
-            "surface_rings": {"color": [0, 0, 0, 60/255.0]},
-            "depths": {"enabled": True},
-            "abstract_lands": abstract_lands,
-            "green_patches": green_patches,
-            "clouds": clouds,
-            "debug": {
-                "original_planet_radius": planet_radius,
-                "center_x": center_x, "center_y": center_y,
-                "green_patch_count": num_green_patches,
-                "cloud_count": num_clouds,
-                "patch_color": patch_color
+            "type": "rendering_commands",  # Cambio clave: no "oceanic" específico
+            "commands": rendering_commands,
+            "legacy_data": {
+                # Mantener datos legacy para debug
+                "surface_rings": {"color": [0, 0, 0, 60/255.0]},
+                "depths": {"enabled": True},
+                "abstract_lands": abstract_lands,
+                "green_patches": green_patches,
+                "clouds": clouds,
             }
         }
     
     def _translate_desert(self, planet_radius: int, rng: random.Random, 
                          seed: int, planet_name: str) -> Dict[str, Any]:
         """Translate Desert planet elements"""
-        return {"type": "desert"}
+        return {"type": "desert"}  # Se usará fallback con base_color
     
     def _translate_lava(self, planet_radius: int, rng: random.Random, 
                        seed: int, planet_name: str) -> Dict[str, Any]:
         """Translate Lava planet elements"""
-        return {"type": "lava"}
+        return {"type": "lava"}  # Se usará fallback con base_color
     
     def _translate_arid(self, planet_radius: int, rng: random.Random, 
                        seed: int, planet_name: str) -> Dict[str, Any]:

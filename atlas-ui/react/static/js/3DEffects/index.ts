@@ -38,8 +38,7 @@ export type { RockyTerrainParams } from './RockyTerrain';
 export { IcyTerrainEffect, createIcyTerrainFromPythonData } from './IcyTerrain';
 export type { IcyTerrainParams } from './IcyTerrain';
 
-export { OceanWavesEffect, createOceanWavesFromPythonData } from './OceanWaves';
-export type { OceanWavesParams } from './OceanWaves';
+// OceanWaves eliminado - no respeta los datos de Python
 
 // Sistema de registro y gestión
 export { 
@@ -64,7 +63,7 @@ export const AVAILABLE_EFFECTS = [
   'fragmentation',
   'rocky_terrain',
   'icy_terrain',
-  'ocean_waves',
+  // 'ocean_waves', // Eliminado - no respeta datos de Python
   'lava_flows',
   'crystal_formations',
   'cloud_layers',
@@ -132,12 +131,7 @@ export const DEFAULT_EFFECT_CONFIGS = {
     iceCapColor: [0.678, 0.847, 1.0]
   },
   
-  ocean_waves: {
-    waveIntensity: 0.3,
-    waveSpeed: 2.0,
-    waveScale: 8.0,
-    oceanColor: [0.1, 0.3, 0.6]
-  }
+  // ocean_waves eliminado - no respeta datos de Python
 } as const;
 
 // Funciones de utilidad

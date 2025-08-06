@@ -12,6 +12,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 // Importar sistema de efectos modulares
 import { effectRegistry, EffectInstance } from '../3DEffects/EffectRegistry';
 import { createPlanetEffectConfig, EffectsLogger } from '../3DEffects';
+import { DebugPlanetData, useDebugPlanetData } from '../utils/DebugPlanetData';
 
 // Interfaces
 interface ModularPlanetRendererProps {
@@ -109,6 +110,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
   const activeEffectsRef = useRef<EffectInstance[]>([]);
   const lastFrameTimeRef = useRef<number>(0);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
+
 
   // Helper functions for the modular effects system now handled by EffectsLogger
 
@@ -343,6 +345,20 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       const data: PlanetRenderingData = result.rendering_data;
       setRenderingData(data);
 
+      // DEBUG: Log planet data
+      if (showDebugInfo || true) { // Siempre mostrar por ahora para debugging
+        console.group(`🔍 DEBUG: Planet Data for ${data.planet_info.name}`);
+        console.log('Full data from API:', data);
+        if (data.surface_elements?.type === 'oceanic') {
+          console.log('🌊 Oceanic specific data:', {
+            green_patches: data.surface_elements.green_patches,
+            abstract_lands: data.surface_elements.abstract_lands,
+            base_color: data.planet_info.base_color
+          });
+        }
+        console.groupEnd();
+      }
+
       EffectsLogger.log('API data loaded successfully', {
         planet: data.planet_info.name,
         type: data.planet_info.type,
@@ -351,9 +367,6 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
 
       // Apply modular effects using the 3DEffects system
       await applyProceduralShadersFromAPI(data);
-      
-      // Los efectos ya se crearon en applyProceduralShadersFromAPI
-      // No necesitamos duplicar la lógica
 
       // Callback opcional
       if (onDataLoaded) {
@@ -606,10 +619,24 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
   }, []); // Sin dependencias
 
   /**
+   * Hook de debug para los datos del planeta
+   */
+  useDebugPlanetData(renderingData);
+
+  /**
    * Renderizado del componente
    */
   return (
     <div className={`relative ${containerClassName}`}>
+      {/* Componente de debug visual (solo si está habilitado) */}
+      {showDebugInfo && renderingData && (
+        <DebugPlanetData 
+          planetData={renderingData} 
+          showInPage={true}
+          showInConsole={true}
+        />
+      )}
+      
       <div 
         ref={mountRef} 
         className="w-full h-full"

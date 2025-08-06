@@ -27,7 +27,7 @@ import { MetallicSurfaceEffect } from './MetallicSurface';
 import { FragmentationEffect } from './FragmentationEffect';
 import { RockyTerrainEffect, createRockyTerrainFromPythonData } from './RockyTerrain';
 import { IcyTerrainEffect, createIcyTerrainFromPythonData } from './IcyTerrain';
-import { OceanWavesEffect, createOceanWavesFromPythonData } from './OceanWaves';
+// OceanWaves eliminado - no respeta los datos de Python
 
 export interface EffectInstance {
   id: string;
@@ -193,11 +193,6 @@ export class EffectRegistry {
     this.registerEffect(EffectType.ICY_TERRAIN, {
       create: (params, planetRadius, mesh) => new IcyTerrainEffect(params),
       fromPythonData: (data, planetRadius, mesh) => createIcyTerrainFromPythonData(data) // Pasar todos los datos
-    });
-
-    this.registerEffect(EffectType.OCEAN_WAVES, {
-      create: (params, planetRadius, mesh) => new OceanWavesEffect(params),
-      fromPythonData: (data, planetRadius, mesh) => createOceanWavesFromPythonData(data) // Pasar todos los datos
     });
 
     // Efectos futuros (placeholders)
@@ -370,7 +365,13 @@ export class EffectRegistry {
         }
       }
       
-      // Efectos específicos por tipo de planeta
+      // Sistema agnóstico: ejecutar comandos de renderizado de Python
+      if (surface.type === 'rendering_commands' && surface.commands) {
+        console.log('🎯 Executing rendering commands from Python');
+        this.executeRenderingCommands(surface.commands, scene, mesh, planetRadius);
+      }
+      
+      // Efectos específicos por tipo de planeta (LEGACY - se eliminará)
       switch (surface.type) {
         case 'gas_giant':
           const gasGiantEffect = this.createEffectFromPythonData(
@@ -444,21 +445,10 @@ export class EffectRegistry {
           break;
 
         case 'oceanic':
-          const oceanEffect = this.createEffectFromPythonData(
-            EffectType.OCEAN_WAVES,
-            {
-              ...pythonData,
-              base_color: pythonData.planet_info?.base_color, // Usar el color específico de Python
-              ocean_color: pythonData.planet_info?.base_color // El color del océano debe ser el base_color de Python
-            },
-            planetRadius,
-            mesh,
-            0
-          );
-          if (oceanEffect) {
-            effects.push(oceanEffect);
-            oceanEffect.effect.apply(mesh);
-          }
+          // El frontend NO debe tener lógica específica para tipos de planeta
+          // Python debe enviar órdenes específicas de renderizado
+          console.log('🚨 PROBLEM: Frontend has planet-type specific logic');
+          console.log('🔧 SOLUTION: Python should send specific rendering commands');
           break;
       }
     }
@@ -615,6 +605,134 @@ export class EffectRegistry {
       }
       this.effects.delete(id);
     }
+  }
+
+  /**
+   * Ejecuta comandos de renderizado genéricos enviados por Python
+   * El frontend es agnóstico del tipo de planeta
+   */
+  private executeRenderingCommands(
+    commands: any[], 
+    scene: THREE.Scene, 
+    mesh: THREE.Mesh, 
+    planetRadius: number
+  ): void {
+    console.log(`🎯 Executing ${commands.length} rendering commands from Python`);
+    
+    commands.forEach((command, index) => {
+      try {
+        switch (command.command) {
+          case 'apply_material':
+            this.executeApplyMaterial(command, mesh);
+            break;
+            
+          case 'create_surface_element':
+            this.executeCreateSurfaceElement(command, scene, planetRadius);
+            break;
+            
+          default:
+            console.warn(`❓ Unknown command: ${command.command}`);
+        }
+      } catch (error) {
+        console.error(`❌ Error executing command ${index}:`, error);
+      }
+    });
+  }
+
+  /**
+   * Ejecuta comando apply_material
+   */
+  private executeApplyMaterial(command: any, mesh: THREE.Mesh): void {
+    console.log('🎨 Applying material from Python command:', command);
+    
+    const props = command.properties;
+    
+    if (command.material_type === 'phong') {
+      const material = new THREE.MeshPhongMaterial({
+        color: new THREE.Color(props.color),
+        shininess: props.shininess || 50,
+        specular: new THREE.Color(props.specular || '#222222'),
+        transparent: props.transparent || false,
+        opacity: props.opacity || 1.0
+      });
+      
+      mesh.material = material;
+      console.log('✅ Applied phong material with color:', props.color);
+    }
+  }
+
+  /**
+   * Ejecuta comando create_surface_element
+   */
+  private executeCreateSurfaceElement(command: any, scene: THREE.Scene, planetRadius: number): void {
+    console.log('🔧 Creating surface element:', command.element_type, command.id);
+    
+    let geometry: THREE.BufferGeometry;
+    
+    // Crear geometría según el tipo
+    switch (command.geometry.type) {
+      case 'circle':
+        geometry = new THREE.CircleGeometry(
+          command.size * planetRadius * 0.1, 
+          command.geometry.segments || 16
+        );
+        break;
+        
+      case 'sphere':
+        geometry = new THREE.SphereGeometry(
+          command.radius * planetRadius * 0.1, 
+          12, 12
+        );
+        break;
+        
+      case 'irregular_polygon':
+        // Por ahora usar anillo simple, después implementar forma irregular
+        geometry = new THREE.RingGeometry(0, 0.05 * planetRadius, 8);
+        break;
+        
+      default:
+        console.warn(`❓ Unknown geometry type: ${command.geometry.type}`);
+        return;
+    }
+    
+    // Crear material
+    const color = command.color;
+    const material = new THREE.MeshBasicMaterial({
+      color: new THREE.Color(color[0], color[1], color[2]),
+      opacity: color[3] || 1.0,
+      transparent: (color[3] || 1.0) < 1.0
+    });
+    
+    // Crear mesh
+    const elementMesh = new THREE.Mesh(geometry, material);
+    
+    // Posicionar si se especifica
+    if (command.position) {
+      const worldPos = this.normalizedToSphere(command.position, 
+        planetRadius * (1 + (command.geometry.elevation || 0))
+      );
+      elementMesh.position.copy(worldPos);
+      elementMesh.lookAt(new THREE.Vector3(0, 0, 0));
+    }
+    
+    scene.add(elementMesh);
+    console.log('✅ Created surface element:', command.id);
+  }
+
+  /**
+   * Convierte coordenadas normalizadas a posición en esfera
+   */
+  private normalizedToSphere(normalizedPos: [number, number], radius: number): THREE.Vector3 {
+    const [x, y] = normalizedPos;
+    
+    const phi = Math.acos(1 - 2 * ((y + 1) / 2));
+    const theta = 2 * Math.PI * ((x + 1) / 2);
+    
+    const worldX = radius * Math.sin(phi) * Math.cos(theta);
+    const worldY = radius * Math.cos(phi);
+    const worldZ = radius * Math.sin(phi) * Math.sin(theta);
+    
+    return new THREE.Vector3(worldX, worldY, worldZ);
   }
 
   /**
