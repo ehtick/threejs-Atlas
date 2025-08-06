@@ -6,6 +6,7 @@
  */
 
 import * as THREE from 'three';
+import { getPlanetBaseColor } from './PlanetColorBase';
 
 export interface OceanWavesParams {
   // Configuración de ondas
@@ -188,7 +189,7 @@ export class OceanWavesEffect {
       foamThreshold: params.foamThreshold || 0.8,
       foamColor: params.foamColor || new THREE.Color(0.9, 0.9, 1.0),
       foamIntensity: params.foamIntensity || 0.4,
-      oceanColor: params.oceanColor || new THREE.Color(0.1, 0.3, 0.6),
+      oceanColor: params.oceanColor || new THREE.Color(0.1, 0.3, 0.6), // TODO: Usar PlanetColorBase aquí también
       ...params
     };
 
@@ -288,39 +289,18 @@ export class OceanWavesEffect {
 
 // Función de utilidad para crear desde datos de Python
 export function createOceanWavesFromPythonData(pythonData: any): OceanWavesEffect {
-  // Usar el base_color de Python si está disponible, sino usar color oceánico por defecto
-  let oceanColor = [0.1, 0.3, 0.6]; // Default oceanic
+  // 🎨 USAR SISTEMA CENTRALIZADO DE COLORES
+  const baseColor = getPlanetBaseColor(pythonData);
+  const oceanColor = [baseColor.r, baseColor.g, baseColor.b];
   
-  if (pythonData.ocean_color) {
-    // Si hay un ocean_color específico, usarlo
-    if (typeof pythonData.ocean_color === 'string') {
-      // Si es un string hex como "#0000FF", convertirlo
-      const hex = pythonData.ocean_color.replace('#', '');
-      oceanColor = [
-        parseInt(hex.substr(0, 2), 16) / 255,
-        parseInt(hex.substr(2, 2), 16) / 255,
-        parseInt(hex.substr(4, 2), 16) / 255
-      ];
-    } else if (Array.isArray(pythonData.ocean_color)) {
-      oceanColor = pythonData.ocean_color;
-    }
-  } else if (pythonData.base_color) {
-    // Si no hay ocean_color pero sí base_color, usarlo
-    if (typeof pythonData.base_color === 'string') {
-      const hex = pythonData.base_color.replace('#', '');
-      oceanColor = [
-        parseInt(hex.substr(0, 2), 16) / 255,
-        parseInt(hex.substr(2, 2), 16) / 255,
-        parseInt(hex.substr(4, 2), 16) / 255
-      ];
-    }
-  }
+  console.log('🌊 OceanWaves using color from PlanetColorBase:', oceanColor);
   
-  console.log('🌊 Creating ocean effect with color from Python:', {
-    base_color: pythonData.base_color,
+  console.log('🌊 Creating ocean effect with color from PlanetColorBase:', {
+    base_color: pythonData.planet_info?.base_color || pythonData.base_color,
     ocean_color: pythonData.ocean_color,
     final_color: oceanColor,
-    seeds: pythonData.seeds
+    seeds: pythonData.seeds,
+    planet_type: pythonData.planet_info?.type || pythonData.type
   });
   
   // GENERAR PARÁMETROS PROCEDIMENTALMENTE usando seeds de Python

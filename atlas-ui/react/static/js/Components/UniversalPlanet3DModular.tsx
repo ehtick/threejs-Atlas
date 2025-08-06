@@ -45,6 +45,8 @@ export const UniversalPlanet3DModular: React.FC<UniversalPlanet3DModularProps> =
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [planetData, setPlanetData] = useState<any>(null);
+  const [showDebugData, setShowDebugData] = useState(false);
+  const [rawPythonData, setRawPythonData] = useState<string>('');
 
   useEffect(() => {
     if (!mountRef.current) return;
@@ -166,6 +168,9 @@ export const UniversalPlanet3DModular: React.FC<UniversalPlanet3DModularProps> =
         
         const data = result.rendering_data;
         setPlanetData(data);
+        
+        // 🚀 GUARDAR DATOS COMPLETOS PARA DEBUG
+        setRawPythonData(JSON.stringify(result, null, 2));
         
         // Callback opcional
         if (onDataLoaded) {
@@ -370,6 +375,38 @@ export const UniversalPlanet3DModular: React.FC<UniversalPlanet3DModularProps> =
               {planetData.description.appearance}
             </p>
           )}
+        </div>
+      )}
+
+      {/* 🚀 PYTHON API DATA DEBUG BOX */}
+      <button 
+        onClick={() => setShowDebugData(!showDebugData)}
+        className="absolute top-2 right-2 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded font-bold z-10 transition-colors"
+        title="Show/Hide Python API Data"
+      >
+        🚀 API DATA
+      </button>
+
+      {showDebugData && (
+        <div className="absolute top-10 right-2 w-80 max-h-96 bg-black bg-opacity-90 border border-gray-400 rounded p-3 overflow-hidden z-10">
+          <div className="flex justify-between items-center mb-2">
+            <h4 className="text-white font-bold text-sm">🚀 PYTHON API DATA - COMPLETE DATASET</h4>
+            <button 
+              onClick={() => setShowDebugData(false)}
+              className="text-red-400 hover:text-red-300 font-bold"
+            >
+              ✕
+            </button>
+          </div>
+          <textarea 
+            value={rawPythonData}
+            readOnly
+            className="w-full h-80 bg-gray-900 text-green-400 text-xs font-mono border border-gray-600 rounded p-2 resize-none overflow-auto"
+            placeholder="Loading API data..."
+          />
+          <div className="text-gray-400 text-xs mt-1">
+            Scroll to see all data • Copy/paste friendly
+          </div>
         </div>
       )}
     </div>
