@@ -296,11 +296,8 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
     const baseColor = new THREE.Color(data.planet_info.base_color);
     const seed = parseFloat(data.seeds.shape_seed) * 0.001;
     
-    // Uniforms base comunes con identificador único del planeta
-    const planetHash = data.planet_info.name.split('').reduce((a, b) => {
-      a = ((a << 5) - a) + b.charCodeAt(0);
-      return a & a;
-    }, 0) * 0.001;
+    // Usar el shape_seed directamente de Python para determinismo completo
+    const planetHash = (parseFloat(data.seeds?.shape_seed || '0') * 0.001) % 1.0;
     
     console.log('🎨 UNIVERSAL SHADER for', data.planet_info.name);
     console.log('  seed:', seed, 'hash:', planetHash, 'color:', baseColor);
@@ -312,35 +309,42 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
     // Arrays para elementos renderizables (backend envía lo que quiera)
     const renderableElements = [];
     
-    // Si hay green_patches, añadirlos con colores terrestres
+    // Si hay green_patches, añadirlos usando el RNG procedural de Python
     if (surfaceData.green_patches) {
-      surfaceData.green_patches.slice(0, 10).forEach((patch: any) => {
-        // Convertir colores a tonos más terrestres
-        const originalColor = patch.color;
-        const terrestrialColor = [
-          Math.max(0.15, originalColor[0] * 1.2), // Más marrón/verde
-          Math.max(0.25, originalColor[1] * 1.3), // Más verde
-          Math.max(0.08, originalColor[2] * 0.8), // Menos azul
-          0.9 // Opacidad alta para continentes
+      surfaceData.green_patches.slice(0, 10).forEach((patch: any, index: number) => {
+        // Usar los datos exactos de Python sin modificarlos
+        const patchSeed = parseFloat(data.seeds?.shape_seed || '0') + index;
+        const colorVariation = Math.abs(Math.sin(patchSeed * 100.0)) * 0.3;
+        
+        // Colores más fieles a los datos originales con variación procedural
+        const proceduralColor = [
+          patch.color[0] * (1.0 + colorVariation * 0.5),
+          patch.color[1] * (1.1 + colorVariation * 0.3), 
+          patch.color[2] * (0.9 + colorVariation * 0.2),
+          0.85 // Opacidad consistente
         ];
         
         renderableElements.push({
           type: 'patch',
           position: patch.position,
-          size: patch.size * 1.2, // Hacer continentes un poco más grandes
-          color: terrestrialColor
+          size: patch.size * 1.1, // Tamaño procedural basado en datos Python
+          color: proceduralColor
         });
       });
     }
     
-    // Si hay clouds, añadirlas con colores atmosféricos
+    // Si hay clouds, añadirlas usando datos procedurales específicos
     if (surfaceData.clouds) {
-      surfaceData.clouds.slice(0, 5).forEach((cloud: any) => {
+      surfaceData.clouds.slice(0, 5).forEach((cloud: any, index: number) => {
+        // Usar seed específico para cada nube
+        const cloudSeed = parseFloat(data.seeds?.shape_seed || '0') + index * 10;
+        const opacity = 0.3 + (Math.abs(Math.sin(cloudSeed)) * 0.3);
+        
         renderableElements.push({
           type: 'cloud',
           position: cloud.position,
-          size: cloud.radius * 1.5, // Nubes más grandes
-          color: [0.95, 0.95, 0.98, 0.4] // Blanco muy suave, menos opaco
+          size: cloud.radius * 1.3,
+          color: [0.96, 0.96, 0.98, opacity] // Opacidad procedural
         });
       });
     }
@@ -862,30 +866,46 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       varying vec3 vNormal;
       varying vec3 vPosition;
       
+      // Función para convertir posición 3D a coordenadas de superficie sin distorsión
+      vec3 get3DCoords(vec3 pos, vec2 elementPos) {
+        // Convertir la posición del elemento de [-1,1] a ángulos esféricos
+        float theta = elementPos.x * 3.14159; // Longitud
+        float phi = (elementPos.y + 1.0) * 1.5708; // Latitud (0 a PI)
+        
+        // Crear vector 3D desde los ángulos
+        vec3 elementDir = vec3(
+          sin(phi) * cos(theta),
+          cos(phi),
+          sin(phi) * sin(theta)
+        );
+        
+        return elementDir;
+      }
+      
+      // Función de distancia geodésica en la esfera (sin distorsión en polos)
+      float sphericalDistance(vec3 pos1, vec3 pos2) {
+        // Normalizar las posiciones para trabajar en la superficie de la esfera
+        vec3 p1 = normalize(pos1);
+        vec3 p2 = normalize(pos2);
+        
+        // Calcular distancia angular usando dot product
+        float angle = acos(clamp(dot(p1, p2), -1.0, 1.0));
+        
+        // Convertir a distancia en el rango [0,1]
+        return angle / 3.14159;
+      }
+      
       void main() {
         // Color base del planeta
         vec3 color = baseColor;
         
-        // Coordenadas esféricas mejoradas con continuidad en bordes
-        float u = atan(vPosition.z, vPosition.x) / 6.28318 + 0.5;
-        float v = acos(clamp(vPosition.y, -1.0, 1.0)) / 3.14159;
+        // Usar posición 3D normalizada directamente (sin UV mapping)
+        vec3 normalPos = normalize(vPosition);
         
-        // Corregir discontinuidad UV en los bordes
-        vec2 sphereUV = vec2(u, v);
-        
-        // Coordenadas alternativas para elementos que pueden cruzar bordes
-        vec2 sphereUV_wrapped = vec2(fract(u + 0.5), v);
-        
-        // Máscara esférica para limitar efectos a la superficie del planeta
-        float distanceFromCenter = length(vPosition);
-        float sphereMask = smoothstep(1.02, 0.98, distanceFromCenter); // Suave falloff en bordes
-        
-        // Agregar profundidad oceánica base con variación 3D continua
+        // Variación procedural oceánica base suave
         vec3 depthPos = vPosition * 3.0 + vec3(seed);
         float depthNoise = fract(sin(dot(depthPos, vec3(17.123, 89.456, 43.789))) * 12758.5);
-        float baseDepth = length(vPosition) - 1.0;
-        float oceanDepth = baseDepth + depthNoise * 0.1;
-        color = mix(color, color * 0.7, clamp(oceanDepth * 2.0, 0.0, 0.3) * sphereMask);
+        color = mix(color, color * 0.95, depthNoise * 0.08); // Variación muy sutil
         
         // Renderizar TODOS los elementos que envíe el backend
         for(int i = 0; i < 20; i++) {
@@ -903,83 +923,77 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
           
           if(elementType == 0) continue; // Skip empty
           
-          // Convertir posición del backend [-1,1] a UV [0,1]
-          vec2 elementUV;
-          
-          if(elementType == 4) { // Band - usar solo Y
-            elementUV = vec2(0.5, (elementPos.y + 1.0) * 0.5);
-            // Banda horizontal
-            float distY = abs(sphereUV.y - elementUV.y);
-            float influence = smoothstep(elementSize, elementSize * 0.3, distY);
+          if(elementType == 4) { // Band - bandas horizontales
+            // Las bandas usan latitud directamente
+            float bandLatitude = elementPos.y;
+            float currentLatitude = normalPos.y;
+            
+            float distToBand = abs(currentLatitude - bandLatitude);
+            float influence = smoothstep(elementSize, elementSize * 0.3, distToBand);
+            
             if(influence > 0.0) {
-              // Aplicar máscara esférica a las bandas también
-              influence *= sphereMask;
-              color = mix(color, elementColor.rgb, influence * elementColor.a);
+              // Añadir variación longitudinal suave
+              float bandVariation = sin(atan(normalPos.z, normalPos.x) * 3.0 + seed) * 0.1 + 0.9;
+              color = mix(color, elementColor.rgb, influence * elementColor.a * bandVariation);
             }
           } else {
-            // Elementos puntuales (patch, cloud, crystal, storm)
-            elementUV = (elementPos + 1.0) * 0.5;
+            // Elementos puntuales usando distancia esférica 3D
+            vec3 elementDir = get3DCoords(normalPos, elementPos);
+            float dist = sphericalDistance(normalPos, elementDir);
             
-            // Calcular distancia considerando wrapping horizontal
-            float dist1 = distance(sphereUV, elementUV);
-            float dist2 = distance(sphereUV_wrapped, elementUV);
-            float dist3 = distance(sphereUV, vec2(elementUV.x + 1.0, elementUV.y));
-            float dist4 = distance(sphereUV, vec2(elementUV.x - 1.0, elementUV.y));
-            
-            // Usar la distancia mínima para evitar cortes
-            float dist = min(min(dist1, dist2), min(dist3, dist4));
-            float influence = smoothstep(elementSize, elementSize * 0.3, dist);
+            // Ajustar el tamaño del elemento para compensar la proyección esférica
+            float adjustedSize = elementSize * 0.5;
+            float influence = smoothstep(adjustedSize, adjustedSize * 0.3, dist);
             
             if(influence > 0.0) {
               // Diferentes formas según tipo
               if(elementType == 1) { // Patch - continentes/islas suaves
-                // Crear bordes más definidos como tierra real
-                float landBorder = smoothstep(0.1, 0.6, influence);
+                // Usar coordenadas 3D para evitar distorsión y cortes
+                vec3 coastPos = normalPos * 15.0 + vec3(planetHash * 1000.0);
+                float coastalNoise = fract(sin(dot(coastPos, vec3(12.9898,78.233,37.719))) * 43758.5);
                 
-                // Añadir variación costera usando 3D para continuidad
-                vec3 coastPos = vPosition * 25.0;
-                float coastalDetail = fract(sin(dot(coastPos, vec3(12.9898,78.233,37.719))) * 43758.5);
-                landBorder *= coastalDetail * 0.2 + 0.8;
+                // Bordes suaves pero definidos para continentes
+                float landInfluence = smoothstep(0.0, 0.7, influence);
+                landInfluence *= coastalNoise * 0.2 + 0.8;
                 
-                color = mix(color, elementColor.rgb, landBorder * elementColor.a);
+                color = mix(color, elementColor.rgb, landInfluence * elementColor.a);
               } else if(elementType == 2) { // Cloud - difuso suavizado
-                // Ruido 3D continuo para nubes sin cortes
-                vec3 cloudPos = vPosition * 8.0 + vec3(time * 0.1);
-                float cloudNoise1 = fract(sin(dot(cloudPos, vec3(12.9898,78.233,37.719))) * 43758.5);
-                float cloudNoise2 = fract(sin(dot(cloudPos * 1.3, vec3(35.9898,46.233,91.123))) * 23758.5);
-                float cloudPattern = mix(cloudNoise1, cloudNoise2, 0.6);
+                // Nubes usando coordenadas 3D sin animación
+                vec3 cloudPos = normalPos * 8.0 + vec3(planetHash * 500.0);
+                float cloudPattern = fract(sin(dot(cloudPos, vec3(12.9898,78.233,37.719))) * 43758.5);
                 
-                // Suavizar bordes de las nubes
-                influence = smoothstep(0.0, 1.0, influence);
-                influence *= cloudPattern * 0.3 + 0.7; // Menos variación
-                color = mix(color, elementColor.rgb, influence * elementColor.a * 0.8);
+                // Nubes más suaves
+                float cloudInfluence = smoothstep(0.0, 0.9, influence);
+                cloudInfluence *= cloudPattern * 0.15 + 0.85;
+                color = mix(color, elementColor.rgb, cloudInfluence * elementColor.a * 0.5);
               } else if(elementType == 3) { // Crystal - angular
-                float angle = atan(sphereUV.y - elementUV.y, sphereUV.x - elementUV.x);
-                float crystal = abs(sin(angle * 6.0)) * influence;
-                color = mix(color, elementColor.rgb, crystal * elementColor.a);
+                // Usar distancia esférica para los cristales
+                float crystalPattern = abs(sin(dist * 30.0 + planetHash * 10.0));
+                float crystalInfluence = influence * crystalPattern;
+                color = mix(color, elementColor.rgb, crystalInfluence * elementColor.a);
               } else if(elementType == 5) { // Storm - swirl
-                float swirl = sin(dist * 20.0 + time * 2.0) * influence;
-                color = mix(color, elementColor.rgb, swirl * elementColor.a);
+                // Tormentas sin animación temporal para evitar flickering
+                float swirl = sin(dist * 20.0 + planetHash * 5.0) * influence;
+                color = mix(color, elementColor.rgb, abs(swirl) * elementColor.a);
               }
             }
           }
         }
         
-        // Variación procedural continua en 3D (sin cortes UV)
-        // Usar coordenadas 3D directas para evitar discontinuidades UV
-        vec3 noisePos = vPosition * 4.0 + vec3(seed + planetHash);
+        // Variación procedural usando posición 3D normalizada (sin distorsión)
+        vec3 noisePos = normalPos * 5.0 + vec3(seed + planetHash);
         float noise1 = fract(sin(dot(noisePos, vec3(12.9898, 78.233, 37.719))) * 43758.5);
         float noise2 = fract(sin(dot(noisePos * 1.7, vec3(35.9898, 46.233, 91.123))) * 23758.5);
         float smoothNoise = mix(noise1, noise2, 0.5);
-        color += (smoothNoise - 0.5) * 0.03 * sphereMask; // Aplicar máscara al ruido
+        color = mix(color, color * 1.03, smoothNoise * 0.15); // Variación sutil pero visible
         
-        // Iluminación
+        // Iluminación realista
         float lighting = dot(vNormal, normalize(vec3(1.0, 1.0, 1.0))) * 0.5 + 0.5;
         color *= lighting;
         
-        // Aplicar máscara esférica final + falloff de bordes
-        float edgeFalloff = smoothstep(1.1, 0.9, distanceFromCenter);
-        color *= edgeFalloff;
+        // Fresnel effect sutil para el borde (más realista que un falloff)
+        float fresnel = pow(1.0 - abs(dot(vNormal, normalize(vPosition))), 2.0);
+        color = mix(color, color * 0.7, fresnel * 0.3); // Oscurecer sutilmente en los bordes
         
         gl_FragColor = vec4(color, 1.0);
       }
