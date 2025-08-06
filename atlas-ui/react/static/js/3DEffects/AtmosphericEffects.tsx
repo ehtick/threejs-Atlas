@@ -421,8 +421,8 @@ export class DenseAtmosphereEffect {
     // width viene como porcentaje adicional del radio del planeta
     const atmosphereRadius = planetRadius * (1 + (this.params.width! / 100));
     
-    // Usar la misma resolución que las estrellas
-    this.geometry = new THREE.SphereGeometry(atmosphereRadius, 16, 16);
+    // Usar el doble de resolución para suavizar los polígonos visibles
+    this.geometry = new THREE.SphereGeometry(atmosphereRadius, 32, 32);
     
     // Crear el color THREE.js
     const atmosphereColor = new THREE.Color(
