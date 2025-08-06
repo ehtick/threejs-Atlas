@@ -129,7 +129,7 @@ export class RingSystemEffect {
       const finalAngle = angle + angularSpread;
       
       positions[i * 3] = finalDistance * Math.cos(finalAngle);                    // x
-      positions[i * 3 + 1] = (tiltedY + ySpread) + (this.planetRadius * 0.15); // Offset para centrar en ecuador
+      positions[i * 3 + 1] = (tiltedY + ySpread) + (this.planetRadius * 0.15); // Offset para compensar diferencia Pillow->ThreeJS
       positions[i * 3 + 2] = tiltedZ + particleRNG.uniform(-ringThickness * 0.4, ringThickness * 0.4); // z with tilt and spread for depth
       
       // Natural gray-based coloring system for realistic rings
