@@ -218,77 +218,214 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
   }, []);
 
   /**
-   * Aplicar shader uniforms de la API directamente al planeta
+   * Aplicar shaders procedurales usando datos específicos del JSON de la API
    */
-  const applyShaderUniformsToPlanet = async (shaderUniforms: any, planetData: PlanetRenderingData) => {
+  const applyProceduralShadersFromAPI = async (planetData: PlanetRenderingData) => {
     if (!planetMeshRef.current) return;
 
-    console.log('🎨 Creating shader material with uniforms:', shaderUniforms);
+    const planetType = planetData.planet_info.type.toLowerCase();
+    const seeds = planetData.seeds;
+    const surfaceElements = planetData.surface_elements;
+    
+    console.log('🔥 DEBUGGING PROCEDURAL SHADER APPLICATION');
+    console.log('  🌍 Planet Name:', planetData.planet_info.name);
+    console.log('  📊 Planet Type:', planetType);
+    console.log('  🌱 Seeds:', seeds);
+    console.log('  🏗️ Surface Elements:', surfaceElements);
+    
+    if (planetType === 'oceanic') {
+      console.log('  🌊 OCEANIC DATA DETAILS:');
+      console.log('    🟢 Green Patches:', surfaceElements?.green_patches?.length || 0);
+      console.log('    ☁️ Clouds:', surfaceElements?.clouds?.length || 0);
+      if (surfaceElements?.green_patches?.[0]) {
+        console.log('    📍 First Patch:', surfaceElements.green_patches[0]);
+      }
+    }
+    
+    if (planetType === 'gas giant') {
+      console.log('  🌪️ GAS GIANT DATA DETAILS:');
+      console.log('    🌀 Cloud Bands:', surfaceElements?.cloud_bands);
+      console.log('    ⛈️ Storms:', surfaceElements?.storms?.length || 0);
+    }
 
-    // Shader vertex simple
+    // Shader vertex común
     const vertexShader = `
       varying vec2 vUv;
       varying vec3 vNormal;
       varying vec3 vPosition;
+      varying vec3 vWorldPosition;
       
       void main() {
         vUv = uv;
         vNormal = normalize(normalMatrix * normal);
         vPosition = position;
+        vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
         gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
       }
     `;
 
-    // Shader fragment que usa los uniforms de la API
-    const fragmentShader = `
-      uniform float time;
-      uniform vec3 baseColor;
-      uniform float planetRadius;
-      uniform float surfaceDetail;
-      uniform float atmosphericHaze;
-      
-      varying vec2 vUv;
-      varying vec3 vNormal;
-      varying vec3 vPosition;
-      
-      void main() {
-        vec3 color = baseColor;
-        
-        // Aplicar variaciones basadas en los uniforms de la API
-        float surface = sin(vPosition.x * surfaceDetail) * cos(vPosition.y * surfaceDetail) * sin(vPosition.z * surfaceDetail);
-        color = mix(color, color * 1.3, surface * 0.3);
-        
-        // Efecto atmosférico
-        float fresnel = 1.0 - abs(dot(vNormal, vec3(0.0, 0.0, 1.0)));
-        color = mix(color, vec3(0.5, 0.7, 1.0), fresnel * atmosphericHaze);
-        
-        // Iluminación básica
-        float lighting = dot(vNormal, normalize(vec3(1.0, 1.0, 1.0))) * 0.5 + 0.5;
-        color *= lighting;
-        
-        gl_FragColor = vec4(color, 1.0);
+    // Generar shader UNIVERSAL que renderiza lo que mande el backend
+    const { fragmentShader, uniforms } = generateUniversalShader(planetData);
+
+    // Limpiar material anterior si existe
+    if (planetMeshRef.current.material) {
+      const oldMaterial = planetMeshRef.current.material;
+      console.log('🧼 Disposing old material for new planet');
+      if (oldMaterial instanceof THREE.Material) {
+        oldMaterial.dispose();
       }
-    `;
+    }
 
-    // Crear uniforms basados en los datos de la API
-    const uniforms = {
-      time: { value: 0.0 },
-      baseColor: { value: new THREE.Color(planetData.planet_info.base_color) },
-      planetRadius: { value: planetData.planet_info.radius || 1.0 },
-      surfaceDetail: { value: shaderUniforms.surfaceDetail || 5.0 },
-      atmosphericHaze: { value: shaderUniforms.atmosphericHaze || 0.1 },
-      ...shaderUniforms // Incluir todos los uniforms de la API
-    };
-
-    // Crear y aplicar el material shader
+    // Crear y aplicar el material shader procedural
     const shaderMaterial = new THREE.ShaderMaterial({
       vertexShader,
       fragmentShader,
-      uniforms
+      uniforms,
+      transparent: true,
+      side: THREE.FrontSide
     });
 
     planetMeshRef.current.material = shaderMaterial;
-    console.log('✅ Shader material applied with API uniforms');
+    console.log('✅ NEW Procedural shader applied for', planetType, 'planet:', planetData.planet_info.name);
+  };
+
+  /**
+   * Generar shader UNIVERSAL que renderiza lo que mande el backend, sin importar el tipo
+   */
+  const generateUniversalShader = (data: PlanetRenderingData) => {
+    const baseColor = new THREE.Color(data.planet_info.base_color);
+    const seed = parseFloat(data.seeds.shape_seed) * 0.001;
+    
+    // Uniforms base comunes con identificador único del planeta
+    const planetHash = data.planet_info.name.split('').reduce((a, b) => {
+      a = ((a << 5) - a) + b.charCodeAt(0);
+      return a & a;
+    }, 0) * 0.001;
+    
+    console.log('🎨 UNIVERSAL SHADER for', data.planet_info.name);
+    console.log('  seed:', seed, 'hash:', planetHash, 'color:', baseColor);
+    console.log('  🚀 BACKEND DATA:', data.surface_elements);
+    
+    // Extraer TODOS los datos que envíe el backend, sin importar el tipo
+    const surfaceData = data.surface_elements || {};
+    
+    // Arrays para elementos renderizables (backend envía lo que quiera)
+    const renderableElements = [];
+    
+    // Si hay green_patches, añadirlos con colores terrestres
+    if (surfaceData.green_patches) {
+      surfaceData.green_patches.slice(0, 10).forEach((patch: any) => {
+        // Convertir colores a tonos más terrestres
+        const originalColor = patch.color;
+        const terrestrialColor = [
+          Math.max(0.15, originalColor[0] * 1.2), // Más marrón/verde
+          Math.max(0.25, originalColor[1] * 1.3), // Más verde
+          Math.max(0.08, originalColor[2] * 0.8), // Menos azul
+          0.9 // Opacidad alta para continentes
+        ];
+        
+        renderableElements.push({
+          type: 'patch',
+          position: patch.position,
+          size: patch.size * 1.2, // Hacer continentes un poco más grandes
+          color: terrestrialColor
+        });
+      });
+    }
+    
+    // Si hay clouds, añadirlas con colores atmosféricos
+    if (surfaceData.clouds) {
+      surfaceData.clouds.slice(0, 5).forEach((cloud: any) => {
+        renderableElements.push({
+          type: 'cloud',
+          position: cloud.position,
+          size: cloud.radius * 1.5, // Nubes más grandes
+          color: [0.95, 0.95, 0.98, 0.4] // Blanco muy suave, menos opaco
+        });
+      });
+    }
+    
+    // Si hay crystals, añadirlos
+    if (surfaceData.crystals) {
+      surfaceData.crystals.slice(0, 10).forEach((crystal: any) => {
+        renderableElements.push({
+          type: 'crystal',
+          position: crystal.position,
+          size: crystal.width,
+          color: crystal.color
+        });
+      });
+    }
+    
+    // Si hay cloud_bands, añadirlas como elementos
+    if (surfaceData.cloud_bands) {
+      const bands = surfaceData.cloud_bands;
+      for (let i = 0; i < bands.num_bands && i < 10; i++) {
+        if (bands.widths[i] > 0) {
+          renderableElements.push({
+            type: 'band',
+            position: [0, bands.positions[i]], // Y position
+            size: bands.widths[i],
+            color: [1.2, 1.2, 1.2, 0.6] // Banda clara
+          });
+        }
+      }
+    }
+    
+    // Si hay storms, añadirlas
+    if (surfaceData.storms) {
+      surfaceData.storms.forEach((storm: any) => {
+        renderableElements.push({
+          type: 'storm',
+          position: storm.position,
+          size: storm.radius,
+          color: [0.545, 0.0, 0.0, 0.8] // Rojo oscuro
+        });
+      });
+    }
+    
+    console.log('🌌 RENDERABLE ELEMENTS extracted from backend:', renderableElements.length);
+    renderableElements.forEach((el, i) => {
+      console.log(`  ${i}: ${el.type} at [${el.position[0]}, ${el.position[1]}] size=${el.size}`);
+    });
+    
+    // Convertir elementos a arrays para el shader
+    const maxElements = 20;
+    const elementTypes: number[] = new Array(maxElements).fill(0);
+    const elementPositions: number[] = new Array(maxElements * 2).fill(0);
+    const elementSizes: number[] = new Array(maxElements).fill(0);
+    const elementColors: number[] = new Array(maxElements * 4).fill(0);
+    
+    renderableElements.slice(0, maxElements).forEach((element, i) => {
+      // Mapear tipos a números
+      const typeMap: {[key: string]: number} = {
+        'patch': 1, 'cloud': 2, 'crystal': 3, 'band': 4, 'storm': 5
+      };
+      
+      elementTypes[i] = typeMap[element.type] || 0;
+      elementPositions[i * 2] = element.position[0];
+      elementPositions[i * 2 + 1] = element.position[1];
+      elementSizes[i] = element.size;
+      elementColors[i * 4] = element.color[0];
+      elementColors[i * 4 + 1] = element.color[1];
+      elementColors[i * 4 + 2] = element.color[2];
+      elementColors[i * 4 + 3] = element.color[3] || 1.0;
+    });
+    
+    const baseUniforms = {
+      time: { value: 0.0 },
+      seed: { value: seed },
+      planetHash: { value: planetHash },
+      baseColor: { value: baseColor },
+      planetRadius: { value: 1.0 },
+      numElements: { value: Math.min(renderableElements.length, maxElements) },
+      elementTypes: { value: elementTypes },
+      elementPositions: { value: elementPositions },
+      elementSizes: { value: elementSizes },
+      elementColors: { value: elementColors }
+    };
+    
+    return generateUniversalShaderCode(baseUniforms);
   };
 
   /**
@@ -425,6 +562,433 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
   };
 
   /**
+   * Generar shader específico para planetas Oceanic usando datos del JSON
+   */
+  const generateOceanicShader = (data: PlanetRenderingData, baseUniforms: any) => {
+    const surfaceData = data.surface_elements;
+    
+    // Extraer datos específicos del oceanic del JSON
+    const greenPatches = surfaceData?.green_patches || [];
+    const clouds = surfaceData?.clouds || [];
+    
+    console.log('🌊 GENERATING OCEANIC SHADER:');
+    console.log('  🟢 Raw Green Patches Data:', greenPatches.length, greenPatches.slice(0, 3));
+    console.log('  ☁️ Raw Clouds Data:', clouds.length, clouds.slice(0, 2));
+    
+    // Convertir datos del JSON a arrays para shader
+    const patchPositions: number[] = [];
+    const patchSizes: number[] = [];
+    const patchColors: number[] = [];
+    
+    greenPatches.slice(0, 10).forEach((patch: any, i: number) => {
+      console.log(`  📍 Processing patch ${i}:`, patch.position, 'size:', patch.size, 'color:', patch.color);
+      patchPositions.push(patch.position[0], patch.position[1]);
+      patchSizes.push(patch.size);
+      patchColors.push(patch.color[0], patch.color[1], patch.color[2]);
+    });
+    
+    // Rellenar hasta 10 elementos
+    while (patchPositions.length < 20) patchPositions.push(0.0);
+    while (patchSizes.length < 10) patchSizes.push(0.0);
+    while (patchColors.length < 30) patchColors.push(0.0);
+    
+    console.log('  🎯 Final Shader Arrays:');
+    console.log('    Positions:', patchPositions.slice(0, 6), '...');
+    console.log('    Sizes:', patchSizes.slice(0, 3), '...');
+    console.log('    Colors:', patchColors.slice(0, 9), '...');
+
+    const numPatches = Math.min(greenPatches.length, 10);
+    const uniforms = {
+      ...baseUniforms,
+      numGreenPatches: { value: numPatches },
+      patchPositions: { value: patchPositions },
+      patchSizes: { value: patchSizes },
+      patchColors: { value: patchColors },
+      oceanDepth: { value: 0.8 },
+      waveAmplitude: { value: 0.02 },
+      waveFrequency: { value: 2.0 }
+    };
+    
+    console.log('  🎮 Final Oceanic Uniforms:');
+    console.log('    numGreenPatches:', numPatches);
+    console.log('    seed:', baseUniforms.seed.value);
+    console.log('    planetHash:', baseUniforms.planetHash.value);
+    console.log('    baseColor:', baseUniforms.baseColor.value);
+    console.log('    patchPositions array:', patchPositions);
+    console.log('    patchSizes array:', patchSizes);
+    console.log('    patchColors array:', patchColors);
+    
+    // DEBUG EXTREMO: Alertar diferencias
+    if (numPatches > 0) {
+      const firstPatchData = `Patch0: pos=[${patchPositions[0]}, ${patchPositions[1]}] size=${patchSizes[0]}`;
+      console.log('  🔥 FIRST PATCH DEBUG:', firstPatchData);
+      
+      // Crear identificador único para este planeta
+      const planetId = `${data.planet_info.name}_${baseUniforms.seed.value.toFixed(6)}`;
+      console.log('  🌍 PLANET UNIQUE ID:', planetId);
+      
+      // Guardar en window para comparar entre planetas
+      if (!(window as any).planetDebugData) {
+        (window as any).planetDebugData = {};
+      }
+      (window as any).planetDebugData[planetId] = {
+        name: data.planet_info.name,
+        seed: baseUniforms.seed.value,
+        hash: baseUniforms.planetHash.value,
+        patches: numPatches,
+        firstPatch: firstPatchData
+      };
+      
+      console.log('  📊 ALL PLANETS DATA:', (window as any).planetDebugData);
+    }
+
+    const fragmentShader = `
+      uniform float time;
+      uniform float seed;
+      uniform float planetHash;
+      uniform vec3 baseColor;
+      uniform int numGreenPatches;
+      uniform float patchPositions[20];
+      uniform float patchSizes[10];
+      uniform float patchColors[30];
+      uniform float oceanDepth;
+      uniform float waveAmplitude;
+      uniform float waveFrequency;
+      
+      varying vec2 vUv;
+      varying vec3 vNormal;
+      varying vec3 vPosition;
+      
+      void main() {
+        // SHADER DE DEBUG EXTREMO - Solo mostrar datos del JSON
+        vec3 color = vec3(0.0, 0.0, 0.2); // Azul oscuro base
+        
+        // Coordenadas esféricas
+        vec2 sphereUV = vec2(
+          atan(vPosition.z, vPosition.x) / 6.28318 + 0.5,
+          acos(vPosition.y) / 3.14159
+        );
+        
+        // DEBUG 1: Mostrar seed como color
+        color.r = fract(seed * 1000.0); // Rojo = seed
+        color.g = fract(planetHash * 1000.0); // Verde = planetHash
+        
+        // DEBUG 2: Si hay patches, mostrar TODOS como puntos gigantes
+        for(int i = 0; i < numGreenPatches && i < 10; i++) {
+          vec2 patchPos = vec2(patchPositions[i*2], patchPositions[i*2+1]);
+          
+          // Convertir posición JSON [-1,1] directamente a esfera [0,1]
+          vec2 patchUV = (patchPos + 1.0) * 0.5;
+          
+          float dist = distance(sphereUV, patchUV);
+          
+          // Punto GIGANTE para que sea imposible no verlo
+          if(dist < 0.3) {
+            // Color diferente por patch index
+            if(i == 0) color = vec3(1.0, 0.0, 1.0); // Magenta
+            else if(i == 1) color = vec3(1.0, 1.0, 0.0); // Amarillo
+            else if(i == 2) color = vec3(0.0, 1.0, 1.0); // Cyan
+            else color = vec3(1.0, 0.0, 0.0); // Rojo para el resto
+          }
+        }
+        
+        // DEBUG 3: Mostrar número de patches como intensidad azul
+        color.b = float(numGreenPatches) / 20.0;
+        
+        gl_FragColor = vec4(color, 1.0);
+      }
+    `;
+
+    return { fragmentShader, uniforms };
+  };
+
+  /**
+   * Generar shader específico para planetas Gas Giant usando datos del JSON
+   */
+  const generateGasGiantShader = (data: PlanetRenderingData, baseUniforms: any) => {
+    const cloudBands = data.surface_elements?.cloud_bands;
+    const storms = data.surface_elements?.storms || [];
+    
+    if (!cloudBands) {
+      return generateGenericShader(data, baseUniforms);
+    }
+
+    const uniforms = {
+      ...baseUniforms,
+      numBands: { value: cloudBands.num_bands },
+      bandPositions: { value: cloudBands.positions.slice(0, 20) },
+      bandWidths: { value: cloudBands.widths.slice(0, 20) },
+      bandRotation: { value: cloudBands.rotation },
+      hasStorm: { value: storms.length > 0 ? 1 : 0 },
+      stormPos: { value: storms[0] ? [storms[0].position[0], storms[0].position[1]] : [0, 0] },
+      stormRadius: { value: storms[0]?.radius || 0.1 }
+    };
+
+    const fragmentShader = `
+      uniform float time;
+      uniform float seed;
+      uniform vec3 baseColor;
+      uniform int numBands;
+      uniform float bandPositions[20];
+      uniform float bandWidths[20];
+      uniform float bandRotation;
+      uniform int hasStorm;
+      uniform vec2 stormPos;
+      uniform float stormRadius;
+      
+      varying vec2 vUv;
+      varying vec3 vNormal;
+      varying vec3 vPosition;
+      
+      float noise(vec2 st) {
+        return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
+      }
+      
+      void main() {
+        vec3 color = baseColor;
+        
+        // Coordenadas esféricas
+        vec2 sphereUV = vec2(
+          atan(vPosition.z, vPosition.x) / 6.28318 + 0.5,
+          acos(vPosition.y) / 3.14159
+        );
+        
+        // Aplicar bandas de nubes proceduralmente desde JSON
+        float y = (sphereUV.y - 0.5) * 2.0; // Convertir a rango [-1, 1]
+        
+        for(int i = 0; i < 20; i++) {
+          if(i >= numBands) break;
+          
+          float bandY = bandPositions[i];
+          float bandWidth = bandWidths[i];
+          
+          if(bandWidth > 0.0) {
+            float distToBand = abs(y - bandY);
+            float bandInfluence = smoothstep(bandWidth, bandWidth * 0.5, distToBand);
+            
+            // Color de banda con variación procedural
+            vec3 bandColor = color * (1.2 + noise(vec2(float(i), seed)) * 0.3);
+            color = mix(color, bandColor, bandInfluence * 0.6);
+          }
+        }
+        
+        // Rotación de bandas
+        float rotatedU = sphereUV.x + bandRotation + time * 0.1;
+        float bandNoise = noise(vec2(rotatedU * 10.0, sphereUV.y * 5.0));
+        color += bandNoise * 0.1;
+        
+        // Aplicar tormenta si existe
+        if(hasStorm > 0) {
+          vec2 stormUV = (stormPos + 1.0) * 0.5;
+          float distToStorm = distance(sphereUV, stormUV);
+          float stormInfluence = smoothstep(stormRadius, stormRadius * 0.5, distToStorm);
+          
+          if(stormInfluence > 0.0) {
+            vec3 stormColor = vec3(0.545, 0.0, 0.0); // darkred
+            color = mix(color, stormColor, stormInfluence * 0.8);
+          }
+        }
+        
+        // Iluminación
+        float lighting = dot(vNormal, normalize(vec3(1.0, 1.0, 1.0))) * 0.5 + 0.5;
+        color *= lighting;
+        
+        gl_FragColor = vec4(color, 1.0);
+      }
+    `;
+
+    return { fragmentShader, uniforms };
+  };
+
+  /**
+   * Generar shader genérico para tipos no implementados
+   */
+  const generateGenericShader = (data: PlanetRenderingData, baseUniforms: any) => {
+    const uniforms = {
+      ...baseUniforms,
+      surfaceDetail: { value: 5.0 },
+      atmosphericHaze: { value: 0.1 }
+    };
+
+    const fragmentShader = `
+      uniform float time;
+      uniform float seed;
+      uniform vec3 baseColor;
+      uniform float surfaceDetail;
+      uniform float atmosphericHaze;
+      
+      varying vec2 vUv;
+      varying vec3 vNormal;
+      varying vec3 vPosition;
+      
+      void main() {
+        vec3 color = baseColor;
+        
+        // Variaciones procedurales usando seed
+        float surface = sin(vPosition.x * surfaceDetail + seed) * cos(vPosition.y * surfaceDetail + seed);
+        color = mix(color, color * 1.3, surface * 0.3);
+        
+        // Efecto atmosférico
+        float fresnel = 1.0 - abs(dot(vNormal, vec3(0.0, 0.0, 1.0)));
+        color = mix(color, vec3(0.5, 0.7, 1.0), fresnel * atmosphericHaze);
+        
+        // Iluminación
+        float lighting = dot(vNormal, normalize(vec3(1.0, 1.0, 1.0))) * 0.5 + 0.5;
+        color *= lighting;
+        
+        gl_FragColor = vec4(color, 1.0);
+      }
+    `;
+
+    return { fragmentShader, uniforms };
+  };
+
+  /**
+   * Generar shader UNIVERSAL que renderiza cualquier elemento que mande el backend
+   */
+  const generateUniversalShaderCode = (uniforms: any) => {
+    const fragmentShader = `
+      uniform float time;
+      uniform float seed;
+      uniform float planetHash;
+      uniform vec3 baseColor;
+      uniform int numElements;
+      uniform int elementTypes[20];     // 1=patch, 2=cloud, 3=crystal, 4=band, 5=storm
+      uniform float elementPositions[40]; // x,y pairs
+      uniform float elementSizes[20];
+      uniform float elementColors[80];  // r,g,b,a quads
+      
+      varying vec2 vUv;
+      varying vec3 vNormal;
+      varying vec3 vPosition;
+      
+      void main() {
+        // Color base del planeta
+        vec3 color = baseColor;
+        
+        // Coordenadas esféricas mejoradas con continuidad en bordes
+        float u = atan(vPosition.z, vPosition.x) / 6.28318 + 0.5;
+        float v = acos(clamp(vPosition.y, -1.0, 1.0)) / 3.14159;
+        
+        // Corregir discontinuidad UV en los bordes
+        vec2 sphereUV = vec2(u, v);
+        
+        // Coordenadas alternativas para elementos que pueden cruzar bordes
+        vec2 sphereUV_wrapped = vec2(fract(u + 0.5), v);
+        
+        // Máscara esférica para limitar efectos a la superficie del planeta
+        float distanceFromCenter = length(vPosition);
+        float sphereMask = smoothstep(1.02, 0.98, distanceFromCenter); // Suave falloff en bordes
+        
+        // Agregar profundidad oceánica base con variación 3D continua
+        vec3 depthPos = vPosition * 3.0 + vec3(seed);
+        float depthNoise = fract(sin(dot(depthPos, vec3(17.123, 89.456, 43.789))) * 12758.5);
+        float baseDepth = length(vPosition) - 1.0;
+        float oceanDepth = baseDepth + depthNoise * 0.1;
+        color = mix(color, color * 0.7, clamp(oceanDepth * 2.0, 0.0, 0.3) * sphereMask);
+        
+        // Renderizar TODOS los elementos que envíe el backend
+        for(int i = 0; i < 20; i++) {
+          if(i >= numElements) break;
+          
+          int elementType = elementTypes[i];
+          vec2 elementPos = vec2(elementPositions[i*2], elementPositions[i*2+1]);
+          float elementSize = elementSizes[i];
+          vec4 elementColor = vec4(
+            elementColors[i*4],
+            elementColors[i*4+1], 
+            elementColors[i*4+2],
+            elementColors[i*4+3]
+          );
+          
+          if(elementType == 0) continue; // Skip empty
+          
+          // Convertir posición del backend [-1,1] a UV [0,1]
+          vec2 elementUV;
+          
+          if(elementType == 4) { // Band - usar solo Y
+            elementUV = vec2(0.5, (elementPos.y + 1.0) * 0.5);
+            // Banda horizontal
+            float distY = abs(sphereUV.y - elementUV.y);
+            float influence = smoothstep(elementSize, elementSize * 0.3, distY);
+            if(influence > 0.0) {
+              // Aplicar máscara esférica a las bandas también
+              influence *= sphereMask;
+              color = mix(color, elementColor.rgb, influence * elementColor.a);
+            }
+          } else {
+            // Elementos puntuales (patch, cloud, crystal, storm)
+            elementUV = (elementPos + 1.0) * 0.5;
+            
+            // Calcular distancia considerando wrapping horizontal
+            float dist1 = distance(sphereUV, elementUV);
+            float dist2 = distance(sphereUV_wrapped, elementUV);
+            float dist3 = distance(sphereUV, vec2(elementUV.x + 1.0, elementUV.y));
+            float dist4 = distance(sphereUV, vec2(elementUV.x - 1.0, elementUV.y));
+            
+            // Usar la distancia mínima para evitar cortes
+            float dist = min(min(dist1, dist2), min(dist3, dist4));
+            float influence = smoothstep(elementSize, elementSize * 0.3, dist);
+            
+            if(influence > 0.0) {
+              // Diferentes formas según tipo
+              if(elementType == 1) { // Patch - continentes/islas suaves
+                // Crear bordes más definidos como tierra real
+                float landBorder = smoothstep(0.1, 0.6, influence);
+                
+                // Añadir variación costera usando 3D para continuidad
+                vec3 coastPos = vPosition * 25.0;
+                float coastalDetail = fract(sin(dot(coastPos, vec3(12.9898,78.233,37.719))) * 43758.5);
+                landBorder *= coastalDetail * 0.2 + 0.8;
+                
+                color = mix(color, elementColor.rgb, landBorder * elementColor.a);
+              } else if(elementType == 2) { // Cloud - difuso suavizado
+                // Ruido 3D continuo para nubes sin cortes
+                vec3 cloudPos = vPosition * 8.0 + vec3(time * 0.1);
+                float cloudNoise1 = fract(sin(dot(cloudPos, vec3(12.9898,78.233,37.719))) * 43758.5);
+                float cloudNoise2 = fract(sin(dot(cloudPos * 1.3, vec3(35.9898,46.233,91.123))) * 23758.5);
+                float cloudPattern = mix(cloudNoise1, cloudNoise2, 0.6);
+                
+                // Suavizar bordes de las nubes
+                influence = smoothstep(0.0, 1.0, influence);
+                influence *= cloudPattern * 0.3 + 0.7; // Menos variación
+                color = mix(color, elementColor.rgb, influence * elementColor.a * 0.8);
+              } else if(elementType == 3) { // Crystal - angular
+                float angle = atan(sphereUV.y - elementUV.y, sphereUV.x - elementUV.x);
+                float crystal = abs(sin(angle * 6.0)) * influence;
+                color = mix(color, elementColor.rgb, crystal * elementColor.a);
+              } else if(elementType == 5) { // Storm - swirl
+                float swirl = sin(dist * 20.0 + time * 2.0) * influence;
+                color = mix(color, elementColor.rgb, swirl * elementColor.a);
+              }
+            }
+          }
+        }
+        
+        // Variación procedural continua en 3D (sin cortes UV)
+        // Usar coordenadas 3D directas para evitar discontinuidades UV
+        vec3 noisePos = vPosition * 4.0 + vec3(seed + planetHash);
+        float noise1 = fract(sin(dot(noisePos, vec3(12.9898, 78.233, 37.719))) * 43758.5);
+        float noise2 = fract(sin(dot(noisePos * 1.7, vec3(35.9898, 46.233, 91.123))) * 23758.5);
+        float smoothNoise = mix(noise1, noise2, 0.5);
+        color += (smoothNoise - 0.5) * 0.03 * sphereMask; // Aplicar máscara al ruido
+        
+        // Iluminación
+        float lighting = dot(vNormal, normalize(vec3(1.0, 1.0, 1.0))) * 0.5 + 0.5;
+        color *= lighting;
+        
+        // Aplicar máscara esférica final + falloff de bordes
+        float edgeFalloff = smoothstep(1.1, 0.9, distanceFromCenter);
+        color *= edgeFalloff;
+        
+        gl_FragColor = vec4(color, 1.0);
+      }
+    `;
+
+    return { fragmentShader, uniforms };
+  };
+
+  /**
    * Cargar datos del planeta desde la API o usar datos locales
    */
   const loadPlanetData = useCallback(async () => {
@@ -432,47 +996,15 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       setLoading(true);
       setError(null);
 
-      // Si tenemos datos locales del planeta, úsalos directamente
-      if (planetData) {
-        // Crear estructura de datos compatible con el sistema modular
-        const data: PlanetRenderingData = {
-          planet_info: {
-            name: planetName,
-            type: planetData.planet_type,
-            base_color: getColorByPlanetType(planetData.planet_type),
-            radius: planetData.diameter / 2
-          },
-          surface_elements: {
-            type: planetData.planet_type.toLowerCase(),
-            elements: planetData.elements,
-            effects_3d: generateEffectsForPlanetType(planetData.planet_type)
-          },
-          atmosphere: planetData.atmosphere !== 'None' ? {
-            type: planetData.atmosphere,
-            halo: true,
-            color: [0.5, 0.7, 1.0, 0.3]
-          } : null,
-          timing: {
-            cosmic_origin_time: cosmicOriginTime,
-            initial_angle_rotation: initialAngleRotation
-          }
-        };
+      // 🎆 FRONTEND AHORA ES AGNÓSTICO - SIEMPRE usar API
+      console.log('🌐 UNIVERSAL RENDERING: Frontend is agnostic, always use API for:', planetName);
+      console.log('  🚀 Backend will provide ALL rendering data, frontend just renders it');
+      
+      // (Codigo local comentado - ahora siempre usamos API)
+      // if (planetData && !needsAPIData) { ... }
 
-        setRenderingData(data);
-        
-        // Crear efectos basados en los datos
-        await createEffectsFromData(data);
-        
-        // Callback opcional
-        if (onDataLoaded) {
-          onDataLoaded(data);
-        }
-        
-        setLoading(false);
-        return;
-      }
-
-      // Fallback: cargar desde API si no tenemos datos locales
+      // Cargar desde API para datos procedurales específicos
+      console.log('🚀 Fetching procedural data from API for:', planetName);
       const response = await fetch(`/api/planet/${encodeURIComponent(planetName)}/rendering-data`);
       
       if (!response.ok) {
@@ -488,34 +1020,30 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       const data: PlanetRenderingData = result.rendering_data;
       setRenderingData(data);
 
-      console.log('🌍 API data loaded:', data);
+      console.log('🔥 API DATA LOADED - FULL DEBUG:');
+      console.log('  🌍 Planet:', data.planet_info.name, '- Type:', data.planet_info.type);
+      console.log('  🌱 Seeds:', data.seeds);
+      console.log('  🏗️ Surface Elements Full:', JSON.stringify(data.surface_elements, null, 2));
+      
+      if (data.surface_elements?.green_patches) {
+        console.log('  🟢 Green Patches Count:', data.surface_elements.green_patches.length);
+        data.surface_elements.green_patches.slice(0, 3).forEach((patch, i) => {
+          console.log(`    Patch ${i}:`, patch.position, 'size:', patch.size, 'color:', patch.color);
+        });
+      }
+      
+      if (data.surface_elements?.cloud_bands) {
+        console.log('  🌪️ Cloud Bands:', data.surface_elements.cloud_bands);
+      }
 
-      // SI la API devuelve shader_uniforms, aplicar shaders procedurales directamente
-      if (data.shader_uniforms) {
-        console.log('🎨 Applying shader uniforms from API:', data.shader_uniforms);
-        
-        // Aplicar los shader uniforms directamente al material del planeta
-        if (planetMeshRef.current?.material instanceof THREE.ShaderMaterial) {
-          // Actualizar los uniforms del material con los datos de la API
-          const material = planetMeshRef.current.material;
-          Object.keys(data.shader_uniforms).forEach(key => {
-            if (material.uniforms[key]) {
-              material.uniforms[key].value = data.shader_uniforms[key];
-            }
-          });
-          material.needsUpdate = true;
-          console.log('✅ Shader uniforms applied to planet material');
-        } else {
-          // Si no es un ShaderMaterial, crear uno con los uniforms
-          console.log('🔄 Creating ShaderMaterial with API uniforms');
-          await applyShaderUniformsToPlanet(data.shader_uniforms, data);
-        }
-        
-        // También crear efectos modulares adicionales
-        await createEffectsFromData(data);
-      } else {
-        console.log('🔧 Using Modular Effects for API data (no shader_uniforms found)');
-        // Crear efectos modulares basados en los datos
+      // Aplicar shaders procedurales usando los datos específicos del JSON
+      console.log('🎨 Applying procedural shaders using JSON data for:', data.planet_info.type);
+      
+      // SIEMPRE usar datos procedurales del JSON, no shaders genéricos
+      await applyProceduralShadersFromAPI(data);
+      
+      // También crear efectos modulares adicionales si están definidos
+      if (data.surface_elements?.effects_3d) {
         await createEffectsFromData(data);
       }
 
@@ -777,9 +1305,22 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
   // Efecto separado para cuando cambian los datos del planeta
   useEffect(() => {
     if (planetData && sceneRef.current && planetMeshRef.current) {
+      console.log('🔄 PLANET DATA CHANGED - Reloading for:', planetName);
       loadPlanetData();
     }
-  }, [planetName, planetData?.planet_type]); // Solo cuando cambian datos críticos
+  }, [planetName, planetData?.planet_type, planetData?.diameter, planetData?.elements]); // Más datos para forzar recarga
+  
+  // Efecto adicional para forzar recarga cuando cambia planetName desde la URL
+  useEffect(() => {
+    console.log('🌍 PLANET NAME CHANGED:', planetName);
+    if (sceneRef.current && planetMeshRef.current) {
+      // Forzar recarga completa del shader
+      setTimeout(() => {
+        console.log('🔄 FORCING SHADER RELOAD for new planet:', planetName);
+        loadPlanetData();
+      }, 100); // Pequeño delay para asegurar que la escena esté lista
+    }
+  }, [planetName]); // Solo cuando cambia el nombre del planeta
 
   /**
    * Efecto para actualizar estadísticas periódicamente
