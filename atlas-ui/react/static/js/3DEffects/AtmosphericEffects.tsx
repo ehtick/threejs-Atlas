@@ -359,11 +359,11 @@ export class AtmosphericStreaksEffect {
 }
 
 /**
- * Efecto de Atmósfera Densa
+ * Efecto de Atmósfera Densa - Replicando el efecto de las estrellas
  */
 export class DenseAtmosphereEffect {
   private mesh: THREE.Mesh;
-  private material: THREE.MeshLambertMaterial;
+  private material: THREE.MeshBasicMaterial;
   private geometry: THREE.SphereGeometry;
   private params: AtmosphereParams;
 
@@ -376,20 +376,32 @@ export class DenseAtmosphereEffect {
       density: params.density || 1.0
     };
 
-    const atmosphereRadius = planetRadius + (this.params.width! / 200);
-    // Usar geometría de alta resolución para evitar líneas meridionales
-    this.geometry = new THREE.SphereGeometry(atmosphereRadius, 64, 32);
+    console.log('DenseAtmosphereEffect params:', this.params); // Debug
+
+    // Usar el width de la atmósfera para determinar el grosor
+    // width viene como porcentaje adicional del radio del planeta
+    const atmosphereRadius = planetRadius * (1 + (this.params.width! / 100));
     
-    this.material = new THREE.MeshLambertMaterial({
-      color: new THREE.Color(
-        this.params.color![0],
-        this.params.color![1],
-        this.params.color![2]
-      ),
+    // Usar la misma resolución que las estrellas
+    this.geometry = new THREE.SphereGeometry(atmosphereRadius, 16, 16);
+    
+    // Crear el color THREE.js
+    const atmosphereColor = new THREE.Color(
+      this.params.color![0],
+      this.params.color![1],
+      this.params.color![2]
+    );
+    
+    console.log('THREE.Color created:', atmosphereColor, 'from RGB:', [this.params.color![0], this.params.color![1], this.params.color![2]]); // Debug
+    
+    // Usar MeshBasicMaterial como las estrellas, pero con la opacidad de la atmósfera
+    this.material = new THREE.MeshBasicMaterial({
+      color: atmosphereColor,
       transparent: true,
-      opacity: this.params.opacity! * this.params.density!,
-      side: THREE.FrontSide // Usar solo FrontSide para evitar artefactos
+      opacity: this.params.opacity! // Usar la opacidad de la atmósfera, no fija
     });
+
+    console.log('Material created with color:', this.material.color, 'opacity:', this.material.opacity); // Debug
 
     this.mesh = new THREE.Mesh(this.geometry, this.material);
   }
@@ -402,23 +414,26 @@ export class DenseAtmosphereEffect {
   }
 
   update(deltaTime: number): void {
-    // Rotación muy lenta para evitar líneas visibles
-    this.mesh.rotation.y += deltaTime * 0.01;
+    // No rotación para mantener consistencia con las estrellas
   }
 
   updateParams(newParams: Partial<AtmosphereParams>): void {
     this.params = { ...this.params, ...newParams };
 
     if (newParams.color) {
+      console.log('Updating color to:', newParams.color); // Debug
       this.material.color.setRGB(
         newParams.color[0],
         newParams.color[1],
         newParams.color[2]
       );
     }
-    if (newParams.opacity !== undefined || newParams.density !== undefined) {
-      this.material.opacity = (newParams.opacity || this.params.opacity!) * 
-                              (newParams.density || this.params.density!);
+    // Usar la opacidad del parámetro, no fija en 0.3
+    if (newParams.opacity !== undefined) {
+      this.material.opacity = newParams.opacity;
+    }
+    if (newParams.density !== undefined) {
+      this.material.opacity = (this.params.opacity || 0.3) * newParams.density;
     }
   }
 
@@ -477,13 +492,40 @@ export function createDenseAtmosphereFromPythonData(
   planetRadius: number, 
   atmosphereData: any
 ): DenseAtmosphereEffect {
+  console.log('Atmosphere data received:', atmosphereData); // Debug
+  
+  // Los colores ya vienen normalizados (0-1) desde la API Python
+  let atmosphereColor = [0.5, 0.5, 0.8, 0.15]; // Default azul con baja opacidad
+  let atmosphereWidth = 15; // Default width
+  
+  if (atmosphereData) {
+    if (atmosphereData.color && Array.isArray(atmosphereData.color)) {
+      console.log('Color from API (already normalized):', atmosphereData.color); // Debug
+      // Los colores ya están en formato 0-1, no convertir de nuevo
+      atmosphereColor = [
+        atmosphereData.color[0],  // R
+        atmosphereData.color[1],  // G  
+        atmosphereData.color[2],  // B
+        atmosphereData.color[3] * 0.5  // A - Reducir opacidad para no oscurecer tanto
+      ];
+    }
+    
+    if (atmosphereData.width) {
+      atmosphereWidth = atmosphereData.width;
+    }
+    
+    console.log('Processed color:', atmosphereColor); // Debug
+    console.log('Width:', atmosphereWidth); // Debug
+  }
+  
   const params: AtmosphereParams = {
-    type: atmosphereData.type || 'Thin',
-    color: atmosphereData.color || [0.5, 0.5, 0.8, 0.3],
-    width: atmosphereData.width || 15,
-    opacity: (atmosphereData.color?.[3] || 0.3),
+    type: atmosphereData?.type || 'Thin',
+    color: atmosphereColor,
+    width: atmosphereWidth,
+    opacity: atmosphereColor[3], // Usar la opacidad del color
     density: 1.0
   };
 
+  console.log('Final params:', params); // Debug
   return new DenseAtmosphereEffect(planetRadius, params);
 }
