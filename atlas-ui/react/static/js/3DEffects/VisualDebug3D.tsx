@@ -24,8 +24,8 @@ export interface VisualDebug3DParams {
 }
 
 export class VisualDebug3DEffect {
-  private sunLine: THREE.Mesh | null = null;
-  private rotationLine: THREE.Mesh | null = null;
+  private sunLine: THREE.Line | null = null;
+  private rotationLine: THREE.Line | null = null;
   private debugGroup: THREE.Group;
   private params: VisualDebug3DParams;
   private planetRadius: number;
@@ -71,39 +71,33 @@ export class VisualDebug3DEffect {
   private createSunLine(): void {
     // Calcular posición del sol basándose en los datos disponibles
     const sunAngle = this.calculateSunAngle();
-    // Línea amarilla hacia el sol
     
-    // Usar un CILINDRO amarillo en lugar de línea para mejor visibilidad
-    const lineLength = this.planetRadius * 1.5; // Extender más allá del planeta
-    const cylinderGeometry = new THREE.CylinderGeometry(
-      this.planetRadius * 0.02, // Radio del cilindro (2% del radio del planeta)
-      this.planetRadius * 0.02, 
-      lineLength,
-      8 // Segmentos
-    );
+    // LÍNEA AMARILLA: Desde el centro hacia el lado OPUESTO al sol (dirección de la sombra)
+    const sceneRadius = this.planetRadius * 20; // Extender hasta el borde de la escena
+    const shadowAngle = sunAngle + Math.PI; // Lado opuesto al sol
     
-    // Material amarillo brillante
-    const lineMaterial = new THREE.MeshBasicMaterial({
-      color: 0xFFFF00, // Yellow brillante
+    // Crear geometría de línea real (no cilindro)
+    const lineGeometry = new THREE.BufferGeometry();
+    const positions = new Float32Array([
+      0, 0, 0,  // Centro del planeta (núcleo)
+      sceneRadius * Math.cos(shadowAngle), // Hacia el borde de la escena
+      0, // Mantener en plano ecuatorial
+      sceneRadius * Math.sin(shadowAngle)  // Dirección opuesta al sol
+    ]);
+    
+    lineGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    
+    // Material amarillo brillante para línea
+    const lineMaterial = new THREE.LineBasicMaterial({
+      color: 0xFFFF00, // Amarillo brillante
+      linewidth: 3,
       transparent: false
     });
     
-    // Crear el cilindro como línea
-    const sunLineMesh = new THREE.Mesh(cylinderGeometry, lineMaterial);
+    this.sunLine = new THREE.Line(lineGeometry, lineMaterial);
+    this.debugGroup.add(this.sunLine);
     
-    // Posicionar y orientar el cilindro desde el centro hacia el sol
-    const sunX = (lineLength / 2) * Math.cos(sunAngle);
-    const sunZ = (lineLength / 2) * Math.sin(sunAngle);
-    
-    sunLineMesh.position.set(sunX, 0, sunZ);
-    
-    // Rotar el cilindro para que apunte hacia el sol
-    sunLineMesh.rotation.z = -sunAngle;
-    
-    this.debugGroup.add(sunLineMesh);
-    this.sunLine = sunLineMesh as any; // Para compatibilidad
-    
-    console.log('🟡 Sun line created - angle:', (sunAngle * 180 / Math.PI).toFixed(1) + '°');
+    console.log('🟡 Shadow direction line created - pointing away from sun at angle:', (shadowAngle * 180 / Math.PI).toFixed(1) + '°');
   }
 
   /**
@@ -112,43 +106,34 @@ export class VisualDebug3DEffect {
    */
   private createRotationLine(): void {
     const currentRotation = this.calculateCurrentRotation();
-    // Línea gris de rotación
     
-    // Crear cilindro gris para la línea de rotación
-    const lineLength = this.planetRadius * 2.2; // Un poco más largo que la línea del sol
-    const cylinderGeometry = new THREE.CylinderGeometry(
-      this.planetRadius * 0.015, // Un poco más delgado que la línea del sol
-      this.planetRadius * 0.015,
-      lineLength,
-      8
-    );
+    // LÍNEA GRIS: Eje de rotación completo atravesando el planeta de borde a borde de la escena
+    const sceneRadius = this.planetRadius * 25; // Aún más largo que la línea del sol
+    
+    // Crear geometría de línea real que atraviesa completamente
+    const lineGeometry = new THREE.BufferGeometry();
+    const positions = new Float32Array([
+      -sceneRadius * Math.cos(currentRotation), // Un extremo de la escena
+      0, // En el plano ecuatorial
+      -sceneRadius * Math.sin(currentRotation),
+      sceneRadius * Math.cos(currentRotation),  // Extremo opuesto de la escena
+      0, // En el plano ecuatorial  
+      sceneRadius * Math.sin(currentRotation)
+    ]);
+    
+    lineGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     
     // Material gris como en Pillow (138, 138, 138)
-    const rotationMaterial = new THREE.MeshBasicMaterial({
+    const rotationMaterial = new THREE.LineBasicMaterial({
       color: 0x8A8A8A, // RGB(138, 138, 138) = #8A8A8A
+      linewidth: 2,
       transparent: false
     });
     
-    // Crear el cilindro
-    const rotationLineMesh = new THREE.Mesh(cylinderGeometry, rotationMaterial);
+    this.rotationLine = new THREE.Line(lineGeometry, rotationMaterial);
+    this.debugGroup.add(this.rotationLine);
     
-    // En Pillow la línea va desde un extremo al otro, cruzando el planeta
-    // line_x1 = center_x + planet_radius * math.cos(angle_rotation) / 64  (punto cerca del centro)
-    // line_x2 = center_x - planet_radius * math.cos(angle_rotation)       (punto en el borde opuesto)
-    
-    // Posicionar el cilindro en el medio de esa línea
-    const rotationX = 0; // El centro está en el planeta
-    const rotationZ = 0;
-    
-    rotationLineMesh.position.set(rotationX, 0, rotationZ);
-    
-    // Rotar el cilindro para que apunte en la dirección de rotación
-    rotationLineMesh.rotation.z = -currentRotation;
-    
-    this.debugGroup.add(rotationLineMesh);
-    this.rotationLine = rotationLineMesh;
-    
-    console.log('🔘 Rotation line created - angle:', (currentRotation * 180 / Math.PI).toFixed(1) + '°');
+    console.log('🔘 Rotation axis line created - crosses entire scene at angle:', (currentRotation * 180 / Math.PI).toFixed(1) + '°');
   }
 
   /**
@@ -215,31 +200,47 @@ export class VisualDebug3DEffect {
   }
 
   /**
-   * Actualizar posición de la línea del sol
+   * Actualizar posición de la línea del sol (dirección de sombra)
    */
   private updateSunLine(): void {
     if (!this.sunLine) return;
     
     const sunAngle = this.calculateSunAngle();
+    const shadowAngle = sunAngle + Math.PI; // Lado opuesto al sol
+    const sceneRadius = this.planetRadius * 20;
+    
     const geometry = this.sunLine.geometry as THREE.BufferGeometry;
     const positions = geometry.attributes.position.array as Float32Array;
     
-    // Actualizar posición final de la línea (mantener centro en 0,0,0)
-    positions[3] = this.planetRadius * Math.cos(sunAngle); // sun_x
-    positions[4] = 0; // sun_y (plano ecuatorial)
-    positions[5] = this.planetRadius * Math.sin(sunAngle); // sun_z
+    // Actualizar línea hacia la dirección de la sombra
+    positions[3] = sceneRadius * Math.cos(shadowAngle);
+    positions[4] = 0; // Plano ecuatorial
+    positions[5] = sceneRadius * Math.sin(shadowAngle);
     
     geometry.attributes.position.needsUpdate = true;
   }
 
   /**
-   * Actualizar rotación de la línea de rotación
+   * Actualizar eje de rotación completo
    */
   private updateRotationLine(): void {
     if (!this.rotationLine) return;
     
     const currentRotation = this.calculateCurrentRotation();
-    this.rotationLine.rotation.z = -currentRotation;
+    const sceneRadius = this.planetRadius * 25;
+    
+    const geometry = this.rotationLine.geometry as THREE.BufferGeometry;
+    const positions = geometry.attributes.position.array as Float32Array;
+    
+    // Actualizar ambos extremos del eje de rotación
+    positions[0] = -sceneRadius * Math.cos(currentRotation); // Extremo 1 - X
+    positions[1] = 0; // Extremo 1 - Y (plano ecuatorial)
+    positions[2] = -sceneRadius * Math.sin(currentRotation); // Extremo 1 - Z
+    positions[3] = sceneRadius * Math.cos(currentRotation);  // Extremo 2 - X
+    positions[4] = 0; // Extremo 2 - Y (plano ecuatorial)
+    positions[5] = sceneRadius * Math.sin(currentRotation);  // Extremo 2 - Z
+    
+    geometry.attributes.position.needsUpdate = true;
   }
 
   /**
@@ -299,12 +300,12 @@ export class VisualDebug3DEffect {
     
     if (this.sunLine) {
       this.sunLine.geometry.dispose();
-      (this.sunLine.material as THREE.Material).dispose();
+      (this.sunLine.material as THREE.LineBasicMaterial).dispose();
     }
     
     if (this.rotationLine) {
       this.rotationLine.geometry.dispose();
-      (this.rotationLine.material as THREE.Material).dispose();
+      (this.rotationLine.material as THREE.LineBasicMaterial).dispose();
     }
   }
 }
