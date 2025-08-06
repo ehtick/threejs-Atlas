@@ -319,12 +319,55 @@ export function createOceanWavesFromPythonData(pythonData: any): OceanWavesEffec
   console.log('🌊 Creating ocean effect with color from Python:', {
     base_color: pythonData.base_color,
     ocean_color: pythonData.ocean_color,
-    final_color: oceanColor
+    final_color: oceanColor,
+    seeds: pythonData.seeds
   });
   
+  // GENERAR PARÁMETROS PROCEDIMENTALMENTE usando seeds de Python
+  let waveIntensity = 0.3;
+  let waveSpeed = 2.0;
+  let waveScale = 8.0;
+  let landmassThreshold = 0.3;
+  let deepOceanThreshold = 0.2;
+  
+  if (pythonData.seeds) {
+    // Usar shape_seed para generar parámetros únicos pero consistentes
+    const seed = pythonData.seeds.shape_seed;
+    const rng = (seed: number) => {
+      let s = seed;
+      return () => {
+        s = (s * 1664525 + 1013904223) % 4294967296;
+        return s / 4294967296;
+      };
+    };
+    
+    const random = rng(seed);
+    waveIntensity = 0.2 + random() * 0.3; // 0.2 - 0.5
+    waveSpeed = 1.5 + random() * 1.5; // 1.5 - 3.0
+    waveScale = 6.0 + random() * 6.0; // 6.0 - 12.0
+    landmassThreshold = 0.25 + random() * 0.15; // 0.25 - 0.4
+    deepOceanThreshold = 0.15 + random() * 0.1; // 0.15 - 0.25
+    
+    console.log('🌊 Procedural ocean params:', {
+      seed,
+      waveIntensity,
+      waveSpeed,
+      waveScale,
+      landmassThreshold,
+      deepOceanThreshold
+    });
+  }
+  
   const params: OceanWavesParams = {
-    waveIntensity: pythonData.wave_intensity || 0.3,
-    waveSpeed: pythonData.wave_speed || 2.0,
+    waveIntensity,
+    waveSpeed,
+    waveScale,
+    landmassThreshold,
+    deepOceanThreshold,
+    deepOceanMultiplier: 0.5,
+    foamThreshold: 0.8,
+    foamColor: new THREE.Color(0.9, 0.9, 1.0),
+    foamIntensity: 0.4,
     oceanColor: oceanColor
   };
 

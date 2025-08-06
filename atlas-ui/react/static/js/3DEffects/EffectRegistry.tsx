@@ -342,7 +342,7 @@ export class EffectRegistry {
   ): EffectInstance[] {
     const effects: EffectInstance[] = [];
     
-    console.log('🎮 Creating effects from Python data:', pythonData);
+    console.log('🚀 PYTHON API DATA - COMPLETE DATASET:', JSON.stringify(pythonData, null, 2));
 
     // 1. Efectos de superficie basados en el tipo
     if (pythonData.surface_elements) {

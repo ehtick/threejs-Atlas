@@ -368,10 +368,79 @@ export function createIcyTerrainFromPythonData(pythonData: any): IcyTerrainEffec
     final_color: baseColor
   });
   
+  // GENERAR ELEMENTOS PROCEDIMENTALMENTE usando seeds de Python
+  let crystals: Array<{ position: [number, number]; length: number; width: number; angle: number }> = [];
+  let cracks: Array<{ angle: number; length: number }> = [];
+  let iceCaps: Array<{ position: [number, number]; radius: number }> = [];
+  
+  if (pythonData.seeds) {
+    // Crear función de random seeded
+    const rng = (seed: number) => {
+      let s = seed;
+      return () => {
+        s = (s * 1664525 + 1013904223) % 4294967296;
+        return s / 4294967296;
+      };
+    };
+    
+    // Generar posición en esfera normalizada
+    const spherePosition = (random: () => number): [number, number] => {
+      const theta = random() * Math.PI * 2; // 0 a 2π
+      const phi = Math.acos(random() * 2 - 1); // 0 a π, distribución uniforme
+      
+      const x = Math.sin(phi) * Math.cos(theta);
+      const y = Math.sin(phi) * Math.sin(theta);
+      
+      return [x, y];
+    };
+    
+    // Generar cristales usando planet_seed
+    const crystalRandom = rng(pythonData.seeds.planet_seed);
+    const crystalCount = 4 + Math.floor(crystalRandom() * 6); // 4-9 cristales
+    
+    for (let i = 0; i < crystalCount; i++) {
+      crystals.push({
+        position: spherePosition(crystalRandom),
+        length: 0.1 + crystalRandom() * 0.2, // 0.1 - 0.3
+        width: 0.05 + crystalRandom() * 0.1, // 0.05 - 0.15
+        angle: crystalRandom() * Math.PI * 2
+      });
+    }
+    
+    // Generar grietas usando shape_seed
+    const crackRandom = rng(pythonData.seeds.shape_seed);
+    const crackCount = 3 + Math.floor(crackRandom() * 5); // 3-7 grietas
+    
+    for (let i = 0; i < crackCount; i++) {
+      cracks.push({
+        angle: crackRandom() * Math.PI * 2,
+        length: 0.2 + crackRandom() * 0.6 // 0.2 - 0.8
+      });
+    }
+    
+    // Generar casquetes polares usando shape_seed + offset
+    const iceCapRandom = rng(pythonData.seeds.shape_seed + 500);
+    const iceCapCount = 2 + Math.floor(iceCapRandom() * 3); // 2-4 casquetes
+    
+    for (let i = 0; i < iceCapCount; i++) {
+      iceCaps.push({
+        position: spherePosition(iceCapRandom),
+        radius: 0.15 + iceCapRandom() * 0.25 // 0.15 - 0.4
+      });
+    }
+    
+    console.log('❄️ Generated procedural icy terrain:', {
+      seeds: pythonData.seeds,
+      crystalCount: crystals.length,
+      crackCount: cracks.length,
+      iceCapCount: iceCaps.length
+    });
+  }
+  
   const params: IcyTerrainParams = {
-    crystals: surfaceData.crystals || [],
-    cracks: surfaceData.cracks || [],
-    iceCaps: surfaceData.ice_caps || [],
+    crystals: surfaceData.crystals?.length > 0 ? surfaceData.crystals : crystals,
+    cracks: surfaceData.cracks?.length > 0 ? surfaceData.cracks : cracks,
+    iceCaps: surfaceData.ice_caps?.length > 0 ? surfaceData.ice_caps : iceCaps,
     baseTextureIntensity: 0.3,
     // Usar colores basados en el color de Python
     crystalColor: new THREE.Color(baseColor[0] * 0.8, baseColor[1] * 0.9, baseColor[2] * 1.0),

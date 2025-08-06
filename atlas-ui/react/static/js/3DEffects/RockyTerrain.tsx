@@ -339,10 +339,77 @@ export function createRockyTerrainFromPythonData(pythonData: any): RockyTerrainE
     final_color: baseColor
   });
   
+  // GENERAR ELEMENTOS PROCEDIMENTALMENTE usando seeds de Python
+  let mountains: Array<{ position: [number, number]; width: number; height: number; angle: number }> = [];
+  let clouds: Array<{ position: [number, number]; radius: number }> = [];
+  let crater: { position: [number, number]; radius: number } | undefined;
+  
+  if (pythonData.seeds) {
+    // Crear función de random seeded
+    const rng = (seed: number) => {
+      let s = seed;
+      return () => {
+        s = (s * 1664525 + 1013904223) % 4294967296;
+        return s / 4294967296;
+      };
+    };
+    
+    // Generar posición en esfera normalizada
+    const spherePosition = (random: () => number): [number, number] => {
+      const theta = random() * Math.PI * 2; // 0 a 2π
+      const phi = Math.acos(random() * 2 - 1); // 0 a π, distribución uniforme
+      
+      const x = Math.sin(phi) * Math.cos(theta);
+      const y = Math.sin(phi) * Math.sin(theta);
+      
+      return [x, y];
+    };
+    
+    // Generar montañas usando planet_seed
+    const mountainRandom = rng(pythonData.seeds.planet_seed);
+    const mountainCount = 6 + Math.floor(mountainRandom() * 4); // 6-9 montañas
+    
+    for (let i = 0; i < mountainCount; i++) {
+      mountains.push({
+        position: spherePosition(mountainRandom),
+        width: 0.1 + mountainRandom() * 0.3, // 0.1 - 0.4
+        height: 0.2 + mountainRandom() * 0.6, // 0.2 - 0.8
+        angle: mountainRandom() * Math.PI * 2
+      });
+    }
+    
+    // Generar nubes usando shape_seed + offset
+    const cloudRandom = rng(pythonData.seeds.shape_seed + 1000);
+    const cloudCount = 3 + Math.floor(cloudRandom() * 4); // 3-6 nubes
+    
+    for (let i = 0; i < cloudCount; i++) {
+      clouds.push({
+        position: spherePosition(cloudRandom),
+        radius: 0.08 + cloudRandom() * 0.17 // 0.08 - 0.25
+      });
+    }
+    
+    // Generar cráter (70% probabilidad) usando shape_seed + otro offset
+    const craterRandom = rng(pythonData.seeds.shape_seed + 2000);
+    if (craterRandom() < 0.7) {
+      crater = {
+        position: spherePosition(craterRandom),
+        radius: 0.1 + craterRandom() * 0.2 // 0.1 - 0.3
+      };
+    }
+    
+    console.log('⛰️ Generated procedural rocky terrain:', {
+      seeds: pythonData.seeds,
+      mountainCount: mountains.length,
+      cloudCount: clouds.length,
+      hasCrater: !!crater
+    });
+  }
+  
   const params: RockyTerrainParams = {
-    mountains: surfaceData.mountains || [],
-    clouds: surfaceData.clouds || [],
-    crater: surfaceData.crater,
+    mountains: surfaceData.mountains?.length > 0 ? surfaceData.mountains : mountains,
+    clouds: surfaceData.clouds?.length > 0 ? surfaceData.clouds : clouds,
+    crater: surfaceData.crater || crater,
     baseTextureIntensity: 0.4,
     // Usar el color de Python para las montañas (un poco más claro)
     mountainColor: new THREE.Color(baseColor[0] * 1.1, baseColor[1] * 1.1, baseColor[2] * 1.1),
