@@ -474,17 +474,50 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
 
 
   /**
-   * Crear planeta base genérico
+   * Obtener color base por tipo de planeta
+   */
+  const getPlanetBaseColor = (planetType?: string): number => {
+    const type = (planetType || '').toLowerCase();
+    const colorMap: { [key: string]: number } = {
+      'gas giant': 0x4A90E2,
+      'rocky': 0x8B4513,
+      'icy': 0xE0F7FF,
+      'oceanic': 0x006BB3,
+      'desert': 0xD2B48C,
+      'lava': 0xFF4500,
+      'metallic': 0xC0C0C0,
+      'toxic': 0x9ACD32,
+      'crystalline': 0xFF69B4,
+      'anomaly': 0xFF00FF,
+      'arid': 0xD2B48C,
+      'swamp': 0x556B2F,
+      'tundra': 0xB0C4DE,
+      'forest': 0x228B22,
+      'savannah': 0xDAA520,
+      'cave': 0x2F2F2F,
+      'radioactive': 0x32CD32,
+      'magma': 0xFF6347,
+      'carbon': 0x1C1C1C,
+      'diamond': 0xE6E6FA
+    };
+    return colorMap[type] || 0x808080;
+  };
+
+  /**
+   * Crear planeta base genérico con color apropiado
    */
   const createBasePlanet = (scene: THREE.Scene) => {
     const basePlanetRadius = planetData?.diameter ? planetData.diameter / 15000 : 1;
     const planetRadius = Math.max(Math.min(basePlanetRadius, 4.0), 1.5);
     
+    // 🚀 Use actual planet type color instead of gray
+    const baseColor = getPlanetBaseColor(planetData?.planet_type);
+    
     const planetGeometry = new THREE.SphereGeometry(planetRadius, 128, 64);
     const planetMaterial = new THREE.MeshStandardMaterial({
-      color: 0x808080,
-      metalness: 0.1,
-      roughness: 0.8,
+      color: baseColor,  // Use color based on planet type
+      metalness: planetData?.planet_type?.toLowerCase().includes('metallic') ? 0.8 : 0.1,
+      roughness: planetData?.planet_type?.toLowerCase().includes('icy') ? 0.1 : 0.8,
       transparent: false,
       opacity: 1.0
     });
@@ -498,6 +531,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
     scene.add(planetMesh);
     planetMeshRef.current = planetMesh;
     
+    console.log('🎨 Created base planet with color:', baseColor.toString(16), 'for type:', planetData?.planet_type);
   };
 
   /**
@@ -554,14 +588,23 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       }
       const planetApiData = result.planet_data;
       const timingApiData = result.timing;
+      const renderingApiData = result.rendering_data; // 🚀 NEW: Use translated rendering data
       
       const data: PlanetRenderingData = {
-        planet_info: {
+        // Use translated planet_info from Python translator
+        planet_info: renderingApiData?.planet_info || {
           name: planetApiData.name,
           type: planetApiData.planet_type,
           base_color: '#808080',
           radius: planetApiData.diameter / 15000
         },
+        // Add all translated data from Python
+        surface_elements: renderingApiData?.surface_elements,
+        atmosphere: renderingApiData?.atmosphere,
+        rings: renderingApiData?.rings,
+        effects_3d: renderingApiData?.effects_3d,
+        shader_uniforms: renderingApiData?.shader_uniforms,
+        universal_actions: renderingApiData?.universal_actions,
         timing: {
           cosmic_origin_time: timingApiData.cosmic_origin_time,
           current_time_seconds: timingApiData.current_time_seconds,
@@ -581,8 +624,14 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       EffectsLogger.log('API data loaded successfully', {
         planet: data.planet_info.name,
         type: data.planet_info.type,
-        hasEffects: !!data.surface_elements
+        hasEffects: !!data.surface_elements,
+        fullRenderingData: renderingApiData  // 🚀 DEBUG: Log full rendering data
       });
+      
+      // 🚀 DEBUG: Log to console for easier debugging
+      console.log('🌍 Planet API Response:', result);
+      console.log('🎨 Rendering Data:', renderingApiData);
+      console.log('🔧 Processed Data:', data);
 
       // Callback opcional
       if (onDataLoaded) {
@@ -636,14 +685,23 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
 
       const planetApiData = result.planet_data;
       const timingApiData = result.timing;
+      const renderingApiData = result.rendering_data; // 🚀 NEW: Use translated rendering data
       
       const data: PlanetRenderingData = {
-        planet_info: {
+        // Use translated planet_info from Python translator
+        planet_info: renderingApiData?.planet_info || {
           name: planetApiData.name,
           type: planetApiData.planet_type,
           base_color: '#808080',
           radius: planetApiData.diameter / 15000
         },
+        // Add all translated data from Python
+        surface_elements: renderingApiData?.surface_elements,
+        atmosphere: renderingApiData?.atmosphere,
+        rings: renderingApiData?.rings,
+        effects_3d: renderingApiData?.effects_3d,
+        shader_uniforms: renderingApiData?.shader_uniforms,
+        universal_actions: renderingApiData?.universal_actions,
         timing: {
           cosmic_origin_time: timingApiData.cosmic_origin_time,
           current_time_seconds: timingApiData.current_time_seconds,
@@ -663,8 +721,14 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       EffectsLogger.log('API data loaded successfully', {
         planet: data.planet_info.name,
         type: data.planet_info.type,
-        hasEffects: !!data.surface_elements
+        hasEffects: !!data.surface_elements,
+        fullRenderingData: renderingApiData  // 🚀 DEBUG: Log full rendering data
       });
+      
+      // 🚀 DEBUG: Also log here for the full load function
+      console.log('🌍 Full Load - API Response:', result);
+      console.log('🎨 Full Load - Rendering Data:', renderingApiData);
+      console.log('🔧 Full Load - Processed Data:', data);
 
       updateLightingWithRealData(data);
       if (orbitLineRef.current && sceneRef.current) {
@@ -768,30 +832,42 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
   const applyFallbackEffects = () => {
     if (!sceneRef.current || !planetMeshRef.current) return;
 
-    EffectsLogger.warn('Applying fallback effects');
+    EffectsLogger.warn('Applying fallback effects for planet type:', planetData?.planet_type);
 
     try {
       // Limpiar efectos anteriores
       clearActiveEffects();
 
-      // Crear efectos básicos usando configuración por defecto
-      const fallbackConfig = createPlanetEffectConfig('generic');
+      // 🚀 Apply basic color at minimum
+      if (planetMeshRef.current.material instanceof THREE.MeshStandardMaterial) {
+        const fallbackColor = getPlanetBaseColor(planetData?.planet_type);
+        planetMeshRef.current.material.color.setHex(fallbackColor);
+        console.log('🎨 Applied fallback color:', fallbackColor.toString(16), 'to planet mesh');
+      }
+
+      // Try to create basic effects if the system is available
+      try {
+        const fallbackConfig = createPlanetEffectConfig('generic');
+        
+        const fallbackEffects = effectRegistry.createEffectsFromList(
+          fallbackConfig,
+          1, // planetRadius
+          planetMeshRef.current
+        );
+
+        // Añadir efectos a la escena
+        fallbackEffects.forEach(effect => {
+          if (effect.effect.addToScene && sceneRef.current && planetMeshRef.current) {
+            effect.effect.addToScene(sceneRef.current, planetMeshRef.current.position);
+          }
+        });
+
+        activeEffectsRef.current = fallbackEffects;
+        setEffects(fallbackEffects);
+      } catch (effectError) {
+        console.warn('Could not create fallback effects, using basic material only:', effectError);
+      }
       
-      const fallbackEffects = effectRegistry.createEffectsFromList(
-        fallbackConfig,
-        1, // planetRadius
-        planetMeshRef.current
-      );
-
-      // Añadir efectos a la escena
-      fallbackEffects.forEach(effect => {
-        if (effect.effect.addToScene && sceneRef.current && planetMeshRef.current) {
-          effect.effect.addToScene(sceneRef.current, planetMeshRef.current.position);
-        }
-      });
-
-      activeEffectsRef.current = fallbackEffects;
-      setEffects(fallbackEffects);
       updateStats();
     } catch (error) {
       EffectsLogger.error('Error applying fallback effects', error);

@@ -1413,10 +1413,25 @@ def register_planet_renderer_api(app):
                 "max_orbital_radius": max_orbital_radius
             }
             
+            # 🚀 NEW: Add translated rendering data for shaders and effects
+            try:
+                rendered_data = translate_planet_to_json(planet)
+            except Exception as e:
+                # Fallback if translation fails
+                rendered_data = {
+                    "planet_info": {
+                        "name": planet.name,
+                        "type": planet.planet_type,
+                        "base_color": "#808080",
+                        "radius": planet.diameter / 15000
+                    }
+                }
+            
             return jsonify({
                 "success": True,
                 "planet_name": planet.name,
                 "planet_data": planet_data,
+                "rendering_data": rendered_data,  # Add this for shaders/effects
                 "timing": timing_data,
                 "coordinates": {
                     "galaxy_coordinates": galaxy_data["coordinates"],

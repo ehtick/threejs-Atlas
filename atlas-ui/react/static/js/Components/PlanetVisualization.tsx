@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import Zoom from "react-medium-image-zoom";
 import "react-medium-image-zoom/dist/styles.css";
-import { HybridPlanet3DRenderer } from "../3DComponents/HybridPlanet3DRenderer";
+import { ModularPlanetRenderer } from "../3DComponents/ModularPlanetRenderer";
 
 interface Planet {
   name: string;
@@ -292,18 +292,19 @@ const PlanetVisualization: React.FC<PlanetVisualizationProps> = ({ planetUrl, im
           style={{ filter: canvasHidden ? "blur(50px)" : "none" }} 
         />
 
-        {/* 3D View - Hybrid Planet 3D Renderer */}
+        {/* 3D View - Modular Planet Renderer */}
         {view3D && imageLoaded && planet && (
           <div className={`absolute inset-0 w-full h-full transition-all duration-500 ${
             imageLoaded ? "opacity-100 blur-0" : "opacity-0 blur-[25px]"
           }`}>
-            <HybridPlanet3DRenderer
+            <ModularPlanetRenderer
               planetName={planet.name}
               containerClassName="w-full h-full"
               autoRotate={true}
               enableControls={true}
-              showDebugInfo={false}
+              showDebugInfo={true}
               planetData={{
+                name: planet.name,
                 diameter: planet.diameter,
                 density: planet.density,
                 gravity: planet.gravity,
@@ -323,7 +324,7 @@ const PlanetVisualization: React.FC<PlanetVisualizationProps> = ({ planetUrl, im
               }}
               onError={(errorMessage) => {
                 setRenderingError(errorMessage);
-                console.error('❌ Hybrid Planet rendering error:', errorMessage);
+                console.error('❌ Modular Planet rendering error:', errorMessage);
               }}
             />
           </div>
