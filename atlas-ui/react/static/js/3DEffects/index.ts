@@ -13,22 +13,22 @@ export { GasGiantBandsEffect, createGasGiantBandsFromPythonData } from './GasGia
 export type { GasGiantBandsParams } from './GasGiantBands';
 
 export { 
-  AtmosphericHaloEffect, 
-  createAtmosphericHaloFromPythonData
+  AtmosphereEffect, 
+  createAtmosphereFromPythonData
 } from './Atmosphere';
-export type { AtmosphericHaloParams } from './Atmosphere';
-
-export { 
-  AtmosphereBrightsEffect, 
-  createAtmosphereBrightsFromPythonData
-} from './AtmosphereBrights';
-export type { AtmosphereBrightsParams } from './AtmosphereBrights';
+export type { AtmosphereParams } from './Atmosphere';
 
 export { 
   CloudGyrosEffect, 
   createCloudGyrosFromPythonData
 } from './CloudGyros';
 export type { CloudGyrosParams } from './CloudGyros';
+
+export { 
+  AtmosphericStreaksEffect, 
+  createAtmosphericStreaksFromPythonData
+} from './AtmosphericStreaks';
+export type { AtmosphericStreaksParams } from './AtmosphericStreaks';
 
 export { MetallicSurfaceEffect } from './MetallicSurface';
 export type { MetallicSurfaceParams } from './MetallicSurface';
@@ -60,9 +60,8 @@ export type {
 export const AVAILABLE_EFFECTS = [
   'metallic_surface',
   'gas_giant_bands',
-  'atmospheric_halo',
+  'atmosphere',
   'atmospheric_streaks',
-  'dense_atmosphere',
   'ring_system',
   'fragmentation',
   'rocky_terrain',
@@ -92,11 +91,11 @@ export const DEFAULT_EFFECT_CONFIGS = {
     noiseIntensity: 0.3
   },
   
-  atmospheric_halo: {
-    intensity: 1.0,
-    falloff: 2.0,
-    scale: 1.2,
-    pulsation: false
+  atmosphere: {
+    type: 'Thin',
+    width: 12,
+    opacity: 0.2,
+    density: 1.0
   },
   
   ring_system: {
@@ -165,11 +164,10 @@ export function createPlanetEffectConfig(planetType: string): EffectCreationData
           priority: 0
         },
         {
-          type: 'atmospheric_halo',
+          type: 'atmosphere',
           params: {
-            ...DEFAULT_EFFECT_CONFIGS.atmospheric_halo,
-            color: [0.6, 0.1, 0.9],
-            scale: 1.15
+            ...DEFAULT_EFFECT_CONFIGS.atmosphere,
+            color: [0.6, 0.1, 0.9, 0.2]
           },
           priority: 10
         },
@@ -192,11 +190,10 @@ export function createPlanetEffectConfig(planetType: string): EffectCreationData
           priority: 0
         },
         {
-          type: 'atmospheric_halo',
+          type: 'atmosphere',
           params: {
-            ...DEFAULT_EFFECT_CONFIGS.atmospheric_halo,
-            color: [1.0, 0.6, 0.2],
-            intensity: 0.8
+            ...DEFAULT_EFFECT_CONFIGS.atmosphere,
+            color: [1.0, 0.6, 0.2, 0.2]
           },
           priority: 10
         }
@@ -206,12 +203,10 @@ export function createPlanetEffectConfig(planetType: string): EffectCreationData
     case 'icy':
       effects.push(
         {
-          type: 'atmospheric_halo',
+          type: 'atmosphere',
           params: {
-            ...DEFAULT_EFFECT_CONFIGS.atmospheric_halo,
-            color: [0.5, 0.8, 1.0],
-            intensity: 0.6,
-            scale: 1.1
+            ...DEFAULT_EFFECT_CONFIGS.atmosphere,
+            color: [0.5, 0.8, 1.0, 0.15]
           },
           priority: 10
         }
@@ -221,10 +216,9 @@ export function createPlanetEffectConfig(planetType: string): EffectCreationData
     default:
       // Efectos genéricos por defecto
       effects.push({
-        type: 'atmospheric_halo',
+        type: 'atmosphere',
         params: {
-          color: [0.5, 0.5, 0.8],
-          intensity: 0.5
+          color: [0.5, 0.5, 0.8, 0.15]
         },
         priority: 10
       });

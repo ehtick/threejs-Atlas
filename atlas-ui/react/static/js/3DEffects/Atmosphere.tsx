@@ -1,43 +1,42 @@
 /**
- * Atmosphere Effects - Efectos atmosféricos modulares
+ * Atmosphere Effect - Efectos atmosféricos principales
  * 
- * Incluye halos, resplandores y atmósferas densas que pueden aplicarse 
- * a cualquier tipo de planeta. Estelas dinámicas movidas a CloudGyros.tsx.
+ * Este es el efecto atmosférico principal que usa Fresnel para crear
+ * la atmósfera base de los planetas. Anteriormente llamado AtmosphereBrights.
+ * 
+ * Responsabilidades:
+ * - Atmosphere.tsx -> Atmósfera base con efecto Fresnel (ESTE ARCHIVO)
+ * - CloudGyros.tsx -> Partículas dinámicas giratorias
+ * - AtmosphericStreaks.tsx -> Estelas atmosféricas específicas
  */
 
 import * as THREE from 'three';
 
-export interface AtmosphericHaloParams {
-  color?: THREE.Color | number[];
-  intensity?: number;
-  falloff?: number;
-  scale?: number;
-  pulsation?: boolean;
-  pulsationSpeed?: number;
-  fresnelPower?: number;
+export interface AtmosphereParams {
+  type?: string;
+  color?: number[];
+  width?: number;
+  opacity?: number;
+  density?: number;
 }
 
-
-
 /**
- * Efecto de Halo Atmosférico
+ * Efecto Atmosférico Principal
+ * 
+ * Crea la atmósfera base del planeta usando efectos Fresnel
  */
-export class AtmosphericHaloEffect {
+export class AtmosphereEffect {
   private mesh: THREE.Mesh;
   private material: THREE.ShaderMaterial;
   private geometry: THREE.SphereGeometry;
-  private params: AtmosphericHaloParams;
+  private params: AtmosphereParams;
 
   private static readonly vertexShader = `
     varying vec3 vNormal;
     varying vec3 vViewPosition;
-    varying vec3 vWorldPosition;
     
     void main() {
       vNormal = normalize(normalMatrix * normal);
-      
-      vec4 worldPosition = modelMatrix * vec4(position, 1.0);
-      vWorldPosition = worldPosition.xyz;
       
       vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
       vViewPosition = -mvPosition.xyz;
@@ -47,88 +46,69 @@ export class AtmosphericHaloEffect {
   `;
 
   private static readonly fragmentShader = `
-    uniform vec3 glowColor;
-    uniform float glowIntensity;
-    uniform float glowFalloff;
+    uniform vec3 atmosphereColor;
+    uniform float atmosphereOpacity;
     uniform float fresnelPower;
-    uniform float time;
-    uniform bool pulsation;
-    uniform float pulsationSpeed;
     
     varying vec3 vNormal;
     varying vec3 vViewPosition;
-    varying vec3 vWorldPosition;
     
     void main() {
       vec3 normal = normalize(vNormal);
       vec3 viewDir = normalize(vViewPosition);
       
-      // Efecto Fresnel para el halo
+      // Efecto Fresnel - opaco en bordes, transparente en el centro
       float fresnel = pow(1.0 - abs(dot(normal, viewDir)), fresnelPower);
       
-      // Pulsación opcional
-      float pulse = pulsation ? 
-        (0.8 + 0.2 * sin(time * pulsationSpeed)) : 1.0;
+      // Color de la atmósfera
+      vec3 color = atmosphereColor;
       
-      // Color del halo con gradiente
-      vec3 color = glowColor * glowIntensity * fresnel * pulse;
-      
-      // Añadir variación de color en los bordes
-      color += glowColor * 0.5 * pow(fresnel, 3.0);
-      
-      // Gradiente radial adicional
-      float radialGradient = 1.0 - length(vWorldPosition.xz) * 0.1;
-      color *= max(0.5, radialGradient);
-      
-      // Alpha con suavizado
-      float alpha = fresnel * glowFalloff * pulse;
+      // Alpha con efecto fresnel
+      float alpha = fresnel * atmosphereOpacity;
       
       gl_FragColor = vec4(color, alpha);
     }
   `;
 
-  constructor(planetRadius: number, params: AtmosphericHaloParams = {}) {
+  constructor(planetRadius: number, params: AtmosphereParams = {}) {
     this.params = {
-      color: params.color || new THREE.Color(0x888888), // CAMBIO: Gris en lugar de azul
-      intensity: params.intensity || 0.5, // CAMBIO: Intensidad reducida
-      falloff: params.falloff || 0.6, // CAMBIO: Falloff más suave
-      scale: params.scale || 1.15, // CAMBIO: Escala ligeramente menor
-      pulsation: params.pulsation || false,
-      pulsationSpeed: params.pulsationSpeed || 2.0,
-      fresnelPower: params.fresnelPower || 3.0 // CAMBIO: Fresnel más sutil
+      type: params.type || 'Thin',
+      color: params.color || [0.7, 0.7, 0.7, 0.2], // Gris con más opacidad
+      width: params.width || 12, // Width más cercano a Python
+      opacity: params.opacity || 0.2, // Opacidad más visible
+      density: params.density || 1.0
     };
 
-    this.geometry = new THREE.SphereGeometry(
-      planetRadius * this.params.scale!,
-      64,
-      64
+    // Usar el width de la atmósfera para determinar el grosor
+    // width viene como porcentaje adicional del radio del planeta
+    const atmosphereRadius = planetRadius * (1 + (this.params.width! / 100));
+    
+    // Usar el doble de resolución para suavizar los polígonos visibles
+    this.geometry = new THREE.SphereGeometry(atmosphereRadius, 32, 32);
+    
+    // Crear el color THREE.js
+    const atmosphereColor = new THREE.Color(
+      this.params.color![0],
+      this.params.color![1],
+      this.params.color![2]
     );
-
-    this.material = this.createMaterial();
-    this.mesh = new THREE.Mesh(this.geometry, this.material);
-  }
-
-  private createMaterial(): THREE.ShaderMaterial {
-    const color = this.params.color instanceof THREE.Color ? 
-      this.params.color : new THREE.Color(this.params.color as any);
-
-    return new THREE.ShaderMaterial({
-      vertexShader: AtmosphericHaloEffect.vertexShader,
-      fragmentShader: AtmosphericHaloEffect.fragmentShader,
+    
+    // Usar ShaderMaterial con efecto fresnel
+    this.material = new THREE.ShaderMaterial({
+      vertexShader: AtmosphereEffect.vertexShader,
+      fragmentShader: AtmosphereEffect.fragmentShader,
       uniforms: {
-        glowColor: { value: color },
-        glowIntensity: { value: this.params.intensity },
-        glowFalloff: { value: this.params.falloff },
-        fresnelPower: { value: this.params.fresnelPower },
-        time: { value: 0 },
-        pulsation: { value: this.params.pulsation },
-        pulsationSpeed: { value: this.params.pulsationSpeed }
+        atmosphereColor: { value: atmosphereColor },
+        atmosphereOpacity: { value: this.params.opacity! },
+        fresnelPower: { value: 2.0 }
       },
       transparent: true,
       blending: THREE.AdditiveBlending,
       side: THREE.BackSide,
       depthWrite: false
     });
+
+    this.mesh = new THREE.Mesh(this.geometry, this.material);
   }
 
   addToScene(scene: THREE.Scene, planetPosition?: THREE.Vector3): void {
@@ -139,28 +119,25 @@ export class AtmosphericHaloEffect {
   }
 
   update(deltaTime: number): void {
-    this.material.uniforms.time.value += deltaTime;
+    // No rotación para mantener consistencia con las estrellas
   }
 
-  updateParams(newParams: Partial<AtmosphericHaloParams>): void {
+  updateParams(newParams: Partial<AtmosphereParams>): void {
     this.params = { ...this.params, ...newParams };
 
     if (newParams.color) {
-      const color = newParams.color instanceof THREE.Color ? 
-        newParams.color : new THREE.Color(newParams.color as any);
-      this.material.uniforms.glowColor.value = color;
+      const atmosphereColor = new THREE.Color(
+        newParams.color[0],
+        newParams.color[1],
+        newParams.color[2]
+      );
+      this.material.uniforms.atmosphereColor.value = atmosphereColor;
     }
-    if (newParams.intensity !== undefined) {
-      this.material.uniforms.glowIntensity.value = newParams.intensity;
+    if (newParams.opacity !== undefined) {
+      this.material.uniforms.atmosphereOpacity.value = newParams.opacity;
     }
-    if (newParams.falloff !== undefined) {
-      this.material.uniforms.glowFalloff.value = newParams.falloff;
-    }
-    if (newParams.pulsation !== undefined) {
-      this.material.uniforms.pulsation.value = newParams.pulsation;
-    }
-    if (newParams.pulsationSpeed !== undefined) {
-      this.material.uniforms.pulsationSpeed.value = newParams.pulsationSpeed;
+    if (newParams.density !== undefined) {
+      this.material.uniforms.atmosphereOpacity.value = (this.params.opacity || 0.3) * newParams.density;
     }
   }
 
@@ -174,49 +151,59 @@ export class AtmosphericHaloEffect {
   }
 }
 
-
-
-// Funciones de utilidad para crear efectos desde datos de Python
-export function createAtmosphericHaloFromPythonData(
+/**
+ * Función de utilidad para crear efecto desde datos de Python
+ */
+export function createAtmosphereFromPythonData(
   planetRadius: number, 
   atmosphereData: any
-): AtmosphericHaloEffect {
-  const haloData = atmosphereData.halo || {};
+): AtmosphereEffect {
   
-  console.log('🌟 AtmosphericHalo received data:', atmosphereData);
+  // Default: atmósfera gris con opacidad moderada
+  let atmosphereColor = [0.7, 0.7, 0.7, 0.15]; // Gris con más opacidad
+  let atmosphereWidth = 12; // Width más cercano a Python por defecto
   
-  // CAMBIO: Usar el color de la atmósfera en lugar de azul por defecto
-  let haloColor = new THREE.Color(0x888888); // Gris por defecto
-  
-  // Si hay color específico de halo, usarlo
-  if (haloData.color && Array.isArray(haloData.color)) {
-    haloColor = new THREE.Color().setRGB(
-      haloData.color[0], haloData.color[1], haloData.color[2]
-    );
-    console.log('🌟 Using specific halo color:', haloColor);
-  } 
-  // Si no hay halo específico pero hay atmósfera, usar color de atmósfera
-  else if (atmosphereData.color && Array.isArray(atmosphereData.color)) {
-    haloColor = new THREE.Color().setRGB(
-      atmosphereData.color[0], 
-      atmosphereData.color[1], 
-      atmosphereData.color[2]
-    );
-    console.log('🌟 Using atmosphere color for halo:', atmosphereData.color, '→', haloColor);
+  if (atmosphereData) {
+    console.log('🌫️ Atmosphere received data:', atmosphereData);
+    
+    // Verificar si hay color específico desde Python
+    if (atmosphereData.color && Array.isArray(atmosphereData.color)) {
+      // Python ya normaliza los colores a 0-1 (ver línea 212 en __frontendAPI_planet_renderer.py)
+      const pythonColor = atmosphereData.color;
+      atmosphereColor = [
+        pythonColor[0],  // R (ya normalizado)
+        pythonColor[1],  // G (ya normalizado)  
+        pythonColor[2],  // B (ya normalizado)
+        (pythonColor[3] || 0.15) * 0.7  // A - Usar opacidad de Python con reducción mínima
+      ];
+      console.log('🎨 Using API atmosphere color (Python normalized):', atmosphereColor);
+    } else {
+      console.log('🎨 Using default atmosphere color (no API color found):', atmosphereColor);
+    }
+    
+    // Usar width desde Python si está disponible
+    if (atmosphereData.width) {
+      atmosphereWidth = atmosphereData.width;
+    }
+    
   } else {
-    console.log('🌟 Using default gray halo color (no atmosphere color found)');
+    console.log('🎨 No atmosphere data found, using defaults:', { color: atmosphereColor, width: atmosphereWidth });
   }
   
-  const params: AtmosphericHaloParams = {
-    color: haloColor,
-    intensity: haloData.intensity || 0.3, // CAMBIO: Intensidad muy baja
-    falloff: haloData.falloff || 0.4, // CAMBIO: Falloff muy sutil
-    scale: haloData.scale || 1.08, // CAMBIO: Escala muy pequeña
-    pulsation: haloData.pulsation || false,
-    pulsationSpeed: haloData.pulsation_speed || 2.0
+  console.log('🌫️ Final Atmosphere params:', { 
+    color: atmosphereColor, 
+    width: atmosphereWidth, 
+    planetRadius,
+    opacity: atmosphereColor[3]
+  });
+  
+  const params: AtmosphereParams = {
+    type: atmosphereData?.type || 'Thin',
+    color: atmosphereColor,
+    width: atmosphereWidth,
+    opacity: atmosphereColor[3], // Usar la opacidad del color calculado
+    density: 1.0
   };
 
-  return new AtmosphericHaloEffect(planetRadius, params);
+  return new AtmosphereEffect(planetRadius, params);
 }
-
-
