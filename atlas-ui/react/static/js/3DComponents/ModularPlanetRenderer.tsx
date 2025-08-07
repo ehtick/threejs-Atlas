@@ -233,9 +233,10 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
 
       // Configurar cámara - EXACTA posición que SolarSystem3DViewer.tsx
       const camera = new THREE.PerspectiveCamera(45, containerWidth / containerHeight, 0.1, 10000);
-      // Posición inicial de la cámara para ver todo el sistema
-      camera.position.set(0, 80, 120); // Mismo ángulo de vista cenital/perspectiva
-      camera.lookAt(0, 0, 0); // Inicialmente mirar al centro, se actualizará para seguir al planeta
+      // 🚀 FIXED: Position camera further back to see entire orbital path (planet orbits at ~100 radius)
+      // Need to ensure field of view includes orbit radius + margin
+      camera.position.set(0, 120, 180); // Further back to see orbit radius ~100
+      camera.lookAt(0, 0, 0); // 🌟 Look at sun center (same as System view)
       cameraRef.current = camera;
 
       // Configurar renderer con configuraciones optimizadas
@@ -563,8 +564,8 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
     const controls = new OrbitControls(camera, domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    controls.minDistance = 20; // Ajustado para la nueva escala
-    controls.maxDistance = 500; // Ajustado para la nueva escala (como SolarSystem3DViewer)
+    controls.minDistance = 50; // 🚀 FIXED: Allow closer zoom but not too close to planet orbit
+    controls.maxDistance = 800; // 🚀 FIXED: Allow zooming out to see entire system
     controls.autoRotate = autoRotate;
     controls.autoRotateSpeed = 0.1; // Más lento para no interferir visualmente con rotación del planeta
     controls.enablePan = true;
@@ -845,25 +846,8 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
     planetMeshRef.current.position.z = planetZ;
     planetMeshRef.current.position.y = 0;
     
-    // 🎯 CRITICAL: Actualizar cámara para seguir al planeta (no al sol)
-    if (cameraRef.current) {
-      // Mantener la misma distancia pero seguir al planeta
-      const cameraOffset = { x: 0, y: 80, z: 120 };
-      cameraRef.current.position.set(
-        planetX + cameraOffset.x, 
-        cameraOffset.y, 
-        planetZ + cameraOffset.z
-      );
-      cameraRef.current.lookAt(planetX, 0, planetZ); // Mirar AL PLANETA, no al sol
-      
-      console.log('📷 Camera updated to follow planet:', {
-        planetPos: { x: planetX.toFixed(2), z: planetZ.toFixed(2) },
-        cameraPos: { 
-          x: (planetX + cameraOffset.x).toFixed(2), 
-          z: (planetZ + cameraOffset.z).toFixed(2) 
-        }
-      });
-    }
+    // 🚀 DISABLED: Don't follow planet - keep camera centered on sun for System view comparison
+    // (Camera will be controlled by OrbitControls instead)
     
     console.log('✅ Planet position updated with API data:', {
       name: renderingData.planet_info?.name,
@@ -914,6 +898,17 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       }
       // Crear nueva línea orbital con los datos correctos
       createOrbitLine(sceneRef.current, dataToUse);
+      
+      // 🎯 DEBUG: Compare Planet vs System API data
+      if (!(window as any).comparedAPIs) {
+        compareAPIsData();
+        (window as any).comparedAPIs = true;
+      }
+      
+      // 🌟 NEW: Draw ALL planets for comparison with System view  
+      if ((window as any).systemPlanetsData) {
+        drawAllPlanets(sceneRef.current);
+      }
 
       // Apply modular effects using the 3DEffects system
       await applyProceduralShadersFromAPI(dataToUse);
@@ -979,6 +974,139 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
 
     activeEffectsRef.current = [];
     setEffects([]);
+  };
+
+  /**
+   * 🎯 DEBUG: Compare Planet vs System API responses
+   */
+  const compareAPIsData = async () => {
+    try {
+      console.log('🔍 COMPARING Planet API vs System API...');
+      
+      // Fetch Planet API
+      const planetResponse = await fetch('/api/planet/rendering-data');
+      const planetResult = await planetResponse.json();
+      
+      // Fetch System API
+      const systemResponse = await fetch('/api/system/rendering-data');
+      const systemResult = await systemResponse.json();
+      
+      if (planetResult.success && systemResult.success) {
+        // Find our planet in system data
+        const systemPlanet = systemResult.system_data.planets.find((p: any) => 
+          p.name.toLowerCase() === planetName.toLowerCase()
+        );
+        
+        const planetAPIData = {
+          endpoint: '/api/planet/rendering-data',
+          initial_orbital_angle: planetResult.planet_data?.initial_orbital_angle,
+          orbital_radius: planetResult.planet_data?.orbital_radius,
+          cosmic_origin_time: planetResult.timing?.cosmic_origin_time
+        };
+        
+        const systemAPIData = {
+          endpoint: '/api/system/rendering-data',
+          initial_orbital_angle: systemPlanet?.initial_orbital_angle,
+          orbital_radius: systemPlanet?.orbital_radius,
+          cosmic_origin_time: systemResult.system_data?.timing?.cosmic_origin_time
+        };
+        
+        const differences = {
+          angle_diff: Math.abs((planetResult.planet_data?.initial_orbital_angle || 0) - (systemPlanet?.initial_orbital_angle || 0)),
+          radius_diff: Math.abs((planetResult.planet_data?.orbital_radius || 0) - (systemPlanet?.orbital_radius || 0)),
+          time_diff: Math.abs((planetResult.timing?.cosmic_origin_time || 0) - (systemResult.system_data?.timing?.cosmic_origin_time || 0))
+        };
+        
+        console.log('🎯 API COMPARISON for', planetName);
+        console.log('📊 Planet API:', planetAPIData);
+        console.log('🌌 System API:', systemAPIData);  
+        console.log('⚖️ Differences:', differences);
+        
+        // Store system data for planet rendering
+        (window as any).systemPlanetsData = systemResult.system_data.planets;
+        (window as any).systemTimingData = systemResult.system_data.timing;
+      }
+    } catch (error) {
+      console.error('❌ Error comparing APIs:', error);
+    }
+  };
+
+  /**
+   * 🌟 NEW: Draw ALL planets like System view for comparison
+   */
+  const drawAllPlanets = (scene: THREE.Scene) => {
+    const systemPlanets = (window as any).systemPlanetsData;
+    const systemTiming = (window as any).systemTimingData;
+    
+    if (!systemPlanets || !systemTiming) {
+      return;
+    }
+    
+    console.log('🌟 Drawing ALL planets for comparison with System view:', systemPlanets.length);
+    
+    systemPlanets.forEach((planet: any, index: number) => {
+      // Skip the main planet (it's already drawn)
+      if (planet.name.toLowerCase() === planetName.toLowerCase()) {
+        return;
+      }
+      
+      // Create simple sphere for other planets
+      const planetGeometry = new THREE.SphereGeometry(2, 16, 16);
+      const planetMaterial = new THREE.MeshLambertMaterial({ 
+        color: index % 2 === 0 ? 0x444444 : 0x666666 
+      });
+      const planetMesh = new THREE.Mesh(planetGeometry, planetMaterial);
+      
+      // Calculate position exactly like System view
+      const relativeOrbitRadius = planet.orbital_radius / systemTiming.max_orbital_radius;
+      const scaleFactor = 80;
+      const orbitalRadius = 20 + relativeOrbitRadius * scaleFactor;
+      
+      const realCurrentTime = Math.floor(Date.now() / 1000);
+      const currentTime = realCurrentTime - systemTiming.cosmic_origin_time;
+      const angleVelocityOrbit = (2 * Math.PI) / planet.orbital_period_seconds;
+      const angleOrbit = (planet.initial_orbital_angle + currentTime * angleVelocityOrbit) % (2 * Math.PI);
+      
+      const planetX = orbitalRadius * Math.cos(angleOrbit);
+      const planetZ = orbitalRadius * Math.sin(angleOrbit);
+      
+      planetMesh.position.set(planetX, 0, planetZ);
+      planetMesh.name = `comparison-planet-${planet.name}`;
+      scene.add(planetMesh);
+      
+      console.log(`🪐 Added comparison planet ${planet.name} at (${planetX.toFixed(2)}, 0, ${planetZ.toFixed(2)})`);
+    });
+    
+    // 🎯 SPECIAL: Draw EXACT marker for Tonnir using System view calculation
+    const tonnirPlanet = systemPlanets.find((p: any) => p.name.toLowerCase().includes('tonnir'));
+    if (tonnirPlanet) {
+      // Use EXACT same calculation as System view logs show
+      const systemCurrentTime = 1240487644; // From System view log: "currentTime": "1240487644"
+      const systemAngleVelocity = (2 * Math.PI) / tonnirPlanet.orbital_period_seconds;
+      const systemAngleOrbit = (tonnirPlanet.initial_orbital_angle + systemCurrentTime * systemAngleVelocity) % (2 * Math.PI);
+      
+      const systemRelativeRadius = tonnirPlanet.orbital_radius / systemTiming.max_orbital_radius;
+      const systemScaleFactor = 80;
+      const systemOrbitalRadius = 20 + systemRelativeRadius * systemScaleFactor;
+      
+      const systemX = systemOrbitalRadius * Math.cos(systemAngleOrbit);
+      const systemZ = systemOrbitalRadius * Math.sin(systemAngleOrbit);
+      
+      // Create a BRIGHT RED marker for exact System position
+      const systemMarkerGeometry = new THREE.SphereGeometry(3, 16, 16);
+      const systemMarkerMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0000 });
+      const systemMarker = new THREE.Mesh(systemMarkerGeometry, systemMarkerMaterial);
+      systemMarker.position.set(systemX, 0, systemZ);
+      systemMarker.name = 'SYSTEM-EXACT-POSITION';
+      scene.add(systemMarker);
+      
+      console.log('🔴 SYSTEM EXACT MARKER placed at:', {
+        name: tonnirPlanet.name,
+        systemCurrentTime,
+        systemAngleOrbit: (systemAngleOrbit * 180 / Math.PI).toFixed(2) + '°',
+        systemPosition: { x: systemX.toFixed(2), z: systemZ.toFixed(2) }
+      });
+    }
   };
 
   /**
@@ -1056,10 +1184,11 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
         return; // Sin datos, salir
       }
 
-      // POSICIÓN ORBITAL FIJA - MISMO CÁLCULO EXACTO que SolarSystem3DViewer.tsx
-      const realCurrentTime = Math.floor(Date.now() / 1000); // Exactamente igual que SolarSystem3DViewer
-      const timeOffset = 0; // Sin offset por defecto (como en SolarSystem3DViewer cuando no hay slider)
-      const currentTime = realCurrentTime - currentCosmicOriginTime + timeOffset; // EXACTA fórmula de SolarSystem3DViewer
+      // 🎯 CRITICAL: Use continuously updated time like System view
+      // System view updates currentTimeRef.current constantly, we need the same behavior
+      const realCurrentTime = Math.floor(Date.now() / 1000);
+      const timeOffset = 0; 
+      const currentTime = realCurrentTime - currentCosmicOriginTime + timeOffset;
       
       // Cálculo del ángulo orbital FIJO - exactamente igual que SolarSystem3DViewer
       const angleVelocityOrbit = (2 * Math.PI) / orbitalPeriod;
@@ -1097,29 +1226,59 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       
       const relativeOrbitRadius = actualOrbitalRadius / systemMaxOrbitalRadius;
       const scaleFactor = 80; // Mismo factor de escala que SolarSystem3DViewer
-      const orbitalRadius = 20 + relativeOrbitRadius * scaleFactor; // EXACTO cálculo de SolarSystem3DViewer
+      const orbitRadius = 20 + relativeOrbitRadius * scaleFactor; // Base radius
+      
+      // 🎯 CRITICAL: Use ellipse calculations like System view (not perfect circles)
+      const eccentricity = apiData?.eccentricity_factor || planetData?.eccentricity_factor || 0.1;
+      const semiMajorAxis = orbitRadius;
+      const semiMinorAxis = semiMajorAxis * Math.sqrt(1 - eccentricity * eccentricity);
       
       // Verificar que el radio coincida con el de la línea orbital (solo la primera vez)
       if ((window as any).debugOrbitRadius && !(window as any).orbitChecked) {
-        const difference = Math.abs((window as any).debugOrbitRadius - orbitalRadius);
+        const difference = Math.abs((window as any).debugOrbitRadius - orbitRadius);
         if (difference > 0.01) {
           console.error(`❌ CRITICAL: Planet not on orbit line! Difference: ${difference.toFixed(2)}`);
-          console.log('Line radius:', (window as any).debugOrbitRadius, 'Planet radius:', orbitalRadius);
+          console.log('Line radius:', (window as any).debugOrbitRadius, 'Planet radius:', orbitRadius);
           console.log('Max system radius - Line:', (window as any).debugSystemMaxRadius, 'Planet:', systemMaxOrbitalRadius);
         } else {
-          console.log(`✅ Planet correctly orbiting at radius: ${orbitalRadius.toFixed(2)}`);
+          console.log(`✅ Planet correctly orbiting at radius: ${orbitRadius.toFixed(2)}`);
         }
         (window as any).orbitChecked = true;
       }
       
-      // Calcular posición del planeta en su órbita - ACTUALIZACIÓN CONTINUA como en SolarSystem3DViewer
-      const planetX = orbitalRadius * Math.cos(angleOrbit);
-      const planetZ = orbitalRadius * Math.sin(angleOrbit);
+      // 🎯 CRITICAL: Use ellipse position calculation like System view
+      const planetX = semiMajorAxis * Math.cos(angleOrbit);
+      const planetZ = semiMinorAxis * Math.sin(angleOrbit);
       
       // ACTUALIZAR POSICIÓN SIEMPRE - el planeta debe moverse en su órbita
       planetMeshRef.current.position.x = planetX;
       planetMeshRef.current.position.z = planetZ;
       planetMeshRef.current.position.y = 0;
+      
+      // 🎯 DEBUG: Add GREEN marker for Planet view calculation (only for Tonnir)  
+      const currentPlanetName = dataToUse?.planet_info?.name || planetData?.name || planetName;
+      if (currentPlanetName.toLowerCase().includes('tonnir') && !(window as any).planetMarkerAdded && sceneRef.current) {
+        const planetMarkerGeometry = new THREE.SphereGeometry(4, 16, 16);
+        const planetMarkerMaterial = new THREE.MeshBasicMaterial({ color: 0x00FF00 });
+        const planetMarker = new THREE.Mesh(planetMarkerGeometry, planetMarkerMaterial);
+        planetMarker.position.set(planetX, 5, planetZ); // Slightly above for visibility
+        planetMarker.name = 'PLANET-VIEW-POSITION';
+        sceneRef.current.add(planetMarker);
+        
+        console.log('🟢 PLANET VIEW MARKER placed at:', {
+          planetCurrentTime: currentTime,
+          planetAngleOrbit: (angleOrbit * 180 / Math.PI).toFixed(2) + '°',
+          planetPosition: { x: planetX.toFixed(2), z: planetZ.toFixed(2) }
+        });
+        
+        (window as any).planetMarkerAdded = true;
+      }
+      
+      // 🌟 SIMPLE FIX: Always keep OrbitControls target at sun center
+      if (controlsRef.current) {
+        controlsRef.current.target.set(0, 0, 0); // Always look at sun
+        // Don't call update() here - let OrbitControls handle it naturally
+      }
       
       // DEBUG para Tonnir_MD-1420
       // Usar el NOMBRE real del planeta, no el tipo
@@ -1148,7 +1307,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
             name: planetName,
             orbital_radius: actualOrbitalRadius,
             maxOrbitalRadius: systemMaxOrbitalRadius,
-            orbitRadius: orbitalRadius,
+            orbitRadius: orbitRadius,
             currentTime: currentTime,
             initial_orbital_angle: initialOrbitalAngle,
             angleOrbit: angleOrbit,

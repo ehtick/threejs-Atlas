@@ -70,8 +70,10 @@ class PlanetRenderingTranslator:
         planet_type = planet.planet_type.replace("_", " ")
         
         # Calculate exact seeds as in Pillow
+        # 🎯 CRITICAL: Use SAME cosmic_origin_time as System endpoint to ensure consistency
+        cosmic_origin_time = 514080000  # FIXED: Same as System API
         current_time = time.time()
-        time_elapsed_seconds = current_time - config.cosmic_origin_time
+        time_elapsed_seconds = current_time - cosmic_origin_time
         
         angle_velocity_rotation = 2 * math.pi / planet.rotation_period_seconds
         angle_rotation = (
@@ -151,7 +153,7 @@ class PlanetRenderingTranslator:
             },
             "debug": {
                 "visual_debug": VISUAL_DEBUG,
-                "cosmic_origin_time": config.cosmic_origin_time,
+                "cosmic_origin_time": cosmic_origin_time,  # Use fixed value
                 "initial_angle_rotation": planet.initial_angle_rotation
             },
             "seeds": {
@@ -164,7 +166,7 @@ class PlanetRenderingTranslator:
                 "orbital_angle": orbital_angle,
                 "initial_orbital_angle": planet.initial_orbital_angle,  # AÑADIDO: posición estática inicial
                 "tilt_factor": tilt_factor,
-                "cosmic_origin_time": config.cosmic_origin_time,
+                "cosmic_origin_time": cosmic_origin_time,  # Use fixed value same as System API
                 "time_elapsed_seconds": time_elapsed_seconds
             },
             "surface_elements": planet_specific_data,
