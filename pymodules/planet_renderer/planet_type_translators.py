@@ -68,11 +68,6 @@ class PlanetTypeTranslators:
                 "widths": band_widths,        # Already padded to 20
                 "rotation": rotation_angle
             },
-            "surface_rings": {
-                "num_rings": 30,
-                "color": [0, 0, 0, 0.02],  # As in draw_planet_rings
-                "opacity_falloff": 4.0
-            },
             "storms": storms,
             "debug": {
                 "original_planet_radius": planet_radius,
@@ -173,7 +168,6 @@ class PlanetTypeTranslators:
         
         return {
             "type": "rocky",
-            "surface_rings": {"color": [0, 0, 0, 75/255.0]},
             "abstract_lands": abstract_lands,
             "mountains": mountains,
             "clouds": clouds,
@@ -277,7 +271,6 @@ class PlanetTypeTranslators:
         
         return {
             "type": "icy",
-            "surface_rings": {"color": [0, 0, 0, 60/255.0]},
             "abstract_lands": abstract_lands,
             "crystals": crystals,
             "cracks": cracks,
@@ -360,7 +353,6 @@ class PlanetTypeTranslators:
         
         return {
             "type": "oceanic",
-            "surface_rings": {"color": [0, 0, 0, 60/255.0]},
             "depths": {"enabled": True},
             "abstract_lands": abstract_lands,
             "green_patches": green_patches,
@@ -377,37 +369,23 @@ class PlanetTypeTranslators:
         # Sistema de efectos modulares 3D
         effects_3d = []
         
-        # 1. SUPERFICIE METÁLICA PBR
+        # 1. SUPERFICIE METÁLICA MEJORADA - Compatible con ThreeJS lighting
         effects_3d.append({
-            "type": "metallic_surface",
+            "type": "metallic_surface", 
             "params": {
                 "color": [base_gray, base_gray, base_gray + 0.05],  # Ligero tinte azulado
-                "roughness": rng.uniform(0.6, 0.8),  # Rugosidad media-alta
-                "metalness": rng.uniform(0.85, 0.95),  # Muy metálico
-                "fragmentationIntensity": rng.uniform(0.4, 0.7),  # Fragmentación en bordes
-                "noiseScale": rng.uniform(6.0, 10.0),  # Escala del ruido superficial
-                "noiseIntensity": rng.uniform(0.2, 0.4)  # Intensidad de variaciones
+                "roughness": rng.uniform(0.3, 0.5),  # Menos rugoso para más brillo
+                "metalness": rng.uniform(0.9, 0.98),  # Muy metálico
+                "reflectivity": rng.uniform(0.8, 1.0),  # Alta reflectividad
+                "envMapIntensity": rng.uniform(1.2, 1.8),  # Intensidad de reflexiones
+                "clearcoat": rng.uniform(0.2, 0.4),  # Capa clara para brillo
+                "clearcoatRoughness": rng.uniform(0.05, 0.15)  # Capa clara suave
             },
             "priority": 0
         })
         
-        # 2. HALO ATMOSFÉRICO VIOLETA
-        halo_color = [
-            rng.uniform(0.5, 0.7),  # R - violeta
-            rng.uniform(0.0, 0.2),  # G - poco verde
-            rng.uniform(0.8, 1.0)   # B - mucho azul
-        ]
-        
-        effects_3d.append({
-            "type": "atmospheric_halo",
-            "params": {
-                "color": halo_color,
-                "intensity": rng.uniform(0.8, 1.2),
-                "falloff": rng.uniform(1.8, 2.5),  # Caída del brillo
-                "scale": rng.uniform(1.12, 1.18)  # Tamaño del halo
-            },
-            "priority": 10
-        })
+        # REMOVED: atmospheric_halo - use existing atmosphere system instead
+        # Metallic planets will use the regular atmosphere system for consistency
         
         # 3. ESTELAS ATMOSFÉRICAS BLANCAS - referenced line 892
         effects_3d.append({
@@ -445,12 +423,7 @@ class PlanetTypeTranslators:
             "type": "metallic_3d",
             "effects_3d": effects_3d,
             "universal_actions": actions,
-            "description": {
-                "appearance": "Metallic gray planet with purple halo",
-                "surface_features": "Angular fragmentation at edges, circular waves in interior",
-                "atmosphere_features": "White atmospheric streaks, violet-purple glow",
-                "material": "PBR metallic with medium-high roughness"
-            }
+
         }
     
     # Placeholder methods for other planet types

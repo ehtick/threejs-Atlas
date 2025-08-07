@@ -361,8 +361,12 @@ export class EffectRegistry {
       
       // Sistema modular de efectos 3D
       if (surface.effects_3d && Array.isArray(surface.effects_3d)) {
-        console.log('✨ Applying modular 3D effects:', surface.effects_3d);
+        console.log('🚀 ENCONTRADOS effects_3d:', surface.effects_3d.length, 'efectos');
+        console.log('🚀 LISTA COMPLETA DE effects_3d:', JSON.stringify(surface.effects_3d, null, 2));
+        
         for (const effectData of surface.effects_3d) {
+          console.log('🔍 PROCESANDO EFECTO:', effectData.type, 'con params:', effectData.params);
+          
           const instance = this.createEffect(
             effectData.type,
             effectData.params,
@@ -374,13 +378,25 @@ export class EffectRegistry {
           if (instance) {
             effects.push(instance);
             
+            // APLICAR EL EFECTO INMEDIATAMENTE
+            if (instance.effect.apply) {
+              console.log('🎯 APLICANDO EFECTO:', effectData.type, 'al mesh');
+              instance.effect.apply(mesh);
+            } else {
+              console.warn('⚠️ EFECTO SIN apply():', effectData.type);
+            }
+            
             // Añadir a la escena si es necesario
             if (instance.effect.addToScene) {
               instance.effect.addToScene(scene, mesh.position);
             }
-            console.log('✅ Added modular effect:', effectData.type);
+            console.log('✅ EFECTO AGREGADO Y APLICADO:', effectData.type);
+          } else {
+            console.error('❌ FALLO AL CREAR EFECTO:', effectData.type);
           }
         }
+      } else {
+        console.log('❌ NO HAY effects_3d O NO ES ARRAY:', typeof surface.effects_3d, surface.effects_3d);
       }
       
       // Sistema de rendering_commands ELIMINADO - usar efectos específicos
@@ -412,33 +428,9 @@ export class EffectRegistry {
 
         case 'metallic':
         case 'metallic_3d':
-          console.log('⚙️ Creating Metallic surface effect');
-          const metallicEffect = this.createEffectFromPythonData(
-            EffectType.METALLIC_SURFACE,
-            {
-              ...pythonData,
-              surface: {
-                ...pythonData.surface,
-                base_color: pythonData.planet_info?.base_color || pythonData.surface?.base_color
-              }
-            },
-            planetRadius,
-            mesh,
-            0
-          );
-          if (metallicEffect) {
-            effects.push(metallicEffect);
-            // 🚀 AÑADIR A LA ESCENA EN LA POSICIÓN DEL PLANETA  
-            if (metallicEffect.effect.addToScene) {
-              metallicEffect.effect.addToScene(scene, mesh.position);
-              console.log('✅ Added Metallic surface to scene');
-            } else if (metallicEffect.effect.apply) {
-              metallicEffect.effect.apply(mesh);
-              console.log('✅ Applied Metallic surface to mesh');
-            }
-          } else {
-            console.warn('⚠️ Failed to create Metallic effect');
-          }
+          console.log('⚙️ Metallic planet detected - effects should be handled by modular effects_3d system');
+          // Los effects_3d ya se procesaron arriba en lines 363-384
+          // No agregamos efectos legacy aquí para evitar duplicación
           break;
 
         case 'rocky':
