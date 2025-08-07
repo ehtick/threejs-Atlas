@@ -15,6 +15,12 @@ import { createPlanetEffectConfig, EffectsLogger } from '../3DEffects';
 import { DebugPlanetData, useDebugPlanetData } from '../utils/DebugPlanetData';
 import { getPlanetBaseColor } from '../3DEffects/PlanetColorBase';
 
+// 🎯 CONSTANTE DE NORMALIZACIÓN - Todos los planetas usan el mismo tamaño en 3D
+// En Pillow: radio ~200px en canvas 800x800 (25% del viewport)
+// En 3D: radio fijo 2.5 unidades para todos los planetas, sin importar el tamaño real
+// Esto evita que planetas gigantes no quepan en cámara o planetas pequeños sean invisibles
+const NORMALIZED_PLANET_RADIUS = 2.5;
+
 // Interfaces
 interface ModularPlanetRendererProps {
   planetName: string;
@@ -171,10 +177,10 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       // Limpiar efectos anteriores
       clearActiveEffects();
 
-      // Crear efectos usando el registry modular
+      // Crear efectos usando el registry modular CON RADIO NORMALIZADO
       const newEffects = effectRegistry.createEffectsFromPythonPlanetData(
         planetData,
-        1, // planetRadius
+        NORMALIZED_PLANET_RADIUS, // Radio normalizado para todos los planetas
         planetMeshRef.current,
         sceneRef.current
       );
@@ -228,8 +234,11 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       sceneRef.current = scene;
 
       const camera = new THREE.PerspectiveCamera(45, containerWidth / containerHeight, 0.1, 10000);
-      camera.position.set(0, 80, 120);
-      camera.lookAt(0, 0, 0);
+      // 🎯 CENTRAR CÁMARA EN EL PLANETA (tamaño normalizado)
+      // Distancia proporcional al radio normalizado: radio 2.5 * 3 = 7.5
+      const cameraDistance = NORMALIZED_PLANET_RADIUS * 3;
+      camera.position.set(0, 0, cameraDistance); 
+      camera.lookAt(0, 0, 0); // Mirar directamente al planeta en el centro
       cameraRef.current = camera;
 
       // Configurar renderer con configuraciones optimizadas
@@ -424,17 +433,21 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
    * Configurar iluminación de la escena basada en datos reales de Python
    */
   const setupLighting = (scene: THREE.Scene, planetData?: any) => {
-    createSunSphere(scene);
+    // createSunSphere(scene); // 🎯 OCULTAR SOL - nos enfocamos solo en el planeta
     if (!planetData) {
+      // 🎯 LUZ PRINCIPAL para iluminar planeta desde el frente-izquierda
       const defaultSunLight = new THREE.DirectionalLight(0xffffff, 2.0);
-      defaultSunLight.position.set(10, 0, 0);
+      defaultSunLight.position.set(-10, 5, 10); // Desde frente-izquierda-arriba
+      defaultSunLight.target.position.set(0, 0, 0); // Apuntar al planeta en centro
       defaultSunLight.castShadow = true;
       setupShadowProperties(defaultSunLight);
       scene.add(defaultSunLight);
+      scene.add(defaultSunLight.target);
       sunLightRef.current = defaultSunLight;
 
-      const defaultFillLight = new THREE.DirectionalLight(0x4466ff, 0.05);
-      defaultFillLight.position.set(-5, 0, 0);
+      // Luz de relleno desde el lado opuesto
+      const defaultFillLight = new THREE.DirectionalLight(0x4466ff, 0.3);
+      defaultFillLight.position.set(8, -3, -5); // Desde atrás-derecha
       scene.add(defaultFillLight);
       fillLightRef.current = defaultFillLight;
 
@@ -475,13 +488,13 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
 
 
   /**
-   * Crear planeta base genérico - color será actualizado cuando lleguen datos de API
+   * Crear planeta base genérico - TAMAÑO NORMALIZADO para 3D
    */
   const createBasePlanet = (scene: THREE.Scene) => {
-    const basePlanetRadius = planetData?.diameter ? planetData.diameter / 15000 : 1;
-    const planetRadius = Math.max(Math.min(basePlanetRadius, 4.0), 1.5);
+    // 🎯 TAMAÑO FIJO NORMALIZADO - como en Pillow todos se ven igual
+    console.log('🪐 Creating normalized planet with fixed radius:', NORMALIZED_PLANET_RADIUS);
     
-    const planetGeometry = new THREE.SphereGeometry(planetRadius, 128, 64);
+    const planetGeometry = new THREE.SphereGeometry(NORMALIZED_PLANET_RADIUS, 128, 64);
     const planetMaterial = new THREE.MeshStandardMaterial({
       color: 0x808080,  // Temporal - será reemplazado por datos de API
       metalness: 0.1,
@@ -494,7 +507,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
     planetMesh.castShadow = true;
     planetMesh.receiveShadow = true;
     
-    planetMesh.position.set(50, 0, 0);
+    planetMesh.position.set(0, 0, 0); // 🎯 PLANETA EN EL CENTRO - la cámara ya está enfocada en él
     
     scene.add(planetMesh);
     planetMeshRef.current = planetMesh;
@@ -541,19 +554,20 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
   };
 
   /**
-   * Configurar controles orbitales
+   * Configurar controles orbitales CENTRADOS EN EL PLANETA
    */
   const setupControls = (camera: THREE.PerspectiveCamera, domElement: HTMLElement) => {
     const controls = new OrbitControls(camera, domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    controls.minDistance = 50;
-    controls.maxDistance = 800;
+    // 🎯 Distancias proporcionales al radio normalizado
+    controls.minDistance = NORMALIZED_PLANET_RADIUS * 1.2;   // Cerca para ver detalles
+    controls.maxDistance = NORMALIZED_PLANET_RADIUS * 8;     // Lejos para vista general
     controls.autoRotate = autoRotate;
-    controls.autoRotateSpeed = 0.1;
+    controls.autoRotateSpeed = 0.5; // Más rápido para ver efectos
     controls.enablePan = true;
     controls.enableZoom = true;
-    controls.target.set(0, 0, 0);
+    controls.target.set(0, 0, 0); // 🎯 TARGET EN EL CENTRO donde está el planeta
     controlsRef.current = controls;
   };
 
@@ -743,7 +757,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
         (orbitLineRef.current.material as THREE.LineBasicMaterial).dispose();
         orbitLineRef.current = null;
       }
-      createOrbitLine(sceneRef.current!, data);
+      // createOrbitLine(sceneRef.current!, data); // 🎯 OCULTAR ÓRBITA - enfoque en planeta solamente
 
       // Apply modular effects using the 3DEffects system
       await applyProceduralShadersFromAPI(data);
@@ -824,7 +838,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
         (orbitLineRef.current.material as THREE.LineBasicMaterial).dispose();
         orbitLineRef.current = null;
       }
-      createOrbitLine(sceneRef.current, dataToUse);
+      // createOrbitLine(sceneRef.current, dataToUse); // 🎯 OCULTAR ÓRBITA - enfoque en planeta
 
       await applyProceduralShadersFromAPI(dataToUse);
       
@@ -863,7 +877,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
         
         const fallbackEffects = effectRegistry.createEffectsFromList(
           fallbackConfig,
-          1, // planetRadius
+          NORMALIZED_PLANET_RADIUS, // Radio normalizado
           planetMeshRef.current
         );
 
@@ -955,16 +969,11 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       const semiMajorAxis = orbitRadius;
       const semiMinorAxis = semiMajorAxis * Math.sqrt(1 - eccentricity * eccentricity);
       
-      const planetX = semiMajorAxis * Math.cos(angleOrbit);
-      const planetZ = semiMinorAxis * Math.sin(angleOrbit);
+      // 🎯 PLANETA FIJO EN EL CENTRO - solo rotar sobre su eje
+      // No mover posición orbital, mantener en (0, 0, 0)
+      planetMeshRef.current.position.set(0, 0, 0);
       
-      planetMeshRef.current.position.x = planetX;
-      planetMeshRef.current.position.z = planetZ;
-      planetMeshRef.current.position.y = 0;
-      
-      if (controlsRef.current) {
-        controlsRef.current.target.set(0, 0, 0);
-      }
+      // La cámara ya está configurada para mirar al centro, no necesitamos actualizarla
       
       const rotationPeriod = apiData?.rotation_period_seconds || 86400;
       const angleVelocityRotation = (2 * Math.PI) / rotationPeriod;
