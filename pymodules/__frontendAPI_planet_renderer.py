@@ -1210,3 +1210,116 @@ def register_planet_renderer_api(app):
                 "error": f"Error generating rendering data: {str(e)}",
                 "traceback": traceback.format_exc()
             })
+
+    @app.route("/api/system/rendering-data")
+    def get_system_rendering_api():
+        """🚀 NEW: Get complete SYSTEM rendering data for ThreeJS - ALL planets with correct positioning"""
+        try:
+            # Initialize universe if not already done
+            if not config.is_initialized:
+                if not config.initialize():
+                    return jsonify({"error": "Failed to initialize config"})
+            
+            constants = PhysicalConstants()
+            universe = Universe(config.seed, constants)
+            
+            # Get current session data
+            galaxy_data = session.get("galaxy")
+            system_index = session.get("system")
+            
+            if not galaxy_data or system_index is None:
+                return jsonify({"error": "No galaxy or system data in session"})
+                
+            # Get galaxy and system
+            galaxy = universe.get_galaxy(*galaxy_data["coordinates"])
+            system = galaxy.get_solar_system(system_index)
+            
+            # 🎯 CRITICAL: Use SAME cosmic_origin_time as DOM data to ensure consistency
+            # DOM uses a fixed cosmic_origin_time, API should match it
+            cosmic_origin_time = 514080000  # FIXED: Same as DOM
+            current_time = int(time.time())
+            
+            # Calculate system max orbital radius (same logic as planet API)
+            max_orbital_radius = max(p.orbital_radius for p in system.planets.values())
+            
+            # 🌟 Build complete system data
+            system_data = {
+                "name": system.name,
+                "star_system_type": system.star_system_type,
+                "num_planets": system.num_planets,
+                
+                # Stars data
+                "stars": [
+                    {
+                        "Type": star["Type"],
+                        "Size": str(star.get("Radius Factor", 1.0)),  # Convert to string for parseFloat()  
+                        "Color": star["Color"]
+                    }
+                    for star in system.stars
+                ],
+                
+                # 🚀 PLANETS with ALL necessary data for positioning
+                "planets": [],
+                
+                # 🕐 Timing data for the entire system
+                "timing": {
+                    "cosmic_origin_time": cosmic_origin_time,
+                    "current_time": current_time,
+                    "max_orbital_radius": max_orbital_radius,
+                    "system_planets_count": len(system.planets)
+                }
+            }
+            
+            # 🪐 Process each planet with complete data
+            for planet in system.planets.values():
+                
+                # 🎯 CRITICAL: Use the SAME initial_orbital_angle that DOM uses
+                # This comes from the planet object itself (calculated in __universe_base.py:256)
+                initial_orbital_angle = planet.initial_orbital_angle
+                
+                # Calculate current orbital angle for verification
+                orbital_period = planet.orbital_period_seconds
+                time_elapsed = current_time - cosmic_origin_time
+                angle_velocity = (2 * math.pi) / orbital_period
+                current_orbital_angle = (initial_orbital_angle + angle_velocity * time_elapsed) % (2 * math.pi)
+                
+                planet_data = {
+                    "name": planet.name,
+                    "planet_type": planet.planet_type,
+                    "diameter": planet.diameter,
+                    "mass": planet.mass,
+                    "density": planet.density,
+                    "gravity": planet.gravity,
+                    "orbital_radius": planet.orbital_radius,
+                    "orbital_period_seconds": planet.orbital_period_seconds,
+                    "orbital_speed": planet.orbital_speed,
+                    "axial_tilt": planet.axial_tilt,
+                    "rotation_period_seconds": planet.rotation_period_seconds,
+                    "surface_temperature": planet.surface_temperature,
+                    "atmosphere": planet.atmosphere,
+                    "life_forms": planet.life_forms,
+                    "elements": planet.elements,
+                    "eccentricity_factor": getattr(planet, 'eccentricity_factor', 0.1),
+                    
+                    # 🎯 CRITICAL: Positioning data
+                    "initial_orbital_angle": initial_orbital_angle,
+                    "current_orbital_angle": current_orbital_angle,
+                    
+                    # Additional calculated fields
+                    "relative_orbital_radius": planet.orbital_radius / max_orbital_radius if max_orbital_radius > 0 else 0
+                }
+                
+                system_data["planets"].append(planet_data)
+            
+            return jsonify({
+                "success": True,
+                "system_name": system.name,
+                "system_data": system_data
+            })
+        
+        except Exception as e:
+            import traceback
+            return jsonify({
+                "error": f"Error generating system rendering data: {str(e)}",
+                "traceback": traceback.format_exc()
+            })
