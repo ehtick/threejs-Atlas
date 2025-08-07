@@ -532,7 +532,14 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
   const updatePlanetMaterialWithAPIData = (renderingData: PlanetRenderingData) => {
     if (!planetMeshRef.current || !renderingData) return;
 
-    const material = planetMeshRef.current.material as THREE.MeshStandardMaterial;
+    const material = planetMeshRef.current.material;
+    
+    
+    // Verificar si el material es MeshStandardMaterial (antes de efectos) o ShaderMaterial (después de efectos)
+    if (!(material instanceof THREE.MeshStandardMaterial)) {
+      console.log('🎨 Material is ShaderMaterial (effects applied), skipping fallback color update');
+      return;
+    }
     
     // Solo aplicar color base si el material sigue siendo gris (no fue modificado por efectos)
     const currentColor = material.color;
@@ -551,7 +558,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
         planetType: renderingData.planet_info?.type
       });
     } else {
-      console.log('🎨 Material already modified by effects, skipping base color');
+      console.log('🎨 Material color already modified, skipping fallback color');
     }
 
     // Actualizar otras propiedades si vienen en la API (siempre aplicar)
@@ -774,8 +781,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       // Apply modular effects using the 3DEffects system
       await applyProceduralShadersFromAPI(data);
       
-      // 🎨 Apply base color only as fallback if no effects changed material
-      updatePlanetMaterialWithAPIData(data);
+      // 🎨 Base colors are now handled by EffectRegistry
 
       // Callback opcional
       if (onDataLoaded) {
@@ -854,10 +860,10 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
 
       await applyProceduralShadersFromAPI(dataToUse);
       
-      // 🎨 Apply base color as fallback if no effects changed material
-      updatePlanetMaterialWithAPIData(dataToUse);
+      // 🎨 Base colors are now handled by EffectRegistry
 
     } catch (error) {
+      EffectsLogger.error('Error in applyProceduralShadersFromAPI:', error);
       applyFallbackEffects();
     }
   }, [renderingData]);
