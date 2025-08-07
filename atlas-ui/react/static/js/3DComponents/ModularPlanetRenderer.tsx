@@ -24,6 +24,7 @@ interface ModularPlanetRendererProps {
   enableControls?: boolean;
   showDebugInfo?: boolean;
   planetData?: {
+    name?: string; // AÑADIDO: nombre del planeta
     diameter: number;
     density: number;
     gravity: number;
@@ -181,6 +182,11 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
    * Inicialización de Three.js
    */
   const initializeThreeJS = useCallback(() => {
+    console.log('🔧 initializeThreeJS called with renderingData:', {
+      hasRenderingData: !!renderingData,
+      initial_orbital_angle: renderingData?.timing?.initial_orbital_angle
+    });
+    
     if (!mountRef.current) {
       return false;
     }
@@ -190,6 +196,19 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       while (mountRef.current.firstChild) {
         mountRef.current.removeChild(mountRef.current.firstChild);
       }
+      
+      // 🧹 Limpiar referencias para la re-inicialización
+      console.log('🔧 Clearing references...');
+      sceneRef.current = null;
+      cameraRef.current = null;
+      rendererRef.current = null;
+      planetMeshRef.current = null;
+      orbitLineRef.current = null;
+      
+      // Reset debug flags
+      (window as any).orbitalCalculationLogged = false;
+      
+      console.log('🔧 References cleared');
 
       // Obtener dimensiones del contenedor de forma responsive
       const container = mountRef.current;
@@ -197,15 +216,17 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       const containerHeight = container.clientHeight || height || 400;
       
       // Crear escena
+      console.log('🔧 Creating scene...');
       const scene = new THREE.Scene();
       scene.background = new THREE.Color(0x000511);
       sceneRef.current = scene;
+      console.log('🔧 Scene created');
 
       // Configurar cámara - EXACTA posición que SolarSystem3DViewer.tsx
       const camera = new THREE.PerspectiveCamera(45, containerWidth / containerHeight, 0.1, 10000);
       // Posición inicial de la cámara para ver todo el sistema
       camera.position.set(0, 80, 120); // Mismo ángulo de vista cenital/perspectiva
-      camera.lookAt(0, 0, 0); // SIEMPRE mirar al centro (sol), no al planeta
+      camera.lookAt(0, 0, 0); // Inicialmente mirar al centro, se actualizará para seguir al planeta
       cameraRef.current = camera;
 
       // Configurar renderer con configuraciones optimizadas
@@ -230,7 +251,9 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       setupLighting(scene, null); // null = usar iluminación por defecto temporal
 
       // Crear planeta base
+      console.log('🔧 Creating base planet...');
       createBasePlanet(scene);
+      console.log('🔧 Base planet created. planetMeshRef.current:', !!planetMeshRef.current);
 
       // Configurar controles si están habilitados (autoRotate desactivado)
       if (enableControls) {
@@ -242,7 +265,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       console.error('Error initializing Three.js:', error);
       return false;
     }
-  }, []); // Sin dependencias para evitar recreación
+  }, [renderingData, planetData, cosmicOriginTime]); // Dependencias necesarias para usar los datos correctos
 
   /**
    * Calcular ángulo del sol basándose en la posición ORBITAL del planeta (no rotación)
@@ -550,9 +573,18 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
   // Universal shader removed - now using modular effects system
 
   /**
-   * Cargar datos del planeta desde la API o usar datos locales
+   * Cargar SOLO los datos del planeta desde la API (sin depender de la escena ThreeJS)
    */
-  const loadPlanetData = useCallback(async () => {
+  const loadPlanetDataOnly = useCallback(async () => {
+    console.log('🚀 loadPlanetDataOnly called with planetName:', planetName);
+    
+    // Prevenir llamadas múltiples
+    if ((window as any).isLoadingPlanetData) {
+      console.log('⚠️ Already loading planet data, skipping...');
+      return;
+    }
+    (window as any).isLoadingPlanetData = true;
+    
     try {
       setLoading(true);
       setError(null);
@@ -560,14 +592,103 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       // Frontend now uses modular effects system - load from API
       EffectsLogger.log('Loading planet data from API', { planetName });
 
+      // DEBUG: Mostrar la URL que se va a fetchar
+      const apiUrl = `/api/planet/${encodeURIComponent(planetName)}/rendering-data`;
+      console.log('🔗 Fetching API URL:', apiUrl);
+
       // Cargar desde API para datos procedurales específicos
-      const response = await fetch(`/api/planet/${encodeURIComponent(planetName)}/rendering-data`);
+      console.log('⏳ Starting fetch...');
+      const response = await fetch(apiUrl);
+      console.log('📡 Fetch completed, status:', response.status);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      console.log('📄 Parsing JSON...');
+      const result = await response.json();
+      console.log('✅ JSON parsed, success:', result.success);
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch planet data');
+      }
+
+      const data: PlanetRenderingData = result.rendering_data;
+      setRenderingData(data);
+      
+      console.log('💾 setRenderingData called with:', {
+        planet_info: data.planet_info,
+        timing: data.timing,
+        hasTimingData: !!data.timing,
+        initial_orbital_angle: data.timing?.initial_orbital_angle
+      });
+
+      EffectsLogger.log('API data loaded successfully', {
+        planet: data.planet_info.name,
+        type: data.planet_info.type,
+        hasEffects: !!data.surface_elements
+      });
+
+      // Callback opcional
+      if (onDataLoaded) {
+        onDataLoaded(data);
+      }
+
+      // Retornar los datos para uso inmediato
+      return data;
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('❌ Error loading planet data:', errorMessage);
+      console.error('❌ Full error object:', error);
+      setError(errorMessage);
+      
+      if (onError) {
+        onError(errorMessage);
+      }
+      return null; // Retornar null en caso de error
+    } finally {
+      setLoading(false);
+      (window as any).isLoadingPlanetData = false;
+    }
+  }, [planetName, onDataLoaded, onError]);
+
+  /**
+   * Cargar datos del planeta desde la API o usar datos locales
+   */
+  const loadPlanetData = useCallback(async () => {
+    console.log('🚀 loadPlanetData called with planetName:', planetName);
+    
+    // Prevenir llamadas múltiples
+    if ((window as any).isLoadingPlanetData) {
+      console.log('⚠️ Already loading planet data, skipping...');
+      return;
+    }
+    (window as any).isLoadingPlanetData = true;
+    
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Frontend now uses modular effects system - load from API
+      EffectsLogger.log('Loading planet data from API', { planetName });
+
+      // DEBUG: Mostrar la URL que se va a fetchar
+      const apiUrl = `/api/planet/${encodeURIComponent(planetName)}/rendering-data`;
+      console.log('🔗 Fetching API URL:', apiUrl);
+
+      // Cargar desde API para datos procedurales específicos
+      console.log('⏳ Starting fetch...');
+      const response = await fetch(apiUrl);
+      console.log('📡 Fetch completed, status:', response.status);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
+      console.log('📄 Parsing JSON...');
       const result = await response.json();
+      console.log('✅ JSON parsed, success:', result.success);
       
       if (!result.success) {
         throw new Error(result.error || 'Failed to fetch planet data');
@@ -575,7 +696,13 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
 
       const data: PlanetRenderingData = result.rendering_data;
       setRenderingData(data);
-
+      
+      console.log('💾 setRenderingData called with:', {
+        planet_info: data.planet_info,
+        timing: data.timing,
+        hasTimingData: !!data.timing,
+        initial_orbital_angle: data.timing?.initial_orbital_angle
+      });
 
       EffectsLogger.log('API data loaded successfully', {
         planet: data.planet_info.name,
@@ -607,7 +734,8 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('Error loading planet data:', errorMessage);
+      console.error('❌ Error loading planet data:', errorMessage);
+      console.error('❌ Full error object:', error);
       setError(errorMessage);
       
       if (onError) {
@@ -618,8 +746,129 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       applyFallbackEffects();
     } finally {
       setLoading(false);
+      (window as any).isLoadingPlanetData = false;
     }
   }, [planetName, planetData, cosmicOriginTime, initialAngleRotation]); // Solo props esenciales
+
+  /**
+   * Actualizar SOLO la posición del planeta con los datos correctos de la API
+   */
+  const updatePlanetPositionWithAPIData = useCallback(() => {
+    if (!renderingData || !planetMeshRef.current) {
+      console.log('⚠️ Cannot update planet position: missing renderingData or planetMesh');
+      return;
+    }
+
+    // 🎯 COPIAR EXACTO de SolarSystem3DViewer.tsx líneas 404-407
+    const orbitalPeriod = planetData?.orbital_period_seconds || 365.25 * 24 * 3600;
+    const angleVelocityOrbit = (2 * Math.PI) / orbitalPeriod;
+    const initialOrbitalAngle = renderingData.timing?.initial_orbital_angle || 0;
+    
+    // ⚡ EXACTO: Replicar currentTimeRef.current de System view
+    const realCurrentTime = Date.now() / 1000;
+    const timeOffset = 0; // System view usa slider, nosotros 0
+    const baseCosmicOriginTime = cosmicOriginTime || renderingData.timing?.cosmic_origin_time || (Date.now() / 1000 - 3600);
+    const currentTimeSystem = realCurrentTime - baseCosmicOriginTime + timeOffset;
+    
+    // 🎯 LÍNEA 407 EXACTA: const angleOrbit = (planet.initial_orbital_angle + currentTimeRef.current * angleVelocityOrbit) % (2 * Math.PI);
+    const angleOrbit = (initialOrbitalAngle + currentTimeSystem * angleVelocityOrbit) % (2 * Math.PI);
+    
+    // ⚡ EXACTO: Calcular semiMajorAxis y semiMinorAxis como System view
+    const systemMaxOrbitalRadius = renderingData.timing?.max_orbital_radius || 100;
+    const relativeRadius = renderingData.planet_info?.orbital_radius / systemMaxOrbitalRadius;
+    const semiMajorAxis = 20 + relativeRadius * 80; // Mismo cálculo que System
+    const semiMinorAxis = semiMajorAxis; // Sin elipse por ahora
+    
+    // 🎯 LÍNEAS 409-411 EXACTAS:
+    // planetMesh.position.x = semiMajorAxis * Math.cos(angleOrbit);
+    // planetMesh.position.z = semiMinorAxis * Math.sin(angleOrbit); 
+    const planetX = semiMajorAxis * Math.cos(angleOrbit);
+    const planetZ = semiMinorAxis * Math.sin(angleOrbit);
+    
+    // ACTUALIZAR POSICIÓN del planeta
+    planetMeshRef.current.position.x = planetX;
+    planetMeshRef.current.position.z = planetZ;
+    planetMeshRef.current.position.y = 0;
+    
+    // 🎯 CRITICAL: Actualizar cámara para seguir al planeta (no al sol)
+    if (cameraRef.current) {
+      // Mantener la misma distancia pero seguir al planeta
+      const cameraOffset = { x: 0, y: 80, z: 120 };
+      cameraRef.current.position.set(
+        planetX + cameraOffset.x, 
+        cameraOffset.y, 
+        planetZ + cameraOffset.z
+      );
+      cameraRef.current.lookAt(planetX, 0, planetZ); // Mirar AL PLANETA, no al sol
+      
+      console.log('📷 Camera updated to follow planet:', {
+        planetPos: { x: planetX.toFixed(2), z: planetZ.toFixed(2) },
+        cameraPos: { 
+          x: (planetX + cameraOffset.x).toFixed(2), 
+          z: (planetZ + cameraOffset.z).toFixed(2) 
+        }
+      });
+    }
+    
+    console.log('✅ Planet position updated with API data:', {
+      name: renderingData.planet_info?.name,
+      initial_orbital_angle: initialOrbitalAngle,
+      angleOrbit: angleOrbit,
+      position: { x: planetX.toFixed(2), z: planetZ.toFixed(2) },
+      source: 'API renderingData'
+    });
+    
+  }, [renderingData, planetData, cosmicOriginTime]);
+
+  /**
+   * Aplicar los datos ya cargados de la API a la escena ThreeJS
+   */
+  const applyAPIDataToScene = useCallback(async (apiData?: PlanetRenderingData) => {
+    console.log('🎨 applyAPIDataToScene called');
+    
+    // Usar apiData pasado como parámetro o renderingData del state
+    const dataToUse = apiData || renderingData;
+    
+    if (!dataToUse) {
+      console.log('⚠️ No rendering data available, skipping scene application');
+      return;
+    }
+
+    if (!sceneRef.current) {
+      console.log('⚠️ No scene available, skipping scene application');
+      return;
+    }
+
+    try {
+      console.log('🔧 Applying API data to scene:', {
+        planet: dataToUse.planet_info.name,
+        initial_orbital_angle: dataToUse.timing?.initial_orbital_angle,
+        max_orbital_radius: dataToUse.timing?.max_orbital_radius
+      });
+
+      // 🔄 ACTUALIZAR ILUMINACIÓN con datos reales de la API
+      updateLightingWithRealData(dataToUse);
+      
+      // 🔄 ACTUALIZAR LÍNEA ORBITAL con el max_orbital_radius correcto del sistema
+      // Primero eliminar la línea orbital anterior si existe
+      if (orbitLineRef.current && sceneRef.current) {
+        sceneRef.current.remove(orbitLineRef.current);
+        orbitLineRef.current.geometry.dispose();
+        (orbitLineRef.current.material as THREE.LineBasicMaterial).dispose();
+        orbitLineRef.current = null;
+      }
+      // Crear nueva línea orbital con los datos correctos
+      createOrbitLine(sceneRef.current, dataToUse);
+
+      // Apply modular effects using the 3DEffects system
+      await applyProceduralShadersFromAPI(dataToUse);
+
+    } catch (error) {
+      console.error('❌ Error applying API data to scene:', error);
+      // Aplicar efectos por defecto en caso de error
+      applyFallbackEffects();
+    }
+  }, [renderingData]);
 
   // createEffectsFromData removed - now unified in applyProceduralShadersFromAPI
 
@@ -699,6 +948,10 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
     }
 
     // Rotación y POSICIÓN ORBITAL del planeta REAL - Misma lógica que SolarSystem3DViewer.tsx
+    if (!((window as any).orbitalCalculationLogged)) {
+      console.log('🔧 About to calculate orbital position. planetMeshRef.current:', !!planetMeshRef.current, 'planetData:', !!planetData, 'renderingData:', !!renderingData);
+      (window as any).orbitalCalculationLogged = true;
+    }
     if (planetMeshRef.current && (planetData || renderingData)) {
       // Determinar los datos del planeta correctamente
       let currentPlanetInfo: any;
@@ -707,13 +960,29 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       let currentCosmicOriginTime: number;
       let axialTilt: number;
       
-      if (renderingData) {
+      // 🚀 PRIORIDAD: renderingData (ya cargado por la API) > planetData (fallback)
+      const dataToUse = renderingData;
+      
+      if (dataToUse) {
         // Datos de la API de renderizado - usar estos si están disponibles
-        currentPlanetInfo = renderingData.planet_info;
+        currentPlanetInfo = dataToUse.planet_info;
         orbitalPeriod = planetData?.orbital_period_seconds || 365.25 * 24 * 3600; // 1 año por defecto
-        initialOrbitalAngle = planetData?.initial_orbital_angle || 0;
-        currentCosmicOriginTime = cosmicOriginTime || renderingData.timing?.cosmic_origin_time || Date.now() / 1000 - 3600;
+        // CORRECCIÓN CRÍTICA: initial_orbital_angle viene en dataToUse.timing, no en planetData
+        initialOrbitalAngle = dataToUse?.timing?.initial_orbital_angle || planetData?.initial_orbital_angle || 0;
+        currentCosmicOriginTime = cosmicOriginTime || dataToUse.timing?.cosmic_origin_time || Date.now() / 1000 - 3600;
         axialTilt = planetData?.axial_tilt || 0;
+        
+        // DEBUG temporal: verificar qué datos están llegando
+        if (actualPlanetName.toLowerCase().includes('tonnir') && !(window as any).timingDataLogged) {
+          console.log('📍 TIMING DATA from API:', {
+            'dataSource': 'renderingData (state - loaded from API first)',
+            'dataToUse.timing': dataToUse?.timing,
+            'initial_orbital_angle_from_timing': dataToUse?.timing?.initial_orbital_angle,
+            'initial_orbital_angle_from_planetData': planetData?.initial_orbital_angle,
+            'finalInitialOrbitalAngle': initialOrbitalAngle
+          });
+          (window as any).timingDataLogged = true;
+        }
       } else if (planetData) {
         // Datos del prop planetData
         currentPlanetInfo = planetData;
@@ -895,10 +1164,19 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
     (window as any).debugOrbitRadius = null;
     (window as any).debugSystemMaxRadius = null;
     (window as any).planetNameLogged = false;
+    (window as any).timingDataLogged = false;
+    (window as any).isLoadingPlanetData = false;
     
     const initialize = async () => {
       try {
         if (!isMounted) return;
+        
+        // 🚀 CAMBIO CRÍTICO: Primero cargar datos de la API, después montar ThreeJS
+        console.log('🔄 Step 1: Loading planet data from API...');
+        const apiData = await loadPlanetDataOnly(); // Nueva función que solo carga datos sin depender de la escena
+        
+        if (!isMounted) return;
+        console.log('🔄 Step 2: Initializing ThreeJS with API data...');
         
         if (!initializeThreeJS()) {
           if (isMounted) setError('Failed to initialize 3D renderer');
@@ -906,6 +1184,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
         }
 
         if (!isMounted) return;
+        console.log('🔄 Step 3: Starting animation...');
         animate();
         
         // Configurar resize observer para responsividad
@@ -918,7 +1197,14 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
         window.addEventListener('resize', handleResize);
         
         if (!isMounted) return;
-        await loadPlanetData();
+        console.log('🔄 Step 4: Applying API data to ThreeJS scene...');
+        // 🚀 CRÍTICO: Pasar los datos directamente sin depender del state
+        if (apiData) {
+          await applyAPIDataToScene(apiData);
+        } else {
+          console.log('❌ No API data available, applying fallback');
+          applyFallbackEffects();
+        }
       } catch (error) {
         console.error('Error during ModularPlanetRenderer initialization:', error);
         if (isMounted) {
@@ -978,22 +1264,8 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
     };
   }, []); // Sin dependencias para evitar re-ejecuciones
 
-  // Efecto separado para cuando cambian los datos del planeta
-  useEffect(() => {
-    if (planetData && sceneRef.current && planetMeshRef.current) {
-      loadPlanetData();
-    }
-  }, [planetName, planetData?.planet_type, planetData?.diameter, planetData?.elements]); // Más datos para forzar recarga
-  
-  // Efecto adicional para forzar recarga cuando cambia planetName desde la URL
-  useEffect(() => {
-    if (sceneRef.current && planetMeshRef.current) {
-      // Forzar recarga completa del shader
-      setTimeout(() => {
-        loadPlanetData();
-      }, 100); // Pequeño delay para asegurar que la escena esté lista
-    }
-  }, [planetName]); // Solo cuando cambia el nombre del planeta
+  // ❌ ELIMINADOS: useEffect adicionales que recargan datos para evitar conflictos
+  // Ahora el flujo es: API primero → ThreeJS después → aplicar datos a la escena
 
   /**
    * Efecto para actualizar estadísticas periódicamente
@@ -1010,6 +1282,29 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
     
     return () => clearInterval(interval);
   }, []); // Sin dependencias
+
+  /**
+   * Efecto para monitorear cuando renderingData se actualiza
+   */
+  useEffect(() => {
+    if (renderingData) {
+      console.log('🎯 renderingData updated:', {
+        hasData: true,
+        initial_orbital_angle: renderingData.timing?.initial_orbital_angle,
+        planet_name: renderingData.planet_info?.name,
+        planet_type: renderingData.planet_info?.type,
+        max_orbital_radius: renderingData.timing?.max_orbital_radius
+      });
+      
+      // 🚀 CRITICAL: Solo recalcular posición orbital cuando renderingData se actualiza
+      if (sceneRef.current && planetMeshRef.current) {
+        console.log('🔄 Recalculating planet position with updated renderingData...');
+        updatePlanetPositionWithAPIData();
+      }
+    } else {
+      console.log('🎯 renderingData is null/undefined');
+    }
+  }, [renderingData, updatePlanetPositionWithAPIData]);
 
   /**
    * Hook de debug para los datos del planeta

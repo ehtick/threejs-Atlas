@@ -71,6 +71,27 @@ const SystemInfo: React.FC<SystemInfoProps> = ({ system, galaxy, systemIndex, co
       </div>
 
       <div className="bg-white/10 rounded-lg p-3 border border-gray-500/30 mb-3 col-span-3">
+        {/* DEBUG: Log datos del DOM para Tonnir_MD-1420 */}
+        {(() => {
+          if (!(window as any).domDataLogged) {
+            const tonnirPlanet = system.planets.find(p => p.name.toLowerCase().includes('tonnir'));
+            if (tonnirPlanet) {
+              console.log('📄 DOM DATA - Tonnir_MD-1420:', {
+                name: tonnirPlanet.name,
+                planet_type: tonnirPlanet.planet_type,
+                orbital_radius: tonnirPlanet.orbital_radius,
+                initial_orbital_angle: tonnirPlanet.initial_orbital_angle,
+                orbital_period_seconds: tonnirPlanet.orbital_period_seconds,
+                rotation_period_seconds: tonnirPlanet.rotation_period_seconds,
+                eccentricity_factor: tonnirPlanet.eccentricity_factor,
+                axial_tilt: tonnirPlanet.axial_tilt,
+                cosmicOriginTime: cosmicOriginTime
+              });
+            }
+            (window as any).domDataLogged = true;
+          }
+          return null;
+        })()}
         <SolarSystem3DViewer planets={system.planets} stars={system.stars} systemName={system.name} cosmicOriginTime={cosmicOriginTime} />
       </div>
 

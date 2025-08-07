@@ -312,6 +312,7 @@ const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> 
               enableControls={true}
               showDebugInfo={false}
               planetData={{
+                name: planet.name, // AÑADIDO: el nombre del planeta
                 diameter: planet.diameter,
                 density: planet.density,
                 gravity: planet.gravity,
