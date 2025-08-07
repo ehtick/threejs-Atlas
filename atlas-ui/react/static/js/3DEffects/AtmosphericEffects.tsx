@@ -409,9 +409,9 @@ export class DenseAtmosphereEffect {
   constructor(planetRadius: number, params: AtmosphereParams = {}) {
     this.params = {
       type: params.type || 'Thin',
-      color: params.color || [0.7, 0.7, 0.7, 0.1], // CAMBIO: gris muy sutil en lugar de azul
-      width: params.width || 8, // CAMBIO: width más pequeño por defecto
-      opacity: params.opacity || 0.1, // CAMBIO: opacidad muy baja por defecto
+      color: params.color || [0.7, 0.7, 0.7, 0.2], // CAMBIO: gris con más opacidad
+      width: params.width || 12, // CAMBIO: width más cercano a Python
+      opacity: params.opacity || 0.2, // CAMBIO: opacidad más visible
       density: params.density || 1.0
     };
 
@@ -558,9 +558,9 @@ export function createDenseAtmosphereFromPythonData(
   atmosphereData: any
 ): DenseAtmosphereEffect {
   
-  // Default: atmósfera gris muy sutil
-  let atmosphereColor = [0.7, 0.7, 0.7, 0.05]; // Gris muy sutil 
-  let atmosphereWidth = 8; // Width pequeño por defecto
+  // Default: atmósfera gris con opacidad moderada
+  let atmosphereColor = [0.7, 0.7, 0.7, 0.15]; // Gris con más opacidad
+  let atmosphereWidth = 12; // Width más cercano a Python por defecto
   
   if (atmosphereData) {
     console.log('🌫️ DenseAtmosphere received data:', atmosphereData);
@@ -573,7 +573,7 @@ export function createDenseAtmosphereFromPythonData(
         pythonColor[0],  // R (ya normalizado)
         pythonColor[1],  // G (ya normalizado)  
         pythonColor[2],  // B (ya normalizado)
-        (pythonColor[3] || 0.15) * 0.4  // A - Usar opacidad de Python pero reducir un poco
+        (pythonColor[3] || 0.15) * 0.7  // A - Usar opacidad de Python con reducción mínima
       ];
       console.log('🎨 Using API atmosphere color (Python normalized):', atmosphereColor);
     } else {
