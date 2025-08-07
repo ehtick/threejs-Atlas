@@ -455,8 +455,8 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       scene.add(defaultSunLight.target);
       sunLightRef.current = defaultSunLight;
 
-      // Luz de relleno desde el lado opuesto
-      const defaultFillLight = new THREE.DirectionalLight(0x4466ff, 0.3);
+      // Luz de relleno desde el lado opuesto - COLOR NEUTRO
+      const defaultFillLight = new THREE.DirectionalLight(0xffffff, 0.05); // Blanco neutro, intensidad muy baja
       defaultFillLight.position.set(8, -3, -5); // Desde atrás-derecha
       scene.add(defaultFillLight);
       fillLightRef.current = defaultFillLight;
@@ -485,7 +485,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
     scene.add(sunLight);
     sunLightRef.current = sunLight;
 
-    const fillLight = new THREE.DirectionalLight(0x4466ff, 0.05);
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.03); // Blanco neutro, muy bajo
     fillLight.position.set(-sunX * 0.5, 0, -sunZ * 0.5);
     scene.add(fillLight);
     fillLightRef.current = fillLight;

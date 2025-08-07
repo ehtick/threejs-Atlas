@@ -104,13 +104,13 @@ export class AtmosphericHaloEffect {
 
   constructor(planetRadius: number, params: AtmosphericHaloParams = {}) {
     this.params = {
-      color: params.color || new THREE.Color(0x4466ff),
-      intensity: params.intensity || 1.0,
-      falloff: params.falloff || 0.8,
-      scale: params.scale || 1.2,
+      color: params.color || new THREE.Color(0x888888), // CAMBIO: Gris en lugar de azul
+      intensity: params.intensity || 0.5, // CAMBIO: Intensidad reducida
+      falloff: params.falloff || 0.6, // CAMBIO: Falloff más suave
+      scale: params.scale || 1.15, // CAMBIO: Escala ligeramente menor
       pulsation: params.pulsation || false,
       pulsationSpeed: params.pulsationSpeed || 2.0,
-      fresnelPower: params.fresnelPower || 2.0
+      fresnelPower: params.fresnelPower || 3.0 // CAMBIO: Fresnel más sutil
     };
 
     this.geometry = new THREE.SphereGeometry(
@@ -409,9 +409,9 @@ export class DenseAtmosphereEffect {
   constructor(planetRadius: number, params: AtmosphereParams = {}) {
     this.params = {
       type: params.type || 'Thin',
-      color: params.color || [0.5, 0.5, 0.8, 0.3],
-      width: params.width || 15,
-      opacity: params.opacity || 0.3,
+      color: params.color || [0.7, 0.7, 0.7, 0.1], // CAMBIO: gris muy sutil en lugar de azul
+      width: params.width || 8, // CAMBIO: width más pequeño por defecto
+      opacity: params.opacity || 0.1, // CAMBIO: opacidad muy baja por defecto
       density: params.density || 1.0
     };
 
@@ -497,13 +497,35 @@ export function createAtmosphericHaloFromPythonData(
 ): AtmosphericHaloEffect {
   const haloData = atmosphereData.halo || {};
   
-  const params: AtmosphericHaloParams = {
-    color: haloData.color ? new THREE.Color().setRGB(
+  console.log('🌟 AtmosphericHalo received data:', atmosphereData);
+  
+  // CAMBIO: Usar el color de la atmósfera en lugar de azul por defecto
+  let haloColor = new THREE.Color(0x888888); // Gris por defecto
+  
+  // Si hay color específico de halo, usarlo
+  if (haloData.color && Array.isArray(haloData.color)) {
+    haloColor = new THREE.Color().setRGB(
       haloData.color[0], haloData.color[1], haloData.color[2]
-    ) : new THREE.Color(0x4466ff),
-    intensity: haloData.intensity || 1.0,
-    falloff: haloData.falloff || 0.8,
-    scale: haloData.scale || 1.2,
+    );
+    console.log('🌟 Using specific halo color:', haloColor);
+  } 
+  // Si no hay halo específico pero hay atmósfera, usar color de atmósfera
+  else if (atmosphereData.color && Array.isArray(atmosphereData.color)) {
+    haloColor = new THREE.Color().setRGB(
+      atmosphereData.color[0], 
+      atmosphereData.color[1], 
+      atmosphereData.color[2]
+    );
+    console.log('🌟 Using atmosphere color for halo:', atmosphereData.color, '→', haloColor);
+  } else {
+    console.log('🌟 Using default gray halo color (no atmosphere color found)');
+  }
+  
+  const params: AtmosphericHaloParams = {
+    color: haloColor,
+    intensity: haloData.intensity || 0.3, // CAMBIO: Intensidad muy baja
+    falloff: haloData.falloff || 0.4, // CAMBIO: Falloff muy sutil
+    scale: haloData.scale || 1.08, // CAMBIO: Escala muy pequeña
     pulsation: haloData.pulsation || false,
     pulsationSpeed: haloData.pulsation_speed || 2.0
   };
@@ -536,32 +558,49 @@ export function createDenseAtmosphereFromPythonData(
   atmosphereData: any
 ): DenseAtmosphereEffect {
   
-  // Los colores ya vienen normalizados (0-1) desde la API Python
-  let atmosphereColor = [0.5, 0.5, 0.8, 0.15]; // Default azul con baja opacidad
-  let atmosphereWidth = 15; // Default width
+  // Default: atmósfera gris muy sutil
+  let atmosphereColor = [0.7, 0.7, 0.7, 0.05]; // Gris muy sutil 
+  let atmosphereWidth = 8; // Width pequeño por defecto
   
   if (atmosphereData) {
+    console.log('🌫️ DenseAtmosphere received data:', atmosphereData);
+    
+    // Verificar si hay color específico desde Python
     if (atmosphereData.color && Array.isArray(atmosphereData.color)) {
-      // Los colores ya están en formato 0-1, no convertir de nuevo
+      // Python ya normaliza los colores a 0-1 (ver línea 212 en __frontendAPI_planet_renderer.py)
+      const pythonColor = atmosphereData.color;
       atmosphereColor = [
-        atmosphereData.color[0],  // R
-        atmosphereData.color[1],  // G  
-        atmosphereData.color[2],  // B
-        atmosphereData.color[3] * 0.5  // A - Reducir opacidad para no oscurecer tanto
+        pythonColor[0],  // R (ya normalizado)
+        pythonColor[1],  // G (ya normalizado)  
+        pythonColor[2],  // B (ya normalizado)
+        (pythonColor[3] || 0.15) * 0.4  // A - Usar opacidad de Python pero reducir un poco
       ];
+      console.log('🎨 Using API atmosphere color (Python normalized):', atmosphereColor);
+    } else {
+      console.log('🎨 Using default atmosphere color (no API color found):', atmosphereColor);
     }
     
+    // Usar width desde Python si está disponible
     if (atmosphereData.width) {
       atmosphereWidth = atmosphereData.width;
     }
     
+  } else {
+    console.log('🎨 No atmosphere data found, using defaults:', { color: atmosphereColor, width: atmosphereWidth });
   }
+  
+  console.log('🌫️ Final DenseAtmosphere params:', { 
+    color: atmosphereColor, 
+    width: atmosphereWidth, 
+    planetRadius,
+    opacity: atmosphereColor[3]
+  });
   
   const params: AtmosphereParams = {
     type: atmosphereData?.type || 'Thin',
     color: atmosphereColor,
     width: atmosphereWidth,
-    opacity: atmosphereColor[3], // Usar la opacidad del color
+    opacity: atmosphereColor[3], // Usar la opacidad del color calculado
     density: 1.0
   };
 
