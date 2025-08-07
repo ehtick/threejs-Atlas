@@ -142,6 +142,7 @@ class PlanetRenderingTranslator:
                 "base_color": base_color,
                 "radius": planet_radius,
                 "diameter": planet.diameter,
+                "orbital_radius": planet.orbital_radius,
                 "density": planet.density,
                 "gravity": planet.gravity,
                 "axial_tilt": planet.axial_tilt,
@@ -1186,6 +1187,16 @@ def register_planet_renderer_api(app):
             
             # Get complete rendering data
             rendering_data = get_planet_rendering_data(planet)
+            
+            # Add system-level context data for proper scaling in frontend
+            # Calculate max orbital radius of all planets in the system
+            max_orbital_radius = max(p.orbital_radius for p in system.planets.values())
+            
+            # Add system context to timing data
+            if "timing" not in rendering_data:
+                rendering_data["timing"] = {}
+            rendering_data["timing"]["max_orbital_radius"] = max_orbital_radius
+            rendering_data["timing"]["system_planets_count"] = len(system.planets)
             
             return jsonify({
                 "success": True,

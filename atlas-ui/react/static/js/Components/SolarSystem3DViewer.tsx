@@ -122,6 +122,9 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({ planets, star
   }, [isFullscreen, isEntering]);
 
   useEffect(() => {
+    // Resetear el flag de debug cuando se monta el componente
+    (window as any).tonnirLoggedInSystem = false;
+    
     if (!mountRef.current) return;
 
     const container = mountRef.current;
@@ -219,6 +222,9 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({ planets, star
 
     const maxOrbitalRadius = Math.max(...planets.map((p) => p.orbital_radius));
     const scaleFactor = 80;
+    
+    // Guardar el máximo orbital radius globalmente para que ModularPlanetRenderer lo pueda usar
+    (window as any).systemMaxOrbitalRadius = maxOrbitalRadius;
 
     planets.forEach((planet, index) => {
       const relativeOrbitRadius = planet.orbital_radius / maxOrbitalRadius;
@@ -403,6 +409,30 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({ planets, star
         planetMesh.position.x = semiMajorAxis * Math.cos(angleOrbit);
         planetMesh.position.z = semiMinorAxis * Math.sin(angleOrbit);
         planetMesh.position.y = 0;
+        
+        // DEBUG para Tonnir_MD-1420
+        if (planet.name.toLowerCase().includes('tonnir_md-1420')) {
+          // Solo loguear una vez
+          if (!(window as any).tonnirLoggedInSystem) {
+            console.log('🌐 SYSTEM - Tonnir_MD-1420:', {
+              name: planet.name,
+              orbital_radius: planet.orbital_radius,
+              maxOrbitalRadius: (window as any).systemMaxOrbitalRadius,
+              orbitRadius: semiMajorAxis,
+              currentTime: currentTimeRef.current,
+              initial_orbital_angle: planet.initial_orbital_angle,
+              angleOrbit: angleOrbit,
+              angleOrbitDegrees: (angleOrbit * 180 / Math.PI).toFixed(2),
+              position: {
+                x: planetMesh.position.x.toFixed(2),
+                z: planetMesh.position.z.toFixed(2)
+              },
+              cosmicOriginTime,
+              realTime: Math.floor(Date.now() / 1000)
+            });
+            (window as any).tonnirLoggedInSystem = true;
+          }
+        }
 
         const rotationPeriodSeconds = planet.rotation_period_seconds;
         const angleVelocityRotation = (2 * Math.PI) / rotationPeriodSeconds;

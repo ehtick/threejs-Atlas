@@ -203,9 +203,9 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
 
       // Configurar cámara - EXACTA posición que SolarSystem3DViewer.tsx
       const camera = new THREE.PerspectiveCamera(45, containerWidth / containerHeight, 0.1, 10000);
-      // Replicar exactamente la posición de SolarSystem3DViewer.tsx
+      // Posición inicial de la cámara para ver todo el sistema
       camera.position.set(0, 80, 120); // Mismo ángulo de vista cenital/perspectiva
-      camera.lookAt(0, 0, 0); // Mirar hacia el sol en el centro (mismo punto que SolarSystem3DViewer)
+      camera.lookAt(0, 0, 0); // SIEMPRE mirar al centro (sol), no al planeta
       cameraRef.current = camera;
 
       // Configurar renderer con configuraciones optimizadas
@@ -339,8 +339,30 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
   /**
    * Crear línea orbital alrededor del sol
    */
-  const createOrbitLine = (scene: THREE.Scene) => {
-    const orbitalRadius = 3; // Mismo radio que la órbita del planeta (original restaurado)
+  const createOrbitLine = (scene: THREE.Scene, renderingData?: any) => {
+    // Si no tenemos datos del planeta aún, no crear la línea orbital
+    if (!planetData?.orbital_radius) {
+      console.warn('⚠️ No orbital_radius data for orbit line');
+      return;
+    }
+    
+    // CRÍTICO: Solo usar el max_orbital_radius del backend, nunca fallback
+    const systemMaxOrbitalRadius = renderingData?.timing?.max_orbital_radius;
+    
+    if (!systemMaxOrbitalRadius) {
+      console.warn('⚠️ No max_orbital_radius from backend, skipping orbit line');
+      return;
+    }
+    
+    const relativeOrbitRadius = planetData.orbital_radius / systemMaxOrbitalRadius;
+    const scaleFactor = 80; // Mismo factor de escala que SolarSystem3DViewer
+    const orbitalRadius = 20 + relativeOrbitRadius * scaleFactor; // Mismo cálculo que SolarSystem3DViewer
+    
+    // Guardar el radio calculado globalmente para verificar consistencia
+    (window as any).debugOrbitRadius = orbitalRadius;
+    (window as any).debugSystemMaxRadius = systemMaxOrbitalRadius;
+    console.log(`✅ Orbit line created at radius: ${orbitalRadius.toFixed(2)} (max_system: ${systemMaxOrbitalRadius})`);
+    
     const segments = 64;
     const orbitPoints = [];
     
@@ -372,8 +394,10 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
    * Crear esfera del sol en el centro de la escena
    */
   const createSunSphere = (scene: THREE.Scene) => {
-    // Crear una esfera brillante que representa el sol - tamaño original restaurado
-    const sunRadius = 0.3; // Tamaño original relativamente pequeño comparado con el planeta
+    // Crear una esfera brillante que representa el sol - escalado como en SolarSystem3DViewer
+    // En SolarSystem3DViewer: starRadius = parseFloat(star.Size) * 3
+    // Asumimos un tamaño típico de estrella de 1.0 por defecto
+    const sunRadius = 3; // Mismo que SolarSystem3DViewer con Size=1.0
     const sunGeometry = new THREE.SphereGeometry(sunRadius, 32, 32);
     
     // Material emisivo brillante para simular el sol
@@ -408,8 +432,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
     // Crear el sol en el centro de la escena SIEMPRE
     createSunSphere(scene);
     
-    // Crear la línea orbital
-    createOrbitLine(scene);
+    // NO crear la línea orbital aquí - esperaremos a tener los datos correctos
     
     // Si no hay datos, usar iluminación por defecto temporal
     if (!planetData) {
@@ -473,8 +496,11 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
    * Crear planeta base genérico
    */
   const createBasePlanet = (scene: THREE.Scene) => {
-    // Tamaño original del planeta restaurado
-    const planetGeometry = new THREE.SphereGeometry(1, 128, 64); // Tamaño original
+    // Tamaño del planeta basado en el diámetro real
+    const basePlanetRadius = planetData?.diameter ? planetData.diameter / 15000 : 1;
+    const planetRadius = Math.max(Math.min(basePlanetRadius, 4.0), 1.5); // Mismo cálculo que SolarSystem3DViewer
+    
+    const planetGeometry = new THREE.SphereGeometry(planetRadius, 128, 64);
     // Usar material básico temporalmente para verificar iluminación
     const planetMaterial = new THREE.MeshStandardMaterial({
       color: 0x808080,
@@ -489,8 +515,9 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
     planetMesh.castShadow = true;
     planetMesh.receiveShadow = true;
     
-    // Posicionar planeta inicialmente a una distancia orbital del sol (original restaurado)
-    planetMesh.position.set(3, 0, 0); // Por defecto a la derecha del sol, distancia original
+    // Posición inicial temporal - será actualizada cuando lleguen los datos reales
+    // Por ahora, colocar en una posición media típica
+    planetMesh.position.set(50, 0, 0); // Posición temporal hasta que animate() la actualice
     
     scene.add(planetMesh);
     planetMeshRef.current = planetMesh;
@@ -504,12 +531,13 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
     const controls = new OrbitControls(camera, domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    controls.minDistance = 1.5;
-    controls.maxDistance = 10;
+    controls.minDistance = 20; // Ajustado para la nueva escala
+    controls.maxDistance = 500; // Ajustado para la nueva escala (como SolarSystem3DViewer)
     controls.autoRotate = autoRotate;
     controls.autoRotateSpeed = 0.1; // Más lento para no interferir visualmente con rotación del planeta
     controls.enablePan = true;
     controls.enableZoom = true;
+    controls.target.set(0, 0, 0); // Mirar al centro donde está el sol
     controlsRef.current = controls;
   };
 
@@ -557,6 +585,17 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
 
       // 🔄 ACTUALIZAR ILUMINACIÓN con datos reales de la API
       updateLightingWithRealData(data);
+      
+      // 🔄 ACTUALIZAR LÍNEA ORBITAL con el max_orbital_radius correcto del sistema
+      // Primero eliminar la línea orbital anterior si existe
+      if (orbitLineRef.current && sceneRef.current) {
+        sceneRef.current.remove(orbitLineRef.current);
+        orbitLineRef.current.geometry.dispose();
+        (orbitLineRef.current.material as THREE.LineBasicMaterial).dispose();
+        orbitLineRef.current = null;
+      }
+      // Crear nueva línea orbital con los datos correctos
+      createOrbitLine(sceneRef.current!, data);
 
       // Apply modular effects using the 3DEffects system
       await applyProceduralShadersFromAPI(data);
@@ -695,23 +734,110 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       const angleVelocityOrbit = (2 * Math.PI) / orbitalPeriod;
       const angleOrbit = (initialOrbitalAngle + currentTime * angleVelocityOrbit) % (2 * Math.PI);
       
-      // POSICIÓN ORBITAL FIJA - calcular una vez y mantener (radio original restaurado)
-      const orbitalRadius = 3; // Radio original restaurado
-      const staticPlanetX = orbitalRadius * Math.cos(angleOrbit);
-      const staticPlanetZ = orbitalRadius * Math.sin(angleOrbit);
+      // POSICIÓN ORBITAL - necesitamos obtener el maxOrbitalRadius del sistema completo
+      // Para obtener la posición exacta, necesitamos saber el contexto del sistema solar completo
       
-      // Solo actualizar posición si es la primera vez o si han cambiado los datos
-      if (!(window as any).planetPositionCalculated || Math.abs(planetMeshRef.current.position.x - staticPlanetX) > 0.1) {
-        planetMeshRef.current.position.x = staticPlanetX;
-        planetMeshRef.current.position.z = staticPlanetZ;
-        planetMeshRef.current.position.y = 0;
-        (window as any).planetPositionCalculated = true;
-        
+      // CRÍTICO: Usar EXACTAMENTE el mismo systemMaxOrbitalRadius que la línea orbital
+      // Primero intentar desde renderingData (más confiable), luego desde el debug guardado
+      const systemMaxOrbitalRadius = renderingData?.timing?.max_orbital_radius || 
+                                     (window as any).debugSystemMaxRadius ||
+                                     (window as any).systemMaxOrbitalRadius;
+      
+      // Si no tenemos el max_orbital_radius todavía, usar un valor temporal
+      if (!systemMaxOrbitalRadius) {
+        // No hacer nada hasta que tengamos los datos, solo continuar el loop
+        return; // Salir de esta iteración pero no detener el animation loop
       }
       
-      // ROTACIÓN del planeta DESACTIVADA - mantener rotación fija
-      const initialRotationAngle = initialAngleRotation || 0;
-      planetMeshRef.current.rotation.y = initialRotationAngle; // Rotación fija, sin actualización temporal
+      // DEBUG comentado - descomentar si se necesita verificar valores
+      // console.log('🔍 DEBUG Planet Position:', {
+      //   planetName: planetData?.planet_type || renderingData?.planet_info?.name,
+      //   orbital_radius: planetData?.orbital_radius,
+      //   systemMaxOrbitalRadius,
+      //   initial_orbital_angle: initialOrbitalAngle,
+      //   currentTime,
+      //   angleOrbit,
+      //   cosmicOriginTime: currentCosmicOriginTime
+      // });
+      
+      // SIEMPRE usar planetData.orbital_radius para consistencia con createOrbitLine
+      const actualOrbitalRadius = planetData?.orbital_radius || 1000000000;
+      
+      const relativeOrbitRadius = actualOrbitalRadius / systemMaxOrbitalRadius;
+      const scaleFactor = 80; // Mismo factor de escala que SolarSystem3DViewer
+      const orbitalRadius = 20 + relativeOrbitRadius * scaleFactor; // EXACTO cálculo de SolarSystem3DViewer
+      
+      // Verificar que el radio coincida con el de la línea orbital (solo la primera vez)
+      if ((window as any).debugOrbitRadius && !(window as any).orbitChecked) {
+        const difference = Math.abs((window as any).debugOrbitRadius - orbitalRadius);
+        if (difference > 0.01) {
+          console.error(`❌ CRITICAL: Planet not on orbit line! Difference: ${difference.toFixed(2)}`);
+          console.log('Line radius:', (window as any).debugOrbitRadius, 'Planet radius:', orbitalRadius);
+          console.log('Max system radius - Line:', (window as any).debugSystemMaxRadius, 'Planet:', systemMaxOrbitalRadius);
+        } else {
+          console.log(`✅ Planet correctly orbiting at radius: ${orbitalRadius.toFixed(2)}`);
+        }
+        (window as any).orbitChecked = true;
+      }
+      
+      // Calcular posición del planeta en su órbita - ACTUALIZACIÓN CONTINUA como en SolarSystem3DViewer
+      const planetX = orbitalRadius * Math.cos(angleOrbit);
+      const planetZ = orbitalRadius * Math.sin(angleOrbit);
+      
+      // ACTUALIZAR POSICIÓN SIEMPRE - el planeta debe moverse en su órbita
+      planetMeshRef.current.position.x = planetX;
+      planetMeshRef.current.position.z = planetZ;
+      planetMeshRef.current.position.y = 0;
+      
+      // DEBUG para Tonnir_MD-1420
+      // Usar el NOMBRE real del planeta, no el tipo
+      const actualPlanetName = renderingData?.planet_info?.name || planetData?.name || 'UNKNOWN';
+      
+      // DEBUG temporal: mostrar siempre el nombre para verificar
+      if (!(window as any).planetNameLogged) {
+        console.log('🔍 Planet name debug (FIXED):', {
+          actualPlanetName,
+          planetDataName: planetData?.name,
+          renderingDataName: renderingData?.planet_info?.name,
+          planetType: planetData?.planet_type,
+          hasRenderingData: !!renderingData,
+          hasPlanetData: !!planetData
+        });
+        (window as any).planetNameLogged = true;
+      }
+      
+      // Buscar tanto con guión bajo como con espacio
+      const nameToCheck = actualPlanetName.toLowerCase();
+      if (nameToCheck.includes('tonnir') && (nameToCheck.includes('md-1420') || nameToCheck.includes('md_1420'))) {
+        // Solo loguear una vez
+        if (!(window as any).tonnirLoggedInPlanet) {
+          const realCurrentTimeDebug = Math.floor(Date.now() / 1000);
+          console.log('🪐 PLANET - Tonnir_MD-1420:', {
+            name: planetName,
+            orbital_radius: actualOrbitalRadius,
+            maxOrbitalRadius: systemMaxOrbitalRadius,
+            orbitRadius: orbitalRadius,
+            currentTime: currentTime,
+            initial_orbital_angle: initialOrbitalAngle,
+            angleOrbit: angleOrbit,
+            angleOrbitDegrees: (angleOrbit * 180 / Math.PI).toFixed(2),
+            position: {
+              x: planetX.toFixed(2),
+              z: planetZ.toFixed(2)
+            },
+            cosmicOriginTime: currentCosmicOriginTime,
+            realTime: realCurrentTimeDebug,
+            timeElapsed: currentTime,
+            source: renderingData ? 'renderingData' : 'planetData'
+          });
+          (window as any).tonnirLoggedInPlanet = true;
+        }
+      }
+      
+      // ROTACIÓN del planeta sobre su propio eje
+      const rotationPeriod = planetData?.rotation_period_seconds || 86400; // 24 horas por defecto
+      const angleVelocityRotation = (2 * Math.PI) / rotationPeriod;
+      planetMeshRef.current.rotation.y = (currentTime * angleVelocityRotation) % (2 * Math.PI);
       
       // Aplicar inclinación axial
       planetMeshRef.current.rotation.z = axialTilt * (Math.PI / 180);
@@ -762,6 +888,13 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
    */
   useEffect(() => {
     let isMounted = true;
+    
+    // Resetear flags de debug cuando se monta el componente
+    (window as any).tonnirLoggedInPlanet = false;
+    (window as any).orbitChecked = false;
+    (window as any).debugOrbitRadius = null;
+    (window as any).debugSystemMaxRadius = null;
+    (window as any).planetNameLogged = false;
     
     const initialize = async () => {
       try {
