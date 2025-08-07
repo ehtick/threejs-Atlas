@@ -112,11 +112,9 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, im
 
   useEffect(() => {
     if (imageUrl) {
-      console.log("Loading galaxy image:", imageUrl);
       const highResImg = new Image();
 
       highResImg.onload = () => {
-        console.log("Galaxy image loaded successfully");
         if (imageRef.current) {
           imageRef.current.src = imageUrl;
           setImageLoaded(true);
@@ -134,7 +132,6 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, im
 
       highResImg.src = imageUrl;
     } else {
-      console.log("No imageUrl provided, using placeholder");
       setTimeout(() => {
         setImageLoaded(true);
         setCanvasHidden(true);

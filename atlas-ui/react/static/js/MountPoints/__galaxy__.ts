@@ -2,11 +2,9 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import GalaxyLayout from '../Layouts/__galaxy__.tsx';
 
-console.log('Atlas Galaxy React script loading...');
 
 // Mount React component when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('DOM loaded, mounting Galaxy React component...');
   
   const rootElement = document.getElementById('atlas-react-root');
   if (!rootElement) {
@@ -54,12 +52,10 @@ document.addEventListener('DOMContentLoaded', () => {
       image_url: commonData.image_url || ''
     };
 
-    console.log('Galaxy props loaded from JSON scripts:', props);
 
     const root = createRoot(rootElement);
     root.render(React.createElement(GalaxyLayout, props));
     
-    console.log('Galaxy React component mounted successfully!');
   } catch (error) {
     console.error('Error parsing galaxy data:', error);
     

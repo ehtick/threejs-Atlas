@@ -45,7 +45,6 @@ export class OptimizedAtlasStorage {
       const legacyKey = 'atlasHistoricalData';
       if (localStorage.getItem(legacyKey)) {
         localStorage.removeItem(legacyKey);
-        console.log('🧹 Cleaned up legacy storage (atlasHistoricalData)');
       }
     } catch (error) {
       console.error('Error cleaning up legacy storage:', error);
@@ -66,7 +65,6 @@ export class OptimizedAtlasStorage {
     if (galaxyHashes.length > 100) { // Keep only 100 most recent galaxies
       const toRemove = galaxyHashes.slice(0, galaxyHashes.length - 100);
       toRemove.forEach(hash => delete data.g[hash]);
-      console.log(`🧹 Cleaned up ${toRemove.length} old galaxy records`);
     }
     
     // Limit systems per galaxy
@@ -94,7 +92,6 @@ export class OptimizedAtlasStorage {
       }
       
       this.saveData(data);
-      console.log('🚨 Emergency cleanup: kept only current galaxy data');
     }
   }
   
@@ -128,7 +125,6 @@ export class OptimizedAtlasStorage {
       visitedIndices.push(planetIndex);
       data.g[galaxyHash][systemKey] = this.indicesToBitmap(visitedIndices);
       this.saveData(data);
-      console.log(`✅ Marked planet '${planetName}' as visited (index: ${planetIndex})`);
     }
   }
   
@@ -144,7 +140,6 @@ export class OptimizedAtlasStorage {
     if (!data.g[galaxyHash][systemKey]) {
       data.g[galaxyHash][systemKey] = '';
       this.saveData(data);
-      console.log(`✅ Marked system ${systemIndex} as visited`);
     }
   }
   

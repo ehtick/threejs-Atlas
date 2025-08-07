@@ -292,16 +292,7 @@ export function createOceanWavesFromPythonData(pythonData: any): OceanWavesEffec
   // 🎨 USAR SISTEMA CENTRALIZADO DE COLORES
   const baseColor = getPlanetBaseColor(pythonData);
   const oceanColor = [baseColor.r, baseColor.g, baseColor.b];
-  
-  console.log('🌊 OceanWaves using color from PlanetColorBase:', oceanColor);
-  
-  console.log('🌊 Creating ocean effect with color from PlanetColorBase:', {
-    base_color: pythonData.planet_info?.base_color || pythonData.base_color,
-    ocean_color: pythonData.ocean_color,
-    final_color: oceanColor,
-    seeds: pythonData.seeds,
-    planet_type: pythonData.planet_info?.type || pythonData.type
-  });
+    
   
   // GENERAR PARÁMETROS PROCEDIMENTALMENTE usando seeds de Python
   let waveIntensity = 0.3;
@@ -328,14 +319,6 @@ export function createOceanWavesFromPythonData(pythonData: any): OceanWavesEffec
     landmassThreshold = 0.25 + random() * 0.15; // 0.25 - 0.4
     deepOceanThreshold = 0.15 + random() * 0.1; // 0.15 - 0.25
     
-    console.log('🌊 Procedural ocean params:', {
-      seed,
-      waveIntensity,
-      waveSpeed,
-      waveScale,
-      landmassThreshold,
-      deepOceanThreshold
-    });
   }
   
   const params: OceanWavesParams = {

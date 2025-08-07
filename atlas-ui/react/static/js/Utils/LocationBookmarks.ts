@@ -41,11 +41,9 @@ export class LocationBookmarks {
       if (existingIndex !== -1) {
         // Update existing location
         locations[existingIndex] = newLocation;
-        console.log('📍 Updated saved location:', location.name);
       } else {
         // Add new location
         locations.push(newLocation);
-        console.log('📍 Saved new location:', location.name);
       }
 
       // Keep only the most recent locations if we exceed the limit
@@ -66,7 +64,6 @@ export class LocationBookmarks {
       const filteredLocations = locations.filter(loc => loc.id !== id);
       
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(filteredLocations));
-      console.log('🗑️ Removed saved location');
     } catch (error) {
       console.error('Error removing location:', error);
     }
@@ -75,7 +72,6 @@ export class LocationBookmarks {
   public static clearAllLocations(): void {
     try {
       localStorage.removeItem(this.STORAGE_KEY);
-      console.log('🗑️ Cleared all saved locations');
     } catch (error) {
       console.error('Error clearing locations:', error);
     }

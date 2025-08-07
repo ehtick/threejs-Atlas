@@ -20,6 +20,7 @@ interface Planet {
   surface_temperature: number;
   elements: string[];
   seed?: number;
+  initial_orbital_angle?: number;
 }
 
 interface PlanetVisualizationUniversalProps {
@@ -173,11 +174,9 @@ const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> 
 
   useEffect(() => {
     if (imageUrl && !view3D) {
-      console.log("Loading planet image:", imageUrl);
       const highResImg = new Image();
 
       highResImg.onload = () => {
-        console.log("Planet image loaded successfully");
         if (imageRef.current) {
           imageRef.current.src = imageUrl;
           setImageLoaded(true);
@@ -325,14 +324,13 @@ const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> 
                 planet_type: planet.planet_type,
                 atmosphere: planet.atmosphere,
                 elements: planet.elements,
-                // initial_orbital_angle se debería obtener del backend, pero por ahora usamos un valor por defecto basado en el nombre del planeta para consistencia
-                initial_orbital_angle: planet.name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % (2 * Math.PI)
+                // initial_orbital_angle debe venir del backend - usar el valor real del planet si existe
+                initial_orbital_angle: (planet as any).initial_orbital_angle || 0
               }}
               cosmicOriginTime={cosmicOriginTime}
               initialAngleRotation={initialAngleRotation}
               onDataLoaded={(data) => {
                 setRenderingData(data);
-                console.log('🌍 Planet data loaded:', data);
               }}
               onError={(errorMessage) => {
                 setRenderingError(errorMessage);

@@ -69,18 +69,15 @@ export class UniversalPlanetRenderer {
         this.scene
       );
       
-      console.log(`🎮 UniversalPlanetRenderer: Aplicados ${effects.length} efectos vía 3DEffects`);
       
       // Procesar atmósfera si existe (usando 3DEffects)
       if (data.atmosphere) {
         // TODO: Crear efecto de atmósfera en 3DEffects en lugar de aquí
-        console.log('🌫️ Atmosphere data available - should be handled by 3DEffects');
       }
       
       // Procesar anillos si existen (usando 3DEffects)
       if (data.rings && data.rings.has_rings) {
         // TODO: Crear efecto de anillos en 3DEffects en lugar de aquí
-        console.log('🪐 Rings data available - should be handled by 3DEffects');
       }
       
     } catch (error) {
@@ -98,7 +95,6 @@ export class UniversalPlanetRenderer {
       this.planetMesh
     );
     
-    console.log('🎮 Applied default effects via 3DEffects');
   }
   
   // Método para limpiar recursos

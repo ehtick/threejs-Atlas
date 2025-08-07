@@ -49,6 +49,7 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({ planets, star
   const currentTime = realCurrentTime - cosmicOriginTime + timeOffset;
 
   currentTimeRef.current = currentTime;
+  
 
   const handleCloseFullscreen = () => {
     setIsClosing(true);

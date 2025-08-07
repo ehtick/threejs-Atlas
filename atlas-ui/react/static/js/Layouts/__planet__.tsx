@@ -24,6 +24,7 @@ interface Planet {
   rotation_period_seconds: number;
   surface_temperature: number;
   elements: string[];
+  initial_orbital_angle?: number;
 }
 
 interface System {

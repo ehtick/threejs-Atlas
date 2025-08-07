@@ -140,11 +140,9 @@ const SystemVisualization: React.FC<SystemVisualizationProps> = ({ systemUrl, im
 
   useEffect(() => {
     if (imageUrl) {
-      console.log("Loading system image:", imageUrl);
       const highResImg = new Image();
 
       highResImg.onload = () => {
-        console.log("System image loaded successfully");
         if (imageRef.current) {
           imageRef.current.src = imageUrl;
           setImageLoaded(true);
@@ -162,7 +160,6 @@ const SystemVisualization: React.FC<SystemVisualizationProps> = ({ systemUrl, im
 
       highResImg.src = imageUrl;
     } else {
-      console.log("No imageUrl provided, using placeholder");
       setTimeout(() => {
         setImageLoaded(true);
         setCanvasHidden(true);

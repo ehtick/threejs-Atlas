@@ -334,10 +334,6 @@ export function createRockyTerrainFromPythonData(pythonData: any): RockyTerrainE
     baseColor = pythonBaseColor;
   }
   
-  console.log('⛰️ Creating rocky terrain effect with color from Python:', {
-    base_color: pythonData.planet_info?.base_color,
-    final_color: baseColor
-  });
   
   // GENERAR ELEMENTOS PROCEDIMENTALMENTE usando seeds de Python
   let mountains: Array<{ position: [number, number]; width: number; height: number; angle: number }> = [];
@@ -398,12 +394,6 @@ export function createRockyTerrainFromPythonData(pythonData: any): RockyTerrainE
       };
     }
     
-    console.log('⛰️ Generated procedural rocky terrain:', {
-      seeds: pythonData.seeds,
-      mountainCount: mountains.length,
-      cloudCount: clouds.length,
-      hasCrater: !!crater
-    });
   }
   
   const params: RockyTerrainParams = {

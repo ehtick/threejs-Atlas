@@ -46,15 +46,12 @@ export function rgbArrayToThreeColor(rgbArray: number[]): THREE.Color {
  * ESTA ES LA FUNCIÓN PRINCIPAL que deben usar todos los efectos
  */
 export function getPlanetBaseColor(pythonData: any): THREE.Color {
-  console.log('🎨 getPlanetBaseColor called with:', pythonData);
   
   // Prioridad 1: ocean_color específico (para compatibilidad)
   if (pythonData.ocean_color) {
     if (typeof pythonData.ocean_color === 'string') {
-      console.log('🎨 Using ocean_color (hex):', pythonData.ocean_color);
       return hexToThreeColor(pythonData.ocean_color);
     } else if (Array.isArray(pythonData.ocean_color)) {
-      console.log('🎨 Using ocean_color (array):', pythonData.ocean_color);
       return rgbArrayToThreeColor(pythonData.ocean_color);
     }
   }
@@ -62,10 +59,8 @@ export function getPlanetBaseColor(pythonData: any): THREE.Color {
   // Prioridad 2: base_color de planet_info (CORRECTO)
   if (pythonData.planet_info?.base_color) {
     if (typeof pythonData.planet_info.base_color === 'string') {
-      console.log('🎨 Using planet_info.base_color (hex):', pythonData.planet_info.base_color);
       return hexToThreeColor(pythonData.planet_info.base_color);
     } else if (Array.isArray(pythonData.planet_info.base_color)) {
-      console.log('🎨 Using planet_info.base_color (array):', pythonData.planet_info.base_color);
       return rgbArrayToThreeColor(pythonData.planet_info.base_color);
     }
   }
@@ -73,10 +68,8 @@ export function getPlanetBaseColor(pythonData: any): THREE.Color {
   // Prioridad 3: base_color directo (por si está en el root)
   if (pythonData.base_color) {
     if (typeof pythonData.base_color === 'string') {
-      console.log('🎨 Using base_color (hex):', pythonData.base_color);
       return hexToThreeColor(pythonData.base_color);
     } else if (Array.isArray(pythonData.base_color)) {
-      console.log('🎨 Using base_color (array):', pythonData.base_color);
       return rgbArrayToThreeColor(pythonData.base_color);
     }
   }
@@ -84,7 +77,6 @@ export function getPlanetBaseColor(pythonData: any): THREE.Color {
   // Prioridad 4: Por tipo de planeta (fallback seguro)
   const planetType = pythonData.planet_info?.type || pythonData.type || 'Unknown';
   const fallbackColor = getFallbackColorForPlanetType(planetType);
-  console.log('🎨 Using fallback color for type', planetType, ':', fallbackColor);
   
   return fallbackColor;
 }

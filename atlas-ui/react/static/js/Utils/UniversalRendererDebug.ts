@@ -25,7 +25,6 @@ export class UniversalRendererDebugger {
    * Test API connectivity for a specific planet
    */
   static async testAPI(planetName: string): Promise<DebugInfo> {
-    console.log(`🔍 Testing API for planet: ${planetName}`);
     
     const debugInfo: DebugInfo = {
       timestamp: new Date().toISOString(),
@@ -40,7 +39,6 @@ export class UniversalRendererDebugger {
     };
     
     try {
-      console.log(`📡 Fetching: ${debugInfo.apiEndpoint}`);
       const response = await fetch(debugInfo.apiEndpoint);
       
       if (!response.ok) {
@@ -101,27 +99,13 @@ export class UniversalRendererDebugger {
   private static logDebugInfo(info: DebugInfo) {
     console.group(`🌍 Universal Renderer Debug - ${info.planetName}`);
     
-    console.log(`⏰ Timestamp: ${info.timestamp}`);
-    console.log(`🌍 Planet: ${info.planetName}`);
-    console.log(`📡 API Endpoint: ${info.apiEndpoint}`);
-    console.log(`🎮 Renderer State: ${info.rendererState}`);
-    
     // Browser info
     console.group('🖥️ Browser Support');
-    console.log(`WebGL: ${info.browserInfo.webGL ? '✅' : '❌'}`);
-    console.log(`WebGL2: ${info.browserInfo.webGL2 ? '✅' : '❌'}`);
     console.groupEnd();
     
     // API Response
     if (info.apiResponse) {
       console.group('📊 API Response');
-      console.log('Success:', info.apiResponse.success);
-      if (info.apiResponse.rendering_data) {
-        console.log('Planet Type:', info.apiResponse.rendering_data.planet_info?.type);
-        console.log('Has Rings:', info.apiResponse.rendering_data.rings?.has_rings);
-        console.log('Has Atmosphere:', !!info.apiResponse.rendering_data.atmosphere);
-        console.log('Surface Elements:', info.apiResponse.rendering_data.surface_elements?.type);
-      }
       console.groupEnd();
     }
     
@@ -183,31 +167,18 @@ export class UniversalRendererDebugger {
    * Full diagnostic
    */
   static async runFullDiagnostic(): Promise<void> {
-    console.log('🚀 Running Full Universal Renderer Diagnostic...');
-    console.log('=' .repeat(60));
     
     // 1. Check current planet
     const planetName = this.getCurrentPlanetName();
-    console.log(`🌍 Current Planet: ${planetName || 'Not found'}`);
     
     // 2. Check session data
     const sessionInfo = this.getSessionInfo();
-    console.log('📊 Session Data:', sessionInfo);
     
     // 3. Test API if planet found
     if (planetName) {
       await this.testCurrentPlanet();
     }
     
-    // 4. Check browser support
-    console.group('🖥️ Browser Capabilities');
-    console.log(`WebGL: ${this.checkWebGLSupport() ? '✅' : '❌'}`);
-    console.log(`WebGL2: ${this.checkWebGL2Support() ? '✅' : '❌'}`);
-    console.log(`Local Storage: ${typeof Storage !== 'undefined' ? '✅' : '❌'}`);
-    console.log(`Fetch API: ${typeof fetch !== 'undefined' ? '✅' : '❌'}`);
-    console.groupEnd();
-    
-    console.log('✅ Diagnostic complete. Check logs above for issues.');
   }
   
   /**
@@ -222,7 +193,6 @@ export class UniversalRendererDebugger {
    */
   static clearLogs(): void {
     this.logs = [];
-    console.log('🗑️ Debug logs cleared');
   }
 }
 

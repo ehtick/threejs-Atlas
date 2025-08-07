@@ -2,7 +2,6 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import PlanetLayout from '../Layouts/__planet__.tsx';
 
-console.log('Atlas Planet React script loading...');
 
 interface PlanetProps {
   planet: {
@@ -39,7 +38,6 @@ interface PlanetProps {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  console.log('DOM loaded, starting Planet React app...');
   
   try {
     // Get data from JSON scripts in HTML
@@ -74,7 +72,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (container) {
       const root = createRoot(container);
       root.render(React.createElement(PlanetLayout, props));
-      console.log('Planet React app rendered successfully!');
     }
   } catch (error) {
     console.error('Error initializing Planet React app:', error);

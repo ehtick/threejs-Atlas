@@ -166,11 +166,9 @@ const PlanetVisualization: React.FC<PlanetVisualizationProps> = ({ planetUrl, im
 
   useEffect(() => {
     if (imageUrl && !view3D) {
-      console.log("Loading planet image:", imageUrl);
       const highResImg = new Image();
 
       highResImg.onload = () => {
-        console.log("Planet image loaded successfully");
         if (imageRef.current) {
           imageRef.current.src = imageUrl;
           setImageLoaded(true);
@@ -322,7 +320,6 @@ const PlanetVisualization: React.FC<PlanetVisualizationProps> = ({ planetUrl, im
               initialAngleRotation={initialAngleRotation}
               onDataLoaded={(data) => {
                 setRenderingData(data);
-                console.log('🌍 Hybrid Planet data loaded:', data);
               }}
               onError={(errorMessage) => {
                 setRenderingError(errorMessage);

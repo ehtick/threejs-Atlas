@@ -32,7 +32,6 @@ export class VisualDebug3DEffect {
   private planetRadius: number;
 
   constructor(planetRadius: number, params: VisualDebug3DParams = {}) {
-    console.log('🐛 VisualDebug3D Constructor - planetRadius:', planetRadius);
     
     this.planetRadius = planetRadius;
     this.params = {
@@ -47,7 +46,6 @@ export class VisualDebug3DEffect {
     this.debugGroup = new THREE.Group();
     this.createDebugElements();
     
-    console.log('✅ VisualDebug3D created with', this.debugGroup.children.length, 'debug elements');
   }
 
   /**
@@ -123,12 +121,6 @@ export class VisualDebug3DEffect {
     // ESFERAS DE TEST para verificar visibilidad
     this.createTestSpheres();
     
-    console.log('🔍 VISUAL DEBUG ANALYSIS:');
-    console.log('   📡 Raw orbital_angle from params:', (this.params.orbitalAngle || 0) * 180 / Math.PI + '°');
-    console.log('   🟡 Yellow line angle (points to shadow):', (shadowAngle * 180 / Math.PI).toFixed(1) + '°');
-    console.log('   🟡 Yellow line direction (shadow): x=' + shadowX.toFixed(2) + ', y=' + shadowY.toFixed(2) + ', z=' + shadowZ.toFixed(2));
-    console.log('   ☀️ Actual sun angle (shadow + 180°):', (actualSunAngle * 180 / Math.PI).toFixed(1) + '°');
-    console.log('   ☀️ Sun sphere position (horizontal plane): x=' + sunSphereX.toFixed(2) + ', y=' + sunSphereY.toFixed(2) + ', z=' + sunSphereZ.toFixed(2));
   }
   
   /**
@@ -138,7 +130,6 @@ export class VisualDebug3DEffect {
   private createTestSpheres(): void {
     // Todas las esferas de test removidas según solicitud del usuario
     // Solo mantenemos la esfera amarilla del sol que se crea en createSunLine()
-    console.log('⭐ Test spheres removed - only sun sphere remains');
   }
 
   /**
@@ -174,7 +165,6 @@ export class VisualDebug3DEffect {
     this.rotationLine = new THREE.Line(lineGeometry, rotationMaterial);
     this.debugGroup.add(this.rotationLine);
     
-    console.log('🔘 Rotation axis line created - crosses entire scene at angle:', (currentRotation * 180 / Math.PI).toFixed(1) + '°');
   }
 
   /**
@@ -206,15 +196,6 @@ export class VisualDebug3DEffect {
     const angleVelocityRotation = (2 * Math.PI) / rotationPeriod;
     const angleRotation = (initialAngleRotation + timeElapsedSeconds * angleVelocityRotation) % (2 * Math.PI);
     
-    // Solo loggear ocasionalmente para no saturar la consola
-    if (Math.random() < 0.001) { // Solo 0.1% de las veces
-      console.log('🐛 Rotation calculation:', {
-        currentTime,
-        cosmicOriginTime,
-        timeElapsedSeconds,
-        angleRotation: angleRotation * 180 / Math.PI + '°'
-      });
-    }
     
     return angleRotation;
   }
@@ -351,7 +332,6 @@ export class VisualDebug3DEffect {
 
 // Función de utilidad para crear el efecto desde datos de Python
 export function createVisualDebug3DFromPythonData(planetData: any, planetRadius: number): VisualDebug3DEffect {
-  console.log('🐛 createVisualDebug3DFromPythonData called with planetData:', planetData);
   
   const params: VisualDebug3DParams = {
     currentTime: Date.now() / 1000,
@@ -370,6 +350,5 @@ export function createVisualDebug3DFromPythonData(planetData: any, planetRadius:
     showTimeInfo: true
   };
 
-  console.log('🐛 Processed params for VisualDebug3D:', params);
   return new VisualDebug3DEffect(planetRadius, params);
 }

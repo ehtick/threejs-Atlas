@@ -10,8 +10,8 @@
       "_atlas_bDOTfl6YifhEgi64OZoGp.js"
     ]
   },
-  "_atlas_Ep8Z7FyBoZ31__UNPvjgh.js": {
-    "file": "atlas_Ep8Z7FyBoZ31__UNPvjgh.js",
+  "_atlas_HOF5V4Y7Q3DW-IYNsZLlc.js": {
+    "file": "atlas_HOF5V4Y7Q3DW-IYNsZLlc.js",
     "name": "SpaceshipPanel",
     "imports": [
       "_atlas_bDOTfl6YifhEgi64OZoGp.js"
@@ -46,14 +46,14 @@
     ]
   },
   "atlas-ui/react/static/js/MountPoints/__galaxy__.ts": {
-    "file": "atlas_BZghmh7b-O-b1l_2De5UB.js",
+    "file": "atlas_kcjjz682DNcLGbpD_5UA1.js",
     "name": "__galaxy__",
     "src": "atlas-ui/react/static/js/MountPoints/__galaxy__.ts",
     "isEntry": true,
     "imports": [
       "_atlas_bDOTfl6YifhEgi64OZoGp.js",
       "_atlas_DAPSgiEQDbHKEp53GoVrV.js",
-      "_atlas_Ep8Z7FyBoZ31__UNPvjgh.js",
+      "_atlas_HOF5V4Y7Q3DW-IYNsZLlc.js",
       "_atlas_ZgUbUwm-J4U4iRNwqY-vk.js"
     ]
   },
@@ -68,7 +68,7 @@
     ]
   },
   "atlas-ui/react/static/js/MountPoints/__onboarding__.ts": {
-    "file": "atlas_CHV2HcClxbwIqBSTLe6-o.js",
+    "file": "atlas_CIFIH4Fhn8HXDkIsLvQjF.js",
     "name": "__onboarding__",
     "src": "atlas-ui/react/static/js/MountPoints/__onboarding__.ts",
     "isEntry": true,
@@ -78,26 +78,26 @@
     ]
   },
   "atlas-ui/react/static/js/MountPoints/__planet__.ts": {
-    "file": "atlas_BOw7KCXZFFf7wq3EIqfQy.js",
+    "file": "atlas_B0ms84SpqeMadzoeIY1uv.js",
     "name": "__planet__",
     "src": "atlas-ui/react/static/js/MountPoints/__planet__.ts",
     "isEntry": true,
     "imports": [
       "_atlas_bDOTfl6YifhEgi64OZoGp.js",
       "_atlas_DAPSgiEQDbHKEp53GoVrV.js",
-      "_atlas_Ep8Z7FyBoZ31__UNPvjgh.js",
+      "_atlas_HOF5V4Y7Q3DW-IYNsZLlc.js",
       "_atlas_ZgUbUwm-J4U4iRNwqY-vk.js"
     ]
   },
   "atlas-ui/react/static/js/MountPoints/__system__.ts": {
-    "file": "atlas_DalaSusE7zZVyP5_YnEPB.js",
+    "file": "atlas_a0qjfaYwPJzsTGle7w9HS.js",
     "name": "__system__",
     "src": "atlas-ui/react/static/js/MountPoints/__system__.ts",
     "isEntry": true,
     "imports": [
       "_atlas_bDOTfl6YifhEgi64OZoGp.js",
       "_atlas_DAPSgiEQDbHKEp53GoVrV.js",
-      "_atlas_Ep8Z7FyBoZ31__UNPvjgh.js",
+      "_atlas_HOF5V4Y7Q3DW-IYNsZLlc.js",
       "_atlas_ZgUbUwm-J4U4iRNwqY-vk.js"
     ]
   }

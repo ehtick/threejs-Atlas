@@ -363,11 +363,6 @@ export function createIcyTerrainFromPythonData(pythonData: any): IcyTerrainEffec
     baseColor = pythonBaseColor;
   }
   
-  console.log('❄️ Creating icy terrain effect with color from Python:', {
-    base_color: pythonData.planet_info?.base_color,
-    final_color: baseColor
-  });
-  
   // GENERAR ELEMENTOS PROCEDIMENTALMENTE usando seeds de Python
   let crystals: Array<{ position: [number, number]; length: number; width: number; angle: number }> = [];
   let cracks: Array<{ angle: number; length: number }> = [];
@@ -429,12 +424,6 @@ export function createIcyTerrainFromPythonData(pythonData: any): IcyTerrainEffec
       });
     }
     
-    console.log('❄️ Generated procedural icy terrain:', {
-      seeds: pythonData.seeds,
-      crystalCount: crystals.length,
-      crackCount: cracks.length,
-      iceCapCount: iceCaps.length
-    });
   }
   
   const params: IcyTerrainParams = {

@@ -87,7 +87,6 @@ export class DailyChallengesManager {
     };
 
     this.saveChallenges(newChallenges);
-    console.log(`🌟 Day ${dayNumber} challenges created! Multiplier: x${multiplier}`);
     
     return newChallenges;
   }

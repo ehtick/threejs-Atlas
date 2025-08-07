@@ -49,7 +49,6 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({ version }) => {
   };
 
   const handleAnimationComplete = () => {
-    console.log("Animation completed, current state:", animationState);
 
     // After first animation, redirect directly
     setAnimationState("redirecting");
@@ -57,7 +56,6 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({ version }) => {
 
     // Wait a bit then redirect
     setTimeout(() => {
-      console.log("Redirecting to Flask with universe type:", selectedUniverse);
 
       // Create form and submit to Flask
       const form = document.createElement("form");

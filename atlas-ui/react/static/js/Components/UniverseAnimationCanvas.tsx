@@ -14,7 +14,6 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
   const animationIdRef = useRef<number | null>(null);
   const [isVisible, setIsVisible] = useState(false);
 
-  console.log("UniverseAnimationCanvas render, animationType:", animationType);
 
   const createCircleTexture = () => {
     const canvas = document.createElement("canvas");
@@ -42,7 +41,6 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
   };
 
   const initScene = () => {
-    console.log("Initializing Three.js scene...");
     if (!mountRef.current) {
       console.error("mountRef.current is null");
       return;
@@ -65,7 +63,6 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
       mountRef.current.appendChild(renderer.domElement);
       rendererRef.current = renderer;
 
-      console.log("Three.js scene initialized successfully");
 
       const cubeGeometry = new THREE.BoxGeometry(10, 10, 10);
       const cubeEdges = new THREE.EdgesGeometry(cubeGeometry);
@@ -216,7 +213,6 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
         renderer.render(scene, camera);
 
         if (elapsed > 7.5 && onAnimationComplete) {
-          console.log("Big Bang animation complete, calling callback");
           onAnimationComplete();
           return;
         }
@@ -231,10 +227,8 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
   };
 
   useEffect(() => {
-    console.log("useEffect triggered, animationType:", animationType, "isVisible:", isVisible);
 
     if (animationType && !isVisible) {
-      console.log("Setting visible and initializing scene");
       setIsVisible(true);
 
       setTimeout(() => {
@@ -245,7 +239,6 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
 
   useEffect(() => {
     return () => {
-      console.log("Cleaning up animation");
       if (animationIdRef.current) {
         cancelAnimationFrame(animationIdRef.current);
       }
@@ -256,10 +249,8 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
     };
   }, []);
 
-  console.log("Rendering component, isVisible:", isVisible);
 
   if (!isVisible) {
-    console.log("Component not visible, returning null");
     return null;
   }
 

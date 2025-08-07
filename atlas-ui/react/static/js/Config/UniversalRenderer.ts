@@ -216,7 +216,6 @@ export const UniversalRendererDebug = {
    */
   enableDebug: () => {
     updateUniversalRendererConfig({ showDebugInfo: true });
-    console.log('🔍 Universal Renderer debug mode enabled');
   },
   
   /**
@@ -224,7 +223,6 @@ export const UniversalRendererDebug = {
    */
   disableDebug: () => {
     updateUniversalRendererConfig({ showDebugInfo: false });
-    console.log('🔍 Universal Renderer debug mode disabled');
   },
   
   /**
@@ -232,7 +230,6 @@ export const UniversalRendererDebug = {
    */
   testPlanetType: (planetType: string) => {
     const supported = isPlanetTypeSupported(planetType);
-    console.log(`🌍 Planet type "${planetType}": ${supported ? '✅ Supported' : '❌ Not supported'}`);
     return supported;
   },
   

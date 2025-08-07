@@ -275,7 +275,7 @@ export function validateEffectConfig(effectType: string, params: any): { valid: 
  */
 export const EffectsLogger = {
   log: (message: string, data?: any) => {
-    console.log(`🎮 [Effects] ${message}`, data || '');
+    // Logs disabled for cleaner console
   },
   
   warn: (message: string, data?: any) => {

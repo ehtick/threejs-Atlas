@@ -199,7 +199,6 @@ export const UniversalPlanet3DModular: React.FC<UniversalPlanet3DModularProps> =
         setLoading(false);
         
       } catch (err) {
-        console.error('Error loading planet data:', err);
         setError(err instanceof Error ? err.message : 'Unknown error');
         setLoading(false);
         
@@ -426,7 +425,6 @@ export const ExampleMetallicPlanet: React.FC = () => {
         autoRotate={true}
         showControls={true}
         onDataLoaded={(data) => {
-          console.log('🌍 Planet data loaded:', data);
         }}
       />
     </div>

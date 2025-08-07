@@ -31,47 +31,7 @@ export const DebugPlanetData: React.FC<DebugPlanetDataProps> = ({
     const analysis = analyzePlanetData(planetData);
     setDataAnalysis(analysis);
 
-    // Mostrar en consola si está habilitado
-    if (showInConsole) {
-      console.group(`🔍 DEBUG: DATOS DEL PLANETA ${planetData.planet_info?.name || 'Unknown'}`);
-      
-      console.log('1️⃣ INFORMACIÓN BÁSICA:', {
-        name: planetData.planet_info?.name,
-        type: planetData.planet_info?.type,
-        base_color: planetData.planet_info?.base_color,
-        radius: planetData.planet_info?.radius
-      });
-
-      console.log('2️⃣ SEMILLAS:', planetData.seeds);
-
-      console.log('3️⃣ ELEMENTOS DE SUPERFICIE:', planetData.surface_elements);
-
-      if (planetData.surface_elements?.type === 'oceanic') {
-        console.group('🌊 DATOS OCEÁNICOS ESPECÍFICOS:');
-        console.log('Abstract Lands:', planetData.surface_elements.abstract_lands);
-        console.log('Green Patches:', planetData.surface_elements.green_patches);
-        console.log('Clouds:', planetData.surface_elements.clouds);
-        console.log('Depths:', planetData.surface_elements.depths);
-        console.groupEnd();
-      }
-
-      console.log('4️⃣ ATMÓSFERA:', planetData.atmosphere);
-      console.log('5️⃣ ANILLOS:', planetData.rings);
-      console.log('6️⃣ VIDA:', planetData.life_forms);
-
-      // Mostrar qué efectos se aplicarían
-      const registry = EffectRegistry.getInstance();
-      console.group('🎨 EFECTOS QUE SE APLICARÍAN:');
-      const effects = determineEffects(planetData);
-      effects.forEach(effect => {
-        console.log(`- ${effect}`);
-      });
-      console.groupEnd();
-
-      console.log('📊 ANÁLISIS:', analysis);
-      
-      console.groupEnd();
-    }
+    // Console debug disabled for cleaner output
 
     // Guardar efectos que se aplicarían
     setEffectsApplied(determineEffects(planetData));
@@ -80,7 +40,6 @@ export const DebugPlanetData: React.FC<DebugPlanetDataProps> = ({
     if (typeof window !== 'undefined') {
       (window as any).__DEBUG_PLANET_DATA = planetData;
       (window as any).__DEBUG_PLANET_ANALYSIS = analysis;
-      console.log('💡 Tip: Accede a los datos con window.__DEBUG_PLANET_DATA y window.__DEBUG_PLANET_ANALYSIS');
     }
 
   }, [planetData, showInConsole]);
@@ -253,10 +212,6 @@ export const DebugPlanetData: React.FC<DebugPlanetDataProps> = ({
       </div>
 
       <button 
-        onClick={() => {
-          console.log('Full Planet Data:', planetData);
-          console.log('Analysis:', dataAnalysis);
-        }}
         style={{
           marginTop: '10px',
           background: '#00ff00',
@@ -278,8 +233,6 @@ export function useDebugPlanetData(planetData: any) {
   useEffect(() => {
     if (!planetData) return;
 
-    console.group(`🔍 HOOK DEBUG: ${planetData.planet_info?.name}`);
-    console.log('Planet Data:', planetData);
     
     // Detectar problemas específicos
     if (planetData.surface_elements?.type === 'oceanic') {
@@ -291,23 +244,13 @@ export function useDebugPlanetData(planetData: any) {
       }
       
       if (hasGreenPatches) {
-        console.log(`📍 ${planetData.surface_elements.green_patches.length} parches verdes detectados`);
-        console.log('Primer parche:', planetData.surface_elements.green_patches[0]);
       }
     }
     
-    console.groupEnd();
   }, [planetData]);
 }
 
-// Función helper para logging rápido
+// Función helper para logging rápido (disabled for cleaner console)
 export function logPlanetData(planetData: any, prefix = '') {
-  const name = planetData?.planet_info?.name || 'Unknown';
-  const type = planetData?.planet_info?.type || 'Unknown';
-  
-  console.log(`${prefix}[${name}/${type}]`, {
-    baseColor: planetData?.planet_info?.base_color,
-    surfaceType: planetData?.surface_elements?.type,
-    elements: planetData?.surface_elements
-  });
+  // Debug disabled for cleaner console output
 }

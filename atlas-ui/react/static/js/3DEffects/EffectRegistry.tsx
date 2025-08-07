@@ -136,12 +136,6 @@ export class EffectRegistry {
           color = baseColor;
         }
         
-        console.log('⚙️ Creating metallic effect with color from Python:', {
-          base_color: data.planet_info?.base_color,
-          surface_color: data.surface?.base_color,
-          final_color: color
-        });
-        
         return new MetallicSurfaceEffect({
           color: color,
           roughness: data.surface?.roughness || 0.7,
@@ -352,7 +346,6 @@ export class EffectRegistry {
   ): EffectInstance[] {
     const effects: EffectInstance[] = [];
     
-    console.log('🚀 PYTHON API DATA - COMPLETE DATASET:', JSON.stringify(pythonData, null, 2));
 
     // 1. Efectos de superficie basados en el tipo
     if (pythonData.surface_elements) {
@@ -382,7 +375,6 @@ export class EffectRegistry {
       
       // Sistema agnóstico: ejecutar comandos de renderizado de Python
       if (surface.type === 'rendering_commands' && surface.commands) {
-        console.log('🎯 Executing rendering commands from Python');
         this.executeRenderingCommands(surface.commands, scene, mesh, planetRadius);
       }
       
@@ -462,8 +454,6 @@ export class EffectRegistry {
         case 'oceanic':
           // El frontend NO debe tener lógica específica para tipos de planeta
           // Python debe enviar órdenes específicas de renderizado
-          console.log('🚨 PROBLEM: Frontend has planet-type specific logic');
-          console.log('🔧 SOLUTION: Python should send specific rendering commands');
           break;
       }
     }
@@ -512,7 +502,6 @@ export class EffectRegistry {
           atmosphereData.opacity = Math.min(atmosphereData.opacity || 0.3, 0.15);
           atmosphereData.width = Math.min(atmosphereData.width || 15, 8);
           
-          console.log('🌊 Applying subtle atmosphere for oceanic planet:', atmosphereData);
         }
         
         const atmosphereEffect = this.createEffectFromPythonData(
@@ -561,12 +550,6 @@ export class EffectRegistry {
 
     // 5. Efecto de debug visual (controlado por VISUAL_DEBUG flag)
     if (VISUAL_DEBUG) {
-      console.log('🐛 Activating Visual Debug 3D mode - VISUAL_DEBUG =', VISUAL_DEBUG);
-      console.log('🐛 Planet data for debug:', {
-        name: pythonData.planet_info?.name,
-        rotation: pythonData.timing?.current_rotation_angle,
-        cosmic_origin: pythonData.debug?.cosmic_origin_time
-      });
       
       const debugEffect = this.createEffectFromPythonData(
         EffectType.VISUAL_DEBUG_3D,
@@ -580,16 +563,11 @@ export class EffectRegistry {
         effects.push(debugEffect);
         debugEffect.effect.addToScene(scene, mesh.position);
         
-        // Log info de debug en consola
-        const debugInfo = debugEffect.effect.getDebugInfo();
-        console.log('🐛 Debug Effect Created! Info:', debugInfo);
-        console.log('🐛 Sun Line Object:', debugEffect.effect.getObject3D());
       } else {
         console.error('❌ Failed to create debug effect!');
       }
     }
 
-    console.log(`✅ Created ${effects.length} effects for planet`);
     return effects;
   }
 
@@ -662,7 +640,6 @@ export class EffectRegistry {
     mesh: THREE.Mesh, 
     planetRadius: number
   ): void {
-    console.log(`🎯 Executing ${commands.length} rendering commands from Python`);
     
     commands.forEach((command, index) => {
       try {
@@ -688,7 +665,6 @@ export class EffectRegistry {
    * Ejecuta comando apply_material
    */
   private executeApplyMaterial(command: any, mesh: THREE.Mesh): void {
-    console.log('🎨 Applying material from Python command:', command);
     
     const props = command.properties;
     
@@ -702,7 +678,6 @@ export class EffectRegistry {
       });
       
       mesh.material = material;
-      console.log('✅ Applied phong material with color:', props.color);
     }
   }
 
@@ -710,7 +685,6 @@ export class EffectRegistry {
    * Ejecuta comando create_surface_element
    */
   private executeCreateSurfaceElement(command: any, scene: THREE.Scene, planetRadius: number): void {
-    console.log('🔧 Creating surface element:', command.element_type, command.id);
     
     let geometry: THREE.BufferGeometry;
     
@@ -761,7 +735,6 @@ export class EffectRegistry {
     }
     
     scene.add(elementMesh);
-    console.log('✅ Created surface element:', command.id);
   }
 
   /**

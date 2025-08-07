@@ -415,7 +415,6 @@ export class DenseAtmosphereEffect {
       density: params.density || 1.0
     };
 
-    console.log('DenseAtmosphereEffect params:', this.params); // Debug
 
     // Usar el width de la atmósfera para determinar el grosor
     // width viene como porcentaje adicional del radio del planeta
@@ -431,7 +430,6 @@ export class DenseAtmosphereEffect {
       this.params.color![2]
     );
     
-    console.log('THREE.Color created:', atmosphereColor, 'from RGB:', [this.params.color![0], this.params.color![1], this.params.color![2]]); // Debug
     
     // Usar ShaderMaterial con efecto fresnel como la atmósfera de fallback
     this.material = new THREE.ShaderMaterial({
@@ -448,7 +446,6 @@ export class DenseAtmosphereEffect {
       depthWrite: false
     });
 
-    console.log('Material created with shader and color:', atmosphereColor, 'opacity:', this.params.opacity); // Debug
 
     this.mesh = new THREE.Mesh(this.geometry, this.material);
   }
@@ -468,7 +465,6 @@ export class DenseAtmosphereEffect {
     this.params = { ...this.params, ...newParams };
 
     if (newParams.color) {
-      console.log('Updating color to:', newParams.color); // Debug
       const atmosphereColor = new THREE.Color(
         newParams.color[0],
         newParams.color[1],
@@ -539,7 +535,6 @@ export function createDenseAtmosphereFromPythonData(
   planetRadius: number, 
   atmosphereData: any
 ): DenseAtmosphereEffect {
-  console.log('Atmosphere data received:', atmosphereData); // Debug
   
   // Los colores ya vienen normalizados (0-1) desde la API Python
   let atmosphereColor = [0.5, 0.5, 0.8, 0.15]; // Default azul con baja opacidad
@@ -547,7 +542,6 @@ export function createDenseAtmosphereFromPythonData(
   
   if (atmosphereData) {
     if (atmosphereData.color && Array.isArray(atmosphereData.color)) {
-      console.log('Color from API (already normalized):', atmosphereData.color); // Debug
       // Los colores ya están en formato 0-1, no convertir de nuevo
       atmosphereColor = [
         atmosphereData.color[0],  // R
@@ -561,8 +555,6 @@ export function createDenseAtmosphereFromPythonData(
       atmosphereWidth = atmosphereData.width;
     }
     
-    console.log('Processed color:', atmosphereColor); // Debug
-    console.log('Width:', atmosphereWidth); // Debug
   }
   
   const params: AtmosphereParams = {
@@ -573,6 +565,5 @@ export function createDenseAtmosphereFromPythonData(
     density: 1.0
   };
 
-  console.log('Final params:', params); // Debug
   return new DenseAtmosphereEffect(planetRadius, params);
 }

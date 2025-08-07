@@ -2,8 +2,6 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import SystemLayout from '../Layouts/__system__.tsx';
 
-console.log('Atlas System React script loading...');
-
 interface SystemProps {
   system: {
     name: string;
@@ -32,7 +30,6 @@ interface SystemProps {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  console.log('DOM loaded, starting System React app...');
   
   try {
     // Get data from JSON scripts in HTML
@@ -65,7 +62,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (container) {
       const root = createRoot(container);
       root.render(React.createElement(SystemLayout, props));
-      console.log('System React app rendered successfully!');
     }
   } catch (error) {
     console.error('Error initializing System React app:', error);

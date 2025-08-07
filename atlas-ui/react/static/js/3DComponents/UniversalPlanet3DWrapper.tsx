@@ -126,7 +126,6 @@ export const UniversalPlanet3DWrapper: React.FC<UniversalPlanet3DProps> = ({
    * Inicialización de Three.js
    */
   const initializeThreeJS = useCallback(() => {
-    console.log('🔧 Initializing Universal 3D renderer...');
     
     if (!mountRef.current) {
       console.error('❌ Mount ref is null');
@@ -144,7 +143,6 @@ export const UniversalPlanet3DWrapper: React.FC<UniversalPlanet3DProps> = ({
       const containerWidth = container.clientWidth || width;
       const containerHeight = container.clientHeight || height;
       
-      console.log('📐 Container dimensions:', containerWidth, 'x', containerHeight);
       
       // Crear escena
       const scene = new THREE.Scene();
@@ -189,7 +187,6 @@ export const UniversalPlanet3DWrapper: React.FC<UniversalPlanet3DProps> = ({
       // Crear el Universal Planet Renderer
       universalRendererRef.current = new UniversalPlanetRenderer(scene, planetMesh);
 
-      console.log('✅ Three.js initialized successfully');
       return true;
     } catch (error) {
       console.error('❌ Error initializing Three.js:', error);
@@ -265,11 +262,9 @@ export const UniversalPlanet3DWrapper: React.FC<UniversalPlanet3DProps> = ({
       setLoading(true);
       setError(null);
 
-      console.log(`🌍 Loading planet data for: ${planetName}`);
 
       // Si tenemos datos locales, crear renderizador con fallback
       if (planetData) {
-        console.log('📊 Using local planet data for Universal renderer');
         
         // Para el sistema universal, necesitamos transformar los datos
         // En este caso, usaremos el fallback del renderer
@@ -356,7 +351,6 @@ export const UniversalPlanet3DWrapper: React.FC<UniversalPlanet3DProps> = ({
   useEffect(() => {
     const initialize = async () => {
       try {
-        console.log('🚀 Initializing Universal Planet 3D for:', planetName);
         
         if (!initializeThreeJS()) {
           setError('Failed to initialize 3D renderer');
@@ -369,7 +363,6 @@ export const UniversalPlanet3DWrapper: React.FC<UniversalPlanet3DProps> = ({
         // Cargar datos del planeta
         await loadPlanetData();
         
-        console.log('✅ Universal Planet 3D initialization complete');
       } catch (error) {
         console.error('❌ Error during initialization:', error);
         setError(error instanceof Error ? error.message : 'Unknown initialization error');
