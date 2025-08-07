@@ -29,12 +29,14 @@ interface ModularPlanetRendererProps {
     gravity: number;
     mass: number;
     orbital_radius: number;
+    orbital_period_seconds?: number;
     rotation_period_seconds: number;
     surface_temperature: number;
     axial_tilt: number;
     planet_type: string;
     atmosphere: string;
     elements: string[];
+    initial_orbital_angle?: number;
   };
   cosmicOriginTime?: number;
   initialAngleRotation?: number;
@@ -200,9 +202,11 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       scene.background = new THREE.Color(0x000511);
       sceneRef.current = scene;
 
-      // Configurar cámara
-      const camera = new THREE.PerspectiveCamera(45, containerWidth / containerHeight, 0.1, 1000);
-      camera.position.set(0, 0, 5);
+      // Configurar cámara - EXACTA posición que SolarSystem3DViewer.tsx
+      const camera = new THREE.PerspectiveCamera(45, containerWidth / containerHeight, 0.1, 10000);
+      // Replicar exactamente la posición de SolarSystem3DViewer.tsx
+      camera.position.set(0, 80, 120); // Mismo ángulo de vista cenital/perspectiva
+      camera.lookAt(0, 0, 0); // Mirar hacia el sol en el centro (mismo punto que SolarSystem3DViewer)
       cameraRef.current = camera;
 
       // Configurar renderer con configuraciones optimizadas
@@ -229,7 +233,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       // Crear planeta base
       createBasePlanet(scene);
 
-      // Configurar controles si están habilitados
+      // Configurar controles si están habilitados (autoRotate desactivado)
       if (enableControls) {
         setupControls(camera, renderer.domElement);
       }
@@ -283,6 +287,12 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
   // Referencias para luces que necesitan ser actualizadas
   const sunLightRef = useRef<THREE.DirectionalLight | null>(null);
   const fillLightRef = useRef<THREE.DirectionalLight | null>(null);
+  
+  // Referencia para la esfera del sol en el centro de la escena
+  const sunSphereRef = useRef<THREE.Mesh | null>(null);
+  
+  // Referencia para la órbita visual del planeta
+  const orbitLineRef = useRef<THREE.Line | null>(null);
 
   /**
    * Configurar propiedades de sombra para una luz direccional
@@ -338,9 +348,82 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
   };
 
   /**
+   * Crear línea orbital alrededor del sol
+   */
+  const createOrbitLine = (scene: THREE.Scene) => {
+    const orbitalRadius = 3; // Mismo radio que la órbita del planeta (original restaurado)
+    const segments = 64;
+    const orbitPoints = [];
+    
+    // Crear puntos de la órbita circular
+    for (let i = 0; i <= segments; i++) {
+      const angle = (i / segments) * Math.PI * 2;
+      orbitPoints.push(new THREE.Vector3(
+        orbitalRadius * Math.cos(angle),
+        0, // En el plano horizontal
+        orbitalRadius * Math.sin(angle)
+      ));
+    }
+    
+    const orbitGeometry = new THREE.BufferGeometry().setFromPoints(orbitPoints);
+    const orbitMaterial = new THREE.LineBasicMaterial({
+      color: 0x708090, // Gris suave
+      transparent: true,
+      opacity: 0.4,
+      linewidth: 1
+    });
+    
+    const orbitLine = new THREE.Line(orbitGeometry, orbitMaterial);
+    scene.add(orbitLine);
+    orbitLineRef.current = orbitLine;
+    
+    console.log('🌌 Orbital line created with radius:', orbitalRadius);
+  };
+
+  /**
+   * Crear esfera del sol en el centro de la escena
+   */
+  const createSunSphere = (scene: THREE.Scene) => {
+    // Crear una esfera brillante que representa el sol - tamaño original restaurado
+    const sunRadius = 0.3; // Tamaño original relativamente pequeño comparado con el planeta
+    const sunGeometry = new THREE.SphereGeometry(sunRadius, 32, 32);
+    
+    // Material emisivo brillante para simular el sol
+    const sunMaterial = new THREE.MeshBasicMaterial({
+      color: 0xFFFF44, // Amarillo brillante
+      transparent: false,
+      opacity: 1.0
+    });
+    
+    const sunSphere = new THREE.Mesh(sunGeometry, sunMaterial);
+    sunSphere.position.set(0, 0, 0); // En el centro de la escena
+    
+    // Añadir glow effect al sol
+    const glowGeometry = new THREE.SphereGeometry(sunRadius * 1.8, 16, 16);
+    const glowMaterial = new THREE.MeshBasicMaterial({
+      color: 0xFFFF44,
+      transparent: true,
+      opacity: 0.3
+    });
+    const sunGlow = new THREE.Mesh(glowGeometry, glowMaterial);
+    sunSphere.add(sunGlow);
+    
+    scene.add(sunSphere);
+    sunSphereRef.current = sunSphere;
+    
+    console.log('☀️ Sun sphere created at center of scene (0, 0, 0) with radius:', sunRadius);
+  };
+
+  /**
    * Configurar iluminación de la escena basada en datos reales de Python
    */
   const setupLighting = (scene: THREE.Scene, planetData?: any) => {
+    // Crear el sol en el centro de la escena SIEMPRE
+    createSunSphere(scene);
+    
+    // Crear la línea orbital
+    createOrbitLine(scene);
+    
     // Si no hay datos, usar iluminación por defecto temporal
     if (!planetData) {
       console.log('⚠️ Setting up DEFAULT lighting (waiting for API data...)');
@@ -408,11 +491,13 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
 
   };
 
+
   /**
    * Crear planeta base genérico
    */
   const createBasePlanet = (scene: THREE.Scene) => {
-    const planetGeometry = new THREE.SphereGeometry(1, 128, 64);
+    // Tamaño original del planeta restaurado
+    const planetGeometry = new THREE.SphereGeometry(1, 128, 64); // Tamaño original
     // Usar material básico temporalmente para verificar iluminación
     const planetMaterial = new THREE.MeshStandardMaterial({
       color: 0x808080,
@@ -426,10 +511,14 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
     const planetMesh = new THREE.Mesh(planetGeometry, planetMaterial);
     planetMesh.castShadow = true;
     planetMesh.receiveShadow = true;
+    
+    // Posicionar planeta inicialmente a una distancia orbital del sol (original restaurado)
+    planetMesh.position.set(3, 0, 0); // Por defecto a la derecha del sol, distancia original
+    
     scene.add(planetMesh);
     planetMeshRef.current = planetMesh;
     
-    console.log('🪐 Base planet created with material that should respond to directional lighting');
+    console.log('🪐 Base planet created at orbital position with material that should respond to directional lighting');
   };
 
   /**
@@ -618,44 +707,83 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       console.error('Error updating effects:', error);
     }
 
-    // Rotación del planeta REAL basada en datos de Python (SIEMPRE, independiente de controles)
-    if (planetMeshRef.current && planetData) {
-      // Calcular rotación EXACTA como en Pillow
-      const currentTime = Date.now() / 1000; // Tiempo actual en segundos Unix
-      const cosmicOriginTime = planetData.debug?.cosmic_origin_time || planetData.cosmic_origin_time || currentTime - 3600;
-      const rotationPeriod = planetData.planet_info?.rotation_period || planetData.rotation_period_seconds || 86400;
-      const initialAngleRotation = planetData.debug?.initial_angle_rotation || planetData.initial_angle_rotation || 0;
+    // Rotación y POSICIÓN ORBITAL del planeta REAL - Misma lógica que SolarSystem3DViewer.tsx
+    if (planetMeshRef.current && (planetData || renderingData)) {
+      // Determinar los datos del planeta correctamente
+      let currentPlanetInfo: any;
+      let orbitalPeriod: number;
+      let rotationPeriod: number;
+      let initialOrbitalAngle: number;
+      let currentCosmicOriginTime: number;
+      let axialTilt: number;
       
-      // Debug: mostrar datos de rotación una vez
-      if (!window.rotationDataLogged) {
-        console.log('🌍 Real Planet Rotation Data:', {
-          rotationPeriod: rotationPeriod,
-          rotationPeriodDays: (rotationPeriod / 86400).toFixed(2) + ' days',
-          rotationPeriodMonths: (rotationPeriod / (86400 * 30.44)).toFixed(2) + ' months',
-          axialTilt: (planetData.planet_info?.axial_tilt || 0).toFixed(2) + '°',
-          cosmicOriginTime: new Date(cosmicOriginTime * 1000).toISOString(),
-          initialAngle: initialAngleRotation + ' radians'
+      if (renderingData) {
+        // Datos de la API de renderizado - usar estos si están disponibles
+        currentPlanetInfo = renderingData.planet_info;
+        orbitalPeriod = planetData?.orbital_period_seconds || 365.25 * 24 * 3600; // 1 año por defecto
+        rotationPeriod = planetData?.rotation_period_seconds || 86400;
+        initialOrbitalAngle = planetData?.initial_orbital_angle || 0;
+        currentCosmicOriginTime = cosmicOriginTime || renderingData.timing?.cosmic_origin_time || Date.now() / 1000 - 3600;
+        axialTilt = planetData?.axial_tilt || 0;
+      } else if (planetData) {
+        // Datos del prop planetData
+        currentPlanetInfo = planetData;
+        orbitalPeriod = planetData.orbital_period_seconds || 365.25 * 24 * 3600;
+        rotationPeriod = planetData.rotation_period_seconds || 86400;
+        initialOrbitalAngle = planetData.initial_orbital_angle || 0;
+        currentCosmicOriginTime = cosmicOriginTime || Date.now() / 1000 - 3600;
+        axialTilt = planetData.axial_tilt || 0;
+      } else {
+        return; // Sin datos, salir
+      }
+
+      // POSICIÓN ORBITAL FIJA - MISMO CÁLCULO EXACTO que SolarSystem3DViewer.tsx
+      const realCurrentTime = Math.floor(Date.now() / 1000); // Exactamente igual que SolarSystem3DViewer
+      const timeOffset = 0; // Sin offset por defecto (como en SolarSystem3DViewer cuando no hay slider)
+      const currentTime = realCurrentTime - currentCosmicOriginTime + timeOffset; // EXACTA fórmula de SolarSystem3DViewer
+      
+      // Cálculo del ángulo orbital FIJO - exactamente igual que SolarSystem3DViewer
+      const angleVelocityOrbit = (2 * Math.PI) / orbitalPeriod;
+      const angleOrbit = (initialOrbitalAngle + currentTime * angleVelocityOrbit) % (2 * Math.PI);
+      
+      // POSICIÓN ORBITAL FIJA - calcular una vez y mantener (radio original restaurado)
+      const orbitalRadius = 3; // Radio original restaurado
+      const staticPlanetX = orbitalRadius * Math.cos(angleOrbit);
+      const staticPlanetZ = orbitalRadius * Math.sin(angleOrbit);
+      
+      // Solo actualizar posición si es la primera vez o si han cambiado los datos
+      if (!(window as any).planetPositionCalculated || Math.abs(planetMeshRef.current.position.x - staticPlanetX) > 0.1) {
+        planetMeshRef.current.position.x = staticPlanetX;
+        planetMeshRef.current.position.z = staticPlanetZ;
+        planetMeshRef.current.position.y = 0;
+        (window as any).planetPositionCalculated = true;
+        
+        console.log('🌍 Planet set to STATIC orbital position (MATCHED with SolarSystem3DViewer):', {
+          planet: currentPlanetInfo?.name || planetName,
+          realCurrentTime: realCurrentTime,
+          cosmicOriginTime: currentCosmicOriginTime,
+          currentTime: currentTime,
+          initialOrbitalAngle: (initialOrbitalAngle * 180 / Math.PI).toFixed(2) + '°',
+          angleOrbit: (angleOrbit * 180 / Math.PI).toFixed(2) + '°',
+          staticPosition: `(${staticPlanetX.toFixed(2)}, 0, ${staticPlanetZ.toFixed(2)})`
         });
-        window.rotationDataLogged = true;
       }
       
-      const timeElapsedSeconds = currentTime - cosmicOriginTime;
-      const angleVelocityRotation = (2 * Math.PI) / rotationPeriod;
-      const currentRotationAngle = (initialAngleRotation + timeElapsedSeconds * angleVelocityRotation) % (2 * Math.PI);
+      // ROTACIÓN del planeta DESACTIVADA - mantener rotación fija
+      const initialRotationAngle = initialAngleRotation || 0;
+      planetMeshRef.current.rotation.y = initialRotationAngle; // Rotación fija, sin actualización temporal
       
-      // Aplicar rotación REAL del planeta (independiente de OrbitControls)
-      planetMeshRef.current.rotation.y = currentRotationAngle;
+      // Aplicar inclinación axial
+      planetMeshRef.current.rotation.z = axialTilt * (Math.PI / 180);
       
-      // Aplicar inclinación axial REAL del planeta
-      const axialTilt = planetData.planet_info?.axial_tilt || 0; // En grados
-      planetMeshRef.current.rotation.z = axialTilt * (Math.PI / 180); // Convertir a radianes
-      
-      // Debug: mostrar rotación actual ocasionalmente
+      // Debug: mostrar datos orbitales ocasionalmente
       if (Math.random() < 0.001) { // Cada ~1000 frames
-        console.log('🌍 Current planet rotation:', {
-          angle: currentRotationAngle,
-          degrees: (currentRotationAngle * 180 / Math.PI).toFixed(2) + '°',
-          timeElapsed: (timeElapsedSeconds / 86400).toFixed(2) + ' days'
+        console.log('🌍 Orbital Position (matching SolarSystem3DViewer):', {
+          planet: currentPlanetInfo?.name || planetName,
+          angleOrbit: (angleOrbit * 180 / Math.PI).toFixed(2) + '°',
+          position: `(${planetMeshRef.current.position.x.toFixed(2)}, ${planetMeshRef.current.position.y.toFixed(2)}, ${planetMeshRef.current.position.z.toFixed(2)})`,
+          currentTime: (currentTime / 86400).toFixed(2) + ' days',
+          orbitalPeriod: (orbitalPeriod / 86400).toFixed(1) + ' days'
         });
       }
     }
@@ -756,6 +884,22 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
 
       if (controlsRef.current) {
         controlsRef.current.dispose();
+      }
+
+      // Limpiar esfera del sol
+      if (sunSphereRef.current && sceneRef.current) {
+        sceneRef.current.remove(sunSphereRef.current);
+        sunSphereRef.current.geometry.dispose();
+        (sunSphereRef.current.material as THREE.MeshBasicMaterial).dispose();
+        sunSphereRef.current = null;
+      }
+
+      // Limpiar línea orbital
+      if (orbitLineRef.current && sceneRef.current) {
+        sceneRef.current.remove(orbitLineRef.current);
+        orbitLineRef.current.geometry.dispose();
+        (orbitLineRef.current.material as THREE.LineBasicMaterial).dispose();
+        orbitLineRef.current = null;
       }
 
       if (rendererRef.current && mountRef.current) {

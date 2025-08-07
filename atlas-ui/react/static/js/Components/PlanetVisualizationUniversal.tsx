@@ -309,7 +309,7 @@ const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> 
             <ModularPlanetRendererWrapper
               planetName={planet.name}
               containerClassName="w-full h-full"
-              autoRotate={true}
+              autoRotate={false}
               enableControls={true}
               showDebugInfo={false}
               planetData={{
@@ -318,12 +318,15 @@ const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> 
                 gravity: planet.gravity,
                 mass: planet.mass,
                 orbital_radius: planet.orbital_radius,
+                orbital_period_seconds: planet.orbital_period_seconds, // AÑADIDO para cálculo orbital
                 rotation_period_seconds: planet.rotation_period_seconds,
                 surface_temperature: planet.surface_temperature,
                 axial_tilt: planet.axial_tilt,
                 planet_type: planet.planet_type,
                 atmosphere: planet.atmosphere,
-                elements: planet.elements
+                elements: planet.elements,
+                // initial_orbital_angle se debería obtener del backend, pero por ahora usamos un valor por defecto basado en el nombre del planeta para consistencia
+                initial_orbital_angle: planet.name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % (2 * Math.PI)
               }}
               cosmicOriginTime={cosmicOriginTime}
               initialAngleRotation={initialAngleRotation}

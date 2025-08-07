@@ -15,12 +15,14 @@ interface ModularPlanetRendererProps {
     gravity: number;
     mass: number;
     orbital_radius: number;
+    orbital_period_seconds?: number; // Añadido para cálculo orbital
     rotation_period_seconds: number;
     surface_temperature: number;
     axial_tilt: number;
     planet_type: string;
     atmosphere: string;
     elements: string[];
+    initial_orbital_angle?: number; // Añadido para posición orbital inicial
   };
   cosmicOriginTime?: number;
   initialAngleRotation?: number;
