@@ -312,6 +312,9 @@ def view_planet(planet_name):
 
     for planet_index, planet in current_system.planets.items():
         if planet.name.lower() == planet_name:
+            # 🚀 NEW: Store planet_index in session for API access
+            session["planet"] = planet_index
+            
             image_url = url_for("planet_blob", planet_name=planet_name)
             planet_url = generate_planet_url(
                 current_galaxy.coordinates, current_system.index, planet_name, page

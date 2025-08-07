@@ -56,10 +56,19 @@ interface PlanetRenderingData {
   surface_elements?: any;
   atmosphere?: any;
   rings?: any;
-  timing?: any;
+  timing?: {
+    cosmic_origin_time: number;
+    current_time_seconds: number;
+    elapsed_time: number;
+    initial_orbital_angle: number;
+    current_orbital_angle: number;
+    max_orbital_radius: number;
+    system_max_orbital_radius: number;
+  };
   effects_3d?: any[];
   shader_uniforms?: any;
   universal_actions?: any[];
+  original_planet_data?: any; // 🚀 NEW: Keep original API data
 }
 
 interface RendererStats {
@@ -284,8 +293,8 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       return explicitSunAngle;
     }
     
-    // VERIFICAR que orbital_angle existe
-    const orbitalAngle = planetData.timing?.orbital_angle;
+    // 🚀 FIXED: Use current_orbital_angle from API
+    const orbitalAngle = planetData.timing?.current_orbital_angle || planetData.timing?.orbital_angle;
     if (orbitalAngle === undefined || orbitalAngle === null) {
       console.error('❌ CRITICAL: orbital_angle missing for planet:', planetData.planet_info?.name);
       console.error('   Full timing data:', planetData.timing);
@@ -593,7 +602,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       EffectsLogger.log('Loading planet data from API', { planetName });
 
       // DEBUG: Mostrar la URL que se va a fetchar
-      const apiUrl = `/api/planet/${encodeURIComponent(planetName)}/rendering-data`;
+      const apiUrl = `/api/planet/rendering-data`;
       console.log('🔗 Fetching API URL:', apiUrl);
 
       // Cargar desde API para datos procedurales específicos
@@ -613,7 +622,30 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
         throw new Error(result.error || 'Failed to fetch planet data');
       }
 
-      const data: PlanetRenderingData = result.rendering_data;
+      // 🚀 NEW: Transform API data to expected format
+      const planetApiData = result.planet_data;
+      const timingApiData = result.timing;
+      
+      // Convert API response to expected PlanetRenderingData format
+      const data: PlanetRenderingData = {
+        planet_info: {
+          name: planetApiData.name,
+          type: planetApiData.planet_type,
+          base_color: '#808080', // Default, will be overridden by effects
+          radius: planetApiData.diameter / 15000 // Convert to render scale
+        },
+        timing: {
+          cosmic_origin_time: timingApiData.cosmic_origin_time,
+          current_time_seconds: timingApiData.current_time_seconds,
+          elapsed_time: timingApiData.elapsed_time,
+          initial_orbital_angle: planetApiData.initial_orbital_angle,
+          current_orbital_angle: planetApiData.current_orbital_angle,
+          max_orbital_radius: timingApiData.max_orbital_radius,
+          system_max_orbital_radius: planetApiData.system_max_orbital_radius
+        },
+        // Keep original API data for backwards compatibility with effects
+        original_planet_data: planetApiData
+      };
       setRenderingData(data);
       
       console.log('💾 setRenderingData called with:', {
@@ -674,7 +706,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       EffectsLogger.log('Loading planet data from API', { planetName });
 
       // DEBUG: Mostrar la URL que se va a fetchar
-      const apiUrl = `/api/planet/${encodeURIComponent(planetName)}/rendering-data`;
+      const apiUrl = `/api/planet/rendering-data`;
       console.log('🔗 Fetching API URL:', apiUrl);
 
       // Cargar desde API para datos procedurales específicos
@@ -694,7 +726,30 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
         throw new Error(result.error || 'Failed to fetch planet data');
       }
 
-      const data: PlanetRenderingData = result.rendering_data;
+      // 🚀 NEW: Transform API data to expected format
+      const planetApiData = result.planet_data;
+      const timingApiData = result.timing;
+      
+      // Convert API response to expected PlanetRenderingData format
+      const data: PlanetRenderingData = {
+        planet_info: {
+          name: planetApiData.name,
+          type: planetApiData.planet_type,
+          base_color: '#808080', // Default, will be overridden by effects
+          radius: planetApiData.diameter / 15000 // Convert to render scale
+        },
+        timing: {
+          cosmic_origin_time: timingApiData.cosmic_origin_time,
+          current_time_seconds: timingApiData.current_time_seconds,
+          elapsed_time: timingApiData.elapsed_time,
+          initial_orbital_angle: planetApiData.initial_orbital_angle,
+          current_orbital_angle: planetApiData.current_orbital_angle,
+          max_orbital_radius: timingApiData.max_orbital_radius,
+          system_max_orbital_radius: planetApiData.system_max_orbital_radius
+        },
+        // Keep original API data for backwards compatibility with effects
+        original_planet_data: planetApiData
+      };
       setRenderingData(data);
       
       console.log('💾 setRenderingData called with:', {
@@ -964,24 +1019,31 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       const dataToUse = renderingData;
       
       if (dataToUse) {
-        // Datos de la API de renderizado - usar estos si están disponibles
+        // 🚀 NEW: Use API data with priority (same as System view)
+        const apiData = dataToUse.original_planet_data;
         currentPlanetInfo = dataToUse.planet_info;
-        orbitalPeriod = planetData?.orbital_period_seconds || 365.25 * 24 * 3600; // 1 año por defecto
-        // CORRECCIÓN CRÍTICA: initial_orbital_angle viene en dataToUse.timing, no en planetData
-        initialOrbitalAngle = dataToUse?.timing?.initial_orbital_angle || planetData?.initial_orbital_angle || 0;
+        orbitalPeriod = apiData?.orbital_period_seconds || planetData?.orbital_period_seconds || 365.25 * 24 * 3600;
+        // 🎯 CRITICAL: Use API initial_orbital_angle (same value as System view)
+        initialOrbitalAngle = apiData?.initial_orbital_angle || planetData?.initial_orbital_angle || 0;
         currentCosmicOriginTime = cosmicOriginTime || dataToUse.timing?.cosmic_origin_time || Date.now() / 1000 - 3600;
-        axialTilt = planetData?.axial_tilt || 0;
+        axialTilt = apiData?.axial_tilt || planetData?.axial_tilt || 0;
         
-        // DEBUG temporal: verificar qué datos están llegando
-        if (actualPlanetName.toLowerCase().includes('tonnir') && !(window as any).timingDataLogged) {
-          console.log('📍 TIMING DATA from API:', {
-            'dataSource': 'renderingData (state - loaded from API first)',
-            'dataToUse.timing': dataToUse?.timing,
-            'initial_orbital_angle_from_timing': dataToUse?.timing?.initial_orbital_angle,
-            'initial_orbital_angle_from_planetData': planetData?.initial_orbital_angle,
-            'finalInitialOrbitalAngle': initialOrbitalAngle
+        // 🚀 DEBUG: Compare API vs DOM data for Tonnir
+        if (actualPlanetName.toLowerCase().includes('tonnir') && !(window as any).planetApiDataLogged) {
+          console.log('🌍 PLANET - API Data vs DOM Data:', {
+            name: apiData?.name || 'unknown',
+            source: 'NEW_API_ENDPOINT',
+            api_initial_orbital_angle: apiData?.initial_orbital_angle,
+            dom_initial_orbital_angle: planetData?.initial_orbital_angle,
+            finalInitialOrbitalAngle: initialOrbitalAngle,
+            api_orbital_radius: apiData?.orbital_radius,
+            dom_orbital_radius: planetData?.orbital_radius,
+            finalOrbitalRadius: actualOrbitalRadius,
+            api_cosmic_origin_time: dataToUse.timing?.cosmic_origin_time,
+            dom_cosmic_origin_time: cosmicOriginTime,
+            system_max_orbital_radius: systemMaxOrbitalRadius
           });
-          (window as any).timingDataLogged = true;
+          (window as any).planetApiDataLogged = true;
         }
       } else if (planetData) {
         // Datos del prop planetData
@@ -1006,9 +1068,9 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       // POSICIÓN ORBITAL - necesitamos obtener el maxOrbitalRadius del sistema completo
       // Para obtener la posición exacta, necesitamos saber el contexto del sistema solar completo
       
-      // CRÍTICO: Usar EXACTAMENTE el mismo systemMaxOrbitalRadius que la línea orbital
-      // Primero intentar desde renderingData (más confiable), luego desde el debug guardado
-      const systemMaxOrbitalRadius = renderingData?.timing?.max_orbital_radius || 
+      // 🚀 NEW: Use API system_max_orbital_radius (same as System view)
+      const systemMaxOrbitalRadius = renderingData?.timing?.system_max_orbital_radius || 
+                                     renderingData?.timing?.max_orbital_radius || 
                                      (window as any).debugSystemMaxRadius ||
                                      (window as any).systemMaxOrbitalRadius;
       
@@ -1029,8 +1091,9 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       //   cosmicOriginTime: currentCosmicOriginTime
       // });
       
-      // SIEMPRE usar planetData.orbital_radius para consistencia con createOrbitLine
-      const actualOrbitalRadius = planetData?.orbital_radius || 1000000000;
+      // 🚀 NEW: Use API orbital_radius (same source as System view)
+      const apiData = renderingData?.original_planet_data;
+      const actualOrbitalRadius = apiData?.orbital_radius || planetData?.orbital_radius || 1000000000;
       
       const relativeOrbitRadius = actualOrbitalRadius / systemMaxOrbitalRadius;
       const scaleFactor = 80; // Mismo factor de escala que SolarSystem3DViewer

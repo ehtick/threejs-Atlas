@@ -1323,3 +1323,109 @@ def register_planet_renderer_api(app):
                 "error": f"Error generating system rendering data: {str(e)}",
                 "traceback": traceback.format_exc()
             })
+
+    # 🚀 NEW: Individual Planet Rendering Data API
+    @app.route('/api/planet/rendering-data')
+    def get_planet_rendering_data():
+        """
+        Get individual planet rendering data for Planet view
+        Ensures same values as System view for consistency
+        """
+        try:
+            from flask import session
+            from .__universe_base import Universe
+            from .__universe_constants import PhysicalConstants
+            import math
+            import time
+            
+            # 🚀 NEW: Initialize same as System API (that works!)
+            if not config.is_initialized:
+                if not config.initialize():
+                    return jsonify({"error": "Failed to initialize config"})
+            
+            constants = PhysicalConstants()
+            universe = Universe(config.seed, constants)
+            
+            # Get session data
+            galaxy_data = session.get("galaxy")
+            system_index = session.get("system")
+            planet_index = session.get("planet")
+            
+            if not galaxy_data or system_index is None or planet_index is None:
+                return jsonify({"error": "No galaxy, system, or planet data in session"})
+            
+            # 🚀 FIXED: Use correct method names (same as location_data API)
+            galaxy = universe.get_galaxy(*galaxy_data["coordinates"])
+            system = galaxy.get_solar_system(system_index)
+            planet = system.get_planet(planet_index)
+            
+            # 🚀 FIXED: Use config directly (same as System API)
+            cosmic_origin_time = config.cosmic_origin_time
+            current_time_seconds = math.floor(time.time())
+            elapsed_time = current_time_seconds - cosmic_origin_time
+            
+            # Calculate max orbital radius for scaling (same as system)
+            max_orbital_radius = max([p.orbital_radius for p in system.planets.values()]) if system.planets else 1.0
+            
+            # 🎯 CRITICAL: Use existing values, don't recalculate!
+            initial_orbital_angle = planet.initial_orbital_angle  # From original generation
+            
+            # Calculate current orbital position (same logic as system)
+            orbital_period = planet.orbital_period_seconds
+            angle_velocity_orbit = (2 * math.pi) / orbital_period
+            current_orbital_angle = (initial_orbital_angle + elapsed_time * angle_velocity_orbit) % (2 * math.pi)
+            
+            # Planet data with consistent values
+            planet_data = {
+                "name": planet.name,
+                "planet_type": planet.planet_type,
+                "diameter": planet.diameter,
+                "mass": planet.mass,
+                "density": planet.density,
+                "gravity": planet.gravity,
+                "orbital_radius": planet.orbital_radius,
+                "orbital_period_seconds": planet.orbital_period_seconds,
+                "orbital_speed": planet.orbital_speed,
+                "rotation_period_seconds": planet.rotation_period_seconds,
+                "surface_temperature": planet.surface_temperature,
+                "axial_tilt": planet.axial_tilt,
+                "atmosphere": planet.atmosphere,
+                "life_forms": planet.life_forms,
+                "elements": planet.elements,
+                "eccentricity_factor": getattr(planet, 'eccentricity_factor', 0.1),
+                
+                # 🎯 CRITICAL: Positioning data (same as system API)
+                "initial_orbital_angle": initial_orbital_angle,
+                "current_orbital_angle": current_orbital_angle,
+                "relative_orbital_radius": planet.orbital_radius / max_orbital_radius if max_orbital_radius > 0 else 0,
+                
+                # System context for orbital calculations
+                "system_max_orbital_radius": max_orbital_radius
+            }
+            
+            # Timing info
+            timing_data = {
+                "cosmic_origin_time": cosmic_origin_time,
+                "current_time_seconds": current_time_seconds,
+                "elapsed_time": elapsed_time,
+                "max_orbital_radius": max_orbital_radius
+            }
+            
+            return jsonify({
+                "success": True,
+                "planet_name": planet.name,
+                "planet_data": planet_data,
+                "timing": timing_data,
+                "coordinates": {
+                    "galaxy_coordinates": galaxy_data["coordinates"],
+                    "system_index": system_index,
+                    "planet_index": planet_index
+                }
+            })
+            
+        except Exception as e:
+            import traceback
+            return jsonify({
+                "error": f"Error generating planet rendering data: {str(e)}",
+                "traceback": traceback.format_exc()
+            })
