@@ -36,7 +36,7 @@ import { VisualDebug3DEffect, createVisualDebug3DFromPythonData } from './Visual
 import { getPlanetBaseColor } from './PlanetColorBase';
 
 // VISUAL DEBUG FLAG - Controla si se muestra debug visual 3D
-const VISUAL_DEBUG = true; // Cambiar a false para desactivar
+const VISUAL_DEBUG = false; // Cambiar a false para desactivar
 
 export interface EffectInstance {
   id: string;
