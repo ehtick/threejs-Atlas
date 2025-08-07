@@ -16,10 +16,19 @@ import { DebugPlanetData, useDebugPlanetData } from '../utils/DebugPlanetData';
 import { getPlanetBaseColor } from '../3DEffects/PlanetColorBase';
 
 // 🎯 CONSTANTE DE NORMALIZACIÓN - Todos los planetas usan el mismo tamaño en 3D
-// En Pillow: radio ~200px en canvas 800x800 (25% del viewport)
-// En 3D: radio fijo 2.5 unidades para todos los planetas, sin importar el tamaño real
-// Esto evita que planetas gigantes no quepan en cámara o planetas pequeños sean invisibles
+// En Pillow: radio 200px en canvas 800x800 = 50% del radio del canvas
+// En 3D: Misma proporción - planeta debe ocupar 50% del radio del viewport
 const NORMALIZED_PLANET_RADIUS = 2.5;
+
+/**
+ * Calcula la distancia exacta de la cámara para que el planeta ocupe 
+ * las mismas proporciones que en Pillow (50% del radio del viewport)
+ */
+const calculateExactCameraDistance = (): number => {
+  const fovRadians = (45 * Math.PI) / 180; // FOV en radianes
+  const desiredProportion = 0.5; // 50% del radio (igual que Pillow)
+  return NORMALIZED_PLANET_RADIUS / (Math.tan(fovRadians / 2) * desiredProportion);
+};
 
 // Interfaces
 interface ModularPlanetRendererProps {
@@ -234,9 +243,10 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       sceneRef.current = scene;
 
       const camera = new THREE.PerspectiveCamera(45, containerWidth / containerHeight, 0.1, 10000);
-      // 🎯 CENTRAR CÁMARA EN EL PLANETA (tamaño normalizado)
-      // Distancia proporcional al radio normalizado: radio 2.5 * 3 = 7.5
-      const cameraDistance = NORMALIZED_PLANET_RADIUS * 3;
+      // 🎯 DISTANCIA EXACTA para que el planeta ocupe las mismas proporciones que Pillow
+      const cameraDistance = calculateExactCameraDistance();
+      console.log('🎯 Camera distance for exact Pillow proportions:', cameraDistance);
+      
       camera.position.set(0, 0, cameraDistance); 
       camera.lookAt(0, 0, 0); // Mirar directamente al planeta en el centro
       cameraRef.current = camera;
@@ -560,9 +570,11 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
     const controls = new OrbitControls(camera, domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    // 🎯 Distancias proporcionales al radio normalizado
-    controls.minDistance = NORMALIZED_PLANET_RADIUS * 1.2;   // Cerca para ver detalles
-    controls.maxDistance = NORMALIZED_PLANET_RADIUS * 8;     // Lejos para vista general
+    // 🎯 Distancias basadas en la proporción exacta de Pillow
+    const exactDistance = calculateExactCameraDistance();
+    
+    controls.minDistance = exactDistance * 0.8;  // Cerca para ver detalles  
+    controls.maxDistance = exactDistance * 3;    // Lejos para vista general
     controls.autoRotate = autoRotate;
     controls.autoRotateSpeed = 0.5; // Más rápido para ver efectos
     controls.enablePan = true;
