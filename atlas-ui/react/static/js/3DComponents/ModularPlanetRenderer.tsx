@@ -504,24 +504,34 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
 
   /**
    * Actualizar material del planeta con datos reales de la API
-   * USA LA FUNCIÓN CENTRALIZADA DE COLORES
+   * USA LA FUNCIÓN CENTRALIZADA DE COLORES (solo como fallback)
    */
   const updatePlanetMaterialWithAPIData = (renderingData: PlanetRenderingData) => {
     if (!planetMeshRef.current || !renderingData) return;
 
     const material = planetMeshRef.current.material as THREE.MeshStandardMaterial;
     
-    // 🎨 USAR FUNCIÓN CENTRALIZADA para obtener color de Python
-    const baseColor = getPlanetBaseColor(renderingData);
-    material.color.copy(baseColor);
+    // Solo aplicar color base si el material sigue siendo gris (no fue modificado por efectos)
+    const currentColor = material.color;
+    const isDefaultGray = Math.abs(currentColor.r - 0.5) < 0.01 && 
+                         Math.abs(currentColor.g - 0.5) < 0.01 && 
+                         Math.abs(currentColor.b - 0.5) < 0.01;
     
-    console.log('🎨 Updated planet color from centralized system:', {
-      apiColor: renderingData.planet_info?.base_color,
-      appliedColor: baseColor,
-      planetType: renderingData.planet_info?.type
-    });
+    if (isDefaultGray) {
+      // 🎨 USAR FUNCIÓN CENTRALIZADA para obtener color de Python
+      const baseColor = getPlanetBaseColor(renderingData);
+      material.color.copy(baseColor);
+      
+      console.log('🎨 Applied fallback color from centralized system:', {
+        apiColor: renderingData.planet_info?.base_color,
+        appliedColor: baseColor,
+        planetType: renderingData.planet_info?.type
+      });
+    } else {
+      console.log('🎨 Material already modified by effects, skipping base color');
+    }
 
-    // Actualizar otras propiedades si vienen en la API
+    // Actualizar otras propiedades si vienen en la API (siempre aplicar)
     if (renderingData.surface_elements?.metalness !== undefined) {
       material.metalness = renderingData.surface_elements.metalness;
     }
@@ -735,11 +745,11 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       }
       createOrbitLine(sceneRef.current!, data);
 
-      // 🎨 Apply API colors to planet material FIRST
-      updatePlanetMaterialWithAPIData(data);
-      
       // Apply modular effects using the 3DEffects system
       await applyProceduralShadersFromAPI(data);
+      
+      // 🎨 Apply base color only as fallback if no effects changed material
+      updatePlanetMaterialWithAPIData(data);
 
       // Callback opcional
       if (onDataLoaded) {
@@ -807,9 +817,6 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
     }
 
     try {
-      // 🎨 Apply API colors to planet material FIRST
-      updatePlanetMaterialWithAPIData(dataToUse);
-      
       updateLightingWithRealData(dataToUse);
       if (orbitLineRef.current && sceneRef.current) {
         sceneRef.current.remove(orbitLineRef.current);
@@ -820,6 +827,9 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       createOrbitLine(sceneRef.current, dataToUse);
 
       await applyProceduralShadersFromAPI(dataToUse);
+      
+      // 🎨 Apply base color as fallback if no effects changed material
+      updatePlanetMaterialWithAPIData(dataToUse);
 
     } catch (error) {
       applyFallbackEffects();
