@@ -14,17 +14,21 @@ export type { GasGiantBandsParams } from './GasGiantBands';
 
 export { 
   AtmosphericHaloEffect, 
-  AtmosphericStreaksEffect, 
-  DenseAtmosphereEffect,
-  createAtmosphericHaloFromPythonData,
-  createAtmosphericStreaksFromPythonData,
-  createDenseAtmosphereFromPythonData
-} from './AtmosphericEffects';
-export type { 
-  AtmosphericHaloParams, 
-  AtmosphericStreaksParams, 
-  AtmosphereParams 
-} from './AtmosphericEffects';
+  createAtmosphericHaloFromPythonData
+} from './Atmosphere';
+export type { AtmosphericHaloParams } from './Atmosphere';
+
+export { 
+  AtmosphereBrightsEffect, 
+  createAtmosphereBrightsFromPythonData
+} from './AtmosphereBrights';
+export type { AtmosphereBrightsParams } from './AtmosphereBrights';
+
+export { 
+  CloudGyrosEffect, 
+  createCloudGyrosFromPythonData
+} from './CloudGyros';
+export type { CloudGyrosParams } from './CloudGyros';
 
 export { MetallicSurfaceEffect } from './MetallicSurface';
 export type { MetallicSurfaceParams } from './MetallicSurface';

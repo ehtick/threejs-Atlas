@@ -12,15 +12,21 @@ import { RingSystemEffect, createRingSystemFromPythonData, RingSystemParams } fr
 import { GasGiantBandsEffect, createGasGiantBandsFromPythonData, GasGiantBandsParams } from './GasGiantBands';
 import { 
   AtmosphericHaloEffect, 
-  AtmosphericStreaksEffect, 
-  DenseAtmosphereEffect,
   createAtmosphericHaloFromPythonData,
-  createAtmosphericStreaksFromPythonData,
-  createDenseAtmosphereFromPythonData,
-  AtmosphericHaloParams,
-  AtmosphericStreaksParams,
-  AtmosphereParams
-} from './AtmosphericEffects';
+  AtmosphericHaloParams
+} from './Atmosphere';
+
+import { 
+  AtmosphereBrightsEffect, 
+  createAtmosphereBrightsFromPythonData,
+  AtmosphereBrightsParams
+} from './AtmosphereBrights';
+
+import { 
+  CloudGyrosEffect, 
+  createCloudGyrosFromPythonData,
+  CloudGyrosParams 
+} from './CloudGyros';
 
 // Importar efectos de superficie
 import { MetallicSurfaceEffect } from './MetallicSurface';
@@ -61,8 +67,10 @@ export enum EffectType {
   
   // Efectos atmosféricos
   ATMOSPHERIC_HALO = 'atmospheric_halo',
-  ATMOSPHERIC_STREAKS = 'atmospheric_streaks',
-  DENSE_ATMOSPHERE = 'dense_atmosphere',
+  ATMOSPHERE_BRIGHTS = 'atmosphere_brights',
+  
+  // Efectos dinámicos
+  CLOUD_GYROS = 'cloud_gyros',
   
   // Efectos estructurales
   RING_SYSTEM = 'ring_system',
@@ -149,16 +157,16 @@ export class EffectRegistry {
         createAtmosphericHaloFromPythonData(planetRadius, data.atmosphere || {})
     });
 
-    this.registerEffect(EffectType.ATMOSPHERIC_STREAKS, {
-      create: (params, planetRadius) => new AtmosphericStreaksEffect(planetRadius, params),
+    this.registerEffect(EffectType.CLOUD_GYROS, {
+      create: (params, planetRadius) => new CloudGyrosEffect(planetRadius, params),
       fromPythonData: (data, planetRadius) => 
-        createAtmosphericStreaksFromPythonData(planetRadius, data.atmosphere || {})
+        createCloudGyrosFromPythonData(planetRadius, data.atmosphere || {})
     });
 
-    this.registerEffect(EffectType.DENSE_ATMOSPHERE, {
-      create: (params, planetRadius) => new DenseAtmosphereEffect(planetRadius, params),
+    this.registerEffect(EffectType.ATMOSPHERE_BRIGHTS, {
+      create: (params, planetRadius) => new AtmosphereBrightsEffect(planetRadius, params),
       fromPythonData: (data, planetRadius) => 
-        createDenseAtmosphereFromPythonData(planetRadius, data)
+        createAtmosphereBrightsFromPythonData(planetRadius, data)
     });
 
     // Efectos estructurales
@@ -521,23 +529,23 @@ export class EffectRegistry {
         }
       }
 
-      // Estelas atmosféricas - aplicar para planetas específicos
+      // Cloud Gyros - aplicar para planetas específicos
       if (pythonData.atmosphere.streaks || ['Gas Giant', 'Frozen Gas Giant'].includes(pythonData.planet_info?.type)) {
-        const streaksEffect = this.createEffectFromPythonData(
-          EffectType.ATMOSPHERIC_STREAKS,
+        const gyrosEffect = this.createEffectFromPythonData(
+          EffectType.CLOUD_GYROS,
           pythonData,
           planetRadius,
           mesh,
           20
         );
-        if (streaksEffect) {
-          effects.push(streaksEffect);
-          streaksEffect.effect.addToScene(scene, mesh.position);
-          console.log('✅ Added atmospheric streaks effect');
+        if (gyrosEffect) {
+          effects.push(gyrosEffect);
+          gyrosEffect.effect.addToScene(scene, mesh.position);
+          console.log('✅ Added cloud gyros effect');
         }
       }
 
-      // Atmósfera densa (sistema anterior) - ARREGLADA para evitar líneas meridionales
+      // Atmosphere Brights (resplandor atmosférico)
       // Para planetas oceánicos, reducir la opacidad atmosférica para no ocultar el océano
       if (pythonData.atmosphere.type && pythonData.atmosphere.type !== 'None') {
         const planetType = pythonData.planet_info?.type?.toLowerCase() || pythonData.surface_elements?.type?.toLowerCase();
@@ -551,16 +559,17 @@ export class EffectRegistry {
           
         }
         
-        const atmosphereEffect = this.createEffectFromPythonData(
-          EffectType.DENSE_ATMOSPHERE,
+        const brightsEffect = this.createEffectFromPythonData(
+          EffectType.ATMOSPHERE_BRIGHTS,
           atmosphereData,
           planetRadius,
           mesh,
           5
         );
-        if (atmosphereEffect) {
-          effects.push(atmosphereEffect);
-          atmosphereEffect.effect.addToScene(scene, mesh.position);
+        if (brightsEffect) {
+          effects.push(brightsEffect);
+          brightsEffect.effect.addToScene(scene, mesh.position);
+          console.log('✅ Added atmosphere brights effect');
         }
       }
     }
