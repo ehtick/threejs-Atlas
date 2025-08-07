@@ -564,7 +564,7 @@ export class EffectRegistry {
         debugEffect.effect.addToScene(scene, mesh.position);
         
       } else {
-        console.error('❌ Failed to create debug effect!');
+        console.error(' Failed to create debug effect!');
       }
     }
 
@@ -653,10 +653,10 @@ export class EffectRegistry {
             break;
             
           default:
-            console.warn(`❓ Unknown command: ${command.command}`);
+            console.warn(` Unknown command: ${command.command}`);
         }
       } catch (error) {
-        console.error(`❌ Error executing command ${index}:`, error);
+        console.error(` Error executing command ${index}:`, error);
       }
     });
   }
@@ -710,7 +710,7 @@ export class EffectRegistry {
         break;
         
       default:
-        console.warn(`❓ Unknown geometry type: ${command.geometry.type}`);
+        console.warn(` Unknown geometry type: ${command.geometry.type}`);
         return;
     }
     

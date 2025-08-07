@@ -47,7 +47,6 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({ planets, star
   const [isEntering, setIsEntering] = useState(false);
   const [sliderTimeOffset, setSliderTimeOffset] = useState(0);
   
-  // 🚀 NEW: API system data state
   const [systemData, setSystemData] = useState<any>(null);
   const [loadingAPI, setLoadingAPI] = useState(true);
   const [apiError, setApiError] = useState<string | null>(null);
@@ -56,14 +55,12 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({ planets, star
 
   currentTimeRef.current = currentTime;
 
-  // 🚀 NEW: Fetch system data from API
   useEffect(() => {
     const fetchSystemData = async () => {
       try {
         setLoadingAPI(true);
         setApiError(null);
         
-        console.log('🚀 Fetching system data from API...');
         const response = await fetch('/api/system/rendering-data');
         
         if (!response.ok) {
@@ -71,42 +68,14 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({ planets, star
         }
         
         const result = await response.json();
-        console.log('✅ API response:', result);
         
         if (result.success) {
           setSystemData(result.system_data);
-          console.log('🎯 System data loaded:', {
-            name: result.system_data.name,
-            planets_count: result.system_data.planets.length,
-            timing: result.system_data.timing
-          });
-          
-          // 🔍 DEBUG: Compare Tonnir_MD-1420 between DOM and API
-          const tonnirDOM = planets.find(p => p.name.toLowerCase().includes('tonnir'));
-          const tonnirAPI = result.system_data.planets.find(p => p.name.toLowerCase().includes('tonnir'));
-          
-          if (tonnirDOM && tonnirAPI) {
-            console.log('🔍 TONNIR COMPARISON DOM vs API:', {
-              dom: {
-                initial_orbital_angle: tonnirDOM.initial_orbital_angle,
-                orbital_radius: tonnirDOM.orbital_radius,
-                orbital_period_seconds: tonnirDOM.orbital_period_seconds
-              },
-              api: {
-                initial_orbital_angle: tonnirAPI.initial_orbital_angle,
-                orbital_radius: tonnirAPI.orbital_radius,
-                orbital_period_seconds: tonnirAPI.orbital_period_seconds
-              },
-              cosmicOriginTime: cosmicOriginTime,
-              apiCosmicOriginTime: result.system_data.timing.cosmic_origin_time
-            });
-          }
         } else {
           throw new Error(result.error || 'Failed to fetch system data');
         }
         
       } catch (error) {
-        console.error('❌ Error fetching system data:', error);
         setApiError(error instanceof Error ? error.message : 'Unknown error');
       } finally {
         setLoadingAPI(false);
@@ -114,7 +83,7 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({ planets, star
     };
     
     fetchSystemData();
-  }, []); // Solo una vez al montar
+  }, []);
   
 
   const handleCloseFullscreen = () => {
@@ -188,15 +157,10 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({ planets, star
   }, [isFullscreen, isEntering]);
 
   useEffect(() => {
-    // 🚀 CRITICAL: Wait for API data before initializing
     if (loadingAPI || !systemData) {
-      console.log('⏳ Waiting for system data...', { loadingAPI, hasSystemData: !!systemData });
       return;
     }
     
-    console.log('🚀 Initializing 3D scene with API data...');
-    
-    // Resetear el flag de debug cuando se monta el componente
     (window as any).tonnirLoggedInSystem = false;
     
     if (!mountRef.current) return;
@@ -259,7 +223,6 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({ planets, star
     };
 
     const starGroup = new THREE.Group();
-    // 🚀 Use API stars data instead of DOM props
     systemData.stars.forEach((star, index) => {
       const starRadius = parseFloat(star.Size) * 3;
       const starGeometry = new THREE.SphereGeometry(starRadius, 16, 16);
@@ -295,11 +258,9 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({ planets, star
     });
     scene.add(starGroup);
 
-    // 🚀 Use API timing data instead of calculating from DOM props
-    const maxOrbitalRadius = systemData.timing.max_orbital_radius; // From API
+    const maxOrbitalRadius = systemData.timing.max_orbital_radius;
     const scaleFactor = 80;
     
-    // Guardar el máximo orbital radius globalmente para que ModularPlanetRenderer lo pueda usar
     (window as any).systemMaxOrbitalRadius = maxOrbitalRadius;
 
     systemData.planets.forEach((planet, index) => {
@@ -485,30 +446,6 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({ planets, star
         planetMesh.position.x = semiMajorAxis * Math.cos(angleOrbit);
         planetMesh.position.z = semiMinorAxis * Math.sin(angleOrbit);
         planetMesh.position.y = 0;
-        
-        // DEBUG para Tonnir_MD-1420
-        if (planet.name.toLowerCase().includes('tonnir_md-1420')) {
-          // Solo loguear una vez
-          if (!(window as any).tonnirLoggedInSystem) {
-            console.log('🌐 SYSTEM - Tonnir_MD-1420:', {
-              name: planet.name,
-              orbital_radius: planet.orbital_radius,
-              maxOrbitalRadius: (window as any).systemMaxOrbitalRadius,
-              orbitRadius: semiMajorAxis,
-              currentTime: currentTimeRef.current,
-              initial_orbital_angle: planet.initial_orbital_angle,
-              angleOrbit: angleOrbit,
-              angleOrbitDegrees: (angleOrbit * 180 / Math.PI).toFixed(2),
-              position: {
-                x: planetMesh.position.x.toFixed(2),
-                z: planetMesh.position.z.toFixed(2)
-              },
-              cosmicOriginTime,
-              realTime: Math.floor(Date.now() / 1000)
-            });
-            (window as any).tonnirLoggedInSystem = true;
-          }
-        }
 
         const rotationPeriodSeconds = planet.rotation_period_seconds;
         const angleVelocityRotation = (2 * Math.PI) / rotationPeriodSeconds;

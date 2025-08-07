@@ -52,12 +52,12 @@ class ErrorBoundary extends React.Component<
   }
 
   static getDerivedStateFromError(error: Error) {
-    console.error('🚨 Planet 3D ErrorBoundary caught error:', error);
+    console.error(' Planet 3D ErrorBoundary caught error:', error);
     return { hasError: true, error: error.message };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('🚨 Planet 3D componentDidCatch:', error, errorInfo);
+    console.error(' Planet 3D componentDidCatch:', error, errorInfo);
     if (this.props.onError) {
       this.props.onError(error.message);
     }
@@ -128,7 +128,7 @@ export const UniversalPlanet3DWrapper: React.FC<UniversalPlanet3DProps> = ({
   const initializeThreeJS = useCallback(() => {
     
     if (!mountRef.current) {
-      console.error('❌ Mount ref is null');
+      console.error(' Mount ref is null');
       return false;
     }
 
@@ -189,7 +189,7 @@ export const UniversalPlanet3DWrapper: React.FC<UniversalPlanet3DProps> = ({
 
       return true;
     } catch (error) {
-      console.error('❌ Error initializing Three.js:', error);
+      console.error(' Error initializing Three.js:', error);
       return false;
     }
   }, [width, height, enableControls]);
@@ -254,7 +254,7 @@ export const UniversalPlanet3DWrapper: React.FC<UniversalPlanet3DProps> = ({
    */
   const loadPlanetData = useCallback(async () => {
     if (!universalRendererRef.current) {
-      console.error('❌ Universal renderer not initialized');
+      console.error(' Universal renderer not initialized');
       return;
     }
 
@@ -302,7 +302,7 @@ export const UniversalPlanet3DWrapper: React.FC<UniversalPlanet3DProps> = ({
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error loading planet';
-      console.error('❌ Error loading planet data:', errorMessage);
+      console.error(' Error loading planet data:', errorMessage);
       setError(errorMessage);
       
       if (onError) {
@@ -364,7 +364,7 @@ export const UniversalPlanet3DWrapper: React.FC<UniversalPlanet3DProps> = ({
         await loadPlanetData();
         
       } catch (error) {
-        console.error('❌ Error during initialization:', error);
+        console.error(' Error during initialization:', error);
         setError(error instanceof Error ? error.message : 'Unknown initialization error');
       }
     };
@@ -402,7 +402,7 @@ export const UniversalPlanet3DWrapper: React.FC<UniversalPlanet3DProps> = ({
    * Manejo de errores del componente
    */
   const handleError = useCallback((errorMessage: string) => {
-    console.error('🚨 Universal Planet 3D Error:', errorMessage);
+    console.error(' Universal Planet 3D Error:', errorMessage);
     setError(errorMessage);
     if (onError) {
       onError(errorMessage);

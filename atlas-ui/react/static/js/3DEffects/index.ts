@@ -279,16 +279,16 @@ export const EffectsLogger = {
   },
   
   warn: (message: string, data?: any) => {
-    console.warn(`⚠️ [Effects] ${message}`, data || '');
+    console.warn(`[Effects] ${message}`, data || '');
   },
   
   error: (message: string, error?: any) => {
-    console.error(`❌ [Effects] ${message}`, error || '');
+    console.error(`[Effects] ${message}`, error || '');
   },
   
   debug: (message: string, data?: any) => {
     if (process.env.NODE_ENV === 'development') {
-      console.debug(`🔍 [Effects] ${message}`, data || '');
+      console.debug(`[Effects] ${message}`, data || '');
     }
   }
 };

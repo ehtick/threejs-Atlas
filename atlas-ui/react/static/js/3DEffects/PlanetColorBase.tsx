@@ -166,6 +166,6 @@ export function generateSecondaryColors(baseColor: THREE.Color, seed: number = 1
  * Esta función era la que estaba en OceanWaves.tsx - YA NO USAR
  */
 export function getLegacyOceanColor(): THREE.Color {
-  console.warn('🚨 getLegacyOceanColor() is deprecated. Use getPlanetBaseColor() instead.');
+  console.warn('getLegacyOceanColor() is deprecated. Use getPlanetBaseColor() instead.');
   return new THREE.Color(0.1, 0.3, 0.6);
 }
