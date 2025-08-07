@@ -13,6 +13,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { effectRegistry, EffectInstance } from '../3DEffects/EffectRegistry';
 import { createPlanetEffectConfig, EffectsLogger } from '../3DEffects';
 import { DebugPlanetData, useDebugPlanetData } from '../utils/DebugPlanetData';
+import { getPlanetBaseColor } from '../3DEffects/PlanetColorBase';
 
 // Interfaces
 interface ModularPlanetRendererProps {
@@ -474,50 +475,17 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
 
 
   /**
-   * Obtener color base por tipo de planeta
-   */
-  const getPlanetBaseColor = (planetType?: string): number => {
-    const type = (planetType || '').toLowerCase();
-    const colorMap: { [key: string]: number } = {
-      'gas giant': 0x4A90E2,
-      'rocky': 0x8B4513,
-      'icy': 0xE0F7FF,
-      'oceanic': 0x006BB3,
-      'desert': 0xD2B48C,
-      'lava': 0xFF4500,
-      'metallic': 0xC0C0C0,
-      'toxic': 0x9ACD32,
-      'crystalline': 0xFF69B4,
-      'anomaly': 0xFF00FF,
-      'arid': 0xD2B48C,
-      'swamp': 0x556B2F,
-      'tundra': 0xB0C4DE,
-      'forest': 0x228B22,
-      'savannah': 0xDAA520,
-      'cave': 0x2F2F2F,
-      'radioactive': 0x32CD32,
-      'magma': 0xFF6347,
-      'carbon': 0x1C1C1C,
-      'diamond': 0xE6E6FA
-    };
-    return colorMap[type] || 0x808080;
-  };
-
-  /**
-   * Crear planeta base genérico con color apropiado
+   * Crear planeta base genérico - color será actualizado cuando lleguen datos de API
    */
   const createBasePlanet = (scene: THREE.Scene) => {
     const basePlanetRadius = planetData?.diameter ? planetData.diameter / 15000 : 1;
     const planetRadius = Math.max(Math.min(basePlanetRadius, 4.0), 1.5);
     
-    // 🚀 Use actual planet type color instead of gray
-    const baseColor = getPlanetBaseColor(planetData?.planet_type);
-    
     const planetGeometry = new THREE.SphereGeometry(planetRadius, 128, 64);
     const planetMaterial = new THREE.MeshStandardMaterial({
-      color: baseColor,  // Use color based on planet type
-      metalness: planetData?.planet_type?.toLowerCase().includes('metallic') ? 0.8 : 0.1,
-      roughness: planetData?.planet_type?.toLowerCase().includes('icy') ? 0.1 : 0.8,
+      color: 0x808080,  // Temporal - será reemplazado por datos de API
+      metalness: 0.1,
+      roughness: 0.8,
       transparent: false,
       opacity: 1.0
     });
@@ -531,7 +499,35 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
     scene.add(planetMesh);
     planetMeshRef.current = planetMesh;
     
-    console.log('🎨 Created base planet with color:', baseColor.toString(16), 'for type:', planetData?.planet_type);
+    console.log('🪐 Base planet created - color will be updated when API data arrives');
+  };
+
+  /**
+   * Actualizar material del planeta con datos reales de la API
+   * USA LA FUNCIÓN CENTRALIZADA DE COLORES
+   */
+  const updatePlanetMaterialWithAPIData = (renderingData: PlanetRenderingData) => {
+    if (!planetMeshRef.current || !renderingData) return;
+
+    const material = planetMeshRef.current.material as THREE.MeshStandardMaterial;
+    
+    // 🎨 USAR FUNCIÓN CENTRALIZADA para obtener color de Python
+    const baseColor = getPlanetBaseColor(renderingData);
+    material.color.copy(baseColor);
+    
+    console.log('🎨 Updated planet color from centralized system:', {
+      apiColor: renderingData.planet_info?.base_color,
+      appliedColor: baseColor,
+      planetType: renderingData.planet_info?.type
+    });
+
+    // Actualizar otras propiedades si vienen en la API
+    if (renderingData.surface_elements?.metalness !== undefined) {
+      material.metalness = renderingData.surface_elements.metalness;
+    }
+    if (renderingData.surface_elements?.roughness !== undefined) {
+      material.roughness = renderingData.surface_elements.roughness;
+    }
   };
 
   /**
@@ -739,6 +735,9 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       }
       createOrbitLine(sceneRef.current!, data);
 
+      // 🎨 Apply API colors to planet material FIRST
+      updatePlanetMaterialWithAPIData(data);
+      
       // Apply modular effects using the 3DEffects system
       await applyProceduralShadersFromAPI(data);
 
@@ -808,6 +807,9 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
     }
 
     try {
+      // 🎨 Apply API colors to planet material FIRST
+      updatePlanetMaterialWithAPIData(dataToUse);
+      
       updateLightingWithRealData(dataToUse);
       if (orbitLineRef.current && sceneRef.current) {
         sceneRef.current.remove(orbitLineRef.current);
@@ -838,11 +840,11 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       // Limpiar efectos anteriores
       clearActiveEffects();
 
-      // 🚀 Apply basic color at minimum
+      // 🚀 Apply basic generic color as fallback (no hardcoding)
       if (planetMeshRef.current.material instanceof THREE.MeshStandardMaterial) {
-        const fallbackColor = getPlanetBaseColor(planetData?.planet_type);
+        const fallbackColor = 0x666666; // Generic gray - API should provide real colors
         planetMeshRef.current.material.color.setHex(fallbackColor);
-        console.log('🎨 Applied fallback color:', fallbackColor.toString(16), 'to planet mesh');
+        console.log('⚠️ Applied fallback generic color - API should provide real colors');
       }
 
       // Try to create basic effects if the system is available

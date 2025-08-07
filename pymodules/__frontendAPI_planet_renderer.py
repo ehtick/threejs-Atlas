@@ -1446,3 +1446,11 @@ def register_planet_renderer_api(app):
                 "error": f"Error generating planet rendering data: {str(e)}",
                 "traceback": traceback.format_exc()
             })
+
+# 🚀 MISSING FUNCTION: Add the translate_planet_to_json wrapper
+def translate_planet_to_json(planet):
+    """
+    Simple wrapper function that calls the PlanetRenderingTranslator
+    to convert a planet object to JSON rendering data for ThreeJS
+    """
+    return planet_translator.translate_planet_rendering(planet)
