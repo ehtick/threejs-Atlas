@@ -499,8 +499,8 @@ export class EffectRegistry {
     if (pythonData.atmosphere) {
       console.log('🌫️ Applying atmospheric effects for:', pythonData.planet_info?.type);
       
-      // Halo atmosférico - aplicar a la mayoría de planetas con atmósfera
-      if (pythonData.atmosphere.halo || pythonData.atmosphere.type !== 'None') {
+      // Halo atmosférico - SOLO aplicar si hay datos específicos de halo
+      if (pythonData.atmosphere.halo && pythonData.atmosphere.halo.enabled !== false) {
         const haloEffect = this.createEffectFromPythonData(
           EffectType.ATMOSPHERIC_HALO,
           pythonData,
