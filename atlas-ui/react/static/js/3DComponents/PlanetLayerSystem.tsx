@@ -28,16 +28,18 @@ export class PlanetLayerSystem {
   private scene?: THREE.Scene;
   private planetRadius: number;
   
-  // Shader base con iluminación correcta
+  // Shader base con iluminación correcta mejorado
   private static readonly baseVertexShader = `
     varying vec3 vPosition;
     varying vec3 vNormal;
     varying vec3 vWorldPosition;
+    varying vec3 vWorldNormal;
     varying vec2 vUv;
     
     void main() {
       vPosition = position;
-      vNormal = normal;
+      vNormal = normalMatrix * normal; // Transformar normal al espacio de vista
+      vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz); // Normal en espacio mundo
       vUv = uv;
       vec4 worldPos = modelMatrix * vec4(position, 1.0);
       vWorldPosition = worldPos.xyz;
@@ -48,28 +50,43 @@ export class PlanetLayerSystem {
   private static readonly baseFragmentShader = `
     uniform vec3 baseColor;
     uniform vec3 lightDirection;
+    uniform vec3 lightPosition;
     uniform float ambientStrength;
+    uniform float lightIntensity;
     
     varying vec3 vPosition;
     varying vec3 vNormal;
     varying vec3 vWorldPosition;
+    varying vec3 vWorldNormal;
     varying vec2 vUv;
     
     void main() {
-      vec3 normal = normalize(vNormal);
-      vec3 lightDir = normalize(lightDirection);
+      vec3 normal = normalize(vWorldNormal);
       
-      // Cálculo de iluminación Lambertiana
+      // Usar posición de luz si está disponible, sino usar dirección
+      vec3 lightDir;
+      if (length(lightPosition) > 0.0) {
+        lightDir = normalize(lightPosition - vWorldPosition);
+      } else {
+        lightDir = normalize(-lightDirection); // Negativo porque lightDirection apunta hacia la luz
+      }
+      
+      // Cálculo de iluminación Lambertiana mejorado
       float dotNL = dot(normal, lightDir);
       
-      // Suavizar la transición entre día y noche
-      float dayNight = smoothstep(-0.2, 0.2, dotNL);
+      // Suavizar la transición entre día y noche con mejor gradiente
+      float dayNight = smoothstep(-0.3, 0.1, dotNL);
       
-      // Color base con iluminación
+      // Añadir un poco de retroiluminación (rim lighting) para evitar oscuridad total
+      float rimLight = 1.0 - abs(dotNL);
+      rimLight = pow(rimLight, 3.0) * 0.1;
+      
+      // Color base con iluminación mejorada
       vec3 finalColor = baseColor;
       
-      // Aplicar iluminación: oscuro en la parte trasera, iluminado en la frontal
-      finalColor *= ambientStrength + (1.0 - ambientStrength) * dayNight;
+      // Aplicar iluminación con intensidad variable
+      float totalLight = ambientStrength + (lightIntensity * dayNight) + rimLight;
+      finalColor *= totalLight;
       
       gl_FragColor = vec4(finalColor, 1.0);
     }
@@ -94,7 +111,9 @@ export class PlanetLayerSystem {
       uniforms: {
         baseColor: { value: color },
         lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
-        ambientStrength: { value: 0.15 } // Más oscuro, igual que otros planetas
+        lightPosition: { value: new THREE.Vector3(0, 0, 0) }, // Posición de luz en espacio mundo
+        ambientStrength: { value: 0.15 }, // Más oscuro, igual que otros planetas
+        lightIntensity: { value: 0.85 } // Intensidad de la luz direccional
       },
       side: THREE.FrontSide
     });
@@ -462,18 +481,48 @@ export class PlanetLayerSystem {
    * Actualiza la dirección de la luz
    */
   updateLightDirection(direction: THREE.Vector3): void {
-    this.baseMaterial.uniforms.lightDirection.value = direction.normalize();
+    this.baseMaterial.uniforms.lightDirection.value = direction.clone().normalize();
     
     // Actualizar también en todas las capas
     this.effectLayers.forEach(layer => {
       if (layer.material.uniforms.lightDirection) {
-        layer.material.uniforms.lightDirection.value = direction.normalize();
+        layer.material.uniforms.lightDirection.value = direction.clone().normalize();
       }
     });
   }
 
   /**
-   * Crea un material genérico para capa con soporte de iluminación
+   * Actualiza la posición de la luz (preferido sobre dirección para cálculos más precisos)
+   */
+  updateLightPosition(position: THREE.Vector3): void {
+    this.baseMaterial.uniforms.lightPosition.value = position.clone();
+    
+    // Actualizar también en todas las capas
+    this.effectLayers.forEach(layer => {
+      if (layer.material.uniforms.lightPosition) {
+        layer.material.uniforms.lightPosition.value = position.clone();
+      }
+    });
+    
+    console.log('🌞 PlanetLayerSystem: Updated light position to', position);
+  }
+
+  /**
+   * Actualiza tanto posición como dirección de luz desde una DirectionalLight de Three.js
+   */
+  updateFromThreeLight(light: THREE.DirectionalLight): void {
+    // Usar posición de la luz
+    this.updateLightPosition(light.position);
+    
+    // También calcular y actualizar dirección
+    const direction = light.target.position.clone().sub(light.position).normalize();
+    this.updateLightDirection(direction);
+    
+    console.log('🌞 PlanetLayerSystem: Synced with Three.js DirectionalLight');
+  }
+
+  /**
+   * Crea un material genérico para capa con soporte de iluminación mejorado
    */
   createGenericLayerMaterial(
     vertexShader: string,
@@ -482,9 +531,12 @@ export class PlanetLayerSystem {
     transparent: boolean = true,
     blending: THREE.Blending = THREE.NormalBlending
   ): THREE.ShaderMaterial {
-    // Añadir uniform de dirección de luz si no existe
+    // Añadir uniforms de iluminación si no existen
     if (!uniforms.lightDirection) {
       uniforms.lightDirection = { value: new THREE.Vector3(1, 1, 1).normalize() };
+    }
+    if (!uniforms.lightPosition) {
+      uniforms.lightPosition = { value: new THREE.Vector3(0, 0, 0) };
     }
     
     return new THREE.ShaderMaterial({

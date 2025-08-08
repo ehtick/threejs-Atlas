@@ -14,6 +14,7 @@ import { effectRegistry, EffectInstance } from '../3DEffects/EffectRegistry';
 import { createPlanetEffectConfig, EffectsLogger } from '../3DEffects';
 import { DebugPlanetData, useDebugPlanetData } from '../utils/DebugPlanetData';
 import { getPlanetBaseColor } from '../3DEffects/PlanetColorBase';
+import { PlanetLayerSystem } from './PlanetLayerSystem';
 
 // 🎯 CONSTANTE DE NORMALIZACIÓN - Todos los planetas usan el mismo tamaño en 3D
 // En Pillow: radio 200px en canvas 800x800 = 50% del radio del canvas
@@ -141,6 +142,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
   const activeEffectsRef = useRef<EffectInstance[]>([]);
   const lastFrameTimeRef = useRef<number>(0);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
+  const planetLayerSystemRef = useRef<PlanetLayerSystem | null>(null);
   
   const realCurrentTime = Math.floor(Date.now() / 1000);
   const [timeOffset, setTimeOffset] = useState(0);
@@ -173,9 +175,10 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
 
   /**
    * Aplicar efectos procedurales usando el sistema modular desde la API
+   * ACTUALIZADO: Trabaja con PlanetLayerSystem existente
    */
   const applyProceduralShadersFromAPI = async (planetData: PlanetRenderingData) => {
-    if (!planetMeshRef.current || !sceneRef.current) return;
+    if (!planetMeshRef.current || !sceneRef.current || !planetLayerSystemRef.current) return;
 
     EffectsLogger.log('Applying modular effects from API data', {
       planet: planetData.planet_info.name,
@@ -186,12 +189,19 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       // Limpiar efectos anteriores
       clearActiveEffects();
 
+      // 🎯 ACTUALIZAR COLOR BASE del PlanetLayerSystem
+      const baseColor = getPlanetBaseColor(planetData);
+      planetLayerSystemRef.current.updateBaseColor(baseColor);
+      
+      console.log('🎨 Updated PlanetLayerSystem base color:', baseColor);
+
       // Crear efectos usando el registry modular CON RADIO NORMALIZADO
       const newEffects = effectRegistry.createEffectsFromPythonPlanetData(
         planetData,
         NORMALIZED_PLANET_RADIUS, // Radio normalizado para todos los planetas
         planetMeshRef.current,
-        sceneRef.current
+        sceneRef.current,
+        planetLayerSystemRef.current // 🚀 PASAR PlanetLayerSystem existente
       );
 
       // Actualizar estado
@@ -333,6 +343,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
 
   /**
    * ACTUALIZAR iluminación cuando lleguen datos reales de la API
+   * ACTUALIZADO: Sincroniza con PlanetLayerSystem
    */
   const updateLightingWithRealData = (planetData: any) => {
     if (!sunLightRef.current || !sceneRef.current) {
@@ -363,6 +374,10 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       fillLightRef.current.position.set(-sunX * 0.5, 0, -sunZ * 0.5);
     }
 
+    // 🚀 SINCRONIZAR luz completa con PlanetLayerSystem
+    if (planetLayerSystemRef.current && sunLightRef.current) {
+      planetLayerSystemRef.current.updateFromThreeLight(sunLightRef.current);
+    }
   };
 
   /**
@@ -441,6 +456,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
 
   /**
    * Configurar iluminación de la escena basada en datos reales de Python
+   * ACTUALIZADO: Sincroniza con PlanetLayerSystem desde el inicio
    */
   const setupLighting = (scene: THREE.Scene, planetData?: any) => {
     // createSunSphere(scene); // 🎯 OCULTAR SOL - nos enfocamos solo en el planeta
@@ -463,6 +479,15 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
 
       const ambientLight = new THREE.AmbientLight(0x222244, 0.1);
       scene.add(ambientLight);
+      
+      // 🚀 SINCRONIZAR luz por defecto con PlanetLayerSystem
+      setTimeout(() => {
+        if (planetLayerSystemRef.current && defaultSunLight) {
+          planetLayerSystemRef.current.updateFromThreeLight(defaultSunLight);
+          console.log('🌞 Initial PlanetLayerSystem light synced');
+        }
+      }, 50);
+      
       return;
     }
 
@@ -494,35 +519,47 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       scene.add(ambientLight);
     }
 
+    // 🚀 SINCRONIZAR luz con datos reales con PlanetLayerSystem
+    if (planetLayerSystemRef.current && sunLight) {
+      planetLayerSystemRef.current.updateFromThreeLight(sunLight);
+    }
+
   };
 
 
   /**
-   * Crear planeta base genérico - TAMAÑO NORMALIZADO para 3D
+   * Crear planeta base genérico usando PlanetLayerSystem desde el inicio
    */
   const createBasePlanet = (scene: THREE.Scene) => {
     // 🎯 TAMAÑO FIJO NORMALIZADO - como en Pillow todos se ven igual
-    console.log('🪐 Creating normalized planet with fixed radius:', NORMALIZED_PLANET_RADIUS);
+    console.log('🪐 Creating normalized planet with PlanetLayerSystem, radius:', NORMALIZED_PLANET_RADIUS);
     
     const planetGeometry = new THREE.SphereGeometry(NORMALIZED_PLANET_RADIUS, 128, 64);
-    const planetMaterial = new THREE.MeshStandardMaterial({
-      color: 0x808080,  // Temporal - será reemplazado por datos de API
-      metalness: 0.1,
-      roughness: 0.8,
-      transparent: false,
-      opacity: 1.0
-    });
-
-    const planetMesh = new THREE.Mesh(planetGeometry, planetMaterial);
+    // 🎯 CREAR MESH CON MATERIAL TEMPORAL - será reemplazado por PlanetLayerSystem
+    const tempMaterial = new THREE.MeshBasicMaterial({ color: 0x808080 });
+    const planetMesh = new THREE.Mesh(planetGeometry, tempMaterial);
     planetMesh.castShadow = true;
     planetMesh.receiveShadow = true;
-    
     planetMesh.position.set(0, 0, 0); // 🎯 PLANETA EN EL CENTRO - la cámara ya está enfocada en él
     
     scene.add(planetMesh);
     planetMeshRef.current = planetMesh;
     
-    console.log('🪐 Base planet created - color will be updated when API data arrives');
+    // 🚀 INICIALIZAR PlanetLayerSystem INMEDIATAMENTE con color por defecto
+    const defaultColor = new THREE.Color(0x808080); // Gris neutro por defecto
+    planetLayerSystemRef.current = new PlanetLayerSystem(planetMesh, defaultColor);
+    planetLayerSystemRef.current.addToScene(scene);
+    
+    console.log('✅ Planet created with PlanetLayerSystem - ShaderMaterial from start');
+    
+    // 🎯 DEBUG: Verificar que el material sea ShaderMaterial
+    setTimeout(() => {
+      if (planetMesh.material instanceof THREE.ShaderMaterial) {
+        console.log('🎯 Found ShaderMaterial on planet');
+      } else {
+        console.log('🚨 PROBLEMA ENCONTRADO: Planeta usa', planetMesh.material.constructor.name);
+      }
+    }, 100);
   };
 
   /**
@@ -920,6 +957,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
 
   /**
    * Limpiar efectos activos
+   * ACTUALIZADO: Preserva PlanetLayerSystem base
    */
   const clearActiveEffects = () => {
     activeEffectsRef.current.forEach(effect => {
@@ -933,6 +971,9 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
 
     activeEffectsRef.current = [];
     setEffects([]);
+    
+    // 🎯 NOTA: NO limpiamos planetLayerSystemRef.current porque es el sistema base
+    // Solo se limpian los efectos adicionales, no el material base del planeta
   };
 
 
@@ -1115,6 +1156,12 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({
       window.removeEventListener('resize', handleResize);
 
       clearActiveEffects();
+
+      // 🚀 LIMPIAR PlanetLayerSystem
+      if (planetLayerSystemRef.current) {
+        planetLayerSystemRef.current.dispose();
+        planetLayerSystemRef.current = null;
+      }
 
       if (controlsRef.current) {
         controlsRef.current.dispose();

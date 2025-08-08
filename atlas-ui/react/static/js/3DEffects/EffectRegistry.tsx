@@ -318,12 +318,14 @@ export class EffectRegistry {
 
   /**
    * Interpreta datos completos de Python y crea todos los efectos necesarios
+   * ACTUALIZADO: Usa PlanetLayerSystem existente
    */
   createEffectsFromPythonPlanetData(
     pythonData: any,
     planetRadius: number,
     mesh: THREE.Mesh,
-    scene: THREE.Scene
+    scene: THREE.Scene,
+    existingLayerSystem?: PlanetLayerSystem
   ): EffectInstance[] {
     const effects: EffectInstance[] = [];
     
@@ -335,11 +337,15 @@ export class EffectRegistry {
       console.log('💍 Rings:', pythonData.rings);
       console.log('🪐 Planet info:', pythonData.planet_info);
       
-      // ⭐ SIEMPRE crear el sistema de capas para cualquier planeta
-      const baseColor = getPlanetBaseColor(pythonData);
-      console.log('🎨 Creating PlanetLayerSystem with base color:', baseColor);
-      this.layerSystem = new PlanetLayerSystem(mesh, baseColor);
-      // NO añadir a la escena todavía - esperar hasta que se creen todas las capas
+      // ⭐ USAR PlanetLayerSystem existente o crear uno nuevo
+      if (existingLayerSystem) {
+        console.log('🔄 Using existing PlanetLayerSystem');
+        this.layerSystem = existingLayerSystem;
+      } else {
+        const baseColor = getPlanetBaseColor(pythonData);
+        console.log('🎨 Creating new PlanetLayerSystem with base color:', baseColor);
+        this.layerSystem = new PlanetLayerSystem(mesh, baseColor);
+      }
     
 
     // 1. Efectos de superficie basados en el tipo
