@@ -212,16 +212,6 @@ export class AtmosphereGlowEffect {
     return this.particleSystem;
   }
 
-  /**
-   * Añade el sistema de partículas a la escena
-   */
-  addToScene(scene: THREE.Scene, planetPosition?: THREE.Vector3): void {
-    if (planetPosition) {
-      this.particleSystem.position.copy(planetPosition);
-    }
-    scene.add(this.particleSystem);
-    console.log('🌟 AtmosphereGlow: Sistema de partículas añadido a la escena');
-  }
 
   dispose(): void {
     this.geometry.dispose();
@@ -247,7 +237,7 @@ export function createAtmosphereGlowFromPythonData(planetRadius: number, atmosph
   const rotationSpeed = rng.uniform(PROCEDURAL_RANGES.ROTATION_SPEED.min, PROCEDURAL_RANGES.ROTATION_SPEED.max);
   const movementAmplitude = rng.uniform(PROCEDURAL_RANGES.MOVEMENT_AMPLITUDE.min, PROCEDURAL_RANGES.MOVEMENT_AMPLITUDE.max);
   
-  console.log(`🎲 AtmosphereGlow procedural: particles=${particleCount}, speed=${speed.toFixed(3)}, size=${size.toFixed(3)}, opacity=${opacity.toFixed(3)}, turbulence=${turbulence.toFixed(3)}, rotation=${rotationSpeed.toFixed(3)}, amplitude=${movementAmplitude.toFixed(3)}`);
+  
 
   const params: AtmosphereGlowParams = {
     color: streaksData.color ? new THREE.Color().setRGB(streaksData.color[0], streaksData.color[1], streaksData.color[2]) : new THREE.Color(0xffffff),

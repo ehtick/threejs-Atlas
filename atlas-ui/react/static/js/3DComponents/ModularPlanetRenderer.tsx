@@ -145,8 +145,6 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
       const baseColor = getPlanetBaseColor(planetData);
       planetLayerSystemRef.current.updateBaseColor(baseColor);
 
-      console.log("🎨 Updated PlanetLayerSystem base color:", baseColor);
-
       const newEffects = effectRegistry.createEffectsFromPythonPlanetData(planetData, NORMALIZED_PLANET_RADIUS, planetMeshRef.current, sceneRef.current, planetLayerSystemRef.current);
 
       setEffects(newEffects);
@@ -194,7 +192,6 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
       const camera = new THREE.PerspectiveCamera(45, containerWidth / containerHeight, 0.1, 10000);
 
       const cameraDistance = calculateExactCameraDistance();
-      console.log("🎯 Camera distance for exact Pillow proportions:", cameraDistance);
 
       camera.position.set(0, 0, cameraDistance);
       camera.lookAt(0, 0, 0);
@@ -399,7 +396,6 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
       setTimeout(() => {
         if (planetLayerSystemRef.current && defaultSunLight) {
           planetLayerSystemRef.current.updateFromThreeLight(defaultSunLight);
-          console.log("🌞 Initial PlanetLayerSystem light synced");
         }
       }, 50);
 
@@ -443,8 +439,6 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
    * Crear planeta base genérico usando PlanetLayerSystem desde el inicio
    */
   const createBasePlanet = (scene: THREE.Scene) => {
-    console.log("🪐 Creating normalized planet with PlanetLayerSystem, radius:", NORMALIZED_PLANET_RADIUS);
-
     const planetGeometry = new THREE.SphereGeometry(NORMALIZED_PLANET_RADIUS, 128, 64);
 
     const tempMaterial = new THREE.MeshBasicMaterial({ color: 0x808080 });
@@ -459,16 +453,6 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
     const defaultColor = new THREE.Color(0x808080);
     planetLayerSystemRef.current = new PlanetLayerSystem(planetMesh, defaultColor);
     planetLayerSystemRef.current.addToScene(scene);
-
-    console.log("✅ Planet created with PlanetLayerSystem - ShaderMaterial from start");
-
-    setTimeout(() => {
-      if (planetMesh.material instanceof THREE.ShaderMaterial) {
-        console.log("🎯 Found ShaderMaterial on planet");
-      } else {
-        console.log("🚨 PROBLEMA ENCONTRADO: Planeta usa", planetMesh.material.constructor.name);
-      }
-    }, 100);
   };
 
   /**
@@ -480,7 +464,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
   //   const material = planetMeshRef.current.material;
 
   //   if (!(material instanceof THREE.MeshStandardMaterial)) {
-  //     console.log("🎨 Material is ShaderMaterial (effects applied), skipping fallback color update");
+  //     
   //     return;
   //   }
 
@@ -497,7 +481,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
   //       planetType: renderingData.planet_info?.type,
   //     });
   //   } else {
-  //     console.log("🎨 Material color already modified, skipping fallback color");
+  //     
   //   }
 
   //   if (renderingData.surface_elements?.metalness !== undefined) {
@@ -596,10 +580,6 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
         fullRenderingData: renderingApiData,
       });
 
-      console.log("🌍 Planet API Response:", result);
-      console.log("🎨 Rendering Data:", renderingApiData);
-      console.log("🔧 Processed Data:", data);
-
       if (onDataLoaded) {
         onDataLoaded(data);
       }
@@ -687,10 +667,6 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
         hasEffects: !!data.surface_elements,
         fullRenderingData: renderingApiData,
       });
-
-      console.log("🌍 Full Load - API Response:", result);
-      console.log("🎨 Full Load - Rendering Data:", renderingApiData);
-      console.log("🔧 Full Load - Processed Data:", data);
 
       updateLightingWithRealData(data);
       if (orbitLineRef.current && sceneRef.current) {
@@ -797,7 +773,6 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
       if (planetMeshRef.current.material instanceof THREE.MeshStandardMaterial) {
         const fallbackColor = 0x666666;
         planetMeshRef.current.material.color.setHex(fallbackColor);
-        console.log("⚠️ Applied fallback generic color - API should provide real colors");
       }
 
       try {

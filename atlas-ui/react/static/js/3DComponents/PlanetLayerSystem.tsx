@@ -1,16 +1,16 @@
 /**
  * Planet Layer System - Sistema de capas para efectos de planetas
- * 
+ *
  * Este sistema permite aplicar múltiples efectos visuales a un planeta
  * sin que se sobrescriban entre sí, manteniendo la iluminación correcta
  * y la parte trasera oscura del planeta.
- * 
+ *
  * Arquitectura:
  * - Capa Base: Material con iluminación día/noche
  * - Capas de Efectos: Meshes adicionales con transparencia que se superponen
  */
 
-import * as THREE from 'three';
+import * as THREE from "three";
 
 export interface LayerEffect {
   name: string;
@@ -27,7 +27,7 @@ export class PlanetLayerSystem {
   private effectLayers: LayerEffect[] = [];
   private scene?: THREE.Scene;
   private planetRadius: number;
-  
+
   // Shader base con iluminación correcta mejorado
   private static readonly baseVertexShader = `
     varying vec3 vPosition;
@@ -92,19 +92,16 @@ export class PlanetLayerSystem {
     }
   `;
 
-  constructor(baseMesh: THREE.Mesh, baseColor: THREE.Color | number[] = new THREE.Color(0xFFA500)) {
+  constructor(baseMesh: THREE.Mesh, baseColor: THREE.Color | number[] = new THREE.Color(0xffa500)) {
     this.baseMesh = baseMesh;
-    
+
     // Obtener el radio del planeta desde la geometría
     const geometry = baseMesh.geometry as THREE.SphereGeometry;
     this.planetRadius = geometry.parameters.radius || 1;
-    
+
     // Crear material base con iluminación correcta
-    const color = baseColor instanceof THREE.Color ? 
-      baseColor : new THREE.Color(baseColor as any);
-    
-    console.log('🌍 PlanetLayerSystem: Creating base material with color:', color);
-    
+    const color = baseColor instanceof THREE.Color ? baseColor : new THREE.Color(baseColor as any);
+
     this.baseMaterial = new THREE.ShaderMaterial({
       vertexShader: PlanetLayerSystem.baseVertexShader,
       fragmentShader: PlanetLayerSystem.baseFragmentShader,
@@ -113,58 +110,44 @@ export class PlanetLayerSystem {
         lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
         lightPosition: { value: new THREE.Vector3(0, 0, 0) }, // Posición de luz en espacio mundo
         ambientStrength: { value: 0.15 }, // Más oscuro, igual que otros planetas
-        lightIntensity: { value: 0.85 } // Intensidad de la luz direccional
+        lightIntensity: { value: 0.85 }, // Intensidad de la luz direccional
       },
-      side: THREE.FrontSide
+      side: THREE.FrontSide,
     });
-    
+
     // Aplicar material base
     this.baseMesh.material = this.baseMaterial;
-    console.log('✅ PlanetLayerSystem: Base material applied to mesh');
   }
 
   /**
    * Añade una capa de efecto al planeta
    * Crea un mesh separado ligeramente más grande para evitar z-fighting
    */
-  addEffectLayer(
-    name: string, 
-    material: THREE.ShaderMaterial,
-    scaleFactor: number = 1.001,
-    layerObject?: any
-  ): THREE.Mesh {
-    console.log(`🔷 PlanetLayerSystem: Adding layer "${name}" with scale ${scaleFactor}`);
-    
+  addEffectLayer(name: string, material: THREE.ShaderMaterial, scaleFactor: number = 1.001, layerObject?: any): THREE.Mesh {
     // Crear una geometría ligeramente más grande
-    const layerGeometry = new THREE.SphereGeometry(
-      this.planetRadius * scaleFactor,
-      64,
-      64
-    );
-    
+    const layerGeometry = new THREE.SphereGeometry(this.planetRadius * scaleFactor, 64, 64);
+
     // Crear mesh para la capa
     const layerMesh = new THREE.Mesh(layerGeometry, material);
-    
+
     // Copiar posición y rotación del planeta base
     layerMesh.position.copy(this.baseMesh.position);
     layerMesh.rotation.copy(this.baseMesh.rotation);
-    
+
     // Guardar la capa
     this.effectLayers.push({
       name,
       mesh: layerMesh,
       material,
-      layerObject
+      layerObject,
     });
-    
+
     // Si ya estamos en una escena, añadir el mesh
     if (this.scene) {
       this.scene.add(layerMesh);
-      console.log(`✅ Layer "${name}" added to scene`);
     } else {
-      console.log(`⚠️ Layer "${name}" created but scene not set yet`);
     }
-    
+
     return layerMesh;
   }
 
@@ -197,6 +180,7 @@ export class PlanetLayerSystem {
       uniform float turbulence;
       uniform float noiseScale;
       uniform vec3 lightDirection;
+      uniform float opacity;
       
       varying vec3 vPosition;
       varying vec3 vNormal;
@@ -281,7 +265,7 @@ export class PlanetLayerSystem {
         
         // Color de las bandas con transparencia
         vec3 color = bandColor;
-        float alpha = bands * 0.7 * lightIntensity; // Transparencia basada en iluminación
+        float alpha = bands * opacity * lightIntensity; // Usar opacity del parámetro
         
         gl_FragColor = vec4(color, alpha);
       }
@@ -293,7 +277,7 @@ export class PlanetLayerSystem {
       uniforms: {
         time: { value: 0 },
         seed: { value: params.seed || Math.random() * 1000 },
-        bandColor: { value: params.bandColor || new THREE.Color(0xFF8C00) },
+        bandColor: { value: params.bandColor || new THREE.Color(0xff8c00) },
         numBands: { value: params.numBands || 8 },
         rotationAngle: { value: params.rotationAngle || 0 },
         bandPositions: { value: params.bandPositions || new Array(20).fill(0) },
@@ -301,12 +285,13 @@ export class PlanetLayerSystem {
         animationSpeed: { value: params.animationSpeed || 1.0 },
         turbulence: { value: params.turbulence || 0.5 },
         noiseScale: { value: params.noiseScale || 3.0 },
-        lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() }
+        lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
+        opacity: { value: params.opacity || 0.4 },
       },
       transparent: true,
       blending: THREE.NormalBlending, // Normal blending porque controlamos alpha
       side: THREE.FrontSide,
-      depthWrite: false
+      depthWrite: false,
     });
   }
 
@@ -404,18 +389,18 @@ export class PlanetLayerSystem {
       fragmentShader,
       uniforms: {
         time: { value: 0 },
-        stormColor: { value: params.stormColor || new THREE.Color(0x8B0000) },
+        stormColor: { value: params.stormColor || new THREE.Color(0x8b0000) },
         stormIntensity: { value: params.stormIntensity || 0.8 },
         spiralSpeed: { value: params.spiralSpeed || 2.0 },
         animationSpeed: { value: params.animationSpeed || 1.0 },
         stormCenters: { value: centersArray },
         numStorms: { value: params.stormCenters ? Math.min(params.stormCenters.length, 5) : 3 },
-        lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() }
+        lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
       },
       transparent: true,
       blending: THREE.NormalBlending,
       side: THREE.FrontSide,
-      depthWrite: false
+      depthWrite: false,
     });
   }
 
@@ -423,19 +408,16 @@ export class PlanetLayerSystem {
    * Añade el sistema a la escena
    */
   addToScene(scene: THREE.Scene): void {
-    console.log('🎬 PlanetLayerSystem: Adding to scene, existing layers:', this.effectLayers.length);
     this.scene = scene;
-    
+
     // Añadir todas las capas de efectos a la escena
-    this.effectLayers.forEach(layer => {
+    this.effectLayers.forEach((layer) => {
       if (layer.mesh) {
         scene.add(layer.mesh);
-        console.log(`   ➕ Added layer "${layer.name}" mesh to scene`);
       }
     });
-    
+
     if (this.effectLayers.length === 0) {
-      console.log('   ℹ️ No effect layers to add yet');
     }
   }
 
@@ -444,14 +426,14 @@ export class PlanetLayerSystem {
    */
   update(deltaTime: number, planetRotation?: number): void {
     // Actualizar uniforms de cada capa
-    this.effectLayers.forEach(layer => {
+    this.effectLayers.forEach((layer) => {
       if (layer.material.uniforms.time) {
         layer.material.uniforms.time.value += deltaTime;
       }
       if (planetRotation !== undefined && layer.material.uniforms.rotationAngle) {
         layer.material.uniforms.rotationAngle.value = planetRotation;
       }
-      
+
       // Actualizar el objeto de capa individual si existe
       if (layer.layerObject && layer.layerObject.update) {
         try {
@@ -460,7 +442,7 @@ export class PlanetLayerSystem {
           console.error(`Error updating layer ${layer.name}:`, error);
         }
       }
-      
+
       // Sincronizar rotación con el planeta base
       if (layer.mesh) {
         layer.mesh.rotation.copy(this.baseMesh.rotation);
@@ -472,8 +454,7 @@ export class PlanetLayerSystem {
    * Actualiza el color base del planeta
    */
   updateBaseColor(color: THREE.Color | number[]): void {
-    const newColor = color instanceof THREE.Color ? 
-      color : new THREE.Color(color as any);
+    const newColor = color instanceof THREE.Color ? color : new THREE.Color(color as any);
     this.baseMaterial.uniforms.baseColor.value = newColor;
   }
 
@@ -482,9 +463,9 @@ export class PlanetLayerSystem {
    */
   updateLightDirection(direction: THREE.Vector3): void {
     this.baseMaterial.uniforms.lightDirection.value = direction.clone().normalize();
-    
+
     // Actualizar también en todas las capas
-    this.effectLayers.forEach(layer => {
+    this.effectLayers.forEach((layer) => {
       if (layer.material.uniforms.lightDirection) {
         layer.material.uniforms.lightDirection.value = direction.clone().normalize();
       }
@@ -496,15 +477,13 @@ export class PlanetLayerSystem {
    */
   updateLightPosition(position: THREE.Vector3): void {
     this.baseMaterial.uniforms.lightPosition.value = position.clone();
-    
+
     // Actualizar también en todas las capas
-    this.effectLayers.forEach(layer => {
+    this.effectLayers.forEach((layer) => {
       if (layer.material.uniforms.lightPosition) {
         layer.material.uniforms.lightPosition.value = position.clone();
       }
     });
-    
-    console.log('🌞 PlanetLayerSystem: Updated light position to', position);
   }
 
   /**
@@ -513,24 +492,16 @@ export class PlanetLayerSystem {
   updateFromThreeLight(light: THREE.DirectionalLight): void {
     // Usar posición de la luz
     this.updateLightPosition(light.position);
-    
+
     // También calcular y actualizar dirección
     const direction = light.target.position.clone().sub(light.position).normalize();
     this.updateLightDirection(direction);
-    
-    console.log('🌞 PlanetLayerSystem: Synced with Three.js DirectionalLight');
   }
 
   /**
    * Crea un material genérico para capa con soporte de iluminación mejorado
    */
-  createGenericLayerMaterial(
-    vertexShader: string,
-    fragmentShader: string,
-    uniforms: any,
-    transparent: boolean = true,
-    blending: THREE.Blending = THREE.NormalBlending
-  ): THREE.ShaderMaterial {
+  createGenericLayerMaterial(vertexShader: string, fragmentShader: string, uniforms: any, transparent: boolean = true, blending: THREE.Blending = THREE.NormalBlending): THREE.ShaderMaterial {
     // Añadir uniforms de iluminación si no existen
     if (!uniforms.lightDirection) {
       uniforms.lightDirection = { value: new THREE.Vector3(1, 1, 1).normalize() };
@@ -538,7 +509,7 @@ export class PlanetLayerSystem {
     if (!uniforms.lightPosition) {
       uniforms.lightPosition = { value: new THREE.Vector3(0, 0, 0) };
     }
-    
+
     return new THREE.ShaderMaterial({
       vertexShader,
       fragmentShader,
@@ -546,34 +517,30 @@ export class PlanetLayerSystem {
       transparent,
       blending,
       side: THREE.FrontSide,
-      depthWrite: false
+      depthWrite: false,
     });
   }
 
   /**
    * Método helper para convertir efectos existentes a capas
    */
-  convertEffectToLayer(
-    effectName: string,
-    originalMaterial: THREE.Material | THREE.ShaderMaterial,
-    scaleFactor: number = 1.001
-  ): THREE.Mesh | null {
+  convertEffectToLayer(effectName: string, originalMaterial: THREE.Material | THREE.ShaderMaterial, scaleFactor: number = 1.001): THREE.Mesh | null {
     if (originalMaterial instanceof THREE.ShaderMaterial) {
       // Clonar el material pero hacerlo transparente
       const layerMaterial = originalMaterial.clone();
       layerMaterial.transparent = true;
       layerMaterial.depthWrite = false;
-      
+
       // Añadir soporte de iluminación si no existe
       if (!layerMaterial.uniforms.lightDirection) {
-        layerMaterial.uniforms.lightDirection = { 
-          value: new THREE.Vector3(1, 1, 1).normalize() 
+        layerMaterial.uniforms.lightDirection = {
+          value: new THREE.Vector3(1, 1, 1).normalize(),
         };
       }
-      
+
       return this.addEffectLayer(effectName, layerMaterial, scaleFactor);
     }
-    
+
     console.warn(`Cannot convert non-shader material to layer: ${effectName}`);
     return null;
   }
@@ -584,7 +551,7 @@ export class PlanetLayerSystem {
   getNextScaleFactor(): number {
     const baseScale = 1.001;
     const increment = 0.001;
-    return baseScale + (this.effectLayers.length * increment);
+    return baseScale + this.effectLayers.length * increment;
   }
 
   /**
@@ -592,8 +559,8 @@ export class PlanetLayerSystem {
    */
   dispose(): void {
     this.baseMaterial.dispose();
-    
-    this.effectLayers.forEach(layer => {
+
+    this.effectLayers.forEach((layer) => {
       if (layer.mesh) {
         layer.mesh.geometry.dispose();
         if (this.scene) {
@@ -602,7 +569,7 @@ export class PlanetLayerSystem {
       }
       layer.material.dispose();
     });
-    
+
     this.effectLayers = [];
   }
 }

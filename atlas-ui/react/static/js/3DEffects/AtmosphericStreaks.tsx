@@ -164,7 +164,7 @@ export function createAtmosphericStreaksFromPythonData(
   atmosphereData: any
 ): AtmosphericStreaksEffect {
   
-  console.log('✨ AtmosphericStreaks received data:', atmosphereData);
+  
   
   // Extraer datos de estelas desde Python (referencia: planet_type_translators.py líneas 391-403)
   const streaksData = atmosphereData.streaks || {};
@@ -178,7 +178,7 @@ export function createAtmosphericStreaksFromPythonData(
     brightness: 1.5
   };
 
-  console.log('✨ Final AtmosphericStreaks params:', params);
+  
 
   return new AtmosphericStreaksEffect(planetRadius, params);
 }

@@ -317,7 +317,7 @@ export class MetallicSurfaceEffect {
   
   apply(mesh: THREE.Mesh): void {
     // 🚀 NO reemplazar el material base - crear capa metálica
-    console.log('🪨 MetallicSurface: Creando capa metálica sin reemplazar material base');
+    
     this.createMetallicLayer(mesh);
   }
 
@@ -337,7 +337,7 @@ export class MetallicSurfaceEffect {
     metallicMesh.rotation.copy(baseMesh.rotation);
     
     this.metallicLayerMesh = metallicMesh;
-    console.log('🪨 MetallicSurface: Capa metálica creada');
+    
   }
   
   update(deltaTime: number, planetRotation?: number): void {
@@ -358,7 +358,7 @@ export class MetallicSurfaceEffect {
         this.metallicLayerMesh.position.copy(planetPosition);
       }
       scene.add(this.metallicLayerMesh);
-      console.log('🪨 MetallicSurface: Capa metálica añadida a la escena');
+      
     } else {
       console.warn('🪨 MetallicSurface: No hay capa metálica - call apply() first');
     }
