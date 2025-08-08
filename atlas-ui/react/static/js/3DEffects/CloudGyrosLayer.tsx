@@ -7,6 +7,7 @@
 
 import * as THREE from 'three';
 import { PlanetLayerSystem } from '../3DComponents/PlanetLayerSystem';
+import { SeededRandom } from '../Utils/SeededRandom';
 
 export interface CloudGyrosLayerParams {
   stormCenters?: Array<{x: number, y: number}>;
@@ -18,6 +19,16 @@ export interface CloudGyrosLayerParams {
   seed?: number;
 }
 
+// Rangos para generación procedural
+const PROCEDURAL_RANGES = {
+  STORM_COUNT: { min: 2, max: 5 },
+  STORM_CENTERS: { min: -0.8, max: 0.8 },
+  STORM_INTENSITY: { min: 0.5, max: 1.0 },
+  SPIRAL_SPEED: { min: 1.0, max: 3.0 },
+  ANIMATION_SPEED: { min: 0.1, max: 0.5 },
+  OPACITY: { min: 0.4, max: 0.8 }
+};
+
 export class CloudGyrosLayer {
   private layerMesh?: THREE.Mesh;
   private material: THREE.ShaderMaterial;
@@ -26,17 +37,19 @@ export class CloudGyrosLayer {
 
   constructor(layerSystem: PlanetLayerSystem, params: CloudGyrosLayerParams = {}) {
     this.layerSystem = layerSystem;
+    
+    // Generar valores procedurales usando seed
+    const seed = params.seed || Math.floor(Math.random() * 1000000);
+    const rng = new SeededRandom(seed);
+    
     this.params = {
-      stormCenters: params.stormCenters || [
-        {x: 0.3, y: -0.2},
-        {x: -0.4, y: 0.6}, 
-        {x: 0.1, y: 0.8}
-      ],
+      stormCenters: params.stormCenters || this.generateStormCenters(seed),
       stormColor: params.stormColor || new THREE.Color(0x8B0000),
-      stormIntensity: params.stormIntensity || 0.8,
-      spiralSpeed: params.spiralSpeed || 2.0,
-      animationSpeed: params.animationSpeed || 1.0,
-      opacity: params.opacity || 0.6
+      stormIntensity: params.stormIntensity || rng.uniform(PROCEDURAL_RANGES.STORM_INTENSITY.min, PROCEDURAL_RANGES.STORM_INTENSITY.max),
+      spiralSpeed: params.spiralSpeed || rng.uniform(PROCEDURAL_RANGES.SPIRAL_SPEED.min, PROCEDURAL_RANGES.SPIRAL_SPEED.max),
+      animationSpeed: params.animationSpeed || rng.uniform(PROCEDURAL_RANGES.ANIMATION_SPEED.min, PROCEDURAL_RANGES.ANIMATION_SPEED.max),
+      opacity: params.opacity || rng.uniform(PROCEDURAL_RANGES.OPACITY.min, PROCEDURAL_RANGES.OPACITY.max),
+      seed
     };
 
     // Crear material usando el sistema de capas
@@ -44,6 +57,21 @@ export class CloudGyrosLayer {
     
     // Añadir capa al sistema (ligeramente más grande que CloudBands), pasando referencia a este objeto
     this.layerMesh = this.layerSystem.addEffectLayer('cloudGyros', this.material, 1.002, this);
+  }
+
+  private generateStormCenters(seed: number): Array<{x: number, y: number}> {
+    const rng = new SeededRandom(seed + 5000);
+    const stormCount = Math.floor(rng.uniform(PROCEDURAL_RANGES.STORM_COUNT.min, PROCEDURAL_RANGES.STORM_COUNT.max));
+    const centers: Array<{x: number, y: number}> = [];
+    
+    for (let i = 0; i < stormCount; i++) {
+      centers.push({
+        x: rng.uniform(PROCEDURAL_RANGES.STORM_CENTERS.min, PROCEDURAL_RANGES.STORM_CENTERS.max),
+        y: rng.uniform(PROCEDURAL_RANGES.STORM_CENTERS.min, PROCEDURAL_RANGES.STORM_CENTERS.max)
+      });
+    }
+    
+    return centers;
   }
 
   update(deltaTime: number): void {
@@ -81,18 +109,18 @@ export function createCloudGyrosLayerFromPythonData(
 ): CloudGyrosLayer {
   const storms = gasGiantData.storms || {};
   
+  // Generar valores proceduralmente basados en seed
+  const seed = globalSeed || Math.floor(Math.random() * 1000000);
+  const rng = new SeededRandom(seed + 5000); // +5000 para CloudGyrosLayer
+  
   const params: CloudGyrosLayerParams = {
-    stormCenters: storms.centers || [
-      {x: 0.3, y: -0.2},
-      {x: -0.4, y: 0.6},
-      {x: 0.1, y: 0.8}
-    ],
+    stormCenters: storms.centers || undefined, // Se generará proceduralmente
     stormColor: new THREE.Color(0x8B0000),
-    stormIntensity: storms.intensity || 0.8,
-    spiralSpeed: storms.spiral_speed || 2.0,
-    animationSpeed: 0.2,
-    opacity: 0.6,
-    seed: globalSeed // Usar seed desde Python
+    stormIntensity: storms.intensity || gasGiantData.storm_intensity || rng.uniform(PROCEDURAL_RANGES.STORM_INTENSITY.min, PROCEDURAL_RANGES.STORM_INTENSITY.max),
+    spiralSpeed: storms.spiral_speed || rng.uniform(PROCEDURAL_RANGES.SPIRAL_SPEED.min, PROCEDURAL_RANGES.SPIRAL_SPEED.max),
+    animationSpeed: rng.uniform(PROCEDURAL_RANGES.ANIMATION_SPEED.min, PROCEDURAL_RANGES.ANIMATION_SPEED.max),
+    opacity: rng.uniform(PROCEDURAL_RANGES.OPACITY.min, PROCEDURAL_RANGES.OPACITY.max),
+    seed
   };
 
   return new CloudGyrosLayer(layerSystem, params);

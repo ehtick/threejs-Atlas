@@ -10,10 +10,10 @@ export { RingSystemEffect, createRingSystemFromPythonData } from './RingSystem';
 export type { RingSystemParams, RingParticle } from './RingSystem';
 
 export { 
-  CloudBandsEffect, 
-  createCloudBandsFromPythonData
-} from './CloudBands';
-export type { CloudBandsParams } from './CloudBands';
+  CloudBandsLayer, 
+  createCloudBandsLayerFromPythonData
+} from './CloudBandsLayer';
+export type { CloudBandsLayerParams } from './CloudBandsLayer';
 
 export { 
   AtmosphereGlowEffect, 
@@ -28,10 +28,10 @@ export {
 export type { AtmosphereParams } from './Atmosphere';
 
 export { 
-  CloudGyrosEffect, 
-  createCloudGyrosFromPythonData
-} from './CloudGyros';
-export type { CloudGyrosParams } from './CloudGyros';
+  CloudGyrosLayer, 
+  createCloudGyrosLayerFromPythonData
+} from './CloudGyrosLayer';
+export type { CloudGyrosLayerParams } from './CloudGyrosLayer';
 
 export { 
   AtmosphericStreaksEffect, 
@@ -39,17 +39,17 @@ export {
 } from './AtmosphericStreaks';
 export type { AtmosphericStreaksParams } from './AtmosphericStreaks';
 
-export { MetallicSurfaceEffect } from './MetallicSurface';
-export type { MetallicSurfaceParams } from './MetallicSurface';
+export { MetallicSurfaceLayer, createMetallicSurfaceLayerFromPythonData } from './MetallicSurfaceLayer';
+export type { MetallicSurfaceLayerParams } from './MetallicSurfaceLayer';
 
 export { FragmentationEffect } from './FragmentationEffect';
 export type { FragmentationParams } from './FragmentationEffect';
 
-export { RockyTerrainEffect, createRockyTerrainFromPythonData } from './RockyTerrain';
-export type { RockyTerrainParams } from './RockyTerrain';
+export { RockyTerrainLayer, createRockyTerrainLayerFromPythonData } from './RockyTerrainLayer';
+export type { RockyTerrainLayerParams } from './RockyTerrainLayer';
 
-export { IcyTerrainEffect, createIcyTerrainFromPythonData } from './IcyTerrain';
-export type { IcyTerrainParams } from './IcyTerrain';
+export { IcyTerrainLayer, createIcyTerrainLayerFromPythonData } from './IcyTerrainLayer';
+export type { IcyTerrainLayerParams } from './IcyTerrainLayer';
 
 // OceanWaves eliminado - no respeta los datos de Python
 

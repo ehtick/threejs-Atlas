@@ -6,6 +6,7 @@
 
 import * as THREE from 'three';
 import { PlanetLayerSystem } from '../3DComponents/PlanetLayerSystem';
+import { SeededRandom } from '../Utils/SeededRandom';
 
 export interface RockyTerrainLayerParams {
   color?: THREE.Color | number[];
@@ -13,7 +14,16 @@ export interface RockyTerrainLayerParams {
   rockDensity?: number;
   craterCount?: number;
   opacity?: number;
+  seed?: number;
 }
+
+// Rangos para generación procedural
+const PROCEDURAL_RANGES = {
+  ROUGHNESS: { min: 0.6, max: 0.9 },
+  ROCK_DENSITY: { min: 0.4, max: 0.8 },
+  CRATER_COUNT: { min: 0.2, max: 0.6 },
+  OPACITY: { min: 0.7, max: 0.95 }
+};
 
 export class RockyTerrainLayer {
   private layerMesh?: THREE.Mesh;
@@ -113,15 +123,20 @@ export class RockyTerrainLayer {
   constructor(layerSystem: PlanetLayerSystem, params: RockyTerrainLayerParams = {}) {
     this.layerSystem = layerSystem;
     
+    // Generar valores procedurales usando seed
+    const seed = params.seed || Math.floor(Math.random() * 1000000);
+    const rng = new SeededRandom(seed);
+    
     const baseColor = params.color instanceof THREE.Color ? 
       params.color : (params.color ? new THREE.Color(params.color as any) : new THREE.Color(0x8B4513));
     
     this.params = {
       color: baseColor,
-      roughness: params.roughness || 1.5,
-      rockDensity: params.rockDensity || 5.0,
-      craterCount: params.craterCount || 0,
-      opacity: params.opacity || 0.7
+      roughness: params.roughness || rng.uniform(PROCEDURAL_RANGES.ROUGHNESS.min, PROCEDURAL_RANGES.ROUGHNESS.max),
+      rockDensity: params.rockDensity || rng.uniform(PROCEDURAL_RANGES.ROCK_DENSITY.min, PROCEDURAL_RANGES.ROCK_DENSITY.max) * 10, // Escalar para uso en shader
+      craterCount: params.craterCount || rng.uniform(PROCEDURAL_RANGES.CRATER_COUNT.min, PROCEDURAL_RANGES.CRATER_COUNT.max),
+      opacity: params.opacity || rng.uniform(PROCEDURAL_RANGES.OPACITY.min, PROCEDURAL_RANGES.OPACITY.max),
+      seed
     };
 
     // Crear material
@@ -162,16 +177,22 @@ export class RockyTerrainLayer {
 
 export function createRockyTerrainLayerFromPythonData(
   layerSystem: PlanetLayerSystem,
-  data: any
+  data: any,
+  globalSeed?: number
 ): RockyTerrainLayer {
   const surface = data.surface || {};
   const baseColor = data.planet_info?.base_color || surface.base_color;
   
+  // Generar valores proceduralmente basados en seed
+  const seed = globalSeed || Math.floor(Math.random() * 1000000);
+  const rng = new SeededRandom(seed + 8000); // +8000 para RockyTerrainLayer
+  
   return new RockyTerrainLayer(layerSystem, {
     color: baseColor ? new THREE.Color(baseColor) : new THREE.Color(0x8B4513),
-    roughness: surface.roughness || 1.5,
-    rockDensity: surface.rock_density || 5.0,
-    craterCount: surface.crater_count || 0,
-    opacity: 0.7
+    roughness: surface.roughness || rng.uniform(PROCEDURAL_RANGES.ROUGHNESS.min, PROCEDURAL_RANGES.ROUGHNESS.max),
+    rockDensity: surface.rock_density || rng.uniform(PROCEDURAL_RANGES.ROCK_DENSITY.min, PROCEDURAL_RANGES.ROCK_DENSITY.max) * 10,
+    craterCount: surface.crater_count || rng.uniform(PROCEDURAL_RANGES.CRATER_COUNT.min, PROCEDURAL_RANGES.CRATER_COUNT.max),
+    opacity: rng.uniform(PROCEDURAL_RANGES.OPACITY.min, PROCEDURAL_RANGES.OPACITY.max),
+    seed
   });
 }

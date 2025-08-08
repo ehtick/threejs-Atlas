@@ -30,18 +30,7 @@ import { RockyTerrainLayer, createRockyTerrainLayerFromPythonData } from './Rock
 import { IcyTerrainLayer, createIcyTerrainLayerFromPythonData } from './IcyTerrainLayer';
 import { MetallicSurfaceLayer, createMetallicSurfaceLayerFromPythonData } from './MetallicSurfaceLayer';
 
-// Mantener los efectos antiguos para compatibilidad temporal
-import { 
-  CloudBandsEffect, 
-  createCloudBandsFromPythonData,
-  CloudBandsParams 
-} from './CloudBands';
-
-import { 
-  CloudGyrosEffect, 
-  createCloudGyrosFromPythonData,
-  CloudGyrosParams 
-} from './CloudGyros';
+// Efectos legacy eliminados - usar solo versiones Layer
 
 import { 
   AtmosphericStreaksEffect, 
@@ -49,12 +38,10 @@ import {
   AtmosphericStreaksParams 
 } from './AtmosphericStreaks';
 
-// Importar efectos de superficie
-import { MetallicSurfaceEffect } from './MetallicSurface';
+// Importar efectos de superficie restantes
 import { FragmentationEffect } from './FragmentationEffect';
-import { RockyTerrainEffect, createRockyTerrainFromPythonData } from './RockyTerrain';
-import { IcyTerrainEffect, createIcyTerrainFromPythonData } from './IcyTerrain';
 // OceanWaves eliminado - no respeta los datos de Python
+// Efectos de superficie legacy eliminados - usar solo versiones Layer
 
 // Importar efectos de debug
 import { VisualDebug3DEffect, createVisualDebug3DFromPythonData } from './VisualDebug3D';
@@ -148,34 +135,10 @@ export class EffectRegistry {
    * Registra todos los efectos por defecto
    */
   private registerDefaultEffects(): void {
-    // Efectos de superficie
-    this.registerEffect(EffectType.METALLIC_SURFACE, {
-      create: (params, planetRadius, mesh) => new MetallicSurfaceEffect(params),
-      fromPythonData: (data, planetRadius, mesh) => {
-        // 🎨 Usar función centralizada de colores
-        const baseColor = getPlanetBaseColor(data);
-        const colorArray = [baseColor.r, baseColor.g, baseColor.b];
-        
-        return new MetallicSurfaceEffect({
-          color: colorArray,
-          roughness: data.surface?.roughness || 0.7,
-          metalness: data.surface?.metalness || 0.9,
-          fragmentationIntensity: data.surface?.fragmentation || 0.5
-        });
-      }
-    });
+    // Efectos de superficie legacy eliminados - usar solo sistema de capas
 
-    this.registerEffect(EffectType.CLOUD_BANDS, {
-      create: (params, planetRadius, mesh) => new CloudBandsEffect(mesh!, params),
-      fromPythonData: (data, planetRadius, mesh) => 
-        createCloudBandsFromPythonData(mesh!, data)
-    });
-
-    this.registerEffect(EffectType.CLOUD_GYROS, {
-      create: (params, planetRadius, mesh) => new CloudGyrosEffect(mesh!, params),
-      fromPythonData: (data, planetRadius, mesh) => 
-        createCloudGyrosFromPythonData(mesh!, data)
-    });
+    // CloudBands y CloudGyros ahora se manejan exclusivamente por el sistema de capas
+    // Ya no necesitan registro directo - se crean en el switch case de gas_giant
 
     // Efectos atmosféricos
 
@@ -214,16 +177,7 @@ export class EffectRegistry {
       }
     });
 
-    // Nuevos efectos de terreno
-    this.registerEffect(EffectType.ROCKY_TERRAIN, {
-      create: (params, planetRadius, mesh) => new RockyTerrainEffect(params),
-      fromPythonData: (data, planetRadius, mesh) => createRockyTerrainFromPythonData(data) // Pasar todos los datos
-    });
-
-    this.registerEffect(EffectType.ICY_TERRAIN, {
-      create: (params, planetRadius, mesh) => new IcyTerrainEffect(params),
-      fromPythonData: (data, planetRadius, mesh) => createIcyTerrainFromPythonData(data) // Pasar todos los datos
-    });
+    // Efectos de terreno legacy eliminados - usar solo sistema de capas
 
     // Efectos futuros (placeholders)
     this.registerEffect(EffectType.LAVA_FLOWS, {
@@ -502,7 +456,8 @@ export class EffectRegistry {
           if (this.layerSystem) {
             const metallicLayer = createMetallicSurfaceLayerFromPythonData(
               this.layerSystem,
-              pythonData
+              pythonData,
+              pythonData.seeds?.shape_seed
             );
             
             effects.push({
@@ -522,7 +477,8 @@ export class EffectRegistry {
           if (this.layerSystem) {
             const rockyLayer = createRockyTerrainLayerFromPythonData(
               this.layerSystem,
-              pythonData
+              pythonData,
+              pythonData.seeds?.shape_seed
             );
             
             effects.push({
@@ -542,7 +498,8 @@ export class EffectRegistry {
           if (this.layerSystem) {
             const icyLayer = createIcyTerrainLayerFromPythonData(
               this.layerSystem,
-              pythonData
+              pythonData,
+              pythonData.seeds?.shape_seed
             );
             
             effects.push({
