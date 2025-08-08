@@ -17,6 +17,18 @@ import {
 } from './Atmosphere';
 
 import { 
+  AtmosphereGlowEffect, 
+  createAtmosphereGlowFromPythonData,
+  AtmosphereGlowParams 
+} from './AtmosphereGlow';
+
+import { 
+  CloudBandsEffect, 
+  createCloudBandsFromPythonData,
+  CloudBandsParams 
+} from './CloudBands';
+
+import { 
   CloudGyrosEffect, 
   createCloudGyrosFromPythonData,
   CloudGyrosParams 
@@ -63,14 +75,13 @@ export interface EffectCreationData {
 export enum EffectType {
   // Efectos de superficie
   METALLIC_SURFACE = 'metallic_surface',
-  GAS_GIANT_BANDS = 'gas_giant_bands',
+  CLOUD_BANDS = 'cloud_bands',
+  CLOUD_GYROS = 'cloud_gyros',
   
   // Efectos atmosféricos
   ATMOSPHERE = 'atmosphere',
+  ATMOSPHERE_GLOW = 'atmosphere_glow',
   ATMOSPHERIC_STREAKS = 'atmospheric_streaks',
-  
-  // Efectos dinámicos
-  CLOUD_GYROS = 'cloud_gyros',
   
   // Efectos estructurales
   RING_SYSTEM = 'ring_system',
@@ -144,18 +155,24 @@ export class EffectRegistry {
       }
     });
 
-    this.registerEffect(EffectType.GAS_GIANT_BANDS, {
-      create: (params, planetRadius, mesh) => new GasGiantBandsEffect(mesh!, params),
+    this.registerEffect(EffectType.CLOUD_BANDS, {
+      create: (params, planetRadius, mesh) => new CloudBandsEffect(mesh!, params),
       fromPythonData: (data, planetRadius, mesh) => 
-        createGasGiantBandsFromPythonData(mesh!, data)
+        createCloudBandsFromPythonData(mesh!, data)
+    });
+
+    this.registerEffect(EffectType.CLOUD_GYROS, {
+      create: (params, planetRadius, mesh) => new CloudGyrosEffect(mesh!, params),
+      fromPythonData: (data, planetRadius, mesh) => 
+        createCloudGyrosFromPythonData(mesh!, data)
     });
 
     // Efectos atmosféricos
 
-    this.registerEffect(EffectType.CLOUD_GYROS, {
-      create: (params, planetRadius) => new CloudGyrosEffect(planetRadius, params),
+    this.registerEffect(EffectType.ATMOSPHERE_GLOW, {
+      create: (params, planetRadius) => new AtmosphereGlowEffect(planetRadius, params),
       fromPythonData: (data, planetRadius) => 
-        createCloudGyrosFromPythonData(planetRadius, data.atmosphere || {})
+        createAtmosphereGlowFromPythonData(planetRadius, data.atmosphere || {})
     });
 
     this.registerEffect(EffectType.ATMOSPHERIC_STREAKS, {
@@ -406,24 +423,38 @@ export class EffectRegistry {
       console.log('🔍 Checking legacy surface type:', surface.type);
       switch (surface.type) {
         case 'gas_giant':
-          console.log('🌀 Creating Gas Giant bands effect');
-          const gasGiantEffect = this.createEffectFromPythonData(
-            EffectType.GAS_GIANT_BANDS,
+          console.log('🌀 Creating Gas Giant cloud bands');
+          const cloudBandsEffect = this.createEffectFromPythonData(
+            EffectType.CLOUD_BANDS,
             {
               ...surface,
               base_color: pythonData.planet_info?.base_color || pythonData.surface?.base_color,
-              turbulence: pythonData.turbulence || surface.turbulence,
-              storm_intensity: pythonData.storm_intensity || surface.storm_intensity
+              turbulence: pythonData.turbulence || surface.turbulence
             },
             planetRadius,
             mesh,
             0
           );
-          if (gasGiantEffect) {
-            effects.push(gasGiantEffect);
-            console.log('✅ Gas Giant bands effect applied to mesh material');
-          } else {
-            console.warn('⚠️ Failed to create Gas Giant effect');
+          if (cloudBandsEffect) {
+            effects.push(cloudBandsEffect);
+            console.log('✅ Cloud bands effect applied to mesh material');
+          }
+
+          console.log('🌪️ Creating Gas Giant spirals');
+          const cloudGyrosEffect = this.createEffectFromPythonData(
+            EffectType.CLOUD_GYROS,
+            {
+              ...surface,
+              base_color: pythonData.planet_info?.base_color || pythonData.surface?.base_color,
+              storm_intensity: pythonData.storm_intensity || surface.storm_intensity
+            },
+            planetRadius,
+            mesh,
+            1
+          );
+          if (cloudGyrosEffect) {
+            effects.push(cloudGyrosEffect);
+            console.log('✅ Cloud gyros effect applied to mesh material');
           }
           break;
 
@@ -522,19 +553,19 @@ export class EffectRegistry {
         }
       }
 
-      // Cloud Gyros - aplicar para planetas específicos
+      // Atmosphere Glow - aplicar para planetas con atmósfera dinámica
       if (pythonData.atmosphere.streaks || ['Gas Giant', 'Frozen Gas Giant'].includes(pythonData.planet_info?.type)) {
-        const gyrosEffect = this.createEffectFromPythonData(
-          EffectType.CLOUD_GYROS,
+        const glowEffect = this.createEffectFromPythonData(
+          EffectType.ATMOSPHERE_GLOW,
           pythonData,
           planetRadius,
           mesh,
           20
         );
-        if (gyrosEffect) {
-          effects.push(gyrosEffect);
-          gyrosEffect.effect.addToScene(scene, mesh.position);
-          console.log('✅ Added cloud gyros effect');
+        if (glowEffect) {
+          effects.push(glowEffect);
+          glowEffect.effect.addToScene(scene, mesh.position);
+          console.log('✅ Added atmosphere glow effect');
         }
       }
 

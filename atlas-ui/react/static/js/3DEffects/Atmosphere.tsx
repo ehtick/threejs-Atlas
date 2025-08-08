@@ -158,6 +158,7 @@ export function createAtmosphereFromPythonData(
   planetRadius: number, 
   atmosphereData: any
 ): AtmosphereEffect {
+  console.log('🌫️ ATMOSPHERE CREATING - THIS SHOULD BE THE GLOW!', { type: 'Fresnel', width: 12 });
   
   // Default: atmósfera gris con opacidad moderada
   let atmosphereColor = [0.7, 0.7, 0.7, 0.15]; // Gris con más opacidad
@@ -201,7 +202,7 @@ export function createAtmosphereFromPythonData(
     type: atmosphereData?.type || 'Thin',
     color: atmosphereColor,
     width: atmosphereWidth,
-    opacity: atmosphereColor[3], // Usar la opacidad del color calculado
+    opacity: atmosphereColor[3], // ✅ RESTAURAR ATMOSPHERE
     density: 1.0
   };
 

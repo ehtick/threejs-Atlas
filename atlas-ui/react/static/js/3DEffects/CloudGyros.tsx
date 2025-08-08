@@ -1,187 +1,204 @@
 /**
- * Cloud Gyros Effect - Sistema de estelas/partículas giratorias para atmósferas
+ * Cloud Gyros Effect - Espirales giratorias atmosféricas
  * 
- * Extraído de AtmosphericEffects.tsx para separar responsabilidades:
- * - AtmosphericEffects -> Solo efectos atmosféricos (halos, atmósfera densa)  
- * - CloudGyros -> Efectos de estelas/partículas dinámicas
+ * Crea las tormentas espirales características de gas giants como 
+ * la Gran Mancha Roja de Júpiter. Extraído de GasGiantBands.
+ * 
+ * Responsabilidades:
+ * - CloudGyros.tsx -> Espirales giratorias específicas (ESTE ARCHIVO)  
+ * - CloudBands.tsx -> Bandas horizontales solamente
+ * - AtmosphereGlow.tsx -> Partículas luminosas orbitantes
  */
 
 import * as THREE from 'three';
 
 export interface CloudGyrosParams {
-  color?: THREE.Color | number;
-  particleCount?: number;
-  speed?: number;
-  size?: number;
-  opacity?: number;
-  turbulence?: number;
+  stormCenters?: Array<{x: number, y: number}>;
+  stormColor?: THREE.Color | number[];
+  stormIntensity?: number;
+  spiralSpeed?: number;
+  animationSpeed?: number;
+  baseColor?: THREE.Color | number[];
 }
 
-/**
- * Efecto de estelas atmosféricas giratorias (anteriormente AtmosphericStreaksEffect)
- */
-export class CloudGyrosEffect {
-  private particleSystem: THREE.Points;
-  private material: THREE.ShaderMaterial;
-  private geometry: THREE.BufferGeometry;
-  private params: CloudGyrosParams;
-  private particleCount: number;
+// Generador de números aleatorios con semilla
+class SeededRandom {
+  private seed: number;
 
+  constructor(seed: number) {
+    this.seed = seed;
+  }
+
+  random(): number {
+    this.seed = (this.seed * 9301 + 49297) % 233280;
+    return this.seed / 233280;
+  }
+
+  uniform(min: number, max: number): number {
+    return min + this.random() * (max - min);
+  }
+}
+
+export class CloudGyrosEffect {
+  private material: THREE.ShaderMaterial;
+  private params: CloudGyrosParams;
+  private mesh: THREE.Mesh;
+  
   private static readonly vertexShader = `
-    attribute float size;
-    attribute vec3 customColor;
-    attribute float speed;
-    attribute float phase;
-    
-    varying vec3 vColor;
-    varying float vAlpha;
-    varying float vSize;
-    
-    uniform float time;
-    uniform float turbulence;
+    varying vec3 vPosition;
+    varying vec3 vNormal;
+    varying vec2 vUv;
     
     void main() {
-      vColor = customColor;
-      vSize = size;
-      
-      // Movimiento de las partículas con turbulencia
-      vec3 pos = position;
-      float timeWithPhase = time * speed + phase;
-      
-      pos.x += sin(timeWithPhase) * 0.1 * turbulence;
-      pos.y += cos(timeWithPhase * 0.7) * 0.05 * turbulence;
-      pos.z += sin(timeWithPhase * 0.5) * 0.08 * turbulence;
-      
-      // Fade basado en la posición y tiempo
-      float distanceFromCenter = length(pos.xy) / 2.0;
-      vAlpha = (1.0 - distanceFromCenter) * (0.5 + 0.5 * sin(timeWithPhase * 2.0));
-      
-      vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
-      gl_PointSize = size * (300.0 / -mvPosition.z);
-      gl_Position = projectionMatrix * mvPosition;
+      vPosition = position;
+      vNormal = normal;
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
     }
   `;
 
   private static readonly fragmentShader = `
-    varying vec3 vColor;
-    varying float vAlpha;
-    varying float vSize;
+    uniform float time;
+    uniform vec3 baseColor;
+    uniform vec3 stormColor;
+    uniform float stormIntensity;
+    uniform float spiralSpeed;
+    uniform float animationSpeed;
+    uniform vec2 stormCenters[5];
+    uniform int numStorms;
+    
+    varying vec3 vPosition;
+    varying vec3 vNormal;
+    varying vec2 vUv;
+    
+    // Crear sistemas de tormentas espirales
+    float createGyroSpirals(vec3 pos) {
+      float storms = 0.0;
+      
+      for(int i = 0; i < 5; i++) {
+        if(i >= numStorms) break;
+        
+        vec2 stormCenter = stormCenters[i];
+        float distToStorm = distance(pos.xy, stormCenter);
+        
+        if(distToStorm < 0.4) { // Radio más grande para espirales más visibles
+          // Crear vórtice rotatorio
+          float angle = atan(pos.y - stormCenter.y, pos.x - stormCenter.x);
+          float spiral = sin(angle * 8.0 + distToStorm * 20.0 - time * animationSpeed * spiralSpeed);
+          
+          float stormIntensityValue = (1.0 - distToStorm / 0.4) * 0.9;
+          stormIntensityValue *= (0.3 + 0.7 * spiral); // Más contraste en espirales
+          stormIntensityValue *= stormIntensity;
+          
+          storms += stormIntensityValue;
+        }
+      }
+      
+      return clamp(storms, 0.0, 1.0);
+    }
     
     void main() {
-      // Crear forma de estela alargada
-      vec2 uv = gl_PointCoord - 0.5;
-      float dist = length(uv);
+      vec3 pos = normalize(vPosition);
+      vec3 color = baseColor;
       
-      // Estela con forma más dinámica
-      float streak = 1.0 - smoothstep(0.0, 0.5, dist);
-      float elongation = 1.0 - smoothstep(0.0, 0.3, abs(uv.x));
-      streak *= elongation;
+      // Aplicar espirales giratorias
+      float storms = createGyroSpirals(pos);
+      color = mix(color, stormColor, storms);
       
-      // Añadir variación basada en el tamaño
-      float sizeVariation = vSize > 1.5 ? 1.2 : 0.8;
-      streak *= sizeVariation;
+      // Iluminación básica
+      vec3 lightDirection = normalize(vec3(1.0, 1.0, 1.0));
+      float lighting = dot(vNormal, lightDirection) * 0.5 + 0.5;
+      color *= lighting;
       
-      gl_FragColor = vec4(vColor, streak * vAlpha);
+      // Añadir efecto de terminador (día/noche) - CRÍTICO
+      float terminator = smoothstep(-0.1, 0.1, dot(vNormal, lightDirection));
+      color *= (0.3 + 0.7 * terminator);
+      
+      gl_FragColor = vec4(color, 1.0);
     }
   `;
 
-  constructor(planetRadius: number, params: CloudGyrosParams = {}) {
+  constructor(mesh: THREE.Mesh, params: CloudGyrosParams = {}) {
     this.params = {
-      color: params.color || new THREE.Color(0xffffff),
-      particleCount: params.particleCount || 100,
-      speed: params.speed || 1.0,
-      size: params.size || 2.0,
-      opacity: params.opacity || 0.6,
-      turbulence: params.turbulence || 1.0
+      stormCenters: params.stormCenters || [
+        {x: 0.3, y: -0.2},
+        {x: -0.4, y: 0.6}, 
+        {x: 0.1, y: 0.8}
+      ],
+      stormColor: params.stormColor || new THREE.Color(0x8B0000), // Rojo oscuro
+      stormIntensity: params.stormIntensity || 0.8,
+      spiralSpeed: params.spiralSpeed || 2.0,
+      animationSpeed: params.animationSpeed || 1.0,
+      baseColor: params.baseColor || new THREE.Color(0xFFA500)
     };
 
-    this.particleCount = this.params.particleCount!;
-    this.geometry = new THREE.BufferGeometry();
+    this.mesh = mesh;
     this.material = this.createMaterial();
-    
-    this.generateParticles(planetRadius);
-    this.particleSystem = new THREE.Points(this.geometry, this.material);
-  }
-
-  private generateParticles(planetRadius: number): void {
-    const positions = new Float32Array(this.particleCount * 3);
-    const colors = new Float32Array(this.particleCount * 3);
-    const sizes = new Float32Array(this.particleCount);
-    const speeds = new Float32Array(this.particleCount);
-    const phases = new Float32Array(this.particleCount);
-
-    const color = this.params.color instanceof THREE.Color ? 
-      this.params.color : new THREE.Color(this.params.color as any);
-
-    for (let i = 0; i < this.particleCount; i++) {
-      // Posición aleatoria en la superficie
-      const theta = Math.random() * Math.PI * 2;
-      const phi = Math.acos(Math.random() * 2 - 1);
-      const r = planetRadius * (1.0 + Math.random() * 0.1);
-
-      positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-      positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-      positions[i * 3 + 2] = r * Math.cos(phi);
-
-      // Color con ligera variación
-      colors[i * 3] = color.r * (0.8 + Math.random() * 0.4);
-      colors[i * 3 + 1] = color.g * (0.8 + Math.random() * 0.4);
-      colors[i * 3 + 2] = color.b * (0.8 + Math.random() * 0.4);
-
-      sizes[i] = this.params.size! * (Math.random() * 0.5 + 0.75);
-      speeds[i] = this.params.speed! * (Math.random() * 0.8 + 0.6);
-      phases[i] = Math.random() * Math.PI * 2;
-    }
-
-    this.geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    this.geometry.setAttribute('customColor', new THREE.BufferAttribute(colors, 3));
-    this.geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
-    this.geometry.setAttribute('speed', new THREE.BufferAttribute(speeds, 1));
-    this.geometry.setAttribute('phase', new THREE.BufferAttribute(phases, 1));
+    this.mesh.material = this.material;
   }
 
   private createMaterial(): THREE.ShaderMaterial {
+    const baseColor = this.params.baseColor instanceof THREE.Color ? 
+      this.params.baseColor : new THREE.Color(this.params.baseColor as any);
+    const stormColor = this.params.stormColor instanceof THREE.Color ? 
+      this.params.stormColor : new THREE.Color(this.params.stormColor as any);
+
+    // Convertir storm centers a array plano para el shader
+    const centersArray = new Array(10).fill(0); // 5 storms * 2 coordinates
+    this.params.stormCenters!.forEach((center, i) => {
+      if (i < 5) {
+        centersArray[i * 2] = center.x;
+        centersArray[i * 2 + 1] = center.y;
+      }
+    });
+
     return new THREE.ShaderMaterial({
       vertexShader: CloudGyrosEffect.vertexShader,
       fragmentShader: CloudGyrosEffect.fragmentShader,
       uniforms: {
         time: { value: 0 },
-        turbulence: { value: this.params.turbulence }
+        baseColor: { value: baseColor },
+        stormColor: { value: stormColor },
+        stormIntensity: { value: this.params.stormIntensity },
+        spiralSpeed: { value: this.params.spiralSpeed },
+        animationSpeed: { value: this.params.animationSpeed },
+        stormCenters: { value: centersArray },
+        numStorms: { value: Math.min(this.params.stormCenters!.length, 5) }
       },
-      transparent: true,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false
+      transparent: false,
+      side: THREE.FrontSide
     });
   }
 
   addToScene(scene: THREE.Scene, planetPosition?: THREE.Vector3): void {
-    if (planetPosition) {
-      this.particleSystem.position.copy(planetPosition);
-    }
-    scene.add(this.particleSystem);
+    // Este efecto modifica el material del mesh del planeta directamente
+    // No necesita ser añadido a la escena por separado
+  }
+
+  apply(mesh: THREE.Mesh): void {
+    // Aplicar el material al mesh
+    mesh.material = this.material;
   }
 
   update(deltaTime: number): void {
     this.material.uniforms.time.value += deltaTime;
-    
-    // Rotación lenta del sistema de partículas
-    this.particleSystem.rotation.y += deltaTime * 0.1;
   }
 
   updateParams(newParams: Partial<CloudGyrosParams>): void {
     this.params = { ...this.params, ...newParams };
-
-    if (newParams.turbulence !== undefined) {
-      this.material.uniforms.turbulence.value = newParams.turbulence;
+    
+    if (newParams.stormIntensity !== undefined) {
+      this.material.uniforms.stormIntensity.value = newParams.stormIntensity;
+    }
+    if (newParams.spiralSpeed !== undefined) {
+      this.material.uniforms.spiralSpeed.value = newParams.spiralSpeed;
+    }
+    if (newParams.animationSpeed !== undefined) {
+      this.material.uniforms.animationSpeed.value = newParams.animationSpeed;
     }
   }
 
-  getObject3D(): THREE.Points {
-    return this.particleSystem;
-  }
-
   dispose(): void {
-    this.geometry.dispose();
     this.material.dispose();
   }
 }
@@ -190,21 +207,24 @@ export class CloudGyrosEffect {
  * Función de utilidad para crear efecto desde datos de Python
  */
 export function createCloudGyrosFromPythonData(
-  planetRadius: number, 
-  atmosphereData: any
+  mesh: THREE.Mesh,
+  gasGiantData: any
 ): CloudGyrosEffect {
-  const streaksData = atmosphereData.streaks || {};
+  const storms = gasGiantData.storms || {};
   
   const params: CloudGyrosParams = {
-    color: streaksData.color ? new THREE.Color().setRGB(
-      streaksData.color[0], streaksData.color[1], streaksData.color[2]
-    ) : new THREE.Color(0xffffff),
-    particleCount: streaksData.count || 100,
-    speed: streaksData.speed || 1.0,
-    size: 2.0,
-    opacity: 0.6,
-    turbulence: 1.0
+    stormCenters: storms.centers || [
+      {x: 0.3, y: -0.2},
+      {x: -0.4, y: 0.6},
+      {x: 0.1, y: 0.8}
+    ],
+    stormColor: new THREE.Color(0x8B0000), // Rojo oscuro
+    stormIntensity: storms.intensity || 0.8,
+    spiralSpeed: storms.spiral_speed || 2.0,
+    animationSpeed: 0.2,
+    baseColor: gasGiantData.base_color ? 
+      new THREE.Color(gasGiantData.base_color) : new THREE.Color(0xFFA500)
   };
 
-  return new CloudGyrosEffect(planetRadius, params);
+  return new CloudGyrosEffect(mesh, params);
 }

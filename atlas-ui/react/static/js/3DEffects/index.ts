@@ -9,8 +9,17 @@
 export { RingSystemEffect, createRingSystemFromPythonData } from './RingSystem';
 export type { RingSystemParams, RingParticle } from './RingSystem';
 
-export { GasGiantBandsEffect, createGasGiantBandsFromPythonData } from './GasGiantBands';
-export type { GasGiantBandsParams } from './GasGiantBands';
+export { 
+  CloudBandsEffect, 
+  createCloudBandsFromPythonData
+} from './CloudBands';
+export type { CloudBandsParams } from './CloudBands';
+
+export { 
+  AtmosphereGlowEffect, 
+  createAtmosphereGlowFromPythonData
+} from './AtmosphereGlow';
+export type { AtmosphereGlowParams } from './AtmosphereGlow';
 
 export { 
   AtmosphereEffect, 
@@ -59,8 +68,10 @@ export type {
 // Utilidades y constantes
 export const AVAILABLE_EFFECTS = [
   'metallic_surface',
-  'gas_giant_bands',
+  'cloud_bands',
+  'cloud_gyros',
   'atmosphere',
+  'atmosphere_glow',
   'atmospheric_streaks',
   'ring_system',
   'fragmentation',
@@ -106,11 +117,23 @@ export const DEFAULT_EFFECT_CONFIGS = {
     brightness: 2.2
   },
   
-  gas_giant_bands: {
+  cloud_bands: {
     numBands: 8,
     animationSpeed: 1.0,
-    turbulence: 0.5,
-    stormIntensity: 0.7
+    turbulence: 0.5
+  },
+  
+  cloud_gyros: {
+    stormIntensity: 0.8,
+    spiralSpeed: 2.0,
+    animationSpeed: 1.0
+  },
+  
+  atmosphere_glow: {
+    particleCount: 500,
+    speed: 0.4,
+    size: 1.0,
+    opacity: 1.0
   },
   
   fragmentation: {
@@ -185,9 +208,14 @@ export function createPlanetEffectConfig(planetType: string): EffectCreationData
     case 'gas giant':
       effects.push(
         {
-          type: 'gas_giant_bands',
-          params: DEFAULT_EFFECT_CONFIGS.gas_giant_bands,
+          type: 'cloud_bands',
+          params: DEFAULT_EFFECT_CONFIGS.cloud_bands,
           priority: 0
+        },
+        {
+          type: 'cloud_gyros',
+          params: DEFAULT_EFFECT_CONFIGS.cloud_gyros,
+          priority: 1
         },
         {
           type: 'atmosphere',
@@ -196,6 +224,11 @@ export function createPlanetEffectConfig(planetType: string): EffectCreationData
             color: [1.0, 0.6, 0.2, 0.2]
           },
           priority: 10
+        },
+        {
+          type: 'atmosphere_glow',
+          params: DEFAULT_EFFECT_CONFIGS.atmosphere_glow,
+          priority: 20
         }
       );
       break;
