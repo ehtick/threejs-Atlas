@@ -221,7 +221,7 @@ export function createCloudGyrosFromPythonData(
     stormColor: new THREE.Color(0x8B0000), // Rojo oscuro
     stormIntensity: storms.intensity || 0.8,
     spiralSpeed: storms.spiral_speed || 2.0,
-    animationSpeed: 0.2,
+    animationSpeed: 4,
     baseColor: gasGiantData.base_color ? 
       new THREE.Color(gasGiantData.base_color) : new THREE.Color(0xFFA500)
   };

@@ -16,6 +16,7 @@ export interface LayerEffect {
   name: string;
   mesh?: THREE.Mesh;
   material: THREE.ShaderMaterial;
+  layerObject?: any; // Referencia al objeto de capa (CloudBandsLayer, etc.)
   update?: (deltaTime: number, planetRotation?: number) => void;
   dispose?: () => void;
 }
@@ -110,7 +111,8 @@ export class PlanetLayerSystem {
   addEffectLayer(
     name: string, 
     material: THREE.ShaderMaterial,
-    scaleFactor: number = 1.001
+    scaleFactor: number = 1.001,
+    layerObject?: any
   ): THREE.Mesh {
     console.log(`🔷 PlanetLayerSystem: Adding layer "${name}" with scale ${scaleFactor}`);
     
@@ -132,7 +134,8 @@ export class PlanetLayerSystem {
     this.effectLayers.push({
       name,
       mesh: layerMesh,
-      material
+      material,
+      layerObject
     });
     
     // Si ya estamos en una escena, añadir el mesh
@@ -270,7 +273,7 @@ export class PlanetLayerSystem {
       fragmentShader,
       uniforms: {
         time: { value: 0 },
-        seed: { value: Math.random() * 1000 },
+        seed: { value: params.seed || Math.random() * 1000 },
         bandColor: { value: params.bandColor || new THREE.Color(0xFF8C00) },
         numBands: { value: params.numBands || 8 },
         rotationAngle: { value: params.rotationAngle || 0 },
@@ -421,13 +424,29 @@ export class PlanetLayerSystem {
    * Actualiza todos los efectos
    */
   update(deltaTime: number, planetRotation?: number): void {
+    // Log de debug para verificar que se está actualizando
+    if (this.effectLayers.length > 0) {
+      console.log(`🔄 PlanetLayerSystem updating ${this.effectLayers.length} layers, deltaTime: ${deltaTime}`);
+    }
+    
     // Actualizar uniforms de cada capa
     this.effectLayers.forEach(layer => {
       if (layer.material.uniforms.time) {
+        const oldTime = layer.material.uniforms.time.value;
         layer.material.uniforms.time.value += deltaTime;
+        console.log(`   ⏰ Layer "${layer.name}" time: ${oldTime} → ${layer.material.uniforms.time.value}`);
       }
       if (planetRotation !== undefined && layer.material.uniforms.rotationAngle) {
         layer.material.uniforms.rotationAngle.value = planetRotation;
+      }
+      
+      // Actualizar el objeto de capa individual si existe
+      if (layer.layerObject && layer.layerObject.update) {
+        try {
+          layer.layerObject.update(deltaTime, planetRotation);
+        } catch (error) {
+          console.error(`Error updating layer ${layer.name}:`, error);
+        }
       }
       
       // Sincronizar rotación con el planeta base

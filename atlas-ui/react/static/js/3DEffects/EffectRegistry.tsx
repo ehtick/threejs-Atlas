@@ -453,7 +453,8 @@ export class EffectRegistry {
                 ...surface,
                 base_color: baseColor,
                 turbulence: pythonData.turbulence || surface.turbulence
-              }
+              },
+              pythonData.seeds?.shape_seed // Pasar seed desde Python
             );
             
             // Añadir capa de espirales
@@ -464,25 +465,30 @@ export class EffectRegistry {
                 ...surface,
                 base_color: baseColor,
                 storm_intensity: pythonData.storm_intensity || surface.storm_intensity
-              }
+              },
+              pythonData.seeds?.shape_seed + 1000 // Seed diferente para variación
             );
             
-            // Crear efectos para tracking
-            effects.push({
+            // Crear efectos para tracking y añadir al mapa de efectos
+            const bandsInstance: EffectInstance = {
               id: `effect_${this.nextId++}`,
               type: 'cloud_bands_layer',
               effect: cloudBandsLayer,
               priority: 0,
               enabled: true
-            });
+            };
+            this.effects.set(bandsInstance.id, bandsInstance);
+            effects.push(bandsInstance);
             
-            effects.push({
+            const gyrosInstance: EffectInstance = {
               id: `effect_${this.nextId++}`,
               type: 'cloud_gyros_layer',
               effect: cloudGyrosLayer,
               priority: 1,
               enabled: true
-            });
+            };
+            this.effects.set(gyrosInstance.id, gyrosInstance);
+            effects.push(gyrosInstance);
             
             console.log('✅ Gas Giant effects added to layer system');
           } else {
@@ -599,16 +605,27 @@ export class EffectRegistry {
 
       // Atmosphere Glow - aplicar para planetas con atmósfera dinámica
       if (pythonData.atmosphere.streaks || ['Gas Giant', 'Frozen Gas Giant'].includes(pythonData.planet_info?.type)) {
-        const glowEffect = this.createEffectFromPythonData(
-          EffectType.ATMOSPHERE_GLOW,
-          pythonData,
+        // Pasar seed directamente al crear atmosphere glow
+        const glowEffect = createAtmosphereGlowFromPythonData(
           planetRadius,
-          mesh,
-          20
+          pythonData.atmosphere || {},
+          pythonData.seeds?.shape_seed + 2000 // Seed específica para partículas
         );
+        
         if (glowEffect) {
-          effects.push(glowEffect);
-          glowEffect.effect.addToScene(scene, mesh.position);
+          const glowInstance: EffectInstance = {
+            id: `effect_${this.nextId++}`,
+            type: 'atmosphere_glow',
+            effect: glowEffect,
+            priority: 20,
+            enabled: true
+          };
+          
+          // CRÍTICO: Añadir al mapa de efectos para que se actualice
+          this.effects.set(glowInstance.id, glowInstance);
+          effects.push(glowInstance);
+          
+          glowEffect.addToScene(scene, mesh.position);
           console.log('✅ Added atmosphere glow effect');
         }
       }
@@ -767,6 +784,9 @@ export class EffectRegistry {
     for (const instance of this.effects.values()) {
       if (instance.enabled && instance.effect.update) {
         try {
+          if (instance.type === 'atmosphere_glow') {
+            console.log(`🔄 Updating AtmosphereGlow with deltaTime: ${deltaTime}`);
+          }
           instance.effect.update(deltaTime, planetRotation);
         } catch (error) {
           console.error(`Error updating effect ${instance.type}:`, error);

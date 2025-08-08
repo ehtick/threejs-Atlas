@@ -1,16 +1,17 @@
 /**
  * Atmosphere Glow Effect - Sistema de partículas luminosas atmosféricas
- * 
+ *
  * Crea partículas brillantes que orbitan el planeta, generando un efecto
  * de resplandor atmosférico dinámico. Anteriormente llamado CloudGyros.
- * 
+ *
  * Responsabilidades:
  * - AtmosphereGlow.tsx -> Partículas luminosas orbitantes (ESTE ARCHIVO)
  * - CloudBands.tsx -> Bandas horizontales de gas giants
  * - CloudGyros.tsx -> Espirales giratorias específicas
  */
 
-import * as THREE from 'three';
+import * as THREE from "three";
+import { SeededRandom } from "../Utils/SeededRandom";
 
 export interface AtmosphereGlowParams {
   color?: THREE.Color | number;
@@ -19,11 +20,25 @@ export interface AtmosphereGlowParams {
   size?: number;
   opacity?: number;
   turbulence?: number;
+  seed?: number;
+  rotationSpeed?: number; // Velocidad de rotación del sistema
+  movementAmplitude?: number; // Amplitud del movimiento individual
 }
+
+// Rangos para generación procedural
+const PROCEDURAL_RANGES = {
+  PARTICLE_COUNT: { min: 50, max: 200 },
+  SPEED: { min: 0.05, max: 0.5 },
+  SIZE: { min: 0.5, max: 2.0 },
+  OPACITY: { min: 0.2, max: 0.5 },
+  TURBULENCE: { min: 0.1, max: 0.5 },
+  ROTATION_SPEED: { min: 0.01, max: 0.05 },
+  MOVEMENT_AMPLITUDE: { min: 0.005, max: 0.05 }
+};
 
 /**
  * Efecto de Resplandor Atmosférico (anteriormente CloudGyrosEffect)
- * 
+ *
  * Crea partículas luminosas que orbitan alrededor del planeta
  */
 export class AtmosphereGlowEffect {
@@ -45,6 +60,7 @@ export class AtmosphereGlowEffect {
     
     uniform float time;
     uniform float turbulence;
+    uniform float movementAmplitude;
     
     void main() {
       vColor = customColor;
@@ -54,9 +70,9 @@ export class AtmosphereGlowEffect {
       vec3 pos = position;
       float timeWithPhase = time * speed + phase;
       
-      pos.x += sin(timeWithPhase) * 0.1 * turbulence;
-      pos.y += cos(timeWithPhase * 0.7) * 0.05 * turbulence;
-      pos.z += sin(timeWithPhase * 0.5) * 0.08 * turbulence;
+      pos.x += sin(timeWithPhase) * movementAmplitude * turbulence;
+      pos.y += cos(timeWithPhase * 0.7) * (movementAmplitude * 0.5) * turbulence;
+      pos.z += sin(timeWithPhase * 0.5) * (movementAmplitude * 0.8) * turbulence;
       
       // Fade basado en la posición y tiempo
       float distanceFromCenter = length(pos.xy) / 2.0;
@@ -92,19 +108,26 @@ export class AtmosphereGlowEffect {
   `;
 
   constructor(planetRadius: number, params: AtmosphereGlowParams = {}) {
+    // Generar valores procedurales usando seed
+    const seed = params.seed || Math.floor(Math.random() * 1000000);
+    const rng = new SeededRandom(seed);
+    
     this.params = {
       color: params.color || new THREE.Color(0xffffff),
-      particleCount: params.particleCount || 100,
-      speed: params.speed || 1.0,
-      size: params.size || 2.0,
-      opacity: params.opacity || 0.6,
-      turbulence: params.turbulence || 1.0
+      particleCount: params.particleCount || Math.floor(rng.uniform(PROCEDURAL_RANGES.PARTICLE_COUNT.min, PROCEDURAL_RANGES.PARTICLE_COUNT.max)),
+      speed: params.speed || rng.uniform(PROCEDURAL_RANGES.SPEED.min, PROCEDURAL_RANGES.SPEED.max),
+      size: params.size || rng.uniform(PROCEDURAL_RANGES.SIZE.min, PROCEDURAL_RANGES.SIZE.max),
+      opacity: params.opacity || rng.uniform(PROCEDURAL_RANGES.OPACITY.min, PROCEDURAL_RANGES.OPACITY.max),
+      turbulence: params.turbulence || rng.uniform(PROCEDURAL_RANGES.TURBULENCE.min, PROCEDURAL_RANGES.TURBULENCE.max),
+      rotationSpeed: params.rotationSpeed || rng.uniform(PROCEDURAL_RANGES.ROTATION_SPEED.min, PROCEDURAL_RANGES.ROTATION_SPEED.max),
+      movementAmplitude: params.movementAmplitude || rng.uniform(PROCEDURAL_RANGES.MOVEMENT_AMPLITUDE.min, PROCEDURAL_RANGES.MOVEMENT_AMPLITUDE.max),
+      seed: seed,
     };
 
     this.particleCount = this.params.particleCount!;
     this.geometry = new THREE.BufferGeometry();
     this.material = this.createMaterial();
-    
+
     this.generateParticles(planetRadius);
     this.particleSystem = new THREE.Points(this.geometry, this.material);
   }
@@ -116,34 +139,35 @@ export class AtmosphereGlowEffect {
     const speeds = new Float32Array(this.particleCount);
     const phases = new Float32Array(this.particleCount);
 
-    const color = this.params.color instanceof THREE.Color ? 
-      this.params.color : new THREE.Color(this.params.color as any);
+    const color = this.params.color instanceof THREE.Color ? this.params.color : new THREE.Color(this.params.color as any);
+
+    // Usar seed consistente para partículas reproducibles
+    const seed = this.params.seed || Math.floor(Math.random() * 1000000);
+    const rng = new SeededRandom(seed);
 
     for (let i = 0; i < this.particleCount; i++) {
-      // Posición aleatoria en la superficie
-      const theta = Math.random() * Math.PI * 2;
-      const phi = Math.acos(Math.random() * 2 - 1);
-      const r = planetRadius * (1.0 + Math.random() * 0.1);
+      // Posición aleatoria en la superficie usando seed
+      const pos = rng.spherePosition(planetRadius * rng.uniform(1.0, 1.1));
+      positions[i * 3] = pos.x;
+      positions[i * 3 + 1] = pos.y;
+      positions[i * 3 + 2] = pos.z;
 
-      positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-      positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-      positions[i * 3 + 2] = r * Math.cos(phi);
+      // Color con ligera variación usando seed
+      const colorVar = rng.colorVariation({ r: color.r, g: color.g, b: color.b });
+      colors[i * 3] = colorVar.r;
+      colors[i * 3 + 1] = colorVar.g;
+      colors[i * 3 + 2] = colorVar.b;
 
-      // Color con ligera variación
-      colors[i * 3] = color.r * (0.8 + Math.random() * 0.4);
-      colors[i * 3 + 1] = color.g * (0.8 + Math.random() * 0.4);
-      colors[i * 3 + 2] = color.b * (0.8 + Math.random() * 0.4);
-
-      sizes[i] = this.params.size! * (Math.random() * 0.5 + 0.75);
-      speeds[i] = this.params.speed! * (Math.random() * 0.8 + 0.6);
-      phases[i] = Math.random() * Math.PI * 2;
+      sizes[i] = this.params.size! * rng.uniform(0.75, 1.25);
+      speeds[i] = this.params.speed! * rng.uniform(0.6, 1.4);
+      phases[i] = rng.random() * Math.PI * 2;
     }
 
-    this.geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    this.geometry.setAttribute('customColor', new THREE.BufferAttribute(colors, 3));
-    this.geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
-    this.geometry.setAttribute('speed', new THREE.BufferAttribute(speeds, 1));
-    this.geometry.setAttribute('phase', new THREE.BufferAttribute(phases, 1));
+    this.geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    this.geometry.setAttribute("customColor", new THREE.BufferAttribute(colors, 3));
+    this.geometry.setAttribute("size", new THREE.BufferAttribute(sizes, 1));
+    this.geometry.setAttribute("speed", new THREE.BufferAttribute(speeds, 1));
+    this.geometry.setAttribute("phase", new THREE.BufferAttribute(phases, 1));
   }
 
   private createMaterial(): THREE.ShaderMaterial {
@@ -152,11 +176,12 @@ export class AtmosphereGlowEffect {
       fragmentShader: AtmosphereGlowEffect.fragmentShader,
       uniforms: {
         time: { value: 0 },
-        turbulence: { value: this.params.turbulence }
+        turbulence: { value: this.params.turbulence },
+        movementAmplitude: { value: this.params.movementAmplitude },
       },
       transparent: true,
       blending: THREE.AdditiveBlending,
-      depthWrite: false
+      depthWrite: false,
     });
   }
 
@@ -168,10 +193,13 @@ export class AtmosphereGlowEffect {
   }
 
   update(deltaTime: number): void {
+    const oldTime = this.material.uniforms.time.value;
     this.material.uniforms.time.value += deltaTime;
-    
-    // Rotación lenta del sistema de partículas
-    this.particleSystem.rotation.y += deltaTime * 0.1;
+    console.log(`✨ AtmosphereGlow time: ${oldTime} → ${this.material.uniforms.time.value}`);
+
+    // Rotación procedural del sistema de partículas
+    this.particleSystem.rotation.y += deltaTime * this.params.rotationSpeed!;
+    console.log(`🌀 AtmosphereGlow rotation.y: ${this.particleSystem.rotation.y}`);
   }
 
   updateParams(newParams: Partial<AtmosphereGlowParams>): void {
@@ -195,22 +223,33 @@ export class AtmosphereGlowEffect {
 /**
  * Función de utilidad para crear efecto desde datos de Python
  */
-export function createAtmosphereGlowFromPythonData(
-  planetRadius: number, 
-  atmosphereData: any
-): AtmosphereGlowEffect {
-  console.log('✨ ATMOSPHERE GLOW CREATING - PARTICLE GLOW EFFECT!', { speed: 0.4, count: 500 });
+export function createAtmosphereGlowFromPythonData(planetRadius: number, atmosphereData: any, globalSeed?: number): AtmosphereGlowEffect {
   const streaksData = atmosphereData.streaks || {};
+
+  // Generar todos los valores proceduralmente basados en seed
+  const seed = globalSeed || Math.floor(Math.random() * 1000000);
+  const rng = new SeededRandom(seed + 3000); // +3000 para AtmosphereGlow
   
+  const particleCount = streaksData.count || Math.floor(rng.uniform(PROCEDURAL_RANGES.PARTICLE_COUNT.min, PROCEDURAL_RANGES.PARTICLE_COUNT.max));
+  const speed = streaksData.speed || rng.uniform(PROCEDURAL_RANGES.SPEED.min, PROCEDURAL_RANGES.SPEED.max);
+  const size = rng.uniform(PROCEDURAL_RANGES.SIZE.min, PROCEDURAL_RANGES.SIZE.max);
+  const opacity = rng.uniform(PROCEDURAL_RANGES.OPACITY.min, PROCEDURAL_RANGES.OPACITY.max);
+  const turbulence = rng.uniform(PROCEDURAL_RANGES.TURBULENCE.min, PROCEDURAL_RANGES.TURBULENCE.max);
+  const rotationSpeed = rng.uniform(PROCEDURAL_RANGES.ROTATION_SPEED.min, PROCEDURAL_RANGES.ROTATION_SPEED.max);
+  const movementAmplitude = rng.uniform(PROCEDURAL_RANGES.MOVEMENT_AMPLITUDE.min, PROCEDURAL_RANGES.MOVEMENT_AMPLITUDE.max);
+  
+  console.log(`🎲 AtmosphereGlow procedural: particles=${particleCount}, speed=${speed.toFixed(3)}, size=${size.toFixed(3)}, opacity=${opacity.toFixed(3)}, turbulence=${turbulence.toFixed(3)}, rotation=${rotationSpeed.toFixed(3)}, amplitude=${movementAmplitude.toFixed(3)}`);
+
   const params: AtmosphereGlowParams = {
-    color: streaksData.color ? new THREE.Color().setRGB(
-      streaksData.color[0], streaksData.color[1], streaksData.color[2]
-    ) : new THREE.Color(0xffffff),
-    particleCount: streaksData.count || 500, // ⚠️ MUCHAS MÁS PARTÍCULAS PARA VER
-    speed: streaksData.speed || 0.4,
-    size: 1.0,
-    opacity: 0, // ✅ RESTAURAR CLOUD GYROS
-    turbulence: 1.0
+    color: streaksData.color ? new THREE.Color().setRGB(streaksData.color[0], streaksData.color[1], streaksData.color[2]) : new THREE.Color(0xffffff),
+    particleCount,
+    speed,
+    size,
+    opacity,
+    turbulence,
+    seed,
+    rotationSpeed,
+    movementAmplitude,
   };
 
   return new AtmosphereGlowEffect(planetRadius, params);

@@ -18,6 +18,7 @@ export interface CloudBandsLayerParams {
   turbulence?: number;
   noiseScale?: number;
   opacity?: number;
+  seed?: number;
 }
 
 // Generador de números aleatorios con semilla
@@ -46,28 +47,31 @@ export class CloudBandsLayer {
 
   constructor(layerSystem: PlanetLayerSystem, params: CloudBandsLayerParams = {}) {
     this.layerSystem = layerSystem;
+    const seed = params.seed || Math.floor(Math.random() * 1000000); // Fallback
+    
     this.params = {
       numBands: params.numBands || 8,
-      bandPositions: params.bandPositions || this.generateDefaultBandPositions(params.numBands || 8),
-      bandWidths: params.bandWidths || this.generateDefaultBandWidths(params.numBands || 8),
+      bandPositions: params.bandPositions || this.generateDefaultBandPositions(params.numBands || 8, seed),
+      bandWidths: params.bandWidths || this.generateDefaultBandWidths(params.numBands || 8, seed),
       rotationAngle: params.rotationAngle || 0,
       bandColor: params.bandColor || new THREE.Color(0xFF8C00),
       animationSpeed: params.animationSpeed || 1.0,
       turbulence: params.turbulence || 0.5,
       noiseScale: params.noiseScale || 3.0,
-      opacity: params.opacity || 0.7
+      opacity: params.opacity || 0.7,
+      seed
     };
 
     // Crear material usando el sistema de capas
     this.material = this.layerSystem.createCloudBandsLayerMaterial(this.params);
     
-    // Añadir capa al sistema
-    this.layerMesh = this.layerSystem.addEffectLayer('cloudBands', this.material, 1.001);
+    // Añadir capa al sistema, pasando referencia a este objeto
+    this.layerMesh = this.layerSystem.addEffectLayer('cloudBands', this.material, 1.001, this);
   }
 
-  private generateDefaultBandPositions(numBands: number): number[] {
+  private generateDefaultBandPositions(numBands: number, seed: number): number[] {
     const positions = new Array(20).fill(0);
-    const rng = new SeededRandom(12345);
+    const rng = new SeededRandom(seed + 12345); // Usar seed única
     
     for (let i = 0; i < numBands && i < 20; i++) {
       positions[i] = rng.uniform(-0.8, 0.8);
@@ -76,9 +80,9 @@ export class CloudBandsLayer {
     return positions;
   }
 
-  private generateDefaultBandWidths(numBands: number): number[] {
+  private generateDefaultBandWidths(numBands: number, seed: number): number[] {
     const widths = new Array(20).fill(0);
-    const rng = new SeededRandom(67890);
+    const rng = new SeededRandom(seed + 67890); // Usar seed única
     
     for (let i = 0; i < numBands && i < 20; i++) {
       widths[i] = rng.uniform(0.08, 0.15);
@@ -127,7 +131,8 @@ export class CloudBandsLayer {
  */
 export function createCloudBandsLayerFromPythonData(
   layerSystem: PlanetLayerSystem,
-  gasGiantData: any
+  gasGiantData: any,
+  globalSeed?: number
 ): CloudBandsLayer {
   const cloudBands = gasGiantData.cloud_bands || {};
   
@@ -140,7 +145,8 @@ export function createCloudBandsLayerFromPythonData(
     animationSpeed: 1.0,
     turbulence: gasGiantData.turbulence || 0.5,
     noiseScale: 3.0,
-    opacity: 0.7
+    opacity: 0.7,
+    seed: globalSeed // Usar seed desde Python
   };
 
   return new CloudBandsLayer(layerSystem, params);

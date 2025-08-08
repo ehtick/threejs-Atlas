@@ -15,6 +15,7 @@ export interface CloudGyrosLayerParams {
   spiralSpeed?: number;
   animationSpeed?: number;
   opacity?: number;
+  seed?: number;
 }
 
 export class CloudGyrosLayer {
@@ -41,8 +42,8 @@ export class CloudGyrosLayer {
     // Crear material usando el sistema de capas
     this.material = this.layerSystem.createCloudGyrosLayerMaterial(this.params);
     
-    // Añadir capa al sistema (ligeramente más grande que CloudBands)
-    this.layerMesh = this.layerSystem.addEffectLayer('cloudGyros', this.material, 1.002);
+    // Añadir capa al sistema (ligeramente más grande que CloudBands), pasando referencia a este objeto
+    this.layerMesh = this.layerSystem.addEffectLayer('cloudGyros', this.material, 1.002, this);
   }
 
   update(deltaTime: number): void {
@@ -75,7 +76,8 @@ export class CloudGyrosLayer {
  */
 export function createCloudGyrosLayerFromPythonData(
   layerSystem: PlanetLayerSystem,
-  gasGiantData: any
+  gasGiantData: any,
+  globalSeed?: number
 ): CloudGyrosLayer {
   const storms = gasGiantData.storms || {};
   
@@ -89,7 +91,8 @@ export function createCloudGyrosLayerFromPythonData(
     stormIntensity: storms.intensity || 0.8,
     spiralSpeed: storms.spiral_speed || 2.0,
     animationSpeed: 0.2,
-    opacity: 0.6
+    opacity: 0.6,
+    seed: globalSeed // Usar seed desde Python
   };
 
   return new CloudGyrosLayer(layerSystem, params);
