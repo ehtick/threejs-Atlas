@@ -297,6 +297,7 @@ export const AtmosphericStreaksShader = {
  */
 export class MetallicSurfaceEffect {
   private material: THREE.ShaderMaterial;
+  private metallicLayerMesh?: THREE.Mesh;
   
   constructor(params: EffectParameters) {
     this.material = new THREE.ShaderMaterial({
@@ -315,11 +316,52 @@ export class MetallicSurfaceEffect {
   }
   
   apply(mesh: THREE.Mesh): void {
-    mesh.material = this.material;
+    // 🚀 NO reemplazar el material base - crear capa metálica
+    console.log('🪨 MetallicSurface: Creando capa metálica sin reemplazar material base');
+    this.createMetallicLayer(mesh);
+  }
+
+  /**
+   * Crea una capa metálica separada del planeta base
+   */
+  private createMetallicLayer(baseMesh: THREE.Mesh): void {
+    const geometry = baseMesh.geometry.clone();
+    
+    // Escalar ligeramente para evitar z-fighting
+    geometry.scale(1.001, 1.001, 1.001);
+    
+    const metallicMesh = new THREE.Mesh(geometry, this.material);
+    
+    // Copiar posición y rotación del mesh base
+    metallicMesh.position.copy(baseMesh.position);
+    metallicMesh.rotation.copy(baseMesh.rotation);
+    
+    this.metallicLayerMesh = metallicMesh;
+    console.log('🪨 MetallicSurface: Capa metálica creada');
   }
   
-  update(deltaTime: number): void {
+  update(deltaTime: number, planetRotation?: number): void {
     this.material.uniforms.time.value += deltaTime;
+    
+    // Sincronizar rotación con el planeta base
+    if (this.metallicLayerMesh && planetRotation !== undefined) {
+      this.metallicLayerMesh.rotation.y = planetRotation;
+    }
+  }
+
+  /**
+   * Añade la capa metálica a la escena
+   */
+  addToScene(scene: THREE.Scene, planetPosition?: THREE.Vector3): void {
+    if (this.metallicLayerMesh) {
+      if (planetPosition) {
+        this.metallicLayerMesh.position.copy(planetPosition);
+      }
+      scene.add(this.metallicLayerMesh);
+      console.log('🪨 MetallicSurface: Capa metálica añadida a la escena');
+    } else {
+      console.warn('🪨 MetallicSurface: No hay capa metálica - call apply() first');
+    }
   }
   
   updateParams(params: EffectParameters): void {
@@ -331,6 +373,19 @@ export class MetallicSurfaceEffect {
     }
     if (params.fragmentationIntensity !== undefined) {
       this.material.uniforms.fragmentationIntensity.value = params.fragmentationIntensity;
+    }
+  }
+
+  /**
+   * Limpia recursos
+   */
+  dispose(): void {
+    this.material.dispose();
+    if (this.metallicLayerMesh) {
+      if (this.metallicLayerMesh.geometry) {
+        this.metallicLayerMesh.geometry.dispose();
+      }
+      this.metallicLayerMesh = undefined;
     }
   }
 }

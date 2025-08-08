@@ -40,7 +40,8 @@ import {
 
 // Importar efectos de superficie restantes
 import { FragmentationEffect } from './FragmentationEffect';
-// OceanWaves eliminado - no respeta los datos de Python
+import { OceanWavesEffect, createOceanWavesFromPythonData } from './OceanWaves';
+import { MetallicSurfaceEffect } from './PlanetEffectsLibrary';
 // Efectos de superficie legacy eliminados - usar solo versiones Layer
 
 // Importar efectos de debug
@@ -178,6 +179,24 @@ export class EffectRegistry {
     });
 
     // Efectos de terreno legacy eliminados - usar solo sistema de capas
+
+    // Efectos de superficie
+    this.registerEffect(EffectType.OCEAN_WAVES, {
+      create: (params, planetRadius) => new OceanWavesEffect(params),
+      fromPythonData: (data, planetRadius) => createOceanWavesFromPythonData(data)
+    });
+
+    this.registerEffect(EffectType.METALLIC_SURFACE, {
+      create: (params, planetRadius) => new MetallicSurfaceEffect(params),
+      fromPythonData: (data, planetRadius) => {
+        return new MetallicSurfaceEffect({
+          color: data.surface?.base_color || [0.5, 0.5, 0.5],
+          roughness: data.surface?.roughness || 0.7,
+          metalness: data.surface?.metalness || 0.9,
+          fragmentationIntensity: data.surface?.fragmentation_intensity || 0.5
+        });
+      }
+    });
 
     // Efectos futuros (placeholders)
     this.registerEffect(EffectType.LAVA_FLOWS, {
@@ -337,12 +356,14 @@ export class EffectRegistry {
       console.log('💍 Rings:', pythonData.rings);
       console.log('🪐 Planet info:', pythonData.planet_info);
       
+      // ⭐ Obtener color base para usar en efectos
+      const baseColor = getPlanetBaseColor(pythonData);
+      
       // ⭐ USAR PlanetLayerSystem existente o crear uno nuevo
       if (existingLayerSystem) {
         console.log('🔄 Using existing PlanetLayerSystem');
         this.layerSystem = existingLayerSystem;
       } else {
-        const baseColor = getPlanetBaseColor(pythonData);
         console.log('🎨 Creating new PlanetLayerSystem with base color:', baseColor);
         this.layerSystem = new PlanetLayerSystem(mesh, baseColor);
       }
@@ -372,21 +393,19 @@ export class EffectRegistry {
           if (instance) {
             effects.push(instance);
             
-            // NO aplicar efectos que modifiquen el material del mesh
-            // El sistema de capas manejará todo
-            console.log('🎯 EFECTO CREADO:', effectData.type, '- será manejado por el sistema de capas');
+            console.log('🎯 EFECTO CREADO:', effectData.type);
             
-            // Si el efecto tiene un método apply, intentar convertirlo a capa
-            if (instance.effect.apply && this.layerSystem) {
-              console.log('🔄 Intentando convertir efecto a capa:', effectData.type);
-              // TODO: Implementar conversión automática de efectos a capas
+            // 🚀 APLICAR EFECTO como antes, pero respetando la iluminación base
+            if (instance.effect.apply) {
+              console.log('🔄 Aplicando efecto al mesh:', effectData.type);
+              instance.effect.apply(mesh);
             }
             
             // Añadir a la escena si es necesario
             if (instance.effect.addToScene) {
               instance.effect.addToScene(scene, mesh.position);
             }
-            console.log('✅ EFECTO AGREGADO Y APLICADO:', effectData.type);
+            console.log('✅ EFECTO APLICADO:', effectData.type);
           } else {
             console.error('❌ FALLO AL CREAR EFECTO:', effectData.type);
           }

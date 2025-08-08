@@ -34,6 +34,7 @@ export interface OceanWavesParams {
 export class OceanWavesEffect {
   private material: THREE.ShaderMaterial;
   private params: OceanWavesParams;
+  private oceanLayerMesh?: THREE.Mesh;
 
   // Vertex shader
   private static readonly vertexShader = `
@@ -240,16 +241,47 @@ export class OceanWavesEffect {
 
   /**
    * Aplica el efecto a un mesh
+   * ACTUALIZADO: NO reemplaza el material base, crea capa adicional
    */
   apply(mesh: THREE.Mesh): void {
-    mesh.material = this.material;
+    // 🚀 NO reemplazar el material base - preservar PlanetLayerSystem
+    console.log('🌊 OceanWaves: Creando capa oceánica sin reemplazar material base');
+    
+    // En lugar de reemplazar, crear una capa adicional
+    this.createOceanLayer(mesh);
+  }
+
+  /**
+   * Crea una capa oceánica separada del planeta base
+   */
+  private createOceanLayer(baseMesh: THREE.Mesh): void {
+    const geometry = baseMesh.geometry.clone();
+    
+    // Escalar ligeramente la geometría para evitar z-fighting
+    geometry.scale(1.002, 1.002, 1.002);
+    
+    const oceanMesh = new THREE.Mesh(geometry, this.material);
+    
+    // Copiar posición y rotación del mesh base
+    oceanMesh.position.copy(baseMesh.position);
+    oceanMesh.rotation.copy(baseMesh.rotation);
+    
+    // Añadir la capa a la escena (se hará en addToScene)
+    this.oceanLayerMesh = oceanMesh;
+    
+    console.log('🌊 OceanWaves: Capa oceánica creada');
   }
 
   /**
    * Actualiza la animación
    */
-  update(deltaTime: number): void {
+  update(deltaTime: number, planetRotation?: number): void {
     this.material.uniforms.time.value += deltaTime;
+    
+    // Sincronizar rotación con el planeta base si está disponible
+    if (this.oceanLayerMesh && planetRotation !== undefined) {
+      this.oceanLayerMesh.rotation.y = planetRotation;
+    }
   }
 
   /**
@@ -273,6 +305,21 @@ export class OceanWavesEffect {
   }
 
   /**
+   * Añade la capa oceánica a la escena
+   */
+  addToScene(scene: THREE.Scene, planetPosition?: THREE.Vector3): void {
+    if (this.oceanLayerMesh) {
+      if (planetPosition) {
+        this.oceanLayerMesh.position.copy(planetPosition);
+      }
+      scene.add(this.oceanLayerMesh);
+      console.log('🌊 OceanWaves: Capa oceánica añadida a la escena');
+    } else {
+      console.warn('🌊 OceanWaves: No hay capa oceánica para añadir - call apply() first');
+    }
+  }
+
+  /**
    * Obtiene el material para manipulación directa
    */
   getMaterial(): THREE.ShaderMaterial {
@@ -284,6 +331,12 @@ export class OceanWavesEffect {
    */
   dispose(): void {
     this.material.dispose();
+    if (this.oceanLayerMesh) {
+      if (this.oceanLayerMesh.geometry) {
+        this.oceanLayerMesh.geometry.dispose();
+      }
+      this.oceanLayerMesh = undefined;
+    }
   }
 }
 

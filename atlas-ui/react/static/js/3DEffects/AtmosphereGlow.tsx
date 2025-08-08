@@ -212,6 +212,17 @@ export class AtmosphereGlowEffect {
     return this.particleSystem;
   }
 
+  /**
+   * Añade el sistema de partículas a la escena
+   */
+  addToScene(scene: THREE.Scene, planetPosition?: THREE.Vector3): void {
+    if (planetPosition) {
+      this.particleSystem.position.copy(planetPosition);
+    }
+    scene.add(this.particleSystem);
+    console.log('🌟 AtmosphereGlow: Sistema de partículas añadido a la escena');
+  }
+
   dispose(): void {
     this.geometry.dispose();
     this.material.dispose();
