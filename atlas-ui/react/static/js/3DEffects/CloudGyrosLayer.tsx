@@ -24,9 +24,9 @@ const PROCEDURAL_RANGES = {
   STORM_COUNT: { min: 2, max: 5 },
   STORM_CENTERS: { min: -0.8, max: 0.8 },
   STORM_INTENSITY: { min: 0.5, max: 1.0 },
-  SPIRAL_SPEED: { min: 0.5, max: 1.0 },
+  SPIRAL_SPEED: { min: 0.5, max: 1.5 },
   ANIMATION_SPEED: { min: 0.1, max: 0.5 },
-  OPACITY: { min: 0.4, max: 0.8 }
+  OPACITY: { min: 0.2, max: 0.6 }
 };
 
 export class CloudGyrosLayer {

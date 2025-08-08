@@ -433,7 +433,7 @@ export class EffectRegistry {
                 base_color: baseColor,
                 turbulence: pythonData.turbulence || surface.turbulence
               },
-              pythonData.seeds?.shape_seed // Pasar seed desde Python
+              pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed || pythonData.seeds?.planet_seed // Usar seed del planeta
             );
             
             // Añadir capa de espirales
@@ -445,7 +445,7 @@ export class EffectRegistry {
                 base_color: baseColor,
                 storm_intensity: pythonData.storm_intensity || surface.storm_intensity
               },
-              pythonData.seeds?.shape_seed + 1000 // Seed diferente para variación
+              (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 1000 // Usar seed del planeta con offset
             );
             
             // Crear efectos para tracking y añadir al mapa de efectos
@@ -482,7 +482,7 @@ export class EffectRegistry {
             const metallicLayer = createMetallicSurfaceLayerFromPythonData(
               this.layerSystem,
               pythonData,
-              pythonData.seeds?.shape_seed
+              pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed
             );
             
             effects.push({
@@ -503,7 +503,7 @@ export class EffectRegistry {
             const rockyLayer = createRockyTerrainLayerFromPythonData(
               this.layerSystem,
               pythonData,
-              pythonData.seeds?.shape_seed
+              pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed
             );
             
             effects.push({
@@ -524,7 +524,7 @@ export class EffectRegistry {
             const icyLayer = createIcyTerrainLayerFromPythonData(
               this.layerSystem,
               pythonData,
-              pythonData.seeds?.shape_seed
+              pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed
             );
             
             effects.push({

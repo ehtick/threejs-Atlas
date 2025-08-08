@@ -73,6 +73,11 @@ interface PlanetRenderingData {
   shader_uniforms?: any;
   universal_actions?: any[];
   original_planet_data?: any;
+  seeds?: {
+    shape_seed: number;
+    config_seed: string;
+    planet_seed: number;
+  };
 }
 
 interface RendererStats {
@@ -568,6 +573,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
           system_max_orbital_radius: planetApiData.system_max_orbital_radius,
         },
         original_planet_data: planetApiData,
+        seeds: renderingApiData?.seeds,
       };
       setRenderingData(data);
 
@@ -656,6 +662,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
           system_max_orbital_radius: planetApiData.system_max_orbital_radius,
         },
         original_planet_data: planetApiData,
+        seeds: renderingApiData?.seeds,
       };
       setRenderingData(data);
 
