@@ -741,9 +741,7 @@ export class EffectRegistry {
     for (const instance of this.effects.values()) {
       if (instance.enabled && instance.effect.update) {
         try {
-          if (instance.type === 'atmosphere_glow') {
-            console.log(`🔄 Updating AtmosphereGlow with deltaTime: ${deltaTime}`);
-          }
+  
           instance.effect.update(deltaTime, planetRotation);
         } catch (error) {
           console.error(`Error updating effect ${instance.type}:`, error);

@@ -195,11 +195,9 @@ export class AtmosphereGlowEffect {
   update(deltaTime: number): void {
     const oldTime = this.material.uniforms.time.value;
     this.material.uniforms.time.value += deltaTime;
-    console.log(`✨ AtmosphereGlow time: ${oldTime} → ${this.material.uniforms.time.value}`);
 
     // Rotación procedural del sistema de partículas
     this.particleSystem.rotation.y += deltaTime * this.params.rotationSpeed!;
-    console.log(`🌀 AtmosphereGlow rotation.y: ${this.particleSystem.rotation.y}`);
   }
 
   updateParams(newParams: Partial<AtmosphereGlowParams>): void {

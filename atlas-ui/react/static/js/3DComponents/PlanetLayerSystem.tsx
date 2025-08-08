@@ -424,17 +424,10 @@ export class PlanetLayerSystem {
    * Actualiza todos los efectos
    */
   update(deltaTime: number, planetRotation?: number): void {
-    // Log de debug para verificar que se está actualizando
-    if (this.effectLayers.length > 0) {
-      console.log(`🔄 PlanetLayerSystem updating ${this.effectLayers.length} layers, deltaTime: ${deltaTime}`);
-    }
-    
     // Actualizar uniforms de cada capa
     this.effectLayers.forEach(layer => {
       if (layer.material.uniforms.time) {
-        const oldTime = layer.material.uniforms.time.value;
         layer.material.uniforms.time.value += deltaTime;
-        console.log(`   ⏰ Layer "${layer.name}" time: ${oldTime} → ${layer.material.uniforms.time.value}`);
       }
       if (planetRotation !== undefined && layer.material.uniforms.rotationAngle) {
         layer.material.uniforms.rotationAngle.value = planetRotation;
