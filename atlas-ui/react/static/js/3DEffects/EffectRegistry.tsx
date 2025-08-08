@@ -22,6 +22,15 @@ import {
   AtmosphereGlowParams 
 } from './AtmosphereGlow';
 
+// Sistema de capas mejorado
+import { PlanetLayerSystem } from '../3DComponents/PlanetLayerSystem';
+import { CloudBandsLayer, createCloudBandsLayerFromPythonData } from './CloudBandsLayer';
+import { CloudGyrosLayer, createCloudGyrosLayerFromPythonData } from './CloudGyrosLayer';
+import { RockyTerrainLayer, createRockyTerrainLayerFromPythonData } from './RockyTerrainLayer';
+import { IcyTerrainLayer, createIcyTerrainLayerFromPythonData } from './IcyTerrainLayer';
+import { MetallicSurfaceLayer, createMetallicSurfaceLayerFromPythonData } from './MetallicSurfaceLayer';
+
+// Mantener los efectos antiguos para compatibilidad temporal
 import { 
   CloudBandsEffect, 
   createCloudBandsFromPythonData,
@@ -122,6 +131,7 @@ export class EffectRegistry {
   private creators: Map<string, EffectCreator> = new Map();
   private effects: Map<string, EffectInstance> = new Map();
   private nextId: number = 1;
+  private layerSystem?: PlanetLayerSystem;
 
   private constructor() {
     this.registerDefaultEffects();
@@ -370,6 +380,12 @@ export class EffectRegistry {
       console.log('🌫️ Atmosphere:', pythonData.atmosphere);
       console.log('💍 Rings:', pythonData.rings);
       console.log('🪐 Planet info:', pythonData.planet_info);
+      
+      // ⭐ SIEMPRE crear el sistema de capas para cualquier planeta
+      const baseColor = getPlanetBaseColor(pythonData);
+      console.log('🎨 Creating PlanetLayerSystem with base color:', baseColor);
+      this.layerSystem = new PlanetLayerSystem(mesh, baseColor);
+      // NO añadir a la escena todavía - esperar hasta que se creen todas las capas
     
 
     // 1. Efectos de superficie basados en el tipo
@@ -396,12 +412,14 @@ export class EffectRegistry {
           if (instance) {
             effects.push(instance);
             
-            // APLICAR EL EFECTO INMEDIATAMENTE
-            if (instance.effect.apply) {
-              console.log('🎯 APLICANDO EFECTO:', effectData.type, 'al mesh');
-              instance.effect.apply(mesh);
-            } else {
-              console.warn('⚠️ EFECTO SIN apply():', effectData.type);
+            // NO aplicar efectos que modifiquen el material del mesh
+            // El sistema de capas manejará todo
+            console.log('🎯 EFECTO CREADO:', effectData.type, '- será manejado por el sistema de capas');
+            
+            // Si el efecto tiene un método apply, intentar convertirlo a capa
+            if (instance.effect.apply && this.layerSystem) {
+              console.log('🔄 Intentando convertir efecto a capa:', effectData.type);
+              // TODO: Implementar conversión automática de efectos a capas
             }
             
             // Añadir a la escena si es necesario
@@ -423,87 +441,113 @@ export class EffectRegistry {
       console.log('🔍 Checking legacy surface type:', surface.type);
       switch (surface.type) {
         case 'gas_giant':
-          console.log('🌀 Creating Gas Giant cloud bands');
-          const cloudBandsEffect = this.createEffectFromPythonData(
-            EffectType.CLOUD_BANDS,
-            {
-              ...surface,
-              base_color: pythonData.planet_info?.base_color || pythonData.surface?.base_color,
-              turbulence: pythonData.turbulence || surface.turbulence
-            },
-            planetRadius,
-            mesh,
-            0
-          );
-          if (cloudBandsEffect) {
-            effects.push(cloudBandsEffect);
-            console.log('✅ Cloud bands effect applied to mesh material');
-          }
-
-          console.log('🌪️ Creating Gas Giant spirals');
-          const cloudGyrosEffect = this.createEffectFromPythonData(
-            EffectType.CLOUD_GYROS,
-            {
-              ...surface,
-              base_color: pythonData.planet_info?.base_color || pythonData.surface?.base_color,
-              storm_intensity: pythonData.storm_intensity || surface.storm_intensity
-            },
-            planetRadius,
-            mesh,
-            1
-          );
-          if (cloudGyrosEffect) {
-            effects.push(cloudGyrosEffect);
-            console.log('✅ Cloud gyros effect applied to mesh material');
+          console.log('🌀 Creating Gas Giant effects with LAYER SYSTEM');
+          
+          // El sistema de capas ya fue creado arriba, solo añadir las capas específicas
+          if (this.layerSystem) {
+            // Añadir capa de bandas
+            console.log('🌀 Adding cloud bands layer');
+            const cloudBandsLayer = createCloudBandsLayerFromPythonData(
+              this.layerSystem,
+              {
+                ...surface,
+                base_color: baseColor,
+                turbulence: pythonData.turbulence || surface.turbulence
+              }
+            );
+            
+            // Añadir capa de espirales
+            console.log('🌪️ Adding cloud gyros layer');
+            const cloudGyrosLayer = createCloudGyrosLayerFromPythonData(
+              this.layerSystem,
+              {
+                ...surface,
+                base_color: baseColor,
+                storm_intensity: pythonData.storm_intensity || surface.storm_intensity
+              }
+            );
+            
+            // Crear efectos para tracking
+            effects.push({
+              id: `effect_${this.nextId++}`,
+              type: 'cloud_bands_layer',
+              effect: cloudBandsLayer,
+              priority: 0,
+              enabled: true
+            });
+            
+            effects.push({
+              id: `effect_${this.nextId++}`,
+              type: 'cloud_gyros_layer',
+              effect: cloudGyrosLayer,
+              priority: 1,
+              enabled: true
+            });
+            
+            console.log('✅ Gas Giant effects added to layer system');
+          } else {
+            console.error('❌ PlanetLayerSystem not initialized!');
           }
           break;
 
         case 'metallic':
         case 'metallic_3d':
-          console.log('⚙️ Metallic planet detected - effects should be handled by modular effects_3d system');
-          // Los effects_3d ya se procesaron arriba en lines 363-384
-          // No agregamos efectos legacy aquí para evitar duplicación
+          console.log('⚙️ Creating Metallic planet with LAYER SYSTEM');
+          if (this.layerSystem) {
+            const metallicLayer = createMetallicSurfaceLayerFromPythonData(
+              this.layerSystem,
+              pythonData
+            );
+            
+            effects.push({
+              id: `effect_${this.nextId++}`,
+              type: 'metallic_surface_layer',
+              effect: metallicLayer,
+              priority: 0,
+              enabled: true
+            });
+            
+            console.log('✅ Metallic surface layer added');
+          }
           break;
 
         case 'rocky':
-          const rockyEffect = this.createEffectFromPythonData(
-            EffectType.ROCKY_TERRAIN,
-            {
-              ...pythonData,
-              base_color: pythonData.planet_info?.base_color,
-              surface: {
-                ...pythonData.surface,
-                base_color: pythonData.planet_info?.base_color
-              }
-            },
-            planetRadius,
-            mesh,
-            0
-          );
-          if (rockyEffect) {
-            effects.push(rockyEffect);
-            rockyEffect.effect.apply(mesh);
+          console.log('🪨 Creating Rocky planet with LAYER SYSTEM');
+          if (this.layerSystem) {
+            const rockyLayer = createRockyTerrainLayerFromPythonData(
+              this.layerSystem,
+              pythonData
+            );
+            
+            effects.push({
+              id: `effect_${this.nextId++}`,
+              type: 'rocky_terrain_layer',
+              effect: rockyLayer,
+              priority: 0,
+              enabled: true
+            });
+            
+            console.log('✅ Rocky terrain layer added');
           }
           break;
 
         case 'icy':
-          const icyEffect = this.createEffectFromPythonData(
-            EffectType.ICY_TERRAIN,
-            {
-              ...pythonData,
-              base_color: pythonData.planet_info?.base_color,
-              surface: {
-                ...pythonData.surface,
-                base_color: pythonData.planet_info?.base_color
-              }
-            },
-            planetRadius,
-            mesh,
-            0
-          );
-          if (icyEffect) {
-            effects.push(icyEffect);
-            icyEffect.effect.apply(mesh);
+          console.log('❄️ Creating Icy planet with LAYER SYSTEM');
+          if (this.layerSystem) {
+            const icyLayer = createIcyTerrainLayerFromPythonData(
+              this.layerSystem,
+              pythonData
+            );
+            
+            effects.push({
+              id: `effect_${this.nextId++}`,
+              type: 'icy_terrain_layer',
+              effect: icyLayer,
+              priority: 0,
+              enabled: true
+            });
+            
+            console.log('✅ Icy terrain layer added');
           }
           break;
 
@@ -656,6 +700,12 @@ export class EffectRegistry {
       }
     }
 
+    // ⭐ AÑADIR EL SISTEMA DE CAPAS A LA ESCENA DESPUÉS DE CREAR TODAS LAS CAPAS
+    if (this.layerSystem) {
+      console.log('🎬 Adding PlanetLayerSystem to scene with all layers');
+      this.layerSystem.addToScene(scene);
+    }
+
     // 🚀 RESUMEN FINAL
     console.log('📊 EffectRegistry Summary:');
     console.log(`   Total effects created: ${effects.length}`);
@@ -709,6 +759,11 @@ export class EffectRegistry {
    * Actualiza todos los efectos activos
    */
   updateAllEffects(deltaTime: number, planetRotation?: number): void {
+    // Actualizar sistema de capas si existe
+    if (this.layerSystem) {
+      this.layerSystem.update(deltaTime, planetRotation);
+    }
+    
     for (const instance of this.effects.values()) {
       if (instance.enabled && instance.effect.update) {
         try {
@@ -740,6 +795,12 @@ export class EffectRegistry {
    * Limpia todos los efectos
    */
   clearAllEffects(): void {
+    // Limpiar sistema de capas si existe
+    if (this.layerSystem) {
+      this.layerSystem.dispose();
+      this.layerSystem = undefined;
+    }
+    
     for (const instance of this.effects.values()) {
       if (instance.effect.dispose) {
         instance.effect.dispose();
