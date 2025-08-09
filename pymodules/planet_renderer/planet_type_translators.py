@@ -369,20 +369,8 @@ class PlanetTypeTranslators:
         # Sistema de efectos modulares 3D
         effects_3d = []
         
-        # 1. SUPERFICIE METÁLICA MEJORADA - Compatible con ThreeJS lighting
-        effects_3d.append({
-            "type": "metallic_surface", 
-            "params": {
-                "color": [base_gray, base_gray, base_gray + 0.05],  # Ligero tinte azulado
-                "roughness": rng.uniform(0.3, 0.5),  # Menos rugoso para más brillo
-                "metalness": rng.uniform(0.9, 0.98),  # Muy metálico
-                "reflectivity": rng.uniform(0.8, 1.0),  # Alta reflectividad
-                "envMapIntensity": rng.uniform(1.2, 1.8),  # Intensidad de reflexiones
-                "clearcoat": rng.uniform(0.2, 0.4),  # Capa clara para brillo
-                "clearcoatRoughness": rng.uniform(0.05, 0.15)  # Capa clara suave
-            },
-            "priority": 0
-        })
+        # REMOVIDO: metallic_surface - ahora se crea automáticamente como MetallicSurfaceLayer
+        # basado en surface.type === 'metallic' en el frontend
         
         # REMOVED: atmospheric_halo - use existing atmosphere system instead
         # Metallic planets will use the regular atmosphere system for consistency

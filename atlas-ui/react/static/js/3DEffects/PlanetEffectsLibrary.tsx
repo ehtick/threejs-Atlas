@@ -639,10 +639,7 @@ export class PlanetEffectsManager {
     let effect;
     
     switch (type) {
-      case 'metallic_surface':
-        effect = new MetallicSurfaceEffect(params);
-        effect.apply(this.planetMesh);
-        break;
+      // ELIMINADO: metallic_surface - usar MetallicSurfaceLayer en su lugar
         
       case 'atmospheric_halo':
         effect = new AtmosphericHaloEffect(this.planetRadius, params);
@@ -739,21 +736,8 @@ export class PlanetEffectsManager {
 export function translatePythonEffectsToThreeJS(pythonData: any): PlanetEffect[] {
   const effects: PlanetEffect[] = [];
   
-  // Superficie metálica
-  if (pythonData.surface?.type === 'metallic') {
-    effects.push({
-      type: 'metallic_surface',
-      params: {
-        color: pythonData.surface.base_color || [0.4, 0.4, 0.45],
-        roughness: pythonData.surface.roughness || 0.7,
-        metalness: pythonData.surface.metalness || 0.9,
-        fragmentationIntensity: pythonData.surface.fragmentation || 0.5,
-        noiseScale: pythonData.surface.noise_scale || 8.0,
-        noiseIntensity: pythonData.surface.noise_intensity || 0.3
-      },
-      priority: 0
-    });
-  }
+  // ELIMINADO: Superficie metálica legacy - usar MetallicSurfaceLayer en su lugar
+  // Este código ya no se usa porque los planetas metálicos usan el sistema de capas
   
   // Halo atmosférico
   if (pythonData.atmosphere?.halo) {

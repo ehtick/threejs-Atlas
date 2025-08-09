@@ -67,7 +67,7 @@ export type {
 
 // Utilidades y constantes
 export const AVAILABLE_EFFECTS = [
-  'metallic_surface',
+  // 'metallic_surface', // ELIMINADO: usar MetallicSurfaceLayer
   'cloud_bands',
   'cloud_gyros',
   'atmosphere',
@@ -94,13 +94,7 @@ export type AvailableEffectType = typeof AVAILABLE_EFFECTS[number];
 
 // Configuración por defecto para efectos comunes
 export const DEFAULT_EFFECT_CONFIGS = {
-  metallic_surface: {
-    roughness: 0.7,
-    metalness: 0.9,
-    fragmentationIntensity: 0.5,
-    noiseScale: 8.0,
-    noiseIntensity: 0.3
-  },
+  // metallic_surface ELIMINADO: usar MetallicSurfaceLayer
   
   atmosphere: {
     type: 'Thin',
@@ -177,15 +171,8 @@ export function createPlanetEffectConfig(planetType: string): EffectCreationData
   
   switch (planetType.toLowerCase()) {
     case 'metallic':
+      // ELIMINADO: metallic_surface - ahora se maneja por MetallicSurfaceLayer automáticamente
       effects.push(
-        {
-          type: 'metallic_surface',
-          params: {
-            ...DEFAULT_EFFECT_CONFIGS.metallic_surface,
-            color: [0.4, 0.4, 0.45]
-          },
-          priority: 0
-        },
         {
           type: 'atmosphere',
           params: {
@@ -273,14 +260,7 @@ export function validateEffectConfig(effectType: string, params: any): { valid: 
   
   // Validaciones específicas por tipo de efecto
   switch (effectType) {
-    case 'metallic_surface':
-      if (params.roughness !== undefined && (params.roughness < 0 || params.roughness > 1)) {
-        errors.push('Roughness must be between 0 and 1');
-      }
-      if (params.metalness !== undefined && (params.metalness < 0 || params.metalness > 1)) {
-        errors.push('Metalness must be between 0 and 1');
-      }
-      break;
+    // ELIMINADO: validación de metallic_surface - usar MetallicSurfaceLayer
       
     case 'ring_system':
       if (params.particleCount !== undefined && params.particleCount < 1) {

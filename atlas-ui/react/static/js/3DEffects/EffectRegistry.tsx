@@ -41,7 +41,6 @@ import {
 // Importar efectos de superficie restantes
 import { FragmentationEffect } from './FragmentationEffect';
 import { OceanWavesEffect, createOceanWavesFromPythonData } from './OceanWaves';
-import { MetallicSurfaceEffect } from './PlanetEffectsLibrary';
 // Efectos de superficie legacy eliminados - usar solo versiones Layer
 
 // Importar efectos de debug
@@ -70,8 +69,7 @@ export interface EffectCreationData {
 
 // Tipos de efectos disponibles
 export enum EffectType {
-  // Efectos de superficie
-  METALLIC_SURFACE = 'metallic_surface',
+  // Efectos de superficie - METALLIC_SURFACE eliminado, usar MetallicSurfaceLayer
   CLOUD_BANDS = 'cloud_bands',
   CLOUD_GYROS = 'cloud_gyros',
   
@@ -186,17 +184,7 @@ export class EffectRegistry {
       fromPythonData: (data, planetRadius) => createOceanWavesFromPythonData(data)
     });
 
-    this.registerEffect(EffectType.METALLIC_SURFACE, {
-      create: (params, planetRadius) => new MetallicSurfaceEffect(params),
-      fromPythonData: (data, planetRadius) => {
-        return new MetallicSurfaceEffect({
-          color: data.surface?.base_color || [0.5, 0.5, 0.5],
-          roughness: data.surface?.roughness || 0.7,
-          metalness: data.surface?.metalness || 0.9,
-          fragmentationIntensity: data.surface?.fragmentation_intensity || 0.5
-        });
-      }
-    });
+    // ELIMINADO: MetallicSurfaceEffect legacy - ahora se maneja por MetallicSurfaceLayer
 
     // Efectos futuros (placeholders)
     this.registerEffect(EffectType.LAVA_FLOWS, {
