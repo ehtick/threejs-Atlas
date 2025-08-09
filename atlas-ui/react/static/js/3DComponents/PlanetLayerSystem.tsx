@@ -124,8 +124,8 @@ export class PlanetLayerSystem {
    * Crea un mesh separado ligeramente más grande para evitar z-fighting
    */
   addEffectLayer(name: string, material: THREE.ShaderMaterial, scaleFactor: number = 1.001, layerObject?: any): THREE.Mesh {
-    // Crear una geometría ligeramente más grande
-    const layerGeometry = new THREE.SphereGeometry(this.planetRadius * scaleFactor, 64, 64);
+    // Crear una geometría ligeramente más grande con más segmentos para eliminar líneas meridanas
+    const layerGeometry = new THREE.SphereGeometry(this.planetRadius * scaleFactor, 256, 256);
 
     // Crear mesh para la capa
     const layerMesh = new THREE.Mesh(layerGeometry, material);
