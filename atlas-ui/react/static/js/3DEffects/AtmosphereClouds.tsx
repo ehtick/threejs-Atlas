@@ -32,8 +32,8 @@ export interface AtmosphereCloudsParams {
 const PROCEDURAL_RANGES = {
   CLOUD_COUNT: { min: 15, max: 30 }, // Más nubes para cobertura atmosférica realista
   SIZE: { min: 3.8, max: 5.5 }, // Variedad de tamaños con curvatura adaptativa
-  OPACITY: { min: 0.4, max: 0.8 }, // Opacidad moderada para realismo
-  DENSITY: { min: 0.4, max: 1.3 }, // Densidad suave para billboards
+  OPACITY: { min: 0.4, max: 0.9 }, // Opacidad moderada para realismo
+  DENSITY: { min: 0.5, max: 2 }, // Densidad suave para billboards
   ROTATION_SPEED: { min: 0.002, max: 0.008 },
   MOVEMENT_AMPLITUDE: { min: 0.003, max: 0.02 },
   PUFFINESS: { min: 1.0, max: 1.4 } // Moderada esponjosidad
