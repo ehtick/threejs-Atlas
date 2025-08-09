@@ -12,6 +12,7 @@ import { RingSystemEffect, createRingSystemFromPythonData, RingSystemParams } fr
 import { AtmosphereEffect, createAtmosphereFromPythonData, AtmosphereParams } from "./Atmosphere";
 
 import { AtmosphereGlowEffect, createAtmosphereGlowFromPythonData, AtmosphereGlowParams } from "./AtmosphereGlow";
+import { AtmosphereCloudsEffect, createAtmosphereCloudsFromPythonData, AtmosphereCloudsParams } from "./AtmosphereClouds";
 
 // Sistema de capas mejorado
 import { PlanetLayerSystem } from "../3DComponents/PlanetLayerSystem";
@@ -65,6 +66,7 @@ export enum EffectType {
   // Efectos atmosféricos
   ATMOSPHERE = "atmosphere",
   ATMOSPHERE_GLOW = "atmosphere_glow",
+  ATMOSPHERE_CLOUDS = "atmosphere_clouds",
   ATMOSPHERIC_STREAKS = "atmospheric_streaks",
 
   // Efectos estructurales
@@ -133,6 +135,11 @@ export class EffectRegistry {
     this.registerEffect(EffectType.ATMOSPHERE_GLOW, {
       create: (params, planetRadius) => new AtmosphereGlowEffect(planetRadius, params),
       fromPythonData: (data, planetRadius) => createAtmosphereGlowFromPythonData(planetRadius, data.atmosphere || {}),
+    });
+
+    this.registerEffect(EffectType.ATMOSPHERE_CLOUDS, {
+      create: (params, planetRadius) => new AtmosphereCloudsEffect(planetRadius, params),
+      fromPythonData: (data, planetRadius) => createAtmosphereCloudsFromPythonData(planetRadius, data.surface_elements || {}),
     });
 
     this.registerEffect(EffectType.ATMOSPHERIC_STREAKS, {
@@ -448,6 +455,28 @@ export class EffectRegistry {
               };
               this.effects.set(rockyInstance.id, rockyInstance);
               effects.push(rockyInstance);
+
+              // Añadir nubes atmosféricas si están disponibles
+              if (surface.clouds && surface.clouds.length > 0) {
+                const cloudsEffect = createAtmosphereCloudsFromPythonData(
+                  planetRadius,
+                  surface,
+                  (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000 // Seed específica para nubes
+                );
+
+                const cloudsInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "atmosphere_clouds",
+                  effect: cloudsEffect,
+                  priority: 15,
+                  enabled: true,
+                  name: "Atmospheric Clouds"
+                };
+
+                this.effects.set(cloudsInstance.id, cloudsInstance);
+                effects.push(cloudsInstance);
+                cloudsEffect.addToScene(scene, mesh.position);
+              }
             }
             break;
 
@@ -468,8 +497,27 @@ export class EffectRegistry {
             break;
 
           case "oceanic":
-            // El frontend NO debe tener lógica específica para tipos de planeta
-            // Python debe enviar órdenes específicas de renderizado
+            // Añadir nubes atmosféricas si están disponibles para planetas oceánicos
+            if (surface.clouds && surface.clouds.length > 0) {
+              const cloudsEffect = createAtmosphereCloudsFromPythonData(
+                planetRadius,
+                surface,
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000 // Seed específica para nubes
+              );
+
+              const cloudsInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "atmosphere_clouds",
+                effect: cloudsEffect,
+                priority: 15,
+                enabled: true,
+                name: "Atmospheric Clouds"
+              };
+
+              this.effects.set(cloudsInstance.id, cloudsInstance);
+              effects.push(cloudsInstance);
+              cloudsEffect.addToScene(scene, mesh.position);
+            }
             break;
 
           default:

@@ -22,6 +22,12 @@ export {
 export type { AtmosphereGlowParams } from './AtmosphereGlow';
 
 export { 
+  AtmosphereCloudsEffect, 
+  createAtmosphereCloudsFromPythonData
+} from './AtmosphereClouds';
+export type { AtmosphereCloudsParams } from './AtmosphereClouds';
+
+export { 
   AtmosphereEffect, 
   createAtmosphereFromPythonData
 } from './Atmosphere';
@@ -72,6 +78,7 @@ export const AVAILABLE_EFFECTS = [
   'cloud_gyros',
   'atmosphere',
   'atmosphere_glow',
+  'atmosphere_clouds',
   'atmospheric_streaks',
   'ring_system',
   'fragmentation',
