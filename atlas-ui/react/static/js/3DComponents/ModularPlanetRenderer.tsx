@@ -153,7 +153,10 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
       const newEffects = effectRegistry.createEffectsFromPythonPlanetData(planetData, NORMALIZED_PLANET_RADIUS, planetMeshRef.current, sceneRef.current, planetLayerSystemRef.current);
 
       // Log de efectos activos
-      console.log(`Planet: ${planetData.planet_info?.name}, Effects:`, newEffects.map(e => e.type));
+      console.log(
+        `Planet: ${planetData.planet_info?.name}, Effects:`,
+        newEffects.map((e) => e.type)
+      );
 
       setEffects(newEffects);
       activeEffectsRef.current = newEffects;
@@ -472,7 +475,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
   //   const material = planetMeshRef.current.material;
 
   //   if (!(material instanceof THREE.MeshStandardMaterial)) {
-  //     
+  //
   //     return;
   //   }
 
@@ -489,7 +492,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
   //       planetType: renderingData.planet_info?.type,
   //     });
   //   } else {
-  //     
+  //
   //   }
 
   //   if (renderingData.surface_elements?.metalness !== undefined) {
@@ -510,8 +513,8 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
 
     const exactDistance = calculateExactCameraDistance();
 
-    controls.minDistance = exactDistance * 0.8;
-    controls.maxDistance = exactDistance * 3;
+    controls.minDistance = exactDistance * 0.5;
+    controls.maxDistance = exactDistance * 2;
     controls.autoRotate = autoRotate;
     controls.autoRotateSpeed = 0.5;
     controls.enablePan = true;
@@ -815,7 +818,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
   const clearActiveEffects = () => {
     // Limpiar del registro global PRIMERO para resetear IDs
     effectRegistry.clearAllEffects();
-    
+
     // Luego limpiar la referencia local
     activeEffectsRef.current.forEach((effect) => {
       try {
