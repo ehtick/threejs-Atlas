@@ -11,6 +11,7 @@
  */
 
 import * as THREE from 'three';
+import { SeededRandom } from '../Utils/SeededRandom';
 
 export interface AtmosphericStreaksParams {
   color?: number[] | THREE.Color;
@@ -19,6 +20,7 @@ export interface AtmosphericStreaksParams {
   size?: number;
   opacity?: number;
   brightness?: number;
+  seed?: number;
 }
 
 /**
@@ -28,19 +30,26 @@ export interface AtmosphericStreaksParams {
  */
 export class AtmosphericStreaksEffect {
   private particleSystem: THREE.Points;
-  private material: THREE.PointsMaterial;
+  private material: THREE.ShaderMaterial;
   private geometry: THREE.BufferGeometry;
   private params: AtmosphericStreaksParams;
   private particleCount: number;
+  private time: number = 0;
+  private rng: SeededRandom;
 
   constructor(planetRadius: number, params: AtmosphericStreaksParams = {}) {
+    // Usar seed para generación determinística
+    const seed = params.seed || Math.floor(Math.random() * 1000000);
+    this.rng = new SeededRandom(seed);
+    
     this.params = {
       color: params.color || [0.95, 0.95, 1.0],
       particleCount: params.particleCount || 100,
       speed: params.speed || 1.0,
       size: params.size || 2.0,
       opacity: params.opacity || 0.8,
-      brightness: params.brightness || 1.5
+      brightness: params.brightness || 1.5,
+      seed
     };
 
     this.particleCount = this.params.particleCount!;
@@ -60,10 +69,10 @@ export class AtmosphericStreaksEffect {
     const atmosphereRadius = planetRadius * 1.3;
     
     for (let i = 0; i < this.particleCount; i++) {
-      // Posiciones aleatorias en una esfera alrededor del planeta
-      const phi = Math.random() * Math.PI * 2;
-      const costheta = Math.random() * 2 - 1;
-      const u = Math.random();
+      // Posiciones aleatorias determinísticas en una esfera alrededor del planeta
+      const phi = this.rng.random() * Math.PI * 2;
+      const costheta = this.rng.random() * 2 - 1;
+      const u = this.rng.random();
       
       const theta = Math.acos(costheta);
       const r = atmosphereRadius * Math.cbrt(u);
@@ -72,10 +81,10 @@ export class AtmosphericStreaksEffect {
       positions[i * 3 + 1] = r * Math.sin(theta) * Math.sin(phi);
       positions[i * 3 + 2] = r * Math.cos(theta);
 
-      // Tamaños y propiedades variadas
-      sizes[i] = this.params.size! * (0.5 + Math.random() * 0.5);
-      speeds[i] = this.params.speed! * (0.8 + Math.random() * 0.4);
-      phases[i] = Math.random() * Math.PI * 2;
+      // Tamaños y propiedades variadas determinísticas
+      sizes[i] = this.params.size! * (0.5 + this.rng.random() * 0.5);
+      speeds[i] = this.params.speed! * (0.8 + this.rng.random() * 0.4);
+      phases[i] = this.rng.random() * Math.PI * 2;
     }
 
     this.geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
@@ -93,18 +102,81 @@ export class AtmosphericStreaksEffect {
         this.params.color![2]
       );
 
-    this.material = new THREE.PointsMaterial({
-      color: color,
-      size: this.params.size!,
-      opacity: this.params.opacity!,
+    // Shader personalizado para partículas suaves tipo estela
+    const vertexShader = `
+      attribute float size;
+      attribute float speed;
+      attribute float phase;
+      
+      varying float vOpacity;
+      varying float vPhase;
+      
+      uniform float time;
+      
+      void main() {
+        vPhase = phase;
+        
+        // Animación sutil de las estelas
+        vec3 animatedPosition = position;
+        float animOffset = time * speed * 0.1 + phase;
+        animatedPosition.y += sin(animOffset) * 0.5;
+        animatedPosition.x += cos(animOffset * 0.7) * 0.3;
+        
+        // Calcular opacidad basada en la distancia al centro
+        float distanceToCenter = length(position);
+        vOpacity = 1.0 - smoothstep(0.0, 30.0, distanceToCenter);
+        
+        vec4 mvPosition = modelViewMatrix * vec4(animatedPosition, 1.0);
+        gl_PointSize = size * (300.0 / -mvPosition.z);
+        gl_Position = projectionMatrix * mvPosition;
+      }
+    `;
+
+    const fragmentShader = `
+      uniform vec3 color;
+      uniform float opacity;
+      uniform float brightness;
+      
+      varying float vOpacity;
+      varying float vPhase;
+      
+      void main() {
+        // Crear una partícula circular suave
+        vec2 center = gl_PointCoord - vec2(0.5);
+        float dist = length(center);
+        
+        // Gradiente suave desde el centro
+        float alpha = 1.0 - smoothstep(0.0, 0.5, dist);
+        
+        // Añadir un brillo extra en el centro
+        float glow = exp(-dist * 4.0);
+        
+        // Combinar alpha con opacidad variable
+        alpha *= vOpacity * opacity;
+        
+        // Color con brillo
+        vec3 finalColor = color * brightness * (1.0 + glow * 2.0);
+        
+        // Añadir ligera variación de color
+        finalColor += vec3(0.1, 0.1, 0.2) * glow;
+        
+        gl_FragColor = vec4(finalColor, alpha * (0.6 + 0.4 * glow));
+      }
+    `;
+
+    this.material = new THREE.ShaderMaterial({
+      uniforms: {
+        time: { value: 0 },
+        color: { value: color },
+        opacity: { value: this.params.opacity },
+        brightness: { value: this.params.brightness }
+      },
+      vertexShader,
+      fragmentShader,
       transparent: true,
       blending: THREE.AdditiveBlending,
-      sizeAttenuation: true,
-      vertexColors: false
+      depthWrite: false
     });
-
-    // Hacer las partículas más brillantes
-    this.material.color.multiplyScalar(this.params.brightness!);
   }
 
   addToScene(scene: THREE.Scene, planetPosition?: THREE.Vector3): void {
@@ -115,11 +187,13 @@ export class AtmosphericStreaksEffect {
   }
 
   update(deltaTime: number): void {
-    // Las estelas son más estáticas que los gyros
-    // Solo un ligero parpadeo/pulsación
-    const time = Date.now() * 0.001;
-    const pulsation = 0.9 + 0.1 * Math.sin(time * 2);
-    this.material.opacity = this.params.opacity! * pulsation;
+    // Actualizar tiempo para animación
+    this.time += deltaTime;
+    this.material.uniforms.time.value = this.time;
+    
+    // Pulsación sutil para más vida
+    const pulsation = 0.9 + 0.1 * Math.sin(this.time * 2);
+    this.material.uniforms.opacity.value = this.params.opacity! * pulsation;
   }
 
   updateParams(newParams: Partial<AtmosphericStreaksParams>): void {
@@ -133,16 +207,15 @@ export class AtmosphericStreaksEffect {
           newParams.color[1], 
           newParams.color[2]
         );
-      this.material.color = color;
-      this.material.color.multiplyScalar(this.params.brightness!);
+      this.material.uniforms.color.value = color;
     }
     
     if (newParams.opacity !== undefined) {
-      this.material.opacity = newParams.opacity;
+      this.material.uniforms.opacity.value = newParams.opacity;
     }
     
-    if (newParams.size !== undefined) {
-      this.material.size = newParams.size;
+    if (newParams.brightness !== undefined) {
+      this.material.uniforms.brightness.value = newParams.brightness;
     }
   }
 
@@ -161,13 +234,11 @@ export class AtmosphericStreaksEffect {
  */
 export function createAtmosphericStreaksFromPythonData(
   planetRadius: number, 
-  atmosphereData: any
+  atmosphereData: any,
+  seed?: number
 ): AtmosphericStreaksEffect {
-  
-  
-  
   // Extraer datos de estelas desde Python (referencia: planet_type_translators.py líneas 391-403)
-  const streaksData = atmosphereData.streaks || {};
+  const streaksData = atmosphereData.streaks || atmosphereData;
   
   const params: AtmosphericStreaksParams = {
     color: streaksData.color || [0.95, 0.95, 1.0], // Blanco brillante por defecto
@@ -175,10 +246,9 @@ export function createAtmosphericStreaksFromPythonData(
     speed: streaksData.speed || 1.0,
     size: 2.0,
     opacity: 0.8,
-    brightness: 1.5
+    brightness: 1.5,
+    seed: seed || Math.floor(Math.random() * 1000000)
   };
-
-  
 
   return new AtmosphericStreaksEffect(planetRadius, params);
 }

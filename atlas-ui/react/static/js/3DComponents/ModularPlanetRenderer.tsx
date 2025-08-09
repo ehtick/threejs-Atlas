@@ -152,6 +152,9 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
 
       const newEffects = effectRegistry.createEffectsFromPythonPlanetData(planetData, NORMALIZED_PLANET_RADIUS, planetMeshRef.current, sceneRef.current, planetLayerSystemRef.current);
 
+      // Log de efectos activos
+      console.log(`Planet: ${planetData.planet_info?.name}, Effects:`, newEffects.map(e => e.type));
+
       setEffects(newEffects);
       activeEffectsRef.current = newEffects;
 

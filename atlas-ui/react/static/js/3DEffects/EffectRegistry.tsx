@@ -380,7 +380,27 @@ export class EffectRegistry {
         
         
         for (const effectData of surface.effects_3d) {
-          
+          // Manejar atmospheric_streaks especialmente para pasar la seed (como AtmosphereGlow)
+          if (effectData.type === 'atmospheric_streaks') {
+            const streaksEffect = createAtmosphericStreaksFromPythonData(
+              planetRadius, 
+              effectData.params,
+              pythonData.seeds?.shape_seed + 3000 // Seed específica para atmospheric streaks
+            );
+            
+            const streaksInstance: EffectInstance = {
+              id: `effect_${this.nextId++}`,
+              type: 'atmospheric_streaks',
+              effect: streaksEffect,
+              priority: effectData.priority || 0,
+              enabled: true,
+              name: 'Atmospheric Streaks'
+            };
+            
+            effects.push(streaksInstance);
+            streaksEffect.addToScene(scene, mesh.position);
+            continue; // Skip the normal createEffect flow
+          }
           
           const instance = this.createEffect(
             effectData.type,
@@ -391,13 +411,13 @@ export class EffectRegistry {
           );
           
           if (instance) {
+            // Añadir nombre descriptivo al efecto
+            instance.name = effectData.type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            
             effects.push(instance);
-            
-            
             
             // 🚀 APLICAR EFECTO como antes, pero respetando la iluminación base
             if (instance.effect.apply) {
-              
               instance.effect.apply(mesh);
             }
             
