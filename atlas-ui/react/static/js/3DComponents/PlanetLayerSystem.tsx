@@ -565,7 +565,7 @@ export class PlanetLayerSystem {
         vec3 baseNormal = normalize(vWorldNormal);
         
         // CRISTALES FACETADOS: Perturbar la normal para crear caras cristalinas
-        vec3 normal = crystallineFacets(vUv, 80.0, baseNormal); // Escala mucho más alta para cristales pequeños
+        vec3 normal = crystallineFacets(vUv, 80.0, baseNormal);
         
         // Usar posición de luz si está disponible, sino usar dirección (EXACTAMENTE como en README)
         vec3 lightDir;

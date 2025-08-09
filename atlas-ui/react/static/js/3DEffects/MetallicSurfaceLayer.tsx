@@ -21,10 +21,10 @@ export interface MetallicSurfaceLayerParams {
 
 // Rangos para generación procedural
 const PROCEDURAL_RANGES = {
-  METALNESS: { min: 0.7, max: 0.95 },
+  METALNESS: { min: 0.5, max: 5 },
   ROUGHNESS: { min: 0.1, max: 0.6 },
   FRAGMENTATION_INTENSITY: { min: 0.3, max: 0.8 },
-  OPACITY: { min: 0.6, max: 0.9 }
+  OPACITY: { min: 0.2, max: 0.9 }
 };
 
 export class MetallicSurfaceLayer {
@@ -53,7 +53,7 @@ export class MetallicSurfaceLayer {
       opacity: params.opacity || rng.uniform(PROCEDURAL_RANGES.OPACITY.min, PROCEDURAL_RANGES.OPACITY.max),
       seed,
       noiseScale: params.noiseScale || 8.0,
-      noiseIntensity: params.noiseIntensity || 0.3
+      noiseIntensity: params.noiseIntensity || 0.3,
     };
 
     // Crear material usando el sistema de capas (como CloudBands)
@@ -87,9 +87,12 @@ export function createMetallicSurfaceLayerFromPythonData(
   const surface = data.surface || {};
   const baseColor = data.planet_info?.base_color || surface.base_color;
   
-  // Generar valores proceduralmente basados en seed
+  // Generar valores proceduralmente basados en seed del planeta
   const seed = globalSeed || Math.floor(Math.random() * 1000000);
   const rng = new SeededRandom(seed + 7000); // +7000 para MetallicSurfaceLayer
+  
+  // Usar el seed del planeta para variaciones sutiles (sin cambiar apariencia base)
+  const subtleVariation = rng.uniform(0.8, 1.2); // Variación muy sutil
   
   return new MetallicSurfaceLayer(layerSystem, {
     color: baseColor ? new THREE.Color(baseColor) : new THREE.Color(0x808080),
@@ -98,7 +101,7 @@ export function createMetallicSurfaceLayerFromPythonData(
     fragmentationIntensity: surface.fragmentation || rng.uniform(PROCEDURAL_RANGES.FRAGMENTATION_INTENSITY.min, PROCEDURAL_RANGES.FRAGMENTATION_INTENSITY.max),
     opacity: rng.uniform(PROCEDURAL_RANGES.OPACITY.min, PROCEDURAL_RANGES.OPACITY.max),
     seed,
-    noiseScale: 4.0,
+    noiseScale: 4.0 * subtleVariation, // Variación sutil basada en seed
     noiseIntensity: 0.3
   });
 }
