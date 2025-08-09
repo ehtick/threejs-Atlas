@@ -98,7 +98,7 @@ export function createMetallicSurfaceLayerFromPythonData(
     fragmentationIntensity: surface.fragmentation || rng.uniform(PROCEDURAL_RANGES.FRAGMENTATION_INTENSITY.min, PROCEDURAL_RANGES.FRAGMENTATION_INTENSITY.max),
     opacity: rng.uniform(PROCEDURAL_RANGES.OPACITY.min, PROCEDURAL_RANGES.OPACITY.max),
     seed,
-    noiseScale: 8.0,
+    noiseScale: 4.0,
     noiseIntensity: 0.3
   });
 }

@@ -543,7 +543,7 @@ export class PlanetLayerSystem {
         
         // CRÍTICO: usar la misma lógica que CloudBands para transparencia
         float lightIntensity = max(0.0, dotNL);
-        lightIntensity = pow(lightIntensity, 1.5); // Caída suave hacia la oscuridad
+        lightIntensity = pow(lightIntensity, 2.0); // Caída más agresiva hacia la oscuridad
         
         float alpha = opacity * lightIntensity;
         
