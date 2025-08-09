@@ -1,53 +1,41 @@
 /**
  * Effect Registry - Registro dinámico de efectos 3D
- * 
+ *
  * Sistema centralizado para gestionar todos los efectos disponibles
  * y aplicarlos dinámicamente basándose en datos de Python.
  */
 
-import * as THREE from 'three';
+import * as THREE from "three";
 
 // Importar todos los efectos disponibles
-import { RingSystemEffect, createRingSystemFromPythonData, RingSystemParams } from './RingSystem';
-import { GasGiantBandsEffect, createGasGiantBandsFromPythonData, GasGiantBandsParams } from './GasGiantBands';
-import { 
-  AtmosphereEffect, 
-  createAtmosphereFromPythonData,
-  AtmosphereParams
-} from './Atmosphere';
+import { RingSystemEffect, createRingSystemFromPythonData, RingSystemParams } from "./RingSystem";
+import { AtmosphereEffect, createAtmosphereFromPythonData, AtmosphereParams } from "./Atmosphere";
 
-import { 
-  AtmosphereGlowEffect, 
-  createAtmosphereGlowFromPythonData,
-  AtmosphereGlowParams 
-} from './AtmosphereGlow';
+import { AtmosphereGlowEffect, createAtmosphereGlowFromPythonData, AtmosphereGlowParams } from "./AtmosphereGlow";
 
 // Sistema de capas mejorado
-import { PlanetLayerSystem } from '../3DComponents/PlanetLayerSystem';
-import { CloudBandsLayer, createCloudBandsLayerFromPythonData } from './CloudBandsLayer';
-import { CloudGyrosLayer, createCloudGyrosLayerFromPythonData } from './CloudGyrosLayer';
-import { RockyTerrainLayer, createRockyTerrainLayerFromPythonData } from './RockyTerrainLayer';
-import { IcyTerrainLayer, createIcyTerrainLayerFromPythonData } from './IcyTerrainLayer';
-import { MetallicSurfaceLayer, createMetallicSurfaceLayerFromPythonData } from './MetallicSurfaceLayer';
+import { PlanetLayerSystem } from "../3DComponents/PlanetLayerSystem";
+import { CloudBandsLayer, createCloudBandsLayerFromPythonData } from "./CloudBandsLayer";
+import { CloudGyrosLayer, createCloudGyrosLayerFromPythonData } from "./CloudGyrosLayer";
+import { RockyTerrainLayer, createRockyTerrainLayerFromPythonData } from "./RockyTerrainLayer";
+import { IcyTerrainLayer, createIcyTerrainLayerFromPythonData } from "./IcyTerrainLayer";
+import { MetallicSurfaceLayer, createMetallicSurfaceLayerFromPythonData } from "./MetallicSurfaceLayer";
 
 // Efectos legacy eliminados - usar solo versiones Layer
 
-import { 
-  AtmosphericStreaksEffect, 
-  createAtmosphericStreaksFromPythonData,
-  AtmosphericStreaksParams 
-} from './AtmosphericStreaks';
+import { AtmosphericStreaksEffect, createAtmosphericStreaksFromPythonData, AtmosphericStreaksParams } from "./AtmosphericStreaks";
 
 // Importar efectos de superficie restantes
-import { FragmentationEffect } from './FragmentationEffect';
-import { OceanWavesEffect, createOceanWavesFromPythonData } from './OceanWaves';
+import { FragmentationEffect } from "./FragmentationEffect";
+import { OceanWavesEffect, createOceanWavesFromPythonData } from "./OceanWaves";
 // Efectos de superficie legacy eliminados - usar solo versiones Layer
 
 // Importar efectos de debug
-import { VisualDebug3DEffect, createVisualDebug3DFromPythonData } from './VisualDebug3D';
+import { VisualDebug3DEffect, createVisualDebug3DFromPythonData } from "./VisualDebug3D";
+import { ENABLE_EFFECTS_LOGGING } from "../Utils/DebugConfig";
 
-// Importar función centralizada de colores  
-import { getPlanetBaseColor } from './PlanetColorBase';
+// Importar función centralizada de colores
+import { getPlanetBaseColor } from "./PlanetColorBase";
 
 // VISUAL DEBUG FLAG - Controla si se muestra debug visual 3D
 const VISUAL_DEBUG = false; // Cambiar a false para desactivar
@@ -58,6 +46,7 @@ export interface EffectInstance {
   effect: any;
   priority: number;
   enabled: boolean;
+  name?: string; // Añadido: nombre descriptivo del efecto
 }
 
 export interface EffectCreationData {
@@ -70,37 +59,37 @@ export interface EffectCreationData {
 // Tipos de efectos disponibles
 export enum EffectType {
   // Efectos de superficie - METALLIC_SURFACE eliminado, usar MetallicSurfaceLayer
-  CLOUD_BANDS = 'cloud_bands',
-  CLOUD_GYROS = 'cloud_gyros',
-  
+  CLOUD_BANDS = "cloud_bands",
+  CLOUD_GYROS = "cloud_gyros",
+
   // Efectos atmosféricos
-  ATMOSPHERE = 'atmosphere',
-  ATMOSPHERE_GLOW = 'atmosphere_glow',
-  ATMOSPHERIC_STREAKS = 'atmospheric_streaks',
-  
+  ATMOSPHERE = "atmosphere",
+  ATMOSPHERE_GLOW = "atmosphere_glow",
+  ATMOSPHERIC_STREAKS = "atmospheric_streaks",
+
   // Efectos estructurales
-  RING_SYSTEM = 'ring_system',
-  FRAGMENTATION = 'fragmentation',
-  
-  // Efectos de superficie específicos 
-  ROCKY_TERRAIN = 'rocky_terrain',
-  ICY_TERRAIN = 'icy_terrain',
-  OCEAN_WAVES = 'ocean_waves',
-  LAVA_FLOWS = 'lava_flows',
-  CRYSTAL_FORMATIONS = 'crystal_formations',
-  CLOUD_LAYERS = 'cloud_layers',
-  STORM_SYSTEMS = 'storm_systems',
-  VOLCANIC_ACTIVITY = 'volcanic_activity',
-  AURORA = 'aurora',
-  MAGNETIC_FIELD = 'magnetic_field',
-  
+  RING_SYSTEM = "ring_system",
+  FRAGMENTATION = "fragmentation",
+
+  // Efectos de superficie específicos
+  ROCKY_TERRAIN = "rocky_terrain",
+  ICY_TERRAIN = "icy_terrain",
+  OCEAN_WAVES = "ocean_waves",
+  LAVA_FLOWS = "lava_flows",
+  CRYSTAL_FORMATIONS = "crystal_formations",
+  CLOUD_LAYERS = "cloud_layers",
+  STORM_SYSTEMS = "storm_systems",
+  VOLCANIC_ACTIVITY = "volcanic_activity",
+  AURORA = "aurora",
+  MAGNETIC_FIELD = "magnetic_field",
+
   // Efectos de iluminación
-  CITY_LIGHTS = 'city_lights',
-  BIOLUMINESCENCE = 'bioluminescence',
-  THERMAL_EMISSIONS = 'thermal_emissions',
-  
+  CITY_LIGHTS = "city_lights",
+  BIOLUMINESCENCE = "bioluminescence",
+  THERMAL_EMISSIONS = "thermal_emissions",
+
   // Efectos de debug
-  VISUAL_DEBUG_3D = 'visual_debug_3d'
+  VISUAL_DEBUG_3D = "visual_debug_3d",
 }
 
 // Interfaz para creadores de efectos
@@ -143,27 +132,23 @@ export class EffectRegistry {
 
     this.registerEffect(EffectType.ATMOSPHERE_GLOW, {
       create: (params, planetRadius) => new AtmosphereGlowEffect(planetRadius, params),
-      fromPythonData: (data, planetRadius) => 
-        createAtmosphereGlowFromPythonData(planetRadius, data.atmosphere || {})
+      fromPythonData: (data, planetRadius) => createAtmosphereGlowFromPythonData(planetRadius, data.atmosphere || {}),
     });
 
     this.registerEffect(EffectType.ATMOSPHERIC_STREAKS, {
       create: (params, planetRadius) => new AtmosphericStreaksEffect(planetRadius, params),
-      fromPythonData: (data, planetRadius) => 
-        createAtmosphericStreaksFromPythonData(planetRadius, data.atmosphere || {})
+      fromPythonData: (data, planetRadius) => createAtmosphericStreaksFromPythonData(planetRadius, data.atmosphere || {}),
     });
 
     this.registerEffect(EffectType.ATMOSPHERE, {
       create: (params, planetRadius) => new AtmosphereEffect(planetRadius, params),
-      fromPythonData: (data, planetRadius) => 
-        createAtmosphereFromPythonData(planetRadius, data)
+      fromPythonData: (data, planetRadius) => createAtmosphereFromPythonData(planetRadius, data),
     });
 
     // Efectos estructurales
     this.registerEffect(EffectType.RING_SYSTEM, {
       create: (params, planetRadius) => new RingSystemEffect(planetRadius, params),
-      fromPythonData: (data, planetRadius) => 
-        createRingSystemFromPythonData(data.rings || {}, planetRadius)
+      fromPythonData: (data, planetRadius) => createRingSystemFromPythonData(data.rings || {}, planetRadius),
     });
 
     this.registerEffect(EffectType.FRAGMENTATION, {
@@ -171,9 +156,9 @@ export class EffectRegistry {
       fromPythonData: (data, planetRadius) => {
         return new FragmentationEffect(planetRadius, {
           color: data.surface?.fragment_color || [0.3, 0.3, 0.3],
-          fragmentCount: data.surface?.fragment_count || 20
+          fragmentCount: data.surface?.fragment_count || 20,
         });
-      }
+      },
     });
 
     // Efectos de terreno legacy eliminados - usar solo sistema de capas
@@ -181,7 +166,7 @@ export class EffectRegistry {
     // Efectos de superficie
     this.registerEffect(EffectType.OCEAN_WAVES, {
       create: (params, planetRadius) => new OceanWavesEffect(params),
-      fromPythonData: (data, planetRadius) => createOceanWavesFromPythonData(data)
+      fromPythonData: (data, planetRadius) => createOceanWavesFromPythonData(data),
     });
 
     // ELIMINADO: MetallicSurfaceEffect legacy - ahora se maneja por MetallicSurfaceLayer
@@ -189,22 +174,22 @@ export class EffectRegistry {
     // Efectos futuros (placeholders)
     this.registerEffect(EffectType.LAVA_FLOWS, {
       create: (params, planetRadius) => {
-        console.warn('Lava flows effect not implemented yet');
+        console.warn("Lava flows effect not implemented yet");
         return null;
-      }
+      },
     });
 
     this.registerEffect(EffectType.CRYSTAL_FORMATIONS, {
       create: (params, planetRadius) => {
-        console.warn('Crystal formations effect not implemented yet');
+        console.warn("Crystal formations effect not implemented yet");
         return null;
-      }
+      },
     });
 
     // Efectos de debug
     this.registerEffect(EffectType.VISUAL_DEBUG_3D, {
       create: (params, planetRadius) => new VisualDebug3DEffect(planetRadius, params),
-      fromPythonData: (data, planetRadius) => createVisualDebug3DFromPythonData(data, planetRadius)
+      fromPythonData: (data, planetRadius) => createVisualDebug3DFromPythonData(data, planetRadius),
     });
 
     // Más efectos pueden añadirse aquí fácilmente
@@ -220,13 +205,7 @@ export class EffectRegistry {
   /**
    * Crea un efecto específico
    */
-  createEffect(
-    type: string, 
-    params: any, 
-    planetRadius: number, 
-    mesh?: THREE.Mesh,
-    priority: number = 0
-  ): EffectInstance | null {
+  createEffect(type: string, params: any, planetRadius: number, mesh?: THREE.Mesh, priority: number = 0): EffectInstance | null {
     const creator = this.creators.get(type);
     if (!creator) {
       console.warn(`Effect type '${type}' not registered`);
@@ -244,7 +223,7 @@ export class EffectRegistry {
         type,
         effect,
         priority,
-        enabled: true
+        enabled: true,
       };
 
       this.effects.set(instance.id, instance);
@@ -258,13 +237,7 @@ export class EffectRegistry {
   /**
    * Crea un efecto desde datos de Python
    */
-  createEffectFromPythonData(
-    type: string,
-    pythonData: any,
-    planetRadius: number,
-    mesh?: THREE.Mesh,
-    priority: number = 0
-  ): EffectInstance | null {
+  createEffectFromPythonData(type: string, pythonData: any, planetRadius: number, mesh?: THREE.Mesh, priority: number = 0): EffectInstance | null {
     const creator = this.creators.get(type);
     if (!creator || !creator.fromPythonData) {
       return this.createEffect(type, pythonData, planetRadius, mesh, priority);
@@ -281,7 +254,7 @@ export class EffectRegistry {
         type,
         effect,
         priority,
-        enabled: true
+        enabled: true,
       };
 
       this.effects.set(instance.id, instance);
@@ -295,24 +268,14 @@ export class EffectRegistry {
   /**
    * Crea múltiples efectos desde una lista de datos
    */
-  createEffectsFromList(
-    effectsData: EffectCreationData[],
-    planetRadius: number,
-    mesh?: THREE.Mesh
-  ): EffectInstance[] {
+  createEffectsFromList(effectsData: EffectCreationData[], planetRadius: number, mesh?: THREE.Mesh): EffectInstance[] {
     const instances: EffectInstance[] = [];
 
     // Ordenar por prioridad
     const sortedData = effectsData.sort((a, b) => (a.priority || 0) - (b.priority || 0));
 
     for (const data of sortedData) {
-      const instance = this.createEffect(
-        data.type,
-        data.params,
-        planetRadius,
-        mesh,
-        data.priority
-      );
+      const instance = this.createEffect(data.type, data.params, planetRadius, mesh, data.priority);
 
       if (instance) {
         instance.enabled = data.enabled !== false;
@@ -327,406 +290,308 @@ export class EffectRegistry {
    * Interpreta datos completos de Python y crea todos los efectos necesarios
    * ACTUALIZADO: Usa PlanetLayerSystem existente
    */
-  createEffectsFromPythonPlanetData(
-    pythonData: any,
-    planetRadius: number,
-    mesh: THREE.Mesh,
-    scene: THREE.Scene,
-    existingLayerSystem?: PlanetLayerSystem
-  ): EffectInstance[] {
+  createEffectsFromPythonPlanetData(pythonData: any, planetRadius: number, mesh: THREE.Mesh, scene: THREE.Scene, existingLayerSystem?: PlanetLayerSystem): EffectInstance[] {
     const effects: EffectInstance[] = [];
-    
+
     try {
       // 🚀 DEBUG: Log the complete data structure
-      
-      
-      
-      
-      
-      
+
       // ⭐ Obtener color base para usar en efectos
       const baseColor = getPlanetBaseColor(pythonData);
-      
+
       // ⭐ USAR PlanetLayerSystem existente o crear uno nuevo
       if (existingLayerSystem) {
-        
         this.layerSystem = existingLayerSystem;
       } else {
-        
         this.layerSystem = new PlanetLayerSystem(mesh, baseColor);
       }
-    
 
-    // 1. Efectos de superficie basados en el tipo
-    if (pythonData.surface_elements) {
-      const surface = pythonData.surface_elements;
-      
-      
-      // Sistema modular de efectos 3D
-      if (surface.effects_3d && Array.isArray(surface.effects_3d)) {
-        
-        
-        
-        for (const effectData of surface.effects_3d) {
-          // Manejar atmospheric_streaks especialmente para pasar la seed (como AtmosphereGlow)
-          if (effectData.type === 'atmospheric_streaks') {
-            const streaksEffect = createAtmosphericStreaksFromPythonData(
-              planetRadius, 
-              effectData.params,
-              pythonData.seeds?.shape_seed + 3000 // Seed específica para atmospheric streaks
-            );
-            
-            const streaksInstance: EffectInstance = {
-              id: `effect_${this.nextId++}`,
-              type: 'atmospheric_streaks',
-              effect: streaksEffect,
-              priority: effectData.priority || 0,
-              enabled: true,
-              name: 'Atmospheric Streaks'
-            };
-            
-            effects.push(streaksInstance);
-            streaksEffect.addToScene(scene, mesh.position);
-            continue; // Skip the normal createEffect flow
-          }
-          
-          const instance = this.createEffect(
-            effectData.type,
-            effectData.params,
-            planetRadius,
-            mesh,
-            effectData.priority || 0
-          );
-          
-          if (instance) {
-            // Añadir nombre descriptivo al efecto
-            instance.name = effectData.type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            
-            effects.push(instance);
-            
-            // 🚀 APLICAR EFECTO como antes, pero respetando la iluminación base
-            if (instance.effect.apply) {
-              instance.effect.apply(mesh);
+      // 1. Efectos de superficie basados en el tipo
+      if (pythonData.surface_elements) {
+        const surface = pythonData.surface_elements;
+
+        // Sistema modular de efectos 3D
+        if (surface.effects_3d && Array.isArray(surface.effects_3d)) {
+          for (const effectData of surface.effects_3d) {
+            // Manejar atmospheric_streaks especialmente para pasar la seed (como AtmosphereGlow)
+            if (effectData.type === "atmospheric_streaks") {
+              const streaksEffect = createAtmosphericStreaksFromPythonData(
+                planetRadius,
+                effectData.params,
+                pythonData.seeds?.shape_seed + 3000 // Seed específica para atmospheric streaks
+              );
+
+              const streaksInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "atmospheric_streaks",
+                effect: streaksEffect,
+                priority: effectData.priority || 0,
+                enabled: true,
+                name: "Atmospheric Streaks",
+              };
+
+              // CRÍTICO: Añadir al mapa de efectos para que se pueda hacer toggle
+              this.effects.set(streaksInstance.id, streaksInstance);
+              effects.push(streaksInstance);
+              streaksEffect.addToScene(scene, mesh.position);
+              continue; // Skip the normal createEffect flow
             }
-            
-            // Añadir a la escena si es necesario
-            if (instance.effect.addToScene) {
-              instance.effect.addToScene(scene, mesh.position);
+
+            const instance = this.createEffect(effectData.type, effectData.params, planetRadius, mesh, effectData.priority || 0);
+
+            if (instance) {
+              // Añadir nombre descriptivo al efecto
+              instance.name = effectData.type.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+
+              effects.push(instance);
+
+              // 🚀 APLICAR EFECTO como antes, pero respetando la iluminación base
+              if (instance.effect.apply) {
+                instance.effect.apply(mesh);
+              }
+
+              // Añadir a la escena si es necesario
+              if (instance.effect.addToScene) {
+                instance.effect.addToScene(scene, mesh.position);
+              }
+            } else {
+              console.error("❌ FALLO AL CREAR EFECTO:", effectData.type);
             }
-            
-          } else {
-            console.error('❌ FALLO AL CREAR EFECTO:', effectData.type);
           }
+        } else {
+        }
+
+        // Sistema de rendering_commands ELIMINADO - usar efectos específicos
+
+        // Efectos específicos por tipo de planeta (LEGACY - se eliminará)
+
+        switch (surface.type) {
+          case "gas_giant":
+            // El sistema de capas ya fue creado arriba, solo añadir las capas específicas
+            if (this.layerSystem) {
+              // Añadir capa de bandas
+
+              const cloudBandsLayer = createCloudBandsLayerFromPythonData(
+                this.layerSystem,
+                {
+                  ...surface,
+                  base_color: baseColor,
+                  turbulence: pythonData.turbulence || surface.turbulence,
+                },
+                pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed || pythonData.seeds?.planet_seed // Usar seed del planeta
+              );
+
+              // Añadir capa de espirales
+
+              const cloudGyrosLayer = createCloudGyrosLayerFromPythonData(
+                this.layerSystem,
+                {
+                  ...surface,
+                  base_color: baseColor,
+                  storm_intensity: pythonData.storm_intensity || surface.storm_intensity,
+                },
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 1000 // Usar seed del planeta con offset
+              );
+
+              // Crear efectos para tracking y añadir al mapa de efectos
+              const bandsInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "cloud_bands_layer",
+                effect: cloudBandsLayer,
+                priority: 0,
+                enabled: true,
+              };
+              this.effects.set(bandsInstance.id, bandsInstance);
+              effects.push(bandsInstance);
+
+              const gyrosInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "cloud_gyros_layer",
+                effect: cloudGyrosLayer,
+                priority: 1,
+                enabled: true,
+              };
+              this.effects.set(gyrosInstance.id, gyrosInstance);
+              effects.push(gyrosInstance);
+            } else {
+              console.error("❌ PlanetLayerSystem not initialized!");
+            }
+            break;
+
+          case "metallic":
+          case "metallic_3d":
+            if (this.layerSystem) {
+              const metallicLayer = createMetallicSurfaceLayerFromPythonData(this.layerSystem, pythonData, pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed);
+
+              const metallicInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "metallic_surface_layer",
+                effect: metallicLayer,
+                priority: 0,
+                enabled: true,
+              };
+              this.effects.set(metallicInstance.id, metallicInstance);
+              effects.push(metallicInstance);
+            }
+            break;
+
+          case "rocky":
+            if (this.layerSystem) {
+              const rockyLayer = createRockyTerrainLayerFromPythonData(this.layerSystem, pythonData, pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed);
+
+              const rockyInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "rocky_terrain_layer",
+                effect: rockyLayer,
+                priority: 0,
+                enabled: true,
+              };
+              this.effects.set(rockyInstance.id, rockyInstance);
+              effects.push(rockyInstance);
+            }
+            break;
+
+          case "icy":
+            if (this.layerSystem) {
+              const icyLayer = createIcyTerrainLayerFromPythonData(this.layerSystem, pythonData, pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed);
+
+              const icyInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "icy_terrain_layer",
+                effect: icyLayer,
+                priority: 0,
+                enabled: true,
+              };
+              this.effects.set(icyInstance.id, icyInstance);
+              effects.push(icyInstance);
+            }
+            break;
+
+          case "oceanic":
+            // El frontend NO debe tener lógica específica para tipos de planeta
+            // Python debe enviar órdenes específicas de renderizado
+            break;
+
+          default:
+            // Para tipos sin efectos específicos, aplicar al menos el color base
+            if (mesh.material instanceof THREE.MeshStandardMaterial) {
+              const baseColor = getPlanetBaseColor(pythonData);
+              mesh.material.color.copy(baseColor);
+            }
+            break;
         }
       } else {
-        
+        // Si no hay surface_elements, aplicar al menos el color base
+        if (mesh.material instanceof THREE.MeshStandardMaterial) {
+          const baseColor = getPlanetBaseColor(pythonData);
+          mesh.material.color.copy(baseColor);
+        }
       }
-      
-      // Sistema de rendering_commands ELIMINADO - usar efectos específicos
-      
-      // Efectos específicos por tipo de planeta (LEGACY - se eliminará)
-      
-      switch (surface.type) {
-        case 'gas_giant':
-          
-          
-          // El sistema de capas ya fue creado arriba, solo añadir las capas específicas
-          if (this.layerSystem) {
-            // Añadir capa de bandas
-            
-            const cloudBandsLayer = createCloudBandsLayerFromPythonData(
-              this.layerSystem,
-              {
-                ...surface,
-                base_color: baseColor,
-                turbulence: pythonData.turbulence || surface.turbulence
-              },
-              pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed || pythonData.seeds?.planet_seed // Usar seed del planeta
-            );
-            
-            // Añadir capa de espirales
-            
-            const cloudGyrosLayer = createCloudGyrosLayerFromPythonData(
-              this.layerSystem,
-              {
-                ...surface,
-                base_color: baseColor,
-                storm_intensity: pythonData.storm_intensity || surface.storm_intensity
-              },
-              (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 1000 // Usar seed del planeta con offset
-            );
-            
-            // Crear efectos para tracking y añadir al mapa de efectos
-            const bandsInstance: EffectInstance = {
+
+      // 2. Efectos atmosféricos
+      if (pythonData.atmosphere) {
+        // Atmosphere Glow - aplicar para planetas con atmósfera dinámica
+        if (pythonData.atmosphere.streaks || ["Gas Giant", "Frozen Gas Giant"].includes(pythonData.planet_info?.type)) {
+          // Pasar seed directamente al crear atmosphere glow
+          const glowEffect = createAtmosphereGlowFromPythonData(
+            planetRadius,
+            pythonData.atmosphere || {},
+            pythonData.seeds?.shape_seed + 2000 // Seed específica para partículas
+          );
+
+          if (glowEffect) {
+            const glowInstance: EffectInstance = {
               id: `effect_${this.nextId++}`,
-              type: 'cloud_bands_layer',
-              effect: cloudBandsLayer,
-              priority: 0,
-              enabled: true
+              type: "atmosphere_glow",
+              effect: glowEffect,
+              priority: 20,
+              enabled: true,
             };
-            this.effects.set(bandsInstance.id, bandsInstance);
-            effects.push(bandsInstance);
-            
-            const gyrosInstance: EffectInstance = {
-              id: `effect_${this.nextId++}`,
-              type: 'cloud_gyros_layer',
-              effect: cloudGyrosLayer,
-              priority: 1,
-              enabled: true
-            };
-            this.effects.set(gyrosInstance.id, gyrosInstance);
-            effects.push(gyrosInstance);
-            
-            
-          } else {
-            console.error('❌ PlanetLayerSystem not initialized!');
-          }
-          break;
 
-        case 'metallic':
-        case 'metallic_3d':
-          
-          if (this.layerSystem) {
-            const metallicLayer = createMetallicSurfaceLayerFromPythonData(
-              this.layerSystem,
-              pythonData,
-              pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed
-            );
-            
-            effects.push({
-              id: `effect_${this.nextId++}`,
-              type: 'metallic_surface_layer',
-              effect: metallicLayer,
-              priority: 0,
-              enabled: true
-            });
-            
-            
-          }
-          break;
+            // CRÍTICO: Añadir al mapa de efectos para que se actualice
+            this.effects.set(glowInstance.id, glowInstance);
+            effects.push(glowInstance);
 
-        case 'rocky':
-          
-          if (this.layerSystem) {
-            const rockyLayer = createRockyTerrainLayerFromPythonData(
-              this.layerSystem,
-              pythonData,
-              pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed
-            );
-            
-            effects.push({
-              id: `effect_${this.nextId++}`,
-              type: 'rocky_terrain_layer',
-              effect: rockyLayer,
-              priority: 0,
-              enabled: true
-            });
-            
-            
+            glowEffect.addToScene(scene, mesh.position);
           }
-          break;
+        }
 
-        case 'icy':
-          
-          if (this.layerSystem) {
-            const icyLayer = createIcyTerrainLayerFromPythonData(
-              this.layerSystem,
-              pythonData,
-              pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed
-            );
-            
-            effects.push({
-              id: `effect_${this.nextId++}`,
-              type: 'icy_terrain_layer',
-              effect: icyLayer,
-              priority: 0,
-              enabled: true
-            });
-            
-            
-          }
-          break;
+        // Atmosphere Brights (resplandor atmosférico)
+        // Para planetas oceánicos, reducir la opacidad atmosférica para no ocultar el océano
+        if (pythonData.atmosphere.type && pythonData.atmosphere.type !== "None") {
+          const planetType = pythonData.planet_info?.type?.toLowerCase() || pythonData.surface_elements?.type?.toLowerCase();
 
-        case 'oceanic':
-          
-          // El frontend NO debe tener lógica específica para tipos de planeta
-          // Python debe enviar órdenes específicas de renderizado
-          break;
-          
-        default:
-          
-          // Para tipos sin efectos específicos, aplicar al menos el color base
-          if (mesh.material instanceof THREE.MeshStandardMaterial) {
-            const baseColor = getPlanetBaseColor(pythonData);
-            mesh.material.color.copy(baseColor);
-            
+          // Ajustar parámetros atmosféricos según el tipo de planeta
+          const atmosphereData = { ...pythonData.atmosphere };
+          if (planetType === "oceanic") {
+            // Para planetas oceánicos, usar atmósfera muy sutil
+            atmosphereData.opacity = Math.min(atmosphereData.opacity || 0.3, 0.15);
+            atmosphereData.width = Math.min(atmosphereData.width || 15, 8);
           }
-          break;
+
+          const atmosphereEffect = this.createEffectFromPythonData(EffectType.ATMOSPHERE, atmosphereData, planetRadius, mesh, 5);
+          if (atmosphereEffect) {
+            effects.push(atmosphereEffect);
+            atmosphereEffect.effect.addToScene(scene, mesh.position);
+          }
+        }
       }
-    } else {
-      
-      // Si no hay surface_elements, aplicar al menos el color base
-      if (mesh.material instanceof THREE.MeshStandardMaterial) {
-        const baseColor = getPlanetBaseColor(pythonData);
-        mesh.material.color.copy(baseColor);
-        
-      }
-    }
 
-    // 2. Efectos atmosféricos
-    if (pythonData.atmosphere) {
-      
-      
-      // Halo atmosférico - SOLO aplicar si hay datos específicos de halo
-      if (pythonData.atmosphere.halo && pythonData.atmosphere.halo.enabled !== false) {
-        const haloEffect = this.createEffectFromPythonData(
-          EffectType.ATMOSPHERIC_HALO,
+      // 3. Sistema de anillos
+      if ((pythonData.rings && pythonData.rings.has_rings) || ["Gas Giant", "Frozen Gas Giant", "Super Earth"].includes(pythonData.planet_info?.type)) {
+        const ringsEffect = this.createEffectFromPythonData(EffectType.RING_SYSTEM, pythonData, planetRadius, mesh, 1);
+        if (ringsEffect) {
+          effects.push(ringsEffect);
+          ringsEffect.effect.addToScene(scene, mesh.position);
+        } else {
+          console.warn("⚠️ Failed to create ring effect");
+        }
+      } else {
+      }
+
+      // 4. Efectos de fragmentación
+      if (pythonData.surface_elements?.has_fragmentation_zones) {
+        const fragmentationEffect = this.createEffectFromPythonData(EffectType.FRAGMENTATION, pythonData, planetRadius, mesh, 5);
+        if (fragmentationEffect) {
+          effects.push(fragmentationEffect);
+          fragmentationEffect.effect.addToScene(scene, mesh.position);
+        }
+      }
+
+      // 5. Efecto de debug visual (controlado por VISUAL_DEBUG flag)
+      if (VISUAL_DEBUG) {
+        const debugEffect = this.createEffectFromPythonData(
+          EffectType.VISUAL_DEBUG_3D,
           pythonData,
           planetRadius,
           mesh,
-          10
+          100 // Prioridad alta para render encima
         );
-        if (haloEffect) {
-          effects.push(haloEffect);
-          haloEffect.effect.addToScene(scene, mesh.position);
-          
+
+        if (debugEffect) {
+          effects.push(debugEffect);
+          debugEffect.effect.addToScene(scene, mesh.position);
+        } else {
+          console.error(" Failed to create debug effect!");
         }
       }
 
-      // Atmosphere Glow - aplicar para planetas con atmósfera dinámica
-      if (pythonData.atmosphere.streaks || ['Gas Giant', 'Frozen Gas Giant'].includes(pythonData.planet_info?.type)) {
-        // Pasar seed directamente al crear atmosphere glow
-        const glowEffect = createAtmosphereGlowFromPythonData(
-          planetRadius,
-          pythonData.atmosphere || {},
-          pythonData.seeds?.shape_seed + 2000 // Seed específica para partículas
-        );
-        
-        if (glowEffect) {
-          const glowInstance: EffectInstance = {
-            id: `effect_${this.nextId++}`,
-            type: 'atmosphere_glow',
-            effect: glowEffect,
-            priority: 20,
-            enabled: true
-          };
-          
-          // CRÍTICO: Añadir al mapa de efectos para que se actualice
-          this.effects.set(glowInstance.id, glowInstance);
-          effects.push(glowInstance);
-          
-          glowEffect.addToScene(scene, mesh.position);
-          
-        }
+      // ⭐ AÑADIR EL SISTEMA DE CAPAS A LA ESCENA DESPUÉS DE CREAR TODAS LAS CAPAS
+      if (this.layerSystem) {
+        this.layerSystem.addToScene(scene);
       }
 
-      // Atmosphere Brights (resplandor atmosférico)
-      // Para planetas oceánicos, reducir la opacidad atmosférica para no ocultar el océano
-      if (pythonData.atmosphere.type && pythonData.atmosphere.type !== 'None') {
-        const planetType = pythonData.planet_info?.type?.toLowerCase() || pythonData.surface_elements?.type?.toLowerCase();
-        
-        // Ajustar parámetros atmosféricos según el tipo de planeta
-        const atmosphereData = { ...pythonData.atmosphere };
-        if (planetType === 'oceanic') {
-          // Para planetas oceánicos, usar atmósfera muy sutil
-          atmosphereData.opacity = Math.min(atmosphereData.opacity || 0.3, 0.15);
-          atmosphereData.width = Math.min(atmosphereData.width || 15, 8);
-          
-        }
-        
-        const atmosphereEffect = this.createEffectFromPythonData(
-          EffectType.ATMOSPHERE,
-          atmosphereData,
-          planetRadius,
-          mesh,
-          5
-        );
-        if (atmosphereEffect) {
-          effects.push(atmosphereEffect);
-          atmosphereEffect.effect.addToScene(scene, mesh.position);
-          
-        }
+      // 🚀 RESUMEN FINAL
+
+      effects.forEach((effect, index) => {});
+
+      if (effects.length === 0) {
+        console.warn("⚠️ NO EFFECTS WERE CREATED! Check the data structure and conditions.");
       }
-    }
 
-    // 3. Sistema de anillos
-    if (pythonData.rings && pythonData.rings.has_rings || 
-        ['Gas Giant', 'Frozen Gas Giant', 'Super Earth'].includes(pythonData.planet_info?.type)) {
-      
-      
-      const ringsEffect = this.createEffectFromPythonData(
-        EffectType.RING_SYSTEM,
-        pythonData,
-        planetRadius,
-        mesh,
-        1
-      );
-      if (ringsEffect) {
-        effects.push(ringsEffect);
-        ringsEffect.effect.addToScene(scene, mesh.position);
-        
-      } else {
-        console.warn('⚠️ Failed to create ring effect');
-      }
-    } else {
-      
-    }
-
-    // 4. Efectos de fragmentación
-    if (pythonData.surface_elements?.has_fragmentation_zones) {
-      const fragmentationEffect = this.createEffectFromPythonData(
-        EffectType.FRAGMENTATION,
-        pythonData,
-        planetRadius,
-        mesh,
-        5
-      );
-      if (fragmentationEffect) {
-        effects.push(fragmentationEffect);
-        fragmentationEffect.effect.addToScene(scene, mesh.position);
-      }
-    }
-
-    // 5. Efecto de debug visual (controlado por VISUAL_DEBUG flag)
-    if (VISUAL_DEBUG) {
-      
-      const debugEffect = this.createEffectFromPythonData(
-        EffectType.VISUAL_DEBUG_3D,
-        pythonData,
-        planetRadius,
-        mesh,
-        100 // Prioridad alta para render encima
-      );
-      
-      if (debugEffect) {
-        effects.push(debugEffect);
-        debugEffect.effect.addToScene(scene, mesh.position);
-        
-      } else {
-        console.error(' Failed to create debug effect!');
-      }
-    }
-
-    // ⭐ AÑADIR EL SISTEMA DE CAPAS A LA ESCENA DESPUÉS DE CREAR TODAS LAS CAPAS
-    if (this.layerSystem) {
-      
-      this.layerSystem.addToScene(scene);
-    }
-
-    // 🚀 RESUMEN FINAL
-    
-    
-    effects.forEach((effect, index) => {
-      
-    });
-    
-    if (effects.length === 0) {
-      console.warn('⚠️ NO EFFECTS WERE CREATED! Check the data structure and conditions.');
-    }
-
-    return effects;
+      return effects;
     } catch (error) {
-      console.error('Error in EffectRegistry.createEffectsFromPythonPlanetData:', error);
+      console.error("Error in EffectRegistry.createEffectsFromPythonPlanetData:", error);
       throw error; // Re-throw to trigger fallback in ModularPlanetRenderer
     }
   }
@@ -742,7 +607,7 @@ export class EffectRegistry {
    * Obtiene todos los efectos de un tipo
    */
   getEffectsByType(type: string): EffectInstance[] {
-    return Array.from(this.effects.values()).filter(effect => effect.type === type);
+    return Array.from(this.effects.values()).filter((effect) => effect.type === type);
   }
 
   /**
@@ -756,9 +621,43 @@ export class EffectRegistry {
    * Habilita/deshabilita un efecto
    */
   toggleEffect(id: string, enabled?: boolean): void {
-    const effect = this.effects.get(id);
-    if (effect) {
-      effect.enabled = enabled !== undefined ? enabled : !effect.enabled;
+    const effectInstance = this.effects.get(id);
+    if (effectInstance) {
+      effectInstance.enabled = enabled !== undefined ? enabled : !effectInstance.enabled;
+
+      // Actualizar visibilidad del objeto 3D
+      const effect = effectInstance.effect;
+
+      // Para efectos con getObject3D (como RingSystem, AtmosphericStreaks, etc.)
+      if (effect && effect.getObject3D) {
+        const object3D = effect.getObject3D();
+        if (object3D) {
+          object3D.visible = effectInstance.enabled;
+        }
+      }
+
+      // Para efectos de capa manejados por PlanetLayerSystem
+      if (this.layerSystem) {
+        // Buscar la capa correspondiente y actualizar su visibilidad
+        const layerMeshes = this.layerSystem.getLayerMeshes();
+
+        // Mapear tipos de efectos a nombres de capa
+        const layerNameMap: Record<string, string> = {
+          cloud_bands_layer: "cloudBands",
+          cloud_gyros_layer: "cloudGyros",
+          metallic_surface_layer: "metallicSurface",
+          rocky_terrain_layer: "rockyTerrain",
+          icy_terrain_layer: "icyTerrain",
+        };
+
+        const layerName = layerNameMap[effectInstance.type];
+
+        if (layerName && layerMeshes[layerName]) {
+          layerMeshes[layerName].visible = effectInstance.enabled;
+        }
+      }
+    } else {
+      console.warn(`⚠️ Effect not found: ${id}`);
     }
   }
 
@@ -770,11 +669,10 @@ export class EffectRegistry {
     if (this.layerSystem) {
       this.layerSystem.update(deltaTime, planetRotation);
     }
-    
+
     for (const instance of this.effects.values()) {
       if (instance.enabled && instance.effect.update) {
         try {
-  
           instance.effect.update(deltaTime, planetRotation);
         } catch (error) {
           console.error(`Error updating effect ${instance.type}:`, error);
@@ -808,13 +706,16 @@ export class EffectRegistry {
       this.layerSystem.dispose();
       this.layerSystem = undefined;
     }
-    
+
     for (const instance of this.effects.values()) {
       if (instance.effect.dispose) {
         instance.effect.dispose();
       }
     }
     this.effects.clear();
+
+    // CRÍTICO: Resetear el contador de IDs para que empiecen desde 1 nuevamente
+    this.nextId = 1;
   }
 
   /**
@@ -825,7 +726,7 @@ export class EffectRegistry {
     return {
       registeredTypes: this.creators.size,
       activeEffects: activeEffects.length,
-      enabledEffects: activeEffects.filter(e => e.enabled).length
+      enabledEffects: activeEffects.filter((e) => e.enabled).length,
     };
   }
 

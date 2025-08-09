@@ -7,6 +7,7 @@ import PlanetNavigation from '../Components/PlanetNavigation.tsx';
 import VersionFooter from '../Components/VersionFooter.tsx';
 import SpaceshipPanel from '../Components/SpaceshipPanel.tsx';
 import { markPlanetAsVisited, markSystemAsVisited } from '../Utils/VisitHistory.ts';
+import { ENABLE_EFFECTS_CONTROL } from '../Utils/DebugConfig.ts';
 
 interface Planet {
   name: string;
@@ -62,6 +63,18 @@ const PlanetLayout: React.FC<PlanetLayoutProps> = ({
   initial_angle_rotation
 }) => {
   const [coordinates] = useState<string>(galaxy.coordinates.join(','));
+  const [effects, setEffects] = useState<any[]>([]);
+  
+  const handleEffectsCreated = (newEffects: any[]) => {
+    setEffects(newEffects);
+  };
+  
+  const handleToggleEffect = (effectId: string, enabled: boolean) => {
+    // This will be passed to PlanetVisualizationUniversal to control effects
+    setEffects(prev => 
+      prev.map(e => e.id === effectId ? { ...e, enabled } : e)
+    );
+  };
 
   useEffect(() => {
     // Set coordinates, system index, and planet name for historical data system
@@ -137,6 +150,9 @@ const PlanetLayout: React.FC<PlanetLayoutProps> = ({
                   planet={planet} 
                   cosmicOriginTime={cosmic_origin_time}
                   initialAngleRotation={initial_angle_rotation}
+                  onEffectsCreated={handleEffectsCreated}
+                  effects={effects}
+                  onToggleEffect={handleToggleEffect}
                 />
               </div>
               
@@ -151,6 +167,8 @@ const PlanetLayout: React.FC<PlanetLayoutProps> = ({
                   galaxy={galaxy} 
                   cosmicOriginTime={cosmic_origin_time}
                   initialAngleRotation={initial_angle_rotation}
+                  effects={ENABLE_EFFECTS_CONTROL ? effects : undefined}
+                  onToggleEffect={ENABLE_EFFECTS_CONTROL ? handleToggleEffect : undefined}
                 />
               </div>
               

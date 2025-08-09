@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import Zoom from "react-medium-image-zoom";
 import "react-medium-image-zoom/dist/styles.css";
 import { ModularPlanetRendererWrapper } from "../3DComponents/ModularPlanetRendererWrapper";
+import { effectRegistry } from "../3DEffects/EffectRegistry";
 
 interface Planet {
   name: string;
@@ -29,6 +30,9 @@ interface PlanetVisualizationUniversalProps {
   planet?: Planet;
   cosmicOriginTime?: number;
   initialAngleRotation?: number;
+  onEffectsCreated?: (effects: any[]) => void;
+  effects?: any[];
+  onToggleEffect?: (effectId: string, enabled: boolean) => void;
 }
 
 const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> = ({ 
@@ -36,7 +40,10 @@ const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> 
   imageUrl, 
   planet, 
   cosmicOriginTime, 
-  initialAngleRotation 
+  initialAngleRotation,
+  onEffectsCreated,
+  effects,
+  onToggleEffect
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
@@ -48,6 +55,15 @@ const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> 
   const [enable3D, setEnable3D] = useState(true); // Enable 3D by default
   const [renderingData, setRenderingData] = useState<any>(null);
   const [renderingError, setRenderingError] = useState<string | null>(null);
+  
+  // Handle effect toggling
+  useEffect(() => {
+    if (effects && onToggleEffect) {
+      effects.forEach(effect => {
+        effectRegistry.toggleEffect(effect.id, effect.enabled);
+      });
+    }
+  }, [effects]);
 
   useEffect(() => {
     const style = document.createElement("style");
@@ -311,6 +327,7 @@ const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> 
               autoRotate={false}
               enableControls={true}
               showDebugInfo={false}
+              onEffectsCreated={onEffectsCreated}
               planetData={{
                 name: planet.name, // AÑADIDO: el nombre del planeta
                 diameter: planet.diameter,

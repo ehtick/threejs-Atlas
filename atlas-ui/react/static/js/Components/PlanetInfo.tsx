@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import SaveLocationButton from "./SaveLocationButton.tsx";
+import EffectsControl from "./EffectsControl.tsx";
 
 interface Planet {
   name: string;
@@ -29,15 +30,23 @@ interface Galaxy {
   coordinates: number[];
 }
 
+interface EffectInfo {
+  id: string;
+  type: string;
+  enabled: boolean;
+}
+
 interface PlanetInfoProps {
   planet: Planet;
   system: System;
   galaxy: Galaxy;
   cosmicOriginTime?: number;
   initialAngleRotation?: number;
+  effects?: EffectInfo[];
+  onToggleEffect?: (effectId: string, enabled: boolean) => void;
 }
 
-const PlanetInfo: React.FC<PlanetInfoProps> = ({ planet, system, galaxy, cosmicOriginTime, initialAngleRotation }) => {
+const PlanetInfo: React.FC<PlanetInfoProps> = ({ planet, system, galaxy, cosmicOriginTime, initialAngleRotation, effects, onToggleEffect }) => {
   const [showAllElements, setShowAllElements] = useState(false);
 
   const formatName = (name: string) => {
@@ -204,6 +213,10 @@ const PlanetInfo: React.FC<PlanetInfoProps> = ({ planet, system, galaxy, cosmicO
           </div>
         </div>
       </div>
+
+      {effects && onToggleEffect && (
+        <EffectsControl effects={effects} onToggleEffect={onToggleEffect} />
+      )}
     </div>
   );
 };

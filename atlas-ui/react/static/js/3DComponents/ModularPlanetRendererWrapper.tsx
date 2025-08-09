@@ -28,6 +28,7 @@ interface ModularPlanetRendererProps {
   initialAngleRotation?: number;
   onDataLoaded?: (data: any) => void;
   onError?: (error: string) => void;
+  onEffectsCreated?: (effects: any[]) => void; // Añadido para exponer efectos
 }
 
 class ErrorBoundary extends React.Component<

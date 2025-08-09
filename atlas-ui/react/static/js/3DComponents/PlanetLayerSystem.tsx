@@ -723,6 +723,19 @@ export class PlanetLayerSystem {
   }
 
   /**
+   * Obtiene un mapa de todas las capas de efectos por nombre
+   */
+  getLayerMeshes(): Record<string, THREE.Mesh | undefined> {
+    const meshes: Record<string, THREE.Mesh | undefined> = {};
+    this.effectLayers.forEach(layer => {
+      if (layer.name && layer.mesh) {
+        meshes[layer.name] = layer.mesh;
+      }
+    });
+    return meshes;
+  }
+
+  /**
    * Limpia todos los recursos
    */
   dispose(): void {

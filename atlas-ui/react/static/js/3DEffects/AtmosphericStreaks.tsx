@@ -44,11 +44,11 @@ export class AtmosphericStreaksEffect {
     
     this.params = {
       color: params.color || [0.95, 0.95, 1.0],
-      particleCount: params.particleCount || 100,
-      speed: params.speed || 1.0,
-      size: params.size || 2.0,
-      opacity: params.opacity || 0.8,
-      brightness: params.brightness || 1.5,
+      particleCount: params.particleCount || 50, // Reducir cantidad de partículas
+      speed: params.speed || 0.5, // Reducir velocidad
+      size: params.size || 1.0, // Reducir tamaño
+      opacity: params.opacity || 0.3, // Reducir opacidad
+      brightness: params.brightness || 1.0, // Reducir brillo
       seed
     };
 
@@ -116,18 +116,19 @@ export class AtmosphericStreaksEffect {
       void main() {
         vPhase = phase;
         
-        // Animación sutil de las estelas
+        // Animación mucho más sutil para evitar patrones de líneas
         vec3 animatedPosition = position;
-        float animOffset = time * speed * 0.1 + phase;
-        animatedPosition.y += sin(animOffset) * 0.5;
-        animatedPosition.x += cos(animOffset * 0.7) * 0.3;
+        float animOffset = time * speed * 0.02 + phase;
+        animatedPosition.y += sin(animOffset + phase) * 0.1;
+        animatedPosition.x += cos(animOffset * 0.7 + phase * 1.3) * 0.05;
+        animatedPosition.z += sin(animOffset * 1.1 + phase * 0.8) * 0.05;
         
         // Calcular opacidad basada en la distancia al centro
         float distanceToCenter = length(position);
         vOpacity = 1.0 - smoothstep(0.0, 30.0, distanceToCenter);
         
         vec4 mvPosition = modelViewMatrix * vec4(animatedPosition, 1.0);
-        gl_PointSize = size * (300.0 / -mvPosition.z);
+        gl_PointSize = size * (100.0 / -mvPosition.z);
         gl_Position = projectionMatrix * mvPosition;
       }
     `;
@@ -242,11 +243,11 @@ export function createAtmosphericStreaksFromPythonData(
   
   const params: AtmosphericStreaksParams = {
     color: streaksData.color || [0.95, 0.95, 1.0], // Blanco brillante por defecto
-    particleCount: streaksData.particleCount || 100,
-    speed: streaksData.speed || 1.0,
-    size: 2.0,
-    opacity: 0.8,
-    brightness: 1.5,
+    particleCount: streaksData.particleCount || 30, // Menos partículas
+    speed: streaksData.speed || 0.3, // Más lento
+    size: 0.8, // Más pequeñas
+    opacity: 0.2, // Más transparentes
+    brightness: 0.8, // Menos brillo
     seed: seed || Math.floor(Math.random() * 1000000)
   };
 

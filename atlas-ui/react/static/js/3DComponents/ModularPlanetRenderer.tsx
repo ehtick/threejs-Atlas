@@ -813,6 +813,10 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
    * ACTUALIZADO: Preserva PlanetLayerSystem base
    */
   const clearActiveEffects = () => {
+    // Limpiar del registro global PRIMERO para resetear IDs
+    effectRegistry.clearAllEffects();
+    
+    // Luego limpiar la referencia local
     activeEffectsRef.current.forEach((effect) => {
       try {
         if (effect.effect.dispose) {
