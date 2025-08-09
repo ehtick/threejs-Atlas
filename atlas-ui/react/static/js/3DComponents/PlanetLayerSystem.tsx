@@ -485,8 +485,87 @@ export class PlanetLayerSystem {
         return pow(1.0 - d, sharpness);
       }
       
+      // Función para crear cristales facetados con normales perturbadas
+      vec3 crystallineFacets(vec2 uv, float scale, vec3 baseNormal) {
+        vec2 id = floor(uv * scale);
+        vec2 f = fract(uv * scale);
+        
+        // Hash para determinar el tipo de cristal en cada celda
+        float crystalType = hash(vec3(id, 42.0));
+        
+        // Crear caras cristalinas angulares
+        vec3 facetNormal = baseNormal;
+        
+        // Determinar orientación del cristal
+        float angle1 = hash(vec3(id, 123.0)) * 6.28;
+        float angle2 = hash(vec3(id, 456.0)) * 3.14;
+        
+        // Crear diferentes tipos de cristales facetados más irregulares y pequeños
+        if(crystalType < 0.25) {
+          // Cristal irregular tipo 1 - formas asimétricas
+          float noise1 = hash(vec3(id, 789.0));
+          float noise2 = hash(vec3(id, 234.0));
+          float irregular1 = sin((f.x + noise1) * 8.0) * cos((f.y + noise2) * 6.0);
+          
+          vec3 perturbation = vec3(
+            cos(angle1 + irregular1) * 0.15,
+            sin(angle1 + irregular1) * 0.15,
+            irregular1 * 0.1
+          );
+          
+          facetNormal = normalize(baseNormal + perturbation);
+          
+        } else if(crystalType < 0.5) {
+          // Cristal irregular tipo 2 - facetas múltiples
+          float facet1 = sin(f.x * 12.0 + angle1) * 0.5 + 0.5;
+          float facet2 = cos(f.y * 10.0 + angle2) * 0.5 + 0.5;
+          float combined = facet1 * facet2;
+          
+          vec3 perturbation = vec3(
+            (facet1 - 0.5) * 0.2,
+            (facet2 - 0.5) * 0.2,
+            combined * 0.15
+          );
+          
+          facetNormal = normalize(baseNormal + perturbation);
+          
+        } else if(crystalType < 0.75) {
+          // Cristal irregular tipo 3 - ondulaciones complejas
+          float wave1 = sin((f.x + f.y) * 15.0 + angle1);
+          float wave2 = cos((f.x - f.y) * 13.0 + angle2);
+          float complex = wave1 * wave2 * 0.5 + 0.5;
+          
+          vec3 perturbation = vec3(
+            wave1 * 0.12,
+            wave2 * 0.12,
+            complex * 0.08
+          );
+          
+          facetNormal = normalize(baseNormal + perturbation);
+          
+        } else {
+          // Cristal irregular tipo 4 - ruido fractal
+          float dist = length(f - vec2(0.5));
+          float angleNoise = atan(f.y - 0.5, f.x - 0.5) + angle1;
+          float fractal = sin(angleNoise * 7.0) * cos(dist * 20.0);
+          
+          vec3 perturbation = vec3(
+            cos(angleNoise + fractal) * 0.18,
+            sin(angleNoise + fractal) * 0.18,
+            fractal * 0.1
+          );
+          
+          facetNormal = normalize(baseNormal + perturbation);
+        }
+        
+        return facetNormal;
+      }
+      
       void main() {
-        vec3 normal = normalize(vWorldNormal);
+        vec3 baseNormal = normalize(vWorldNormal);
+        
+        // CRISTALES FACETADOS: Perturbar la normal para crear caras cristalinas
+        vec3 normal = crystallineFacets(vUv, 80.0, baseNormal); // Escala mucho más alta para cristales pequeños
         
         // Usar posición de luz si está disponible, sino usar dirección (EXACTAMENTE como en README)
         vec3 lightDir;
@@ -513,17 +592,14 @@ export class PlanetLayerSystem {
         float surfaceNoise = noise3D(vPosition * noiseScale);
         color = mix(color, color * 0.7, surfaceNoise * noiseIntensity);
         
-        // Fragmentación angular en los bordes
+        
+        // Fragmentación angular en los bordes (reducida para dar más protagonismo a la purpurina)
         float edgeFactor = 1.0 - abs(dotNL);
         float fragmentation = angularCracks(vUv, 5.0 + fragmentationIntensity * 10.0, 2.0);
         
-        // Aplicar fragmentación más fuerte en los bordes
-        if(edgeFactor > 0.7) {
-          color = mix(color, color * 0.3, fragmentation * edgeFactor);
-          
-          // Añadir grietas más pronunciadas
-          float cracks = angularCracks(vUv * 2.0, 8.0, 4.0);
-          color = mix(color, color * 0.2, cracks * edgeFactor * 0.5);
+        // Aplicar fragmentación más suave
+        if(edgeFactor > 0.8) {
+          color = mix(color, color * 0.5, fragmentation * edgeFactor * 0.3);
         }
         
         // Ondas circulares sutiles en el interior
