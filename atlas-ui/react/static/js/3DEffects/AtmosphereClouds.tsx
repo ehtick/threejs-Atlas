@@ -30,13 +30,13 @@ export interface AtmosphereCloudsParams {
 // Rangos para generación procedural basados en generate_clouds de Python
 // Ajustados para proporciones realistas del planeta y atmósfera
 const PROCEDURAL_RANGES = {
-  CLOUD_COUNT: { min: 5, max: 250 }, // Basado en num_points de Python
-  SIZE: { min: 0.5, max: 0.8 }, // Tamaño visible desde el espacio
-  OPACITY: { min: 0.6, max: 0.8 }, // Opacidad visible pero natural
-  DENSITY: { min: 0.9, max: 1.0 }, // Máxima densidad para mayor contraste
-  ROTATION_SPEED: { min: 0.005, max: 0.02 },
-  MOVEMENT_AMPLITUDE: { min: 0.01, max: 0.08 },
-  PUFFINESS: { min: 1.0, max: 2.0 } // Controladas para no exceder atmósfera
+  CLOUD_COUNT: { min: 15, max: 30 }, // Más nubes para cobertura atmosférica realista
+  SIZE: { min: 3.8, max: 5.5 }, // Variedad de tamaños con curvatura adaptativa
+  OPACITY: { min: 0.4, max: 0.8 }, // Opacidad moderada para realismo
+  DENSITY: { min: 0.4, max: 1.3 }, // Densidad suave para billboards
+  ROTATION_SPEED: { min: 0.002, max: 0.008 },
+  MOVEMENT_AMPLITUDE: { min: 0.003, max: 0.02 },
+  PUFFINESS: { min: 1.0, max: 1.4 } // Moderada esponjosidad
 };
 
 /**
@@ -124,88 +124,55 @@ export class AtmosphereCloudsEffect {
     }
     
     void main() {
-      // Crear textura de nube volumétrica usando ruido con offset único
-      vec2 cloudUv = vUv * 8.0 + noiseOffset + time * 0.02;
-      float cloudNoise = fbm(cloudUv);
+      // TÉCNICA BILLBOARD VOLUMÉTRICA CON SOFT PARTICLES
       
-      // Añadir variaciones de escala con offset diferente
-      float detailNoise = fbm(vUv * 16.0 + noiseOffset * 2.0 + time * 0.01) * 0.3;
-      cloudNoise += detailNoise;
+      // Distancia radial del centro para forma circular suave
+      vec2 center = vec2(0.5);
+      float distFromCenter = length(vUv - center);
       
-      // Crear forma de nube orgánica con múltiples lóbulos
-      float cloudShape = smoothstep(0.2, 0.8, cloudNoise);
+      // Máscara circular con bordes súper suaves (soft particles)
+      float circularMask = 1.0 - smoothstep(0.1, 0.5, distFromCenter);
       
-      // Crear forma orgánica usando múltiples frecuencias de ruido con variación
-      float freq1 = 3.0 + shapeVariation * 2.0;
-      float freq2 = 6.0 + shapeVariation * 4.0;
+      // Ruido volumétrico para textura de nube realista
+      vec2 noiseUv1 = vUv * 4.0 + noiseOffset + time * 0.008;
+      float noise1 = fbm(noiseUv1) * 0.7;
       
-      vec2 cloudUv2 = vUv * freq1 + noiseOffset * 0.3;
-      float organicShape1 = fbm(cloudUv2) * (0.6 + shapeVariation * 0.3);
+      vec2 noiseUv2 = vUv * 8.0 + noiseOffset * 1.3 + time * 0.005;
+      float noise2 = fbm(noiseUv2) * 0.5;
       
-      vec2 cloudUv3 = vUv * freq2 + noiseOffset * 0.7;
-      float organicShape2 = fbm(cloudUv3) * (0.4 + shapeVariation * 0.2);
+      vec2 noiseUv3 = vUv * 16.0 + noiseOffset * 2.1 + time * 0.003;
+      float noise3 = fbm(noiseUv3) * 0.3;
       
-      // Combinar diferentes escalas de ruido para crear lóbulos únicos
-      float organicMask = organicShape1 + organicShape2;
-      float threshold1 = 0.3 + shapeVariation * 0.3;
-      float threshold2 = 0.9 - shapeVariation * 0.2;
-      organicMask = smoothstep(threshold1, threshold2, organicMask);
+      // Combinar múltiples octavas de ruido
+      float cloudNoise = noise1 + noise2 + noise3;
+      cloudNoise = smoothstep(0.2, 1.0, cloudNoise);
       
-      // Eliminar dependencia circular - usar forma completamente basada en ruido
-      // En lugar de distanceFromCenter, usar máscara de ruido directamente
-      vec2 edgeMaskUv = vUv * 2.5 + noiseOffset * 0.8;
-      float edgeMask = fbm(edgeMaskUv);
+      // Aplicar máscara circular para bordes suaves
+      float baseCloud = cloudNoise * circularMask * density;
       
-      // Añadir segunda capa de máscara para mayor irregularidad
-      vec2 edgeMaskUv2 = vUv * 4.0 + noiseOffset * 1.2 + time * 0.003;
-      float edgeMask2 = fbm(edgeMaskUv2) * 0.7;
+      // Función de densidad que baja en los bordes (soft particles)
+      float densityFalloff = pow(circularMask, 1.5);
       
-      // Combinar máscaras para forma completamente orgánica
-      float organicFade = smoothstep(0.2, 0.8, edgeMask + edgeMask2);
+      // Aplicar técnica de soft particles para bordes suaves
+      float finalCloud = baseCloud * densityFalloff;
       
-      // Combinar todas las capas para formar nube orgánica base
-      float baseCloud = cloudShape * organicMask * organicFade * density;
+      // Gamma correction para mayor suavidad
+      finalCloud = pow(finalCloud, 0.8);
       
-      // Simplificar - blur muy visible y directo
-      float blurRadius = 0.05; // Radius mucho más grande
-      float finalCloud = baseCloud * 0.2; // Base muy reducido
-      
-      // Solo 4 muestras pero con radio grande
-      vec2 blurOffsets[4] = vec2[4](
-        vec2(blurRadius, 0.0),
-        vec2(-blurRadius, 0.0),
-        vec2(0.0, blurRadius), 
-        vec2(0.0, -blurRadius)
-      );
-      
-      // Aplicar blur simple pero muy visible
-      for(int i = 0; i < 4; i++) {
-        vec2 sampleUv = vUv + blurOffsets[i];
-        
-        // Calcular nube base en la muestra
-        vec2 sampleCloudUv = sampleUv * 8.0 + noiseOffset + time * 0.02;
-        float sampleNoise = fbm(sampleCloudUv) + fbm(sampleUv * 16.0 + noiseOffset * 2.0) * 0.3;
-        float sampleShape = smoothstep(0.2, 0.8, sampleNoise);
-        
-        // Solo máscara orgánica simple para la muestra
-        vec2 sampleEdgeUv = sampleUv * 2.5 + noiseOffset * 0.8;
-        float sampleEdgeMask = fbm(sampleEdgeUv);
-        float sampleFade = smoothstep(0.2, 0.8, sampleEdgeMask);
-        
-        finalCloud += (sampleShape * sampleFade) * 0.2; // 20% cada muestra
-      }
-      
-      finalCloud *= density;
-      
-      // Color de nube realista (blanco con tinte cálido)
+      // Color de nube realista con variaciones naturales
       vec3 finalColor = cloudColor;
       
-      // Añadir sombreado sutil basado en la normal
-      float lightIntensity = dot(vNormal, normalize(vec3(1.0, 1.0, 1.0))) * 0.2 + 0.8;
+      // Variación de color como nubes reales (centro más blanco, bordes más grises)
+      float colorVariation = 1.0 - distFromCenter * 0.3;
+      finalColor *= colorVariation;
+      
+      // Sombreado súper sutil y realista
+      float lightIntensity = dot(vNormal, normalize(vec3(0.8, 1.0, 0.6))) * 0.15 + 0.85;
       finalColor *= lightIntensity;
       
-      // Transparencia realista de nube atmosférica
+      // Transparencia con falloff natural como nubes reales
       float alpha = finalCloud * opacity;
+      alpha *= (1.0 - distFromCenter * 0.5); // Más transparente en los bordes
       
       gl_FragColor = vec4(finalColor, alpha);
     }
@@ -267,90 +234,81 @@ export class AtmosphereCloudsEffect {
         cloudSize = cloudData.radius * planetRadius * 0.8;
         
       } else {
-        // Generación procedural - distribuidas sobre la superficie
+        // Generación procedural - DISTRIBUCIÓN ESFÉRICA UNIFORME
         const phi = rng.uniform(0, 2 * Math.PI);
-        const theta = rng.uniform(0, Math.PI);
-        const surfaceRadius = planetRadius * 1.04; // Altura media atmosférica
+        const cosTheta = rng.uniform(-1, 1); // Distribución uniforme en coseno
+        const theta = Math.acos(cosTheta);
+        const surfaceRadius = planetRadius * rng.uniform(1.02, 1.06); // Altura variable
         
         x = surfaceRadius * Math.sin(theta) * Math.cos(phi);
         y = surfaceRadius * Math.sin(theta) * Math.sin(phi);
         z = surfaceRadius * Math.cos(theta);
       }
 
-      // Crear geometría de resolución razonable
-      const segments = 12; // Suficiente resolución sin ser excesivo
-      const baseRadius = cloudSize * rng.uniform(1.0, 1.8);
+      // TÉCNICA BILLBOARD ORIENTADA AL PLANETA
+      const baseRadius = cloudSize * rng.uniform(0.3, 0.8);
       
+      // Usar PlaneGeometry con suficientes segmentos para curvar
+      const segments = Math.max(8, Math.floor(baseRadius * 15)); // Más segmentos para nubes grandes
       const cloudGeometry = new THREE.PlaneGeometry(
         baseRadius * 2,
         baseRadius * 2,
-        segments,
-        segments
+        segments, segments
       );
       
-      // Modificar vertices para crear forma orgánica irregular
-      const position = cloudGeometry.attributes.position;
-      const uv = cloudGeometry.attributes.uv;
+      // ORIENTACIÓN TANGENTE A LA SUPERFICIE DEL PLANETA
+      const cloudPosition = new THREE.Vector3(x, y, z);
+      const planetCenter = new THREE.Vector3(0, 0, 0);
+      const normalFromPlanet = cloudPosition.clone().normalize();
       
-      for (let j = 0; j < position.count; j++) {
-        const x = position.getX(j);
-        const y = position.getY(j);
-        const uvX = uv.getX(j);
-        const uvY = uv.getY(j);
-        
-        // Calcular distancia del centro y ángulo
-        const centerDist = Math.sqrt(x * x + y * y);
-        const angle = Math.atan2(y, x);
-        
-        // Crear forma irregular usando ruido basado en ángulo
-        const noiseInput = angle * 3 + rng.random() * 10;
-        const irregularFactor = 0.7 + 0.6 * (Math.sin(noiseInput) + Math.sin(noiseInput * 2.3) * 0.5 + Math.sin(noiseInput * 4.7) * 0.3);
-        
-        // Aplicar deformación irregular
-        if (centerDist > 0.1) { // No deformar el centro
-          const newRadius = centerDist * irregularFactor;
-          position.setX(j, Math.cos(angle) * newRadius);
-          position.setY(j, Math.sin(angle) * newRadius);
-        }
+      // Crear vectores tangentes a la superficie esférica
+      const tangent1 = new THREE.Vector3();
+      const tangent2 = new THREE.Vector3();
+      
+      // Calcular primer vector tangente
+      if (Math.abs(normalFromPlanet.y) < 0.99) {
+        tangent1.crossVectors(normalFromPlanet, new THREE.Vector3(0, 1, 0)).normalize();
+      } else {
+        tangent1.crossVectors(normalFromPlanet, new THREE.Vector3(1, 0, 0)).normalize();
       }
       
-      position.needsUpdate = true;
+      // Calcular segundo vector tangente (perpendicular al primero y al normal)
+      tangent2.crossVectors(normalFromPlanet, tangent1).normalize();
       
-      // Curvar la geometría para que siga la superficie esférica del planeta
+      // Crear matriz de rotación para que la nube siga la superficie
+      const rotationMatrix = new THREE.Matrix4();
+      rotationMatrix.makeBasis(tangent1, tangent2, normalFromPlanet);
+      
+      // CURVAR LA GEOMETRÍA PARA SEGUIR LA SUPERFICIE ESFÉRICA
       const positions = cloudGeometry.attributes.position;
       const vertex = new THREE.Vector3();
-      const normal = new THREE.Vector3(x, y, z).normalize();
-      const radius = Math.sqrt(x * x + y * y + z * z);
+      const cloudRadius = Math.sqrt(x * x + y * y + z * z); // Radio atmosférico de esta nube
       
-      // Crear base ortogonal para el plano de la nube
-      const tangent = new THREE.Vector3();
-      const bitangent = new THREE.Vector3();
+      // Aplicar primero la orientación
+      cloudGeometry.applyMatrix4(rotationMatrix);
       
-      // Calcular vectores tangentes
-      if (Math.abs(normal.y) < 0.999) {
-        tangent.crossVectors(new THREE.Vector3(0, 1, 0), normal).normalize();
-      } else {
-        tangent.crossVectors(new THREE.Vector3(1, 0, 0), normal).normalize();
-      }
-      bitangent.crossVectors(normal, tangent);
-      
+      // Ahora curvar cada vértice para seguir la superficie esférica
       for (let i = 0; i < positions.count; i++) {
         vertex.fromBufferAttribute(positions, i);
         
-        // Convertir coordenadas del plano a coordenadas del mundo
-        const worldPoint = new THREE.Vector3()
-          .addScaledVector(tangent, vertex.x)
-          .addScaledVector(bitangent, vertex.y)
-          .addScaledVector(normal, radius);
+        // Convertir a coordenadas del mundo
+        const worldVertex = vertex.clone().add(cloudPosition);
         
-        // Proyectar sobre la esfera para mantener curvatura
-        worldPoint.normalize().multiplyScalar(radius);
+        // Proyectar sobre la superficie esférica a la altura correcta
+        const direction = worldVertex.clone().normalize();
+        const projectedVertex = direction.multiplyScalar(cloudRadius);
         
-        positions.setXYZ(i, worldPoint.x, worldPoint.y, worldPoint.z);
+        // Volver a coordenadas locales de la nube
+        const localVertex = projectedVertex.sub(cloudPosition);
+        
+        positions.setXYZ(i, localVertex.x, localVertex.y, localVertex.z);
       }
       
+      positions.needsUpdate = true;
       cloudGeometry.computeVertexNormals();
-      cloudGeometry.attributes.position.needsUpdate = true;
+      
+      // Posicionar la nube
+      cloudGeometry.translate(x, y, z);
       
       // Crear material individual para cada nube con patrón único
       const cloudMaterial = this.material.clone();
@@ -364,15 +322,12 @@ export class AtmosphereCloudsEffect {
       // Variación de forma única para cada nube
       cloudMaterial.uniforms.shapeVariation.value = rng.uniform(-1.0, 1.0);
       
-      // Crear mesh de nube
+      // Crear mesh de nube SIGUIENDO LA SUPERFICIE
       const cloudMesh = new THREE.Mesh(cloudGeometry, cloudMaterial);
       
-      // No necesitamos posicionar porque la geometría ya está en posición mundial
-      // cloudMesh.position.set(0, 0, 0);
-      
-      // Añadir pequeña rotación aleatoria para variedad visual
-      const rotationAxis = new THREE.Vector3(x, y, z).normalize();
-      cloudMesh.rotateOnWorldAxis(rotationAxis, rng.uniform(0, Math.PI * 2));
+      // Guardar datos para nubes atmosféricas
+      cloudMesh.userData.isAtmosphericCloud = true;
+      cloudMesh.userData.planetNormal = normalFromPlanet.clone();
       
       this.clouds.push(cloudMesh);
       this.cloudSystem.add(cloudMesh);
@@ -393,9 +348,9 @@ export class AtmosphereCloudsEffect {
         shapeVariation: { value: 0.0 },
       },
       transparent: true,
-      blending: THREE.NormalBlending,
+      blending: THREE.NormalBlending, // Blending normal para billboards
       depthWrite: false,
-      side: THREE.DoubleSide, // Para que sean visibles desde cualquier ángulo
+      side: THREE.FrontSide, // FrontSide para geometría curvada
     });
   }
 
@@ -406,11 +361,14 @@ export class AtmosphereCloudsEffect {
     scene.add(this.cloudSystem);
   }
 
-  update(deltaTime: number): void {
+  update(deltaTime: number, camera?: THREE.Camera): void {
     // Actualizar tiempo en todos los materiales de las nubes
     this.clouds.forEach(cloud => {
       const material = cloud.material as THREE.ShaderMaterial;
       material.uniforms.time.value += deltaTime;
+      
+      // ORIENTACIÓN ATMOSFÉRICA: Las nubes ya están orientadas al planeta
+      // No necesitan lookAt dinámico porque están pre-orientadas
     });
 
     // Rotación procedural del sistema de nubes
