@@ -217,6 +217,34 @@ export class PlanetLayerSystem {
         return value;
       }
       
+      // Función para crear cortes/gaps aleatorios en las bandas
+      float createBandGaps(vec3 pos, float bandIndex) {
+        // Usar ángulo alrededor del planeta para determinar posición
+        float angle = atan(pos.z, pos.x);
+        
+        // Crear múltiples gaps por banda basados en la seed
+        float gapPattern = 1.0;
+        
+        // 3-5 gaps por banda
+        for(float g = 0.0; g < 4.0; g++) {
+          float gapSeed = hash(bandIndex * 100.0 + g * 17.0);
+          float gapPosition = gapSeed * 6.28318; // Posición aleatoria alrededor del planeta
+          float gapWidth = 0.3 + gapSeed * 0.4; // Ancho del gap entre 0.3 y 0.7 radianes
+          
+          // Crear transición suave para el gap
+          float distToGap = abs(angle - gapPosition);
+          // Manejar el wrap-around del ángulo
+          distToGap = min(distToGap, 6.28318 - distToGap);
+          
+          if(distToGap < gapWidth) {
+            float gapIntensity = smoothstep(0.0, gapWidth, distToGap);
+            gapPattern *= gapIntensity;
+          }
+        }
+        
+        return gapPattern;
+      }
+      
       float createCloudBands(vec3 pos) {
         float bands = 0.0;
         
@@ -240,6 +268,10 @@ export class PlanetLayerSystem {
             float turbulenceNoise = fbm(pos * noiseScale + vec3(time * animationSpeed * 0.1));
             bandIntensity *= (0.8 + 0.4 * turbulenceNoise * turbulence);
             
+            // Aplicar gaps/cortes aleatorios a la banda
+            float gapMask = createBandGaps(pos, float(i));
+            bandIntensity *= gapMask;
+            
             bands += bandIntensity * 0.8;
           }
         }
@@ -259,13 +291,13 @@ export class PlanetLayerSystem {
         // Solo mostrar bandas en la parte iluminada
         float bands = createCloudBands(pos);
         
-        // CRÍTICO: hacer las bandas completamente transparentes en la parte oscura
-        float lightIntensity = max(0.0, dotNL);
-        lightIntensity = pow(lightIntensity, 2.0); // Caída más agresiva hacia la oscuridad
+        // Hacer las bandas visibles en todo el planeta
+        // Solo ajustar ligeramente el brillo basado en la iluminación
+        float lightIntensity = max(0.3, dotNL); // Mantener mínimo 30% de visibilidad
         
         // Color de las bandas con transparencia
-        vec3 color = bandColor;
-        float alpha = bands * opacity * lightIntensity; // Usar opacity del parámetro
+        vec3 color = bandColor * (0.5 + 0.5 * lightIntensity); // Ajustar brillo del color
+        float alpha = bands * opacity; // No multiplicar por lightIntensity
         
         gl_FragColor = vec4(color, alpha);
       }
