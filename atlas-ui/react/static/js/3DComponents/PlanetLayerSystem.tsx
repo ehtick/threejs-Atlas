@@ -439,6 +439,7 @@ export class PlanetLayerSystem {
       uniform float time;
       uniform float noiseScale;
       uniform float noiseIntensity;
+      uniform float crystalScale;
       
       varying vec3 vPosition;
       varying vec3 vNormal;
@@ -565,7 +566,7 @@ export class PlanetLayerSystem {
         vec3 baseNormal = normalize(vWorldNormal);
         
         // CRISTALES FACETADOS: Perturbar la normal para crear caras cristalinas
-        vec3 normal = crystallineFacets(vUv, 80.0, baseNormal);
+        vec3 normal = crystallineFacets(vUv, crystalScale, baseNormal);
         
         // Usar posición de luz si está disponible, sino usar dirección (EXACTAMENTE como en README)
         vec3 lightDir;
@@ -649,6 +650,7 @@ export class PlanetLayerSystem {
         lightIntensity: { value: 0.85 }, // Intensidad de la luz direccional
         noiseScale: { value: params.noiseScale || 8.0 },
         noiseIntensity: { value: params.noiseIntensity || 0.3 },
+        crystalScale: { value: params.crystalScale || 80.0 },
       },
       transparent: true,
       blending: THREE.NormalBlending, // Usar el mismo blending que CloudBands
