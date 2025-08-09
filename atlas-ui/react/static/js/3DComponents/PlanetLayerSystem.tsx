@@ -411,18 +411,18 @@ export class PlanetLayerSystem {
     const vertexShader = `
       varying vec3 vPosition;
       varying vec3 vNormal;
+      varying vec3 vWorldPosition;
+      varying vec3 vWorldNormal;
       varying vec2 vUv;
-      varying vec3 vViewPosition;
       
       void main() {
         vPosition = position;
-        vNormal = normal;
+        vNormal = normalMatrix * normal; // Transformar normal al espacio de vista
+        vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz); // Normal en espacio mundo
         vUv = uv;
-        
-        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-        vViewPosition = -mvPosition.xyz;
-        
-        gl_Position = projectionMatrix * mvPosition;
+        vec4 worldPos = modelMatrix * vec4(position, 1.0);
+        vWorldPosition = worldPos.xyz;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
       }
     `;
 
@@ -433,14 +433,18 @@ export class PlanetLayerSystem {
       uniform float fragmentationIntensity;
       uniform float opacity;
       uniform vec3 lightDirection;
+      uniform vec3 lightPosition;
+      uniform float ambientStrength;
+      uniform float lightIntensity;
       uniform float time;
       uniform float noiseScale;
       uniform float noiseIntensity;
       
       varying vec3 vPosition;
       varying vec3 vNormal;
+      varying vec3 vWorldPosition;
+      varying vec3 vWorldNormal;
       varying vec2 vUv;
-      varying vec3 vViewPosition;
       
       // Ruido procedural para variaciones de superficie
       float hash(vec3 p) {
@@ -481,35 +485,26 @@ export class PlanetLayerSystem {
         return pow(1.0 - d, sharpness);
       }
       
-      // PBR básico
-      vec3 calculatePBR(vec3 albedo, float metallic, float rough, vec3 normal, vec3 viewDir) {
-        vec3 lightDir = normalize(lightDirection);
-        vec3 halfwayDir = normalize(lightDir + viewDir);
-        
-        // Difuso
-        float NdotL = max(dot(normal, lightDir), 0.0);
-        vec3 diffuse = albedo * (1.0 - metallic) * NdotL;
-        
-        // Especular simplificado
-        float NdotH = max(dot(normal, halfwayDir), 0.0);
-        float specularStrength = pow(NdotH, mix(4.0, 128.0, 1.0 - rough));
-        vec3 specular = mix(vec3(0.04), albedo, metallic) * specularStrength;
-        
-        // Fresnel para bordes metálicos
-        float fresnel = pow(1.0 - max(dot(normal, viewDir), 0.0), 2.0);
-        vec3 fresnelColor = mix(vec3(0.04), albedo, metallic) * fresnel;
-        
-        return diffuse + specular + fresnelColor * 0.5;
-      }
-      
       void main() {
-        vec3 normal = normalize(vNormal);
-        vec3 viewDir = normalize(vViewPosition);
-        vec3 lightDir = normalize(lightDirection);
+        vec3 normal = normalize(vWorldNormal);
         
-        // Calcular si estamos en la parte iluminada (como CloudBands)
+        // Usar posición de luz si está disponible, sino usar dirección (EXACTAMENTE como en README)
+        vec3 lightDir;
+        if (length(lightPosition) > 0.0) {
+          lightDir = normalize(lightPosition - vWorldPosition);
+        } else {
+          lightDir = normalize(-lightDirection); // Negativo porque lightDirection apunta hacia la luz
+        }
+        
+        // Cálculo de iluminación Lambertiana mejorado (EXACTAMENTE como en README)
         float dotNL = dot(normal, lightDir);
-        float visibility = smoothstep(-0.2, 0.2, dotNL);
+        
+        // Suavizar la transición entre día y noche con mejor gradiente (EXACTAMENTE como en README)
+        float dayNight = smoothstep(-0.3, 0.1, dotNL);
+        
+        // Añadir un poco de retroiluminación (rim lighting) para evitar oscuridad total (EXACTAMENTE como en README)
+        float rimLight = 1.0 - abs(dotNL);
+        rimLight = pow(rimLight, 3.0) * 0.1;
         
         // Base metálica con variaciones
         vec3 color = metalColor;
@@ -519,7 +514,7 @@ export class PlanetLayerSystem {
         color = mix(color, color * 0.7, surfaceNoise * noiseIntensity);
         
         // Fragmentación angular en los bordes
-        float edgeFactor = 1.0 - abs(dot(normal, viewDir));
+        float edgeFactor = 1.0 - abs(dotNL);
         float fragmentation = angularCracks(vUv, 5.0 + fragmentationIntensity * 10.0, 2.0);
         
         // Aplicar fragmentación más fuerte en los bordes
@@ -535,19 +530,30 @@ export class PlanetLayerSystem {
         float radialWaves = sin(length(vUv - 0.5) * 20.0 + time * 0.5) * 0.5 + 0.5;
         color = mix(color, color * 1.1, radialWaves * 0.1 * (1.0 - edgeFactor));
         
-        // Calcular iluminación PBR completa
-        vec3 finalColor = calculatePBR(color, metalness, roughness, normal, viewDir);
+        // REFLEJO METÁLICO: Calcular reflexión especular usando la iluminación correcta del README
+        vec3 viewDir = normalize(cameraPosition - vWorldPosition);
+        vec3 halfwayDir = normalize(lightDir + viewDir);
+        
+        // Especular metálico con la posición correcta de la luz
+        float NdotH = max(dot(normal, halfwayDir), 0.0);
+        float specularStrength = pow(NdotH, mix(4.0, 128.0, 1.0 - roughness));
+        vec3 specular = mix(vec3(0.04), color, metalness) * specularStrength;
+        
+        // Fresnel para bordes metálicos
+        float fresnel = pow(1.0 - max(dot(normal, viewDir), 0.0), 2.0);
+        vec3 fresnelColor = mix(vec3(0.04), color, metalness) * fresnel;
+        
+        // Aplicar iluminación base con intensidad variable (EXACTAMENTE como en README)
+        float totalLight = ambientStrength + (lightIntensity * dayNight) + rimLight;
+        vec3 finalColor = color * totalLight;
+        
+        // Añadir reflejos metálicos SOLO en la parte iluminada
+        finalColor += (specular + fresnelColor * 0.5) * dayNight;
         
         // Añadir un toque de color oscuro para profundidad
         finalColor = mix(finalColor, finalColor * 0.5, pow(surfaceNoise, 2.0) * 0.3);
         
-        // CRÍTICO: usar la misma lógica que CloudBands para transparencia
-        float lightIntensity = max(0.0, dotNL);
-        lightIntensity = pow(lightIntensity, 2.0); // Caída más agresiva hacia la oscuridad
-        
-        float alpha = opacity * lightIntensity;
-        
-        gl_FragColor = vec4(finalColor, alpha);
+        gl_FragColor = vec4(finalColor, opacity);
       }
     `;
 
@@ -562,6 +568,9 @@ export class PlanetLayerSystem {
         fragmentationIntensity: { value: params.fragmentationIntensity || 0.5 },
         opacity: { value: params.opacity || 0.8 },
         lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
+        lightPosition: { value: new THREE.Vector3(0, 0, 0) }, // Posición de luz en espacio mundo
+        ambientStrength: { value: 0.15 }, // Más oscuro, igual que otros planetas
+        lightIntensity: { value: 0.85 }, // Intensidad de la luz direccional
         noiseScale: { value: params.noiseScale || 8.0 },
         noiseIntensity: { value: params.noiseIntensity || 0.3 },
       },
