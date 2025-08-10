@@ -25,6 +25,7 @@ import { MetallicSurfaceLayer, createMetallicSurfaceLayerFromPythonData } from "
 // Efectos legacy eliminados - usar solo versiones Layer
 
 import { AtmosphericStreaksEffect, createAtmosphericStreaksFromPythonData, AtmosphericStreaksParams } from "./AtmosphericStreaks";
+import { StarFieldEffect, createStarFieldFromPythonData, StarFieldParams } from "./StarField";
 
 // Importar efectos de superficie restantes
 import { FragmentationEffect } from "./FragmentationEffect";
@@ -68,6 +69,7 @@ export enum EffectType {
   ATMOSPHERE_GLOW = "atmosphere_glow",
   ATMOSPHERE_CLOUDS = "atmosphere_clouds",
   ATMOSPHERIC_STREAKS = "atmospheric_streaks",
+  STAR_FIELD = "star_field",
 
   // Efectos estructurales
   RING_SYSTEM = "ring_system",
@@ -191,6 +193,12 @@ export class EffectRegistry {
         console.warn("Crystal formations effect not implemented yet");
         return null;
       },
+    });
+
+    // Efectos de fondo
+    this.registerEffect(EffectType.STAR_FIELD, {
+      create: (params, planetRadius) => new StarFieldEffect(planetRadius, params),
+      fromPythonData: (data, planetRadius) => createStarFieldFromPythonData(planetRadius, data.seeds?.planet_seed || data.planet_seed),
     });
 
     // Efectos de debug
@@ -627,6 +635,25 @@ export class EffectRegistry {
       // ⭐ AÑADIR EL SISTEMA DE CAPAS A LA ESCENA DESPUÉS DE CREAR TODAS LAS CAPAS
       if (this.layerSystem) {
         this.layerSystem.addToScene(scene);
+      }
+
+      // ⭐ AÑADIR STARFIELD AUTOMÁTICAMENTE (siempre presente como fondo)
+      try {
+        const starFieldEffect = this.createEffectFromPythonData(
+          EffectType.STAR_FIELD,
+          pythonData,
+          planetRadius,
+          mesh,
+          -100 // Prioridad muy baja para que esté al fondo
+        );
+
+        if (starFieldEffect && starFieldEffect.effect) {
+          starFieldEffect.effect.addToScene(scene, mesh.position);
+          effects.push(starFieldEffect);
+          console.log("⭐ StarField added automatically using planet seed:", pythonData.seeds?.planet_seed);
+        }
+      } catch (error) {
+        console.warn("Could not create StarField:", error);
       }
 
       // 🚀 RESUMEN FINAL
