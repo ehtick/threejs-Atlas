@@ -312,8 +312,20 @@ class PlanetTypeTranslators:
         green_patches = []
         for _ in range(num_green_patches):
             patch_size = rng.randint(6, 80)
+            
+            # Generar posición 3D uniforme en la esfera
+            # Usar método de Marsaglia para distribución uniforme
+            theta = rng.uniform(0, 2 * math.pi)  # Ángulo azimutal
+            phi = math.acos(rng.uniform(-1, 1))   # Ángulo polar (acos para distribución uniforme)
+            
+            # Convertir a coordenadas cartesianas 3D normalizadas
+            patch_3d_x = math.sin(phi) * math.cos(theta)
+            patch_3d_y = math.sin(phi) * math.sin(theta)
+            patch_3d_z = math.cos(phi)
+            
+            # También mantener las coordenadas 2D para compatibilidad
             patch_angle = rng.uniform(0, 2 * math.pi)
-            patch_distance = rng.uniform(1 * planet_radius, planet_radius)
+            patch_distance = rng.uniform(0.3 * planet_radius, planet_radius)
             
             patch_x = center_x + patch_distance * math.cos(patch_angle)
             patch_y = center_y + patch_distance * math.sin(patch_angle)
@@ -324,7 +336,8 @@ class PlanetTypeTranslators:
             )
             
             green_patches.append({
-                "position": normalized_coords,
+                "position": normalized_coords,  # Mantener para compatibilidad 2D
+                "position_3d": [patch_3d_x, patch_3d_y, patch_3d_z],  # Nueva posición 3D
                 "size": patch_size / planet_radius,
                 "color": patch_color,
                 "sides": rng.randint(20, 30)

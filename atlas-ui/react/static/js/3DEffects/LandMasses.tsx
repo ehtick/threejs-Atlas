@@ -39,7 +39,21 @@ export class LandMassesEffect {
   private generateLandsFromPython(planetRadius: number, greenPatches: any[], rng: SeededRandom): void {
     greenPatches.forEach((patch, index) => {
       // Extraer datos del patch
-      const position = patch.position || [0, 0, 1];
+      // Usar position_3d si está disponible (nueva versión), si no, usar position (retrocompatibilidad)
+      let position = patch.position_3d || patch.position || [0, 0, 1];
+      
+      // Si solo tenemos posición 2D (array de 2 elementos), convertir a 3D
+      if (position.length === 2) {
+        // Convertir coordenadas 2D normalizadas a posición 3D en la esfera
+        const theta = rng.uniform(0, Math.PI * 2);
+        const phi = Math.acos(rng.uniform(-1, 1));
+        position = [
+          Math.sin(phi) * Math.cos(theta),
+          Math.sin(phi) * Math.sin(theta),
+          Math.cos(phi)
+        ];
+      }
+      
       const size = (patch.size || 0.1) * planetRadius * 1.8; // Tamaño de la isla
       const sides = Math.max(8, Math.min(patch.sides || 20, 12)); // Limitar lados
       
@@ -54,8 +68,11 @@ export class LandMassesEffect {
         );
       }
       
-      // ENFOQUE ESFÉRICO: SphereGeometry con más segmentos para suavizar
-      const geometry = new THREE.SphereGeometry(size * 0.6, Math.max(16, sides * 2), Math.max(8, sides));
+      // NUEVO ENFOQUE: PlaneGeometry con ruido 2D para formas orgánicas
+      
+      // Crear un plano en el espacio tangente local
+      const resolution = 24; // Resolución de la grilla
+      const planeSize = size * 2;
       
       // Posición en la superficie del planeta
       const sphericalPos = new THREE.Vector3(
@@ -64,98 +81,197 @@ export class LandMassesEffect {
         position[2]
       ).normalize();
       
-      // AÑADIR VARIACIÓN ORGÁNICA a los vértices para crear formas de tierra irregulares
-      const positionAttribute = geometry.attributes.position;
-      const vertex = new THREE.Vector3();
-      
-      for (let i = 0; i < positionAttribute.count; i++) {
-        vertex.fromBufferAttribute(positionAttribute, i);
-        
-        // Solo modificar los vértices del borde (no el centro)
-        const distFromCenter = Math.sqrt(vertex.x * vertex.x + vertex.y * vertex.y);
-        
-        if (distFromCenter > 0.1) { // Evitar el centro
-          // Aplicar ruido radial para crear bordes irregulares
-          const angle = Math.atan2(vertex.y, vertex.x);
-          
-          // Variación de ruido que cambia con el ángulo
-          const noiseFreq = 3.0; // Frecuencia del ruido
-          const noiseAmp = 0.3;   // Amplitud del ruido (30% de variación)
-          
-          const noise1 = Math.sin(angle * noiseFreq + rng.uniform(0, Math.PI * 2)) * noiseAmp;
-          const noise2 = Math.sin(angle * noiseFreq * 2.3 + rng.uniform(0, Math.PI * 2)) * noiseAmp * 0.5;
-          const totalNoise = 1.0 + noise1 + noise2;
-          
-          // Aplicar ruido radial
-          vertex.x *= totalNoise;
-          vertex.y *= totalNoise;
-          
-          // Añadir algo de ruido individual por vértice
-          const randomVariation = rng.uniform(0.9, 1.1);
-          vertex.x *= randomVariation;
-          vertex.y *= randomVariation;
-        }
-        
-        positionAttribute.setXYZ(i, vertex.x, vertex.y, vertex.z);
-      }
-      
-      positionAttribute.needsUpdate = true;
-      
-      // ORIENTACIÓN TANGENTE A LA SUPERFICIE (como en AtmosphereClouds)
-      // Crear vectores tangentes a la superficie esférica
+      // Crear sistema de coordenadas tangente
       const tangent1 = new THREE.Vector3();
       const tangent2 = new THREE.Vector3();
       
-      // Calcular primer vector tangente
       if (Math.abs(sphericalPos.y) < 0.99) {
         tangent1.crossVectors(sphericalPos, new THREE.Vector3(0, 1, 0)).normalize();
       } else {
         tangent1.crossVectors(sphericalPos, new THREE.Vector3(1, 0, 0)).normalize();
       }
-      
-      // Calcular segundo vector tangente (perpendicular al primero y al normal)
       tangent2.crossVectors(sphericalPos, tangent1).normalize();
       
-      // Crear matriz de rotación para que la isla siga la superficie
-      const rotationMatrix = new THREE.Matrix4();
-      rotationMatrix.makeBasis(tangent1, tangent2, sphericalPos);
+      // Función de ruido 2D mejorada (FBM - Fractal Brownian Motion)
+      const fbmNoise = (x: number, y: number) => {
+        let value = 0;
+        let amplitude = 1;
+        let frequency = 1;
+        let maxValue = 0;
+        
+        // 4 octavas de ruido para más detalle
+        for (let i = 0; i < 4; i++) {
+          const sx = x * frequency;
+          const sy = y * frequency;
+          
+          // Hash function para ruido coherente
+          const hash = (px: number, py: number) => {
+            const dot = px * 12.9898 + py * 78.233;
+            return Math.sin(dot + rng.uniform(0, 1000)) * 43758.5453 % 1;
+          };
+          
+          // Interpolación bicúbica para suavidad
+          const ix = Math.floor(sx);
+          const iy = Math.floor(sy);
+          const fx = sx - ix;
+          const fy = sy - iy;
+          
+          // Función de suavizado
+          const smooth = (t: number) => t * t * t * (t * (t * 6 - 15) + 10);
+          
+          const sx_smooth = smooth(fx);
+          const sy_smooth = smooth(fy);
+          
+          // Valores en las esquinas
+          const n00 = hash(ix, iy);
+          const n10 = hash(ix + 1, iy);
+          const n01 = hash(ix, iy + 1);
+          const n11 = hash(ix + 1, iy + 1);
+          
+          // Interpolación
+          const nx0 = n00 * (1 - sx_smooth) + n10 * sx_smooth;
+          const nx1 = n01 * (1 - sx_smooth) + n11 * sx_smooth;
+          const nxy = nx0 * (1 - sy_smooth) + nx1 * sy_smooth;
+          
+          value += nxy * amplitude;
+          maxValue += amplitude;
+          
+          amplitude *= 0.5;
+          frequency *= 2.1; // Frecuencia ligeramente irregular para más naturalidad
+        }
+        
+        return value / maxValue;
+      };
       
-      // Aplicar primero la orientación
-      geometry.applyMatrix4(rotationMatrix);
+      // Generar vértices y caras
+      const vertices: number[] = [];
+      const indices: number[] = [];
+      const uvs: number[] = [];
       
-      // CURVAR LA GEOMETRÍA PARA SEGUIR LA SUPERFICIE ESFÉRICA (como las nubes)
+      // Umbral para determinar tierra vs agua
+      const landThreshold = 0.35; // Bajado para crear más tierra
+      
+      // Crear grilla de puntos
+      const vertexMap = new Map<string, number>();
+      const heightMap = new Map<string, number>(); // Guardar altura para cada vértice
+      let vertexIndex = 0;
+      
+      for (let i = 0; i <= resolution; i++) {
+        for (let j = 0; j <= resolution; j++) {
+          // Coordenadas en el plano tangente (-1 a 1)
+          const u = (i / resolution - 0.5) * 2;
+          const v = (j / resolution - 0.5) * 2;
+          
+          // Distancia desde el centro para forma base
+          const distFromCenter = Math.sqrt(u * u + v * v);
+          
+          // Evaluar ruido 2D
+          const noiseValue = fbmNoise(u * 2, v * 2);
+          
+          // Combinar distancia y ruido para crear forma orgánica
+          const shapeFactor = (1.0 - distFromCenter * 0.5) + noiseValue * 0.6;
+          
+          // Solo crear vértice si está sobre el umbral (es tierra)
+          if (shapeFactor > landThreshold && distFromCenter < 1.2) {
+            // Convertir coordenadas UV a posición 3D en el plano tangente
+            const localX = u * size;
+            const localY = v * size;
+            const localZ = 0;
+            
+            // Proyectar al espacio 3D usando la base tangente
+            const worldPos = new THREE.Vector3()
+              .addScaledVector(tangent1, localX)
+              .addScaledVector(tangent2, localY)
+              .addScaledVector(sphericalPos, localZ);
+            
+            vertices.push(worldPos.x, worldPos.y, worldPos.z);
+            uvs.push((u + 1) * 0.5, (v + 1) * 0.5);
+            
+            // Guardar índice y altura para triangulación
+            vertexMap.set(`${i},${j}`, vertexIndex);
+            // Guardar el valor de ruido normalizado para usar como altura
+            heightMap.set(`${i},${j}`, noiseValue);
+            vertexIndex++;
+          }
+        }
+      }
+      
+      // Crear triangulación conectando vértices adyacentes
+      for (let i = 0; i < resolution; i++) {
+        for (let j = 0; j < resolution; j++) {
+          const v00 = vertexMap.get(`${i},${j}`);
+          const v10 = vertexMap.get(`${i+1},${j}`);
+          const v01 = vertexMap.get(`${i},${j+1}`);
+          const v11 = vertexMap.get(`${i+1},${j+1}`);
+          
+          // Solo crear triángulos si todos los vértices existen
+          if (v00 !== undefined && v10 !== undefined && v01 !== undefined) {
+            indices.push(v00, v10, v01);
+          }
+          if (v10 !== undefined && v11 !== undefined && v01 !== undefined) {
+            indices.push(v10, v11, v01);
+          }
+        }
+      }
+      
+      // Crear geometría
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+      geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+      geometry.setIndex(indices);
+      geometry.computeVertexNormals();
+      
+      // La geometría ya está orientada correctamente desde su creación
+      
+      // CURVAR LA GEOMETRÍA PARA SEGUIR LA SUPERFICIE ESFÉRICA CON RELIEVE
       const positions = geometry.attributes.position;
       const landPosition = sphericalPos.clone().multiplyScalar(planetRadius);
-      const landRadius = planetRadius * 1.009; // Radio con más elevación para que emerjan del océano
+      const vertex = new THREE.Vector3();
       
-      // Ahora curvar cada vértice para seguir la superficie esférica
-      // IMPORTANTE: Proyectar TODOS los vértices, no solo los bordes
+      // Proyectar cada vértice sobre la superficie esférica con elevación basada en ruido
       for (let i = 0; i < positions.count; i++) {
         vertex.fromBufferAttribute(positions, i);
         
         // Convertir a coordenadas del mundo
         const worldVertex = vertex.clone().add(landPosition);
         
-        // Proyectar sobre la superficie esférica a la altura correcta
+        // Proyectar sobre la superficie esférica
         const direction = worldVertex.clone().normalize();
         
-        // GRADIENTE DE ALTURA: El centro más alto, los bordes más bajos
-        // Calcular distancia desde el centro de la isla (en coordenadas locales originales)
-        const localDist = Math.sqrt(vertex.x * vertex.x + vertex.y * vertex.y);
-        const maxRadius = size * 1.2 * 0.5; // Radio máximo de la isla
-        const heightFactor = Math.max(0, 1.0 - (localDist / maxRadius)); // 1.0 en centro, 0.0 en bordes
-        
-        // Elevación variable: más alta en el centro, baja en los bordes
-        const baseRadius = planetRadius * 1.003; // Elevación base mínima
-        const peakRadius = planetRadius * 1.009; // Elevación máxima en el centro
-        const finalRadius = baseRadius + (peakRadius - baseRadius) * heightFactor * heightFactor;
-        
-        const projectedVertex = direction.multiplyScalar(finalRadius);
-        
-        // Volver a coordenadas locales de la isla
-        const localVertex = projectedVertex.sub(landPosition);
-        
-        positions.setXYZ(i, localVertex.x, localVertex.y, localVertex.z);
+        // Obtener UV para calcular elevación combinada
+        const uv = geometry.attributes.uv;
+        if (uv) {
+          const u = uv.getX(i) * 2 - 1; // Convertir de [0,1] a [-1,1]
+          const v = uv.getY(i) * 2 - 1;
+          const distFromCenter = Math.sqrt(u * u + v * v);
+          
+          // Recalcular el ruido para este vértice para obtener su altura
+          const noiseValue = fbmNoise(u * 2, v * 2);
+          
+          // Combinar perfil radial (centro alto, bordes bajos) con ruido
+          const radialHeight = Math.max(0, 1.0 - distFromCenter * 0.8);
+          
+          // 60% perfil radial + 40% ruido para relieve con variación
+          const combinedHeight = radialHeight * 0.6 + noiseValue * 0.4;
+          
+          // Aplicar función smoothstep para suavizar transiciones
+          const smoothstep = (x: number) => x * x * (3.0 - 2.0 * x);
+          const smoothHeight = smoothstep(combinedHeight);
+          
+          // Rango de elevación más pronunciado para que se note el relieve
+          const baseRadius = planetRadius * 1.002; // Elevación base (nivel del mar)
+          const peakRadius = planetRadius * 1.008; // Elevación máxima (montañas)
+          
+          // Interpolar entre base y peak usando la altura combinada
+          const finalRadius = THREE.MathUtils.lerp(baseRadius, peakRadius, smoothHeight);
+          
+          const projectedVertex = direction.multiplyScalar(finalRadius);
+          
+          // Volver a coordenadas locales de la isla
+          const localVertex = projectedVertex.sub(landPosition);
+          
+          positions.setXYZ(i, localVertex.x, localVertex.y, localVertex.z);
+        }
       }
       
       positions.needsUpdate = true;
