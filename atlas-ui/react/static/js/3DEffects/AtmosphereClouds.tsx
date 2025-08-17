@@ -174,6 +174,15 @@ export class AtmosphereCloudsEffect {
       float alpha = finalCloud * opacity;
       alpha *= (1.0 - distFromCenter * 0.5); // Más transparente en los bordes
       
+      // SIMPLE: hacer nubes más transparentes en zona sin luz - TRANSICIÓN SUAVE
+      vec3 lightDirection = normalize(vec3(1.0, 0.5, 0.5)); // Luz fija
+      vec3 planetNormal = normalize(vWorldPosition);
+      float lightDot = dot(planetNormal, lightDirection);
+      
+      // Transición suave de opacidad (de 1.0 a 0.3)
+      float lightFactor = smoothstep(-0.2, 0.2, lightDot); // Transición suave entre -0.2 y 0.2
+      alpha *= mix(0.3, 1.0, lightFactor); // Mezcla suave entre 30% y 100% opacidad
+      
       gl_FragColor = vec4(finalColor, alpha);
     }
   `;
