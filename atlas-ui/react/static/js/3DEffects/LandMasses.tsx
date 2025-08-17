@@ -40,7 +40,7 @@ export class LandMassesEffect {
     greenPatches.forEach((patch, index) => {
       // Extraer datos del patch
       const position = patch.position || [0, 0, 1];
-      const size = (patch.size || 0.1) * planetRadius * 0.8; // Tamaño de la isla
+      const size = (patch.size || 0.1) * planetRadius * 1.8; // Tamaño de la isla
       const sides = Math.max(8, Math.min(patch.sides || 20, 12)); // Limitar lados
       
       // Color del patch - convertir de [0-1] a color THREE.js
@@ -54,8 +54,8 @@ export class LandMassesEffect {
         );
       }
       
-      // ENFOQUE ESFÉRICO: SphereGeometry para ajustarse a la curvatura
-      const geometry = new THREE.SphereGeometry(size * 0.6, Math.max(8, sides), Math.max(4, Math.floor(sides/2)));
+      // ENFOQUE ESFÉRICO: SphereGeometry con más segmentos para suavizar
+      const geometry = new THREE.SphereGeometry(size * 0.6, Math.max(16, sides * 2), Math.max(8, sides));
       
       // Posición en la superficie del planeta
       const sphericalPos = new THREE.Vector3(
@@ -164,14 +164,38 @@ export class LandMassesEffect {
       // Posicionar la isla (trasladar al final)
       geometry.translate(landPosition.x, landPosition.y, landPosition.z);
       
-      // Material sólido para la tierra con colores más naturales
+      // Material con textura de ruido procedural
       const material = new THREE.MeshPhongMaterial({
         color: patchColor,
-        emissive: patchColor.clone().multiplyScalar(0.1),
-        emissiveIntensity: 0.0000002,
-        shininess: 20,
-        flatShading: false, // Sin flat shading para que se vea más suave
+        emissive: patchColor.clone().multiplyScalar(0.05),
+        emissiveIntensity: 0.0000001,
+        shininess: 8,
+        flatShading: false,
+        // Añadir rugosidad para simular textura de tierra
+        bumpScale: 0.002,
       });
+      
+      // Crear textura de ruido simple para darle textura
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 64;
+      const ctx = canvas.getContext('2d')!;
+      const imageData = ctx.createImageData(64, 64);
+      
+      for (let i = 0; i < imageData.data.length; i += 4) {
+        const noise = rng.uniform(0.8, 1.2);
+        const gray = Math.floor(128 * noise);
+        imageData.data[i] = gray;     // R
+        imageData.data[i + 1] = gray; // G
+        imageData.data[i + 2] = gray; // B
+        imageData.data[i + 3] = 255;  // A
+      }
+      
+      ctx.putImageData(imageData, 0, 0);
+      const noiseTexture = new THREE.CanvasTexture(canvas);
+      noiseTexture.wrapS = noiseTexture.wrapT = THREE.RepeatWrapping;
+      noiseTexture.repeat.set(2, 2);
+      
+      material.bumpMap = noiseTexture;
       
       const landMesh = new THREE.Mesh(geometry, material);
       landMesh.castShadow = true;
