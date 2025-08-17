@@ -54,8 +54,8 @@ export class LandMassesEffect {
         );
       }
       
-      // ENFOQUE SIMPLE: CircleGeometry básica con orientación correcta
-      const geometry = new THREE.CircleGeometry(size * 1.2, sides); // Más ancho - 50% del tamaño original
+      // ENFOQUE ESFÉRICO: SphereGeometry para ajustarse a la curvatura
+      const geometry = new THREE.SphereGeometry(size * 0.6, Math.max(8, sides), Math.max(4, Math.floor(sides/2)));
       
       // Posición en la superficie del planeta
       const sphericalPos = new THREE.Vector3(
@@ -129,6 +129,7 @@ export class LandMassesEffect {
       const landRadius = planetRadius * 1.009; // Radio con más elevación para que emerjan del océano
       
       // Ahora curvar cada vértice para seguir la superficie esférica
+      // IMPORTANTE: Proyectar TODOS los vértices, no solo los bordes
       for (let i = 0; i < positions.count; i++) {
         vertex.fromBufferAttribute(positions, i);
         
@@ -137,7 +138,19 @@ export class LandMassesEffect {
         
         // Proyectar sobre la superficie esférica a la altura correcta
         const direction = worldVertex.clone().normalize();
-        const projectedVertex = direction.multiplyScalar(landRadius);
+        
+        // GRADIENTE DE ALTURA: El centro más alto, los bordes más bajos
+        // Calcular distancia desde el centro de la isla (en coordenadas locales originales)
+        const localDist = Math.sqrt(vertex.x * vertex.x + vertex.y * vertex.y);
+        const maxRadius = size * 1.2 * 0.5; // Radio máximo de la isla
+        const heightFactor = Math.max(0, 1.0 - (localDist / maxRadius)); // 1.0 en centro, 0.0 en bordes
+        
+        // Elevación variable: más alta en el centro, baja en los bordes
+        const baseRadius = planetRadius * 1.003; // Elevación base mínima
+        const peakRadius = planetRadius * 1.009; // Elevación máxima en el centro
+        const finalRadius = baseRadius + (peakRadius - baseRadius) * heightFactor * heightFactor;
+        
+        const projectedVertex = direction.multiplyScalar(finalRadius);
         
         // Volver a coordenadas locales de la isla
         const localVertex = projectedVertex.sub(landPosition);
@@ -191,7 +204,7 @@ export class LandMassesEffect {
       const geometry = new THREE.CircleGeometry(size, 16);
       
       // Posicionar y orientar
-      const worldPos = position.clone().multiplyScalar(planetRadius * 1.001);
+      const worldPos = position.clone().multiplyScalar(planetRadius * 1.000);
       geometry.lookAt(position);
       geometry.translate(worldPos.x, worldPos.y, worldPos.z);
       
