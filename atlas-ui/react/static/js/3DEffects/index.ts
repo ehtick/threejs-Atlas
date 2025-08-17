@@ -57,6 +57,9 @@ export type { RockyTerrainLayerParams } from './RockyTerrainLayer';
 export { IcyTerrainLayer, createIcyTerrainLayerFromPythonData } from './IcyTerrainLayer';
 export type { IcyTerrainLayerParams } from './IcyTerrainLayer';
 
+export { LandMassesEffect, createLandMassesFromPythonData } from './LandMasses';
+export type { LandMassesParams } from './LandMasses';
+
 // OceanWaves eliminado - no respeta los datos de Python
 
 // Sistema de registro y gestión

@@ -13,6 +13,7 @@ import { AtmosphereEffect, createAtmosphereFromPythonData, AtmosphereParams } fr
 
 import { AtmosphereGlowEffect, createAtmosphereGlowFromPythonData, AtmosphereGlowParams } from "./AtmosphereGlow";
 import { AtmosphereCloudsEffect, createAtmosphereCloudsFromPythonData, AtmosphereCloudsParams } from "./AtmosphereClouds";
+import { LandMassesEffect, createLandMassesFromPythonData, LandMassesParams } from "./LandMasses";
 
 // Sistema de capas mejorado
 import { PlanetLayerSystem } from "../3DComponents/PlanetLayerSystem";
@@ -78,6 +79,7 @@ export enum EffectType {
   // Efectos de superficie específicos
   ROCKY_TERRAIN = "rocky_terrain",
   ICY_TERRAIN = "icy_terrain",
+  LAND_MASSES = "land_masses",
   OCEAN_WAVES = "ocean_waves",
   LAVA_FLOWS = "lava_flows",
   CRYSTAL_FORMATIONS = "crystal_formations",
@@ -173,6 +175,11 @@ export class EffectRegistry {
     // Efectos de terreno legacy eliminados - usar solo sistema de capas
 
     // Efectos de superficie
+    this.registerEffect(EffectType.LAND_MASSES, {
+      create: (params, planetRadius) => new LandMassesEffect(planetRadius, params),
+      fromPythonData: (data, planetRadius) => createLandMassesFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed),
+    });
+
     this.registerEffect(EffectType.OCEAN_WAVES, {
       create: (params, planetRadius) => new OceanWavesEffect(params),
       fromPythonData: (data, planetRadius) => createOceanWavesFromPythonData(data),
@@ -505,6 +512,30 @@ export class EffectRegistry {
             break;
 
           case "oceanic":
+            // Añadir green_patches como masas de tierra para planetas oceánicos
+            if (surface.green_patches && surface.green_patches.length > 0) {
+              const landMassesEffect = createLandMassesFromPythonData(
+                planetRadius,
+                surface,
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 6000
+              );
+
+              if (landMassesEffect) {
+                const landMassesInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "land_masses",
+                  effect: landMassesEffect,
+                  priority: 5, // Prioridad baja para que esté cerca de la superficie
+                  enabled: true,
+                  name: "Land Masses (Islands)"
+                };
+
+                this.effects.set(landMassesInstance.id, landMassesInstance);
+                effects.push(landMassesInstance);
+                landMassesEffect.addToScene(scene, mesh.position);
+              }
+            }
+
             // Añadir nubes atmosféricas si están disponibles para planetas oceánicos
             if (surface.clouds && surface.clouds.length > 0) {
               const cloudsEffect = createAtmosphereCloudsFromPythonData(
