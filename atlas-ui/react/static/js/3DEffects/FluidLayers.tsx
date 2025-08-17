@@ -408,9 +408,9 @@ export class FluidLayersEffect {
 // Función para crear desde datos de Python
 export function createFluidLayersFromPythonData(planetRadius: number, pythonData: any): FluidLayersEffect {
   // Usar parámetros procedurales basados en seeds si están disponibles
-  let flowSpeed = 2.0;    // Rápido pero visible
-  let waveAmplitude = 0.1;  // Olas grandes pero no extremas
-  let opacity = 0.8;       // Muy visible
+  let flowSpeed = 0.5;
+  let waveAmplitude = 0.025;
+  let opacity = 0.75;
   
   if (pythonData.seeds) {
     const seed = pythonData.seeds.shape_seed || pythonData.seeds.planet_seed;
@@ -423,9 +423,9 @@ export function createFluidLayersFromPythonData(planetRadius: number, pythonData
     };
     
     const random = rng(seed);
-    flowSpeed = 0.3 + random() * 0.4; // 0.3 - 0.7 (velocidad variable)
-    waveAmplitude = 0.02 + random() * 0.015; // 0.02 - 0.035 (olas sutiles)
-    opacity = 0.65 + random() * 0.2; // 0.65 - 0.85 (mayor opacidad)
+    flowSpeed = 0.05 + random() * 0.3; // 0.1 - 0.5 (velocidad variable)
+    waveAmplitude = 0.02 + random() * 0.02; // 0.02 - 0.04 (olas sutiles)
+    opacity = 0.25 + random() * 0.6; // 0.25 - 0.85 (mayor opacidad)
   }
   
   const params: FluidLayersParams = {
