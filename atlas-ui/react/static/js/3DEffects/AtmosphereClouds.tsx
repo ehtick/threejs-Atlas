@@ -25,6 +25,8 @@ export interface AtmosphereCloudsParams {
   movementAmplitude?: number; // Amplitud del movimiento individual
   puffiness?: number; // Factor de esponjosidad de las nubes
   cloudsFromPython?: any[]; // Datos de nubes desde Python API
+  startTime?: number; // Tiempo inicial fijo para determinismo
+  timeSpeed?: number; // Velocidad del tiempo para movimiento de nubes (0.1 - 3.0)
 }
 
 // Rangos para generación procedural basados en generate_clouds de Python
@@ -36,7 +38,8 @@ const PROCEDURAL_RANGES = {
   DENSITY: { min: 0.5, max: 2 }, // Densidad suave para billboards
   ROTATION_SPEED: { min: 0.002, max: 0.008 },
   MOVEMENT_AMPLITUDE: { min: 0.003, max: 0.02 },
-  PUFFINESS: { min: 1.0, max: 1.4 } // Moderada esponjosidad
+  PUFFINESS: { min: 1.0, max: 1.4 }, // Moderada esponjosidad
+  TIME_SPEED: { min: 0.1, max: 3.0 } // Rango de velocidades del tiempo
 };
 
 /**
@@ -50,6 +53,7 @@ export class AtmosphereCloudsEffect {
   private params: AtmosphereCloudsParams;
   private cloudCount: number;
   private clouds: THREE.Mesh[] = [];
+  private startTime: number;
 
   private static readonly vertexShader = `
     varying vec3 vPosition;
@@ -203,6 +207,9 @@ export class AtmosphereCloudsEffect {
     const seed = params.seed || Math.floor(Math.random() * 1000000);
     const rng = new SeededRandom(seed);
     
+    // Tiempo inicial determinista basado en el seed
+    this.startTime = params.startTime || (seed % 10000) / 1000; // Convertir seed a tiempo inicial
+    
     this.params = {
       color: params.color || new THREE.Color(0xffffff),
       cloudCount: params.cloudCount || Math.floor(rng.uniform(PROCEDURAL_RANGES.CLOUD_COUNT.min, PROCEDURAL_RANGES.CLOUD_COUNT.max)),
@@ -212,7 +219,9 @@ export class AtmosphereCloudsEffect {
       rotationSpeed: params.rotationSpeed || rng.uniform(PROCEDURAL_RANGES.ROTATION_SPEED.min, PROCEDURAL_RANGES.ROTATION_SPEED.max),
       movementAmplitude: params.movementAmplitude || rng.uniform(PROCEDURAL_RANGES.MOVEMENT_AMPLITUDE.min, PROCEDURAL_RANGES.MOVEMENT_AMPLITUDE.max),
       puffiness: params.puffiness || rng.uniform(PROCEDURAL_RANGES.PUFFINESS.min, PROCEDURAL_RANGES.PUFFINESS.max),
+      timeSpeed: params.timeSpeed || rng.uniform(PROCEDURAL_RANGES.TIME_SPEED.min, PROCEDURAL_RANGES.TIME_SPEED.max),
       seed: seed,
+      startTime: this.startTime,
     };
 
     this.cloudCount = this.params.cloudCount!;
@@ -387,17 +396,21 @@ export class AtmosphereCloudsEffect {
   }
 
   update(deltaTime: number, camera?: THREE.Camera): void {
+    // Calcular tiempo absoluto determinista desde el inicio con ciclo y velocidad procedural
+    const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!; // Velocidad procedural
+    const currentTime = rawTime % 1000; // Mantener el tiempo en un ciclo de 1000 segundos
+    
     // Actualizar tiempo en todos los materiales de las nubes
     this.clouds.forEach(cloud => {
       const material = cloud.material as THREE.ShaderMaterial;
-      material.uniforms.time.value += deltaTime;
+      material.uniforms.time.value = currentTime;
       
       // ORIENTACIÓN ATMOSFÉRICA: Las nubes ya están orientadas al planeta
       // No necesitan lookAt dinámico porque están pre-orientadas
     });
 
-    // Rotación procedural del sistema de nubes
-    this.cloudSystem.rotation.y += deltaTime * this.params.rotationSpeed!;
+    // Rotación procedural del sistema de nubes usando tiempo absoluto
+    this.cloudSystem.rotation.y = currentTime * this.params.rotationSpeed!;
   }
 
   updateParams(newParams: Partial<AtmosphereCloudsParams>): void {
@@ -483,6 +496,7 @@ export function createAtmosphereCloudsFromPythonData(planetRadius: number, surfa
       rotationSpeed: 0.005, // Rotación más lenta y realista
       movementAmplitude: 0.02, // Movimiento sutil
       puffiness: 1.5,
+      timeSpeed: rng.uniform(PROCEDURAL_RANGES.TIME_SPEED.min, PROCEDURAL_RANGES.TIME_SPEED.max),
     };
 
     return new AtmosphereCloudsEffect(planetRadius, params);
@@ -502,6 +516,7 @@ export function createAtmosphereCloudsFromPythonData(planetRadius: number, surfa
     rotationSpeed: rng.uniform(PROCEDURAL_RANGES.ROTATION_SPEED.min, PROCEDURAL_RANGES.ROTATION_SPEED.max),
     movementAmplitude: rng.uniform(PROCEDURAL_RANGES.MOVEMENT_AMPLITUDE.min, PROCEDURAL_RANGES.MOVEMENT_AMPLITUDE.max),
     puffiness: rng.uniform(PROCEDURAL_RANGES.PUFFINESS.min, PROCEDURAL_RANGES.PUFFINESS.max),
+    timeSpeed: rng.uniform(PROCEDURAL_RANGES.TIME_SPEED.min, PROCEDURAL_RANGES.TIME_SPEED.max),
     cloudsFromPython: cloudsArray, // Pasar los datos de Python
   };
 
