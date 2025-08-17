@@ -31,6 +31,7 @@ import { StarFieldEffect, createStarFieldFromPythonData, StarFieldParams } from 
 // Importar efectos de superficie restantes
 import { FragmentationEffect } from "./FragmentationEffect";
 import { OceanWavesEffect, createOceanWavesFromPythonData } from "./OceanWaves";
+import { FluidLayersEffect, createFluidLayersFromPythonData } from "./FluidLayers";
 // Efectos de superficie legacy eliminados - usar solo versiones Layer
 
 // Importar efectos de debug
@@ -81,6 +82,7 @@ export enum EffectType {
   ICY_TERRAIN = "icy_terrain",
   LAND_MASSES = "land_masses",
   OCEAN_WAVES = "ocean_waves",
+  FLUID_LAYERS = "fluid_layers",
   LAVA_FLOWS = "lava_flows",
   CRYSTAL_FORMATIONS = "crystal_formations",
   CLOUD_LAYERS = "cloud_layers",
@@ -183,6 +185,11 @@ export class EffectRegistry {
     this.registerEffect(EffectType.OCEAN_WAVES, {
       create: (params, planetRadius) => new OceanWavesEffect(params),
       fromPythonData: (data, planetRadius) => createOceanWavesFromPythonData(data),
+    });
+
+    this.registerEffect(EffectType.FLUID_LAYERS, {
+      create: (params, planetRadius) => new FluidLayersEffect(planetRadius, params),
+      fromPythonData: (data, planetRadius) => createFluidLayersFromPythonData(planetRadius, data)
     });
 
     // ELIMINADO: MetallicSurfaceEffect legacy - ahora se maneja por MetallicSurfaceLayer
@@ -512,6 +519,26 @@ export class EffectRegistry {
             break;
 
           case "oceanic":
+            // Añadir FluidLayers para corrientes oceánicas transparentes
+            const fluidLayersEffect = createFluidLayersFromPythonData(planetRadius, pythonData);
+            
+            if (fluidLayersEffect) {
+              const fluidLayersInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "fluid_layers",
+                effect: fluidLayersEffect,
+                priority: 3,
+                enabled: true,
+                name: "Fluid Ocean Layers"
+              };
+              
+              this.effects.set(fluidLayersInstance.id, fluidLayersInstance);
+              effects.push(fluidLayersInstance);
+              fluidLayersEffect.addToScene(scene, mesh.position);
+              
+              console.log("🌊 FluidLayers effect added for oceanic planet");
+            }
+
             // Añadir green_patches como masas de tierra para planetas oceánicos
             if (surface.green_patches && surface.green_patches.length > 0) {
               const landMassesEffect = createLandMassesFromPythonData(
@@ -734,11 +761,12 @@ export class EffectRegistry {
       // Actualizar visibilidad del objeto 3D
       const effect = effectInstance.effect;
 
-      // Para efectos con getObject3D (como RingSystem, AtmosphericStreaks, etc.)
+      // Para efectos con getObject3D (como RingSystem, AtmosphericStreaks, FluidLayers, etc.)
       if (effect && effect.getObject3D) {
         const object3D = effect.getObject3D();
         if (object3D) {
           object3D.visible = effectInstance.enabled;
+          console.log(`🎮 Toggle effect ${effectInstance.type}: visible = ${effectInstance.enabled}`);
         }
       }
 
