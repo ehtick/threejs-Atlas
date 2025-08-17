@@ -70,8 +70,8 @@ export class LandMassesEffect {
       
       // NUEVO ENFOQUE: PlaneGeometry con ruido 2D para formas orgánicas
       
-      // Crear un plano en el espacio tangente local
-      const resolution = 24; // Resolución de la grilla
+      // RESOLUCIÓN ADAPTATIVA: más vértices para islas grandes
+      const resolution = Math.max(24, Math.min(64, Math.floor(size * 32))); // Más agresivo: 24-64
       const planeSize = size * 2;
       
       // Posición en la superficie del planeta
@@ -93,14 +93,19 @@ export class LandMassesEffect {
       tangent2.crossVectors(sphericalPos, tangent1).normalize();
       
       // Función de ruido 2D mejorada (FBM - Fractal Brownian Motion)
+      // RUIDO ADAPTATIVO: frecuencia inversa al tamaño para mantener detalle consistente
+      const baseFrequency = 2.0 / Math.max(size * 0.05, 1.0); // Frecuencia base adaptativa
+      
       const fbmNoise = (x: number, y: number) => {
         let value = 0;
         let amplitude = 1;
-        let frequency = 1;
+        let frequency = baseFrequency;
         let maxValue = 0;
         
-        // 4 octavas de ruido para más detalle
-        for (let i = 0; i < 4; i++) {
+        // Más octavas para islas grandes (más detalle)
+        const octaves = Math.min(5, Math.max(3, Math.floor(size / 40) + 2));
+        
+        for (let i = 0; i < octaves; i++) {
           const sx = x * frequency;
           const sy = y * frequency;
           
@@ -137,7 +142,7 @@ export class LandMassesEffect {
           maxValue += amplitude;
           
           amplitude *= 0.5;
-          frequency *= 2.1; // Frecuencia ligeramente irregular para más naturalidad
+          frequency *= 2.2; // Frecuencia ligeramente irregular para más naturalidad
         }
         
         return value / maxValue;
@@ -249,18 +254,32 @@ export class LandMassesEffect {
           const noiseValue = fbmNoise(u * 2, v * 2);
           
           // Combinar perfil radial (centro alto, bordes bajos) con ruido
-          const radialHeight = Math.max(0, 1.0 - distFromCenter * 0.8);
+          // Factor de borde más suave para transición natural
+          const edgeFactor = Math.max(0, 1.0 - Math.pow(distFromCenter, 0.7));
           
-          // 60% perfil radial + 40% ruido para relieve con variación
-          const combinedHeight = radialHeight * 0.6 + noiseValue * 0.4;
+          // Más peso al ruido para mayor variación topográfica
+          const combinedHeight = edgeFactor * 0.5 + noiseValue * 0.5;
           
           // Aplicar función smoothstep para suavizar transiciones
           const smoothstep = (x: number) => x * x * (3.0 - 2.0 * x);
           const smoothHeight = smoothstep(combinedHeight);
           
-          // Rango de elevación más pronunciado para que se note el relieve
-          const baseRadius = planetRadius * 1.002; // Elevación base (nivel del mar)
-          const peakRadius = planetRadius * 1.008; // Elevación máxima (montañas)
+          // RELIEVE ESCALADO AL TAMAÑO DE LA ISLA (CON LÍMITE ATMOSFÉRICO)
+          // Las islas grandes tendrán montañas más altas proporcionalmente
+          // pero nunca sobrepasarán la capa de nubes
+          
+          // Límite máximo absoluto: las nubes suelen estar a ~1.01-1.02 del radio
+          const cloudLayerRadius = planetRadius * 1.01; // Altura típica de las nubes
+          const maxAbsoluteRelief = cloudLayerRadius - planetRadius; // No sobrepasar las nubes
+          
+          // RELIEVE MÁS AGRESIVO: 15-20% del tamaño de la isla
+          const proportionalRelief = size * 0.15; // 15% del tamaño para relieve notable
+          const maxRelief = Math.min(proportionalRelief, maxAbsoluteRelief * 0.9); // Hasta 90% de la altura de nubes
+          const minRelief = planetRadius * 0.002; // Elevación base más visible
+          
+          // Combinar relieve proporcional con base del planeta
+          const baseRadius = planetRadius + minRelief;
+          const peakRadius = planetRadius + minRelief + maxRelief;
           
           // Interpolar entre base y peak usando la altura combinada
           const finalRadius = THREE.MathUtils.lerp(baseRadius, peakRadius, smoothHeight);
