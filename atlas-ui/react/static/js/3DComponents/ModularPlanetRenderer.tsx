@@ -313,6 +313,11 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
     if (planetLayerSystemRef.current && sunLightRef.current) {
       planetLayerSystemRef.current.updateFromThreeLight(sunLightRef.current);
     }
+
+    // ACTUALIZAR LUZ DE TODOS LOS EFECTOS (incluidas las nubes atmosféricas)
+    if (sunLightRef.current) {
+      effectRegistry.updateLightForAllEffects(sunLightRef.current);
+    }
   };
 
   /**
@@ -408,6 +413,10 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
         if (planetLayerSystemRef.current && defaultSunLight) {
           planetLayerSystemRef.current.updateFromThreeLight(defaultSunLight);
         }
+        // ACTUALIZAR LUZ DE TODOS LOS EFECTOS (incluidas las nubes atmosféricas)
+        if (defaultSunLight) {
+          effectRegistry.updateLightForAllEffects(defaultSunLight);
+        }
       }, 50);
 
       return;
@@ -443,6 +452,11 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
 
     if (planetLayerSystemRef.current && sunLight) {
       planetLayerSystemRef.current.updateFromThreeLight(sunLight);
+    }
+
+    // ACTUALIZAR LUZ DE TODOS LOS EFECTOS (incluidas las nubes atmosféricas)
+    if (sunLight) {
+      effectRegistry.updateLightForAllEffects(sunLight);
     }
   };
 

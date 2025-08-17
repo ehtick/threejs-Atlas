@@ -788,6 +788,27 @@ export class EffectRegistry {
   }
 
   /**
+   * Actualiza la luz de todos los efectos (incluyendo PlanetLayerSystem)
+   */
+  updateLightForAllEffects(light: THREE.DirectionalLight): void {
+    // Actualizar PlanetLayerSystem
+    if (this.layerSystem) {
+      this.layerSystem.updateFromThreeLight(light);
+    }
+
+    // Actualizar efectos que tienen updateFromThreeLight
+    for (const instance of this.effects.values()) {
+      if (instance.enabled && instance.effect.updateFromThreeLight) {
+        try {
+          instance.effect.updateFromThreeLight(light);
+        } catch (error) {
+          console.error(`Error updating light for effect ${instance.type}:`, error);
+        }
+      }
+    }
+  }
+
+  /**
    * Elimina un efecto
    */
   removeEffect(id: string): void {

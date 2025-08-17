@@ -90,6 +90,8 @@ export class AtmosphereCloudsEffect {
     uniform float density;
     uniform vec2 noiseOffset;
     uniform float shapeVariation;
+    uniform vec3 lightDirection; // Del sistema PlanetLayerSystem
+    uniform vec3 lightPosition; // Del sistema PlanetLayerSystem
     
     // Función de ruido Perlin simplificada para nubes
     float random(vec2 st) {
@@ -174,14 +176,22 @@ export class AtmosphereCloudsEffect {
       float alpha = finalCloud * opacity;
       alpha *= (1.0 - distFromCenter * 0.5); // Más transparente en los bordes
       
-      // SIMPLE: hacer nubes más transparentes en zona sin luz - TRANSICIÓN SUAVE
-      vec3 lightDirection = normalize(vec3(1.0, 0.5, 0.5)); // Luz fija
-      vec3 planetNormal = normalize(vWorldPosition);
-      float lightDot = dot(planetNormal, lightDirection);
+      // USAR LA LUZ REAL DEL SISTEMA PERO CON NORMAL PLANETARIA
+      vec3 lightDir;
+      if (length(lightPosition) > 0.0) {
+        lightDir = normalize(lightPosition - vWorldPosition);
+      } else {
+        lightDir = normalize(-lightDirection); // Negativo porque lightDirection apunta hacia la luz
+      }
+      
+      // CRÍTICO: Usar la normal planetaria, NO la normal de la superficie de la nube
+      // Para determinar qué lado del PLANETA está iluminado
+      vec3 planetNormal = normalize(vWorldPosition); // Normal desde centro del planeta
+      float dotNL = dot(planetNormal, lightDir);
       
       // Transición suave de opacidad (de 1.0 a 0.3)
-      float lightFactor = smoothstep(-0.2, 0.2, lightDot); // Transición suave entre -0.2 y 0.2
-      alpha *= mix(0.3, 1.0, lightFactor); // Mezcla suave entre 30% y 100% opacidad
+      float lightFactor = smoothstep(-0.2, 0.2, dotNL);
+      alpha *= mix(0.3, 1.0, lightFactor);
       
       gl_FragColor = vec4(finalColor, alpha);
     }
@@ -331,6 +341,10 @@ export class AtmosphereCloudsEffect {
       // Variación de forma única para cada nube
       cloudMaterial.uniforms.shapeVariation.value = rng.uniform(-1.0, 1.0);
       
+      // Configurar uniformes de luz para cada nube
+      cloudMaterial.uniforms.lightDirection.value = this.material.uniforms.lightDirection.value.clone();
+      cloudMaterial.uniforms.lightPosition.value = this.material.uniforms.lightPosition.value.clone();
+      
       // Crear mesh de nube SIGUIENDO LA SUPERFICIE
       const cloudMesh = new THREE.Mesh(cloudGeometry, cloudMaterial);
       
@@ -355,6 +369,8 @@ export class AtmosphereCloudsEffect {
         density: { value: this.params.density },
         noiseOffset: { value: new THREE.Vector2(0, 0) },
         shapeVariation: { value: 0.0 },
+        lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
+        lightPosition: { value: new THREE.Vector3(0, 0, 0) },
       },
       transparent: true,
       blending: THREE.NormalBlending, // Blending normal para billboards
@@ -399,6 +415,32 @@ export class AtmosphereCloudsEffect {
         material.uniforms.movementAmplitude.value = newParams.movementAmplitude;
       }
     });
+  }
+
+  // MÉTODOS PARA INTEGRACIÓN CON SISTEMA DE LUZ
+  updateLightPosition(position: THREE.Vector3): void {
+    this.clouds.forEach(cloud => {
+      const material = cloud.material as THREE.ShaderMaterial;
+      if (material.uniforms.lightPosition) {
+        material.uniforms.lightPosition.value.copy(position);
+      }
+    });
+  }
+
+  updateLightDirection(direction: THREE.Vector3): void {
+    this.clouds.forEach(cloud => {
+      const material = cloud.material as THREE.ShaderMaterial;
+      if (material.uniforms.lightDirection) {
+        material.uniforms.lightDirection.value.copy(direction);
+      }
+    });
+  }
+
+  // Método compatible con PlanetLayerSystem
+  updateFromThreeLight(light: THREE.DirectionalLight): void {
+    this.updateLightPosition(light.position);
+    const direction = light.target.position.clone().sub(light.position).normalize();
+    this.updateLightDirection(direction);
   }
 
   getObject3D(): THREE.Group {
