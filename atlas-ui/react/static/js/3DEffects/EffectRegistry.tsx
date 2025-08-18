@@ -658,6 +658,83 @@ export class EffectRegistry {
             }
             break;
 
+          case "tundra":
+            // Tundra planets: mix of land masses (earth tones), sparse ice features, and atmospheric clouds
+            
+            // 1. Land masses with earth-toned colors (browns, greys, muted greens) WITH LOW OPACITY
+            if (surface.green_patches && surface.green_patches.length > 0) {
+              // NOTE: The opacity is already in the patch data from Python (0.25)
+              // The LandMassesEffect will use it automatically
+              const landMassesEffect = createLandMassesFromPythonData(
+                planetRadius,
+                surface,
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 6000
+              );
+
+              if (landMassesEffect) {
+                const landMassesInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "land_masses",
+                  effect: landMassesEffect,
+                  priority: 5,
+                  enabled: true,
+                  name: "Tundra Terrain"
+                };
+
+                this.effects.set(landMassesInstance.id, landMassesInstance);
+                effects.push(landMassesInstance);
+                landMassesEffect.addToScene(scene, mesh.position);
+                console.log("🏔️ Tundra terrain (LandMasses) added");
+              }
+            }
+
+            // 2. Sparse ice features (seasonal snow patches, sparse crystals)
+            const tundraIcyFeatures = createIcyFeaturesFromPythonData(
+              planetRadius,
+              surface,
+              (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 9000
+            );
+
+            if (tundraIcyFeatures) {
+              const icyFeaturesInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "icy_features",
+                effect: tundraIcyFeatures,
+                priority: 6,
+                enabled: true,
+                name: "Snow Patches & Ice"
+              };
+
+              this.effects.set(icyFeaturesInstance.id, icyFeaturesInstance);
+              effects.push(icyFeaturesInstance);
+              tundraIcyFeatures.addToScene(scene, mesh.position);
+              console.log("❄️ Sparse ice features added to Tundra planet");
+            }
+
+            // 3. Atmospheric clouds with earth-like colors
+            if (surface.clouds && surface.clouds.length > 0) {
+              const cloudsEffect = createAtmosphereCloudsFromPythonData(
+                planetRadius,
+                surface,
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000
+              );
+
+              const cloudsInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "atmosphere_clouds",
+                effect: cloudsEffect,
+                priority: 15,
+                enabled: true,
+                name: "Atmospheric Clouds"
+              };
+
+              this.effects.set(cloudsInstance.id, cloudsInstance);
+              effects.push(cloudsInstance);
+              cloudsEffect.addToScene(scene, mesh.position);
+              console.log("☁️ Atmospheric clouds added to Tundra planet");
+            }
+            break;
+
           default:
             // Para tipos sin efectos específicos, aplicar al menos el color base
             if (mesh.material instanceof THREE.MeshStandardMaterial) {

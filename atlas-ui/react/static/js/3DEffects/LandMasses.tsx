@@ -12,6 +12,7 @@ export interface LandMassesParams {
   greenPatches?: any[]; // Datos de green_patches desde Python
   seed?: number;
   transparentMode?: boolean; // Modo transparente para planetas Icy
+  tundraMode?: boolean; // Modo tundra con baja opacidad
 }
 
 /**
@@ -60,6 +61,8 @@ export class LandMassesEffect {
       
       // Color del patch - convertir de [0-1] a color THREE.js
       let patchColor = new THREE.Color(0x4a7c59); // Verde tierra por defecto
+      let patchOpacity = 1.0; // Opacidad por defecto
+      
       if (patch.color && Array.isArray(patch.color)) {
         // Los colores vienen normalizados [0-1] desde Python
         patchColor = new THREE.Color(
@@ -67,6 +70,11 @@ export class LandMassesEffect {
           patch.color[1], 
           patch.color[2]
         );
+        
+        // Si hay un cuarto valor, es la opacidad (alpha)
+        if (patch.color.length > 3) {
+          patchOpacity = patch.color[3];
+        }
       }
       
       // NUEVO ENFOQUE: PlaneGeometry con ruido 2D para formas orgánicas
@@ -301,10 +309,11 @@ export class LandMassesEffect {
       geometry.translate(landPosition.x, landPosition.y, landPosition.z);
       
       // Material con textura de ruido procedural
+      // IMPORTANTE: Usar la opacidad del patch desde Python
       const material = new THREE.MeshPhongMaterial({
         color: params.transparentMode ? new THREE.Color(0xE6F3FF) : patchColor, // Azul hielo muy claro si es transparente
-        opacity: params.transparentMode ? 0.3 : 1.0, // Semitransparente para que se note sutilmente
-        transparent: params.transparentMode ? true : false,
+        opacity: params.transparentMode ? 0.3 : patchOpacity, // Usar opacidad del patch desde Python
+        transparent: params.transparentMode || patchOpacity < 1.0, // Transparente si tiene opacidad menor a 1
         emissive: params.transparentMode ? new THREE.Color(0xCCE6FF).multiplyScalar(0.1) : patchColor.clone().multiplyScalar(0.05),
         emissiveIntensity: params.transparentMode ? 0.05 : 0.0000001,
         shininess: params.transparentMode ? 30 : 8, // Más brillante como hielo
@@ -378,10 +387,14 @@ export class LandMassesEffect {
         0
       );
       
+      // Para planetas tundra, usar colores blanquecinos con baja opacidad
+      const isTundra = params.tundraMode || false;
+      const proceduralOpacity = isTundra ? 0.25 : 1.0;
+      
       const material = new THREE.MeshPhongMaterial({
         color: params.transparentMode ? new THREE.Color(0xE6F3FF) : baseColor,
-        opacity: params.transparentMode ? 0.3 : 1.0,
-        transparent: params.transparentMode ? true : false,
+        opacity: params.transparentMode ? 0.3 : proceduralOpacity,
+        transparent: params.transparentMode || proceduralOpacity < 1.0,
         emissive: params.transparentMode ? new THREE.Color(0xCCE6FF).multiplyScalar(0.1) : 0x0a0a00,
         shininess: params.transparentMode ? 30 : 5,
       });

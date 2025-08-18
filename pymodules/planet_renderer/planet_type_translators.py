@@ -469,7 +469,174 @@ class PlanetTypeTranslators:
     
     def translate_tundra(self, planet_radius: int, rng: random.Random, 
                         seed: int, planet_name: str) -> Dict[str, Any]:
-        return {"type": "tundra"}
+        """Translate Tundra planet elements - mix of land, seasonal snow, and sparse vegetation"""
+        center_x, center_y = 200, 200  # Pillow center coordinates
+        
+        # Base whitish colors with earth tones for tundra (more subtle, snow-covered terrain)
+        tundra_colors = [
+            [0.85, 0.80, 0.75],  # Whitish brown - snow-covered soil
+            [0.88, 0.85, 0.82],  # Light whitish brown - dry earth with snow
+            [0.80, 0.82, 0.78],  # Whitish olive - sparse vegetation under snow
+            [0.82, 0.85, 0.83],  # Whitish grey-green - lichen/moss under snow
+            [0.90, 0.88, 0.88],  # Light grey - snow-covered rock
+        ]
+        
+        # LAND MASSES - using oceanic green_patches system but with tundra colors
+        num_land_patches = rng.randint(8, 15)  # More patches than oceanic for fragmented look
+        green_patches = []
+        
+        for i in range(num_land_patches):
+            # Generate uniform 3D position (same as oceanic)
+            theta = rng.uniform(0, 2 * math.pi)
+            phi = math.acos(rng.uniform(-1, 1))
+            
+            patch_3d_x = math.sin(phi) * math.cos(theta)
+            patch_3d_y = math.sin(phi) * math.sin(theta)
+            patch_3d_z = math.cos(phi)
+            
+            # Also maintain 2D coordinates for compatibility
+            patch_angle = rng.uniform(0, 2 * math.pi)
+            patch_distance = rng.uniform(0.4 * planet_radius, planet_radius)
+            
+            patch_x = center_x + patch_distance * math.cos(patch_angle)
+            patch_y = center_y + patch_distance * math.sin(patch_angle)
+            
+            normalized_coords = self.common_utils.normalize_coordinates(
+                patch_x, patch_y, center_x, center_y, planet_radius
+            )
+            
+            # Choose random tundra color for this patch with low opacity (25%)
+            patch_color = rng.choice(tundra_colors) + [0.25]  # 25% opacity for subtle effect
+            
+            green_patches.append({
+                "position": normalized_coords,
+                "position_3d": [patch_3d_x, patch_3d_y, patch_3d_z],
+                "size": rng.uniform(0.04, 0.12),  # Variable sizes
+                "color": patch_color,
+                "sides": rng.randint(12, 25)  # Irregular shapes
+            })
+        
+        # SEASONAL SNOW PATCHES - using adapted ice caps system (more for montículos effect)
+        num_snow_patches = rng.randint(8, 15)  # More snow patches for montículos de nieve
+        ice_caps = []
+        
+        for i in range(num_snow_patches):
+            # Favor higher latitudes for snow (polar bias like crystals)
+            polar_bias = rng.choice([-1, 1])
+            latitude_bias = rng.uniform(0.3, 0.8) * polar_bias  # 30-80% toward poles
+            
+            cap_x = center_x + rng.uniform(-planet_radius * 0.6, planet_radius * 0.6)
+            cap_y = center_y + latitude_bias * planet_radius
+            
+            normalized_coords = self.common_utils.normalize_coordinates(
+                cap_x, cap_y, center_x, center_y, planet_radius
+            )
+            
+            # Snow-like colors - white to light blue
+            snow_colors = [
+                [0.95, 0.95, 0.98, 0.7],  # Pure white snow
+                [0.90, 0.94, 0.98, 0.6],  # Light blue snow
+                [0.88, 0.92, 0.95, 0.5],  # Slightly blue snow
+            ]
+            
+            # Create mix of small snow mounds and larger snow patches
+            if i < num_snow_patches // 2:
+                # Small montículos de nieve (snow mounds)
+                radius = rng.uniform(0.04, 0.12)
+                opacity_boost = rng.uniform(0.6, 0.9)  # Higher opacity for small mounds
+            else:
+                # Larger seasonal snow patches
+                radius = rng.uniform(0.12, 0.22)
+                opacity_boost = rng.uniform(0.5, 0.7)  # Lower opacity for larger patches
+            
+            # Adjust snow color opacity
+            snow_color = rng.choice(snow_colors).copy()
+            snow_color[3] = opacity_boost
+            
+            ice_caps.append({
+                "position": normalized_coords,
+                "radius": radius,
+                "color": snow_color,
+                "seed": f"{planet_name}_snow_{i}"
+            })
+        
+        # SPARSE ICE CRYSTALS - fewer than full icy planets
+        num_crystals = rng.randint(3, 8)  # Much fewer than icy planets
+        crystals = []
+        
+        for _ in range(num_crystals):
+            crystal_length = rng.randint(3, 8)  # Smaller crystals  
+            crystal_width = rng.randint(4, 12)
+            crystal_angle = rng.uniform(0, 2 * math.pi)
+            
+            # Less polar bias than icy planets - more distributed
+            polar_bias = rng.choice([-1, 1])
+            polar_offset = rng.uniform(0.2 * planet_radius, 0.7 * planet_radius) * polar_bias
+            crystal_x = center_x + rng.uniform(-0.5 * planet_radius, 0.5 * planet_radius)
+            crystal_y = center_y + polar_offset
+            
+            normalized_coords = self.common_utils.normalize_coordinates(
+                crystal_x, crystal_y, center_x, center_y, planet_radius
+            )
+            
+            crystals.append({
+                "position": normalized_coords,
+                "length": crystal_length / planet_radius,
+                "width": crystal_width / planet_radius,
+                "angle": crystal_angle,
+                "color": [0.85, 0.90, 0.95, 0.8]  # Slight blue tint to ice
+            })
+        
+        # CLOUDS - using atmospheric system with earth-like colors
+        num_clouds = rng.randint(4, 10)
+        clouds = []
+        
+        for i in range(num_clouds):
+            cloud_radius = rng.randint(20, 40)
+            max_offset = planet_radius - cloud_radius
+            cloud_x = center_x + rng.randint(-max_offset, max_offset)
+            cloud_y = center_y + rng.randint(-max_offset, max_offset)
+            
+            normalized_coords = self.common_utils.normalize_coordinates(
+                cloud_x, cloud_y, center_x, center_y, planet_radius
+            )
+            
+            # Tundra clouds - greyish white, not pure white
+            cloud_colors = [
+                [0.85, 0.87, 0.90, 0.8],  # Light grey clouds
+                [0.80, 0.82, 0.85, 0.7],  # Medium grey clouds  
+                [0.90, 0.91, 0.93, 0.6],  # Light white-grey
+            ]
+            
+            clouds.append({
+                "position": normalized_coords,
+                "radius": cloud_radius / planet_radius,
+                "color": rng.choice(cloud_colors),
+                "type": "cloud",
+                "seed": f"{planet_name}_cloud_{i}"
+            })
+        
+        return {
+            "type": "tundra",
+            # Land masses with tundra colors (browns, greys, muted greens)
+            "green_patches": green_patches,
+            # Seasonal snow patches
+            "ice_caps": ice_caps,
+            # Sparse ice formations
+            "crystals": crystals,
+            # Earth-like clouds
+            "clouds": clouds,
+            "debug": {
+                "original_planet_radius": planet_radius,
+                "center_x": center_x, "center_y": center_y,
+                "land_patch_count": num_land_patches,
+                "snow_patch_count": num_snow_patches,
+                "small_mounds_count": num_snow_patches // 2,
+                "large_patches_count": num_snow_patches - (num_snow_patches // 2),
+                "crystal_count": num_crystals,
+                "cloud_count": num_clouds
+            }
+        }
     
     def translate_forest(self, planet_radius: int, rng: random.Random, 
                         seed: int, planet_name: str) -> Dict[str, Any]:
