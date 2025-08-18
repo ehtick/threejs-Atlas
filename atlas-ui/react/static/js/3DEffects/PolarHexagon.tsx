@@ -1,15 +1,21 @@
 import * as THREE from 'three';
 
-// Shader for the polar hexagon effect
+// Shader for the polar hexagon effect with curved geometry
 const vertexShader = `
   varying vec2 vUv;
   varying vec3 vPosition;
   varying vec3 vNormal;
+  varying vec3 vWorldPosition;
   
   void main() {
     vUv = uv;
     vPosition = position;
     vNormal = normalize(normalMatrix * normal);
+    
+    // World position for curved surface calculations
+    vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+    vWorldPosition = worldPosition.xyz;
+    
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   }
 `;
@@ -28,6 +34,7 @@ const fragmentShader = `
   varying vec2 vUv;
   varying vec3 vPosition;
   varying vec3 vNormal;
+  varying vec3 vWorldPosition;
   
   #define PI 3.14159265359
   
@@ -48,21 +55,7 @@ const fragmentShader = `
     return length(p) * sign(p.y);
   }
   
-  // Check if point is at pole
-  float atPole(vec3 position, float poleSign) {
-    // Use Y coordinate to determine if at north (1.0) or south (-1.0) pole
-    float polarDistance = abs(position.y * poleSign);
-    return smoothstep(0.7, 1.0, polarDistance);
-  }
-  
   void main() {
-    // Check if we're at the correct pole
-    float poleInfluence = atPole(vPosition, pole);
-    
-    if (poleInfluence < 0.01) {
-      discard; // Not at the pole, don't render hexagon
-    }
-    
     // Convert to polar coordinates centered at pole
     vec2 polar = toPolar(vUv);
     
@@ -76,27 +69,37 @@ const fragmentShader = `
       rotatedUV.x * sinR + rotatedUV.y * cosR
     );
     
-    // Create hexagon shape
+    // Create hexagon shape distance field
     float hex = hexagon(rotatedUV, hexagonRadius);
     
-    // Only show hexagon within its radius
-    if (hex > 0.0) {
-      discard;
+    // HOLLOW HEXAGON: Only show the edges/lines
+    float lineWidth = 0.03; // Thick lines like Saturn
+    float hexagonEdge = abs(hex); // Distance to hexagon edge
+    
+    // Only render if we're close to the hexagon edge
+    if (hexagonEdge > lineWidth) {
+      discard; // Not on hexagon edge, don't render
     }
+    
+    // Only show if we're inside the hexagon area (not outside)
+    if (hex > lineWidth) {
+      discard; // Outside hexagon completely
+    }
+    
+    // Calculate line intensity based on distance to edge
+    float edgeIntensity = 1.0 - smoothstep(0.0, lineWidth, hexagonEdge);
     
     // Calculate hexagon color (darker than planet)
     vec3 finalColor = planetColor * (1.0 - darkenFactor);
     
-    // Add subtle gradient from center to edges
-    float edgeFade = 1.0 - smoothstep(0.0, hexagonRadius, polar.r);
-    finalColor *= (0.8 + 0.2 * edgeFade);
+    // Make lines more prominent
+    finalColor *= 0.6; // Darker for contrast
     
-    // Apply pole influence and visibility
-    float finalOpacity = opacity * poleInfluence * visibility;
+    // Apply edge intensity to make lines fade smoothly
+    float finalOpacity = opacity * visibility * edgeIntensity;
     
-    // Add subtle glow at edges
-    float edgeGlow = smoothstep(hexagonRadius * 0.9, hexagonRadius, polar.r);
-    finalColor += vec3(0.05) * edgeGlow;
+    // Add subtle glow for Saturn-like effect
+    finalColor += vec3(0.1) * edgeIntensity;
     
     gl_FragColor = vec4(finalColor, finalOpacity);
   }
@@ -134,7 +137,7 @@ export class PolarHexagonEffect {
     const hexColor = color.clone();
     hexColor.multiplyScalar(1 - params.hexagonData.color_darken_factor);
     
-    // Create shader material
+    // Create shader material with planet color
     this.material = new THREE.ShaderMaterial({
       uniforms: {
         time: { value: 0 },
@@ -155,15 +158,15 @@ export class PolarHexagonEffect {
       blending: params.hexagonData.nebula_blend ? THREE.AdditiveBlending : THREE.NormalBlending,
     });
     
-    // Create sphere geometry
-    const geometry = new THREE.SphereGeometry(1, 64, 64);
+    // Create custom curved hexagon geometry
+    const geometry = this.createCurvedHexagonGeometry(params.hexagonData.pole, params.hexagonData.radius);
     
     // Create mesh
     this.mesh = new THREE.Mesh(geometry, this.material);
     this.mesh.scale.set(
-      params.planetRadius * 1.01,
-      params.planetRadius * 1.01,
-      params.planetRadius * 1.01
+      params.planetRadius,
+      params.planetRadius,
+      params.planetRadius
     );
     
     this.updateVisibility();
@@ -175,6 +178,11 @@ export class PolarHexagonEffect {
       return;
     }
     
+    // DEBUG: Always visible for debugging
+    this.material.uniforms.visibility.value = 1.0;
+    
+    // ORIGINAL TEMPORAL VISIBILITY LOGIC (commented out for debugging)
+    /*
     const currentTime = this.params.currentTime || 0;
     const cycleProgress = (currentTime % this.params.hexagonData.cycle_duration_years) / 
                          this.params.hexagonData.cycle_duration_years;
@@ -195,6 +203,7 @@ export class PolarHexagonEffect {
     } else {
       this.material.uniforms.visibility.value = 0.0; // Not visible
     }
+    */
   }
   
   update(deltaTime: number): void {
@@ -218,114 +227,64 @@ export class PolarHexagonEffect {
     this.mesh.geometry.dispose();
   }
   
+  private createCurvedHexagonGeometry(pole: 'north' | 'south', hexRadius: number): THREE.BufferGeometry {
+    const poleDirection = pole === 'north' ? 1 : -1;
+    
+    // Create a plane and curve it to match the polar region
+    const segments = 64; // More segments for smooth curvature
+    const size = 1.0; // Size of the plane
+    
+    const geometry = new THREE.PlaneGeometry(size, size, segments, segments);
+    
+    // Curve the plane to follow the sphere surface at the pole
+    const positions = geometry.attributes.position;
+    const vertex = new THREE.Vector3();
+    
+    for (let i = 0; i < positions.count; i++) {
+      vertex.fromBufferAttribute(positions, i);
+      
+      // Map plane coordinates to sphere coordinates
+      const x = vertex.x;
+      const z = vertex.y; // Note: PlaneGeometry uses Y as the second dimension
+      
+      // Calculate distance from center
+      const distance = Math.sqrt(x * x + z * z);
+      
+      if (distance <= size / 2) {
+        // Project onto sphere surface
+        const sphereRadius = 1.02; // Slightly above planet surface
+        const angle = distance * Math.PI * 0.5; // Map distance to angle (0 to PI/2)
+        
+        const sphereY = poleDirection * Math.cos(angle) * sphereRadius;
+        const radialDistance = Math.sin(angle) * sphereRadius;
+        
+        // Maintain relative position but project onto sphere
+        if (distance > 0) {
+          const normalizedX = x / distance;
+          const normalizedZ = z / distance;
+          
+          vertex.x = normalizedX * radialDistance;
+          vertex.y = sphereY;
+          vertex.z = normalizedZ * radialDistance;
+        } else {
+          // At center (pole)
+          vertex.x = 0;
+          vertex.y = poleDirection * sphereRadius;
+          vertex.z = 0;
+        }
+      }
+      
+      positions.setXYZ(i, vertex.x, vertex.y, vertex.z);
+    }
+    
+    positions.needsUpdate = true;
+    geometry.computeVertexNormals();
+    
+    return geometry;
+  }
+
   setEnabled(enabled: boolean): void {
     this.mesh.visible = enabled;
-  }
-}
-
-// Alternative implementation using cap geometry
-export class PolarHexagonCapEffect {
-  private group: THREE.Group;
-  private mesh: THREE.Mesh;
-  private material: THREE.MeshStandardMaterial;
-  private params: PolarHexagonParams;
-
-  constructor(params: PolarHexagonParams) {
-    this.params = params;
-    this.group = new THREE.Group();
-    
-    // Convert planet color to THREE.Color
-    const color = new THREE.Color(params.planetColor);
-    const hexColor = color.clone().multiplyScalar(1 - params.hexagonData.color_darken_factor);
-    
-    // Create hexagonal cylinder geometry
-    const geometry = new THREE.CylinderGeometry(
-      params.planetRadius * params.hexagonData.radius, // Top radius
-      params.planetRadius * params.hexagonData.radius, // Bottom radius
-      params.planetRadius * 0.05, // Height (thin cylinder)
-      6, // Radial segments (6 for hexagon)
-      1
-    );
-    
-    // Create material
-    this.material = new THREE.MeshStandardMaterial({
-      color: hexColor,
-      transparent: true,
-      opacity: params.hexagonData.opacity,
-      emissive: hexColor,
-      emissiveIntensity: 0.1,
-    });
-    
-    // Create mesh
-    this.mesh = new THREE.Mesh(geometry, this.material);
-    
-    // Position at pole
-    const yPosition = params.hexagonData.pole === 'north' 
-      ? params.planetRadius * 0.95 
-      : -params.planetRadius * 0.95;
-    
-    this.mesh.position.y = yPosition;
-    
-    // Rotate if south pole
-    if (params.hexagonData.pole === 'south') {
-      this.mesh.rotation.x = Math.PI;
-    }
-    
-    this.group.add(this.mesh);
-    this.updateVisibility();
-  }
-  
-  private updateVisibility(): void {
-    if (!this.params.hexagonData.enabled) {
-      this.material.opacity = 0;
-      return;
-    }
-    
-    const currentTime = this.params.currentTime || 0;
-    const cycleProgress = (currentTime % this.params.hexagonData.cycle_duration_years) / 
-                         this.params.hexagonData.cycle_duration_years;
-    const visibleFraction = this.params.hexagonData.visible_duration_years / 
-                           this.params.hexagonData.cycle_duration_years;
-    
-    let visibility = 0;
-    
-    if (cycleProgress < visibleFraction) {
-      const localProgress = cycleProgress / visibleFraction;
-      if (localProgress < 0.1) {
-        visibility = localProgress / 0.1;
-      } else if (localProgress > 0.9) {
-        visibility = (1 - localProgress) / 0.1;
-      } else {
-        visibility = 1.0;
-      }
-    }
-    
-    this.material.opacity = this.params.hexagonData.opacity * visibility;
-  }
-  
-  update(deltaTime: number): void {
-    // Rotate hexagon slowly
-    this.group.rotation.y += this.params.hexagonData.rotation_speed * deltaTime;
-    
-    // Update visibility
-    this.updateVisibility();
-  }
-  
-  addToScene(scene: THREE.Scene): void {
-    scene.add(this.group);
-  }
-  
-  removeFromScene(scene: THREE.Scene): void {
-    scene.remove(this.group);
-  }
-  
-  dispose(): void {
-    this.material.dispose();
-    this.mesh.geometry.dispose();
-  }
-  
-  setEnabled(enabled: boolean): void {
-    this.group.visible = enabled;
   }
 }
 
@@ -333,7 +292,7 @@ export class PolarHexagonCapEffect {
 export function createPolarHexagonFromPythonData(
   pythonData: any,
   planetRadius: number
-): PolarHexagonCapEffect | null {
+): PolarHexagonEffect | null {
   const surface = pythonData.surface_elements;
   
   if (!surface?.polar_hexagon?.enabled) {
@@ -352,5 +311,5 @@ export function createPolarHexagonFromPythonData(
     currentTime: currentTimeYears
   };
   
-  return new PolarHexagonCapEffect(params);
+  return new PolarHexagonEffect(params);
 }

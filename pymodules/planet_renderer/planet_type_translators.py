@@ -62,7 +62,7 @@ class PlanetTypeTranslators:
         
         # Polar hexagon generation (like Saturn)
         polar_hexagon = None
-        if rng.random() < 0.3:  # 30% chance to have a polar hexagon
+        if True:  # Always enabled for debugging (was 30% chance)
             # Calculate visibility cycle based on orbital period
             # Hexagon appears and disappears in cycles
             cycle_duration_years = rng.uniform(orbital_period_years * 0.5, orbital_period_years * 2.0)
@@ -736,7 +736,7 @@ class PlanetTypeTranslators:
         
         # Polar hexagon - higher chance for frozen gas giants
         polar_hexagon = None
-        if rng.random() < 0.4:  # 40% chance for frozen gas giants
+        if True:  # Always enabled for debugging (was 40% chance for frozen gas giants)
             cycle_duration_years = rng.uniform(orbital_period_years * 0.8, orbital_period_years * 3.0)
             visible_duration_years = rng.uniform(cycle_duration_years * 0.4, cycle_duration_years * 0.8)
             pole = rng.choice(['north', 'south'])
@@ -787,7 +787,7 @@ class PlanetTypeTranslators:
         
         # Polar hexagon - medium chance for nebulous
         polar_hexagon = None
-        if rng.random() < 0.35:  # 35% chance
+        if True:  # Always enabled for debugging (was 35% chance)
             cycle_duration_years = rng.uniform(orbital_period_years * 0.6, orbital_period_years * 2.5)
             visible_duration_years = rng.uniform(cycle_duration_years * 0.35, cycle_duration_years * 0.75)
             pole = rng.choice(['north', 'south'])

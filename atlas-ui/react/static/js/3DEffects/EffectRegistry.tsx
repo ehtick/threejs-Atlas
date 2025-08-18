@@ -29,7 +29,7 @@ import { MetallicSurfaceLayer, createMetallicSurfaceLayerFromPythonData } from "
 
 import { AtmosphericStreaksEffect, createAtmosphericStreaksFromPythonData, AtmosphericStreaksParams } from "./AtmosphericStreaks";
 import { StarFieldEffect, createStarFieldFromPythonData, StarFieldParams } from "./StarField";
-import { PolarHexagonCapEffect, createPolarHexagonFromPythonData } from "./PolarHexagon";
+import { PolarHexagonEffect, createPolarHexagonFromPythonData } from "./PolarHexagon";
 
 // Importar efectos de superficie restantes
 import { FragmentationEffect } from "./FragmentationEffect";
@@ -462,7 +462,7 @@ export class EffectRegistry {
                   ? pythonData.timing.elapsed_time / (365.25 * 24 * 3600) 
                   : 0;
                 
-                const hexagonEffect = new PolarHexagonCapEffect({
+                const hexagonEffect = new PolarHexagonEffect({
                   planetColor: baseColor,
                   hexagonData: surface.polar_hexagon,
                   planetRadius: planetRadius,
@@ -520,7 +520,7 @@ export class EffectRegistry {
                   ? pythonData.timing.elapsed_time / (365.25 * 24 * 3600) 
                   : 0;
                 
-                const hexagonEffect = new PolarHexagonCapEffect({
+                const hexagonEffect = new PolarHexagonEffect({
                   planetColor: baseColor,
                   hexagonData: surface.polar_hexagon,
                   planetRadius: planetRadius,
@@ -576,7 +576,7 @@ export class EffectRegistry {
                   ? pythonData.timing.elapsed_time / (365.25 * 24 * 3600) 
                   : 0;
                 
-                const hexagonEffect = new PolarHexagonCapEffect({
+                const hexagonEffect = new PolarHexagonEffect({
                   planetColor: baseColor,
                   hexagonData: surface.polar_hexagon,
                   planetRadius: planetRadius,
