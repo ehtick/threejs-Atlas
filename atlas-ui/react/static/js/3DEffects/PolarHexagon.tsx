@@ -4,7 +4,7 @@ import { SeededRandom } from "../Utils/SeededRandom";
 // Rangos procedurales para hexágonos polares basados en observaciones de Saturno
 const PROCEDURAL_RANGES = {
   SIZE: { min: 0.12, max: 0.2 }, // Tamaño más pequeño por defecto
-  ROTATION_SPEED: { min: 0.0005, max: 0.002 }, // Rotación muy lenta como Saturno
+  ROTATION_SPEED: { min: 0.05, max: 0.1 }, // Rotación muy lenta como Saturno
   OPACITY: { min: 0.15, max: 0.35 }, // Opacidad sutil
   TIME_SPEED: { min: 0.8, max: 1.5 }, // Velocidad de tiempo
 };
