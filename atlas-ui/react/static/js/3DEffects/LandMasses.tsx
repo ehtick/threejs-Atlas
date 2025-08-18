@@ -11,6 +11,7 @@ import { SeededRandom } from "../Utils/SeededRandom";
 export interface LandMassesParams {
   greenPatches?: any[]; // Datos de green_patches desde Python
   seed?: number;
+  transparentMode?: boolean; // Modo transparente para planetas Icy
 }
 
 /**
@@ -29,14 +30,14 @@ export class LandMassesEffect {
     
     // Si tenemos green_patches de Python, usarlos
     if (params.greenPatches && params.greenPatches.length > 0) {
-      this.generateLandsFromPython(planetRadius, params.greenPatches, rng);
+      this.generateLandsFromPython(planetRadius, params.greenPatches, rng, params);
     } else {
       // Generación procedural de respaldo
-      this.generateProceduralLands(planetRadius, rng);
+      this.generateProceduralLands(planetRadius, rng, params);
     }
   }
 
-  private generateLandsFromPython(planetRadius: number, greenPatches: any[], rng: SeededRandom): void {
+  private generateLandsFromPython(planetRadius: number, greenPatches: any[], rng: SeededRandom, params: LandMassesParams): void {
     greenPatches.forEach((patch, index) => {
       // Extraer datos del patch
       // Usar position_3d si está disponible (nueva versión), si no, usar position (retrocompatibilidad)
@@ -301,12 +302,14 @@ export class LandMassesEffect {
       
       // Material con textura de ruido procedural
       const material = new THREE.MeshPhongMaterial({
-        color: patchColor,
-        emissive: patchColor.clone().multiplyScalar(0.05),
-        emissiveIntensity: 0.0000001,
-        shininess: 8,
+        color: params.transparentMode ? new THREE.Color(0xE6F3FF) : patchColor, // Azul hielo muy claro si es transparente
+        opacity: params.transparentMode ? 0.3 : 1.0, // Semitransparente para que se note sutilmente
+        transparent: params.transparentMode ? true : false,
+        emissive: params.transparentMode ? new THREE.Color(0xCCE6FF).multiplyScalar(0.1) : patchColor.clone().multiplyScalar(0.05),
+        emissiveIntensity: params.transparentMode ? 0.05 : 0.0000001,
+        shininess: params.transparentMode ? 30 : 8, // Más brillante como hielo
         flatShading: false,
-        // Añadir rugosidad para simular textura de tierra
+        // Añadir rugosidad para simular textura de tierra/hielo
         bumpScale: 0.002,
       });
       
@@ -341,7 +344,7 @@ export class LandMassesEffect {
     });
   }
 
-  private generateProceduralLands(planetRadius: number, rng: SeededRandom): void {
+  private generateProceduralLands(planetRadius: number, rng: SeededRandom, params: LandMassesParams): void {
     // Generación procedural simple si no hay datos de Python
     const numLands = Math.floor(rng.uniform(5, 15));
     
@@ -367,16 +370,20 @@ export class LandMassesEffect {
       geometry.lookAt(position);
       geometry.translate(worldPos.x, worldPos.y, worldPos.z);
       
-      // Material verde/marrón
+      // Material verde/marrón o transparente
       const greenAmount = rng.uniform(0.3, 0.7);
+      const baseColor = new THREE.Color(
+        0.36 * (1 - greenAmount) + 0.22 * greenAmount,
+        0.23 * (1 - greenAmount) + 0.36 * greenAmount,
+        0
+      );
+      
       const material = new THREE.MeshPhongMaterial({
-        color: new THREE.Color(
-          0.36 * (1 - greenAmount) + 0.22 * greenAmount,
-          0.23 * (1 - greenAmount) + 0.36 * greenAmount,
-          0
-        ),
-        emissive: 0x0a0a00,
-        shininess: 5,
+        color: params.transparentMode ? new THREE.Color(0xE6F3FF) : baseColor,
+        opacity: params.transparentMode ? 0.3 : 1.0,
+        transparent: params.transparentMode ? true : false,
+        emissive: params.transparentMode ? new THREE.Color(0xCCE6FF).multiplyScalar(0.1) : 0x0a0a00,
+        shininess: params.transparentMode ? 30 : 5,
       });
       
       const landMesh = new THREE.Mesh(geometry, material);
@@ -433,5 +440,48 @@ export function createLandMassesFromPythonData(
   return new LandMassesEffect(planetRadius, {
     greenPatches: greenPatches,
     seed: seed + 6000
+  });
+}
+
+/**
+ * Función de utilidad para crear el efecto LandMasses en planetas Icy (modo transparente)
+ */
+export function createTransparentLandMassesForIcyPlanet(
+  planetRadius: number, 
+  surfaceData: any, 
+  globalSeed?: number
+): LandMassesEffect | null {
+  
+  // Crear datos sintéticos de green_patches para planetas Icy
+  const seed = globalSeed || Math.floor(Math.random() * 1000000);
+  const rng = new SeededRandom(seed + 7000); // +7000 para LandMasses en Icy
+  
+  // Generar entre 3-8 "masas de hielo" con formas orgánicas
+  const numPatches = Math.floor(rng.uniform(3, 8));
+  const syntheticPatches = [];
+  
+  for (let i = 0; i < numPatches; i++) {
+    // Posición aleatoria en la esfera
+    const theta = rng.uniform(0, Math.PI * 2);
+    const phi = Math.acos(rng.uniform(-1, 1));
+    
+    syntheticPatches.push({
+      position_3d: [
+        Math.sin(phi) * Math.cos(theta),
+        Math.sin(phi) * Math.sin(theta),
+        Math.cos(phi)
+      ],
+      size: rng.uniform(0.05, 0.15), // Tamaños variados para masas de hielo
+      sides: Math.floor(rng.uniform(8, 16)), // Formas orgánicas
+      color: [0, 0, 0] // Negro (será transparente)
+    });
+  }
+  
+  console.log(`🧊 Creating ${numPatches} transparent ice formations for Icy planet with seed ${seed + 7000}`);
+  
+  return new LandMassesEffect(planetRadius, {
+    greenPatches: syntheticPatches,
+    seed: seed + 7000,
+    transparentMode: true // Activar modo transparente
   });
 }

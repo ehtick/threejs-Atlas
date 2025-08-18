@@ -719,6 +719,7 @@ export class PlanetLayerSystem {
       uniform float frostDensity;
       uniform float crackIntensity;
       uniform float opacity;
+      uniform float organicShapeIntensity;
       uniform vec3 lightDirection;
       uniform vec3 lightPosition;
       uniform float ambientStrength;

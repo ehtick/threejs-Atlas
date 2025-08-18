@@ -13,7 +13,7 @@ import { AtmosphereEffect, createAtmosphereFromPythonData, AtmosphereParams } fr
 
 import { AtmosphereGlowEffect, createAtmosphereGlowFromPythonData, AtmosphereGlowParams } from "./AtmosphereGlow";
 import { AtmosphereCloudsEffect, createAtmosphereCloudsFromPythonData, AtmosphereCloudsParams } from "./AtmosphereClouds";
-import { LandMassesEffect, createLandMassesFromPythonData, LandMassesParams } from "./LandMasses";
+import { LandMassesEffect, createLandMassesFromPythonData, createTransparentLandMassesForIcyPlanet, LandMassesParams } from "./LandMasses";
 
 // Sistema de capas mejorado
 import { PlanetLayerSystem } from "../3DComponents/PlanetLayerSystem";
@@ -515,6 +515,31 @@ export class EffectRegistry {
               };
               this.effects.set(icyInstance.id, icyInstance);
               effects.push(icyInstance);
+
+              // Agregar LandMasses transparentes para crear variaciones topográficas
+              const transparentLandMasses = createTransparentLandMassesForIcyPlanet(
+                planetRadius,
+                surface,
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 8000 // Seed específica para LandMasses en Icy
+              );
+
+              if (transparentLandMasses) {
+                const landMassesInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "transparent_land_masses",
+                  effect: transparentLandMasses,
+                  priority: 1, // Prioridad después del terreno base
+                  enabled: true,
+                  name: "Ice Formations"
+                };
+
+                this.effects.set(landMassesInstance.id, landMassesInstance);
+                effects.push(landMassesInstance);
+                transparentLandMasses.addToScene(scene, mesh.position);
+                console.log("🧊 Ice Formations (transparent LandMasses) added to Icy planet");
+              } else {
+                console.warn("❄️ Failed to create transparent LandMasses for Icy planet");
+              }
             }
             break;
 
@@ -761,7 +786,7 @@ export class EffectRegistry {
       // Actualizar visibilidad del objeto 3D
       const effect = effectInstance.effect;
 
-      // Para efectos con getObject3D (como RingSystem, AtmosphericStreaks, FluidLayers, etc.)
+      // Para efectos con getObject3D (como RingSystem, AtmosphericStreaks, FluidLayers, LandMasses, etc.)
       if (effect && effect.getObject3D) {
         const object3D = effect.getObject3D();
         if (object3D) {
