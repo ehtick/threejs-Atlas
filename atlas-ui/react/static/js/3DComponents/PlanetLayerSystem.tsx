@@ -827,8 +827,13 @@ export class PlanetLayerSystem {
         // La escarcha añade textura cristalina blanca
         color = mix(color, vec3(1.0, 1.0, 1.0), frost * 0.4);
         
-        // Iluminación base
-        float totalLight = ambientStrength + (lightIntensity * dayNight);
+        // Iluminación suave con transición gradual día/noche
+        float smoothLight = ambientStrength + (lightIntensity * dayNight);
+        
+        // Añadir luz ambiental extra en la cara oculta para evitar corte seco
+        float backLight = max(0.0, -dotNL) * 0.25; // Luz trasera suave
+        float totalLight = smoothLight + backLight;
+        
         vec3 finalColor = color * totalLight;
         
         // REFLEJOS DE MICROCRISTALES - esto es clave!
@@ -854,8 +859,9 @@ export class PlanetLayerSystem {
         float sparkle = smoothstep(0.8, 1.0, crystals) * smoothstep(0.9, 1.0, NdotH);
         finalColor += vec3(1.0, 1.0, 1.0) * sparkle * 0.5 * dayNight;
         
-        // Transparencia variable con cristales
-        float alpha = (0.7 + 0.2 * cracks + 0.1 * crystals) * dayNight * opacity;
+        // Alpha con transición suave - visible en toda la superficie
+        float smoothVisibility = smoothstep(-0.5, 0.3, dotNL); // Transición más gradual
+        float alpha = (0.5 + 0.3 * cracks + 0.2 * crystals) * smoothVisibility * opacity;
         
         gl_FragColor = vec4(finalColor, alpha);
       }
