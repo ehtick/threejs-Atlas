@@ -46,7 +46,7 @@ export class TundraSnowflakesEffect {
     this.rng = new SeededRandom(seed);
     
     // Configuración - VALORES EXACTOS QUE FUNCIONARON
-    this.particleCount = params.particleCount || 50; // POCAS para ver bien
+    this.particleCount = params.particleCount || 10; // POCAS para ver bien
     const windSpeed = params.windSpeed || 3.0; 
     const baseSize = (params.size || 1.0) * (planetRadius * 0.2); // GIGANTE como funcionó
     const opacity = params.opacity || 1.0;
@@ -270,23 +270,29 @@ export class TundraSnowflakesEffect {
     // Adjust time with randomness for varied movement
     t += 10 * rnd + particleIndex * 0.1;
     
-    // Create organic movement patterns similar to the example but larger
-    const x = (0.5 + 2 * rnd) * Math.sin(t * 0.5 + 13 * rnd) + rnd * Math.cos(1.2 * t + 3);
-    const y = (2 - 2 * rnd) * Math.cos(t * 0.3) + rnd * Math.cos(2.5 * t - 7 * rnd);
-    const z = (2 * rnd) * Math.sin(1.7 * t - 4 * rnd);
+    // Get initial position on planet surface (spherical coordinates)
+    const initialTheta = this.burstZone.lon + (rnd - 0.5) * this.burstZone.radius;
+    const initialPhi = this.burstZone.lat + Math.PI/2 + (rnd - 0.5) * 0.2;
     
-    // Much larger scale for visibility
-    const scale = this.planetRadius * 0.1;
+    // Movement along the surface horizontally (only theta changes, phi stays mostly constant)
+    const windSpeed = 2; // Increased speed to make trails more visible
+    const surfaceMovement = t * windSpeed;
     
-    // Start from planet surface and move outward
-    const surfaceDistance = this.planetRadius * 1.1;
-    const direction = new THREE.Vector3(x, y, z).normalize();
+    // Horizontal movement: only change longitude (theta), keep latitude (phi) stable
+    const newTheta = initialTheta + Math.cos(this.globalWindDirection) * surfaceMovement;
+    const newPhi = initialPhi + 0.450 * Math.sin(t * 0.5 + rnd); // Very small vertical oscillation
     
-    return {
-      x: direction.x * surfaceDistance + x * scale,
-      y: direction.y * surfaceDistance + y * scale, 
-      z: direction.z * surfaceDistance + z * scale
-    };
+    // Small height oscillation for natural movement but stay very close to surface
+    const heightOscillation = 0.015 * Math.sin(t * 2 + rnd * 10);
+    
+    // Stay close to planet surface
+    const surfaceDistance = this.planetRadius * (1.005 + heightOscillation);
+    
+    const x = surfaceDistance * Math.sin(newPhi) * Math.cos(newTheta);
+    const y = surfaceDistance * Math.cos(newPhi);
+    const z = surfaceDistance * Math.sin(newPhi) * Math.sin(newTheta);
+    
+    return { x, y, z };
   }
 
   addToScene(scene: THREE.Scene, planetPosition?: THREE.Vector3): void {
@@ -328,7 +334,7 @@ export function createTundraSnowflakesFromPythonData(
   const snowIntensity = surfaceData.snow_intensity || 0.7;
   const windStrength = surfaceData.wind_strength || 1.0;
   
-  const particleCount = Math.floor(snowIntensity * 800 + 200); // Menos partículas pero más visibles
+  const particleCount = Math.floor(snowIntensity * 200 + 50); // Menos partículas pero más visibles
   const windSpeed = windStrength * 5.0; // Velocidad MUY alta para estelas muy visibles
   
   return new TundraSnowflakesEffect(planetRadius, {
