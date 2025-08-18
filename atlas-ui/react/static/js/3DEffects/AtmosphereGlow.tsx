@@ -29,10 +29,10 @@ export interface AtmosphereGlowParams {
 
 // Rangos para generación procedural
 const PROCEDURAL_RANGES = {
-  PARTICLE_COUNT: { min: 50, max: 200 },
+  PARTICLE_COUNT: { min: 25, max: 150 },
   SPEED: { min: 0.05, max: 0.5 },
-  SIZE: { min: 0.5, max: 2.0 },
-  OPACITY: { min: 0.2, max: 0.5 },
+  SIZE: { min: 0.3, max: 1.5 },
+  OPACITY: { min: 0.1, max: 0.3 },
   TURBULENCE: { min: 0.1, max: 0.5 },
   ROTATION_SPEED: { min: 0.01, max: 0.05 },
   MOVEMENT_AMPLITUDE: { min: 0.005, max: 0.05 },
