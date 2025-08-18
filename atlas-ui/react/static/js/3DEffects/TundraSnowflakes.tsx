@@ -37,6 +37,10 @@ export class TundraSnowflakesEffect {
   private particleOpacity: number;
   private windSpeedMultiplier: number;
   private verticalOscillation: number;
+  // Wind gust system
+  private gustCycles: number[];
+  private gustPhases: number[];
+  private gustZones: { start: number; end: number }[];
   // Sistema de ráfagas procedurales
   private burstZone: { lat: number; lon: number; radius: number }; // Zona de ráfaga
   private burstCycleDuration: number; // Duración del ciclo completo
@@ -68,6 +72,22 @@ export class TundraSnowflakesEffect {
     this.particleOpacity = this.rng.uniform(0.05, 0.25); // Opacity between 5-25%
     this.windSpeedMultiplier = this.rng.uniform(1.1, 2.5); // Wind speed variation
     this.verticalOscillation = this.rng.uniform(0.10, 0.40); // Vertical movement amplitude
+    
+    // Initialize wind gust system - each particle has its own cycle
+    this.gustCycles = [];
+    this.gustPhases = [];
+    this.gustZones = [];
+    for (let i = 0; i < this.particleCount; i++) {
+      this.gustCycles.push(this.rng.uniform(15, 30)); // Cycle duration 15-30 seconds
+      this.gustPhases.push(this.rng.uniform(0, 1)); // Random phase offset
+      // Define specific longitude zones where wind appears (not full planet)
+      const zoneStart = this.rng.uniform(0, Math.PI * 2);
+      const zoneWidth = this.rng.uniform(Math.PI * 0.3, Math.PI * 0.6); // 30-60% of planet circumference
+      this.gustZones.push({ 
+        start: zoneStart, 
+        end: (zoneStart + zoneWidth) % (Math.PI * 2) 
+      });
+    }
     
     // CONFIGURACIÓN DE ZONA ESTIRADA
     // Zona específica donde aparecen los copos (latitud/longitud en radianes)
@@ -242,9 +262,8 @@ export class TundraSnowflakesEffect {
       });
     }
     
-    // ROTACIÓN PROCEDURAL DEL SISTEMA COMPLETO - VELOCIDAD ALTA
-    // Todas las partículas rotan juntas en la dirección del viento
-    this.snowflakeGroup.rotation.y = currentTime * this.rotationSpeed; // Use procedural rotation speed
+    // No global rotation - particles only appear in specific zones
+    // this.snowflakeGroup.rotation.y = currentTime * this.rotationSpeed; // Disabled for zone-based wind
     
     this.particleSystems.forEach((line, index) => {
       const positionAttribute = line.geometry.getAttribute('position') as THREE.BufferAttribute;
@@ -272,8 +291,41 @@ export class TundraSnowflakesEffect {
       
       positionAttribute.needsUpdate = true;
       
-      // Set particle opacity to procedural value
-      this.materials[index].opacity = this.particleOpacity;
+      // Calculate gust intensity for this particle (fade in/out effect)
+      const realTime = Date.now() / 1000;
+      const gustCycle = this.gustCycles[index];
+      const gustPhase = this.gustPhases[index];
+      const gustProgress = ((realTime / gustCycle) + gustPhase) % 1;
+      
+      // Create smooth fade in/out curve
+      let gustIntensity = 0;
+      if (gustProgress < 0.3) {
+        // Fade in (30% of cycle)
+        gustIntensity = gustProgress / 0.3;
+      } else if (gustProgress < 0.7) {
+        // Full intensity (40% of cycle)
+        gustIntensity = 1;
+      } else {
+        // Fade out (30% of cycle)
+        gustIntensity = (1 - gustProgress) / 0.3;
+      }
+      
+      // Check if particle is in its active zone
+      const headPos = new THREE.Vector3(positions[0], positions[1], positions[2]);
+      const theta = Math.atan2(headPos.z, headPos.x);
+      const normalizedTheta = theta < 0 ? theta + Math.PI * 2 : theta;
+      const zone = this.gustZones[index];
+      
+      let inZone = false;
+      if (zone.start < zone.end) {
+        inZone = normalizedTheta >= zone.start && normalizedTheta <= zone.end;
+      } else {
+        // Zone wraps around 0
+        inZone = normalizedTheta >= zone.start || normalizedTheta <= zone.end;
+      }
+      
+      // Set opacity based on gust intensity and zone
+      this.materials[index].opacity = inZone ? this.particleOpacity * gustIntensity : 0;
     });
   }
 
