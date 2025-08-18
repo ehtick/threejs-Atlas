@@ -21,13 +21,17 @@ export interface TundraSnowflakesParams {
 export class TundraSnowflakesEffect {
   private snowflakeGroup: THREE.Group;
   private planetRadius: number;
-  private materials: THREE.PointsMaterial[] = [];
-  private particleSystems: THREE.Points[] = [];
-  private originalPositions: Float32Array[] = [];
+  private materials: THREE.LineBasicMaterial[] = [];
+  private particleSystems: THREE.Line[] = [];
+  private trailPositions: Float32Array[] = [];
+  private trailColors: Float32Array[] = [];
   private globalWindDirection: number;
   private rng: SeededRandom;
   private startTime: number;
   private timeSpeed: number;
+  // Trail configuration
+  private trailLength: number = 15; // Number of points in each trail
+  private particleCount: number;
   // Sistema de ráfagas procedurales
   private burstZone: { lat: number; lon: number; radius: number }; // Zona de ráfaga
   private burstCycleDuration: number; // Duración del ciclo completo
@@ -42,7 +46,7 @@ export class TundraSnowflakesEffect {
     this.rng = new SeededRandom(seed);
     
     // Configuración - VALORES EXACTOS QUE FUNCIONARON
-    const particleCount = params.particleCount || 50; // POCAS para ver bien
+    this.particleCount = params.particleCount || 50; // POCAS para ver bien
     const windSpeed = params.windSpeed || 3.0; 
     const baseSize = (params.size || 1.0) * (planetRadius * 0.2); // GIGANTE como funcionó
     const opacity = params.opacity || 1.0;
@@ -76,7 +80,7 @@ export class TundraSnowflakesEffect {
       new THREE.Color(0.3, 0.3, 0.3)   // Gris oscuro
     ];
 
-    this.createSnowflakeSystem(particleCount, baseSize, opacity, colors);
+    this.createSnowflakeSystem(this.particleCount, baseSize, opacity, colors);
   }
 
   private createSnowflakeSystem(
@@ -85,8 +89,6 @@ export class TundraSnowflakesEffect {
     opacity: number, 
     colors: THREE.Color[]
   ): void {
-    // Crear geometría
-    const geometry = new THREE.BufferGeometry();
     const vertices: number[] = [];
 
     // Distribuir partículas SOLO EN LA ZONA DE RÁFAGA
@@ -132,32 +134,62 @@ export class TundraSnowflakesEffect {
       vertices.push(x, y, z);
     }
     
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-
-    // Crear sistemas de partículas para cada tono de gris - TAMAÑOS MÁS GRANDES
-    const sizes = [baseSize * 2.0, baseSize * 1.8, baseSize * 1.6, baseSize * 1.4, baseSize * 2.2]; // Todos más grandes
+    // Generate color gradients for trails (bright to fade)
+    const trailColors: number[] = [];
+    const baseColor = new THREE.Color();
     
-    for (let i = 0; i < colors.length; i++) {
-      const material = new THREE.PointsMaterial({
-        size: sizes[i],
-        color: colors[i],
+    for (let i = 0; i < this.trailLength; i++) {
+      const intensity = Math.pow(1 - i / (this.trailLength - 1), 1.5); // Slower fade for more visibility
+      baseColor.setRGB(intensity, intensity, intensity); // Pure white with fade
+      trailColors.push(baseColor.r, baseColor.g, baseColor.b);
+    }
+
+    // Create individual trail lines for each particle
+    for (let particleIndex = 0; particleIndex < particleCount; particleIndex++) {
+      // Use the position we already calculated
+      const baseIndex = particleIndex * 3;
+      const startX = vertices[baseIndex];
+      const startY = vertices[baseIndex + 1];
+      const startZ = vertices[baseIndex + 2];
+
+      // Create trail positions (spread out initially for immediate visibility)
+      const positions = new Float32Array(this.trailLength * 3);
+      for (let i = 0; i < this.trailLength; i++) {
+        const offsetScale = i * 0.1;
+        positions[i * 3] = startX + (this.rng.uniform(-1, 1) * offsetScale * this.planetRadius * 0.01);
+        positions[i * 3 + 1] = startY + (this.rng.uniform(-1, 1) * offsetScale * this.planetRadius * 0.01);
+        positions[i * 3 + 2] = startZ + (this.rng.uniform(-1, 1) * offsetScale * this.planetRadius * 0.01);
+      }
+
+      // Create geometry for this trail
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(trailColors), 3));
+
+      // Create material with visible settings
+      const material = new THREE.LineBasicMaterial({
+        vertexColors: true,
         transparent: true,
-        opacity: opacity,
-        blending: THREE.NormalBlending, // Normal blending para mejor visibilidad
-        depthTest: true, // CON depthTest para respetar la profundidad del planeta
-        sizeAttenuation: false // Sin atenuación para tamaño constante
+        opacity: 1.0, // Full opacity for debugging
+        blending: THREE.NormalBlending, // Normal blending for better visibility
+        depthTest: true,
+        linewidth: 3 // Thicker lines for visibility (may not work on all systems)
       });
+
+      // Create line object
+      const line = new THREE.Line(geometry, material);
       
+      // Store references
       this.materials.push(material);
+      this.particleSystems.push(line);
+      this.trailPositions.push(positions);
+      this.trailColors.push(new Float32Array(trailColors));
       
-      const particleGeometry = geometry.clone();
-      const particles = new THREE.Points(particleGeometry, material);
+      // Add random offset for varied movement
+      (line as any).rnd = this.rng.uniform(0, 1);
+      (line as any).particleIndex = particleIndex;
       
-      // Guardar posiciones originales
-      this.originalPositions[i] = new Float32Array(vertices);
-      
-      this.particleSystems.push(particles);
-      this.snowflakeGroup.add(particles);
+      this.snowflakeGroup.add(line);
     }
   }
 
@@ -203,40 +235,58 @@ export class TundraSnowflakesEffect {
     // Todas las partículas rotan juntas en la dirección del viento
     this.snowflakeGroup.rotation.y = currentTime * 0.5; // Velocidad de rotación 5x MÁS RÁPIDA
     
-    this.particleSystems.forEach((particles, index) => {
-      const positionAttribute = particles.geometry.getAttribute('position') as THREE.BufferAttribute;
+    this.particleSystems.forEach((line, index) => {
+      const positionAttribute = line.geometry.getAttribute('position') as THREE.BufferAttribute;
       const positions = positionAttribute.array as Float32Array;
-      const originalPos = this.originalPositions[index];
+      const rnd = (line as any).rnd;
+      const particleIndex = (line as any).particleIndex;
       
-      const particleCount = positions.length / 3;
+      // Calculate new head position using the trail path function
+      const newPos = this.calculateTrailPath(currentTime, particleIndex, rnd);
       
-      for (let i = 0; i < particleCount; i++) {
-        const i3 = i * 3;
+      // Shift trail positions: move each point to the next position
+      for (let i = this.trailLength - 1; i > 0; i--) {
+        const currentIndex = i * 3;
+        const previousIndex = (i - 1) * 3;
         
-        // Posición original
-        const originalX = originalPos[i3];
-        const originalY = originalPos[i3 + 1];
-        const originalZ = originalPos[i3 + 2];
-        
-        // MOVIMIENTO PROCEDURAL INDIVIDUAL MÁS RÁPIDO
-        // Cada partícula se mueve en la dirección del viento con variación
-        const individualMovement = Math.sin(currentTime * 2.0 + i * 0.1) * this.planetRadius * 0.005;
-        const moveX = Math.cos(this.globalWindDirection) * individualMovement;
-        const moveZ = Math.sin(this.globalWindDirection) * individualMovement;
-        
-        // Movimiento vertical más rápido para dinamismo
-        const moveY = Math.sin(currentTime * 1.5 + i * 0.05) * this.planetRadius * 0.008;
-        
-        positions[i3] = originalX + moveX;
-        positions[i3 + 1] = originalY + moveY;
-        positions[i3 + 2] = originalZ + moveZ;
+        positions[currentIndex] = positions[previousIndex];
+        positions[currentIndex + 1] = positions[previousIndex + 1];
+        positions[currentIndex + 2] = positions[previousIndex + 2];
       }
+      
+      // Set new head position
+      positions[0] = newPos.x;
+      positions[1] = newPos.y;
+      positions[2] = newPos.z;
       
       positionAttribute.needsUpdate = true;
       
-      // DEBUG: Opacidad temporal fija para verificar funcionamiento
-      this.materials[index].opacity = 1.0; // TEMPORAL - siempre visible
+      // Keep trails always visible for debugging
+      this.materials[index].opacity = 1.0; // Always fully visible
     });
+  }
+
+  private calculateTrailPath(t: number, particleIndex: number, rnd: number): { x: number; y: number; z: number } {
+    // Adjust time with randomness for varied movement
+    t += 10 * rnd + particleIndex * 0.1;
+    
+    // Create organic movement patterns similar to the example but larger
+    const x = (0.5 + 2 * rnd) * Math.sin(t * 0.5 + 13 * rnd) + rnd * Math.cos(1.2 * t + 3);
+    const y = (2 - 2 * rnd) * Math.cos(t * 0.3) + rnd * Math.cos(2.5 * t - 7 * rnd);
+    const z = (2 * rnd) * Math.sin(1.7 * t - 4 * rnd);
+    
+    // Much larger scale for visibility
+    const scale = this.planetRadius * 0.1;
+    
+    // Start from planet surface and move outward
+    const surfaceDistance = this.planetRadius * 1.1;
+    const direction = new THREE.Vector3(x, y, z).normalize();
+    
+    return {
+      x: direction.x * surfaceDistance + x * scale,
+      y: direction.y * surfaceDistance + y * scale, 
+      z: direction.z * surfaceDistance + z * scale
+    };
   }
 
   addToScene(scene: THREE.Scene, planetPosition?: THREE.Vector3): void {
@@ -252,10 +302,11 @@ export class TundraSnowflakesEffect {
 
   dispose(): void {
     this.materials.forEach(material => material.dispose());
-    this.particleSystems.forEach(particles => particles.geometry.dispose());
+    this.particleSystems.forEach(line => line.geometry.dispose());
     this.materials = [];
     this.particleSystems = [];
-    this.originalPositions = [];
+    this.trailPositions = [];
+    this.trailColors = [];
     this.snowflakeGroup.clear();
   }
 }
