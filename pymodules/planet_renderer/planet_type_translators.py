@@ -17,7 +17,7 @@ class PlanetTypeTranslators:
         self.common_utils = CommonUtils()
     
     def translate_gas_giant(self, planet_radius: int, rng: random.Random, 
-                           seed: int, planet_name: str) -> Dict[str, Any]:
+                           seed: int, planet_name: str, orbital_period_years: float = 12.0) -> Dict[str, Any]:
         """Translate Gas Giant specific elements EXACTLY as in Pillow"""
         
         # EXACTLY as in generate_cloud_bands from Pillow (__drawer_cplanet_inside.py)
@@ -60,6 +60,28 @@ class PlanetTypeTranslators:
                 "intensity": rng.uniform(0.5, 1.0)
             })
         
+        # Polar hexagon generation (like Saturn)
+        polar_hexagon = None
+        if rng.random() < 0.3:  # 30% chance to have a polar hexagon
+            # Calculate visibility cycle based on orbital period
+            # Hexagon appears and disappears in cycles
+            cycle_duration_years = rng.uniform(orbital_period_years * 0.5, orbital_period_years * 2.0)
+            visible_duration_years = rng.uniform(cycle_duration_years * 0.3, cycle_duration_years * 0.7)
+            
+            # Determine which pole (north or south)
+            pole = rng.choice(['north', 'south'])
+            
+            polar_hexagon = {
+                "enabled": True,
+                "pole": pole,  # 'north' or 'south'
+                "radius": rng.uniform(0.15, 0.25),  # Relative to planet radius
+                "rotation_speed": rng.uniform(0.001, 0.003),  # Slow rotation
+                "color_darken_factor": rng.uniform(0.15, 0.25),  # How much darker than planet
+                "cycle_duration_years": cycle_duration_years,
+                "visible_duration_years": visible_duration_years,
+                "opacity": rng.uniform(0.6, 0.9)
+            }
+        
         return {
             "type": "gas_giant",
             "cloud_bands": {
@@ -69,11 +91,13 @@ class PlanetTypeTranslators:
                 "rotation": rotation_angle
             },
             "storms": storms,
+            "polar_hexagon": polar_hexagon,
             "debug": {
                 "original_planet_radius": planet_radius,
                 "center_y": center_y,
                 "band_count": num_bands,
-                "rotation_degrees": rotation_angle * 180 / math.pi
+                "rotation_degrees": rotation_angle * 180 / math.pi,
+                "has_hexagon": polar_hexagon is not None
             }
         }
     
@@ -687,12 +711,110 @@ class PlanetTypeTranslators:
         return {"type": "sub_earth"}
     
     def translate_frozen_gas_giant(self, planet_radius: int, rng: random.Random, 
-                                  seed: int, planet_name: str) -> Dict[str, Any]:
-        return {"type": "frozen_gas_giant"}
+                                  seed: int, planet_name: str, orbital_period_years: float = 30.0) -> Dict[str, Any]:
+        """Translate Frozen Gas Giant - similar to gas giant but with icy colors and hexagon"""
+        
+        # Similar cloud bands but with frozen appearance
+        num_bands = rng.randint(4, 15)  # Fewer bands for frozen
+        rotation_angle = rng.uniform(-10, 10) * math.pi / 180
+        
+        band_positions = []
+        band_widths = []
+        center_y = 200
+        
+        for i in range(num_bands):
+            band_width = rng.randint(3, 6)
+            band_position_y = rng.randint(center_y - planet_radius, center_y + planet_radius)
+            normalized_y = 1.0 - 2.0 * (band_position_y - 100) / 200
+            band_positions.append(normalized_y)
+            band_widths.append(band_width / planet_radius)
+        
+        # Fill arrays up to 20 elements
+        while len(band_positions) < 20:
+            band_positions.append(0)
+            band_widths.append(0)
+        
+        # Polar hexagon - higher chance for frozen gas giants
+        polar_hexagon = None
+        if rng.random() < 0.4:  # 40% chance for frozen gas giants
+            cycle_duration_years = rng.uniform(orbital_period_years * 0.8, orbital_period_years * 3.0)
+            visible_duration_years = rng.uniform(cycle_duration_years * 0.4, cycle_duration_years * 0.8)
+            pole = rng.choice(['north', 'south'])
+            
+            polar_hexagon = {
+                "enabled": True,
+                "pole": pole,
+                "radius": rng.uniform(0.18, 0.28),  # Slightly larger for frozen
+                "rotation_speed": rng.uniform(0.0005, 0.002),  # Even slower
+                "color_darken_factor": rng.uniform(0.12, 0.20),
+                "cycle_duration_years": cycle_duration_years,
+                "visible_duration_years": visible_duration_years,
+                "opacity": rng.uniform(0.7, 0.95)
+            }
+        
+        return {
+            "type": "frozen_gas_giant",
+            "cloud_bands": {
+                "num_bands": num_bands,
+                "positions": band_positions,
+                "widths": band_widths,
+                "rotation": rotation_angle
+            },
+            "polar_hexagon": polar_hexagon,
+            "icy_tint": True,  # Flag for blue-white tinting
+            "debug": {
+                "has_hexagon": polar_hexagon is not None
+            }
+        }
     
     def translate_nebulous(self, planet_radius: int, rng: random.Random, 
-                          seed: int, planet_name: str) -> Dict[str, Any]:
-        return {"type": "nebulous"}
+                          seed: int, planet_name: str, orbital_period_years: float = 20.0) -> Dict[str, Any]:
+        """Translate Nebulous planet - gas giant with nebula-like appearance and possible hexagon"""
+        
+        # Nebula-like swirling patterns
+        num_swirls = rng.randint(5, 12)
+        swirl_patterns = []
+        
+        for i in range(num_swirls):
+            theta = rng.uniform(0, 2 * math.pi)
+            radius = rng.uniform(0.2, 0.8)
+            swirl_patterns.append({
+                "angle": theta,
+                "radius": radius,
+                "intensity": rng.uniform(0.3, 0.8),
+                "color_shift": rng.uniform(-0.2, 0.2)  # Hue shift
+            })
+        
+        # Polar hexagon - medium chance for nebulous
+        polar_hexagon = None
+        if rng.random() < 0.35:  # 35% chance
+            cycle_duration_years = rng.uniform(orbital_period_years * 0.6, orbital_period_years * 2.5)
+            visible_duration_years = rng.uniform(cycle_duration_years * 0.35, cycle_duration_years * 0.75)
+            pole = rng.choice(['north', 'south'])
+            
+            polar_hexagon = {
+                "enabled": True,
+                "pole": pole,
+                "radius": rng.uniform(0.16, 0.26),
+                "rotation_speed": rng.uniform(0.0008, 0.0025),
+                "color_darken_factor": rng.uniform(0.18, 0.28),  # More contrast for nebulous
+                "cycle_duration_years": cycle_duration_years,
+                "visible_duration_years": visible_duration_years,
+                "opacity": rng.uniform(0.5, 0.85),
+                "nebula_blend": True  # Special blending for nebulous planets
+            }
+        
+        return {
+            "type": "nebulous",
+            "swirl_patterns": swirl_patterns,
+            "polar_hexagon": polar_hexagon,
+            "nebula_density": rng.uniform(0.4, 0.8),
+            "color_variance": rng.uniform(0.1, 0.3),
+            "debug": {
+                "has_hexagon": polar_hexagon is not None,
+                "swirl_count": num_swirls
+            }
+        }
     
     def translate_aquifer(self, planet_radius: int, rng: random.Random, 
                          seed: int, planet_name: str) -> Dict[str, Any]:

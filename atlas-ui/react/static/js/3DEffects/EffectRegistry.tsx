@@ -29,6 +29,7 @@ import { MetallicSurfaceLayer, createMetallicSurfaceLayerFromPythonData } from "
 
 import { AtmosphericStreaksEffect, createAtmosphericStreaksFromPythonData, AtmosphericStreaksParams } from "./AtmosphericStreaks";
 import { StarFieldEffect, createStarFieldFromPythonData, StarFieldParams } from "./StarField";
+import { PolarHexagonCapEffect, createPolarHexagonFromPythonData } from "./PolarHexagon";
 
 // Importar efectos de superficie restantes
 import { FragmentationEffect } from "./FragmentationEffect";
@@ -453,8 +454,150 @@ export class EffectRegistry {
               };
               this.effects.set(gyrosInstance.id, gyrosInstance);
               effects.push(gyrosInstance);
+              
+              // Add polar hexagon effect if present
+              if (surface.polar_hexagon && surface.polar_hexagon.enabled) {
+                // Calculate current time in years from cosmic origin
+                const currentTimeYears = pythonData.timing?.elapsed_time 
+                  ? pythonData.timing.elapsed_time / (365.25 * 24 * 3600) 
+                  : 0;
+                
+                const hexagonEffect = new PolarHexagonCapEffect({
+                  planetColor: baseColor,
+                  hexagonData: surface.polar_hexagon,
+                  planetRadius: planetRadius,
+                  currentTime: currentTimeYears
+                });
+                
+                const hexagonInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "polar_hexagon",
+                  effect: hexagonEffect,
+                  priority: 10, // High priority to render on top
+                  enabled: true,
+                };
+                this.effects.set(hexagonInstance.id, hexagonInstance);
+                effects.push(hexagonInstance);
+                
+                // Add to scene
+                if (scene) {
+                  hexagonEffect.addToScene(scene);
+                }
+              }
             } else {
               console.error("❌ PlanetLayerSystem not initialized!");
+            }
+            break;
+
+          case "frozen_gas_giant":
+            // Similar to gas_giant but with icy appearance
+            if (this.layerSystem) {
+              // Add cloud bands with icy tint
+              const frozenBandsLayer = createCloudBandsLayerFromPythonData(
+                this.layerSystem,
+                {
+                  ...surface,
+                  base_color: baseColor,
+                  turbulence: pythonData.turbulence || surface.turbulence,
+                  icy_tint: true, // Flag for blue-white tinting
+                },
+                pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed
+              );
+
+              const frozenBandsInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "cloud_bands_layer",
+                effect: frozenBandsLayer,
+                priority: 0,
+                enabled: true,
+              };
+              this.effects.set(frozenBandsInstance.id, frozenBandsInstance);
+              effects.push(frozenBandsInstance);
+
+              // Add polar hexagon if present
+              if (surface.polar_hexagon && surface.polar_hexagon.enabled) {
+                const currentTimeYears = pythonData.timing?.elapsed_time 
+                  ? pythonData.timing.elapsed_time / (365.25 * 24 * 3600) 
+                  : 0;
+                
+                const hexagonEffect = new PolarHexagonCapEffect({
+                  planetColor: baseColor,
+                  hexagonData: surface.polar_hexagon,
+                  planetRadius: planetRadius,
+                  currentTime: currentTimeYears
+                });
+                
+                const hexagonInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "polar_hexagon",
+                  effect: hexagonEffect,
+                  priority: 10,
+                  enabled: true,
+                };
+                this.effects.set(hexagonInstance.id, hexagonInstance);
+                effects.push(hexagonInstance);
+                
+                // Add to scene
+                if (scene) {
+                  hexagonEffect.addToScene(scene);
+                }
+              }
+            }
+            break;
+
+          case "nebulous":
+            // Nebula-like gas giant with swirling patterns
+            if (this.layerSystem) {
+              // Add nebula swirls using cloud gyros with special parameters
+              const nebulaGyrosLayer = createCloudGyrosLayerFromPythonData(
+                this.layerSystem,
+                {
+                  ...surface,
+                  base_color: baseColor,
+                  storm_intensity: surface.nebula_density || 0.6,
+                  color_variance: surface.color_variance || 0.2,
+                },
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 2000
+              );
+
+              const nebulaGyrosInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "cloud_gyros_layer",
+                effect: nebulaGyrosLayer,
+                priority: 0,
+                enabled: true,
+              };
+              this.effects.set(nebulaGyrosInstance.id, nebulaGyrosInstance);
+              effects.push(nebulaGyrosInstance);
+
+              // Add polar hexagon if present
+              if (surface.polar_hexagon && surface.polar_hexagon.enabled) {
+                const currentTimeYears = pythonData.timing?.elapsed_time 
+                  ? pythonData.timing.elapsed_time / (365.25 * 24 * 3600) 
+                  : 0;
+                
+                const hexagonEffect = new PolarHexagonCapEffect({
+                  planetColor: baseColor,
+                  hexagonData: surface.polar_hexagon,
+                  planetRadius: planetRadius,
+                  currentTime: currentTimeYears
+                });
+                
+                const hexagonInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "polar_hexagon",
+                  effect: hexagonEffect,
+                  priority: 10,
+                  enabled: true,
+                };
+                this.effects.set(hexagonInstance.id, hexagonInstance);
+                effects.push(hexagonInstance);
+                
+                // Add to scene
+                if (scene) {
+                  hexagonEffect.addToScene(scene);
+                }
+              }
             }
             break;
 

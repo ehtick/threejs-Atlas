@@ -103,9 +103,18 @@ class PlanetRenderingTranslator:
         # Generate planet-specific rendering data
         planet_specific_data = {}
         if planet_type in self.planet_types:
-            planet_specific_data = self.planet_types[planet_type](
-                planet_radius, rng, config.seed, spaced_planet_name
-            )
+            # Calculate orbital period in years for hexagon timing
+            orbital_period_years = planet.orbital_period_seconds / (365.25 * 24 * 3600) if planet.orbital_period_seconds else 1.0
+            
+            # Check if this is a gas giant type that needs orbital period
+            if planet_type in ["Gas Giant", "Frozen Gas Giant", "Nebulous"]:
+                planet_specific_data = self.planet_types[planet_type](
+                    planet_radius, rng, config.seed, spaced_planet_name, orbital_period_years
+                )
+            else:
+                planet_specific_data = self.planet_types[planet_type](
+                    planet_radius, rng, config.seed, spaced_planet_name
+                )
         
         # Si no hay datos específicos, simplemente usar datos básicos
         if not planet_specific_data:
