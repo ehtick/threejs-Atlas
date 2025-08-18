@@ -14,6 +14,7 @@ import { AtmosphereEffect, createAtmosphereFromPythonData, AtmosphereParams } fr
 import { AtmosphereGlowEffect, createAtmosphereGlowFromPythonData, AtmosphereGlowParams } from "./AtmosphereGlow";
 import { AtmosphereCloudsEffect, createAtmosphereCloudsFromPythonData, AtmosphereCloudsParams } from "./AtmosphereClouds";
 import { LandMassesEffect, createLandMassesFromPythonData, createTransparentLandMassesForIcyPlanet, LandMassesParams } from "./LandMasses";
+import { IcyFeaturesEffect, createIcyFeaturesFromPythonData } from "./IcyFeatures";
 
 // Sistema de capas mejorado
 import { PlanetLayerSystem } from "../3DComponents/PlanetLayerSystem";
@@ -562,6 +563,29 @@ export class EffectRegistry {
                 effects.push(cloudsInstance);
                 cloudsEffect.addToScene(scene, mesh.position);
                 console.log("☁️ Atmospheric Clouds added to Icy planet");
+              }
+
+              // Añadir características heladas (cristales, grietas, casquetes)
+              const icyFeaturesEffect = createIcyFeaturesFromPythonData(
+                planetRadius,
+                surface,
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 9000 // Seed específica para características heladas
+              );
+
+              if (icyFeaturesEffect) {
+                const icyFeaturesInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "icy_features",
+                  effect: icyFeaturesEffect,
+                  priority: 2, // Después del terreno y formaciones, pero antes de nubes
+                  enabled: true,
+                  name: "Ice Crystals & Features"
+                };
+
+                this.effects.set(icyFeaturesInstance.id, icyFeaturesInstance);
+                effects.push(icyFeaturesInstance);
+                icyFeaturesEffect.addToScene(scene, mesh.position);
+                console.log("❄️ Icy Features (crystals, cracks, ice caps) added to Icy planet");
               }
             }
             break;
