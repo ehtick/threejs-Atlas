@@ -208,8 +208,26 @@ export class PolarHexagonEffect {
       return;
     }
 
-    // DEBUG: Always visible for debugging
-    this.material.uniforms.visibility.value = 1.0;
+    const currentTime = this.params.currentTime || 0;
+    const cycleProgress = (currentTime % this.params.hexagonData.cycle_duration_years) / 
+                         this.params.hexagonData.cycle_duration_years;
+    const visibleFraction = this.params.hexagonData.visible_duration_years / 
+                           this.params.hexagonData.cycle_duration_years;
+    
+    // Hexagon is visible for the first part of the cycle
+    if (cycleProgress < visibleFraction) {
+      // Fade in and out smoothly
+      const localProgress = cycleProgress / visibleFraction;
+      if (localProgress < 0.1) {
+        this.material.uniforms.visibility.value = localProgress / 0.1; // Fade in
+      } else if (localProgress > 0.9) {
+        this.material.uniforms.visibility.value = (1 - localProgress) / 0.1; // Fade out
+      } else {
+        this.material.uniforms.visibility.value = 1.0; // Fully visible
+      }
+    } else {
+      this.material.uniforms.visibility.value = 0.0; // Not visible
+    }
   }
 
   update(deltaTime: number): void {
