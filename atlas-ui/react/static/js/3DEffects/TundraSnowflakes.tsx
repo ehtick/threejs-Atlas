@@ -262,7 +262,7 @@ export class TundraSnowflakesEffect {
       positionAttribute.needsUpdate = true;
       
       // Keep trails always visible for debugging
-      this.materials[index].opacity = 1.0; // Always fully visible
+      this.materials[index].opacity = 0.1; // Always fully visible
     });
   }
 
@@ -280,7 +280,7 @@ export class TundraSnowflakesEffect {
     
     // Horizontal movement: only change longitude (theta), keep latitude (phi) stable
     const newTheta = initialTheta + Math.cos(this.globalWindDirection) * surfaceMovement;
-    const newPhi = initialPhi + 0.450 * Math.sin(t * 0.5 + rnd); // Very small vertical oscillation
+    const newPhi = initialPhi + 0.250 * Math.sin(t * 0.5 + rnd); // Very small vertical oscillation
     
     // Small height oscillation for natural movement but stay very close to surface
     const heightOscillation = 0.015 * Math.sin(t * 2 + rnd * 10);
