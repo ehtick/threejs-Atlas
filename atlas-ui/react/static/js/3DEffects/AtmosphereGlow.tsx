@@ -23,6 +23,8 @@ export interface AtmosphereGlowParams {
   seed?: number;
   rotationSpeed?: number; // Velocidad de rotación del sistema
   movementAmplitude?: number; // Amplitud del movimiento individual
+  startTime?: number; // Tiempo inicial fijo para determinismo
+  timeSpeed?: number; // Velocidad del tiempo para movimiento procedural (0.1 - 3.0)
 }
 
 // Rangos para generación procedural
@@ -33,7 +35,8 @@ const PROCEDURAL_RANGES = {
   OPACITY: { min: 0.2, max: 0.5 },
   TURBULENCE: { min: 0.1, max: 0.5 },
   ROTATION_SPEED: { min: 0.01, max: 0.05 },
-  MOVEMENT_AMPLITUDE: { min: 0.005, max: 0.05 }
+  MOVEMENT_AMPLITUDE: { min: 0.005, max: 0.05 },
+  TIME_SPEED: { min: 0.1, max: 3.0 } // Rango de velocidades del tiempo
 };
 
 /**
@@ -47,6 +50,7 @@ export class AtmosphereGlowEffect {
   private geometry: THREE.BufferGeometry;
   private params: AtmosphereGlowParams;
   private particleCount: number;
+  private startTime: number;
 
   private static readonly vertexShader = `
     attribute float size;
@@ -112,6 +116,9 @@ export class AtmosphereGlowEffect {
     const seed = params.seed || Math.floor(Math.random() * 1000000);
     const rng = new SeededRandom(seed);
     
+    // Tiempo inicial determinista basado en el seed
+    this.startTime = params.startTime || (seed % 10000) / 1000; // Convertir seed a tiempo inicial
+    
     this.params = {
       color: params.color || new THREE.Color(0xffffff),
       particleCount: params.particleCount || Math.floor(rng.uniform(PROCEDURAL_RANGES.PARTICLE_COUNT.min, PROCEDURAL_RANGES.PARTICLE_COUNT.max)),
@@ -121,7 +128,9 @@ export class AtmosphereGlowEffect {
       turbulence: params.turbulence || rng.uniform(PROCEDURAL_RANGES.TURBULENCE.min, PROCEDURAL_RANGES.TURBULENCE.max),
       rotationSpeed: params.rotationSpeed || rng.uniform(PROCEDURAL_RANGES.ROTATION_SPEED.min, PROCEDURAL_RANGES.ROTATION_SPEED.max),
       movementAmplitude: params.movementAmplitude || rng.uniform(PROCEDURAL_RANGES.MOVEMENT_AMPLITUDE.min, PROCEDURAL_RANGES.MOVEMENT_AMPLITUDE.max),
+      timeSpeed: params.timeSpeed || rng.uniform(PROCEDURAL_RANGES.TIME_SPEED.min, PROCEDURAL_RANGES.TIME_SPEED.max),
       seed: seed,
+      startTime: this.startTime,
     };
 
     this.particleCount = this.params.particleCount!;
@@ -193,11 +202,14 @@ export class AtmosphereGlowEffect {
   }
 
   update(deltaTime: number): void {
-    const oldTime = this.material.uniforms.time.value;
-    this.material.uniforms.time.value += deltaTime;
+    // Calcular tiempo absoluto determinista desde el inicio con ciclo y velocidad procedural
+    const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!; // Velocidad procedural
+    const currentTime = rawTime % 1000; // Mantener el tiempo en un ciclo de 1000 segundos
+    
+    this.material.uniforms.time.value = currentTime;
 
-    // Rotación procedural del sistema de partículas
-    this.particleSystem.rotation.y += deltaTime * this.params.rotationSpeed!;
+    // Rotación procedural del sistema de partículas usando tiempo absoluto
+    this.particleSystem.rotation.y = currentTime * this.params.rotationSpeed!;
   }
 
   updateParams(newParams: Partial<AtmosphereGlowParams>): void {
@@ -236,9 +248,8 @@ export function createAtmosphereGlowFromPythonData(planetRadius: number, atmosph
   const turbulence = rng.uniform(PROCEDURAL_RANGES.TURBULENCE.min, PROCEDURAL_RANGES.TURBULENCE.max);
   const rotationSpeed = rng.uniform(PROCEDURAL_RANGES.ROTATION_SPEED.min, PROCEDURAL_RANGES.ROTATION_SPEED.max);
   const movementAmplitude = rng.uniform(PROCEDURAL_RANGES.MOVEMENT_AMPLITUDE.min, PROCEDURAL_RANGES.MOVEMENT_AMPLITUDE.max);
+  const timeSpeed = rng.uniform(PROCEDURAL_RANGES.TIME_SPEED.min, PROCEDURAL_RANGES.TIME_SPEED.max);
   
-  
-
   const params: AtmosphereGlowParams = {
     color: streaksData.color ? new THREE.Color().setRGB(streaksData.color[0], streaksData.color[1], streaksData.color[2]) : new THREE.Color(0xffffff),
     particleCount,
@@ -249,6 +260,7 @@ export function createAtmosphereGlowFromPythonData(planetRadius: number, atmosph
     seed,
     rotationSpeed,
     movementAmplitude,
+    timeSpeed,
   };
 
   return new AtmosphereGlowEffect(planetRadius, params);
