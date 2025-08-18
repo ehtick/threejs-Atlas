@@ -269,18 +269,41 @@ class PlanetTypeTranslators:
                 "seed": f"{planet_name}_icecap_{i}"
             })
         
+        # Cloud generation for icy planets (similar to rocky but with icy colors)
+        num_clouds = rng.randint(8, 15)  # More clouds for icy atmosphere
+        clouds = []
+        for i in range(num_clouds):
+            cloud_radius = rng.randint(15, 35)  # Slightly larger clouds
+            cloud_x = center_x + rng.randint(-planet_radius, planet_radius)
+            cloud_y = center_y + rng.randint(-planet_radius, planet_radius)
+            
+            # Convert to normalized coordinates
+            normalized_coords = self.common_utils.normalize_coordinates(
+                cloud_x, cloud_y, center_x, center_y, planet_radius
+            )
+            
+            clouds.append({
+                "position": normalized_coords,
+                "radius": cloud_radius / planet_radius,
+                "color": [0.9, 0.95, 1.0, 0.6],  # Light blue-white clouds for icy atmosphere
+                "type": "cloud",
+                "seed": f"{planet_name}_cloud_{i}"
+            })
+        
         return {
             "type": "icy",
             "abstract_lands": abstract_lands,
             "crystals": crystals,
             "cracks": cracks,
             "ice_caps": ice_caps,
+            "clouds": clouds,  # Added clouds to icy planets
             "debug": {
                 "original_planet_radius": planet_radius,
                 "center_x": center_x, "center_y": center_y,
                 "crystal_count": num_crystals,
                 "crack_count": len(cracks),
-                "ice_cap_count": num_ice_caps
+                "ice_cap_count": num_ice_caps,
+                "cloud_count": num_clouds  # Added cloud count to debug
             }
         }
     
