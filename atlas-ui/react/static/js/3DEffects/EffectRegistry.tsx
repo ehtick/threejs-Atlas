@@ -15,6 +15,7 @@ import { AtmosphereGlowEffect, createAtmosphereGlowFromPythonData, AtmosphereGlo
 import { AtmosphereCloudsEffect, createAtmosphereCloudsFromPythonData, AtmosphereCloudsParams } from "./AtmosphereClouds";
 import { LandMassesEffect, createLandMassesFromPythonData, createTransparentLandMassesForIcyPlanet, LandMassesParams } from "./LandMasses";
 import { IcyFeaturesEffect, createIcyFeaturesFromPythonData } from "./IcyFeatures";
+import { TundraSnowflakesEffect, createTundraSnowflakesFromPythonData } from "./TundraSnowflakes";
 
 // Sistema de capas mejorado
 import { PlanetLayerSystem } from "../3DComponents/PlanetLayerSystem";
@@ -96,6 +97,9 @@ export enum EffectType {
   CITY_LIGHTS = "city_lights",
   BIOLUMINESCENCE = "bioluminescence",
   THERMAL_EMISSIONS = "thermal_emissions",
+  
+  // Efectos de clima
+  TUNDRA_SNOWFLAKES = "tundra_snowflakes",
 
   // Efectos de debug
   VISUAL_DEBUG_3D = "visual_debug_3d",
@@ -214,6 +218,12 @@ export class EffectRegistry {
     this.registerEffect(EffectType.STAR_FIELD, {
       create: (params, planetRadius) => new StarFieldEffect(planetRadius, params),
       fromPythonData: (data, planetRadius) => createStarFieldFromPythonData(planetRadius, data.seeds?.planet_seed || data.planet_seed),
+    });
+
+    // Efectos de clima
+    this.registerEffect(EffectType.TUNDRA_SNOWFLAKES, {
+      create: (params, planetRadius) => new TundraSnowflakesEffect(planetRadius, params),
+      fromPythonData: (data, planetRadius) => createTundraSnowflakesFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed),
     });
 
     // Efectos de debug
@@ -732,6 +742,29 @@ export class EffectRegistry {
               effects.push(cloudsInstance);
               cloudsEffect.addToScene(scene, mesh.position);
               console.log("☁️ Atmospheric clouds added to Tundra planet");
+            }
+
+            // 4. Tundra snowflakes effect
+            const snowflakesEffect = createTundraSnowflakesFromPythonData(
+              planetRadius,
+              surface,
+              (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 15000
+            );
+
+            if (snowflakesEffect) {
+              const snowflakesInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "tundra_snowflakes",
+                effect: snowflakesEffect,
+                priority: 20,
+                enabled: true,
+                name: "Snowflakes"
+              };
+
+              this.effects.set(snowflakesInstance.id, snowflakesInstance);
+              effects.push(snowflakesInstance);
+              snowflakesEffect.addToScene(scene, mesh.position);
+              console.log("❄️ Tundra snowflakes added to Tundra planet");
             }
             break;
 

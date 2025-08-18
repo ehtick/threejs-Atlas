@@ -60,6 +60,12 @@ export type { IcyTerrainLayerParams } from './IcyTerrainLayer';
 export { LandMassesEffect, createLandMassesFromPythonData } from './LandMasses';
 export type { LandMassesParams } from './LandMasses';
 
+export { 
+  TundraSnowflakesEffect, 
+  createTundraSnowflakesFromPythonData
+} from './TundraSnowflakes';
+export type { TundraSnowflakesParams } from './TundraSnowflakes';
+
 // OceanWaves eliminado - no respeta los datos de Python
 
 // Sistema de registro y gestión
@@ -97,7 +103,8 @@ export const AVAILABLE_EFFECTS = [
   'magnetic_field',
   'city_lights',
   'bioluminescence',
-  'thermal_emissions'
+  'thermal_emissions',
+  'tundra_snowflakes'
 ] as const;
 
 export type AvailableEffectType = typeof AVAILABLE_EFFECTS[number];
