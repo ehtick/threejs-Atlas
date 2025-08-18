@@ -95,8 +95,8 @@ const fragmentShader = `
     // Make lines more prominent
     finalColor *= 0.6; // Darker for contrast
     
-    // Apply edge intensity to make lines fade smoothly
-    float finalOpacity = opacity * visibility * edgeIntensity;
+    // Apply edge intensity and 25% opacity (75% transparent)
+    float finalOpacity = opacity * visibility * edgeIntensity * 0.25;
     
     // Add subtle glow for Saturn-like effect
     finalColor += vec3(0.1) * edgeIntensity;
