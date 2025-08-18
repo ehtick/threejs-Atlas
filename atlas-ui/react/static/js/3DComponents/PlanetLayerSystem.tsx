@@ -692,6 +692,146 @@ export class PlanetLayerSystem {
   }
 
   /**
+   * Crea un material para IcyTerrain que funciona como capa
+   */
+  createIcyTerrainLayerMaterial(params: any): THREE.ShaderMaterial {
+    const vertexShader = `
+      varying vec3 vPosition;
+      varying vec3 vNormal;
+      varying vec3 vWorldPosition;
+      varying vec3 vWorldNormal;
+      varying vec2 vUv;
+      
+      void main() {
+        vPosition = position;
+        vNormal = normalMatrix * normal; // Transformar normal al espacio de vista
+        vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz); // Normal en espacio mundo
+        vUv = uv;
+        vec4 worldPos = modelMatrix * vec4(position, 1.0);
+        vWorldPosition = worldPos.xyz;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `;
+
+    const fragmentShader = `
+      uniform vec3 iceColor;
+      uniform float iceReflectivity;
+      uniform float frostDensity;
+      uniform float crackIntensity;
+      uniform float opacity;
+      uniform vec3 lightDirection;
+      uniform vec3 lightPosition;
+      uniform float ambientStrength;
+      uniform float lightIntensity;
+      uniform float time;
+      
+      varying vec3 vPosition;
+      varying vec3 vNormal;
+      varying vec3 vWorldPosition;
+      varying vec3 vWorldNormal;
+      varying vec2 vUv;
+      
+      // Función de ruido para las grietas de hielo
+      float noise(vec2 p) {
+        return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+      }
+      
+      // Patrón de grietas Voronoi
+      float voronoi(vec2 p) {
+        vec2 n = floor(p);
+        vec2 f = fract(p);
+        
+        float minDist = 1.0;
+        
+        for(int i = -1; i <= 1; i++) {
+          for(int j = -1; j <= 1; j++) {
+            vec2 neighbor = vec2(float(i), float(j));
+            vec2 point = neighbor + noise(n + neighbor) - f;
+            float dist = length(point);
+            minDist = min(minDist, dist);
+          }
+        }
+        
+        return minDist;
+      }
+      
+      void main() {
+        vec3 normal = normalize(vWorldNormal);
+        
+        // Usar posición de luz si está disponible, sino usar dirección (IGUAL que MetallicSurface)
+        vec3 lightDir;
+        if (length(lightPosition) > 0.0) {
+          lightDir = normalize(lightPosition - vWorldPosition);
+        } else {
+          lightDir = normalize(-lightDirection); // Negativo porque lightDirection apunta hacia la luz
+        }
+        
+        // Cálculo de iluminación Lambertiana mejorado (IGUAL que MetallicSurface)
+        float dotNL = dot(normal, lightDir);
+        
+        // Suavizar la transición entre día y noche con mejor gradiente (IGUAL que MetallicSurface)
+        float dayNight = smoothstep(-0.3, 0.1, dotNL);
+        
+        // Añadir un poco de retroiluminación (rim lighting) para evitar oscuridad total (IGUAL que MetallicSurface)
+        float rimLight = 1.0 - abs(dotNL);
+        rimLight = pow(rimLight, 3.0) * 0.1;
+        
+        // Textura de hielo con grietas
+        float cracks = voronoi(vUv * crackIntensity * 10.0);
+        cracks = pow(cracks, 2.0);
+        
+        // Escarcha
+        float frost = noise(vUv * frostDensity * 50.0);
+        frost = smoothstep(0.3, 0.7, frost);
+        
+        // Color base del hielo
+        vec3 color = iceColor;
+        color = mix(color, vec3(1.0), frost * 0.3); // Añadir escarcha blanca
+        color = mix(color * 0.7, color, cracks); // Oscurecer las grietas
+        
+        // Aplicar iluminación base con intensidad variable (EXACTAMENTE como MetallicSurface)
+        float totalLight = ambientStrength + (lightIntensity * dayNight) + rimLight;
+        vec3 finalColor = color * totalLight;
+        
+        // Reflejo especular para simular hielo brillante - SOLO en la parte iluminada
+        vec3 viewDir = normalize(cameraPosition - vWorldPosition);
+        vec3 halfwayDir = normalize(lightDir + viewDir);
+        float NdotH = max(dot(normal, halfwayDir), 0.0);
+        float specularStrength = pow(NdotH, 32.0);
+        vec3 specular = vec3(specularStrength * iceReflectivity);
+        
+        // Añadir reflejos especulares SOLO en la parte iluminada (como MetallicSurface)
+        finalColor += specular * dayNight;
+        
+        // Solo mostrar en la parte iluminada (usar dayNight en lugar de visibility manual)
+        float alpha = (0.5 + 0.5 * cracks) * dayNight * opacity;
+        
+        gl_FragColor = vec4(finalColor, alpha);
+      }
+    `;
+
+    return new THREE.ShaderMaterial({
+      vertexShader,
+      fragmentShader,
+      uniforms: {
+        time: { value: 0 },
+        iceColor: { value: params.color || new THREE.Color(0xB0E0E6) },
+        iceReflectivity: { value: params.iceReflectivity || 0.8 },
+        frostDensity: { value: params.frostDensity || 0.5 },
+        crackIntensity: { value: params.crackIntensity || 0.4 },
+        opacity: { value: params.opacity || 0.7 },
+        lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
+        lightPosition: { value: new THREE.Vector3(0, 0, 0) }, // Posición de luz en espacio mundo
+        ambientStrength: { value: 0.15 }, // Más oscuro, igual que otros planetas
+        lightIntensity: { value: 0.85 }, // Intensidad de la luz direccional
+      },
+      transparent: true,
+      side: THREE.FrontSide,
+      depthWrite: false
+    });
+  }
+
+  /**
    * Añade el sistema a la escena
    */
   addToScene(scene: THREE.Scene): void {
