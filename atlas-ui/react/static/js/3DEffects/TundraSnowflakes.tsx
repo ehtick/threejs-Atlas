@@ -32,6 +32,11 @@ export class TundraSnowflakesEffect {
   // Trail configuration
   private trailLength: number = 15; // Number of points in each trail
   private particleCount: number;
+  // Procedural parameters based on seed
+  private rotationSpeed: number;
+  private particleOpacity: number;
+  private windSpeedMultiplier: number;
+  private verticalOscillation: number;
   // Sistema de ráfagas procedurales
   private burstZone: { lat: number; lon: number; radius: number }; // Zona de ráfaga
   private burstCycleDuration: number; // Duración del ciclo completo
@@ -57,6 +62,12 @@ export class TundraSnowflakesEffect {
     // Parámetros de tiempo procedural - VELOCIDAD ALTA para estelas
     this.startTime = this.rng.uniform(0, 1000); // Tiempo inicial aleatorio
     this.timeSpeed = this.rng.uniform(2.0, 4.0); // Velocidad procedural MÁS ALTA
+    
+    // Procedural parameters unique to each planet based on seed
+    this.rotationSpeed = this.rng.uniform(0.2, 0.8); // Rotation speed multiplier
+    this.particleOpacity = this.rng.uniform(0.05, 0.25); // Opacity between 5-25%
+    this.windSpeedMultiplier = this.rng.uniform(1.1, 2.5); // Wind speed variation
+    this.verticalOscillation = this.rng.uniform(0.10, 0.40); // Vertical movement amplitude
     
     // CONFIGURACIÓN DE ZONA ESTIRADA
     // Zona específica donde aparecen los copos (latitud/longitud en radianes)
@@ -170,7 +181,7 @@ export class TundraSnowflakesEffect {
       const material = new THREE.LineBasicMaterial({
         vertexColors: true,
         transparent: true,
-        opacity: 1.0, // Full opacity for debugging
+        opacity: this.particleOpacity, // Use procedural opacity based on seed
         blending: THREE.NormalBlending, // Normal blending for better visibility
         depthTest: true,
         linewidth: 3 // Thicker lines for visibility (may not work on all systems)
@@ -233,7 +244,7 @@ export class TundraSnowflakesEffect {
     
     // ROTACIÓN PROCEDURAL DEL SISTEMA COMPLETO - VELOCIDAD ALTA
     // Todas las partículas rotan juntas en la dirección del viento
-    this.snowflakeGroup.rotation.y = currentTime * 0.5; // Velocidad de rotación 5x MÁS RÁPIDA
+    this.snowflakeGroup.rotation.y = currentTime * this.rotationSpeed; // Use procedural rotation speed
     
     this.particleSystems.forEach((line, index) => {
       const positionAttribute = line.geometry.getAttribute('position') as THREE.BufferAttribute;
@@ -261,8 +272,8 @@ export class TundraSnowflakesEffect {
       
       positionAttribute.needsUpdate = true;
       
-      // Keep trails always visible for debugging
-      this.materials[index].opacity = 0.1; // Always fully visible
+      // Set particle opacity to procedural value
+      this.materials[index].opacity = this.particleOpacity;
     });
   }
 
@@ -275,12 +286,12 @@ export class TundraSnowflakesEffect {
     const initialPhi = this.burstZone.lat + Math.PI/2 + (rnd - 0.5) * 0.2;
     
     // Movement along the surface horizontally (only theta changes, phi stays mostly constant)
-    const windSpeed = 2; // Increased speed to make trails more visible
+    const windSpeed = this.windSpeedMultiplier; // Use procedural wind speed based on seed
     const surfaceMovement = t * windSpeed;
     
     // Horizontal movement: only change longitude (theta), keep latitude (phi) stable
     const newTheta = initialTheta + Math.cos(this.globalWindDirection) * surfaceMovement;
-    const newPhi = initialPhi + 0.250 * Math.sin(t * 0.5 + rnd); // Very small vertical oscillation
+    const newPhi = initialPhi + this.verticalOscillation * Math.sin(t * 0.5 + rnd); // Procedural vertical oscillation
     
     // Small height oscillation for natural movement but stay very close to surface
     const heightOscillation = 0.015 * Math.sin(t * 2 + rnd * 10);
