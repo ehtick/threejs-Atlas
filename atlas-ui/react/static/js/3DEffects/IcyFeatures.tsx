@@ -132,13 +132,24 @@ export class IcyFeaturesEffect {
       
       const crystalMesh = new THREE.Mesh(geometry, material);
       
-      // Calcular posición en la superficie esférica
-      const phi = Math.acos(Math.min(1, Math.max(-1, position[1]))); 
+      // Calcular posición en la superficie esférica - MODIFICADO para favorecer los polos
+      // Convertir coordenadas a coordenadas polares y aplicar sesgo polar
+      let normalizedY = Math.min(1, Math.max(-1, position[1]));
+      
+      // Aplicar función de sesgo polar: valores más altos de |Y| son más probables
+      const polarBias = Math.pow(Math.abs(normalizedY), 0.3); // Exponente < 1 favorece valores altos
+      const biasedY = Math.sign(normalizedY) * polarBias;
+      
+      // Añadir ruido aleatorio pero mantener sesgo polar
+      const polarNoise = rng.uniform(-0.3, 0.3) * (1 - Math.abs(biasedY)); // Menos ruido cerca de los polos
+      const finalY = Math.min(1, Math.max(-1, biasedY + polarNoise));
+      
+      const phi = Math.acos(Math.abs(finalY)); 
       const theta = Math.atan2(position[0], 0.001) + angle;
       
       const surfaceRadius = this.planetRadius * rng.uniform(1.0005, 1.001); // MUY pegados a la superficie
       const x = surfaceRadius * Math.sin(phi) * Math.cos(theta);
-      const y = surfaceRadius * position[1];
+      const y = surfaceRadius * finalY;
       const z = surfaceRadius * Math.sin(phi) * Math.sin(theta);
       
       crystalMesh.position.set(x, y, z);
@@ -181,14 +192,22 @@ export class IcyFeaturesEffect {
   }
 
   /**
-   * Genera grietas en el hielo
+   * Genera grietas en el hielo - MODIFICADO para favorecer regiones polares
    */
   private generateCracks(cracksData: any[]): void {
+    const rng = new SeededRandom(42); // Seed fijo para grietas consistentes
+    
     cracksData.forEach((crack) => {
       const angle = crack.angle || 0;
       const length = (crack.length || 1.0) * this.planetRadius * 2;
       const crackColor = crack.color || [80/255, 80/255, 80/255, 0.4];
       const width = (crack.width || 1) * 0.0005 * this.planetRadius; // MÁS delgadas - reducido a la mitad
+      
+      // NUEVA LÓGICA: Favorecer ubicaciones polares para las grietas
+      // Generar latitud con sesgo polar (más probable cerca de los polos)
+      const polarBiasedLat = rng.uniform(0.6, 1.0); // Entre 60° y 90° de latitud
+      const hemisphere = rng.uniform(0, 1) > 0.5 ? 1 : -1; // Polo norte o sur aleatorio
+      const phi = Math.acos(polarBiasedLat * hemisphere); // Convertir a phi (ángulo polar)
       
       // Crear una línea curvada para la grieta usando CatmullRomCurve3
       const points: THREE.Vector3[] = [];
@@ -198,13 +217,13 @@ export class IcyFeaturesEffect {
         const t = i / numSegments;
         const variance = Math.sin(t * Math.PI) * 0.1; // Curvatura de la grieta
         
-        // Posición a lo largo de la grieta con curvatura
-        const phi = Math.PI / 2 + angle; // Ecuador + ángulo
-        const theta = (t - 0.5) * length / this.planetRadius + variance;
+        // Posición a lo largo de la grieta con curvatura - AHORA EN REGIONES POLARES
+        const baseTheta = angle; // Ángulo base de la grieta
+        const theta = baseTheta + (t - 0.5) * length / (this.planetRadius * Math.sin(Math.abs(phi))) + variance;
         
-        const x = this.planetRadius * 1.002 * Math.sin(phi) * Math.cos(theta);
-        const y = this.planetRadius * 1.002 * Math.cos(phi);
-        const z = this.planetRadius * 1.002 * Math.sin(phi) * Math.sin(theta);
+        const x = this.planetRadius * 1.002 * Math.sin(Math.abs(phi)) * Math.cos(theta);
+        const y = this.planetRadius * 1.002 * Math.cos(Math.abs(phi)) * hemisphere;
+        const z = this.planetRadius * 1.002 * Math.sin(Math.abs(phi)) * Math.sin(theta);
         
         points.push(new THREE.Vector3(x, y, z));
       }
