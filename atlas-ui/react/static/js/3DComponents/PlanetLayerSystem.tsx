@@ -725,6 +725,10 @@ export class PlanetLayerSystem {
       uniform float ambientStrength;
       uniform float lightIntensity;
       uniform float time;
+      uniform float crystalScale;
+      uniform float crystalDensity;
+      uniform float crystalSharpness;
+      uniform float frostPattern;
       
       varying vec3 vPosition;
       varying vec3 vNormal;
@@ -803,17 +807,21 @@ export class PlanetLayerSystem {
         float cracks = iceCracks(vUv * crackIntensity * 4.0);
         cracks = pow(cracks, 1.5);
         
-        // MICROCRISTALES - esto es lo que hace que se vea como hielo real!
-        float microCrystals1 = noise3D(vWorldPosition * 25.0); // Cristales pequeños
-        float microCrystals2 = noise3D(vWorldPosition * 50.0); // Cristales diminutos  
-        float microCrystals3 = noise3D(vWorldPosition * 100.0); // Cristales microscópicos
+        // MICROCRISTALES PROCEDURALES - cada planeta tiene su personalidad!
+        float scale1 = crystalScale * 0.8;
+        float scale2 = crystalScale * 1.6; 
+        float scale3 = crystalScale * 3.2;
         
-        // Combinar escalas de cristales
+        float microCrystals1 = noise3D(vWorldPosition * scale1); // Cristales pequeños
+        float microCrystals2 = noise3D(vWorldPosition * scale2); // Cristales diminutos  
+        float microCrystals3 = noise3D(vWorldPosition * scale3); // Cristales microscópicos
+        
+        // Combinar escalas de cristales con densidad procedural
         float crystals = microCrystals1 * 0.6 + microCrystals2 * 0.3 + microCrystals3 * 0.1;
-        crystals = smoothstep(0.3, 0.8, crystals);
+        crystals = smoothstep(0.3, 0.3 + crystalDensity, crystals);
         
-        // Escarcha cristalina en la superficie
-        float frost = noise3D(vWorldPosition * frostDensity * 12.0);
+        // Escarcha cristalina con patrón único por planeta
+        float frost = noise3D(vWorldPosition * frostPattern);
         frost = smoothstep(0.6, 0.9, frost);
         
         // COLOR BASE: Hielo con microcristales
@@ -845,9 +853,11 @@ export class PlanetLayerSystem {
         float mainSpecular = pow(NdotH, 60.0) * iceReflectivity;
         mainSpecular *= (0.2 + 0.8 * cracks);
         
-        // REFLEJOS DE CRISTALES - múltiples puntos brillantes
-        float crystalSpecular1 = pow(NdotH, 120.0) * crystals * iceReflectivity * 0.8;
-        float crystalSpecular2 = pow(NdotH, 200.0) * crystals * iceReflectivity * 0.4;
+        // REFLEJOS DE CRISTALES - múltiples puntos brillantes con sharpness procedural
+        float sharpness1 = crystalSharpness * 0.6;
+        float sharpness2 = crystalSharpness * 1.0;
+        float crystalSpecular1 = pow(NdotH, sharpness1) * crystals * iceReflectivity * 0.8;
+        float crystalSpecular2 = pow(NdotH, sharpness2) * crystals * iceReflectivity * 0.4;
         
         // Reflejos de escarcha - más suaves pero numerosos
         float frostSpecular = pow(NdotH, 40.0) * frost * iceReflectivity * 0.6;
@@ -877,6 +887,10 @@ export class PlanetLayerSystem {
         frostDensity: { value: params.frostDensity || 0.5 },
         crackIntensity: { value: params.crackIntensity || 0.4 },
         opacity: { value: params.opacity || 0.7 },
+        crystalScale: { value: params.crystalScale || 25.0 }, // Escala procedural de cristales
+        crystalDensity: { value: params.crystalDensity || 0.6 }, // Densidad procedural
+        crystalSharpness: { value: params.crystalSharpness || 150.0 }, // Nitidez procedural
+        frostPattern: { value: params.frostPattern || 12.0 }, // Patrón procedural de escarcha
         lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
         lightPosition: { value: new THREE.Vector3(0, 0, 0) }, // Posición de luz en espacio mundo
         ambientStrength: { value: 0.15 }, // Más oscuro, igual que otros planetas
