@@ -732,13 +732,30 @@ export class PlanetLayerSystem {
       varying vec3 vWorldNormal;
       varying vec2 vUv;
       
-      // Función de ruido para las grietas de hielo
-      float noise(vec2 p) {
-        return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+      // Hash function mejorada
+      float hash(vec3 p) {
+        p = fract(p * vec3(443.8975, 397.2973, 491.1871));
+        p += dot(p, p.yxz + 19.19);
+        return fract((p.x + p.y) * p.z);
       }
       
-      // Patrón de grietas Voronoi
-      float voronoi(vec2 p) {
+      // Ruido 3D suave
+      float noise3D(vec3 p) {
+        vec3 i = floor(p);
+        vec3 f = fract(p);
+        f = f * f * (3.0 - 2.0 * f);
+        
+        float n = mix(
+          mix(mix(hash(i + vec3(0,0,0)), hash(i + vec3(1,0,0)), f.x),
+              mix(hash(i + vec3(0,1,0)), hash(i + vec3(1,1,0)), f.x), f.y),
+          mix(mix(hash(i + vec3(0,0,1)), hash(i + vec3(1,0,1)), f.x),
+              mix(hash(i + vec3(0,1,1)), hash(i + vec3(1,1,1)), f.x), f.y), f.z);
+        
+        return n;
+      }
+      
+      // Grietas de hielo con profundidad real
+      float iceCracks(vec2 p) {
         vec2 n = floor(p);
         vec2 f = fract(p);
         
@@ -747,7 +764,7 @@ export class PlanetLayerSystem {
         for(int i = -1; i <= 1; i++) {
           for(int j = -1; j <= 1; j++) {
             vec2 neighbor = vec2(float(i), float(j));
-            vec2 point = neighbor + noise(n + neighbor) - f;
+            vec2 point = neighbor + hash(vec3(n + neighbor, 0.0)) - f;
             float dist = length(point);
             minDist = min(minDist, dist);
           }
@@ -756,56 +773,89 @@ export class PlanetLayerSystem {
         return minDist;
       }
       
+      // Burbujas internas del hielo
+      float iceBubbles(vec3 p) {
+        float bubbles = 0.0;
+        
+        // Múltiples escalas de burbujas
+        bubbles += smoothstep(0.8, 1.0, noise3D(p * 8.0)) * 0.6;
+        bubbles += smoothstep(0.9, 1.0, noise3D(p * 16.0 + vec3(100.0))) * 0.3;
+        bubbles += smoothstep(0.95, 1.0, noise3D(p * 32.0 + vec3(200.0))) * 0.1;
+        
+        return bubbles;
+      }
+      
       void main() {
         vec3 normal = normalize(vWorldNormal);
         
-        // Usar posición de luz si está disponible, sino usar dirección (IGUAL que MetallicSurface)
+        // Calcular dirección de luz
         vec3 lightDir;
         if (length(lightPosition) > 0.0) {
           lightDir = normalize(lightPosition - vWorldPosition);
         } else {
-          lightDir = normalize(-lightDirection); // Negativo porque lightDirection apunta hacia la luz
+          lightDir = normalize(-lightDirection);
         }
         
-        // Cálculo de iluminación Lambertiana mejorado (IGUAL que MetallicSurface)
         float dotNL = dot(normal, lightDir);
-        
-        // Suavizar la transición entre día y noche con mejor gradiente (IGUAL que MetallicSurface)
         float dayNight = smoothstep(-0.3, 0.1, dotNL);
         
-        // Añadir un poco de retroiluminación (rim lighting) para evitar oscuridad total (IGUAL que MetallicSurface)
-        float rimLight = 1.0 - abs(dotNL);
-        rimLight = pow(rimLight, 3.0) * 0.1;
+        // Grietas principales
+        float cracks = iceCracks(vUv * crackIntensity * 4.0);
+        cracks = pow(cracks, 1.5);
         
-        // Textura de hielo con grietas
-        float cracks = voronoi(vUv * crackIntensity * 10.0);
-        cracks = pow(cracks, 2.0);
+        // MICROCRISTALES - esto es lo que hace que se vea como hielo real!
+        float microCrystals1 = noise3D(vWorldPosition * 25.0); // Cristales pequeños
+        float microCrystals2 = noise3D(vWorldPosition * 50.0); // Cristales diminutos  
+        float microCrystals3 = noise3D(vWorldPosition * 100.0); // Cristales microscópicos
         
-        // Escarcha
-        float frost = noise(vUv * frostDensity * 50.0);
-        frost = smoothstep(0.3, 0.7, frost);
+        // Combinar escalas de cristales
+        float crystals = microCrystals1 * 0.6 + microCrystals2 * 0.3 + microCrystals3 * 0.1;
+        crystals = smoothstep(0.3, 0.8, crystals);
         
-        // Color base del hielo
-        vec3 color = iceColor;
-        color = mix(color, vec3(1.0), frost * 0.3); // Añadir escarcha blanca
-        color = mix(color * 0.7, color, cracks); // Oscurecer las grietas
+        // Escarcha cristalina en la superficie
+        float frost = noise3D(vWorldPosition * frostDensity * 12.0);
+        frost = smoothstep(0.6, 0.9, frost);
         
-        // Aplicar iluminación base con intensidad variable (EXACTAMENTE como MetallicSurface)
-        float totalLight = ambientStrength + (lightIntensity * dayNight) + rimLight;
+        // COLOR BASE: Hielo con microcristales
+        vec3 baseIce = vec3(0.95, 0.97, 1.0);
+        vec3 scratchColor = vec3(0.7, 0.8, 0.9);
+        vec3 color = mix(scratchColor, baseIce, cracks);
+        
+        // Los microcristales añaden brillo y variación
+        color = mix(color, vec3(0.98, 0.99, 1.0), crystals * 0.3);
+        
+        // La escarcha añade textura cristalina blanca
+        color = mix(color, vec3(1.0, 1.0, 1.0), frost * 0.4);
+        
+        // Iluminación base
+        float totalLight = ambientStrength + (lightIntensity * dayNight);
         vec3 finalColor = color * totalLight;
         
-        // Reflejo especular para simular hielo brillante - SOLO en la parte iluminada
+        // REFLEJOS DE MICROCRISTALES - esto es clave!
         vec3 viewDir = normalize(cameraPosition - vWorldPosition);
         vec3 halfwayDir = normalize(lightDir + viewDir);
         float NdotH = max(dot(normal, halfwayDir), 0.0);
-        float specularStrength = pow(NdotH, 32.0);
-        vec3 specular = vec3(specularStrength * iceReflectivity);
         
-        // Añadir reflejos especulares SOLO en la parte iluminada (como MetallicSurface)
+        // Reflejo principal del hielo
+        float mainSpecular = pow(NdotH, 60.0) * iceReflectivity;
+        mainSpecular *= (0.2 + 0.8 * cracks);
+        
+        // REFLEJOS DE CRISTALES - múltiples puntos brillantes
+        float crystalSpecular1 = pow(NdotH, 120.0) * crystals * iceReflectivity * 0.8;
+        float crystalSpecular2 = pow(NdotH, 200.0) * crystals * iceReflectivity * 0.4;
+        
+        // Reflejos de escarcha - más suaves pero numerosos
+        float frostSpecular = pow(NdotH, 40.0) * frost * iceReflectivity * 0.6;
+        
+        vec3 specular = vec3(mainSpecular + crystalSpecular1 + crystalSpecular2 + frostSpecular);
         finalColor += specular * dayNight;
         
-        // Solo mostrar en la parte iluminada (usar dayNight en lugar de visibility manual)
-        float alpha = (0.5 + 0.5 * cracks) * dayNight * opacity;
+        // Los cristales también crean pequeños destellos
+        float sparkle = smoothstep(0.8, 1.0, crystals) * smoothstep(0.9, 1.0, NdotH);
+        finalColor += vec3(1.0, 1.0, 1.0) * sparkle * 0.5 * dayNight;
+        
+        // Transparencia variable con cristales
+        float alpha = (0.7 + 0.2 * cracks + 0.1 * crystals) * dayNight * opacity;
         
         gl_FragColor = vec4(finalColor, alpha);
       }
