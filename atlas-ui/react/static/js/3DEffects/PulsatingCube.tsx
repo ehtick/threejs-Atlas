@@ -22,6 +22,13 @@ export interface PulsatingCubeParams {
   emissiveIntensity?: number;
   startTime?: number; // Tiempo inicial fijo para determinismo
   timeSpeed?: number; // Velocidad del tiempo para sincronización (0.1 - 3.0)
+  // Orbital visibility data (similar to PolarHexagon)
+  orbitalData?: {
+    enabled: boolean;
+    cycle_duration_years: number;
+    visible_duration_years: number;
+  };
+  currentTime?: number; // Tiempo actual en años para calcular ciclos orbitales
 }
 
 // Rangos para generación procedural
@@ -52,6 +59,7 @@ export class PulsatingCubeEffect {
   private currentState: 'hidden' | 'fading_in' | 'visible' | 'fading_out';
   private stateStartTime: number;
   private rng: SeededRandom;
+  private orbitalVisibilityFactor: number; // Factor de visibilidad basado en periodo orbital (0-1)
   
   // Particle system properties
   private particleSystem: THREE.Points;
@@ -75,7 +83,7 @@ export class PulsatingCubeEffect {
     
     // Tiempo inicial determinista basado en el seed (igual que AtmosphereClouds)
     this.startTime = params.startTime || (seed % 10000) / 1000;
-    
+
     this.params = {
       color: params.color || new THREE.Color(0xff6b35), // Color naranja anómalo por defecto
       opacity: params.opacity || this.rng.uniform(PROCEDURAL_RANGES.OPACITY.min, PROCEDURAL_RANGES.OPACITY.max),
@@ -91,11 +99,17 @@ export class PulsatingCubeEffect {
       cornerRadius: params.cornerRadius || this.rng.uniform(PROCEDURAL_RANGES.CORNER_RADIUS.min, PROCEDURAL_RANGES.CORNER_RADIUS.max),
       emissiveIntensity: params.emissiveIntensity || this.rng.uniform(PROCEDURAL_RANGES.EMISSIVE_INTENSITY.min, PROCEDURAL_RANGES.EMISSIVE_INTENSITY.max),
       startTime: this.startTime,
-      timeSpeed: params.timeSpeed || this.rng.uniform(PROCEDURAL_RANGES.TIME_SPEED.min, PROCEDURAL_RANGES.TIME_SPEED.max)
+      timeSpeed: params.timeSpeed || this.rng.uniform(PROCEDURAL_RANGES.TIME_SPEED.min, PROCEDURAL_RANGES.TIME_SPEED.max),
+      // Orbital data (opcional, desde Python)
+      orbitalData: params.orbitalData,
+      currentTime: params.currentTime || 0
     };
 
     // Calcular estado inicial correcto basado en tiempo absoluto
     this.initializeStateFromAbsoluteTime();
+    
+    // Calcular factor de visibilidad orbital inicial
+    this.orbitalVisibilityFactor = this.calculateOrbitalVisibility();
 
     // Crear grupo para el cubo
     this.cubeGroup = new THREE.Group();
@@ -202,6 +216,37 @@ export class PulsatingCubeEffect {
     }
   }
 
+  /**
+   * Calcular factor de visibilidad basado en datos orbitales (como PolarHexagon)
+   */
+  private calculateOrbitalVisibility(): number {
+    // Si no hay datos orbitales, usar visibilidad completa (comportamiento por defecto)
+    if (!this.params.orbitalData || !this.params.orbitalData.enabled) {
+      return 1.0;
+    }
+
+    const currentTime = this.params.currentTime || 0;
+    const cycleProgress = (currentTime % this.params.orbitalData.cycle_duration_years) / 
+                         this.params.orbitalData.cycle_duration_years;
+    const visibleFraction = this.params.orbitalData.visible_duration_years / 
+                           this.params.orbitalData.cycle_duration_years;
+    
+    // El efecto es visible solo durante la primera parte del ciclo orbital
+    if (cycleProgress < visibleFraction) {
+      // Transiciones suaves al principio y final del periodo visible
+      const localProgress = cycleProgress / visibleFraction;
+      if (localProgress < 0.1) {
+        return localProgress / 0.1; // Fade in
+      } else if (localProgress > 0.9) {
+        return (1 - localProgress) / 0.1; // Fade out
+      } else {
+        return 1.0; // Completamente visible
+      }
+    } else {
+      return 0.0; // No visible fuera del periodo
+    }
+  }
+
   addToScene(scene: THREE.Scene, planetPosition?: THREE.Vector3): void {
     if (planetPosition) {
       this.cubeGroup.position.copy(planetPosition);
@@ -215,6 +260,17 @@ export class PulsatingCubeEffect {
     const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!;
     const currentTime = rawTime % 1000; // Mantener el tiempo en un ciclo de 1000 segundos
     const timeSinceStart = currentTime - this.stateStartTime;
+
+    // Actualizar factor de visibilidad orbital (recalcular en tiempo real)
+    this.orbitalVisibilityFactor = this.calculateOrbitalVisibility();
+    
+    // Si no estamos en el periodo orbital visible, forzar el estado a hidden
+    if (this.orbitalVisibilityFactor <= 0.001) {
+      this.currentState = 'hidden';
+      this.material.opacity = 0;
+      this.cubeGroup.visible = false;
+      return;
+    }
 
     // Rotación determinista del cubo basada en tiempo absoluto
     this.cube.rotation.x = currentTime * 0.1;
@@ -239,7 +295,7 @@ export class PulsatingCubeEffect {
         const fadeInProgress = Math.min(timeSinceStart / this.params.fadeInDuration!, 1.0);
         // Delay cube appearance slightly after particles start moving
         const delayedProgress = Math.max(0, (fadeInProgress - 0.3) / 0.7);
-        const fadeInOpacity = this.smoothstep(0, 1, delayedProgress) * this.params.opacity!;
+        const fadeInOpacity = this.smoothstep(0, 1, delayedProgress) * this.params.opacity! * this.orbitalVisibilityFactor;
         this.material.opacity = fadeInOpacity;
         
         if (fadeInProgress >= 1.0) {
@@ -250,7 +306,8 @@ export class PulsatingCubeEffect {
 
       case 'visible':
         // Apple liquid glass estable - sin animaciones que distorsionen
-        this.material.opacity = this.params.opacity!;
+        // Aplicar el factor de visibilidad orbital a la opacidad máxima
+        this.material.opacity = this.params.opacity! * this.orbitalVisibilityFactor;
         
         // Solo el efecto de rotación suave del cubo, manteniendo propiedades de vidrio constantes
         // El liquid glass de Apple es elegante y estable, no cambia constantemente
@@ -265,7 +322,7 @@ export class PulsatingCubeEffect {
         const fadeOutProgress = Math.min(timeSinceStart / this.params.fadeOutDuration!, 1.0);
         // Start fading cube before particles return
         const acceleratedProgress = Math.min(1, fadeOutProgress * 1.3);
-        const fadeOutOpacity = (1.0 - this.smoothstep(0, 1, acceleratedProgress)) * this.params.opacity!;
+        const fadeOutOpacity = (1.0 - this.smoothstep(0, 1, acceleratedProgress)) * this.params.opacity! * this.orbitalVisibilityFactor;
         this.material.opacity = fadeOutOpacity;
         
         if (fadeOutProgress >= 1.0) {
@@ -526,9 +583,10 @@ export class PulsatingCubeEffect {
     }
     
     // Update particle material opacity and size based on state
-    this.particleMaterial.opacity = particleOpacity;
+    // Aplicar también el factor de visibilidad orbital a las partículas
+    this.particleMaterial.opacity = particleOpacity * this.orbitalVisibilityFactor;
     // Particles grow as they emerge
-    this.particleMaterial.size = this.planetRadius * 0.012 * (0.5 + particleOpacity);
+    this.particleMaterial.size = this.planetRadius * 0.012 * (0.5 + particleOpacity) * this.orbitalVisibilityFactor;
     
     // Mark positions for update
     this.particleGeometry.attributes.position.needsUpdate = true;
@@ -543,9 +601,17 @@ export class PulsatingCubeEffect {
 }
 
 /**
- * Función de utilidad para crear efecto desde datos de Python
+ * Función de utilidad para crear efecto desde datos de Python (similar a PolarHexagon)
  */
-export function createPulsatingCubeFromPythonData(planetRadius: number, _anomalyData: any, globalSeed?: number, planetColor?: THREE.Color): PulsatingCubeEffect {
+export function createPulsatingCubeFromPythonData(planetRadius: number, _anomalyData: any, globalSeed?: number, planetColor?: THREE.Color, pythonData?: any): PulsatingCubeEffect | null {
+  // Buscar datos de cubo pulsante en pythonData (similar a como PolarHexagon busca surface_elements)
+  const cubeData = pythonData?.surface_elements?.pulsating_cube;
+  
+  // Si no está habilitado, retornar null (como PolarHexagon)
+  if (!cubeData?.enabled) {
+    return null;
+  }
+
   const seed = globalSeed || Math.floor(Math.random() * 1000000);
   const rng = new SeededRandom(seed + 4000); // +4000 para PulsatingCube, MISMO OFFSET que AtmosphereClouds
   
@@ -554,6 +620,9 @@ export function createPulsatingCubeFromPythonData(planetRadius: number, _anomaly
   
   // Tiempo inicial determinista basado en el seed (igual que AtmosphereClouds)
   const startTime = (seed % 10000) / 1000;
+  
+  // Obtener tiempo actual desde pythonData si está disponible
+  const currentTimeYears = pythonData?.timing?.elapsed_time ? pythonData.timing.elapsed_time / (365.25 * 24 * 3600) : 0;
   
   const params: PulsatingCubeParams = {
     color: planetColor || new THREE.Color(0xff6b35), // Usar el color del planeta, fallback a naranja
@@ -570,7 +639,10 @@ export function createPulsatingCubeFromPythonData(planetRadius: number, _anomaly
     cornerRadius: rng.uniform(PROCEDURAL_RANGES.CORNER_RADIUS.min, PROCEDURAL_RANGES.CORNER_RADIUS.max),
     emissiveIntensity: rng.uniform(PROCEDURAL_RANGES.EMISSIVE_INTENSITY.min, PROCEDURAL_RANGES.EMISSIVE_INTENSITY.max),
     startTime: startTime,
-    timeSpeed: timeSpeed
+    timeSpeed: timeSpeed,
+    // Datos orbitales desde Python (como PolarHexagon)
+    orbitalData: cubeData,
+    currentTime: currentTimeYears
   };
 
   return new PulsatingCubeEffect(planetRadius, params);

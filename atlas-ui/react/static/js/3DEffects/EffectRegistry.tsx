@@ -264,7 +264,8 @@ export class EffectRegistry {
       fromPythonData: (data, planetRadius) => {
         // Obtener el color del planeta
         const baseColor = getPlanetBaseColor(data);
-        return createPulsatingCubeFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed, baseColor);
+        // CRÍTICO: Pasar pythonData completo como 5to parámetro
+        return createPulsatingCubeFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed, baseColor, data);
       },
     });
 

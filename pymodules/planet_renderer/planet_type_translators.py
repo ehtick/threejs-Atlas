@@ -825,5 +825,27 @@ class PlanetTypeTranslators:
         return {"type": "exotic"}
     
     def translate_anomaly(self, planet_radius: int, rng: random.Random, 
-                         seed: int, planet_name: str) -> Dict[str, Any]:
-        return {"type": "anomaly"}
+                         seed: int, planet_name: str, orbital_period_years: float = 5.0) -> Dict[str, Any]:
+        """Translate Anomaly planet - mysterious planets with pulsating cube effect"""
+        
+        # Pulsating cube effect for anomaly planets
+        pulsating_cube = None
+        if rng.random() < 0.7:  # 70% chance for anomaly planets to have pulsating cube
+            # Calculate visibility cycle based on orbital period
+            # Cube appears and disappears in cycles
+            cycle_duration_years = rng.uniform(orbital_period_years * 0.3, orbital_period_years * 1.5)
+            visible_duration_years = rng.uniform(cycle_duration_years * 0.2, cycle_duration_years * 0.5)
+            
+            pulsating_cube = {
+                "enabled": True,
+                "cycle_duration_years": cycle_duration_years,
+                "visible_duration_years": visible_duration_years
+            }
+        
+        return {
+            "type": "anomaly",
+            "pulsating_cube": pulsating_cube,
+            "debug": {
+                "has_pulsating_cube": pulsating_cube is not None
+            }
+        }

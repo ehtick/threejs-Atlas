@@ -106,8 +106,8 @@ class PlanetRenderingTranslator:
             # Calculate orbital period in years for hexagon timing
             orbital_period_years = planet.orbital_period_seconds / (365.25 * 24 * 3600) if planet.orbital_period_seconds else 1.0
             
-            # Check if this is a gas giant type that needs orbital period
-            if planet_type in ["Gas Giant", "Frozen Gas Giant", "Nebulous"]:
+            # Check if this is a planet type that needs orbital period
+            if planet_type in ["Gas Giant", "Frozen Gas Giant", "Nebulous", "Anomaly"]:
                 planet_specific_data = self.planet_types[planet_type](
                     planet_radius, rng, config.seed, spaced_planet_name, orbital_period_years
                 )
@@ -167,7 +167,8 @@ class PlanetRenderingTranslator:
                 "initial_orbital_angle": planet.initial_orbital_angle,  # AÑADIDO: posición estática inicial
                 "tilt_factor": tilt_factor,
                 "cosmic_origin_time": cosmic_origin_time,  # Use fixed value same as System API
-                "time_elapsed_seconds": time_elapsed_seconds
+                "time_elapsed_seconds": time_elapsed_seconds,
+                "elapsed_time": time_elapsed_seconds  # Also as elapsed_time for compatibility
             },
             "surface_elements": planet_specific_data,
             "atmosphere": atmosphere_data,
