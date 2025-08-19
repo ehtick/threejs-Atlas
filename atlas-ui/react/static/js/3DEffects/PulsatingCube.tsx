@@ -30,8 +30,8 @@ const PROCEDURAL_RANGES = {
   FADE_IN_DURATION: { min: 1.5, max: 3.0 },
   FADE_OUT_DURATION: { min: 2.0, max: 4.0 },
   VISIBLE_DURATION: { min: 3.0, max: 6.0 },
-  CORNER_RADIUS: { min: 0.1, max: 0.3 },
-  EMISSIVE_INTENSITY: { min: 0.2, max: 0.4 }
+  CORNER_RADIUS: { min: 0.4, max: 0.6 }, // Aumentado para esquinas mucho más redondeadas
+  EMISSIVE_INTENSITY: { min: 0.05, max: 0.1 } // Reducido para que la iluminación direccional sea más visible
 };
 
 /**
@@ -84,12 +84,14 @@ export class PulsatingCubeEffect {
     this.cubeGroup = new THREE.Group();
 
     // Crear el cubo con esquinas redondeadas
-    const cubeSize = planetRadius * this.params.size! * 1.3;
+    // Para que el cubo envuelva completamente una esfera, necesitamos que la diagonal del cubo
+    // sea mayor que el diámetro de la esfera. Factor √2 ≈ 1.414 para cubrir completamente
+    const cubeSize = planetRadius * 2.35; // 2.35x el radio para envolver completamente y ver bien el cubo
     console.log(`🔲 PulsatingCube: Creating cube with size ${cubeSize.toFixed(2)} (planet radius: ${planetRadius})`);
     
     // Usar RoundedBoxGeometry para esquinas redondeadas
-    const cornerRadiusAbsolute = cubeSize * this.params.cornerRadius! * 0.1;
-    this.geometry = new RoundedBoxGeometry(cubeSize, cubeSize, cubeSize, 4, cornerRadiusAbsolute);
+    const cornerRadiusAbsolute = cubeSize * this.params.cornerRadius! * 0.2; // Aumentado de 0.1 a 0.2 para esquinas más redondeadas
+    this.geometry = new RoundedBoxGeometry(cubeSize, cubeSize, cubeSize, 8, cornerRadiusAbsolute); // Aumentado segments de 4 a 8 para redondeo más suave
     
     // Crear material físico como en AnomalyGeometricMorph
     const color = this.params.color instanceof THREE.Color ? this.params.color : new THREE.Color(this.params.color as any);
@@ -98,9 +100,9 @@ export class PulsatingCubeEffect {
       transparent: true,
       opacity: 0, // Inicialmente invisible
       emissive: color,
-      emissiveIntensity: this.params.emissiveIntensity,
-      roughness: 0.3,
-      metalness: 0.7,
+      emissiveIntensity: this.params.emissiveIntensity! * 0.3, // Reducir emisión para que la iluminación sea más visible
+      roughness: 0.5, // Aumentar roughness para mejor interacción con la luz
+      metalness: 0.3, // Reducir metalness para que responda mejor a la luz direccional
       side: THREE.DoubleSide,
       depthWrite: false,
       blending: THREE.NormalBlending
@@ -164,7 +166,7 @@ export class PulsatingCubeEffect {
         
         // Efecto pulsante sutil mientras está visible
         const pulse = 0.8 + 0.2 * Math.sin(currentTime * 2.0);
-        this.material.emissiveIntensity = this.params.emissiveIntensity! * pulse;
+        this.material.emissiveIntensity = this.params.emissiveIntensity! * 0.3 * pulse; // Mantener la reducción de emisión
         
         if (timeSinceStart >= this.params.visibleDuration!) {
           this.currentState = 'fading_out';
