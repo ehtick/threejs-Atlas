@@ -40,6 +40,7 @@ import { PolarHexagonEffect, createPolarHexagonFromPythonData } from "./PolarHex
 import { FragmentationEffect } from "./FragmentationEffect";
 import { OceanWavesEffect, createOceanWavesFromPythonData } from "./OceanWaves";
 import { FluidLayersEffect, createFluidLayersFromPythonData } from "./FluidLayers";
+import { AquiferWaterEffect, createAquiferWaterFromPythonData } from "./AquiferWaterEffect";
 // Efectos de superficie legacy eliminados - usar solo versiones Layer
 
 // Importar efectos de debug
@@ -91,6 +92,7 @@ export enum EffectType {
   LAND_MASSES = "land_masses",
   OCEAN_WAVES = "ocean_waves",
   FLUID_LAYERS = "fluid_layers",
+  AQUIFER_WATER = "aquifer_water",
   LAVA_FLOWS = "lava_flows",
   CRYSTAL_FORMATIONS = "crystal_formations",
   CLOUD_LAYERS = "cloud_layers",
@@ -121,8 +123,8 @@ export enum EffectType {
 
 // Interfaz para creadores de efectos
 export interface EffectCreator {
-  create(params: any, planetRadius: number, mesh?: THREE.Mesh): any;
-  fromPythonData?(pythonData: any, planetRadius: number, mesh?: THREE.Mesh): any;
+  create(params: any, planetRadius: number, layerSystem?: PlanetLayerSystem, mesh?: THREE.Mesh): any;
+  fromPythonData?(pythonData: any, planetRadius: number, layerSystem?: PlanetLayerSystem, mesh?: THREE.Mesh): any;
 }
 
 /**
@@ -204,6 +206,11 @@ export class EffectRegistry {
     this.registerEffect(EffectType.OCEAN_WAVES, {
       create: (params, planetRadius) => new OceanWavesEffect(params),
       fromPythonData: (data, planetRadius) => createOceanWavesFromPythonData(data),
+    });
+
+    this.registerEffect(EffectType.AQUIFER_WATER, {
+      create: (params, planetRadius, layerSystem) => new AquiferWaterEffect(layerSystem!, params),
+      fromPythonData: (data, planetRadius, layerSystem) => createAquiferWaterFromPythonData(layerSystem!, data),
     });
 
     this.registerEffect(EffectType.FLUID_LAYERS, {
@@ -598,6 +605,73 @@ export class EffectRegistry {
                 if (scene) {
                   hexagonEffect.addToScene(scene);
                 }
+              }
+            }
+            break;
+
+          case "aquifer":
+            // Planetas Aquifer - superficie acuática con efectos de olas realistas
+            const aquiferWaterEffect = createAquiferWaterFromPythonData(this.layerSystem!, pythonData);
+            
+            if (aquiferWaterEffect) {
+              const aquiferWaterInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "aquifer_water",
+                effect: aquiferWaterEffect,
+                priority: 2,
+                enabled: true,
+                name: "Aquifer Water Surface"
+              };
+              
+              this.effects.set(aquiferWaterInstance.id, aquiferWaterInstance);
+              effects.push(aquiferWaterInstance);
+              
+              // Como MetallicSurfaceLayer, ya no necesita apply() ni addToScene()
+              // porque se integra automáticamente con PlanetLayerSystem
+              console.log("🌊 AquiferWater effect added for aquifer planet");
+            }
+
+            // Añadir masas de tierra emergentes si están disponibles
+            if (surface.land_masses && surface.land_masses.length > 0) {
+              const landMassesEffect = createLandMassesFromPythonData(
+                planetRadius,
+                surface,
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 7000
+              );
+              if (landMassesEffect) {
+                const landMassesInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "land_masses",
+                  effect: landMassesEffect,
+                  priority: 3,
+                  enabled: true,
+                  name: "Emergent Land Masses"
+                };
+                this.effects.set(landMassesInstance.id, landMassesInstance);
+                effects.push(landMassesInstance);
+                landMassesEffect.addToScene(scene, mesh.position);
+              }
+            }
+
+            // Añadir atmósfera sutil si está disponible
+            if (surface.atmosphere_clouds && surface.atmosphere_clouds.length > 0) {
+              const cloudsEffect = createAtmosphereCloudsFromPythonData(
+                planetRadius,
+                surface,
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 8000
+              );
+              if (cloudsEffect) {
+                const cloudsInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "atmosphere_clouds",
+                  effect: cloudsEffect,
+                  priority: 4,
+                  enabled: true,
+                  name: "Atmospheric Clouds"
+                };
+                this.effects.set(cloudsInstance.id, cloudsInstance);
+                effects.push(cloudsInstance);
+                cloudsEffect.addToScene(scene, mesh.position);
               }
             }
             break;
@@ -1327,15 +1401,20 @@ export class EffectRegistry {
    * Actualiza la luz de todos los efectos (incluyendo PlanetLayerSystem)
    */
   updateLightForAllEffects(light: THREE.DirectionalLight): void {
+    console.log("🔆 updateLightForAllEffects called with light position:", light.position);
+    
     // Actualizar PlanetLayerSystem
     if (this.layerSystem) {
       this.layerSystem.updateFromThreeLight(light);
     }
 
     // Actualizar efectos que tienen updateFromThreeLight
+    console.log("🔆 Checking", this.effects.size, "effects for light updates");
     for (const instance of this.effects.values()) {
+      console.log(`🔆 Effect ${instance.type}, enabled: ${instance.enabled}, hasUpdateFromThreeLight: ${!!instance.effect.updateFromThreeLight}`);
       if (instance.enabled && instance.effect.updateFromThreeLight) {
         try {
+          console.log(`🔆 Updating light for effect: ${instance.type}`);
           instance.effect.updateFromThreeLight(light);
         } catch (error) {
           console.error(`Error updating light for effect ${instance.type}:`, error);
