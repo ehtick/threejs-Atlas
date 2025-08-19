@@ -24,14 +24,14 @@ export interface PulsatingCubeParams {
 
 // Rangos para generación procedural
 const PROCEDURAL_RANGES = {
-  OPACITY: { min: 1.0, max: 1.0 }, // Completamente opaco
+  OPACITY: { min: 0.8, max: 0.95 }, // Mayor opacidad para cristal sólido pero transparente
   SIZE: { min: 1.0, max: 1.0 }, // Tamaño fijo (se multiplica por 1.3 más adelante)
   PULSE_INTERVAL: { min: 3, max: 6 }, // Reducido de 10-20 a 3-6 segundos para mejor visibilidad
   FADE_IN_DURATION: { min: 1.5, max: 3.0 },
   FADE_OUT_DURATION: { min: 2.0, max: 4.0 },
   VISIBLE_DURATION: { min: 3.0, max: 6.0 },
-  CORNER_RADIUS: { min: 0.4, max: 0.6 }, // Aumentado para esquinas mucho más redondeadas
-  EMISSIVE_INTENSITY: { min: 0.05, max: 0.1 } // Reducido para que la iluminación direccional sea más visible
+  CORNER_RADIUS: { min: 0.3, max: 0.5 }, // Esquinas redondeadas como cristal pulido
+  EMISSIVE_INTENSITY: { min: 0.08, max: 0.15 } // Brillo interno cristalino más pronunciado
 };
 
 /**
@@ -83,29 +83,51 @@ export class PulsatingCubeEffect {
     // Crear grupo para el cubo
     this.cubeGroup = new THREE.Group();
 
-    // Crear el cubo con esquinas redondeadas
+    // Crear el cubo cristalino tipo liquid glass de Apple
     // Para que el cubo envuelva completamente una esfera, necesitamos que la diagonal del cubo
     // sea mayor que el diámetro de la esfera. Factor √2 ≈ 1.414 para cubrir completamente
     const cubeSize = planetRadius * 2.35; // 2.35x el radio para envolver completamente y ver bien el cubo
-    console.log(`🔲 PulsatingCube: Creating cube with size ${cubeSize.toFixed(2)} (planet radius: ${planetRadius})`);
     
-    // Usar RoundedBoxGeometry para esquinas redondeadas
-    const cornerRadiusAbsolute = cubeSize * this.params.cornerRadius! * 0.2; // Aumentado de 0.1 a 0.2 para esquinas más redondeadas
-    this.geometry = new RoundedBoxGeometry(cubeSize, cubeSize, cubeSize, 8, cornerRadiusAbsolute); // Aumentado segments de 4 a 8 para redondeo más suave
+    // Usar RoundedBoxGeometry para esquinas redondeadas (más liquid glass)
+    const cornerRadiusAbsolute = cubeSize * this.params.cornerRadius! * 0.2;
+    this.geometry = new RoundedBoxGeometry(cubeSize, cubeSize, cubeSize, 8, cornerRadiusAbsolute);
     
-    // Crear material físico como en AnomalyGeometricMorph
+    // Asegurar normales correctas para iluminación
+    this.geometry.computeVertexNormals();
+    this.geometry.normalizeNormals();
+    
+    // Crear material Apple liquid glass - vidrio perfecto con iluminación correcta
     const color = this.params.color instanceof THREE.Color ? this.params.color : new THREE.Color(this.params.color as any);
     this.material = new THREE.MeshPhysicalMaterial({
-      color: color,
+      color: new THREE.Color(1, 1, 1), // Blanco puro
       transparent: true,
-      opacity: 0, // Inicialmente invisible
-      emissive: color,
-      emissiveIntensity: this.params.emissiveIntensity! * 0.3, // Reducir emisión para que la iluminación sea más visible
-      roughness: 0.5, // Aumentar roughness para mejor interacción con la luz
-      metalness: 0.3, // Reducir metalness para que responda mejor a la luz direccional
+      opacity: 0, // Inicialmente invisible - se controlará dinámicamente
+      
+      // Propiedades Apple liquid glass - vidrio perfecto
+      metalness: 0.0,           // Cero metalness para vidrio puro
+      roughness: 0.0,           // Perfectamente liso
+      ior: 1.52,                // IOR de vidrio estándar (como pantalla iPhone)
+      thickness: 0.5,           // Grosor moderado
+      transmission: 0.98,       // Casi transparencia total
+      
+      // Efectos premium Apple
+      clearcoat: 1.0,           // Superficie premium brillante
+      clearcoatRoughness: 0.0,  // Perfectamente lisa
+      
+      // Sin emissive para máxima transparencia
+      emissive: new THREE.Color(0, 0, 0),
+      emissiveIntensity: 0,
+      
+      // Configuración para correcta iluminación
       side: THREE.DoubleSide,
-      depthWrite: false,
-      blending: THREE.NormalBlending
+      depthWrite: true,         // Cambiado a true para mejor iluminación
+      depthTest: true,          // Asegurar depth testing correcto
+      blending: THREE.NormalBlending,
+      
+      // Asegurar que responde a luces de la escena
+      flatShading: false,       // Usar smooth shading para iluminación suave
+      vertexColors: false,      // No usar colores de vértices
+      fog: true                 // Responder a fog si existe en la escena
     });
     
     this.cube = new THREE.Mesh(this.geometry, this.material);
@@ -162,11 +184,11 @@ export class PulsatingCubeEffect {
         break;
 
       case 'visible':
+        // Apple liquid glass estable - sin animaciones que distorsionen
         this.material.opacity = this.params.opacity!;
         
-        // Efecto pulsante sutil mientras está visible
-        const pulse = 0.8 + 0.2 * Math.sin(currentTime * 2.0);
-        this.material.emissiveIntensity = this.params.emissiveIntensity! * 0.3 * pulse; // Mantener la reducción de emisión
+        // Solo el efecto de rotación suave del cubo, manteniendo propiedades de vidrio constantes
+        // El liquid glass de Apple es elegante y estable, no cambia constantemente
         
         if (timeSinceStart >= this.params.visibleDuration!) {
           this.currentState = 'fading_out';
@@ -202,10 +224,9 @@ export class PulsatingCubeEffect {
     if (newParams.color !== undefined) {
       const color = newParams.color instanceof THREE.Color ? newParams.color : new THREE.Color(newParams.color as any);
       this.material.color = color;
-      this.material.emissive = color;
     }
-    if (newParams.emissiveIntensity !== undefined) {
-      this.material.emissiveIntensity = newParams.emissiveIntensity;
+    if (newParams.opacity !== undefined) {
+      this.material.opacity = newParams.opacity;
     }
   }
 
