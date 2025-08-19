@@ -20,6 +20,8 @@ export interface PulsatingCubeParams {
   visibleDuration?: number; // How long it stays visible (seconds)
   cornerRadius?: number; // Roundness of corners (0-1)
   emissiveIntensity?: number;
+  startTime?: number; // Tiempo inicial fijo para determinismo
+  timeSpeed?: number; // Velocidad del tiempo para sincronización (0.1 - 3.0)
 }
 
 // Rangos para generación procedural
@@ -31,7 +33,8 @@ const PROCEDURAL_RANGES = {
   FADE_OUT_DURATION: { min: 2.0, max: 4.0 },
   VISIBLE_DURATION: { min: 3.0, max: 6.0 },
   CORNER_RADIUS: { min: 0.3, max: 1.5 }, // Esquinas redondeadas como cristal pulido
-  EMISSIVE_INTENSITY: { min: 0.08, max: 0.15 } // Brillo interno cristalino más pronunciado
+  EMISSIVE_INTENSITY: { min: 0.08, max: 0.15 }, // Brillo interno cristalino más pronunciado
+  TIME_SPEED: { min: 0.1, max: 3.0 } // Rango de velocidades del tiempo para sincronización
 };
 
 /**
@@ -70,9 +73,8 @@ export class PulsatingCubeEffect {
     const seed = params.seed || Math.floor(Math.random() * 1000000);
     this.rng = new SeededRandom(seed);
     
-    this.startTime = Date.now() / 1000;
-    this.currentState = 'hidden';
-    this.stateStartTime = this.startTime;
+    // Tiempo inicial determinista basado en el seed (igual que AtmosphereClouds)
+    this.startTime = params.startTime || (seed % 10000) / 1000;
     
     this.params = {
       color: params.color || new THREE.Color(0xff6b35), // Color naranja anómalo por defecto
@@ -87,11 +89,13 @@ export class PulsatingCubeEffect {
       fadeOutDuration: params.fadeOutDuration || this.rng.uniform(PROCEDURAL_RANGES.FADE_OUT_DURATION.min, PROCEDURAL_RANGES.FADE_OUT_DURATION.max),
       visibleDuration: params.visibleDuration || this.rng.uniform(PROCEDURAL_RANGES.VISIBLE_DURATION.min, PROCEDURAL_RANGES.VISIBLE_DURATION.max),
       cornerRadius: params.cornerRadius || this.rng.uniform(PROCEDURAL_RANGES.CORNER_RADIUS.min, PROCEDURAL_RANGES.CORNER_RADIUS.max),
-      emissiveIntensity: params.emissiveIntensity || this.rng.uniform(PROCEDURAL_RANGES.EMISSIVE_INTENSITY.min, PROCEDURAL_RANGES.EMISSIVE_INTENSITY.max)
+      emissiveIntensity: params.emissiveIntensity || this.rng.uniform(PROCEDURAL_RANGES.EMISSIVE_INTENSITY.min, PROCEDURAL_RANGES.EMISSIVE_INTENSITY.max),
+      startTime: this.startTime,
+      timeSpeed: params.timeSpeed || this.rng.uniform(PROCEDURAL_RANGES.TIME_SPEED.min, PROCEDURAL_RANGES.TIME_SPEED.max)
     };
 
-    // Calcular el próximo pulso
-    this.nextPulseTime = this.startTime + this.rng.uniform(this.params.pulseInterval![0], this.params.pulseInterval![1]);
+    // Calcular estado inicial correcto basado en tiempo absoluto
+    this.initializeStateFromAbsoluteTime();
 
     // Crear grupo para el cubo
     this.cubeGroup = new THREE.Group();
@@ -156,7 +160,46 @@ export class PulsatingCubeEffect {
     
     // Inicialmente visible (controlado por opacidad)
     this.cubeGroup.visible = true;
-    console.log(`🔲 PulsatingCube: Initial state: hidden, next pulse in ${(this.nextPulseTime - this.startTime).toFixed(1)}s`);
+  }
+
+  private initializeStateFromAbsoluteTime(): void {
+    // Calcular tiempo actual absoluto
+    const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!;
+    const currentTime = rawTime % 1000;
+    
+    // Calcular la duración total de un ciclo completo
+    const avgPulseInterval = (this.params.pulseInterval![0] + this.params.pulseInterval![1]) / 2;
+    const totalCycleDuration = this.params.fadeInDuration! + this.params.visibleDuration! + this.params.fadeOutDuration! + avgPulseInterval;
+    
+    // Determinar en qué punto del ciclo estamos
+    const cycleTime = currentTime % totalCycleDuration;
+    
+    // Definir los puntos de transición del ciclo
+    const fadeInEnd = this.params.fadeInDuration!;
+    const visibleEnd = fadeInEnd + this.params.visibleDuration!;
+    const fadeOutEnd = visibleEnd + this.params.fadeOutDuration!;
+    
+    if (cycleTime < fadeInEnd) {
+      // Estamos en fade-in
+      this.currentState = 'fading_in';
+      this.stateStartTime = currentTime - cycleTime;
+      this.nextPulseTime = currentTime - cycleTime; // Ya empezó el pulso
+    } else if (cycleTime < visibleEnd) {
+      // Estamos en visible
+      this.currentState = 'visible';
+      this.stateStartTime = currentTime - (cycleTime - fadeInEnd);
+      this.nextPulseTime = currentTime - cycleTime; // Ya empezó el pulso
+    } else if (cycleTime < fadeOutEnd) {
+      // Estamos en fade-out
+      this.currentState = 'fading_out';
+      this.stateStartTime = currentTime - (cycleTime - visibleEnd);
+      this.nextPulseTime = currentTime - cycleTime; // Ya empezó el pulso
+    } else {
+      // Estamos en hidden (esperando próximo pulso)
+      this.currentState = 'hidden';
+      this.stateStartTime = currentTime - (cycleTime - fadeOutEnd);
+      this.nextPulseTime = currentTime + (totalCycleDuration - cycleTime);
+    }
   }
 
   addToScene(scene: THREE.Scene, planetPosition?: THREE.Vector3): void {
@@ -167,30 +210,26 @@ export class PulsatingCubeEffect {
     scene.add(this.cubeGroup);
   }
 
-  update(deltaTime: number): void {
-    const currentTime = Date.now() / 1000;
+  update(_deltaTime: number): void {
+    // Sistema de tiempo determinista sincronizado con AtmosphereClouds
+    const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!;
+    const currentTime = rawTime % 1000; // Mantener el tiempo en un ciclo de 1000 segundos
     const timeSinceStart = currentTime - this.stateStartTime;
 
-    // Rotación sutil del cubo
-    this.cube.rotation.x += deltaTime * 0.1;
-    this.cube.rotation.y += deltaTime * 0.15;
-    this.cube.rotation.z += deltaTime * 0.05;
+    // Rotación determinista del cubo basada en tiempo absoluto
+    this.cube.rotation.x = currentTime * 0.1;
+    this.cube.rotation.y = currentTime * 0.15;
+    this.cube.rotation.z = currentTime * 0.05;
     
     // Update particle system
-    this.updateParticles(deltaTime);
+    this.updateParticles(currentTime);
 
-    // Log de debug para ver el estado
-    const timeUntilNext = this.nextPulseTime - currentTime;
-    if (timeUntilNext > 0 && timeUntilNext < 1) {
-      console.log(`🔲 PulsatingCube: Next pulse in ${timeUntilNext.toFixed(1)}s`);
-    }
 
     // Máquina de estados para la animación
     switch (this.currentState) {
       case 'hidden':
         this.material.opacity = 0;
         if (currentTime >= this.nextPulseTime) {
-          console.log('🔲 PulsatingCube: Starting fade in!');
           this.currentState = 'fading_in';
           this.stateStartTime = currentTime;
         }
@@ -204,7 +243,6 @@ export class PulsatingCubeEffect {
         this.material.opacity = fadeInOpacity;
         
         if (fadeInProgress >= 1.0) {
-          console.log('🔲 PulsatingCube: Now fully visible!');
           this.currentState = 'visible';
           this.stateStartTime = currentTime;
         }
@@ -380,7 +418,8 @@ export class PulsatingCubeEffect {
     this.cubeGroup.add(this.particleSystem);
   }
   
-  private updateParticles(_deltaTime: number): void {
+  private updateParticles(currentTime: number): void {
+    
     const positions = this.particleGeometry.attributes.position.array as Float32Array;
     let particleOpacity = 0;
     let particleProgress = 0;
@@ -392,7 +431,7 @@ export class PulsatingCubeEffect {
         break;
         
       case 'fading_in':
-        const fadeInTime = (Date.now() / 1000) - this.stateStartTime;
+        const fadeInTime = currentTime - this.stateStartTime;
         particleProgress = Math.min(fadeInTime / this.params.fadeInDuration!, 1.0);
         // Gradual fade in as particles emerge and travel
         particleOpacity = this.smoothstep(0, 1, particleProgress);
@@ -404,7 +443,7 @@ export class PulsatingCubeEffect {
         break;
         
       case 'fading_out':
-        const fadeOutTime = (Date.now() / 1000) - this.stateStartTime;
+        const fadeOutTime = currentTime - this.stateStartTime;
         const fadeOutProg = Math.min(fadeOutTime / this.params.fadeOutDuration!, 1.0);
         particleProgress = 1.0 - fadeOutProg;
         // Particles fade as they return to core
@@ -412,7 +451,8 @@ export class PulsatingCubeEffect {
         break;
     }
     
-    const time = Date.now() * 0.001;
+    // Usar tiempo absoluto para movimiento de partículas determinista
+    const time = currentTime;
     
     // Get cube's current rotation matrix
     const cubeMatrix = this.cube.matrixWorld;
@@ -507,7 +547,13 @@ export class PulsatingCubeEffect {
  */
 export function createPulsatingCubeFromPythonData(planetRadius: number, _anomalyData: any, globalSeed?: number, planetColor?: THREE.Color): PulsatingCubeEffect {
   const seed = globalSeed || Math.floor(Math.random() * 1000000);
-  const rng = new SeededRandom(seed + 4000); // +4000 para PulsatingCube
+  const rng = new SeededRandom(seed + 4000); // +4000 para PulsatingCube, MISMO OFFSET que AtmosphereClouds
+  
+  // CRÍTICO: Generar timeSpeed PRIMERO para que coincida con AtmosphereClouds
+  const timeSpeed = rng.uniform(PROCEDURAL_RANGES.TIME_SPEED.min, PROCEDURAL_RANGES.TIME_SPEED.max);
+  
+  // Tiempo inicial determinista basado en el seed (igual que AtmosphereClouds)
+  const startTime = (seed % 10000) / 1000;
   
   const params: PulsatingCubeParams = {
     color: planetColor || new THREE.Color(0xff6b35), // Usar el color del planeta, fallback a naranja
@@ -522,7 +568,9 @@ export function createPulsatingCubeFromPythonData(planetRadius: number, _anomaly
     fadeOutDuration: rng.uniform(PROCEDURAL_RANGES.FADE_OUT_DURATION.min, PROCEDURAL_RANGES.FADE_OUT_DURATION.max),
     visibleDuration: rng.uniform(PROCEDURAL_RANGES.VISIBLE_DURATION.min, PROCEDURAL_RANGES.VISIBLE_DURATION.max),
     cornerRadius: rng.uniform(PROCEDURAL_RANGES.CORNER_RADIUS.min, PROCEDURAL_RANGES.CORNER_RADIUS.max),
-    emissiveIntensity: rng.uniform(PROCEDURAL_RANGES.EMISSIVE_INTENSITY.min, PROCEDURAL_RANGES.EMISSIVE_INTENSITY.max)
+    emissiveIntensity: rng.uniform(PROCEDURAL_RANGES.EMISSIVE_INTENSITY.min, PROCEDURAL_RANGES.EMISSIVE_INTENSITY.max),
+    startTime: startTime,
+    timeSpeed: timeSpeed
   };
 
   return new PulsatingCubeEffect(planetRadius, params);
