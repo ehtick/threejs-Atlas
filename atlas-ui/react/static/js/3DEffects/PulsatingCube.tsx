@@ -99,7 +99,7 @@ export class PulsatingCubeEffect {
     // Crear material de cristal transparente con sutil toque blanco
     const color = this.params.color instanceof THREE.Color ? this.params.color : new THREE.Color(this.params.color as any);
     this.material = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color(0.95, 0.95, 0.95), // Casi transparente con ligero tinte
+      color: new THREE.Color(0.99, 0.99, 0.99), // Casi transparente con ligero tinte
       transparent: true,
       opacity: 0, // Inicialmente invisible - se controlará dinámicamente
       
