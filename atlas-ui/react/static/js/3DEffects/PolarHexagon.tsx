@@ -104,6 +104,9 @@ const fragmentShader = `
     // Make lines more prominent
     finalColor *= 0.6; // Darker for contrast
     
+    // Add subtle white tint (5-7% white)
+    finalColor = mix(finalColor, vec3(1.0), 0.06);
+    
     // Apply edge intensity and 25% opacity (75% transparent)
     float finalOpacity = opacity * visibility * edgeIntensity * 0.25;
     
