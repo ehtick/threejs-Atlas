@@ -215,14 +215,18 @@ export class AnomalyGlitchFieldEffect {
     });
   }
 
-  addToScene(scene: THREE.Scene, planetPosition?: THREE.Vector3): void {
+  addToScene(scene: THREE.Scene, planetPosition?: THREE.Vector3, planetRotation?: THREE.Euler): void {
     if (planetPosition) {
       this.glitchSystem.position.copy(planetPosition);
+    }
+    // Alinear con la rotación del planeta si se proporciona
+    if (planetRotation) {
+      this.glitchSystem.rotation.copy(planetRotation);
     }
     scene.add(this.glitchSystem);
   }
 
-  update(deltaTime: number): void {
+  update(deltaTime: number, planetRotation?: THREE.Euler): void {
     const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!;
     const currentTime = rawTime % 1000;
     
@@ -241,17 +245,18 @@ export class AnomalyGlitchFieldEffect {
       }
     }
     
-    // Fade suave entre visible/invisible
-    const targetOpacity = this.isVisible ? 1.0 : 0.0;
-    const fadeSpeed = 2.0; // Velocidad de fade
+    // Fade mucho más suave y menos notorio cuando está invisible
+    const targetOpacity = this.isVisible ? 1.0 : 0.15; // Nunca desaparece completamente, queda muy tenue
+    const fadeSpeed = 1.0; // Velocidad de fade más lenta
     const currentOpacity = this.material.uniforms.intensity.value / this.params.intensity!;
     const newOpacity = currentOpacity + (targetOpacity - currentOpacity) * deltaTime * fadeSpeed;
     this.material.uniforms.intensity.value = newOpacity * this.params.intensity!;
     
-    // Rotación mucho más lenta y suave
-    this.glitchSystem.rotation.x += deltaTime * 0.05;
-    this.glitchSystem.rotation.y += deltaTime * 0.03;
-    this.glitchSystem.rotation.z += deltaTime * 0.02;
+    // Sincronizar con la rotación del planeta si se proporciona
+    if (planetRotation) {
+      this.glitchSystem.rotation.copy(planetRotation);
+    }
+    // Ya no rotamos independientemente - el campo se queda fijo con el planeta
   }
 
   getObject3D(): THREE.Mesh {

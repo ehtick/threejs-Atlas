@@ -67,18 +67,18 @@ export {
 export type { TundraSnowflakesParams } from './TundraSnowflakes';
 
 // Efectos anómalos
-export { 
-  AnomalyGlitchFieldEffect, 
-  createAnomalyGlitchFieldFromPythonData
-} from './AnomalyGlitchField';
-export type { AnomalyGlitchFieldParams } from './AnomalyGlitchField';
+// AnomalyGlitchFieldEffect, AnomalyGeometricMorphEffect y AnomalyVoidSphereEffect movidos a Unused3DEffects
+// export { 
+//   AnomalyGlitchFieldEffect, 
+//   createAnomalyGlitchFieldFromPythonData
+// } from './AnomalyGlitchField';
+// export type { AnomalyGlitchFieldParams } from './AnomalyGlitchField';
 
-
-export { 
-  AnomalyVoidSphereEffect, 
-  createAnomalyVoidSphereFromPythonData
-} from './AnomalyVoidSphere';
-export type { AnomalyVoidSphereParams } from './AnomalyVoidSphere';
+// export { 
+//   AnomalyVoidSphereEffect, 
+//   createAnomalyVoidSphereFromPythonData
+// } from './AnomalyVoidSphere';
+// export type { AnomalyVoidSphereParams } from './AnomalyVoidSphere';
 
 export { 
   AnomalyPhaseMatterEffect, 
@@ -86,17 +86,17 @@ export {
 } from './AnomalyPhaseMatter';
 export type { AnomalyPhaseMatterParams } from './AnomalyPhaseMatter';
 
-export { 
-  AnomalyGeometricMorphEffect, 
-  createAnomalyGeometricMorphFromPythonData
-} from './AnomalyGeometricMorph';
-export type { AnomalyGeometricMorphParams } from './AnomalyGeometricMorph';
+// export { 
+//   AnomalyGeometricMorphEffect, 
+//   createAnomalyGeometricMorphFromPythonData
+// } from './AnomalyGeometricMorph';
+// export type { AnomalyGeometricMorphParams } from './AnomalyGeometricMorph';
 
-export { 
-  AnomalyGravityWellEffect, 
-  createAnomalyGravityWellFromPythonData
-} from './AnomalyGravityWell';
-export type { AnomalyGravityWellParams } from './AnomalyGravityWell';
+// export { 
+//   AnomalyGravityWellEffect, 
+//   createAnomalyGravityWellFromPythonData
+// } from './AnomalyGravityWell';
+// export type { AnomalyGravityWellParams } from './AnomalyGravityWell';
 
 // OceanWaves eliminado - no respeta los datos de Python
 
@@ -137,12 +137,12 @@ export const AVAILABLE_EFFECTS = [
   'bioluminescence',
   'thermal_emissions',
   'tundra_snowflakes',
-  // Efectos anómalos
-  'anomaly_glitch_field',
-  'anomaly_void_sphere',
+  // Efectos anómalos (algunos desactivados)
+  // 'anomaly_glitch_field', // Movido a Unused3DEffects
+  // 'anomaly_void_sphere', // Movido a Unused3DEffects
   'anomaly_phase_matter',
-  'anomaly_geometric_morph',
-  'anomaly_gravity_well'
+  // 'anomaly_geometric_morph', // Movido a Unused3DEffects
+  // 'anomaly_gravity_well' // Movido a Unused3DEffects
 ] as const;
 
 export type AvailableEffectType = typeof AVAILABLE_EFFECTS[number];

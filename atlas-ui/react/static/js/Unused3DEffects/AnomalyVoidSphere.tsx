@@ -190,6 +190,8 @@ export class AnomalyVoidSphereEffect {
     this.voidSystem = new THREE.Group();
     
     this.generateVoidSpheres(planetRadius);
+    
+    console.log("🕳️ AnomalyVoidSphere created with", this.sphereCount, "spheres");
   }
 
   private generateVoidSpheres(planetRadius: number): void {
@@ -209,7 +211,7 @@ export class AnomalyVoidSphereEffect {
       // Crear mesh de esfera de vacío
       const voidMesh = new THREE.Mesh(geometry, material);
       
-      // Posicionar esfera alrededor del planeta
+      // Posicionar esfera relativa al centro (el grupo será posicionado en addToScene)
       const distance = planetRadius * rng.uniform(1.3, 2.2);
       const position = rng.spherePosition(distance);
       voidMesh.position.copy(position);
@@ -254,8 +256,10 @@ export class AnomalyVoidSphereEffect {
   addToScene(scene: THREE.Scene, planetPosition?: THREE.Vector3): void {
     if (planetPosition) {
       this.voidSystem.position.copy(planetPosition);
+      console.log("🕳️ AnomalyVoidSphere positioned at:", planetPosition);
     }
     scene.add(this.voidSystem);
+    console.log("🕳️ AnomalyVoidSphere added to scene");
   }
 
   update(deltaTime: number): void {

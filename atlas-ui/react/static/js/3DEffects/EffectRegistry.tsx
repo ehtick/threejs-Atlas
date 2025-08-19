@@ -18,11 +18,8 @@ import { IcyFeaturesEffect, createIcyFeaturesFromPythonData } from "./IcyFeature
 import { TundraSnowflakesEffect, createTundraSnowflakesFromPythonData } from "./TundraSnowflakes";
 
 // Efectos anómalos
-import { AnomalyGlitchFieldEffect, createAnomalyGlitchFieldFromPythonData } from "./AnomalyGlitchField";
-import { AnomalyVoidSphereEffect, createAnomalyVoidSphereFromPythonData } from "./AnomalyVoidSphere";
+// AnomalyGlitchFieldEffect, AnomalyGeometricMorphEffect, AnomalyGravityWellEffect y AnomalyVoidSphereEffect movidos a Unused3DEffects
 import { AnomalyPhaseMatterEffect, createAnomalyPhaseMatterFromPythonData } from "./AnomalyPhaseMatter";
-import { AnomalyGeometricMorphEffect, createAnomalyGeometricMorphFromPythonData } from "./AnomalyGeometricMorph";
-import { AnomalyGravityWellEffect, createAnomalyGravityWellFromPythonData } from "./AnomalyGravityWell";
 
 // Sistema de capas mejorado
 import { PlanetLayerSystem } from "../3DComponents/PlanetLayerSystem";
@@ -109,12 +106,12 @@ export enum EffectType {
   // Efectos de clima
   TUNDRA_SNOWFLAKES = "tundra_snowflakes",
 
-  // Efectos anómalos
-  ANOMALY_GLITCH_FIELD = "anomaly_glitch_field",
-  ANOMALY_VOID_SPHERE = "anomaly_void_sphere",
+  // Efectos anómalos (algunos desactivados)
+  // ANOMALY_GLITCH_FIELD = "anomaly_glitch_field", // Movido a Unused3DEffects
+  // ANOMALY_VOID_SPHERE = "anomaly_void_sphere", // Movido a Unused3DEffects
   ANOMALY_PHASE_MATTER = "anomaly_phase_matter",
-  ANOMALY_GEOMETRIC_MORPH = "anomaly_geometric_morph",
-  ANOMALY_GRAVITY_WELL = "anomaly_gravity_well",
+  // ANOMALY_GEOMETRIC_MORPH = "anomaly_geometric_morph", // Movido a Unused3DEffects
+  // ANOMALY_GRAVITY_WELL = "anomaly_gravity_well", // Movido a Unused3DEffects
 
   // Efectos de debug
   VISUAL_DEBUG_3D = "visual_debug_3d",
@@ -242,31 +239,35 @@ export class EffectRegistry {
     });
 
     // Efectos anómalos
-    this.registerEffect(EffectType.ANOMALY_GLITCH_FIELD, {
-      create: (params, planetRadius) => new AnomalyGlitchFieldEffect(planetRadius, params),
-      fromPythonData: (data, planetRadius) => createAnomalyGlitchFieldFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed),
-    });
+    // AnomalyGlitchField desactivado - movido a Unused3DEffects
+    // this.registerEffect(EffectType.ANOMALY_GLITCH_FIELD, {
+    //   create: (params, planetRadius) => new AnomalyGlitchFieldEffect(planetRadius, params),
+    //   fromPythonData: (data, planetRadius) => createAnomalyGlitchFieldFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed),
+    // });
 
 
-    this.registerEffect(EffectType.ANOMALY_VOID_SPHERE, {
-      create: (params, planetRadius) => new AnomalyVoidSphereEffect(planetRadius, params),
-      fromPythonData: (data, planetRadius) => createAnomalyVoidSphereFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed),
-    });
+    // AnomalyVoidSphere desactivado - movido a Unused3DEffects
+    // this.registerEffect(EffectType.ANOMALY_VOID_SPHERE, {
+    //   create: (params, planetRadius) => new AnomalyVoidSphereEffect(planetRadius, params),
+    //   fromPythonData: (data, planetRadius) => createAnomalyVoidSphereFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed),
+    // });
 
     this.registerEffect(EffectType.ANOMALY_PHASE_MATTER, {
       create: (params, planetRadius) => new AnomalyPhaseMatterEffect(planetRadius, params),
       fromPythonData: (data, planetRadius) => createAnomalyPhaseMatterFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed),
     });
 
-    this.registerEffect(EffectType.ANOMALY_GEOMETRIC_MORPH, {
-      create: (params, planetRadius) => new AnomalyGeometricMorphEffect(planetRadius, params),
-      fromPythonData: (data, planetRadius) => createAnomalyGeometricMorphFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed),
-    });
+    // AnomalyGeometricMorph desactivado - movido a Unused3DEffects
+    // this.registerEffect(EffectType.ANOMALY_GEOMETRIC_MORPH, {
+    //   create: (params, planetRadius) => new AnomalyGeometricMorphEffect(planetRadius, params),
+    //   fromPythonData: (data, planetRadius) => createAnomalyGeometricMorphFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed),
+    // });
 
-    this.registerEffect(EffectType.ANOMALY_GRAVITY_WELL, {
-      create: (params, planetRadius) => new AnomalyGravityWellEffect(planetRadius, params),
-      fromPythonData: (data, planetRadius) => createAnomalyGravityWellFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed),
-    });
+    // AnomalyGravityWell desactivado - movido a Unused3DEffects
+    // this.registerEffect(EffectType.ANOMALY_GRAVITY_WELL, {
+    //   create: (params, planetRadius) => new AnomalyGravityWellEffect(planetRadius, params),
+    //   fromPythonData: (data, planetRadius) => createAnomalyGravityWellFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed),
+    // });
 
     // Efectos de debug
     this.registerEffect(EffectType.VISUAL_DEBUG_3D, {
@@ -964,11 +965,11 @@ export class EffectRegistry {
             console.log("🎭 SHOWCASE MODE: Activating ALL anomaly effects for evaluation");
             
             const allAnomalyEffects = [
-              EffectType.ANOMALY_GLITCH_FIELD,
-              EffectType.ANOMALY_VOID_SPHERE,
+              // EffectType.ANOMALY_GLITCH_FIELD, // Desactivado - movido a Unused3DEffects
+              // EffectType.ANOMALY_VOID_SPHERE, // Desactivado - movido a Unused3DEffects
               EffectType.ANOMALY_PHASE_MATTER,
-              EffectType.ANOMALY_GEOMETRIC_MORPH,
-              EffectType.ANOMALY_GRAVITY_WELL
+              // EffectType.ANOMALY_GEOMETRIC_MORPH, // Desactivado - movido a Unused3DEffects
+              // EffectType.ANOMALY_GRAVITY_WELL // Desactivado - movido a Unused3DEffects
             ];
             
             const selectedEffects = allAnomalyEffects;
@@ -1026,11 +1027,11 @@ export class EffectRegistry {
               console.log("🎭 SHOWCASE MODE (alt detection): Activating ALL anomaly effects for evaluation");
               
               const allAnomalyEffects = [
-                EffectType.ANOMALY_GLITCH_FIELD,
-                EffectType.ANOMALY_VOID_SPHERE,
+                // EffectType.ANOMALY_GLITCH_FIELD, // Desactivado - movido a Unused3DEffects
+                // EffectType.ANOMALY_VOID_SPHERE, // Desactivado - movido a Unused3DEffects
                 EffectType.ANOMALY_PHASE_MATTER,
-                EffectType.ANOMALY_GEOMETRIC_MORPH,
-                EffectType.ANOMALY_GRAVITY_WELL
+                // EffectType.ANOMALY_GEOMETRIC_MORPH, // Desactivado - movido a Unused3DEffects
+                // EffectType.ANOMALY_GRAVITY_WELL // Desactivado - movido a Unused3DEffects
               ];
               
               const selectedEffects = allAnomalyEffects;
