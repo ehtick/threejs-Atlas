@@ -1,99 +1,78 @@
 /**
  * 3D Effects Library - Índice principal
- * 
+ *
  * Exporta todos los efectos 3D disponibles para facilitar las importaciones
  * y proporcionar una API unificada para el sistema de efectos modulares.
  */
 
 // Efectos principales
-export { RingSystemEffect, createRingSystemFromPythonData } from './RingSystem';
-export type { RingSystemParams, RingParticle } from './RingSystem';
+export { RingSystemEffect, createRingSystemFromPythonData } from "./RingSystem";
+export type { RingSystemParams, RingParticle } from "./RingSystem";
 
-export { 
-  CloudBandsLayer, 
-  createCloudBandsLayerFromPythonData
-} from './CloudBandsLayer';
-export type { CloudBandsLayerParams } from './CloudBandsLayer';
+export { CloudBandsLayer, createCloudBandsLayerFromPythonData } from "./CloudBandsLayer";
+export type { CloudBandsLayerParams } from "./CloudBandsLayer";
 
-export { 
-  AtmosphereGlowEffect, 
-  createAtmosphereGlowFromPythonData
-} from './AtmosphereGlow';
-export type { AtmosphereGlowParams } from './AtmosphereGlow';
+export { AtmosphereGlowEffect, createAtmosphereGlowFromPythonData } from "./AtmosphereGlow";
+export type { AtmosphereGlowParams } from "./AtmosphereGlow";
 
-export { 
-  AtmosphereCloudsEffect, 
-  createAtmosphereCloudsFromPythonData
-} from './AtmosphereClouds';
-export type { AtmosphereCloudsParams } from './AtmosphereClouds';
+export { AtmosphereCloudsEffect, createAtmosphereCloudsFromPythonData } from "./AtmosphereClouds";
+export type { AtmosphereCloudsParams } from "./AtmosphereClouds";
 
-export { 
-  AtmosphereEffect, 
-  createAtmosphereFromPythonData
-} from './Atmosphere';
-export type { AtmosphereParams } from './Atmosphere';
+export { AtmosphereEffect, createAtmosphereFromPythonData } from "./Atmosphere";
+export type { AtmosphereParams } from "./Atmosphere";
 
-export { 
-  CloudGyrosLayer, 
-  createCloudGyrosLayerFromPythonData
-} from './CloudGyrosLayer';
-export type { CloudGyrosLayerParams } from './CloudGyrosLayer';
+export { CloudGyrosLayer, createCloudGyrosLayerFromPythonData } from "./CloudGyrosLayer";
+export type { CloudGyrosLayerParams } from "./CloudGyrosLayer";
 
-export { 
-  AtmosphericStreaksEffect, 
-  createAtmosphericStreaksFromPythonData
-} from './AtmosphericStreaks';
-export type { AtmosphericStreaksParams } from './AtmosphericStreaks';
+export { AtmosphericStreaksEffect, createAtmosphericStreaksFromPythonData } from "./AtmosphericStreaks";
+export type { AtmosphericStreaksParams } from "./AtmosphericStreaks";
 
-export { MetallicSurfaceLayer, createMetallicSurfaceLayerFromPythonData } from './MetallicSurfaceLayer';
-export type { MetallicSurfaceLayerParams } from './MetallicSurfaceLayer';
+export { MetallicSurfaceLayer, createMetallicSurfaceLayerFromPythonData } from "./MetallicSurfaceLayer";
+export type { MetallicSurfaceLayerParams } from "./MetallicSurfaceLayer";
 
-export { FragmentationEffect } from './FragmentationEffect';
-export type { FragmentationParams } from './FragmentationEffect';
+export { FragmentationEffect } from "./FragmentationEffect";
+export type { FragmentationParams } from "./FragmentationEffect";
 
-export { RockyTerrainLayer, createRockyTerrainLayerFromPythonData } from './RockyTerrainLayer';
-export type { RockyTerrainLayerParams } from './RockyTerrainLayer';
+export { RockyTerrainLayer, createRockyTerrainLayerFromPythonData } from "./RockyTerrainLayer";
+export type { RockyTerrainLayerParams } from "./RockyTerrainLayer";
 
-export { IcyTerrainLayer, createIcyTerrainLayerFromPythonData } from './IcyTerrainLayer';
-export type { IcyTerrainLayerParams } from './IcyTerrainLayer';
+export { IcyTerrainLayer, createIcyTerrainLayerFromPythonData } from "./IcyTerrainLayer";
+export type { IcyTerrainLayerParams } from "./IcyTerrainLayer";
 
-export { LandMassesEffect, createLandMassesFromPythonData } from './LandMasses';
-export type { LandMassesParams } from './LandMasses';
+export { LandMassesEffect, createLandMassesFromPythonData } from "./LandMasses";
+export type { LandMassesParams } from "./LandMasses";
 
-export { 
-  TundraSnowflakesEffect, 
-  createTundraSnowflakesFromPythonData
-} from './TundraSnowflakes';
-export type { TundraSnowflakesParams } from './TundraSnowflakes';
+export { TundraSnowflakesEffect, createTundraSnowflakesFromPythonData } from "./TundraSnowflakes";
+export type { TundraSnowflakesParams } from "./TundraSnowflakes";
 
 // Efectos anómalos
 // AnomalyGlitchFieldEffect, AnomalyGeometricMorphEffect y AnomalyVoidSphereEffect movidos a Unused3DEffects
-// export { 
-//   AnomalyGlitchFieldEffect, 
+// export {
+//   AnomalyGlitchFieldEffect,
 //   createAnomalyGlitchFieldFromPythonData
 // } from './AnomalyGlitchField';
 // export type { AnomalyGlitchFieldParams } from './AnomalyGlitchField';
 
-// export { 
-//   AnomalyVoidSphereEffect, 
+// export {
+//   AnomalyVoidSphereEffect,
 //   createAnomalyVoidSphereFromPythonData
 // } from './AnomalyVoidSphere';
 // export type { AnomalyVoidSphereParams } from './AnomalyVoidSphere';
 
-export { 
-  AnomalyPhaseMatterEffect, 
-  createAnomalyPhaseMatterFromPythonData
-} from './AnomalyPhaseMatter';
-export type { AnomalyPhaseMatterParams } from './AnomalyPhaseMatter';
+export { AnomalyPhaseMatterEffect, createAnomalyPhaseMatterFromPythonData } from "./AnomalyPhaseMatter";
+export type { AnomalyPhaseMatterParams } from "./AnomalyPhaseMatter";
 
-// export { 
-//   AnomalyGeometricMorphEffect, 
+export { PulsatingCubeEffect, createPulsatingCubeFromPythonData } from "./PulsatingCube";
+export type { PulsatingCubeParams } from "./PulsatingCube";
+
+// export {
+//   AnomalyGeometricMorphEffect,
 //   createAnomalyGeometricMorphFromPythonData
 // } from './AnomalyGeometricMorph';
 // export type { AnomalyGeometricMorphParams } from './AnomalyGeometricMorph';
 
-// export { 
-//   AnomalyGravityWellEffect, 
+// export {
+//   AnomalyGravityWellEffect,
 //   createAnomalyGravityWellFromPythonData
 // } from './AnomalyGravityWell';
 // export type { AnomalyGravityWellParams } from './AnomalyGravityWell';
@@ -101,111 +80,104 @@ export type { AnomalyPhaseMatterParams } from './AnomalyPhaseMatter';
 // OceanWaves eliminado - no respeta los datos de Python
 
 // Sistema de registro y gestión
-export { 
-  EffectRegistry, 
-  effectRegistry, 
-  EffectType 
-} from './EffectRegistry';
-export type { 
-  EffectInstance, 
-  EffectCreationData, 
-  EffectCreator 
-} from './EffectRegistry';
+export { EffectRegistry, effectRegistry, EffectType } from "./EffectRegistry";
+export type { EffectInstance, EffectCreationData, EffectCreator } from "./EffectRegistry";
 
 // Utilidades y constantes
 export const AVAILABLE_EFFECTS = [
   // 'metallic_surface', // ELIMINADO: usar MetallicSurfaceLayer
-  'cloud_bands',
-  'cloud_gyros',
-  'atmosphere',
-  'atmosphere_glow',
-  'atmosphere_clouds',
-  'atmospheric_streaks',
-  'ring_system',
-  'fragmentation',
-  'rocky_terrain',
-  'icy_terrain',
+  "cloud_bands",
+  "cloud_gyros",
+  "atmosphere",
+  "atmosphere_glow",
+  "atmosphere_clouds",
+  "atmospheric_streaks",
+  "ring_system",
+  "fragmentation",
+  "rocky_terrain",
+  "icy_terrain",
   // 'ocean_waves', // Eliminado - no respeta datos de Python
-  'lava_flows',
-  'crystal_formations',
-  'cloud_layers',
-  'storm_systems',
-  'volcanic_activity',
-  'aurora',
-  'magnetic_field',
-  'city_lights',
-  'bioluminescence',
-  'thermal_emissions',
-  'tundra_snowflakes',
+  "lava_flows",
+  "crystal_formations",
+  "cloud_layers",
+  "storm_systems",
+  "volcanic_activity",
+  "aurora",
+  "magnetic_field",
+  "city_lights",
+  "bioluminescence",
+  "thermal_emissions",
+  "tundra_snowflakes",
   // Efectos anómalos (algunos desactivados)
   // 'anomaly_glitch_field', // Movido a Unused3DEffects
   // 'anomaly_void_sphere', // Movido a Unused3DEffects
-  'anomaly_phase_matter',
+  "anomaly_phase_matter",
+  "pulsating_cube",
   // 'anomaly_geometric_morph', // Movido a Unused3DEffects
   // 'anomaly_gravity_well' // Movido a Unused3DEffects
 ] as const;
 
-export type AvailableEffectType = typeof AVAILABLE_EFFECTS[number];
+export type AvailableEffectType = (typeof AVAILABLE_EFFECTS)[number];
 
 // Configuración por defecto para efectos comunes
 export const DEFAULT_EFFECT_CONFIGS = {
   // metallic_surface ELIMINADO: usar MetallicSurfaceLayer
-  
+
   atmosphere: {
-    type: 'Thin',
+    type: "Thin",
     width: 12,
     opacity: 0.2,
-    density: 1.0
+    density: 1.0,
   },
-  
+
   ring_system: {
     particleCount: 1000,
-    grayVariation: 'medium' as const,
+    grayVariation: "medium" as const,
     ringThickness: 0.1,
     sparkleIntensity: 0.03,
-    brightness: 2.2
+    brightness: 2.2,
   },
-  
+
   cloud_bands: {
     numBands: 8,
     animationSpeed: 1.0,
-    turbulence: 0.5
+    turbulence: 0.5,
   },
-  
+
   cloud_gyros: {
     stormIntensity: 0.8,
     spiralSpeed: 2.0,
-    animationSpeed: 1.0
+    animationSpeed: 1.0,
   },
-  
+
   atmosphere_glow: {
     particleCount: 500,
     speed: 0.4,
     size: 1.0,
-    opacity: 1.0
+    opacity: 1.0,
   },
-  
+
   fragmentation: {
     fragmentCount: 20,
     size: 0.05,
-    distribution: 'edge' as const,
-    animationSpeed: 1.0
+    distribution: "edge" as const,
+    animationSpeed: 1.0,
   },
-  
+
   rocky_terrain: {
     baseTextureIntensity: 0.4,
     mountainColor: [0.8, 0.8, 0.8],
     cloudColor: [0.7, 0.7, 0.7],
-    craterColor: [0.1, 0.1, 0.1]
+    craterColor: [0.1, 0.1, 0.1],
   },
-  
+
   icy_terrain: {
     baseTextureIntensity: 0.3,
     crystalColor: [0.675, 0.843, 0.902],
     crackColor: [0.2, 0.2, 0.2],
-    iceCapColor: [0.678, 0.847, 1.0]
+    iceCapColor: [0.678, 0.847, 1.0],
   },
-  
+
   // ocean_waves eliminado - no respeta datos de Python
 } as const;
 
@@ -223,83 +195,81 @@ export function isEffectAvailable(effectType: string): boolean {
  */
 export function createPlanetEffectConfig(planetType: string): EffectCreationData[] {
   const effects: EffectCreationData[] = [];
-  
+
   switch (planetType.toLowerCase()) {
-    case 'metallic':
+    case "metallic":
       // ELIMINADO: metallic_surface - ahora se maneja por MetallicSurfaceLayer automáticamente
       effects.push(
         {
-          type: 'atmosphere',
+          type: "atmosphere",
           params: {
             ...DEFAULT_EFFECT_CONFIGS.atmosphere,
-            color: [0.6, 0.1, 0.9, 0.2]
+            color: [0.6, 0.1, 0.9, 0.2],
           },
-          priority: 10
+          priority: 10,
         },
         {
-          type: 'atmospheric_streaks',
+          type: "atmospheric_streaks",
           params: {
             color: [0.95, 0.95, 1.0],
-            particleCount: 100
+            particleCount: 100,
           },
-          priority: 20
+          priority: 20,
         }
       );
       break;
-      
-    case 'gas giant':
+
+    case "gas giant":
       effects.push(
         {
-          type: 'cloud_bands',
+          type: "cloud_bands",
           params: DEFAULT_EFFECT_CONFIGS.cloud_bands,
-          priority: 0
+          priority: 0,
         },
         {
-          type: 'cloud_gyros',
+          type: "cloud_gyros",
           params: DEFAULT_EFFECT_CONFIGS.cloud_gyros,
-          priority: 1
+          priority: 1,
         },
         {
-          type: 'atmosphere',
+          type: "atmosphere",
           params: {
             ...DEFAULT_EFFECT_CONFIGS.atmosphere,
-            color: [1.0, 0.6, 0.2, 0.2]
+            color: [1.0, 0.6, 0.2, 0.2],
           },
-          priority: 10
+          priority: 10,
         },
         {
-          type: 'atmosphere_glow',
+          type: "atmosphere_glow",
           params: DEFAULT_EFFECT_CONFIGS.atmosphere_glow,
-          priority: 20
+          priority: 20,
         }
       );
       break;
-      
-    case 'icy':
-      effects.push(
-        {
-          type: 'atmosphere',
-          params: {
-            ...DEFAULT_EFFECT_CONFIGS.atmosphere,
-            color: [0.5, 0.8, 1.0, 0.15]
-          },
-          priority: 10
-        }
-      );
+
+    case "icy":
+      effects.push({
+        type: "atmosphere",
+        params: {
+          ...DEFAULT_EFFECT_CONFIGS.atmosphere,
+          color: [0.5, 0.8, 1.0, 0.15],
+        },
+        priority: 10,
+      });
       break;
-      
+
     default:
       // Efectos genéricos por defecto
       effects.push({
-        type: 'atmosphere',
+        type: "atmosphere",
         params: {
-          color: [0.5, 0.5, 0.8, 0.15]
+          color: [0.5, 0.5, 0.8, 0.15],
         },
-        priority: 10
+        priority: 10,
       });
       break;
   }
-  
+
   return effects;
 }
 
@@ -308,31 +278,31 @@ export function createPlanetEffectConfig(planetType: string): EffectCreationData
  */
 export function validateEffectConfig(effectType: string, params: any): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
-  
+
   if (!isEffectAvailable(effectType)) {
     errors.push(`Effect type '${effectType}' is not available`);
   }
-  
+
   // Validaciones específicas por tipo de efecto
   switch (effectType) {
     // ELIMINADO: validación de metallic_surface - usar MetallicSurfaceLayer
-      
-    case 'ring_system':
+
+    case "ring_system":
       if (params.particleCount !== undefined && params.particleCount < 1) {
-        errors.push('Particle count must be positive');
+        errors.push("Particle count must be positive");
       }
       break;
-      
-    case 'fragmentation':
+
+    case "fragmentation":
       if (params.fragmentCount !== undefined && params.fragmentCount < 1) {
-        errors.push('Fragment count must be positive');
+        errors.push("Fragment count must be positive");
       }
       break;
   }
-  
+
   return {
     valid: errors.length === 0,
-    errors
+    errors,
   };
 }
 
@@ -343,36 +313,36 @@ export const EffectsLogger = {
   log: (message: string, data?: any) => {
     // Logs disabled for cleaner console
   },
-  
+
   warn: (message: string, data?: any) => {
-    console.warn(`[Effects] ${message}`, data || '');
+    console.warn(`[Effects] ${message}`, data || "");
   },
-  
+
   error: (message: string, error?: any) => {
-    console.error(`[Effects] ${message}`, error || '');
+    console.error(`[Effects] ${message}`, error || "");
   },
-  
+
   debug: (message: string, data?: any) => {
-    if (process.env.NODE_ENV === 'development') {
-      console.debug(`[Effects] ${message}`, data || '');
+    if (process.env.NODE_ENV === "development") {
+      console.debug(`[Effects] ${message}`, data || "");
     }
-  }
+  },
 };
 
 // Re-exportar el registry para acceso directo
 export { effectRegistry as Effects };
 
 // Versión y metadata
-export const EFFECTS_LIBRARY_VERSION = '1.0.0';
-export const EFFECTS_LIBRARY_NAME = 'Atlas Planet Effects Library';
+export const EFFECTS_LIBRARY_VERSION = "1.0.0";
+export const EFFECTS_LIBRARY_NAME = "Atlas Planet Effects Library";
 
 export const EFFECTS_METADATA = {
   version: EFFECTS_LIBRARY_VERSION,
   name: EFFECTS_LIBRARY_NAME,
   totalEffects: AVAILABLE_EFFECTS.length,
   lastUpdated: new Date().toISOString(),
-  author: 'Atlas Universal Planet Renderer',
-  description: 'Modular 3D effects library for procedural planet rendering'
+  author: "Atlas Universal Planet Renderer",
+  description: "Modular 3D effects library for procedural planet rendering",
 };
 
 // Inicialización
