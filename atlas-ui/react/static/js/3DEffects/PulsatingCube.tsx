@@ -24,13 +24,13 @@ export interface PulsatingCubeParams {
 
 // Rangos para generación procedural
 const PROCEDURAL_RANGES = {
-  OPACITY: { min: 0.8, max: 0.95 }, // Mayor opacidad para cristal sólido pero transparente
+  OPACITY: { min: 0.5, max: 0.95 }, // Mayor opacidad para cristal sólido pero transparente
   SIZE: { min: 1.0, max: 1.0 }, // Tamaño fijo (se multiplica por 1.3 más adelante)
   PULSE_INTERVAL: { min: 3, max: 6 }, // Reducido de 10-20 a 3-6 segundos para mejor visibilidad
   FADE_IN_DURATION: { min: 1.5, max: 3.0 },
   FADE_OUT_DURATION: { min: 2.0, max: 4.0 },
   VISIBLE_DURATION: { min: 3.0, max: 6.0 },
-  CORNER_RADIUS: { min: 0.3, max: 0.5 }, // Esquinas redondeadas como cristal pulido
+  CORNER_RADIUS: { min: 0.3, max: 1.5 }, // Esquinas redondeadas como cristal pulido
   EMISSIVE_INTENSITY: { min: 0.08, max: 0.15 } // Brillo interno cristalino más pronunciado
 };
 
