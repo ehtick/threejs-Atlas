@@ -301,11 +301,12 @@ export class AquiferWaterEffect {
       
       // Color final (SIN iluminación propia - eso lo maneja el PlanetLayerSystem)
       vec3 finalColor = baseColor;
-      finalColor = mix(finalColor, reflectionColor, fresnelFactor * reflectivity * 0.5);
-      finalColor += caustics * waterColor * 0.3;
+      finalColor = mix(finalColor, reflectionColor, fresnelFactor * reflectivity * 0.2); // Reducido
+      finalColor += caustics * waterColor * 0.1; // Muy sutil
       
-      // Transparencia y profundidad
-      float alpha = mix(0.7, 1.0, fresnelFactor) * (1.0 - transparency * 0.3);
+      // Transparencia MUCHO mayor para no interferir con la iluminación base
+      float alpha = mix(0.2, 0.4, fresnelFactor) * (1.0 - transparency * 0.5);
+      alpha *= 0.5; // Hacer aún más transparente
       
       gl_FragColor = vec4(finalColor, alpha);
     }
@@ -388,8 +389,10 @@ export class AquiferWaterEffect {
       },
       transparent: true,
       side: THREE.DoubleSide,
-      depthWrite: true,
-      depthTest: true
+      depthWrite: false, // Evitar interferencia con el planeta base
+      depthTest: true,
+      blending: THREE.NormalBlending,
+      opacity: 0.6 // Hacer el material menos opaco
     });
   }
 
@@ -479,21 +482,21 @@ export function createAquiferWaterFromPythonData(layerSystem: PlanetLayerSystem,
     waveHeight,
     waveFrequency,
     waveSpeed,
-    secondaryWaveHeight: waveHeight * 0.8, // Olas secundarias más grandes
-    secondaryWaveFrequency: waveFrequency * 1.2, // Frecuencia más cercana
-    secondaryWaveSpeed: waveSpeed * 1.2, // Velocidad más rápida
+    secondaryWaveHeight: waveHeight * 0.8,
+    secondaryWaveFrequency: waveFrequency * 1.2,
+    secondaryWaveSpeed: waveSpeed * 1.2,
     distortionScale,
-    distortionSpeed: 0.5, // Distorsión más rápida
+    distortionSpeed: 0.5,
     waterColor,
     deepWaterColor,
     foamColor: new THREE.Color(0.9, 0.95, 1.0),
-    specularIntensity: 3.0,
-    reflectivity: 0.7,
-    transparency: 0.2,
+    specularIntensity: 1.0, // Reducido para menos reflejo
+    reflectivity: 0.3, // Mucho menos reflectivo
+    transparency: 0.8, // MUY transparente
     roughness: 0.05,
-    metalness: 0.9,
-    normalScale: 0.08, // Normales más pronunciadas
-    normalSpeed: 0.6 // Animación de normales más rápida
+    metalness: 0.1, // Mucho menos metálico
+    normalScale: 0.02, // Normales muy sutiles
+    normalSpeed: 0.6
   };
   
   return new AquiferWaterEffect(layerSystem, params);
