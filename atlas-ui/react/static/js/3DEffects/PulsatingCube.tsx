@@ -96,41 +96,46 @@ export class PulsatingCubeEffect {
     this.geometry.computeVertexNormals();
     this.geometry.normalizeNormals();
     
-    // Crear material Apple liquid glass - vidrio perfecto con iluminación correcta
+    // Crear material de cristal transparente con sutil toque blanco
     const color = this.params.color instanceof THREE.Color ? this.params.color : new THREE.Color(this.params.color as any);
     this.material = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color(0.001, 0.001, 0.001),
+      color: new THREE.Color(0.95, 0.95, 0.95), // Casi transparente con ligero tinte
       transparent: true,
       opacity: 0, // Inicialmente invisible - se controlará dinámicamente
       
-      // Propiedades Apple liquid glass - vidrio perfecto
-      metalness: 0.0,           // Cero metalness para vidrio puro
-      roughness: 0.0,           // Perfectamente liso
-      ior: 1.52,                // IOR de vidrio estándar (como pantalla iPhone)
-      thickness: 0.5,           // Grosor moderado
-      transmission: 0.98,       // Casi transparencia total
+      // Propiedades de cristal para efecto de refracción
+      metalness: 0.0,           // Sin metalicidad
+      roughness: 0.0,           // Superficie lisa
+      transmission: 0.99,       // Máxima transmisión para efecto cristal
+      ior: 1.33,                // Índice de refracción como cristal/agua
+      thickness: 1.5,           // Grosor para distorsión visible
       
-      // Efectos premium Apple
-      clearcoat: 1.0,           // Superficie premium brillante
-      clearcoatRoughness: 0.0,  // Perfectamente lisa
+      // Efectos de superficie
+      clearcoat: 0.5,           // Capa brillante moderada
+      clearcoatRoughness: 0.0,  // Lisa
       
-      // Sutil brillo blanco para visibilidad en espacio oscuro (5%)
-      emissive: new THREE.Color(1, 1, 1),
-      emissiveIntensity: 0.05,
+      // Muy sutil emisión para visibilidad en oscuridad
+      emissive: new THREE.Color(0.02, 0.02, 0.02),
+      emissiveIntensity: 1.0,
       
-      // Configuración para transparencia correcta sin bloquear estrellas
+      // Configuración crítica para no bloquear otros elementos
       side: THREE.DoubleSide,
-      depthWrite: false,        // NO escribir en depth buffer para permitir ver estrellas
-      depthTest: true,          // Pero sí testear depth para orden correcto
-      blending: THREE.AdditiveBlending, // Blending aditivo para efecto de cristal luminoso
+      depthWrite: false,        // Crítico: no escribir en depth buffer
+      depthTest: true,          
+      blending: THREE.NormalBlending,
       
-      // Asegurar que responde a luces de la escena
-      flatShading: false,       // Usar smooth shading para iluminación suave
-      vertexColors: false,      // No usar colores de vértices
-      fog: true                 // Responder a fog si existe en la escena
+      // Sin alpha test para transiciones suaves
+      alphaTest: 0,
+      
+      // Opciones adicionales
+      flatShading: false,
+      vertexColors: false,
+      fog: false                // No afectado por niebla
     });
     
     this.cube = new THREE.Mesh(this.geometry, this.material);
+    // Renderizar el cubo después de otros elementos transparentes para evitar conflictos
+    this.cube.renderOrder = 999;
     this.cubeGroup.add(this.cube);
     
     // Inicialmente visible (controlado por opacidad)
