@@ -99,7 +99,7 @@ export class PulsatingCubeEffect {
     // Crear material Apple liquid glass - vidrio perfecto con iluminación correcta
     const color = this.params.color instanceof THREE.Color ? this.params.color : new THREE.Color(this.params.color as any);
     this.material = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color(1, 1, 1), // Blanco puro
+      color: new THREE.Color(0.001, 0.001, 0.001),
       transparent: true,
       opacity: 0, // Inicialmente invisible - se controlará dinámicamente
       
@@ -114,15 +114,15 @@ export class PulsatingCubeEffect {
       clearcoat: 1.0,           // Superficie premium brillante
       clearcoatRoughness: 0.0,  // Perfectamente lisa
       
-      // Sin emissive para máxima transparencia
-      emissive: new THREE.Color(0, 0, 0),
-      emissiveIntensity: 0,
+      // Sutil brillo blanco para visibilidad en espacio oscuro (5%)
+      emissive: new THREE.Color(1, 1, 1),
+      emissiveIntensity: 0.05,
       
-      // Configuración para correcta iluminación
+      // Configuración para transparencia correcta sin bloquear estrellas
       side: THREE.DoubleSide,
-      depthWrite: true,         // Cambiado a true para mejor iluminación
-      depthTest: true,          // Asegurar depth testing correcto
-      blending: THREE.NormalBlending,
+      depthWrite: false,        // NO escribir en depth buffer para permitir ver estrellas
+      depthTest: true,          // Pero sí testear depth para orden correcto
+      blending: THREE.AdditiveBlending, // Blending aditivo para efecto de cristal luminoso
       
       // Asegurar que responde a luces de la escena
       flatShading: false,       // Usar smooth shading para iluminación suave
@@ -211,6 +211,10 @@ export class PulsatingCubeEffect {
         }
         break;
     }
+
+    // Solo ocultar completamente cuando la opacidad es prácticamente cero
+    // El AdditiveBlending + depthWrite:false permite que las estrellas se vean a través
+    this.cubeGroup.visible = this.material.opacity > 0.001;
   }
 
   private smoothstep(edge0: number, edge1: number, x: number): number {
