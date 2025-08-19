@@ -49,6 +49,19 @@ export class PulsatingCubeEffect {
   private currentState: 'hidden' | 'fading_in' | 'visible' | 'fading_out';
   private stateStartTime: number;
   private rng: SeededRandom;
+  
+  // Particle system properties
+  private particleSystem: THREE.Points;
+  private particleGeometry: THREE.BufferGeometry;
+  private particleMaterial: THREE.PointsMaterial;
+  private particleCount: number = 800;
+  private particlePositions: Float32Array;
+  private particleVelocities: Float32Array;
+  private particleTargets: Float32Array;
+  private particleOrigins: Float32Array;
+  private particleProgress: Float32Array;
+  private particleSurfacePoints: Float32Array; // Store surface exit points
+  private planetPosition: THREE.Vector3 = new THREE.Vector3();
 
   constructor(planetRadius: number, params: PulsatingCubeParams = {}) {
     this.planetRadius = planetRadius;
@@ -82,6 +95,9 @@ export class PulsatingCubeEffect {
 
     // Crear grupo para el cubo
     this.cubeGroup = new THREE.Group();
+    
+    // Initialize particle system
+    this.initParticleSystem();
 
     // Crear el cubo cristalino tipo liquid glass de Apple
     // Para que el cubo envuelva completamente una esfera, necesitamos que la diagonal del cubo
@@ -146,6 +162,7 @@ export class PulsatingCubeEffect {
   addToScene(scene: THREE.Scene, planetPosition?: THREE.Vector3): void {
     if (planetPosition) {
       this.cubeGroup.position.copy(planetPosition);
+      this.planetPosition.copy(planetPosition);
     }
     scene.add(this.cubeGroup);
   }
@@ -158,6 +175,9 @@ export class PulsatingCubeEffect {
     this.cube.rotation.x += deltaTime * 0.1;
     this.cube.rotation.y += deltaTime * 0.15;
     this.cube.rotation.z += deltaTime * 0.05;
+    
+    // Update particle system
+    this.updateParticles(deltaTime);
 
     // Log de debug para ver el estado
     const timeUntilNext = this.nextPulseTime - currentTime;
@@ -178,7 +198,9 @@ export class PulsatingCubeEffect {
 
       case 'fading_in':
         const fadeInProgress = Math.min(timeSinceStart / this.params.fadeInDuration!, 1.0);
-        const fadeInOpacity = this.smoothstep(0, 1, fadeInProgress) * this.params.opacity!;
+        // Delay cube appearance slightly after particles start moving
+        const delayedProgress = Math.max(0, (fadeInProgress - 0.3) / 0.7);
+        const fadeInOpacity = this.smoothstep(0, 1, delayedProgress) * this.params.opacity!;
         this.material.opacity = fadeInOpacity;
         
         if (fadeInProgress >= 1.0) {
@@ -203,7 +225,9 @@ export class PulsatingCubeEffect {
 
       case 'fading_out':
         const fadeOutProgress = Math.min(timeSinceStart / this.params.fadeOutDuration!, 1.0);
-        const fadeOutOpacity = (1.0 - this.smoothstep(0, 1, fadeOutProgress)) * this.params.opacity!;
+        // Start fading cube before particles return
+        const acceleratedProgress = Math.min(1, fadeOutProgress * 1.3);
+        const fadeOutOpacity = (1.0 - this.smoothstep(0, 1, acceleratedProgress)) * this.params.opacity!;
         this.material.opacity = fadeOutOpacity;
         
         if (fadeOutProgress >= 1.0) {
@@ -243,16 +267,245 @@ export class PulsatingCubeEffect {
     return this.cubeGroup;
   }
 
+  private initParticleSystem(): void {
+    // Initialize arrays for particle data
+    this.particlePositions = new Float32Array(this.particleCount * 3);
+    this.particleVelocities = new Float32Array(this.particleCount * 3);
+    this.particleTargets = new Float32Array(this.particleCount * 3);
+    this.particleOrigins = new Float32Array(this.particleCount * 3);
+    this.particleProgress = new Float32Array(this.particleCount);
+    this.particleSurfacePoints = new Float32Array(this.particleCount * 3);
+    
+    const cubeSize = this.planetRadius * 2.35;
+    const halfSize = cubeSize / 2;
+    
+    // Initialize particles starting from planet core
+    for (let i = 0; i < this.particleCount; i++) {
+      const i3 = i * 3;
+      
+      // All particles start at the planet core (0, 0, 0)
+      this.particleOrigins[i3] = 0;
+      this.particleOrigins[i3 + 1] = 0;
+      this.particleOrigins[i3 + 2] = 0;
+      
+      // Initial position at planet core
+      this.particlePositions[i3] = 0;
+      this.particlePositions[i3 + 1] = 0;
+      this.particlePositions[i3 + 2] = 0;
+      
+      // Define surface exit point for each particle
+      const theta = this.rng.uniform(0, Math.PI * 2);
+      const phi = Math.acos(this.rng.uniform(-1, 1));
+      
+      this.particleSurfacePoints[i3] = this.planetRadius * Math.sin(phi) * Math.cos(theta);
+      this.particleSurfacePoints[i3 + 1] = this.planetRadius * Math.sin(phi) * Math.sin(theta);
+      this.particleSurfacePoints[i3 + 2] = this.planetRadius * Math.cos(phi);
+      
+      // Create target positions on cube edges and vertices for better definition
+      const targetType = this.rng.uniform(0, 1);
+      let tx: number, ty: number, tz: number;
+      
+      if (targetType < 0.7) {
+        // 70% on faces
+        const face = Math.floor(this.rng.uniform(0, 6));
+        const u = this.rng.uniform(-0.9, 0.9);
+        const v = this.rng.uniform(-0.9, 0.9);
+        
+        switch(face) {
+          case 0: tx = halfSize; ty = u * halfSize; tz = v * halfSize; break;
+          case 1: tx = -halfSize; ty = u * halfSize; tz = v * halfSize; break;
+          case 2: tx = u * halfSize; ty = halfSize; tz = v * halfSize; break;
+          case 3: tx = u * halfSize; ty = -halfSize; tz = v * halfSize; break;
+          case 4: tx = u * halfSize; ty = v * halfSize; tz = halfSize; break;
+          case 5: tx = u * halfSize; ty = v * halfSize; tz = -halfSize; break;
+          default: tx = 0; ty = 0; tz = 0;
+        }
+      } else {
+        // 30% on edges for better cube definition
+        const edge = Math.floor(this.rng.uniform(0, 12));
+        const t = this.rng.uniform(-0.95, 0.95);
+        
+        switch(edge) {
+          // X-aligned edges
+          case 0: tx = t * halfSize; ty = halfSize; tz = halfSize; break;
+          case 1: tx = t * halfSize; ty = -halfSize; tz = halfSize; break;
+          case 2: tx = t * halfSize; ty = halfSize; tz = -halfSize; break;
+          case 3: tx = t * halfSize; ty = -halfSize; tz = -halfSize; break;
+          // Y-aligned edges
+          case 4: tx = halfSize; ty = t * halfSize; tz = halfSize; break;
+          case 5: tx = -halfSize; ty = t * halfSize; tz = halfSize; break;
+          case 6: tx = halfSize; ty = t * halfSize; tz = -halfSize; break;
+          case 7: tx = -halfSize; ty = t * halfSize; tz = -halfSize; break;
+          // Z-aligned edges
+          case 8: tx = halfSize; ty = halfSize; tz = t * halfSize; break;
+          case 9: tx = -halfSize; ty = halfSize; tz = t * halfSize; break;
+          case 10: tx = halfSize; ty = -halfSize; tz = t * halfSize; break;
+          case 11: tx = -halfSize; ty = -halfSize; tz = t * halfSize; break;
+          default: tx = 0; ty = 0; tz = 0;
+        }
+      }
+      
+      this.particleTargets[i3] = tx;
+      this.particleTargets[i3 + 1] = ty;
+      this.particleTargets[i3 + 2] = tz;
+      
+      // Random velocities for organic movement
+      this.particleVelocities[i3] = this.rng.uniform(-0.3, 0.3);
+      this.particleVelocities[i3 + 1] = this.rng.uniform(-0.3, 0.3);
+      this.particleVelocities[i3 + 2] = this.rng.uniform(-0.3, 0.3);
+      
+      // Initial progress
+      this.particleProgress[i] = 0;
+    }
+    
+    // Create particle geometry
+    this.particleGeometry = new THREE.BufferGeometry();
+    this.particleGeometry.setAttribute('position', new THREE.BufferAttribute(this.particlePositions, 3));
+    
+    // Create particle material with glow effect
+    this.particleMaterial = new THREE.PointsMaterial({
+      color: new THREE.Color(1, 1, 1), // White particles that will glow
+      size: this.planetRadius * 0.015,
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      sizeAttenuation: true,
+      vertexColors: false
+    });
+    
+    // Create particle system
+    this.particleSystem = new THREE.Points(this.particleGeometry, this.particleMaterial);
+    this.particleSystem.renderOrder = 998; // Render before cube
+    this.cubeGroup.add(this.particleSystem);
+  }
+  
+  private updateParticles(_deltaTime: number): void {
+    const positions = this.particleGeometry.attributes.position.array as Float32Array;
+    let particleOpacity = 0;
+    let particleProgress = 0;
+    
+    switch (this.currentState) {
+      case 'hidden':
+        particleOpacity = 0;
+        particleProgress = -0.1; // Particles stay in core
+        break;
+        
+      case 'fading_in':
+        const fadeInTime = (Date.now() / 1000) - this.stateStartTime;
+        particleProgress = Math.min(fadeInTime / this.params.fadeInDuration!, 1.0);
+        // Gradual fade in as particles emerge and travel
+        particleOpacity = this.smoothstep(0, 1, particleProgress);
+        break;
+        
+      case 'visible':
+        particleOpacity = 1.0; // Keep particles fully visible when cube is formed
+        particleProgress = 1;
+        break;
+        
+      case 'fading_out':
+        const fadeOutTime = (Date.now() / 1000) - this.stateStartTime;
+        const fadeOutProg = Math.min(fadeOutTime / this.params.fadeOutDuration!, 1.0);
+        particleProgress = 1.0 - fadeOutProg;
+        // Particles fade as they return to core
+        particleOpacity = this.smoothstep(0, 1, particleProgress);
+        break;
+    }
+    
+    const time = Date.now() * 0.001;
+    
+    // Get cube's current rotation matrix
+    const cubeMatrix = this.cube.matrixWorld;
+    const rotationMatrix = new THREE.Matrix4().extractRotation(cubeMatrix);
+    
+    // Update particle positions
+    for (let i = 0; i < this.particleCount; i++) {
+      const i3 = i * 3;
+      
+      // Different timing for different particles creates stream effect
+      const particleDelay = (i / this.particleCount) * 0.4;
+      const delayedProgress = Math.max(-0.1, Math.min(1, particleProgress * 1.3 - particleDelay));
+      
+      // Clamp to ensure particles stay at core when progress is negative
+      const clampedProgress = Math.max(0, delayedProgress);
+      
+      // Three-stage movement: core -> surface -> cube
+      let finalX: number, finalY: number, finalZ: number;
+      
+      if (clampedProgress < 0.3) {
+        // Stage 1: Core to planet surface (0 to 0.3)
+        const surfaceProgress = clampedProgress / 0.3;
+        const easedSurfaceProgress = this.smoothstep(0, 1, surfaceProgress);
+        
+        // Use pre-calculated surface point for this particle
+        const surfaceX = this.particleSurfacePoints[i3];
+        const surfaceY = this.particleSurfacePoints[i3 + 1];
+        const surfaceZ = this.particleSurfacePoints[i3 + 2];
+        
+        finalX = surfaceX * easedSurfaceProgress;
+        finalY = surfaceY * easedSurfaceProgress;
+        finalZ = surfaceZ * easedSurfaceProgress;
+        
+      } else {
+        // Stage 2: Surface to cube (0.3 to 1.0)
+        const cubeProgress = (clampedProgress - 0.3) / 0.7;
+        const easedCubeProgress = this.smoothstep(0, 1, cubeProgress);
+        
+        // Apply rotation to target position
+        const targetVector = new THREE.Vector3(
+          this.particleTargets[i3],
+          this.particleTargets[i3 + 1],
+          this.particleTargets[i3 + 2]
+        );
+        targetVector.applyMatrix4(rotationMatrix);
+        
+        // Interpolate from surface to cube
+        const surfaceX = this.particleSurfacePoints[i3];
+        const surfaceY = this.particleSurfacePoints[i3 + 1];
+        const surfaceZ = this.particleSurfacePoints[i3 + 2];
+        
+        finalX = surfaceX + (targetVector.x - surfaceX) * easedCubeProgress;
+        finalY = surfaceY + (targetVector.y - surfaceY) * easedCubeProgress;
+        finalZ = surfaceZ + (targetVector.z - surfaceZ) * easedCubeProgress;
+        
+        // Add energy burst effect when leaving surface
+        if (cubeProgress < 0.5) {
+          const burst = Math.sin(cubeProgress * Math.PI * 2) * this.planetRadius * 0.1;
+          finalX *= (1 + burst * 0.1);
+          finalY *= (1 + burst * 0.1);
+          finalZ *= (1 + burst * 0.1);
+        }
+      }
+      
+      // Add subtle wave motion
+      const waveOffset = Math.sin(time * 2 + i * 0.1) * 0.01 * this.planetRadius;
+      
+      positions[i3] = finalX + this.particleVelocities[i3] * waveOffset;
+      positions[i3 + 1] = finalY + this.particleVelocities[i3 + 1] * waveOffset;
+      positions[i3 + 2] = finalZ + this.particleVelocities[i3 + 2] * waveOffset;
+    }
+    
+    // Update particle material opacity and size based on state
+    this.particleMaterial.opacity = particleOpacity;
+    // Particles grow as they emerge
+    this.particleMaterial.size = this.planetRadius * 0.012 * (0.5 + particleOpacity);
+    
+    // Mark positions for update
+    this.particleGeometry.attributes.position.needsUpdate = true;
+  }
+  
   dispose(): void {
     this.geometry.dispose();
     this.material.dispose();
+    this.particleGeometry.dispose();
+    this.particleMaterial.dispose();
   }
 }
 
 /**
  * Función de utilidad para crear efecto desde datos de Python
  */
-export function createPulsatingCubeFromPythonData(planetRadius: number, anomalyData: any, globalSeed?: number, planetColor?: THREE.Color): PulsatingCubeEffect {
+export function createPulsatingCubeFromPythonData(planetRadius: number, _anomalyData: any, globalSeed?: number, planetColor?: THREE.Color): PulsatingCubeEffect {
   const seed = globalSeed || Math.floor(Math.random() * 1000000);
   const rng = new SeededRandom(seed + 4000); // +4000 para PulsatingCube
   
