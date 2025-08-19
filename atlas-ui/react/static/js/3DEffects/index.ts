@@ -66,6 +66,38 @@ export {
 } from './TundraSnowflakes';
 export type { TundraSnowflakesParams } from './TundraSnowflakes';
 
+// Efectos anómalos
+export { 
+  AnomalyGlitchFieldEffect, 
+  createAnomalyGlitchFieldFromPythonData
+} from './AnomalyGlitchField';
+export type { AnomalyGlitchFieldParams } from './AnomalyGlitchField';
+
+
+export { 
+  AnomalyVoidSphereEffect, 
+  createAnomalyVoidSphereFromPythonData
+} from './AnomalyVoidSphere';
+export type { AnomalyVoidSphereParams } from './AnomalyVoidSphere';
+
+export { 
+  AnomalyPhaseMatterEffect, 
+  createAnomalyPhaseMatterFromPythonData
+} from './AnomalyPhaseMatter';
+export type { AnomalyPhaseMatterParams } from './AnomalyPhaseMatter';
+
+export { 
+  AnomalyGeometricMorphEffect, 
+  createAnomalyGeometricMorphFromPythonData
+} from './AnomalyGeometricMorph';
+export type { AnomalyGeometricMorphParams } from './AnomalyGeometricMorph';
+
+export { 
+  AnomalyGravityWellEffect, 
+  createAnomalyGravityWellFromPythonData
+} from './AnomalyGravityWell';
+export type { AnomalyGravityWellParams } from './AnomalyGravityWell';
+
 // OceanWaves eliminado - no respeta los datos de Python
 
 // Sistema de registro y gestión
@@ -104,7 +136,13 @@ export const AVAILABLE_EFFECTS = [
   'city_lights',
   'bioluminescence',
   'thermal_emissions',
-  'tundra_snowflakes'
+  'tundra_snowflakes',
+  // Efectos anómalos
+  'anomaly_glitch_field',
+  'anomaly_void_sphere',
+  'anomaly_phase_matter',
+  'anomaly_geometric_morph',
+  'anomaly_gravity_well'
 ] as const;
 
 export type AvailableEffectType = typeof AVAILABLE_EFFECTS[number];

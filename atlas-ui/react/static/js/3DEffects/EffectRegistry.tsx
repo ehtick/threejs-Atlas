@@ -17,6 +17,13 @@ import { LandMassesEffect, createLandMassesFromPythonData, createTransparentLand
 import { IcyFeaturesEffect, createIcyFeaturesFromPythonData } from "./IcyFeatures";
 import { TundraSnowflakesEffect, createTundraSnowflakesFromPythonData } from "./TundraSnowflakes";
 
+// Efectos anómalos
+import { AnomalyGlitchFieldEffect, createAnomalyGlitchFieldFromPythonData } from "./AnomalyGlitchField";
+import { AnomalyVoidSphereEffect, createAnomalyVoidSphereFromPythonData } from "./AnomalyVoidSphere";
+import { AnomalyPhaseMatterEffect, createAnomalyPhaseMatterFromPythonData } from "./AnomalyPhaseMatter";
+import { AnomalyGeometricMorphEffect, createAnomalyGeometricMorphFromPythonData } from "./AnomalyGeometricMorph";
+import { AnomalyGravityWellEffect, createAnomalyGravityWellFromPythonData } from "./AnomalyGravityWell";
+
 // Sistema de capas mejorado
 import { PlanetLayerSystem } from "../3DComponents/PlanetLayerSystem";
 import { CloudBandsLayer, createCloudBandsLayerFromPythonData } from "./CloudBandsLayer";
@@ -101,6 +108,13 @@ export enum EffectType {
   
   // Efectos de clima
   TUNDRA_SNOWFLAKES = "tundra_snowflakes",
+
+  // Efectos anómalos
+  ANOMALY_GLITCH_FIELD = "anomaly_glitch_field",
+  ANOMALY_VOID_SPHERE = "anomaly_void_sphere",
+  ANOMALY_PHASE_MATTER = "anomaly_phase_matter",
+  ANOMALY_GEOMETRIC_MORPH = "anomaly_geometric_morph",
+  ANOMALY_GRAVITY_WELL = "anomaly_gravity_well",
 
   // Efectos de debug
   VISUAL_DEBUG_3D = "visual_debug_3d",
@@ -225,6 +239,33 @@ export class EffectRegistry {
     this.registerEffect(EffectType.TUNDRA_SNOWFLAKES, {
       create: (params, planetRadius) => new TundraSnowflakesEffect(planetRadius, params),
       fromPythonData: (data, planetRadius) => createTundraSnowflakesFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed),
+    });
+
+    // Efectos anómalos
+    this.registerEffect(EffectType.ANOMALY_GLITCH_FIELD, {
+      create: (params, planetRadius) => new AnomalyGlitchFieldEffect(planetRadius, params),
+      fromPythonData: (data, planetRadius) => createAnomalyGlitchFieldFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed),
+    });
+
+
+    this.registerEffect(EffectType.ANOMALY_VOID_SPHERE, {
+      create: (params, planetRadius) => new AnomalyVoidSphereEffect(planetRadius, params),
+      fromPythonData: (data, planetRadius) => createAnomalyVoidSphereFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed),
+    });
+
+    this.registerEffect(EffectType.ANOMALY_PHASE_MATTER, {
+      create: (params, planetRadius) => new AnomalyPhaseMatterEffect(planetRadius, params),
+      fromPythonData: (data, planetRadius) => createAnomalyPhaseMatterFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed),
+    });
+
+    this.registerEffect(EffectType.ANOMALY_GEOMETRIC_MORPH, {
+      create: (params, planetRadius) => new AnomalyGeometricMorphEffect(planetRadius, params),
+      fromPythonData: (data, planetRadius) => createAnomalyGeometricMorphFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed),
+    });
+
+    this.registerEffect(EffectType.ANOMALY_GRAVITY_WELL, {
+      create: (params, planetRadius) => new AnomalyGravityWellEffect(planetRadius, params),
+      fromPythonData: (data, planetRadius) => createAnomalyGravityWellFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed),
     });
 
     // Efectos de debug
@@ -406,7 +447,10 @@ export class EffectRegistry {
 
         // Efectos específicos por tipo de planeta (LEGACY - se eliminará)
 
-        switch (surface.type) {
+        console.log(`🔍 Planet surface type: "${surface.type}"`);
+        console.log(`🔍 Planet info type: "${pythonData.planet_info?.type}"`);
+        
+        switch (surface.type.toLowerCase()) {
           case "gas_giant":
             // El sistema de capas ya fue creado arriba, solo añadir las capas específicas
             if (this.layerSystem) {
@@ -911,11 +955,133 @@ export class EffectRegistry {
             }
             break;
 
+          case "anomaly":
+            // Planetas anómalos: múltiples efectos extraños y perturbadores
+            console.log("🌌 DETECTED ANOMALY PLANET - Creating effects");
+            console.log("🌌 Planet data:", { surfaceType: surface.type, planetType: pythonData.planet_info?.type });
+            
+            // 🚀 MODO SHOWCASE: ACTIVAR TODOS LOS EFECTOS PARA EVALUACIÓN
+            console.log("🎭 SHOWCASE MODE: Activating ALL anomaly effects for evaluation");
+            
+            const allAnomalyEffects = [
+              EffectType.ANOMALY_GLITCH_FIELD,
+              EffectType.ANOMALY_VOID_SPHERE,
+              EffectType.ANOMALY_PHASE_MATTER,
+              EffectType.ANOMALY_GEOMETRIC_MORPH,
+              EffectType.ANOMALY_GRAVITY_WELL
+            ];
+            
+            const selectedEffects = allAnomalyEffects;
+            const anomalySeed = pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000);
+            const numEffects = selectedEffects.length;
+            
+            // Crear los efectos seleccionados
+            for (let i = 0; i < numEffects; i++) {
+              const effectType = selectedEffects[i];
+              const effectSeed = anomalySeed + i * 10000;
+              
+              const anomalyEffect = this.createEffectFromPythonData(
+                effectType,
+                { ...pythonData, seeds: { ...pythonData.seeds, planet_seed: effectSeed } },
+                planetRadius,
+                mesh,
+                10 + i // Prioridad alta para efectos anómalos
+              );
+              
+              if (anomalyEffect) {
+                anomalyEffect.name = effectType.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+                effects.push(anomalyEffect);
+                
+                if (anomalyEffect.effect.addToScene) {
+                  anomalyEffect.effect.addToScene(scene, mesh.position);
+                }
+                
+                console.log(`🎭 Added anomaly effect: ${anomalyEffect.name}`);
+              }
+            }
+            
+            // Añadir atmósfera anómala si está disponible
+            if (pythonData.atmosphere && pythonData.atmosphere.type !== "None") {
+              const atmosphereEffect = this.createEffectFromPythonData(
+                EffectType.ATMOSPHERE, 
+                pythonData.atmosphere, 
+                planetRadius, 
+                mesh, 
+                5
+              );
+              if (atmosphereEffect) {
+                effects.push(atmosphereEffect);
+                atmosphereEffect.effect.addToScene(scene, mesh.position);
+                console.log("🌫️ Anomalous atmosphere added");
+              }
+            }
+            break;
+
           default:
-            // Para tipos sin efectos específicos, aplicar al menos el color base
-            if (mesh.material instanceof THREE.MeshStandardMaterial) {
-              const baseColor = getPlanetBaseColor(pythonData);
-              mesh.material.color.copy(baseColor);
+            // Verificar si es un planeta anómalo por planet_info.type
+            if (pythonData.planet_info?.type?.toLowerCase() === "anomaly") {
+              console.log("🌌 DETECTED ANOMALY PLANET via planet_info.type - Creating effects");
+              
+              // 🚀 MODO SHOWCASE: ACTIVAR TODOS LOS EFECTOS PARA EVALUACIÓN
+              console.log("🎭 SHOWCASE MODE (alt detection): Activating ALL anomaly effects for evaluation");
+              
+              const allAnomalyEffects = [
+                EffectType.ANOMALY_GLITCH_FIELD,
+                EffectType.ANOMALY_VOID_SPHERE,
+                EffectType.ANOMALY_PHASE_MATTER,
+                EffectType.ANOMALY_GEOMETRIC_MORPH,
+                EffectType.ANOMALY_GRAVITY_WELL
+              ];
+              
+              const selectedEffects = allAnomalyEffects;
+              const anomalySeed = pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000);
+              const numEffects = selectedEffects.length;
+              
+              for (let i = 0; i < numEffects; i++) {
+                const effectType = selectedEffects[i];
+                const effectSeed = anomalySeed + i * 10000;
+                
+                const anomalyEffect = this.createEffectFromPythonData(
+                  effectType,
+                  { ...pythonData, seeds: { ...pythonData.seeds, planet_seed: effectSeed } },
+                  planetRadius,
+                  mesh,
+                  10 + i
+                );
+                
+                if (anomalyEffect) {
+                  anomalyEffect.name = effectType.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+                  effects.push(anomalyEffect);
+                  
+                  if (anomalyEffect.effect.addToScene) {
+                    anomalyEffect.effect.addToScene(scene, mesh.position);
+                  }
+                  
+                  console.log(`🎭 Added anomaly effect: ${anomalyEffect.name}`);
+                }
+              }
+              
+              // Añadir atmósfera anómala si está disponible
+              if (pythonData.atmosphere && pythonData.atmosphere.type !== "None") {
+                const atmosphereEffect = this.createEffectFromPythonData(
+                  EffectType.ATMOSPHERE, 
+                  pythonData.atmosphere, 
+                  planetRadius, 
+                  mesh, 
+                  5
+                );
+                if (atmosphereEffect) {
+                  effects.push(atmosphereEffect);
+                  atmosphereEffect.effect.addToScene(scene, mesh.position);
+                  console.log("🌫️ Anomalous atmosphere added");
+                }
+              }
+            } else {
+              // Para tipos sin efectos específicos, aplicar al menos el color base
+              if (mesh.material instanceof THREE.MeshStandardMaterial) {
+                const baseColor = getPlanetBaseColor(pythonData);
+                mesh.material.color.copy(baseColor);
+              }
             }
             break;
         }
@@ -927,8 +1093,11 @@ export class EffectRegistry {
         }
       }
 
-      // 2. Efectos atmosféricos
-      if (pythonData.atmosphere) {
+      // 2. Efectos atmosféricos (solo para planetas no-anómalos)
+      const planetType = pythonData.planet_info?.type?.toLowerCase() || pythonData.surface_elements?.type?.toLowerCase();
+      const isAnomalyPlanet = planetType === "anomaly" || pythonData.surface_elements?.type === "anomaly";
+      
+      if (pythonData.atmosphere && !isAnomalyPlanet) {
         // Atmosphere Glow - aplicar para planetas con atmósfera dinámica
         if (pythonData.atmosphere.streaks || ["Gas Giant", "Frozen Gas Giant"].includes(pythonData.planet_info?.type)) {
           // Pasar seed directamente al crear atmosphere glow
@@ -958,7 +1127,6 @@ export class EffectRegistry {
         // Atmosphere Brights (resplandor atmosférico)
         // Para planetas oceánicos, reducir la opacidad atmosférica para no ocultar el océano
         if (pythonData.atmosphere.type && pythonData.atmosphere.type !== "None") {
-          const planetType = pythonData.planet_info?.type?.toLowerCase() || pythonData.surface_elements?.type?.toLowerCase();
 
           // Ajustar parámetros atmosféricos según el tipo de planeta
           const atmosphereData = { ...pythonData.atmosphere };
