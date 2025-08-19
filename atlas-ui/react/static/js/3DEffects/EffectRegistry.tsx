@@ -1364,6 +1364,7 @@ export class EffectRegistry {
           metallic_surface_layer: "metallicSurface",
           rocky_terrain_layer: "rockyTerrain",
           icy_terrain_layer: "icyTerrain",
+          aquifer_water: "aquiferWater",
         };
 
         const layerName = layerNameMap[effectInstance.type];

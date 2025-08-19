@@ -422,6 +422,10 @@ export class AquiferWaterEffect {
     });
   }
 
+  getObject3D(): THREE.Mesh | undefined {
+    return this.layerMesh;
+  }
+
   dispose(): void {
     // La limpieza se maneja en PlanetLayerSystem
   }
