@@ -21,6 +21,7 @@ import { TundraSnowflakesEffect, createTundraSnowflakesFromPythonData } from "./
 // AnomalyGlitchFieldEffect, AnomalyGeometricMorphEffect, AnomalyGravityWellEffect y AnomalyVoidSphereEffect movidos a Unused3DEffects
 import { AnomalyPhaseMatterEffect, createAnomalyPhaseMatterFromPythonData } from "./AnomalyPhaseMatter";
 import { PulsatingCubeEffect, createPulsatingCubeFromPythonData } from "./PulsatingCube";
+import { PlanetRaysEffect, createPlanetRaysFromPythonData } from "./PlanetRays";
 
 // Sistema de capas mejorado
 import { PlanetLayerSystem } from "../3DComponents/PlanetLayerSystem";
@@ -116,6 +117,7 @@ export enum EffectType {
   // ANOMALY_VOID_SPHERE = "anomaly_void_sphere", // Movido a Unused3DEffects
   ANOMALY_PHASE_MATTER = "anomaly_phase_matter",
   PULSATING_CUBE = "pulsating_cube",
+  PLANET_RAYS = "planet_rays",
   // ANOMALY_GEOMETRIC_MORPH = "anomaly_geometric_morph", // Movido a Unused3DEffects
   // ANOMALY_GRAVITY_WELL = "anomaly_gravity_well", // Movido a Unused3DEffects
 
@@ -276,6 +278,11 @@ export class EffectRegistry {
         // CRÍTICO: Pasar pythonData completo como 5to parámetro
         return createPulsatingCubeFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed, baseColor, data);
       },
+    });
+
+    this.registerEffect(EffectType.PLANET_RAYS, {
+      create: (params, planetRadius) => new PlanetRaysEffect(planetRadius, params),
+      fromPythonData: (data, planetRadius) => createPlanetRaysFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed),
     });
 
     // AnomalyGeometricMorph desactivado - movido a Unused3DEffects
@@ -1099,6 +1106,7 @@ export class EffectRegistry {
               // EffectType.ANOMALY_VOID_SPHERE, // Desactivado - movido a Unused3DEffects
               EffectType.ANOMALY_PHASE_MATTER,
               EffectType.PULSATING_CUBE,
+              EffectType.PLANET_RAYS,
               // EffectType.ANOMALY_GEOMETRIC_MORPH, // Desactivado - movido a Unused3DEffects
               // EffectType.ANOMALY_GRAVITY_WELL // Desactivado - movido a Unused3DEffects
             ];
@@ -1162,6 +1170,7 @@ export class EffectRegistry {
                 // EffectType.ANOMALY_VOID_SPHERE, // Desactivado - movido a Unused3DEffects
                 EffectType.ANOMALY_PHASE_MATTER,
                 EffectType.PULSATING_CUBE,
+                EffectType.PLANET_RAYS,
                 // EffectType.ANOMALY_GEOMETRIC_MORPH, // Desactivado - movido a Unused3DEffects
                 // EffectType.ANOMALY_GRAVITY_WELL // Desactivado - movido a Unused3DEffects
               ];

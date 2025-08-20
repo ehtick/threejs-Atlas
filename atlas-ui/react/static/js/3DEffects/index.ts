@@ -65,6 +65,9 @@ export type { AnomalyPhaseMatterParams } from "./AnomalyPhaseMatter";
 export { PulsatingCubeEffect, createPulsatingCubeFromPythonData } from "./PulsatingCube";
 export type { PulsatingCubeParams } from "./PulsatingCube";
 
+export { PlanetRaysEffect, createPlanetRaysFromPythonData } from "./PlanetRays";
+export type { PlanetRaysParams } from "./PlanetRays";
+
 // export {
 //   AnomalyGeometricMorphEffect,
 //   createAnomalyGeometricMorphFromPythonData
@@ -113,6 +116,7 @@ export const AVAILABLE_EFFECTS = [
   // 'anomaly_void_sphere', // Movido a Unused3DEffects
   "anomaly_phase_matter",
   "pulsating_cube",
+  "planet_rays",
   // 'anomaly_geometric_morph', // Movido a Unused3DEffects
   // 'anomaly_gravity_well' // Movido a Unused3DEffects
 ] as const;
