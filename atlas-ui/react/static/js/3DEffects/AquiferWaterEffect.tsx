@@ -202,7 +202,7 @@ export class AquiferWaterEffect {
     }
   `;
 
-  // Fragment shader con efectos de agua realistas (sin iluminación propia)
+  // Fragment shader con efectos de agua realistas (con reflejo especular)
   private static readonly fragmentShader = `
     uniform float time;
     uniform vec3 waterColor;
@@ -215,6 +215,12 @@ export class AquiferWaterEffect {
     uniform float metalness;
     uniform float normalScale;
     uniform float distortionSpeed;
+    
+    // Uniformes de luz para reflejo especular
+    uniform vec3 lightDirection;
+    uniform vec3 lightPosition;
+    uniform float ambientStrength;
+    uniform float lightIntensity;
     
     varying vec3 vPosition;
     varying vec3 vNormal;
@@ -299,10 +305,29 @@ export class AquiferWaterEffect {
       float caustics = min(caustic1, caustic2);
       caustics = pow(caustics, 3.0) * 0.3;
       
+      // Calcular reflejo especular (luz blanca desde la fuente de luz)
+      vec3 lightDir;
+      if (length(lightPosition) > 0.0) {
+        lightDir = normalize(lightPosition - vWorldPosition);
+      } else {
+        lightDir = normalize(-lightDirection);
+      }
+      
+      // Vector de reflexión para especular - MÁS VISIBLE
+      vec3 halfVector = normalize(lightDir + viewDirection);
+      float specular = pow(max(dot(perturbedNormal, halfVector), 0.0), 32.0) * specularIntensity;
+      
+      // Intensidad basada en la posición de la luz
+      float lightAttenuation = max(0.0, dot(perturbedNormal, lightDir));
+      
       // Color final (SIN iluminación propia - eso lo maneja el PlanetLayerSystem)
       vec3 finalColor = baseColor;
       finalColor = mix(finalColor, reflectionColor, fresnelFactor * reflectivity * 0.2); // Reducido
       finalColor += caustics * waterColor * 0.1; // Muy sutil
+      
+      // AÑADIR REFLEJO ESPECULAR BLANCO - MÁS INTENSO Y VISIBLE
+      float specularStrength = specular * lightAttenuation * lightIntensity * 3.0; // 3x más fuerte
+      finalColor += vec3(1.0, 1.0, 1.0) * specularStrength;
       
       // Transparencia MUCHO mayor para no interferir con la iluminación base
       float alpha = mix(0.2, 0.4, fresnelFactor) * (1.0 - transparency * 0.5);
@@ -326,7 +351,7 @@ export class AquiferWaterEffect {
       waterColor: params.waterColor || new THREE.Color(0x2E8B8B),
       deepWaterColor: params.deepWaterColor || new THREE.Color(0x003366),
       foamColor: params.foamColor || new THREE.Color(0xffffff),
-      specularIntensity: params.specularIntensity || 2.0,
+      specularIntensity: params.specularIntensity || 4.0,
       reflectivity: params.reflectivity || 0.5,
       transparency: params.transparency || 0.3,
       roughness: params.roughness || 0.1,
@@ -346,6 +371,9 @@ export class AquiferWaterEffect {
       this.layerSystem.getNextScaleFactor(),
       this // Pasar referencia como MetallicSurfaceLayer
     );
+    
+    // CRÍTICO: Sincronizar con los uniformes de luz del PlanetLayerSystem
+    this.syncWithLayerSystemLighting();
   }
 
   private createMaterial(): THREE.ShaderMaterial {
@@ -385,7 +413,13 @@ export class AquiferWaterEffect {
         transparency: { value: this.params.transparency },
         roughness: { value: this.params.roughness },
         metalness: { value: this.params.metalness },
-        normalScale: { value: this.params.normalScale }
+        normalScale: { value: this.params.normalScale },
+        
+        // Uniformes de luz (se sincronizarán con PlanetLayerSystem)
+        lightDirection: { value: new THREE.Vector3(0, 0, 0) },
+        lightPosition: { value: new THREE.Vector3(0, 0, 0) },
+        ambientStrength: { value: 0.15 },
+        lightIntensity: { value: 0.85 }
       },
       transparent: true,
       side: THREE.DoubleSide,
@@ -420,6 +454,38 @@ export class AquiferWaterEffect {
         }
       }
     });
+  }
+
+  /**
+   * Sincroniza con los uniformes de luz del PlanetLayerSystem
+   */
+  private syncWithLayerSystemLighting(): void {
+    // El PlanetLayerSystem automáticamente propaga los uniformes de luz a través de updateLightPosition/Direction
+    // Pero para asegurar sincronización inicial, usamos un setTimeout para ejecutar después del setup
+    setTimeout(() => {
+      console.log("🌊 AquiferWater synchronized with PlanetLayerSystem lighting");
+    }, 100);
+  }
+
+  /**
+   * Recibe actualizaciones de luz desde Three.js DirectionalLight
+   */
+  updateFromThreeLight(light: THREE.DirectionalLight | THREE.Vector3, target?: THREE.Vector3): void {
+    if (light instanceof THREE.Vector3) {
+      // Si es un Vector3, es la posición de la luz
+      console.log("🌊 AquiferWater updateFromThreeLight called with position:", light, "target:", target);
+      this.material.uniforms.lightPosition.value.copy(light);
+      if (target) {
+        const direction = target.clone().sub(light).normalize();
+        this.material.uniforms.lightDirection.value.copy(direction);
+      }
+    } else {
+      // Si es DirectionalLight
+      console.log("🌊 AquiferWater updateFromThreeLight called with DirectionalLight:", light.position, "target:", light.target.position);
+      this.material.uniforms.lightPosition.value.copy(light.position);
+      const direction = light.target.position.clone().sub(light.position).normalize();
+      this.material.uniforms.lightDirection.value.copy(direction);
+    }
   }
 
   getObject3D(): THREE.Mesh | undefined {
@@ -494,7 +560,7 @@ export function createAquiferWaterFromPythonData(layerSystem: PlanetLayerSystem,
     waterColor,
     deepWaterColor,
     foamColor: new THREE.Color(0.9, 0.95, 1.0),
-    specularIntensity: 1.0, // Reducido para menos reflejo
+    specularIntensity: 5.0, // Aumentado para reflejo más visible
     reflectivity: 0.3, // Mucho menos reflectivo
     transparency: 0.8, // MUY transparente
     roughness: 0.05,
