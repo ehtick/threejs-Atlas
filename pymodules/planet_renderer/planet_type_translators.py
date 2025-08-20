@@ -818,7 +818,48 @@ class PlanetTypeTranslators:
     
     def translate_aquifer(self, planet_radius: int, rng: random.Random, 
                          seed: int, planet_name: str) -> Dict[str, Any]:
-        return {"type": "aquifer"}
+        """Translate Aquifer planet elements - water worlds with atmospheric clouds"""
+        center_x, center_y = 200, 200  # Pillow center coordinates
+        
+        # Generate atmospheric clouds for aquifer planets (water worlds should have rich atmospheres)
+        num_clouds = rng.randint(8, 15)  # Rich atmospheric activity over water
+        clouds = []
+        for i in range(num_clouds):
+            cloud_radius = rng.randint(20, 45)  # Larger clouds over water surfaces
+            max_offset = planet_radius - cloud_radius
+            cloud_x = center_x + rng.randint(-max_offset, max_offset)
+            cloud_y = center_y + rng.randint(-max_offset, max_offset)
+            
+            # Convert to normalized coordinates
+            normalized_coords = self.common_utils.normalize_coordinates(
+                cloud_x, cloud_y, center_x, center_y, planet_radius
+            )
+            
+            # Aquifer clouds - white to light blue, representing water vapor
+            cloud_colors = [
+                [1.0, 1.0, 1.0, 0.8],      # Pure white water vapor
+                [0.95, 0.98, 1.0, 0.7],    # Light blue-white
+                [0.90, 0.95, 1.0, 0.9],    # Slightly blue tinted
+                [0.98, 1.0, 1.0, 0.6],     # Very light cyan
+            ]
+            
+            clouds.append({
+                "position": normalized_coords,
+                "radius": cloud_radius / planet_radius,
+                "color": rng.choice(cloud_colors),
+                "type": "cloud",
+                "seed": f"{planet_name}_aquifer_cloud_{i}"
+            })
+        
+        return {
+            "type": "aquifer",
+            "clouds": clouds,
+            "debug": {
+                "original_planet_radius": planet_radius,
+                "center_x": center_x, "center_y": center_y,
+                "cloud_count": num_clouds
+            }
+        }
     
     def translate_exotic(self, planet_radius: int, rng: random.Random, 
                         seed: int, planet_name: str) -> Dict[str, Any]:
