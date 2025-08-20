@@ -851,13 +851,35 @@ class PlanetTypeTranslators:
                 "seed": f"{planet_name}_aquifer_cloud_{i}"
             })
         
+        # Generate ocean currents data for aquifer planets
+        ocean_currents = {
+            "intensity": rng.uniform(0.3, 0.8),
+            "scale": rng.uniform(1.0, 3.0),
+            "speed": rng.uniform(0.1, 0.4),
+            "opacity": rng.uniform(0.15, 0.35),
+            # Current colors - greenish-blue tints for rich ocean currents
+            "current_color": [
+                rng.uniform(0.25, 0.35),  # R - low for blue-green
+                rng.uniform(0.55, 0.65),  # G - medium-high for green tint
+                rng.uniform(0.50, 0.60),  # B - medium for blue component
+            ],
+            "deep_current_color": [
+                rng.uniform(0.15, 0.25),  # R - darker
+                rng.uniform(0.35, 0.45),  # G - darker green
+                rng.uniform(0.30, 0.40),  # B - darker blue
+            ]
+        }
+
         return {
             "type": "aquifer",
             "clouds": clouds,
+            "ocean_currents": ocean_currents,
             "debug": {
                 "original_planet_radius": planet_radius,
                 "center_x": center_x, "center_y": center_y,
-                "cloud_count": num_clouds
+                "cloud_count": num_clouds,
+                "ocean_currents_intensity": ocean_currents["intensity"],
+                "ocean_currents_scale": ocean_currents["scale"]
             }
         }
     

@@ -1092,6 +1092,188 @@ export class PlanetLayerSystem {
   }
 
   /**
+   * Crea un material para OceanCurrents que funciona como capa
+   */
+  createOceanCurrentsLayerMaterial(params: any): THREE.ShaderMaterial {
+    const vertexShader = `
+      varying vec3 vPosition;
+      varying vec3 vNormal;
+      varying vec3 vWorldPosition;
+      varying vec3 vWorldNormal;
+      varying vec2 vUv;
+      
+      void main() {
+        vPosition = position;
+        vNormal = normalize(normalMatrix * normal);
+        vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);
+        vUv = uv;
+        
+        vec4 worldPos = modelMatrix * vec4(position, 1.0);
+        vWorldPosition = worldPos.xyz;
+        
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `;
+
+    const fragmentShader = `
+      uniform float time;
+      uniform vec3 currentColor;
+      uniform vec3 deepCurrentColor;
+      uniform float currentIntensity;
+      uniform float currentScale;
+      uniform float currentSpeed;
+      uniform float secondaryCurrentIntensity;
+      uniform float secondaryCurrentScale;
+      uniform float secondaryCurrentSpeed;
+      uniform float opacity;
+      uniform float seedOffset;
+      
+      // Uniformes de luz (EXACTAMENTE como otros efectos)
+      uniform vec3 lightDirection;
+      uniform vec3 lightPosition;
+      uniform float ambientStrength;
+      uniform float lightIntensity;
+      
+      varying vec3 vPosition;
+      varying vec3 vNormal;
+      varying vec3 vWorldPosition;
+      varying vec3 vWorldNormal;
+      varying vec2 vUv;
+      
+      // Función de ruido determinista simple
+      float random(vec3 st) {
+        return fract(sin(dot(st.xyz, vec3(12.9898, 78.233, 54.321))) * 43758.5453123);
+      }
+      
+      float noise(vec3 st) {
+        vec3 i = floor(st);
+        vec3 f = fract(st);
+        
+        // Interpolación suave
+        f = f * f * (3.0 - 2.0 * f);
+        
+        // Obtener valores en los vértices del cubo
+        float a = random(i);
+        float b = random(i + vec3(1.0, 0.0, 0.0));
+        float c = random(i + vec3(0.0, 1.0, 0.0));
+        float d = random(i + vec3(1.0, 1.0, 0.0));
+        float e = random(i + vec3(0.0, 0.0, 1.0));
+        float f2 = random(i + vec3(1.0, 0.0, 1.0));
+        float g = random(i + vec3(0.0, 1.0, 1.0));
+        float h = random(i + vec3(1.0, 1.0, 1.0));
+        
+        // Interpolación trilineal
+        return mix(
+          mix(mix(a, b, f.x), mix(c, d, f.x), f.y),
+          mix(mix(e, f2, f.x), mix(g, h, f.x), f.y),
+          f.z
+        );
+      }
+      
+      // Ruido fractal para patrones orgánicos
+      float fbm(vec3 p) {
+        float value = 0.0;
+        float amplitude = 0.5;
+        
+        for (int i = 0; i < 4; i++) {
+          value += amplitude * noise(p);
+          p *= 2.0;
+          amplitude *= 0.5;
+        }
+        
+        return value;
+      }
+      
+      void main() {
+        vec3 normal = normalize(vWorldNormal);
+        
+        // Usar posición de luz (EXACTAMENTE como otros efectos)
+        vec3 lightDir;
+        if (length(lightPosition) > 0.0) {
+          lightDir = normalize(lightPosition - vWorldPosition);
+        } else {
+          lightDir = normalize(-lightDirection);
+        }
+        
+        // Cálculo de iluminación básico
+        float dotNL = dot(normal, lightDir);
+        float dayNight = smoothstep(-0.3, 0.1, dotNL);
+        
+        // Usar la posición 3D normalizada para patrones esféricos continuos
+        vec3 spherePos = normalize(vPosition);
+        
+        // Añadir offset de seed para que cada planeta tenga corrientes únicas
+        vec3 seedOffset3D = vec3(seedOffset, seedOffset * 0.7, seedOffset * 1.3);
+        
+        // Corrientes principales - patrones largos y serpenteantes
+        float currentPattern = 0.0;
+        
+        // Corrientes primarias - grandes y lentas (como la Corriente del Golfo)
+        currentPattern += fbm(spherePos * currentScale + seedOffset3D + vec3(time * currentSpeed * 0.1)) * currentIntensity;
+        
+        // Corrientes secundarias - más pequeñas y rápidas
+        currentPattern += fbm(spherePos * secondaryCurrentScale + seedOffset3D * 1.5 + vec3(time * secondaryCurrentSpeed * 0.15)) * secondaryCurrentIntensity;
+        
+        // Corrientes terciarias - detalles finos
+        currentPattern += fbm(spherePos * currentScale * 3.0 + seedOffset3D * 2.0 + vec3(time * currentSpeed * 0.05)) * 0.2;
+        
+        // Convertir ruido a rango apropiado para corrientes
+        currentPattern = (currentPattern * 2.0 - 1.0) * 0.5 + 0.5;
+        currentPattern = smoothstep(0.3, 0.7, currentPattern); // Hacer patrones más definidos
+        
+        // Mezclar colores basado en la intensidad de las corrientes
+        vec3 baseColor = mix(deepCurrentColor, currentColor, currentPattern);
+        
+        // Aplicar iluminación sutil (las corrientes son cambios de albedo, no elevación)
+        float totalLight = ambientStrength + (lightIntensity * dayNight * 0.3); // Menos contraste de luz
+        vec3 finalColor = baseColor * totalLight;
+        
+        // Alpha basado en la intensidad de las corrientes y opacidad general
+        // Las corrientes oceánicas son cambios de albedo, deberían ser visibles en toda la superficie
+        float alpha = currentPattern * opacity;
+        
+        gl_FragColor = vec4(finalColor, alpha);
+      }
+    `;
+
+    const currentColor = params.currentColor instanceof THREE.Color ? 
+      params.currentColor : new THREE.Color(params.currentColor || 0x4A9B8E);
+    const deepCurrentColor = params.deepCurrentColor instanceof THREE.Color ? 
+      params.deepCurrentColor : new THREE.Color(params.deepCurrentColor || 0x2D5D52);
+
+    return new THREE.ShaderMaterial({
+      vertexShader,
+      fragmentShader,
+      uniforms: {
+        time: { value: 0 },
+        // Offset basado en seed para patrones únicos por planeta
+        seedOffset: { value: (params.seed || 0) % 100 },
+        // Parámetros de corrientes
+        currentIntensity: { value: params.currentIntensity || 0.5 },
+        currentScale: { value: params.currentScale || 2.0 },
+        currentSpeed: { value: params.currentSpeed || 0.2 },
+        secondaryCurrentIntensity: { value: params.secondaryCurrentIntensity || 0.3 },
+        secondaryCurrentScale: { value: params.secondaryCurrentScale || 3.0 },
+        secondaryCurrentSpeed: { value: params.secondaryCurrentSpeed || 0.15 },
+        // Colores
+        currentColor: { value: currentColor },
+        deepCurrentColor: { value: deepCurrentColor },
+        // Efectos visuales
+        opacity: { value: params.opacity || 0.25 },
+        // Uniformes de luz (EXACTAMENTE como otros efectos)
+        lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
+        lightPosition: { value: new THREE.Vector3(0, 0, 0) },
+        ambientStrength: { value: 0.15 },
+        lightIntensity: { value: 0.85 },
+      },
+      transparent: true,
+      blending: THREE.NormalBlending,
+      side: THREE.FrontSide,
+      depthWrite: false,
+    });
+  }
+
+  /**
    * Añade el sistema a la escena
    */
   addToScene(scene: THREE.Scene): void {

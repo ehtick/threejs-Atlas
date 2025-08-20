@@ -41,6 +41,7 @@ import { FragmentationEffect } from "./FragmentationEffect";
 import { OceanWavesEffect, createOceanWavesFromPythonData } from "./OceanWaves";
 import { FluidLayersEffect, createFluidLayersFromPythonData } from "./FluidLayers";
 import { AquiferWaterEffect, createAquiferWaterFromPythonData } from "./AquiferWaterEffect";
+import { OceanCurrentsEffect, createOceanCurrentsFromPythonData } from "./OceanCurrentsEffect";
 // Efectos de superficie legacy eliminados - usar solo versiones Layer
 
 // Importar efectos de debug
@@ -93,6 +94,7 @@ export enum EffectType {
   OCEAN_WAVES = "ocean_waves",
   FLUID_LAYERS = "fluid_layers",
   AQUIFER_WATER = "aquifer_water",
+  OCEAN_CURRENTS = "ocean_currents",
   LAVA_FLOWS = "lava_flows",
   CRYSTAL_FORMATIONS = "crystal_formations",
   CLOUD_LAYERS = "cloud_layers",
@@ -631,6 +633,25 @@ export class EffectRegistry {
               // Como MetallicSurfaceLayer, ya no necesita apply() ni addToScene()
               // porque se integra automáticamente con PlanetLayerSystem
               console.log("🌊 AquiferWater effect added for aquifer planet");
+            }
+            
+            // Añadir corrientes oceánicas para todos los planetas acuáticos
+            const oceanCurrentsEffect = createOceanCurrentsFromPythonData(this.layerSystem!, pythonData);
+            
+            if (oceanCurrentsEffect) {
+              const oceanCurrentsInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "ocean_currents",
+                effect: oceanCurrentsEffect,
+                priority: 1, // Prioridad más alta para que aparezca debajo del agua
+                enabled: true,
+                name: "Ocean Currents"
+              };
+              
+              this.effects.set(oceanCurrentsInstance.id, oceanCurrentsInstance);
+              effects.push(oceanCurrentsInstance);
+              
+              console.log("🌊 Ocean Currents effect added for aquifer planet");
             }
             
             // Añadir nubes atmosféricas si están disponibles para planetas acuáticos
@@ -1388,6 +1409,7 @@ export class EffectRegistry {
           rocky_terrain_layer: "rockyTerrain",
           icy_terrain_layer: "icyTerrain",
           aquifer_water: "aquiferWater",
+          ocean_currents: "oceanCurrents",
         };
 
         const layerName = layerNameMap[effectInstance.type];
