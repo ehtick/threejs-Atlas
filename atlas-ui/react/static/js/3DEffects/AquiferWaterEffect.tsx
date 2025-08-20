@@ -40,6 +40,8 @@ export interface AquiferWaterParams {
   normalScale?: number;
   normalSpeed?: number;
   seed?: number;
+  startTime?: number; // Tiempo inicial fijo para determinismo
+  timeSpeed?: number; // Velocidad del tiempo para movimiento de olas (0.1 - 1.0)
 }
 
 // Rangos para generación procedural
@@ -49,6 +51,7 @@ const PROCEDURAL_RANGES = {
   WAVE_SPEED: { min: 0.2, max: 0.8 },  // Reducido de 1.5-3.5 a 0.2-0.8
   SPECULAR_INTENSITY: { min: 2.0, max: 6.0 },
   TRANSPARENCY: { min: 0.2, max: 0.5 },
+  TIME_SPEED: { min: 0.1, max: 1.0 }, // Rango de velocidades del tiempo
 };
 
 export class AquiferWaterEffect {
@@ -56,6 +59,7 @@ export class AquiferWaterEffect {
   private material: THREE.ShaderMaterial;
   private params: AquiferWaterParams;
   private layerSystem: PlanetLayerSystem;
+  private startTime: number;
 
   // Shaders eliminados - ahora se usan desde PlanetLayerSystem.createAquiferWaterLayerMaterial
 
@@ -65,6 +69,9 @@ export class AquiferWaterEffect {
     // Generar valores procedurales usando seed
     const seed = params.seed || Math.floor(Math.random() * 1000000);
     const rng = new SeededRandom(seed);
+    
+    // Tiempo inicial determinista basado en el seed
+    this.startTime = params.startTime || (seed % 10000) / 1000; // Convertir seed a tiempo inicial
 
     const waterColor = params.waterColor instanceof THREE.Color ? params.waterColor : params.waterColor ? new THREE.Color(params.waterColor as any) : new THREE.Color(0x2E8B8B);
     const deepWaterColor = params.deepWaterColor instanceof THREE.Color ? params.deepWaterColor : params.deepWaterColor ? new THREE.Color(params.deepWaterColor as any) : new THREE.Color(0x003366);
@@ -89,7 +96,9 @@ export class AquiferWaterEffect {
       metalness: params.metalness || 0.2,
       normalScale: params.normalScale || 0.05,
       normalSpeed: params.normalSpeed || 0.5,
-      seed
+      seed,
+      startTime: this.startTime,
+      timeSpeed: params.timeSpeed || rng.uniform(PROCEDURAL_RANGES.TIME_SPEED.min, PROCEDURAL_RANGES.TIME_SPEED.max)
     };
 
     // Crear material usando el sistema de capas (como MetallicSurfaceLayer)
@@ -105,8 +114,13 @@ export class AquiferWaterEffect {
   }
 
   update(deltaTime: number): void {
+    // Calcular tiempo absoluto determinista desde el inicio con ciclo y velocidad procedural
+    const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!;
+    const currentTime = rawTime % 1000; // Mantener el tiempo en un ciclo de 1000 segundos
+    
+    // Actualizar tiempo en el material con el tiempo determinista
     if (this.material.uniforms.time) {
-      this.material.uniforms.time.value += deltaTime;
+      this.material.uniforms.time.value = currentTime;
     }
   }
 
@@ -142,7 +156,7 @@ export function createAquiferWaterFromPythonData(layerSystem: PlanetLayerSystem,
   );
 
   // Usar el seed del planeta para variaciones sutiles
-  const seed = globalSeed || Math.floor(Math.random() * 1000000);
+  const seed = globalSeed || 12345; // Seed determinista por defecto
   const rng = new SeededRandom(seed + 5000); // +5000 para AquiferWaterEffect
 
   const params: AquiferWaterParams = {
