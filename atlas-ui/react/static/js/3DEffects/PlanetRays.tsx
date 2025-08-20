@@ -44,6 +44,11 @@ export class PlanetRaysEffect {
     color: THREE.Color;
     activationOffset: number; // Para que no todos empiecen al mismo tiempo
   }>;
+  
+  // Parámetros de tormenta específicos del planeta
+  private stormFreq1: number;
+  private stormFreq2: number;
+  private stormThreshold: number;
 
   constructor(planetRadius: number, params: PlanetRaysParams = {}) {
     const seed = params.seed || Math.floor(Math.random() * 1000000);
@@ -63,6 +68,12 @@ export class PlanetRaysEffect {
       seed: seed,
       startTime: this.startTime,
     };
+
+    // Inicializar parámetros de tormenta específicos del planeta usando seedOffset
+    const seedOffset = (seed % 1000) / 1000; // Normalizar seed a 0-1
+    this.stormFreq1 = 0.01 + seedOffset * 0.005; // Frecuencia base + variación por seed
+    this.stormFreq2 = 0.003 + seedOffset * 0.002; // Frecuencia secundaria + variación por seed
+    this.stormThreshold = 0.75 + seedOffset * 0.15; // Umbral variable por planeta
 
     this.group = new THREE.Group();
     this.rays = [];
@@ -257,9 +268,9 @@ export class PlanetRaysEffect {
         const mainPulse = Math.sin(phase) * 0.3 + 0.7;
         const flicker = Math.sin(phase * 12.0) > 0.9 ? 1.5 : 1.0;
 
-        // Verificar si estamos en modo tormenta
-        const stormPattern = Math.sin(currentTime * 0.01) * Math.sin(currentTime * 0.003);
-        const isStormTime = stormPattern > 0.8;
+        // Verificar si estamos en modo tormenta específico del planeta
+        const stormPattern = Math.sin(currentTime * this.stormFreq1) * Math.sin(currentTime * this.stormFreq2);
+        const isStormTime = stormPattern > this.stormThreshold;
         const stormBoost = isStormTime ? 1.5 : 1.0;
 
         // Combinar todos los efectos
