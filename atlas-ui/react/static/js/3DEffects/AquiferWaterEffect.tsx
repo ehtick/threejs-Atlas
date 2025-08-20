@@ -46,7 +46,7 @@ export interface AquiferWaterParams {
 const PROCEDURAL_RANGES = {
   WAVE_HEIGHT: { min: 0.05, max: 0.12 },
   WAVE_FREQUENCY: { min: 2.0, max: 5.0 },
-  WAVE_SPEED: { min: 1.5, max: 3.5 },
+  WAVE_SPEED: { min: 0.2, max: 0.8 },  // Reducido de 1.5-3.5 a 0.2-0.8
   SPECULAR_INTENSITY: { min: 2.0, max: 6.0 },
   TRANSPARENCY: { min: 0.2, max: 0.5 },
 };
