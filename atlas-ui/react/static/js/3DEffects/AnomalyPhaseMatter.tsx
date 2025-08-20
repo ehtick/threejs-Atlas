@@ -16,6 +16,7 @@ export interface AnomalyPhaseMatterParams {
   seed?: number;
   timeSpeed?: number;
   phaseStates?: number;
+  startTime?: number; // Tiempo inicial fijo para determinismo
 }
 
 const PROCEDURAL_RANGES = {
@@ -222,7 +223,8 @@ export class AnomalyPhaseMatterEffect {
     const seed = params.seed || Math.floor(Math.random() * 1000000);
     const rng = new SeededRandom(seed);
     
-    this.startTime = (seed % 10000) / 1000;
+    // Tiempo inicial determinista basado en el seed - igual que AtmosphereClouds
+    this.startTime = params.startTime || (seed % 10000) / 1000;
     
     this.params = {
       particleCount: params.particleCount || Math.floor(rng.uniform(PROCEDURAL_RANGES.PARTICLE_COUNT.min, PROCEDURAL_RANGES.PARTICLE_COUNT.max)),
@@ -232,6 +234,7 @@ export class AnomalyPhaseMatterEffect {
       timeSpeed: params.timeSpeed || rng.uniform(PROCEDURAL_RANGES.TIME_SPEED.min, PROCEDURAL_RANGES.TIME_SPEED.max),
       phaseStates: params.phaseStates || Math.floor(rng.uniform(PROCEDURAL_RANGES.PHASE_STATES.min, PROCEDURAL_RANGES.PHASE_STATES.max)),
       seed: seed,
+      startTime: this.startTime,
     };
 
     this.particleCount = this.params.particleCount!;
@@ -313,16 +316,17 @@ export class AnomalyPhaseMatterEffect {
     scene.add(this.phaseSystem);
   }
 
-  update(deltaTime: number): void {
+  update(): void {
+    // Calcular tiempo absoluto determinista desde el inicio con ciclo y velocidad procedural
     const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!;
-    const currentTime = rawTime % 1000;
+    const currentTime = rawTime % 1000; // Mantener el tiempo en un ciclo de 1000 segundos
     
     this.material.uniforms.time.value = currentTime;
     
-    // Rotación compleja para simular comportamiento cuántico
-    this.phaseSystem.rotation.x += deltaTime * 0.12 * Math.cos(currentTime * 0.3);
-    this.phaseSystem.rotation.y += deltaTime * 0.08 * Math.sin(currentTime * 0.5);
-    this.phaseSystem.rotation.z += deltaTime * 0.06 * Math.cos(currentTime * 0.7);
+    // Rotación procedural determinista basada en tiempo absoluto (factores reducidos para velocidad similar)
+    this.phaseSystem.rotation.x = currentTime * 0.012 * Math.cos(currentTime * 0.3);
+    this.phaseSystem.rotation.y = currentTime * 0.008 * Math.sin(currentTime * 0.5);
+    this.phaseSystem.rotation.z = currentTime * 0.006 * Math.cos(currentTime * 0.7);
   }
 
   getObject3D(): THREE.Points {
@@ -347,6 +351,7 @@ export function createAnomalyPhaseMatterFromPythonData(planetRadius: number, ano
     timeSpeed: rng.uniform(PROCEDURAL_RANGES.TIME_SPEED.min, PROCEDURAL_RANGES.TIME_SPEED.max),
     phaseStates: Math.floor(rng.uniform(PROCEDURAL_RANGES.PHASE_STATES.min, PROCEDURAL_RANGES.PHASE_STATES.max)),
     seed,
+    startTime: (seed % 10000) / 1000, // Tiempo inicial determinista
   };
 
   return new AnomalyPhaseMatterEffect(planetRadius, params);
