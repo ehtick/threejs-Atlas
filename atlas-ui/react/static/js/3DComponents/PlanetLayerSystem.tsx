@@ -903,6 +903,158 @@ export class PlanetLayerSystem {
   }
 
   /**
+   * Crea un material para AquiferWater que funciona como capa
+   */
+  createAquiferWaterLayerMaterial(params: any): THREE.ShaderMaterial {
+    const vertexShader = `
+      uniform float time;
+      uniform float waveHeight;
+      uniform float waveFrequency;
+      uniform float waveSpeed;
+      
+      varying vec3 vPosition;
+      varying vec3 vNormal;
+      varying vec3 vWorldPosition;
+      varying vec3 vWorldNormal;
+      varying vec2 vUv;
+      varying float vWaveHeight;
+      
+      // Función de ola simple
+      float wave(vec2 uv, float freq, float speed) {
+        return sin(uv.x * freq + time * speed) * cos(uv.y * freq + time * speed * 0.8);
+      }
+      
+      void main() {
+        vPosition = position;
+        vUv = uv;
+        
+        // Aplicar múltiples ondas para efecto más realista
+        float waveValue = 0.0;
+        waveValue += wave(uv * 10.0, waveFrequency, waveSpeed) * 0.5;
+        waveValue += wave(uv * 20.0, waveFrequency * 1.5, waveSpeed * 1.2) * 0.3;
+        waveValue += wave(uv * 35.0, waveFrequency * 2.0, waveSpeed * 0.8) * 0.2;
+        
+        vWaveHeight = waveValue * waveHeight;
+        
+        // Deformar vértices
+        vec3 newPosition = position + normal * vWaveHeight;
+        
+        // Calcular nueva normal (aproximada)
+        vec3 modifiedNormal = normalize(normal + vec3(waveValue * 0.1, waveValue * 0.1, 0.0));
+        vNormal = normalMatrix * modifiedNormal;
+        vWorldNormal = normalize((modelMatrix * vec4(modifiedNormal, 0.0)).xyz);
+        
+        vec4 worldPos = modelMatrix * vec4(newPosition, 1.0);
+        vWorldPosition = worldPos.xyz;
+        
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
+      }
+    `;
+
+    const fragmentShader = `
+      uniform float time;
+      uniform vec3 waterColor;
+      uniform vec3 deepWaterColor;
+      uniform vec3 foamColor;
+      uniform float specularIntensity;
+      uniform float transparency;
+      uniform float roughness;
+      
+      // Uniformes de luz (EXACTAMENTE como MetallicSurfaceLayer)
+      uniform vec3 lightDirection;
+      uniform vec3 lightPosition;
+      uniform float ambientStrength;
+      uniform float lightIntensity;
+      
+      varying vec3 vPosition;
+      varying vec3 vNormal;
+      varying vec3 vWorldPosition;
+      varying vec3 vWorldNormal;
+      varying vec2 vUv;
+      varying float vWaveHeight;
+      
+      void main() {
+        vec3 normal = normalize(vWorldNormal);
+        
+        // Usar posición de luz si está disponible, sino usar dirección (EXACTAMENTE como MetallicSurfaceLayer)
+        vec3 lightDir;
+        if (length(lightPosition) > 0.0) {
+          lightDir = normalize(lightPosition - vWorldPosition);
+        } else {
+          lightDir = normalize(-lightDirection);
+        }
+        
+        // Cálculo de iluminación (EXACTAMENTE como MetallicSurfaceLayer)
+        float dotNL = dot(normal, lightDir);
+        float dayNight = smoothstep(-0.3, 0.1, dotNL);
+        
+        // Rim lighting (EXACTAMENTE como MetallicSurfaceLayer)
+        float rimLight = 1.0 - abs(dotNL);
+        rimLight = pow(rimLight, 3.0) * 0.1;
+        
+        // Color base del agua con variación por profundidad
+        float depth = 1.0 - abs(vWaveHeight) * 2.0;
+        vec3 baseColor = mix(deepWaterColor, waterColor, depth);
+        
+        // Espuma en las crestas
+        float foamFactor = smoothstep(0.2, 0.4, vWaveHeight);
+        baseColor = mix(baseColor, foamColor, foamFactor * 0.3);
+        
+        // Calcular especular (EXACTAMENTE como MetallicSurfaceLayer)
+        vec3 viewDir = normalize(cameraPosition - vWorldPosition);
+        vec3 halfwayDir = normalize(lightDir + viewDir);
+        float NdotH = max(dot(normal, halfwayDir), 0.0);
+        float specularStrength = pow(NdotH, mix(4.0, 128.0, 1.0 - roughness)) * specularIntensity;
+        
+        // Aplicar iluminación (EXACTAMENTE como MetallicSurfaceLayer)
+        float totalLight = ambientStrength + (lightIntensity * dayNight) + rimLight;
+        vec3 finalColor = baseColor * totalLight;
+        
+        // Añadir especular SOLO en la parte iluminada
+        finalColor += vec3(1.0, 1.0, 1.0) * specularStrength * dayNight;
+        
+        gl_FragColor = vec4(finalColor, transparency);
+      }
+    `;
+
+    const waterColor = params.waterColor instanceof THREE.Color ? 
+      params.waterColor : new THREE.Color(params.waterColor || 0x2E8B8B);
+    const deepWaterColor = params.deepWaterColor instanceof THREE.Color ? 
+      params.deepWaterColor : new THREE.Color(params.deepWaterColor || 0x003366);
+    const foamColor = params.foamColor instanceof THREE.Color ? 
+      params.foamColor : new THREE.Color(params.foamColor || 0xffffff);
+
+    return new THREE.ShaderMaterial({
+      vertexShader,
+      fragmentShader,
+      uniforms: {
+        time: { value: 0 },
+        // Parámetros de olas
+        waveHeight: { value: params.waveHeight || 0.08 },
+        waveFrequency: { value: params.waveFrequency || 3.0 },
+        waveSpeed: { value: params.waveSpeed || 2.0 },
+        // Colores
+        waterColor: { value: waterColor },
+        deepWaterColor: { value: deepWaterColor },
+        foamColor: { value: foamColor },
+        // Efectos visuales
+        specularIntensity: { value: params.specularIntensity || 3.0 },
+        transparency: { value: params.transparency || 0.6 },
+        roughness: { value: params.roughness || 0.1 },
+        // Uniformes de luz (EXACTAMENTE como MetallicSurfaceLayer)
+        lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
+        lightPosition: { value: new THREE.Vector3(0, 0, 0) },
+        ambientStrength: { value: 0.15 },
+        lightIntensity: { value: 0.85 },
+      },
+      transparent: true,
+      blending: THREE.NormalBlending,
+      side: THREE.FrontSide,
+      depthWrite: false,
+    });
+  }
+
+  /**
    * Añade el sistema a la escena
    */
   addToScene(scene: THREE.Scene): void {
