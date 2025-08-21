@@ -18,12 +18,12 @@ export interface RiverLinesParams {
 
 // Rangos para generación procedural de ríos secos
 const PROCEDURAL_RANGES = {
-  RIVER_COUNT: { min: 2, max: 10 }, // 2-4 ríos por planeta
-  OPACITY: { min: 0.01, max: 0.10 }, // Opacidad sutil para líneas de ríos secos
+  RIVER_COUNT: { min: 2, max: 6 }, // 2-4 ríos por planeta
+  OPACITY: { min: 0.05, max: 0.1 }, // Opacidad visible para ríos secos
   ELEVATION: { min: 0.006, max: 0.012 }, // Altura variable sobre superficie
-  THICKNESS: { min: 0.015, max: 0.015 }, // Grosor variable de líneas
-  SEGMENTS: { min: 20, max: 35 }, // Segmentos para resolución variable
-  CURVE_AMOUNT: { min: 0.15, max: 0.4 }, // Cantidad de curvatura
+  THICKNESS: { min: 4, max: 12 }, // Factor de grosor para radio del tubo
+  SEGMENTS: { min: 10, max: 30 }, // Segmentos para resolución variable
+  CURVE_AMOUNT: { min: 0.05, max: 0.25 }, // Cantidad de curvatura natural
   STEP_SIZE: { min: 0.02, max: 0.035 } // Tamaño de paso para longitud variable
 };
 
@@ -140,7 +140,7 @@ export class RiverLinesEffect {
   private createLineFromPoints(points: THREE.Vector3[], riverIndex: number): THREE.Group | null {
     if (points.length < 2) return null;
     
-    // Crear un grupo para contener múltiples líneas (simular grosor)
+    // Crear un grupo para la línea del río
     const riverGroup = new THREE.Group();
     
     // Simple brown color with tiny variation
@@ -156,8 +156,24 @@ export class RiverLinesEffect {
     const variation = riverIndex * 0.05;
     baseColor.multiplyScalar(1 - variation * 0.2);
     
-    // Material base
-    const material = new THREE.LineBasicMaterial({
+    // Grosor real usando TubeGeometry
+    const thickness = this.rng.uniform(PROCEDURAL_RANGES.THICKNESS.min, PROCEDURAL_RANGES.THICKNESS.max);
+    const tubeRadius = thickness * 0.005; // Radio más grande para visibilidad
+    
+    // Crear curva desde los puntos
+    const curve = new THREE.CatmullRomCurve3(points);
+    
+    // Crear geometría de tubo con grosor real
+    const tubeGeometry = new THREE.TubeGeometry(
+      curve,
+      points.length - 1, // segments
+      tubeRadius,        // radius
+      8,                 // radial segments
+      false              // closed
+    );
+    
+    // Material para el tubo
+    const material = new THREE.MeshBasicMaterial({
       color: baseColor,
       opacity: this.params.opacity!,
       transparent: this.params.opacity! < 1,
@@ -165,40 +181,10 @@ export class RiverLinesEffect {
       depthTest: true
     });
     
-    // Crear línea central
-    const centralGeometry = new THREE.BufferGeometry().setFromPoints(points);
-    const centralLine = new THREE.Line(centralGeometry, material);
-    centralLine.renderOrder = 1000;
-    riverGroup.add(centralLine);
-    
-    // Crear líneas desplazadas para simular grosor variable
-    const offsetDistance = this.rng.uniform(PROCEDURAL_RANGES.THICKNESS.min, PROCEDURAL_RANGES.THICKNESS.max);
-    
-    for (let offset of [-offsetDistance, offsetDistance]) {
-      const offsetPoints = points.map((point, i) => {
-        // Calcular dirección perpendicular
-        let perpendicular;
-        if (i < points.length - 1) {
-          const direction = points[i + 1].clone().sub(point).normalize();
-          const normal = point.clone().normalize();
-          perpendicular = direction.clone().cross(normal).normalize();
-        } else {
-          const direction = point.clone().sub(points[i - 1]).normalize();
-          const normal = point.clone().normalize();
-          perpendicular = direction.clone().cross(normal).normalize();
-        }
-        
-        // Aplicar desplazamiento
-        return point.clone().add(perpendicular.multiplyScalar(offset));
-      });
-      
-      const offsetGeometry = new THREE.BufferGeometry().setFromPoints(offsetPoints);
-      const offsetMaterial = material.clone();
-      offsetMaterial.opacity = this.params.opacity! * 0.8; // Ligeramente más transparente
-      const offsetLine = new THREE.Line(offsetGeometry, offsetMaterial);
-      offsetLine.renderOrder = 1000;
-      riverGroup.add(offsetLine);
-    }
+    // Crear mesh del río
+    const riverMesh = new THREE.Mesh(tubeGeometry, material);
+    riverMesh.renderOrder = 1000;
+    riverGroup.add(riverMesh);
     
     return riverGroup;
   }
@@ -221,7 +207,7 @@ export class RiverLinesEffect {
     if (newParams.color || newParams.opacity) {
       this.riverLines.forEach(riverGroup => {
         riverGroup.children.forEach(child => {
-          if (child instanceof THREE.Line && child.material instanceof THREE.LineBasicMaterial) {
+          if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshBasicMaterial) {
             if (newParams.color) {
               const color = newParams.color instanceof THREE.Color ? 
                 newParams.color : 
@@ -250,7 +236,7 @@ export class RiverLinesEffect {
   dispose(): void {
     this.riverLines.forEach(riverGroup => {
       riverGroup.children.forEach(child => {
-        if (child instanceof THREE.Line) {
+        if (child instanceof THREE.Mesh) {
           child.geometry.dispose();
           if (child.material instanceof THREE.Material) {
             child.material.dispose();
