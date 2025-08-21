@@ -30,6 +30,7 @@ import { CloudGyrosLayer, createCloudGyrosLayerFromPythonData } from "./CloudGyr
 import { RockyTerrainLayer, createRockyTerrainLayerFromPythonData } from "./RockyTerrainLayer";
 import { IcyTerrainLayer, createIcyTerrainLayerFromPythonData } from "./IcyTerrainLayer";
 import { MetallicSurfaceLayer, createMetallicSurfaceLayerFromPythonData } from "./MetallicSurfaceLayer";
+import { DiamondSurfaceLayer, createDiamondSurfaceLayerFromPythonData } from "./DiamondSurfaceLayer";
 
 // Efectos legacy eliminados - usar solo versiones Layer
 
@@ -800,6 +801,22 @@ export class EffectRegistry {
             }
             break;
 
+          case "diamond":
+            if (this.layerSystem) {
+              const diamondLayer = createDiamondSurfaceLayerFromPythonData(this.layerSystem, pythonData, pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed);
+
+              const diamondInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "diamond_surface_layer",
+                effect: diamondLayer,
+                priority: 0,
+                enabled: true,
+              };
+              this.effects.set(diamondInstance.id, diamondInstance);
+              effects.push(diamondInstance);
+            }
+            break;
+
           case "rocky":
             if (this.layerSystem) {
               const rockyLayer = createRockyTerrainLayerFromPythonData(this.layerSystem, pythonData, pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed);
@@ -1415,6 +1432,7 @@ export class EffectRegistry {
           cloud_bands_layer: "cloudBands",
           cloud_gyros_layer: "cloudGyros",
           metallic_surface_layer: "metallicSurface",
+          diamond_surface_layer: "diamondSurface",
           rocky_terrain_layer: "rockyTerrain",
           icy_terrain_layer: "icyTerrain",
           aquifer_water: "aquiferWater",

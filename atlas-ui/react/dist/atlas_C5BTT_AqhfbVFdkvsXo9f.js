@@ -1,4 +1,4 @@
-import{C as t,S as s,F as c,V as r,b as m,M as d,N as v}from"./atlas_Ce3hh0hgxYWauQ_qSK6cl.js";class f{baseMesh;baseMaterial;effectLayers=[];scene;planetRadius;static baseVertexShader=`
+import{C as t,S as s,F as c,V as r,b as m,M as d,N as v,D as u}from"./atlas_Ce3hh0hgxYWauQ_qSK6cl.js";class f{baseMesh;baseMaterial;effectLayers=[];scene;planetRadius;static baseVertexShader=`
     varying vec3 vPosition;
     varying vec3 vNormal;
     varying vec3 vWorldPosition;
@@ -950,4 +950,189 @@ import{C as t,S as s,F as c,V as r,b as m,M as d,N as v}from"./atlas_Ce3hh0hgxYW
         
         gl_FragColor = vec4(finalColor, alpha);
       }
-    `,i=e.currentColor instanceof t?e.currentColor:new t(e.currentColor||4889486),l=e.deepCurrentColor instanceof t?e.deepCurrentColor:new t(e.deepCurrentColor||2973010);return new s({vertexShader:a,fragmentShader:o,uniforms:{time:{value:0},seedOffset:{value:(e.seed||0)%100},currentIntensity:{value:e.currentIntensity||.5},currentScale:{value:e.currentScale||2},currentSpeed:{value:e.currentSpeed||.2},secondaryCurrentIntensity:{value:e.secondaryCurrentIntensity||.3},secondaryCurrentScale:{value:e.secondaryCurrentScale||3},secondaryCurrentSpeed:{value:e.secondaryCurrentSpeed||.15},currentColor:{value:i},deepCurrentColor:{value:l},opacity:{value:e.opacity||.25},lightDirection:{value:new r(1,1,1).normalize()},lightPosition:{value:new r(0,0,0)},ambientStrength:{value:.15},lightIntensity:{value:.85}},transparent:!0,blending:v,side:c,depthWrite:!1})}addToScene(e){this.scene=e,this.effectLayers.forEach(a=>{a.mesh&&e.add(a.mesh)}),this.effectLayers.length}update(e,a){this.effectLayers.forEach(o=>{if(o.material.uniforms.time&&(o.material.uniforms.time.value+=e),a!==void 0&&o.material.uniforms.rotationAngle&&(o.material.uniforms.rotationAngle.value=a),o.layerObject&&o.layerObject.update)try{o.layerObject.update(e,a)}catch(i){console.error(`Error updating layer ${o.name}:`,i)}o.mesh&&o.mesh.rotation.copy(this.baseMesh.rotation)})}updateBaseColor(e){const a=e instanceof t?e:new t(e);this.baseMaterial.uniforms.baseColor.value=a}updateLightDirection(e){this.baseMaterial.uniforms.lightDirection.value=e.clone().normalize(),this.effectLayers.forEach(a=>{a.material.uniforms.lightDirection&&(a.material.uniforms.lightDirection.value=e.clone().normalize())})}updateLightPosition(e){this.baseMaterial.uniforms.lightPosition.value=e.clone(),this.effectLayers.forEach(a=>{a.material.uniforms.lightPosition&&(a.material.uniforms.lightPosition.value=e.clone())})}updateFromThreeLight(e){this.updateLightPosition(e.position);const a=e.target.position.clone().sub(e.position).normalize();this.updateLightDirection(a)}createGenericLayerMaterial(e,a,o,i=!0,l=v){return o.lightDirection||(o.lightDirection={value:new r(1,1,1).normalize()}),o.lightPosition||(o.lightPosition={value:new r(0,0,0)}),new s({vertexShader:e,fragmentShader:a,uniforms:o,transparent:i,blending:l,side:c,depthWrite:!1})}convertEffectToLayer(e,a,o=1.001){if(a instanceof s){const i=a.clone();return i.transparent=!0,i.depthWrite=!1,i.uniforms.lightDirection||(i.uniforms.lightDirection={value:new r(1,1,1).normalize()}),this.addEffectLayer(e,i,o)}return console.warn(`Cannot convert non-shader material to layer: ${e}`),null}getNextScaleFactor(){return 1.001+this.effectLayers.length*.001}getLayerMeshes(){const e={};return this.effectLayers.forEach(a=>{a.name&&a.mesh&&(e[a.name]=a.mesh)}),e}dispose(){this.baseMaterial.dispose(),this.effectLayers.forEach(e=>{e.mesh&&(e.mesh.geometry.dispose(),this.scene&&this.scene.remove(e.mesh)),e.material.dispose()}),this.effectLayers=[]}}export{f as P};
+    `,i=e.currentColor instanceof t?e.currentColor:new t(e.currentColor||4889486),l=e.deepCurrentColor instanceof t?e.deepCurrentColor:new t(e.deepCurrentColor||2973010);return new s({vertexShader:a,fragmentShader:o,uniforms:{time:{value:0},seedOffset:{value:(e.seed||0)%100},currentIntensity:{value:e.currentIntensity||.5},currentScale:{value:e.currentScale||2},currentSpeed:{value:e.currentSpeed||.2},secondaryCurrentIntensity:{value:e.secondaryCurrentIntensity||.3},secondaryCurrentScale:{value:e.secondaryCurrentScale||3},secondaryCurrentSpeed:{value:e.secondaryCurrentSpeed||.15},currentColor:{value:i},deepCurrentColor:{value:l},opacity:{value:e.opacity||.25},lightDirection:{value:new r(1,1,1).normalize()},lightPosition:{value:new r(0,0,0)},ambientStrength:{value:.15},lightIntensity:{value:.85}},transparent:!0,blending:v,side:c,depthWrite:!1})}addToScene(e){this.scene=e,this.effectLayers.forEach(a=>{a.mesh&&e.add(a.mesh)}),this.effectLayers.length}update(e,a){this.effectLayers.forEach(o=>{if(o.material.uniforms.time&&(o.material.uniforms.time.value+=e),a!==void 0&&o.material.uniforms.rotationAngle&&(o.material.uniforms.rotationAngle.value=a),o.layerObject&&o.layerObject.update)try{o.layerObject.update(e,a)}catch(i){console.error(`Error updating layer ${o.name}:`,i)}o.mesh&&o.mesh.rotation.copy(this.baseMesh.rotation)})}updateBaseColor(e){const a=e instanceof t?e:new t(e);this.baseMaterial.uniforms.baseColor.value=a}updateLightDirection(e){this.baseMaterial.uniforms.lightDirection.value=e.clone().normalize(),this.effectLayers.forEach(a=>{a.material.uniforms.lightDirection&&(a.material.uniforms.lightDirection.value=e.clone().normalize())})}updateLightPosition(e){this.baseMaterial.uniforms.lightPosition.value=e.clone(),this.effectLayers.forEach(a=>{a.material.uniforms.lightPosition&&(a.material.uniforms.lightPosition.value=e.clone())})}updateFromThreeLight(e){this.updateLightPosition(e.position);const a=e.target.position.clone().sub(e.position).normalize();this.updateLightDirection(a)}createGenericLayerMaterial(e,a,o,i=!0,l=v){return o.lightDirection||(o.lightDirection={value:new r(1,1,1).normalize()}),o.lightPosition||(o.lightPosition={value:new r(0,0,0)}),new s({vertexShader:e,fragmentShader:a,uniforms:o,transparent:i,blending:l,side:c,depthWrite:!1})}convertEffectToLayer(e,a,o=1.001){if(a instanceof s){const i=a.clone();return i.transparent=!0,i.depthWrite=!1,i.uniforms.lightDirection||(i.uniforms.lightDirection={value:new r(1,1,1).normalize()}),this.addEffectLayer(e,i,o)}return console.warn(`Cannot convert non-shader material to layer: ${e}`),null}createDiamondSurfaceLayerMaterial(e){const a=`
+      varying vec3 vPosition;
+      varying vec3 vNormal;
+      varying vec3 vWorldPosition;
+      varying vec3 vWorldNormal;
+      varying vec2 vUv;
+      
+      void main() {
+        vPosition = position;
+        vNormal = normalMatrix * normal;
+        vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);
+        vUv = uv;
+        vec4 worldPos = modelMatrix * vec4(position, 1.0);
+        vWorldPosition = worldPos.xyz;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,o=`
+      uniform vec3 diamondColor;
+      uniform float refractionIndex;
+      uniform float dispersion;
+      uniform float clarity;
+      uniform float facetSize;
+      uniform float brilliance;
+      uniform float opacity;
+      uniform float prismaticIntensity;
+      uniform float time;
+      uniform vec3 lightDirection;
+      uniform vec3 lightPosition;
+      uniform float ambientStrength;
+      uniform float lightIntensity;
+      
+      varying vec3 vPosition;
+      varying vec3 vNormal;
+      varying vec3 vWorldPosition;
+      varying vec3 vWorldNormal;
+      varying vec2 vUv;
+      
+      // Hash function para patrones procedurales
+      float hash(vec3 p) {
+        p = fract(p * vec3(443.8975, 397.2973, 491.1871));
+        p += dot(p, p.yxz + 19.19);
+        return fract((p.x + p.y) * p.z);
+      }
+      
+      // Función para crear facetas de diamante perfectas y geométricas
+      vec3 diamondFacets(vec2 uv, float scale, vec3 baseNormal) {
+        vec2 id = floor(uv * scale);
+        vec2 f = fract(uv * scale);
+        
+        // Crear facetas geométricas perfectas (hexagonales/octogonales)
+        float facetType = hash(vec3(id, 42.0));
+        vec3 facetNormal = baseNormal;
+        
+        // Centro de la faceta
+        vec2 center = vec2(0.5);
+        vec2 toCenter = f - center;
+        float dist = length(toCenter);
+        float angle = atan(toCenter.y, toCenter.x);
+        
+        if(facetType < 0.33) {
+          // Facetas hexagonales perfectas
+          float hexAngle = floor(angle * 3.0 / 3.14159) * 3.14159 / 3.0;
+          vec3 perturbation = vec3(
+            cos(hexAngle) * dist * 0.25,
+            sin(hexAngle) * dist * 0.25,
+            (1.0 - dist) * 0.15
+          );
+          facetNormal = normalize(baseNormal + perturbation);
+          
+        } else if(facetType < 0.66) {
+          // Facetas octogonales brillantes
+          float octAngle = floor(angle * 4.0 / 3.14159) * 3.14159 / 4.0;
+          vec3 perturbation = vec3(
+            cos(octAngle) * dist * 0.3,
+            sin(octAngle) * dist * 0.3,
+            cos(dist * 6.28) * 0.12
+          );
+          facetNormal = normalize(baseNormal + perturbation);
+          
+        } else {
+          // Facetas triangulares de brillante corte
+          float triAngle = floor(angle * 6.0 / 3.14159) * 3.14159 / 6.0;
+          float triPattern = sin(triAngle * 3.0) * cos(dist * 8.0);
+          vec3 perturbation = vec3(
+            cos(triAngle) * triPattern * 0.2,
+            sin(triAngle) * triPattern * 0.2,
+            triPattern * 0.1
+          );
+          facetNormal = normalize(baseNormal + perturbation);
+        }
+        
+        return facetNormal;
+      }
+      
+      // Función para dispersión cromática (separación de colores espectrales)
+      vec3 chromaticDispersion(vec3 direction, vec3 normal, float dispersionAmount) {
+        float eta_r = 1.0 / (refractionIndex - dispersionAmount * 0.01); // Rojo
+        float eta_g = 1.0 / refractionIndex; // Verde
+        float eta_b = 1.0 / (refractionIndex + dispersionAmount * 0.01); // Azul
+        
+        vec3 refracted_r = refract(direction, normal, eta_r);
+        vec3 refracted_g = refract(direction, normal, eta_g);
+        vec3 refracted_b = refract(direction, normal, eta_b);
+        
+        // Combinar componentes espectrales
+        return vec3(
+          length(refracted_r),
+          length(refracted_g),
+          length(refracted_b)
+        );
+      }
+      
+      void main() {
+        vec3 baseNormal = normalize(vWorldNormal);
+        
+        // FACETAS DE DIAMANTE: Crear facetas perfectas y geométricas
+        vec3 normal = diamondFacets(vUv, facetSize, baseNormal);
+        
+        // Dirección de luz como en README
+        vec3 lightDir;
+        if (length(lightPosition) > 0.0) {
+          lightDir = normalize(lightPosition - vWorldPosition);
+        } else {
+          lightDir = normalize(-lightDirection);
+        }
+        
+        // Dirección de vista (cameraPosition es built-in de Three.js)
+        vec3 viewDir = normalize(cameraPosition - vWorldPosition);
+        
+        // Cálculo de iluminación básica Lambertiana
+        float dotNL = dot(normal, lightDir);
+        float dayNight = smoothstep(-0.3, 0.1, dotNL);
+        float rimLight = 1.0 - abs(dotNL);
+        rimLight = pow(rimLight, 3.0) * 0.1;
+        
+        // Color base del diamante (más brillante por defecto)
+        vec3 color = diamondColor * 1.5; // Amplificar brillo base
+        
+        // EFECTO PRISMÁTICO: Dispersión cromática
+        vec3 dispersedColor = chromaticDispersion(-viewDir, normal, dispersion);
+        vec3 prismaticColors = vec3(
+          sin(time * 0.5 + dispersedColor.r * 10.0) * 0.5 + 0.5,
+          sin(time * 0.7 + dispersedColor.g * 8.0) * 0.5 + 0.5,
+          sin(time * 0.3 + dispersedColor.b * 12.0) * 0.5 + 0.5
+        );
+        
+        // Aplicar efecto prismático (más intenso)
+        color = mix(color, prismaticColors * 2.0, prismaticIntensity * clarity);
+        
+        // REFLEXIÓN ESPECULAR INTENSA (características del diamante)
+        vec3 halfwayDir = normalize(lightDir + viewDir);
+        float NdotH = max(dot(normal, halfwayDir), 0.0);
+        float specularPower = mix(64.0, 512.0, brilliance); // Muy alto para diamante
+        float specularStrength = pow(NdotH, specularPower);
+        
+        // Múltiples reflexiones internas (característica del diamante)
+        float fresnel = pow(1.0 - max(dot(normal, viewDir), 0.0), 2.0);
+        vec3 internalReflections = vec3(1.0) * fresnel * clarity;
+        
+        // REFRACCIÓN: Simular el comportamiento refractivo del diamante
+        vec3 refractedDir = refract(-viewDir, normal, 1.0 / refractionIndex);
+        float refractionEffect = length(refractedDir) * clarity;
+        
+        // Aplicar iluminación base (más brillante ambiente para diamante)
+        float enhancedAmbient = ambientStrength + 0.3; // Más luz ambiente para diamantes
+        float totalLight = enhancedAmbient + (lightIntensity * dayNight) + rimLight;
+        vec3 finalColor = color * totalLight;
+        
+        // Añadir brillos especulares intensos (más visibles en parte iluminada)
+        vec3 diamondSparkle = vec3(specularStrength * brilliance * 3.0); // Triplicar intensidad
+        finalColor += diamondSparkle * max(dayNight, 0.3); // Visible incluso en sombra
+        
+        // Añadir reflexiones internas y refracción (siempre visibles)
+        finalColor += internalReflections * 0.6; // Duplicar y hacer independiente de luz
+        finalColor = mix(finalColor, finalColor * 1.8, refractionEffect * 0.3);
+        
+        // Añadir destellos dinámicos (independientes de iluminación)
+        float sparkle = sin(time * 2.0 + dot(normal, viewDir) * 20.0) * 0.5 + 0.5;
+        finalColor += vec3(sparkle * brilliance * 0.8); // Más intenso y siempre visible
+        
+        // Aplicar claridad (transparencia parcial)
+        float finalOpacity = opacity * clarity;
+        
+        gl_FragColor = vec4(finalColor, finalOpacity);
+      }
+    `;return new s({vertexShader:a,fragmentShader:o,uniforms:{time:{value:0},diamondColor:{value:e.color||new t(16777215)},refractionIndex:{value:e.refractionIndex||2.42},dispersion:{value:e.dispersion||.5},clarity:{value:e.clarity||.8},facetSize:{value:e.facetSize||15},brilliance:{value:e.brilliance||2},opacity:{value:e.opacity||.9},prismaticIntensity:{value:e.prismaticIntensity||.6},lightDirection:{value:new r(1,1,1).normalize()},lightPosition:{value:new r(0,0,0)},ambientStrength:{value:.15},lightIntensity:{value:.85}},transparent:!0,blending:v,side:u,depthWrite:!1})}getNextScaleFactor(){return 1.001+this.effectLayers.length*.001}getLayerMeshes(){const e={};return this.effectLayers.forEach(a=>{a.name&&a.mesh&&(e[a.name]=a.mesh)}),e}dispose(){this.baseMaterial.dispose(),this.effectLayers.forEach(e=>{e.mesh&&(e.mesh.geometry.dispose(),this.scene&&this.scene.remove(e.mesh)),e.material.dispose()}),this.effectLayers=[]}}export{f as P};

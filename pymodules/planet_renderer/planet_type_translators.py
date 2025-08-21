@@ -700,7 +700,50 @@ class PlanetTypeTranslators:
     
     def translate_diamond(self, planet_radius: int, rng: random.Random, 
                          seed: int, planet_name: str) -> Dict[str, Any]:
-        return {"type": "diamond"}
+        """Translate Diamond planet elements with crystal properties"""
+        
+        # Diamond-specific properties
+        base_color = [
+            rng.uniform(0.95, 1.0),  # Very pure white/crystal
+            rng.uniform(0.95, 1.0),
+            rng.uniform(0.95, 1.0)
+        ]
+        
+        # Crystal surface properties
+        surface_properties = {
+            "refraction": rng.uniform(2.0, 2.8),  # High refractive index
+            "dispersion": rng.uniform(0.4, 0.8),  # Chromatic dispersion
+            "clarity": rng.uniform(0.7, 0.95),    # Transparency/clarity
+            "facet_size": rng.uniform(8.0, 25.0), # Size of crystal facets
+            "brilliance": rng.uniform(1.8, 3.2),  # Intensity of reflections
+            "prismatic": rng.uniform(0.5, 0.9)    # Prismatic effects intensity
+        }
+        
+        # Sistema de efectos modulares 3D para planetas Diamond
+        effects_3d = []
+        
+        # Atmospheric sparkles (destellos atmosféricos cristalinos)
+        effects_3d.append({
+            "type": "atmospheric_streaks",
+            "params": {
+                "color": [
+                    rng.uniform(0.9, 1.0),
+                    rng.uniform(0.9, 1.0),
+                    rng.uniform(0.95, 1.0)
+                ],
+                "particleCount": rng.randint(80, 200),  # Más partículas para efecto brillante
+                "speed": rng.uniform(0.3, 0.8),        # Movimiento más suave
+                "sparkle": True                        # Efecto de destellos
+            },
+            "priority": 15
+        })
+        
+        return {
+            "type": "diamond",
+            "base_color": base_color,
+            "surface": surface_properties,
+            "effects_3d": effects_3d
+        }
     
     def translate_super_earth(self, planet_radius: int, rng: random.Random, 
                              seed: int, planet_name: str) -> Dict[str, Any]:
