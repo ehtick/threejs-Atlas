@@ -45,6 +45,9 @@ export type { LandMassesParams } from "./LandMasses";
 export { TundraSnowflakesEffect, createTundraSnowflakesFromPythonData } from "./TundraSnowflakes";
 export type { TundraSnowflakesParams } from "./TundraSnowflakes";
 
+export { RiverLinesEffect, createRiverLinesFromPythonData, createRiverLinesWithPreset } from "./RiverLines";
+export type { RiverLinesParams, RiverSegment } from "./RiverLines";
+
 // Efectos anómalos
 // AnomalyGlitchFieldEffect, AnomalyGeometricMorphEffect y AnomalyVoidSphereEffect movidos a Unused3DEffects
 // export {
@@ -111,6 +114,7 @@ export const AVAILABLE_EFFECTS = [
   "bioluminescence",
   "thermal_emissions",
   "tundra_snowflakes",
+  "river_lines",
   // Efectos anómalos (algunos desactivados)
   // 'anomaly_glitch_field', // Movido a Unused3DEffects
   // 'anomaly_void_sphere', // Movido a Unused3DEffects
@@ -180,6 +184,17 @@ export const DEFAULT_EFFECT_CONFIGS = {
     crystalColor: [0.675, 0.843, 0.902],
     crackColor: [0.2, 0.2, 0.2],
     iceCapColor: [0.678, 0.847, 1.0],
+  },
+
+  river_lines: {
+    riverCount: 12,
+    segmentsPerRiver: 8,
+    lineWidth: 2.0,
+    color: [0.4, 0.3, 0.2],
+    opacity: 0.7,
+    curviness: 0.8,
+    branching: 0.3,
+    density: 1.0,
   },
 
   // ocean_waves eliminado - no respeta datos de Python

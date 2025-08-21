@@ -16,6 +16,7 @@ import { AtmosphereCloudsEffect, createAtmosphereCloudsFromPythonData, Atmospher
 import { LandMassesEffect, createLandMassesFromPythonData, createTransparentLandMassesForIcyPlanet, LandMassesParams } from "./LandMasses";
 import { IcyFeaturesEffect, createIcyFeaturesFromPythonData } from "./IcyFeatures";
 import { TundraSnowflakesEffect, createTundraSnowflakesFromPythonData } from "./TundraSnowflakes";
+import { RiverLinesEffect, createRiverLinesFromPythonData } from "./RiverLines";
 
 // Efectos anómalos
 // AnomalyGlitchFieldEffect, AnomalyGeometricMorphEffect, AnomalyGravityWellEffect y AnomalyVoidSphereEffect movidos a Unused3DEffects
@@ -113,6 +114,9 @@ export enum EffectType {
 
   // Efectos de clima
   TUNDRA_SNOWFLAKES = "tundra_snowflakes",
+
+  // Efectos geológicos
+  RIVER_LINES = "river_lines",
 
   // Efectos anómalos (algunos desactivados)
   // ANOMALY_GLITCH_FIELD = "anomaly_glitch_field", // Movido a Unused3DEffects
@@ -252,6 +256,13 @@ export class EffectRegistry {
       create: (params, planetRadius) => new TundraSnowflakesEffect(planetRadius, params),
       fromPythonData: (data, planetRadius) => createTundraSnowflakesFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed),
     });
+
+    this.registerEffect(EffectType.RIVER_LINES, {
+      create: (params, planetRadius) => new RiverLinesEffect(planetRadius, params),
+      fromPythonData: (data, planetRadius) => createRiverLinesFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed),
+    });
+
+    // Efectos de superficie específicos
 
     // Efectos anómalos
     // AnomalyGlitchField desactivado - movido a Unused3DEffects
@@ -1233,6 +1244,27 @@ export class EffectRegistry {
               effects.push(landMassesInstance);
               landMassesEffect.addToScene(scene, mesh.position);
               console.log("🏜️ Arid terrain (LandMasses with dark reddish color) added to Arid planet");
+            }
+
+            // 3. Añadir ríos secos para dar más detalle al terreno árido
+            const riverLinesEffect = createRiverLinesFromPythonData(
+              planetRadius,
+              surface,
+              (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed)
+            );
+            if (riverLinesEffect) {
+              const riverLinesInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "river_lines",
+                effect: riverLinesEffect,
+                priority: 6, // Prioridad alta para renderizar sobre el terreno
+                enabled: true,
+                name: "Dried River Channels",
+              };
+              this.effects.set(riverLinesInstance.id, riverLinesInstance);
+              effects.push(riverLinesInstance);
+              riverLinesEffect.addToScene(scene, mesh.position);
+              console.log("🏜️ Dried river channels added to Arid planet");
             }
             break;
 
