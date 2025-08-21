@@ -1558,12 +1558,12 @@ export class PlanetLayerSystem {
         // Color base del diamante (como MetallicSurfaceLayer)
         vec3 color = diamondColor;
         
-        // EFECTO PRISMÁTICO: Dispersión cromática suave
+        // EFECTO PRISMÁTICO: Dispersión cromática estática
         vec3 dispersedColor = chromaticDispersion(-viewDir, normal, dispersion);
         vec3 prismaticColors = vec3(
-          sin(time * 0.5 + dispersedColor.r * 10.0) * 0.5 + 0.5,
-          sin(time * 0.7 + dispersedColor.g * 8.0) * 0.5 + 0.5,
-          sin(time * 0.3 + dispersedColor.b * 12.0) * 0.5 + 0.5
+          sin(dispersedColor.r * 10.0) * 0.5 + 0.5,
+          sin(dispersedColor.g * 8.0) * 0.5 + 0.5,
+          sin(dispersedColor.b * 12.0) * 0.5 + 0.5
         );
         
         // Aplicar efecto prismático sutilmente
@@ -1594,8 +1594,8 @@ export class PlanetLayerSystem {
         // Añadir reflexiones internas sutiles
         finalColor += internalReflections * 0.2 * dayNight;
         
-        // Añadir destellos dinámicos sutiles
-        float sparkle = sin(time * 2.0 + dot(normal, viewDir) * 20.0) * 0.5 + 0.5;
+        // Destellos estáticos basados en facetas (sin animación)
+        float sparkle = sin(dot(normal, viewDir) * 50.0) * 0.5 + 0.5;
         finalColor += vec3(sparkle * brilliance * 0.1) * dayNight;
         
         // Aplicar claridad (transparencia parcial)
