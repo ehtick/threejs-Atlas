@@ -1555,10 +1555,10 @@ export class PlanetLayerSystem {
         float rimLight = 1.0 - abs(dotNL);
         rimLight = pow(rimLight, 3.0) * 0.1;
         
-        // Color base del diamante (más brillante por defecto)
-        vec3 color = diamondColor * 1.5; // Amplificar brillo base
+        // Color base del diamante (como MetallicSurfaceLayer)
+        vec3 color = diamondColor;
         
-        // EFECTO PRISMÁTICO: Dispersión cromática
+        // EFECTO PRISMÁTICO: Dispersión cromática suave
         vec3 dispersedColor = chromaticDispersion(-viewDir, normal, dispersion);
         vec3 prismaticColors = vec3(
           sin(time * 0.5 + dispersedColor.r * 10.0) * 0.5 + 0.5,
@@ -1566,8 +1566,8 @@ export class PlanetLayerSystem {
           sin(time * 0.3 + dispersedColor.b * 12.0) * 0.5 + 0.5
         );
         
-        // Aplicar efecto prismático (más intenso)
-        color = mix(color, prismaticColors * 2.0, prismaticIntensity * clarity);
+        // Aplicar efecto prismático sutilmente
+        color = mix(color, prismaticColors, prismaticIntensity * clarity * 0.3);
         
         // REFLEXIÓN ESPECULAR INTENSA (características del diamante)
         vec3 halfwayDir = normalize(lightDir + viewDir);
@@ -1583,22 +1583,20 @@ export class PlanetLayerSystem {
         vec3 refractedDir = refract(-viewDir, normal, 1.0 / refractionIndex);
         float refractionEffect = length(refractedDir) * clarity;
         
-        // Aplicar iluminación base (más brillante ambiente para diamante)
-        float enhancedAmbient = ambientStrength + 0.3; // Más luz ambiente para diamantes
-        float totalLight = enhancedAmbient + (lightIntensity * dayNight) + rimLight;
+        // Aplicar iluminación base (EXACTAMENTE como MetallicSurfaceLayer)
+        float totalLight = ambientStrength + (lightIntensity * dayNight) + rimLight;
         vec3 finalColor = color * totalLight;
         
-        // Añadir brillos especulares intensos (más visibles en parte iluminada)
-        vec3 diamondSparkle = vec3(specularStrength * brilliance * 3.0); // Triplicar intensidad
-        finalColor += diamondSparkle * max(dayNight, 0.3); // Visible incluso en sombra
+        // Añadir brillos especulares SOLO en la parte iluminada (como MetallicSurfaceLayer)
+        vec3 diamondSparkle = vec3(specularStrength * brilliance);
+        finalColor += diamondSparkle * dayNight;
         
-        // Añadir reflexiones internas y refracción (siempre visibles)
-        finalColor += internalReflections * 0.6; // Duplicar y hacer independiente de luz
-        finalColor = mix(finalColor, finalColor * 1.8, refractionEffect * 0.3);
+        // Añadir reflexiones internas sutiles
+        finalColor += internalReflections * 0.2 * dayNight;
         
-        // Añadir destellos dinámicos (independientes de iluminación)
+        // Añadir destellos dinámicos sutiles
         float sparkle = sin(time * 2.0 + dot(normal, viewDir) * 20.0) * 0.5 + 0.5;
-        finalColor += vec3(sparkle * brilliance * 0.8); // Más intenso y siempre visible
+        finalColor += vec3(sparkle * brilliance * 0.1) * dayNight;
         
         // Aplicar claridad (transparencia parcial)
         float finalOpacity = opacity * clarity;
@@ -1612,7 +1610,7 @@ export class PlanetLayerSystem {
       fragmentShader,
       uniforms: {
         time: { value: 0 },
-        diamondColor: { value: params.color || new THREE.Color(0xffffff) },
+        diamondColor: { value: params.color || new THREE.Color(0x808080) },
         refractionIndex: { value: params.refractionIndex || 2.42 },
         dispersion: { value: params.dispersion || 0.5 },
         clarity: { value: params.clarity || 0.8 },

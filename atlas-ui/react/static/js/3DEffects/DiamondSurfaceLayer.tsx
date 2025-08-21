@@ -102,7 +102,7 @@ export function createDiamondSurfaceLayerFromPythonData(layerSystem: PlanetLayer
   const surfaceProps = surfaceElements.surface || surface;
 
   return new DiamondSurfaceLayer(layerSystem, {
-    color: baseColor ? new THREE.Color().fromArray(baseColor) : new THREE.Color(0xffffff),
+    color: baseColor ? new THREE.Color(baseColor) : new THREE.Color(0x808080),
     refractionIndex: surfaceProps.refraction || rng.uniform(PROCEDURAL_RANGES.REFRACTION_INDEX.min, PROCEDURAL_RANGES.REFRACTION_INDEX.max),
     dispersion: surfaceProps.dispersion || rng.uniform(PROCEDURAL_RANGES.DISPERSION.min, PROCEDURAL_RANGES.DISPERSION.max),
     clarity: surfaceProps.clarity || rng.uniform(PROCEDURAL_RANGES.CLARITY.min, PROCEDURAL_RANGES.CLARITY.max),

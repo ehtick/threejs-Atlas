@@ -1,4 +1,4 @@
-import{C as t,S as s,F as c,V as r,b as m,M as d,N as v,D as u}from"./atlas_Ce3hh0hgxYWauQ_qSK6cl.js";class f{baseMesh;baseMaterial;effectLayers=[];scene;planetRadius;static baseVertexShader=`
+import{C as t,S as s,F as c,V as r,b as d,M as m,N as v,D as u}from"./atlas_Ce3hh0hgxYWauQ_qSK6cl.js";class f{baseMesh;baseMaterial;effectLayers=[];scene;planetRadius;static baseVertexShader=`
     varying vec3 vPosition;
     varying vec3 vNormal;
     varying vec3 vWorldPosition;
@@ -57,7 +57,7 @@ import{C as t,S as s,F as c,V as r,b as m,M as d,N as v,D as u}from"./atlas_Ce3h
       
       gl_FragColor = vec4(finalColor, 1.0);
     }
-  `;constructor(e,a=new t(16753920)){this.baseMesh=e;const o=e.geometry;this.planetRadius=o.parameters.radius||1;const i=a instanceof t?a:new t(a);this.baseMaterial=new s({vertexShader:f.baseVertexShader,fragmentShader:f.baseFragmentShader,uniforms:{baseColor:{value:i},lightDirection:{value:new r(1,1,1).normalize()},lightPosition:{value:new r(0,0,0)},ambientStrength:{value:.15},lightIntensity:{value:.85}},side:c}),this.baseMesh.material=this.baseMaterial}addEffectLayer(e,a,o=1.001,i){const l=new m(this.planetRadius*o,256,256),n=new d(l,a);return n.position.copy(this.baseMesh.position),n.rotation.copy(this.baseMesh.rotation),this.effectLayers.push({name:e,mesh:n,material:a,layerObject:i}),this.scene&&this.scene.add(n),n}createCloudBandsLayerMaterial(e){const a=`
+  `;constructor(e,a=new t(16753920)){this.baseMesh=e;const o=e.geometry;this.planetRadius=o.parameters.radius||1;const i=a instanceof t?a:new t(a);this.baseMaterial=new s({vertexShader:f.baseVertexShader,fragmentShader:f.baseFragmentShader,uniforms:{baseColor:{value:i},lightDirection:{value:new r(1,1,1).normalize()},lightPosition:{value:new r(0,0,0)},ambientStrength:{value:.15},lightIntensity:{value:.85}},side:c}),this.baseMesh.material=this.baseMaterial}addEffectLayer(e,a,o=1.001,i){const l=new d(this.planetRadius*o,256,256),n=new m(l,a);return n.position.copy(this.baseMesh.position),n.rotation.copy(this.baseMesh.rotation),this.effectLayers.push({name:e,mesh:n,material:a,layerObject:i}),this.scene&&this.scene.add(n),n}createCloudBandsLayerMaterial(e){const a=`
       varying vec3 vPosition;
       varying vec3 vNormal;
       varying vec2 vUv;
@@ -1085,10 +1085,10 @@ import{C as t,S as s,F as c,V as r,b as m,M as d,N as v,D as u}from"./atlas_Ce3h
         float rimLight = 1.0 - abs(dotNL);
         rimLight = pow(rimLight, 3.0) * 0.1;
         
-        // Color base del diamante (más brillante por defecto)
-        vec3 color = diamondColor * 1.5; // Amplificar brillo base
+        // Color base del diamante (como MetallicSurfaceLayer)
+        vec3 color = diamondColor;
         
-        // EFECTO PRISMÁTICO: Dispersión cromática
+        // EFECTO PRISMÁTICO: Dispersión cromática suave
         vec3 dispersedColor = chromaticDispersion(-viewDir, normal, dispersion);
         vec3 prismaticColors = vec3(
           sin(time * 0.5 + dispersedColor.r * 10.0) * 0.5 + 0.5,
@@ -1096,8 +1096,8 @@ import{C as t,S as s,F as c,V as r,b as m,M as d,N as v,D as u}from"./atlas_Ce3h
           sin(time * 0.3 + dispersedColor.b * 12.0) * 0.5 + 0.5
         );
         
-        // Aplicar efecto prismático (más intenso)
-        color = mix(color, prismaticColors * 2.0, prismaticIntensity * clarity);
+        // Aplicar efecto prismático sutilmente
+        color = mix(color, prismaticColors, prismaticIntensity * clarity * 0.3);
         
         // REFLEXIÓN ESPECULAR INTENSA (características del diamante)
         vec3 halfwayDir = normalize(lightDir + viewDir);
@@ -1113,26 +1113,24 @@ import{C as t,S as s,F as c,V as r,b as m,M as d,N as v,D as u}from"./atlas_Ce3h
         vec3 refractedDir = refract(-viewDir, normal, 1.0 / refractionIndex);
         float refractionEffect = length(refractedDir) * clarity;
         
-        // Aplicar iluminación base (más brillante ambiente para diamante)
-        float enhancedAmbient = ambientStrength + 0.3; // Más luz ambiente para diamantes
-        float totalLight = enhancedAmbient + (lightIntensity * dayNight) + rimLight;
+        // Aplicar iluminación base (EXACTAMENTE como MetallicSurfaceLayer)
+        float totalLight = ambientStrength + (lightIntensity * dayNight) + rimLight;
         vec3 finalColor = color * totalLight;
         
-        // Añadir brillos especulares intensos (más visibles en parte iluminada)
-        vec3 diamondSparkle = vec3(specularStrength * brilliance * 3.0); // Triplicar intensidad
-        finalColor += diamondSparkle * max(dayNight, 0.3); // Visible incluso en sombra
+        // Añadir brillos especulares SOLO en la parte iluminada (como MetallicSurfaceLayer)
+        vec3 diamondSparkle = vec3(specularStrength * brilliance);
+        finalColor += diamondSparkle * dayNight;
         
-        // Añadir reflexiones internas y refracción (siempre visibles)
-        finalColor += internalReflections * 0.6; // Duplicar y hacer independiente de luz
-        finalColor = mix(finalColor, finalColor * 1.8, refractionEffect * 0.3);
+        // Añadir reflexiones internas sutiles
+        finalColor += internalReflections * 0.2 * dayNight;
         
-        // Añadir destellos dinámicos (independientes de iluminación)
+        // Añadir destellos dinámicos sutiles
         float sparkle = sin(time * 2.0 + dot(normal, viewDir) * 20.0) * 0.5 + 0.5;
-        finalColor += vec3(sparkle * brilliance * 0.8); // Más intenso y siempre visible
+        finalColor += vec3(sparkle * brilliance * 0.1) * dayNight;
         
         // Aplicar claridad (transparencia parcial)
         float finalOpacity = opacity * clarity;
         
         gl_FragColor = vec4(finalColor, finalOpacity);
       }
-    `;return new s({vertexShader:a,fragmentShader:o,uniforms:{time:{value:0},diamondColor:{value:e.color||new t(16777215)},refractionIndex:{value:e.refractionIndex||2.42},dispersion:{value:e.dispersion||.5},clarity:{value:e.clarity||.8},facetSize:{value:e.facetSize||15},brilliance:{value:e.brilliance||2},opacity:{value:e.opacity||.9},prismaticIntensity:{value:e.prismaticIntensity||.6},lightDirection:{value:new r(1,1,1).normalize()},lightPosition:{value:new r(0,0,0)},ambientStrength:{value:.15},lightIntensity:{value:.85}},transparent:!0,blending:v,side:u,depthWrite:!1})}getNextScaleFactor(){return 1.001+this.effectLayers.length*.001}getLayerMeshes(){const e={};return this.effectLayers.forEach(a=>{a.name&&a.mesh&&(e[a.name]=a.mesh)}),e}dispose(){this.baseMaterial.dispose(),this.effectLayers.forEach(e=>{e.mesh&&(e.mesh.geometry.dispose(),this.scene&&this.scene.remove(e.mesh)),e.material.dispose()}),this.effectLayers=[]}}export{f as P};
+    `;return new s({vertexShader:a,fragmentShader:o,uniforms:{time:{value:0},diamondColor:{value:e.color||new t(8421504)},refractionIndex:{value:e.refractionIndex||2.42},dispersion:{value:e.dispersion||.5},clarity:{value:e.clarity||.8},facetSize:{value:e.facetSize||15},brilliance:{value:e.brilliance||2},opacity:{value:e.opacity||.9},prismaticIntensity:{value:e.prismaticIntensity||.6},lightDirection:{value:new r(1,1,1).normalize()},lightPosition:{value:new r(0,0,0)},ambientStrength:{value:.15},lightIntensity:{value:.85}},transparent:!0,blending:v,side:u,depthWrite:!1})}getNextScaleFactor(){return 1.001+this.effectLayers.length*.001}getLayerMeshes(){const e={};return this.effectLayers.forEach(a=>{a.name&&a.mesh&&(e[a.name]=a.mesh)}),e}dispose(){this.baseMaterial.dispose(),this.effectLayers.forEach(e=>{e.mesh&&(e.mesh.geometry.dispose(),this.scene&&this.scene.remove(e.mesh)),e.material.dispose()}),this.effectLayers=[]}}export{f as P};
