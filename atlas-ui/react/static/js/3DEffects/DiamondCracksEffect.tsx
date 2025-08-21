@@ -91,28 +91,29 @@ export class DiamondCracksEffect {
         uniform vec3 crackColor;
         uniform float crackIntensity;
         uniform float crackGlow;
+        uniform float planetSeed;
         
-        // Random simple
-        vec2 random2(vec2 st) {
-          st = vec2(dot(st, vec2(127.1, 311.7)),
-                    dot(st, vec2(269.5, 183.3)));
-          return -1.0 + 2.0 * fract(sin(st) * 43758.5453123);
+        // Random mejorado con seed única por planeta
+        vec2 random2(vec2 st, float seed) {
+          st = vec2(dot(st, vec2(127.1 + seed, 311.7 + seed * 0.5)),
+                    dot(st, vec2(269.5 + seed * 0.3, 183.3 + seed * 0.7)));
+          return -1.0 + 2.0 * fract(sin(st) * (43758.5453123 + seed));
         }
         
-        // Voronoi mejorado para evitar bordes de corte
-        float voronoiCracks(vec2 st) {
+        // Voronoi único por planeta usando seed
+        float voronoiCracks(vec2 st, float planetSeed) {
           vec2 i_st = floor(st);
           vec2 f_st = fract(st);
           
           float min_dist = 10.0;
           float min_dist2 = 10.0;
           
-          // Búsqueda extendida para evitar artefactos en bordes
+          // Búsqueda extendida con seed única
           for(int y = -2; y <= 2; y++) {
             for(int x = -2; x <= 2; x++) {
               vec2 neighbor = vec2(float(x), float(y));
-              vec2 point = random2(i_st + neighbor);
-              point = 0.5 + 0.35 * point; // Reducir variación para más uniformidad
+              vec2 point = random2(i_st + neighbor, planetSeed);
+              point = 0.5 + 0.35 * point;
               vec2 diff = neighbor + point - f_st;
               float dist = length(diff);
               
@@ -125,44 +126,46 @@ export class DiamondCracksEffect {
             }
           }
           
-          // Suavizado para evitar cortes abruptos
           float edge = min_dist2 - min_dist;
           return smoothstep(0.0, 0.1, edge);
         }
         
         void main() {
-          vec2 st = vUv * 8.0; // Escala optimizada
+          // Escala variable basada en la seed del planeta
+          vec2 st = vUv * (6.0 + mod(planetSeed, 4.0));
           
-          // Solo 2 capas para mejor rendimiento
-          float edge1 = voronoiCracks(st);
-          float edge2 = voronoiCracks(st * 1.5 + vec2(13.0, 7.0));
+          // Offsets únicos por planeta
+          vec2 offset1 = vec2(mod(planetSeed, 17.0), mod(planetSeed * 1.3, 19.0));
+          vec2 offset2 = vec2(mod(planetSeed * 2.1, 23.0), mod(planetSeed * 0.7, 29.0));
           
-          // Combinar solo las 2 capas
-          float lineWidth = 0.025;
+          // Solo 2 capas con patrones completamente diferentes
+          float edge1 = voronoiCracks(st, planetSeed);
+          float edge2 = voronoiCracks(st * (1.3 + mod(planetSeed * 0.1, 0.4)) + offset2, planetSeed + 1000.0);
+          
+          // Ancho de línea variable
+          float lineWidth = 0.02 + mod(planetSeed * 0.001, 0.01);
           float crack1 = 1.0 - smoothstep(0.0, lineWidth, edge1);
           float crack2 = 1.0 - smoothstep(0.0, lineWidth * 0.8, edge2);
           
-          // Combinar grietas con pesos balanceados
-          float crack = max(crack1, crack2 * 0.6);
+          // Combinar con pesos variables
+          float weight = 0.5 + mod(planetSeed * 0.01, 0.3);
+          float crack = max(crack1, crack2 * weight);
           
-          // Descartar fragmentos débiles
           if(crack < 0.1) {
             discard;
           }
           
-          // Variación de profundidad mejorada
           float depthVariation = abs(dot(vNormal, vec3(0.0, 0.0, 1.0)));
           crack *= 0.7 + 0.3 * depthVariation;
           
-          // Pulsación más sutil
-          float pulse = 1.0 + 0.05 * sin(time * 1.5 + st.x * 3.0);
+          // Pulsación única por planeta
+          float pulseSpeed = 1.0 + mod(planetSeed * 0.001, 1.0);
+          float pulse = 1.0 + 0.05 * sin(time * pulseSpeed + st.x * 3.0 + planetSeed);
           crack *= pulse;
           
-          // Color con brillo optimizado
           vec3 baseColor = crackColor * crackIntensity;
           vec3 glowColor = baseColor * (1.0 + crackGlow * crack * 0.5);
           
-          // Transparencia ajustada
           float alpha = crack * 0.4;
           
           gl_FragColor = vec4(glowColor, alpha);
@@ -172,7 +175,8 @@ export class DiamondCracksEffect {
         time: { value: 0.0 },
         crackColor: { value: this.params.crackColor },
         crackIntensity: { value: this.params.crackOpacity! * 2.0 },
-        crackGlow: { value: this.params.internalReflections! * 3.0 }
+        crackGlow: { value: this.params.internalReflections! * 3.0 },
+        planetSeed: { value: this.params.seed! }
       },
       transparent: true,
       depthWrite: false,
