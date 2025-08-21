@@ -248,10 +248,10 @@ export class AtmosphereCloudsEffect {
         // Usar datos reales de Python
         const cloudData = cloudsFromPython[i];
         
-        // Posición desde Python - a mitad de camino entre planeta y atmósfera
-        x = cloudData.position[0] * planetRadius * 1.04; // Altura media atmosférica
-        y = cloudData.position[1] * planetRadius * 1.04;
-        z = cloudData.position[2] * planetRadius * 1.04;
+        // Posición desde Python - más alta para evitar Z-fighting con LandMasses
+        x = cloudData.position[0] * planetRadius * 1.05; // Altura atmosférica más alta
+        y = cloudData.position[1] * planetRadius * 1.05;
+        z = cloudData.position[2] * planetRadius * 1.05;
         
         // Color desde Python
         if (cloudData.color) {
@@ -266,7 +266,7 @@ export class AtmosphereCloudsEffect {
         const phi = rng.uniform(0, 2 * Math.PI);
         const cosTheta = rng.uniform(-1, 1); // Distribución uniforme en coseno
         const theta = Math.acos(cosTheta);
-        const surfaceRadius = planetRadius * rng.uniform(1.02, 1.06); // Altura variable
+        const surfaceRadius = planetRadius * rng.uniform(1.03, 1.07); // Altura variable más alta para evitar Z-fighting
         
         x = surfaceRadius * Math.sin(theta) * Math.cos(phi);
         y = surfaceRadius * Math.sin(theta) * Math.sin(phi);
@@ -356,6 +356,9 @@ export class AtmosphereCloudsEffect {
       
       // Crear mesh de nube SIGUIENDO LA SUPERFICIE
       const cloudMesh = new THREE.Mesh(cloudGeometry, cloudMaterial);
+      
+      // RenderOrder: 2 para que se renderice después de las masas de tierra (que tienen 1)
+      cloudMesh.renderOrder = 2;
       
       // Guardar datos para nubes atmosféricas
       cloudMesh.userData.isAtmosphericCloud = true;

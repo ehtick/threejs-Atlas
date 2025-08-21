@@ -320,6 +320,9 @@ export class LandMassesEffect {
         flatShading: false,
         // Añadir rugosidad para simular textura de tierra/hielo
         bumpScale: 0.002,
+        // Configurar depth sorting para evitar Z-fighting
+        depthWrite: true,
+        depthTest: true,
       });
       
       // Crear textura de ruido simple para darle textura
@@ -347,6 +350,8 @@ export class LandMassesEffect {
       const landMesh = new THREE.Mesh(geometry, material);
       landMesh.castShadow = true;
       landMesh.receiveShadow = true;
+      // RenderOrder: 1 para que se renderice antes que las nubes (que tendrán 2)
+      landMesh.renderOrder = 1;
       
       this.lands.push(landMesh);
       this.landGroup.add(landMesh);
@@ -374,8 +379,8 @@ export class LandMassesEffect {
       // Crear geometría simple de círculo
       const geometry = new THREE.CircleGeometry(size, 16);
       
-      // Posicionar y orientar
-      const worldPos = position.clone().multiplyScalar(planetRadius * 1.000);
+      // Posicionar y orientar - más separación para evitar Z-fighting con nubes
+      const worldPos = position.clone().multiplyScalar(planetRadius * 1.002);
       geometry.lookAt(position);
       geometry.translate(worldPos.x, worldPos.y, worldPos.z);
       
@@ -397,9 +402,14 @@ export class LandMassesEffect {
         transparent: params.transparentMode || proceduralOpacity < 1.0,
         emissive: params.transparentMode ? new THREE.Color(0xCCE6FF).multiplyScalar(0.1) : 0x0a0a00,
         shininess: params.transparentMode ? 30 : 5,
+        // Configurar depth sorting para evitar Z-fighting
+        depthWrite: true,
+        depthTest: true,
       });
       
       const landMesh = new THREE.Mesh(geometry, material);
+      // RenderOrder: 1 para que se renderice antes que las nubes (que tendrán 2)
+      landMesh.renderOrder = 1;
       this.lands.push(landMesh);
       this.landGroup.add(landMesh);
     }
