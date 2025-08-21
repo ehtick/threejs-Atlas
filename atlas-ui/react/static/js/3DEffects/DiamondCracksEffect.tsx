@@ -21,6 +21,7 @@ export interface DiamondCracksParams {
   animationSpeed?: number;
   seed?: number;
   radius?: number;
+  lineDrawPercentage?: number; // Porcentaje de líneas a dibujar (0.0 - 1.0)
 }
 
 // Rangos para generación procedural
@@ -63,6 +64,7 @@ export class DiamondCracksEffect {
       animationSpeed: rng.uniform(PROCEDURAL_RANGES.ANIMATION_SPEED.min, PROCEDURAL_RANGES.ANIMATION_SPEED.max),
       seed,
       radius: params.radius || 2.5,
+      lineDrawPercentage: params.lineDrawPercentage !== undefined ? params.lineDrawPercentage : 0.5, // Por defecto 30%
     };
 
     // Esfera que envuelve el diamante
@@ -92,12 +94,21 @@ export class DiamondCracksEffect {
         uniform float crackIntensity;
         uniform float crackGlow;
         uniform float planetSeed;
+        uniform float lineDrawPercentage;
         
         // Random mejorado con seed única por planeta
         vec2 random2(vec2 st, float seed) {
           st = vec2(dot(st, vec2(127.1 + seed, 311.7 + seed * 0.5)),
                     dot(st, vec2(269.5 + seed * 0.3, 183.3 + seed * 0.7)));
           return -1.0 + 2.0 * fract(sin(st) * (43758.5453123 + seed));
+        }
+        
+        // Función para determinar si una línea debe dibujarse (porcentaje ajustable)
+        float shouldDrawLine(vec2 position, float seed, float percentage) {
+          vec2 cellPos = floor(position * 2.0); // Dividir en células más grandes
+          float cellSeed = dot(cellPos, vec2(127.1, 311.7)) + seed;
+          float random = fract(sin(cellSeed) * 43758.5453);
+          return step(random, percentage); // Porcentaje ajustable
         }
         
         // Voronoi único por planeta usando seed
@@ -134,6 +145,15 @@ export class DiamondCracksEffect {
           // Escala variable basada en la seed del planeta
           vec2 st = vUv * (6.0 + mod(planetSeed, 4.0));
           
+          // Verificar si esta posición debe tener líneas (porcentaje ajustable)
+          float drawChance1 = shouldDrawLine(st, planetSeed, lineDrawPercentage);
+          float drawChance2 = shouldDrawLine(st * 1.5, planetSeed + 500.0, lineDrawPercentage);
+          
+          // Si ninguna capa debe dibujarse, descartar
+          if(drawChance1 < 0.5 && drawChance2 < 0.5) {
+            discard;
+          }
+          
           // Offsets únicos por planeta
           vec2 offset1 = vec2(mod(planetSeed, 17.0), mod(planetSeed * 1.3, 19.0));
           vec2 offset2 = vec2(mod(planetSeed * 2.1, 23.0), mod(planetSeed * 0.7, 29.0));
@@ -144,8 +164,8 @@ export class DiamondCracksEffect {
           
           // Ancho de línea variable
           float lineWidth = 0.02 + mod(planetSeed * 0.001, 0.01);
-          float crack1 = 1.0 - smoothstep(0.0, lineWidth, edge1);
-          float crack2 = 1.0 - smoothstep(0.0, lineWidth * 0.8, edge2);
+          float crack1 = (1.0 - smoothstep(0.0, lineWidth, edge1)) * drawChance1;
+          float crack2 = (1.0 - smoothstep(0.0, lineWidth * 0.8, edge2)) * drawChance2;
           
           // Combinar con pesos variables
           float weight = 0.5 + mod(planetSeed * 0.01, 0.3);
@@ -176,7 +196,8 @@ export class DiamondCracksEffect {
         crackColor: { value: this.params.crackColor },
         crackIntensity: { value: this.params.crackOpacity! * 2.0 },
         crackGlow: { value: this.params.internalReflections! * 3.0 },
-        planetSeed: { value: this.params.seed! }
+        planetSeed: { value: this.params.seed! },
+        lineDrawPercentage: { value: this.params.lineDrawPercentage! }
       },
       transparent: true,
       depthWrite: false,
