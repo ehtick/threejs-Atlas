@@ -738,11 +738,49 @@ class PlanetTypeTranslators:
             "priority": 15
         })
         
+        # Generate atmospheric clouds for diamond planets (crystal atmospheres)
+        num_clouds = rng.randint(6, 12)  # Moderate cloud coverage
+        clouds = []
+        center_x, center_y = 200, 200  # Pillow center coordinates
+        
+        for i in range(num_clouds):
+            cloud_radius = rng.randint(18, 35)  # Medium-sized clouds
+            max_offset = planet_radius - cloud_radius
+            cloud_x = center_x + rng.randint(-max_offset, max_offset)
+            cloud_y = center_y + rng.randint(-max_offset, max_offset)
+            
+            # Convert to normalized coordinates
+            normalized_coords = self.common_utils.normalize_coordinates(
+                cloud_x, cloud_y, center_x, center_y, planet_radius
+            )
+            
+            # Diamond clouds - crystalline white with rainbow refractions
+            cloud_colors = [
+                [0.98, 0.98, 1.0, 0.7],     # Pure crystalline white
+                [1.0, 0.95, 0.98, 0.8],     # Light pink refraction
+                [0.95, 0.98, 1.0, 0.6],     # Light blue refraction
+                [0.98, 1.0, 0.95, 0.9],     # Light green refraction
+            ]
+            
+            clouds.append({
+                "position": normalized_coords,
+                "radius": cloud_radius / planet_radius,
+                "color": rng.choice(cloud_colors),
+                "type": "cloud",
+                "seed": f"{planet_name}_diamond_cloud_{i}"
+            })
+        
         return {
             "type": "diamond",
             "base_color": base_color,
             "surface": surface_properties,
-            "effects_3d": effects_3d
+            "effects_3d": effects_3d,
+            "clouds": clouds,
+            "debug": {
+                "original_planet_radius": planet_radius,
+                "center_x": center_x, "center_y": center_y,
+                "cloud_count": num_clouds
+            }
         }
     
     def translate_super_earth(self, planet_radius: int, rng: random.Random, 

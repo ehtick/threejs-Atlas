@@ -814,6 +814,29 @@ export class EffectRegistry {
               };
               this.effects.set(diamondInstance.id, diamondInstance);
               effects.push(diamondInstance);
+
+              // Añadir nubes atmosféricas si están disponibles para planetas Diamond
+              if (surface.clouds && surface.clouds.length > 0) {
+                const cloudsEffect = createAtmosphereCloudsFromPythonData(
+                  planetRadius,
+                  surface,
+                  (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000 // Seed específica para nubes
+                );
+
+                const cloudsInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "atmosphere_clouds",
+                  effect: cloudsEffect,
+                  priority: 15,
+                  enabled: true,
+                  name: "Atmospheric Clouds"
+                };
+
+                this.effects.set(cloudsInstance.id, cloudsInstance);
+                effects.push(cloudsInstance);
+                cloudsEffect.addToScene(scene, mesh.position);
+                console.log("💎 Atmospheric Clouds added to Diamond planet");
+              }
             }
             break;
 
