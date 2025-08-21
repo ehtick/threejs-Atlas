@@ -1889,8 +1889,15 @@ export class PlanetLayerSystem {
         finalColor += vec3(1.0, 0.8, 0.6) * specularStrength * dayNight;
         
         // Efecto emisivo MUY intenso para lava incandescente
+        // ENFOQUE HÍBRIDO: La lava brilla incluso en la oscuridad, pero menos
         vec3 emissive = baseColor * emissiveIntensity * (0.6 + temperaturePulse * 0.4) * heatIntensity;
-        finalColor += emissive;
+        
+        // Factor de emisividad: 35% mínimo en oscuridad, 100% en luz
+        // Esto mantiene la lava visible en el lado oscuro pero más tenue
+        float emissiveFactor = mix(0.35, 1.0, dayNight);
+        
+        // Aplicar el factor emisivo manteniendo algo de brillo en la cara oculta
+        finalColor += emissive * emissiveFactor;
         
         // Alpha basado en intensidad de calor
         float alpha = 0.8 + heatIntensity * 0.2;

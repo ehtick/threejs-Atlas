@@ -200,10 +200,7 @@ export class LavaFlowsEffect {
         finalColor = coolColor * (0.5 + heatIntensity * 0.5);
       }
       
-      // Efecto emisivo intenso para brillar en la oscuridad
-      vec3 emissive = finalColor * emissiveIntensity * (0.8 + temperaturePulse * 0.4);
-      
-      // Iluminación básica
+      // Iluminación básica primero para calcular dayNight
       vec3 lightDir;
       if (length(lightPosition) > 0.0) {
         lightDir = normalize(lightPosition - vWorldPosition);
@@ -212,10 +209,26 @@ export class LavaFlowsEffect {
       }
       
       float lambertian = max(dot(vNormal, lightDir), 0.0);
+      
+      // Calcular factor día/noche similar al sistema principal
+      float dayNight = smoothstep(-0.3, 0.1, lambertian);
+      
       vec3 diffuse = finalColor * (0.3 + lambertian * 0.7);
       
-      // Combinar difuso y emisivo
-      vec3 result = diffuse + emissive;
+      // Efecto emisivo intenso para brillar en la oscuridad
+      // ENFOQUE HÍBRIDO: Los flujos de lava brillan más cuando emergen Y en el lado iluminado
+      vec3 emissive = finalColor * emissiveIntensity * (0.8 + temperaturePulse * 0.4);
+      
+      // Factor de emisividad: 40% mínimo en oscuridad, 100% en luz
+      // Los flujos son más brillantes que la superficie base incluso en oscuridad
+      float emissiveFactor = mix(0.4, 1.0, dayNight);
+      
+      // Bonus de emergencia: cuando el flujo emerge, brilla más incluso en oscuridad
+      float emergenceBonus = abs(vEmergence) * 10.0;
+      emissiveFactor = min(1.0, emissiveFactor + emergenceBonus * 0.3);
+      
+      // Combinar difuso y emisivo con factor híbrido
+      vec3 result = diffuse + (emissive * emissiveFactor);
       
       // Alpha basado en intensidad de calor y distancia del centro
       vec2 center = vec2(0.5);
