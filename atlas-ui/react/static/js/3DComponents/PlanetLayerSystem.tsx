@@ -1683,6 +1683,264 @@ export class PlanetLayerSystem {
   }
 
   /**
+   * Crea un material para MoltenLava que funciona como capa (adaptado de AquiferWater pero para lava)
+   */
+  createMoltenLavaLayerMaterial(params: any): THREE.ShaderMaterial {
+    const vertexShader = `
+      uniform float time;
+      uniform float lavaWaveHeight;
+      uniform float lavaWaveFrequency;
+      uniform float lavaWaveSpeed;
+      uniform float seedOffset;
+      uniform float viscosity;
+      
+      varying vec3 vPosition;
+      varying vec3 vNormal;
+      varying vec3 vWorldPosition;
+      varying vec3 vWorldNormal;
+      varying vec2 vUv;
+      varying float vLavaHeight;
+      
+      // Función de ruido determinista más lenta para lava viscosa
+      float random(vec3 st) {
+        return fract(sin(dot(st.xyz, vec3(12.9898, 78.233, 54.321))) * 43758.5453123);
+      }
+      
+      float noise(vec3 st) {
+        vec3 i = floor(st);
+        vec3 f = fract(st);
+        
+        // Interpolación más suave para movimiento viscoso
+        f = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
+        
+        // Obtener valores en los vértices del cubo
+        float a = random(i);
+        float b = random(i + vec3(1.0, 0.0, 0.0));
+        float c = random(i + vec3(0.0, 1.0, 0.0));
+        float d = random(i + vec3(1.0, 1.0, 0.0));
+        float e = random(i + vec3(0.0, 0.0, 1.0));
+        float f2 = random(i + vec3(1.0, 0.0, 1.0));
+        float g = random(i + vec3(0.0, 1.0, 1.0));
+        float h = random(i + vec3(1.0, 1.0, 1.0));
+        
+        // Interpolación trilineal
+        return mix(
+          mix(mix(a, b, f.x), mix(c, d, f.x), f.y),
+          mix(mix(e, f2, f.x), mix(g, h, f.x), f.y),
+          f.z
+        );
+      }
+      
+      void main() {
+        vPosition = position;
+        vUv = uv;
+        
+        // Usar la posición 3D normalizada para ondas de lava esféricas continuas
+        vec3 spherePos = normalize(position);
+        
+        // Crear ondas de lava muy lentas y viscosas
+        float lavaValue = 0.0;
+        
+        // Añadir offset de seed para que cada planeta tenga lava única
+        vec3 seedOffset3D = vec3(seedOffset, seedOffset * 0.7, seedOffset * 1.3);
+        
+        // Ondas principales de lava EXTREMADAMENTE lentas (viscosidad alta)
+        // Convertir ruido de [0,1] a [-1,1] para ondas bidireccionales
+        lavaValue += (noise(spherePos * lavaWaveFrequency + seedOffset3D + vec3(time * lavaWaveSpeed * 0.1)) * 2.0 - 1.0) * 0.6;
+        lavaValue += (noise(spherePos * lavaWaveFrequency * 1.8 + seedOffset3D * 1.5 + vec3(time * lavaWaveSpeed * 0.05)) * 2.0 - 1.0) * 0.3;
+        lavaValue += (noise(spherePos * lavaWaveFrequency * 3.2 + seedOffset3D * 2.0 + vec3(time * lavaWaveSpeed * 0.03)) * 2.0 - 1.0) * 0.1;
+        
+        // Aplicar viscosidad para hacer el movimiento más lento y pesado
+        vLavaHeight = lavaValue * lavaWaveHeight * viscosity;
+        
+        // Deformar vértices en la dirección normal con efecto de lava
+        vec3 newPosition = position + normal * vLavaHeight;
+        
+        // Calcular nueva normal con perturbación de lava
+        vec3 modifiedNormal = normalize(normal + vec3(lavaValue * 0.02, lavaValue * 0.02, 0.0));
+        vNormal = normalMatrix * modifiedNormal;
+        vWorldNormal = normalize((modelMatrix * vec4(modifiedNormal, 0.0)).xyz);
+        
+        vec4 worldPos = modelMatrix * vec4(newPosition, 1.0);
+        vWorldPosition = worldPos.xyz;
+        
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
+      }
+    `;
+
+    const fragmentShader = `
+      uniform float time;
+      uniform vec3 moltenColor;
+      uniform vec3 coreColor;
+      uniform vec3 coolingColor;
+      uniform float emissiveIntensity;
+      uniform float glowIntensity;
+      uniform float temperature;
+      uniform float lavaRoughness;
+      
+      // Uniformes de luz (EXACTAMENTE como AquiferWater)
+      uniform vec3 lightDirection;
+      uniform vec3 lightPosition;
+      uniform float ambientStrength;
+      uniform float lightIntensity;
+      
+      varying vec3 vPosition;
+      varying vec3 vNormal;
+      varying vec3 vWorldPosition;
+      varying vec3 vWorldNormal;
+      varying vec2 vUv;
+      varying float vLavaHeight;
+      
+      // Función de ruido para textura de lava burbujeante
+      float random(vec2 st) {
+        return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
+      }
+      
+      float noise(vec2 st) {
+        vec2 i = floor(st);
+        vec2 f = fract(st);
+        
+        float a = random(i);
+        float b = random(i + vec2(1.0, 0.0));
+        float c = random(i + vec2(0.0, 1.0));
+        float d = random(i + vec2(1.0, 1.0));
+        
+        vec2 u = f * f * (3.0 - 2.0 * f);
+        
+        return mix(a, b, u.x) + (c - a)* u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
+      }
+      
+      float fbm(vec2 st) {
+        float value = 0.0;
+        float amplitude = 0.5;
+        
+        for (int i = 0; i < 5; i++) {
+          value += amplitude * noise(st);
+          st *= 2.0;
+          amplitude *= 0.5;
+        }
+        return value;
+      }
+      
+      void main() {
+        vec3 normal = normalize(vWorldNormal);
+        
+        // Usar posición de luz (EXACTAMENTE como AquiferWater)
+        vec3 lightDir;
+        if (length(lightPosition) > 0.0) {
+          lightDir = normalize(lightPosition - vWorldPosition);
+        } else {
+          lightDir = normalize(-lightDirection);
+        }
+        
+        // Cálculo de iluminación (EXACTAMENTE como AquiferWater)
+        float dotNL = dot(normal, lightDir);
+        float dayNight = smoothstep(-0.3, 0.1, dotNL);
+        
+        // Rim lighting (EXACTAMENTE como AquiferWater)
+        float rimLight = 1.0 - abs(dotNL);
+        rimLight = pow(rimLight, 3.0) * 0.1;
+        
+        // UV animado para flujo de lava MUY LENTO
+        vec2 lavaUv = vUv;
+        lavaUv.x += time * 0.02; // Flujo horizontal muy lento
+        lavaUv.y += time * 0.01; // Flujo vertical extremadamente lento
+        
+        // Textura de lava burbujeante con múltiples escalas
+        float lavaTexture1 = fbm(lavaUv * 4.0);
+        float lavaTexture2 = fbm(lavaUv * 8.0 + vec2(time * 0.03));
+        float lavaTexture3 = fbm(lavaUv * 16.0 + vec2(time * 0.05));
+        
+        // Combinar texturas para efecto de lava realista
+        float combinedTexture = lavaTexture1 * 0.5 + lavaTexture2 * 0.3 + lavaTexture3 * 0.2;
+        
+        // Pulsación de temperatura muy lenta
+        float temperaturePulse = sin(time * 0.2) * 0.5 + 0.5;
+        float heatIntensity = combinedTexture + temperaturePulse * 0.2 + temperature * 0.3;
+        
+        // Mapeo de color basado en temperatura (similar a LavaFlowsEffect)
+        vec3 baseColor;
+        if (heatIntensity > 0.8) {
+          // Núcleo súper caliente - color core
+          baseColor = mix(moltenColor, coreColor, (heatIntensity - 0.8) / 0.2);
+        } else if (heatIntensity > 0.5) {
+          // Lava caliente - transición
+          baseColor = mix(coolingColor, moltenColor, (heatIntensity - 0.5) / 0.3);
+        } else {
+          // Lava enfriándose
+          baseColor = coolingColor * (0.4 + heatIntensity * 0.6);
+        }
+        
+        // Variación de color por elevación de lava
+        float elevationFactor = 1.0 + abs(vLavaHeight) * 3.0;
+        baseColor = mix(baseColor, coreColor, elevationFactor * 0.2);
+        
+        // Calcular especular rugoso (como lava real)
+        vec3 viewDir = normalize(cameraPosition - vWorldPosition);
+        vec3 halfwayDir = normalize(lightDir + viewDir);
+        float NdotH = max(dot(normal, halfwayDir), 0.0);
+        float specularStrength = pow(NdotH, mix(2.0, 8.0, 1.0 - lavaRoughness)) * glowIntensity * 0.5;
+        
+        // Aplicar iluminación base (EXACTAMENTE como AquiferWater)
+        float totalLight = ambientStrength + (lightIntensity * dayNight) + rimLight;
+        vec3 finalColor = baseColor * totalLight;
+        
+        // Añadir especular SOLO en la parte iluminada
+        finalColor += vec3(1.0, 0.8, 0.6) * specularStrength * dayNight;
+        
+        // Efecto emisivo MUY intenso para lava incandescente
+        vec3 emissive = baseColor * emissiveIntensity * (0.6 + temperaturePulse * 0.4) * heatIntensity;
+        finalColor += emissive;
+        
+        // Alpha basado en intensidad de calor
+        float alpha = 0.8 + heatIntensity * 0.2;
+        
+        gl_FragColor = vec4(finalColor, alpha);
+      }
+    `;
+
+    const moltenColor = params.moltenColor instanceof THREE.Color ? 
+      params.moltenColor : new THREE.Color(params.moltenColor || 0xFF8C00);
+    const coreColor = params.coreColor instanceof THREE.Color ? 
+      params.coreColor : new THREE.Color(params.coreColor || 0xFFB347);
+    const coolingColor = params.coolingColor instanceof THREE.Color ? 
+      params.coolingColor : new THREE.Color(params.coolingColor || 0xCC4400);
+
+    return new THREE.ShaderMaterial({
+      vertexShader,
+      fragmentShader,
+      uniforms: {
+        time: { value: 0 },
+        // Offset basado en seed para lava única por planeta
+        seedOffset: { value: (params.seed || 0) % 100 },
+        // Parámetros de olas de lava (MUY lentas)
+        lavaWaveHeight: { value: params.lavaWaveHeight || 0.04 },
+        lavaWaveFrequency: { value: params.lavaWaveFrequency || 2.0 },
+        lavaWaveSpeed: { value: params.lavaWaveSpeed || 0.05 }, // EXTREMADAMENTE lento
+        viscosity: { value: params.viscosity || 0.8 },
+        // Colores incandescentes
+        moltenColor: { value: moltenColor },
+        coreColor: { value: coreColor },
+        coolingColor: { value: coolingColor },
+        // Efectos visuales de lava
+        emissiveIntensity: { value: params.emissiveIntensity || 4.0 },
+        glowIntensity: { value: params.glowIntensity || 3.0 },
+        temperature: { value: params.temperature || 0.9 },
+        lavaRoughness: { value: params.lavaRoughness || 0.8 },
+        // Uniformes de luz (EXACTAMENTE como AquiferWater)
+        lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
+        lightPosition: { value: new THREE.Vector3(0, 0, 0) },
+        ambientStrength: { value: 0.15 },
+        lightIntensity: { value: 0.85 },
+      },
+      transparent: true,
+      blending: THREE.NormalBlending,
+      side: THREE.FrontSide,
+      depthWrite: false,
+    });
+  }
+
+  /**
    * Obtiene el siguiente factor de escala disponible para evitar z-fighting
    */
   getNextScaleFactor(): number {

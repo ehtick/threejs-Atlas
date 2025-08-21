@@ -46,6 +46,8 @@ import { OceanWavesEffect, createOceanWavesFromPythonData } from "./OceanWaves";
 import { FluidLayersEffect, createFluidLayersFromPythonData } from "./FluidLayers";
 import { AquiferWaterEffect, createAquiferWaterFromPythonData } from "./AquiferWaterEffect";
 import { OceanCurrentsEffect, createOceanCurrentsFromPythonData } from "./OceanCurrentsEffect";
+import { LavaFlowsEffect, createLavaFlowsFromPythonData } from "./LavaFlowsEffect";
+import { MoltenLavaEffect, createMoltenLavaFromPythonData } from "./MoltenLavaEffect";
 // Efectos de superficie legacy eliminados - usar solo versiones Layer
 
 // Importar efectos de debug
@@ -100,6 +102,7 @@ export enum EffectType {
   AQUIFER_WATER = "aquifer_water",
   OCEAN_CURRENTS = "ocean_currents",
   LAVA_FLOWS = "lava_flows",
+  MOLTEN_LAVA = "molten_lava",
   CRYSTAL_FORMATIONS = "crystal_formations",
   CLOUD_LAYERS = "cloud_layers",
   STORM_SYSTEMS = "storm_systems",
@@ -230,13 +233,18 @@ export class EffectRegistry {
 
     // ELIMINADO: MetallicSurfaceEffect legacy - ahora se maneja por MetallicSurfaceLayer
 
-    // Efectos futuros (placeholders)
+    // Efectos de lava para planetas Molten Core
     this.registerEffect(EffectType.LAVA_FLOWS, {
-      create: (params, planetRadius) => {
-        console.warn("Lava flows effect not implemented yet");
-        return null;
-      },
+      create: (params, planetRadius) => new LavaFlowsEffect(planetRadius, params),
+      fromPythonData: (data, planetRadius) => createLavaFlowsFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed),
     });
+
+    this.registerEffect(EffectType.MOLTEN_LAVA, {
+      create: (params, planetRadius, layerSystem) => new MoltenLavaEffect(layerSystem!, params),
+      fromPythonData: (data, planetRadius, layerSystem) => createMoltenLavaFromPythonData(layerSystem!, data, data.seeds?.planet_seed),
+    });
+
+    // Efectos futuros (placeholders)
 
     this.registerEffect(EffectType.CRYSTAL_FORMATIONS, {
       create: (params, planetRadius) => {
@@ -1268,6 +1276,111 @@ export class EffectRegistry {
             }
             break;
 
+          case "molten_core":
+          case "molten core":
+            // Planetas Molten Core: superficie de lava incandescente con efectos de fuego
+            console.log("🌋 Processing Molten Core planet - adding lava effects");
+
+            // 1. Añadir superficie de lava como capa base
+            const moltenLavaEffect = createMoltenLavaFromPythonData(this.layerSystem!, pythonData);
+            
+            if (moltenLavaEffect) {
+              const moltenLavaInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "molten_lava",
+                effect: moltenLavaEffect,
+                priority: 2,
+                enabled: true,
+                name: "Molten Lava Surface",
+              };
+
+              this.effects.set(moltenLavaInstance.id, moltenLavaInstance);
+              effects.push(moltenLavaInstance);
+              console.log("🌋 Molten Lava surface layer added for Molten Core planet");
+            }
+
+            // 2. Añadir flujos de lava y látigos de fuego
+            const lavaFlowsEffect = createLavaFlowsFromPythonData(
+              planetRadius, 
+              surface, 
+              (pythonData.seeds?.planet_seed || pythonData.seeds?.shape_seed) + 9000
+            );
+            
+            if (lavaFlowsEffect) {
+              const lavaFlowsInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "lava_flows",
+                effect: lavaFlowsEffect,
+                priority: 4, // Alta prioridad para que se vea encima de la superficie
+                enabled: true,
+                name: "Lava Flows & Fire Whips",
+              };
+
+              this.effects.set(lavaFlowsInstance.id, lavaFlowsInstance);
+              effects.push(lavaFlowsInstance);
+              lavaFlowsEffect.addToScene(scene, mesh.position);
+              console.log("🔥 Lava Flows (fire whips) added to Molten Core planet");
+            }
+
+            // 3. Añadir landmasses incandescentes (masas de tierra que brillan como lava)
+            if (surface.green_patches && surface.green_patches.length > 0) {
+              // Modificar los green_patches para que sean incandescentes (color Molten Core)
+              const moltenCoreMassesData = {
+                ...surface,
+                green_patches: surface.green_patches.map((patch: any) => ({
+                  ...patch,
+                  // Color incandescente basado en Molten Core (#FF8C00)
+                  color: [1.0, 0.55, 0.0, patch.color?.[3] || 0.9] // RGB normalizado + alpha
+                }))
+              };
+
+              const incandescientLandMasses = createLandMassesFromPythonData(
+                planetRadius, 
+                moltenCoreMassesData, 
+                (pythonData.seeds?.planet_seed || pythonData.seeds?.shape_seed) + 10000
+              );
+
+              if (incandescientLandMasses) {
+                const landMassesInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "land_masses",
+                  effect: incandescientLandMasses,
+                  priority: 3, // Encima de la superficie de lava
+                  enabled: true,
+                  name: "Incandescent Land Masses",
+                };
+
+                this.effects.set(landMassesInstance.id, landMassesInstance);
+                effects.push(landMassesInstance);
+                incandescientLandMasses.addToScene(scene, mesh.position);
+                console.log("🌋 Incandescent Land Masses added to Molten Core planet");
+              }
+            }
+
+            // 4. Añadir nubes atmosféricas si están disponibles (con tinte anaranjado)
+            if (surface.clouds && surface.clouds.length > 0) {
+              const moltenCloudsEffect = createAtmosphereCloudsFromPythonData(
+                planetRadius,
+                surface,
+                (pythonData.seeds?.planet_seed || pythonData.seeds?.shape_seed) + 4000
+              );
+
+              const moltenCloudsInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "atmosphere_clouds",
+                effect: moltenCloudsEffect,
+                priority: 15,
+                enabled: true,
+                name: "Molten Atmospheric Clouds",
+              };
+
+              this.effects.set(moltenCloudsInstance.id, moltenCloudsInstance);
+              effects.push(moltenCloudsInstance);
+              moltenCloudsEffect.addToScene(scene, mesh.position);
+              console.log("🌫️ Molten Atmospheric Clouds added to Molten Core planet");
+            }
+            break;
+
           case "anomaly":
             // Planetas anómalos: múltiples efectos extraños y perturbadores
             console.log("🌌 DETECTED ANOMALY PLANET - Creating effects");
@@ -1575,6 +1688,7 @@ export class EffectRegistry {
           icy_terrain_layer: "icyTerrain",
           aquifer_water: "aquiferWater",
           ocean_currents: "oceanCurrents",
+          molten_lava: "moltenLava",
         };
 
         const layerName = layerNameMap[effectInstance.type];
