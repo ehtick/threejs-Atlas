@@ -1719,7 +1719,5 @@ export class PlanetLayerSystem {
       }
       layer.material.dispose();
     });
-
-    this.effectLayers = [];
   }
 }

@@ -31,6 +31,7 @@ import { RockyTerrainLayer, createRockyTerrainLayerFromPythonData } from "./Rock
 import { IcyTerrainLayer, createIcyTerrainLayerFromPythonData } from "./IcyTerrainLayer";
 import { MetallicSurfaceLayer, createMetallicSurfaceLayerFromPythonData } from "./MetallicSurfaceLayer";
 import { DiamondSurfaceLayer, createDiamondSurfaceLayerFromPythonData } from "./DiamondSurfaceLayer";
+import { DiamondCracksEffect, createDiamondCracksFromPythonData } from "./DiamondCracksEffect";
 
 // Efectos legacy eliminados - usar solo versiones Layer
 
@@ -301,6 +302,12 @@ export class EffectRegistry {
     this.registerEffect(EffectType.VISUAL_DEBUG_3D, {
       create: (params, planetRadius) => new VisualDebug3DEffect(planetRadius, params),
       fromPythonData: (data, planetRadius) => createVisualDebug3DFromPythonData(data, planetRadius),
+    });
+
+    // Efectos de diamante
+    this.registerEffect("diamond_cracks", {
+      create: (params, planetRadius) => new DiamondCracksEffect({ ...params, radius: planetRadius }),
+      fromPythonData: (data, planetRadius) => createDiamondCracksFromPythonData(data, planetRadius, data.seeds?.shape_seed || data.seeds?.planet_seed),
     });
 
     // Más efectos pueden añadirse aquí fácilmente
@@ -792,6 +799,28 @@ export class EffectRegistry {
               };
               this.effects.set(diamondInstance.id, diamondInstance);
               effects.push(diamondInstance);
+
+              // Añadir grietas internas al diamante como efecto independiente
+              console.log("💎 Creating DiamondCracksEffect for Diamond planet...");
+              const cracksEffect = createDiamondCracksFromPythonData(
+                pythonData, 
+                planetRadius,
+                pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed
+              );
+              
+              const cracksInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "diamond_cracks",
+                effect: cracksEffect,
+                priority: 1, // Mayor prioridad para renderizar sobre el diamante
+                enabled: true,
+              };
+              this.effects.set(cracksInstance.id, cracksInstance);
+              effects.push(cracksInstance);
+              
+              // CRÍTICO: Añadir el efecto a la escena
+              cracksEffect.addToScene(scene, mesh.position);
+              console.log("💎 DiamondCracksEffect created and added to scene!");
 
               // Añadir nubes atmosféricas si están disponibles para planetas Diamond
               if (surface.clouds && surface.clouds.length > 0) {
