@@ -324,7 +324,7 @@ export class EffectRegistry {
     }
 
     try {
-      const effect = creator.create(params, planetRadius, mesh);
+      const effect = creator.create(params, planetRadius, this.layerSystem);
       if (!effect) {
         return null;
       }
@@ -355,7 +355,7 @@ export class EffectRegistry {
     }
 
     try {
-      const effect = creator.fromPythonData(pythonData, planetRadius, mesh);
+      const effect = creator.fromPythonData(pythonData, planetRadius, this.layerSystem);
       if (!effect) {
         return null;
       }

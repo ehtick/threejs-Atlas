@@ -996,8 +996,10 @@ import{C as t,S as s,F as c,V as r,b as d,M as m,N as v,D as u}from"./atlas_Ce3h
       
       // Función para crear facetas de diamante perfectas y geométricas
       vec3 diamondFacets(vec2 uv, float scale, vec3 baseNormal) {
-        vec2 id = floor(uv * scale);
-        vec2 f = fract(uv * scale);
+        // CRÍTICO: Usar scale correctamente igual que crystallineFacets
+        vec2 scaledUv = uv * scale;
+        vec2 id = floor(scaledUv);
+        vec2 f = fract(scaledUv);
         
         // Crear facetas geométricas perfectas (hexagonales/octogonales)
         float facetType = hash(vec3(id, 42.0));
@@ -1010,33 +1012,33 @@ import{C as t,S as s,F as c,V as r,b as d,M as m,N as v,D as u}from"./atlas_Ce3h
         float angle = atan(toCenter.y, toCenter.x);
         
         if(facetType < 0.33) {
-          // Facetas hexagonales perfectas
+          // Facetas hexagonales perfectas - MUY VISIBLES
           float hexAngle = floor(angle * 3.0 / 3.14159) * 3.14159 / 3.0;
           vec3 perturbation = vec3(
-            cos(hexAngle) * dist * 0.25,
-            sin(hexAngle) * dist * 0.25,
-            (1.0 - dist) * 0.15
+            cos(hexAngle) * dist * 0.8,
+            sin(hexAngle) * dist * 0.8,
+            (1.0 - dist) * 0.6
           );
           facetNormal = normalize(baseNormal + perturbation);
           
         } else if(facetType < 0.66) {
-          // Facetas octogonales brillantes
+          // Facetas octogonales brillantes - MUY VISIBLES
           float octAngle = floor(angle * 4.0 / 3.14159) * 3.14159 / 4.0;
           vec3 perturbation = vec3(
-            cos(octAngle) * dist * 0.3,
-            sin(octAngle) * dist * 0.3,
-            cos(dist * 6.28) * 0.12
+            cos(octAngle) * dist * 0.9,
+            sin(octAngle) * dist * 0.9,
+            cos(dist * 6.28) * 0.5
           );
           facetNormal = normalize(baseNormal + perturbation);
           
         } else {
-          // Facetas triangulares de brillante corte
+          // Facetas triangulares de brillante corte - MUY VISIBLES
           float triAngle = floor(angle * 6.0 / 3.14159) * 3.14159 / 6.0;
           float triPattern = sin(triAngle * 3.0) * cos(dist * 8.0);
           vec3 perturbation = vec3(
-            cos(triAngle) * triPattern * 0.2,
-            sin(triAngle) * triPattern * 0.2,
-            triPattern * 0.1
+            cos(triAngle) * triPattern * 0.7,
+            sin(triAngle) * triPattern * 0.7,
+            triPattern * 0.4
           );
           facetNormal = normalize(baseNormal + perturbation);
         }
@@ -1088,22 +1090,23 @@ import{C as t,S as s,F as c,V as r,b as d,M as m,N as v,D as u}from"./atlas_Ce3h
         // Color base del diamante (como MetallicSurfaceLayer)
         vec3 color = diamondColor;
         
+        
         // EFECTO PRISMÁTICO: Dispersión cromática estática
-        vec3 dispersedColor = chromaticDispersion(-viewDir, normal, dispersion);
+        vec3 dispersedColor = chromaticDispersion(-viewDir, normal, dispersion * 10.0);
         vec3 prismaticColors = vec3(
-          sin(dispersedColor.r * 10.0) * 0.5 + 0.5,
-          sin(dispersedColor.g * 8.0) * 0.5 + 0.5,
-          sin(dispersedColor.b * 12.0) * 0.5 + 0.5
+          sin(dispersedColor.r * 15.0) * 0.5 + 0.5,
+          sin(dispersedColor.g * 12.0) * 0.5 + 0.5,
+          sin(dispersedColor.b * 18.0) * 0.5 + 0.5
         );
         
-        // Aplicar efecto prismático sutilmente
-        color = mix(color, prismaticColors, prismaticIntensity * clarity * 0.3);
+        // Aplicar efecto prismático más visible
+        color = mix(color, prismaticColors, prismaticIntensity * clarity * 0.7);
         
         // REFLEXIÓN ESPECULAR INTENSA (características del diamante)
         vec3 halfwayDir = normalize(lightDir + viewDir);
         float NdotH = max(dot(normal, halfwayDir), 0.0);
-        float specularPower = mix(64.0, 512.0, brilliance); // Muy alto para diamante
-        float specularStrength = pow(NdotH, specularPower);
+        float specularPower = mix(32.0, 256.0, brilliance / 3.0); // Normalizar brilliance
+        float specularStrength = pow(NdotH, specularPower) * brilliance;
         
         // Múltiples reflexiones internas (característica del diamante)
         float fresnel = pow(1.0 - max(dot(normal, viewDir), 0.0), 2.0);
@@ -1113,19 +1116,23 @@ import{C as t,S as s,F as c,V as r,b as d,M as m,N as v,D as u}from"./atlas_Ce3h
         vec3 refractedDir = refract(-viewDir, normal, 1.0 / refractionIndex);
         float refractionEffect = length(refractedDir) * clarity;
         
+        // Aplicar efecto de refracción al color final
+        vec3 refractionTint = vec3(0.9, 0.95, 1.1); // Tinte azulado por refracción
+        color = mix(color, color * refractionTint, refractionEffect * 0.3);
+        
         // Aplicar iluminación base (EXACTAMENTE como MetallicSurfaceLayer)
         float totalLight = ambientStrength + (lightIntensity * dayNight) + rimLight;
         vec3 finalColor = color * totalLight;
         
         // Añadir brillos especulares SOLO en la parte iluminada (como MetallicSurfaceLayer)
-        vec3 diamondSparkle = vec3(specularStrength * brilliance);
+        vec3 diamondSparkle = vec3(specularStrength);
         finalColor += diamondSparkle * dayNight;
         
         // Añadir reflexiones internas sutiles
         finalColor += internalReflections * 0.2 * dayNight;
         
         // Destellos estáticos basados en facetas (sin animación)
-        float sparkle = sin(dot(normal, viewDir) * 50.0) * 0.5 + 0.5;
+        float sparkle = sin(dot(normal, viewDir) * facetSize * 2.0) * 0.5 + 0.5;
         finalColor += vec3(sparkle * brilliance * 0.1) * dayNight;
         
         // Aplicar claridad (transparencia parcial)
@@ -1133,4 +1140,4 @@ import{C as t,S as s,F as c,V as r,b as d,M as m,N as v,D as u}from"./atlas_Ce3h
         
         gl_FragColor = vec4(finalColor, finalOpacity);
       }
-    `;return new s({vertexShader:a,fragmentShader:o,uniforms:{time:{value:0},diamondColor:{value:e.color||new t(8421504)},refractionIndex:{value:e.refractionIndex||2.42},dispersion:{value:e.dispersion||.5},clarity:{value:e.clarity||.8},facetSize:{value:e.facetSize||15},brilliance:{value:e.brilliance||2},opacity:{value:e.opacity||.9},prismaticIntensity:{value:e.prismaticIntensity||.6},lightDirection:{value:new r(1,1,1).normalize()},lightPosition:{value:new r(0,0,0)},ambientStrength:{value:.15},lightIntensity:{value:.85}},transparent:!0,blending:v,side:u,depthWrite:!1})}getNextScaleFactor(){return 1.001+this.effectLayers.length*.001}getLayerMeshes(){const e={};return this.effectLayers.forEach(a=>{a.name&&a.mesh&&(e[a.name]=a.mesh)}),e}dispose(){this.baseMaterial.dispose(),this.effectLayers.forEach(e=>{e.mesh&&(e.mesh.geometry.dispose(),this.scene&&this.scene.remove(e.mesh)),e.material.dispose()}),this.effectLayers=[]}}export{f as P};
+    `;return new s({vertexShader:a,fragmentShader:o,uniforms:{time:{value:0},diamondColor:{value:e.color||new t(8421504)},refractionIndex:{value:e.refractionIndex||2.42},dispersion:{value:e.dispersion||.5},clarity:{value:e.clarity||.8},facetSize:{value:e.facetSize!==void 0?e.facetSize:15},brilliance:{value:e.brilliance||2},opacity:{value:e.opacity||.9},prismaticIntensity:{value:e.prismaticIntensity||.6},lightDirection:{value:new r(1,1,1).normalize()},lightPosition:{value:new r(0,0,0)},ambientStrength:{value:.15},lightIntensity:{value:.85}},transparent:!0,blending:v,side:u,depthWrite:!1})}getNextScaleFactor(){return 1.001+this.effectLayers.length*.001}getLayerMeshes(){const e={};return this.effectLayers.forEach(a=>{a.name&&a.mesh&&(e[a.name]=a.mesh)}),e}dispose(){this.baseMaterial.dispose(),this.effectLayers.forEach(e=>{e.mesh&&(e.mesh.geometry.dispose(),this.scene&&this.scene.remove(e.mesh)),e.material.dispose()}),this.effectLayers=[]}}export{f as P};
