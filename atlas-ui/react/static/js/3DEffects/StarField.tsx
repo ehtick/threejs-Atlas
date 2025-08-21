@@ -101,7 +101,6 @@ export class StarFieldEffect {
   constructor(planetRadius: number, params: StarFieldParams = {}) {
     // Generar valores procedurales usando seed
     const seed = params.seed !== undefined ? params.seed : Math.floor(Math.random() * 1000000);
-    console.log("🌟 StarFieldEffect - Using seed:", seed, "from params:", params.seed);
     const rng = new SeededRandom(seed + 10000); // Offset para evitar colisiones
 
     this.params = {
@@ -224,7 +223,6 @@ export class StarFieldEffect {
 export function createStarFieldFromPythonData(planetRadius: number, planetSeed?: number): StarFieldEffect {
   // Usar planet seed para generar campo de estrellas consistente
   const seed = planetSeed !== undefined ? planetSeed : Math.floor(Math.random() * 1000000);
-  console.log("🌟 createStarFieldFromPythonData - planetSeed:", planetSeed, "final seed:", seed);
   const rng = new SeededRandom(seed + 10000);
 
   const params: StarFieldParams = {

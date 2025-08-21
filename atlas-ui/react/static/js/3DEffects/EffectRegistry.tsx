@@ -109,7 +109,7 @@ export enum EffectType {
   CITY_LIGHTS = "city_lights",
   BIOLUMINESCENCE = "bioluminescence",
   THERMAL_EMISSIONS = "thermal_emissions",
-  
+
   // Efectos de clima
   TUNDRA_SNOWFLAKES = "tundra_snowflakes",
 
@@ -220,7 +220,7 @@ export class EffectRegistry {
 
     this.registerEffect(EffectType.FLUID_LAYERS, {
       create: (params, planetRadius) => new FluidLayersEffect(planetRadius, params),
-      fromPythonData: (data, planetRadius) => createFluidLayersFromPythonData(planetRadius, data)
+      fromPythonData: (data, planetRadius) => createFluidLayersFromPythonData(planetRadius, data),
     });
 
     // ELIMINADO: MetallicSurfaceEffect legacy - ahora se maneja por MetallicSurfaceLayer
@@ -258,7 +258,6 @@ export class EffectRegistry {
     //   create: (params, planetRadius) => new AnomalyGlitchFieldEffect(planetRadius, params),
     //   fromPythonData: (data, planetRadius) => createAnomalyGlitchFieldFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed),
     // });
-
 
     // AnomalyVoidSphere desactivado - movido a Unused3DEffects
     // this.registerEffect(EffectType.ANOMALY_VOID_SPHERE, {
@@ -473,13 +472,6 @@ export class EffectRegistry {
         } else {
         }
 
-        // Sistema de rendering_commands ELIMINADO - usar efectos específicos
-
-        // Efectos específicos por tipo de planeta (LEGACY - se eliminará)
-
-        console.log(`🔍 Planet surface type: "${surface.type}"`);
-        console.log(`🔍 Planet info type: "${pythonData.planet_info?.type}"`);
-        
         switch (surface.type.toLowerCase()) {
           case "gas_giant":
             // El sistema de capas ya fue creado arriba, solo añadir las capas específicas
@@ -528,21 +520,19 @@ export class EffectRegistry {
               };
               this.effects.set(gyrosInstance.id, gyrosInstance);
               effects.push(gyrosInstance);
-              
+
               // Add polar hexagon effect if present
               if (surface.polar_hexagon && surface.polar_hexagon.enabled) {
                 // Calculate current time in years from cosmic origin
-                const currentTimeYears = pythonData.timing?.elapsed_time 
-                  ? pythonData.timing.elapsed_time / (365.25 * 24 * 3600) 
-                  : 0;
-                
+                const currentTimeYears = pythonData.timing?.elapsed_time ? pythonData.timing.elapsed_time / (365.25 * 24 * 3600) : 0;
+
                 const hexagonEffect = new PolarHexagonEffect({
                   planetColor: baseColor,
                   hexagonData: surface.polar_hexagon,
                   planetRadius: planetRadius,
-                  currentTime: currentTimeYears
+                  currentTime: currentTimeYears,
                 });
-                
+
                 const hexagonInstance: EffectInstance = {
                   id: `effect_${this.nextId++}`,
                   type: "polar_hexagon",
@@ -552,7 +542,7 @@ export class EffectRegistry {
                 };
                 this.effects.set(hexagonInstance.id, hexagonInstance);
                 effects.push(hexagonInstance);
-                
+
                 // Add to scene
                 if (scene) {
                   hexagonEffect.addToScene(scene);
@@ -590,17 +580,15 @@ export class EffectRegistry {
 
               // Add polar hexagon if present
               if (surface.polar_hexagon && surface.polar_hexagon.enabled) {
-                const currentTimeYears = pythonData.timing?.elapsed_time 
-                  ? pythonData.timing.elapsed_time / (365.25 * 24 * 3600) 
-                  : 0;
-                
+                const currentTimeYears = pythonData.timing?.elapsed_time ? pythonData.timing.elapsed_time / (365.25 * 24 * 3600) : 0;
+
                 const hexagonEffect = new PolarHexagonEffect({
                   planetColor: baseColor,
                   hexagonData: surface.polar_hexagon,
                   planetRadius: planetRadius,
-                  currentTime: currentTimeYears
+                  currentTime: currentTimeYears,
                 });
-                
+
                 const hexagonInstance: EffectInstance = {
                   id: `effect_${this.nextId++}`,
                   type: "polar_hexagon",
@@ -610,7 +598,7 @@ export class EffectRegistry {
                 };
                 this.effects.set(hexagonInstance.id, hexagonInstance);
                 effects.push(hexagonInstance);
-                
+
                 // Add to scene
                 if (scene) {
                   hexagonEffect.addToScene(scene);
@@ -624,7 +612,7 @@ export class EffectRegistry {
             console.log("🌊 Processing Aquifer planet with surface data:", surface);
             console.log("🌊 Surface.clouds:", surface.clouds);
             const aquiferWaterEffect = createAquiferWaterFromPythonData(this.layerSystem!, pythonData);
-            
+
             if (aquiferWaterEffect) {
               const aquiferWaterInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -632,20 +620,20 @@ export class EffectRegistry {
                 effect: aquiferWaterEffect,
                 priority: 2,
                 enabled: true,
-                name: "Aquifer Water Surface"
+                name: "Aquifer Water Surface",
               };
-              
+
               this.effects.set(aquiferWaterInstance.id, aquiferWaterInstance);
               effects.push(aquiferWaterInstance);
-              
+
               // Como MetallicSurfaceLayer, ya no necesita apply() ni addToScene()
               // porque se integra automáticamente con PlanetLayerSystem
               console.log("🌊 AquiferWater effect added for aquifer planet");
             }
-            
+
             // Añadir corrientes oceánicas para todos los planetas acuáticos
             const oceanCurrentsEffect = createOceanCurrentsFromPythonData(this.layerSystem!, pythonData);
-            
+
             if (oceanCurrentsEffect) {
               const oceanCurrentsInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -653,15 +641,15 @@ export class EffectRegistry {
                 effect: oceanCurrentsEffect,
                 priority: 1, // Prioridad más alta para que aparezca debajo del agua
                 enabled: true,
-                name: "Ocean Currents"
+                name: "Ocean Currents",
               };
-              
+
               this.effects.set(oceanCurrentsInstance.id, oceanCurrentsInstance);
               effects.push(oceanCurrentsInstance);
-              
+
               console.log("🌊 Ocean Currents effect added for aquifer planet");
             }
-            
+
             // Añadir nubes atmosféricas si están disponibles para planetas acuáticos
             if (surface.clouds && surface.clouds.length > 0) {
               const cloudsEffect = createAtmosphereCloudsFromPythonData(
@@ -675,7 +663,7 @@ export class EffectRegistry {
                 effect: cloudsEffect,
                 priority: 15,
                 enabled: true,
-                name: "Atmospheric Clouds"
+                name: "Atmospheric Clouds",
               };
               this.effects.set(cloudsInstance.id, cloudsInstance);
               effects.push(cloudsInstance);
@@ -685,11 +673,7 @@ export class EffectRegistry {
 
             // Añadir masas de tierra emergentes si están disponibles
             if (surface.land_masses && surface.land_masses.length > 0) {
-              const landMassesEffect = createLandMassesFromPythonData(
-                planetRadius,
-                surface,
-                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 7000
-              );
+              const landMassesEffect = createLandMassesFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 7000);
               if (landMassesEffect) {
                 const landMassesInstance: EffectInstance = {
                   id: `effect_${this.nextId++}`,
@@ -697,7 +681,7 @@ export class EffectRegistry {
                   effect: landMassesEffect,
                   priority: 3,
                   enabled: true,
-                  name: "Emergent Land Masses"
+                  name: "Emergent Land Masses",
                 };
                 this.effects.set(landMassesInstance.id, landMassesInstance);
                 effects.push(landMassesInstance);
@@ -707,11 +691,7 @@ export class EffectRegistry {
 
             // Añadir atmósfera sutil si está disponible
             if (surface.atmosphere_clouds && surface.atmosphere_clouds.length > 0) {
-              const cloudsEffect = createAtmosphereCloudsFromPythonData(
-                planetRadius,
-                surface,
-                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 8000
-              );
+              const cloudsEffect = createAtmosphereCloudsFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 8000);
               if (cloudsEffect) {
                 const cloudsInstance: EffectInstance = {
                   id: `effect_${this.nextId++}`,
@@ -719,7 +699,7 @@ export class EffectRegistry {
                   effect: cloudsEffect,
                   priority: 4,
                   enabled: true,
-                  name: "Atmospheric Clouds"
+                  name: "Atmospheric Clouds",
                 };
                 this.effects.set(cloudsInstance.id, cloudsInstance);
                 effects.push(cloudsInstance);
@@ -755,17 +735,15 @@ export class EffectRegistry {
 
               // Add polar hexagon if present
               if (surface.polar_hexagon && surface.polar_hexagon.enabled) {
-                const currentTimeYears = pythonData.timing?.elapsed_time 
-                  ? pythonData.timing.elapsed_time / (365.25 * 24 * 3600) 
-                  : 0;
-                
+                const currentTimeYears = pythonData.timing?.elapsed_time ? pythonData.timing.elapsed_time / (365.25 * 24 * 3600) : 0;
+
                 const hexagonEffect = new PolarHexagonEffect({
                   planetColor: baseColor,
                   hexagonData: surface.polar_hexagon,
                   planetRadius: planetRadius,
-                  currentTime: currentTimeYears
+                  currentTime: currentTimeYears,
                 });
-                
+
                 const hexagonInstance: EffectInstance = {
                   id: `effect_${this.nextId++}`,
                   type: "polar_hexagon",
@@ -775,7 +753,7 @@ export class EffectRegistry {
                 };
                 this.effects.set(hexagonInstance.id, hexagonInstance);
                 effects.push(hexagonInstance);
-                
+
                 // Add to scene
                 if (scene) {
                   hexagonEffect.addToScene(scene);
@@ -829,13 +807,12 @@ export class EffectRegistry {
                   effect: cloudsEffect,
                   priority: 15,
                   enabled: true,
-                  name: "Atmospheric Clouds"
+                  name: "Atmospheric Clouds",
                 };
 
                 this.effects.set(cloudsInstance.id, cloudsInstance);
                 effects.push(cloudsInstance);
                 cloudsEffect.addToScene(scene, mesh.position);
-                console.log("💎 Atmospheric Clouds added to Diamond planet");
               }
             }
             break;
@@ -868,7 +845,7 @@ export class EffectRegistry {
                   effect: cloudsEffect,
                   priority: 15,
                   enabled: true,
-                  name: "Atmospheric Clouds"
+                  name: "Atmospheric Clouds",
                 };
 
                 this.effects.set(cloudsInstance.id, cloudsInstance);
@@ -906,7 +883,7 @@ export class EffectRegistry {
                   effect: transparentLandMasses,
                   priority: 1, // Prioridad después del terreno base
                   enabled: true,
-                  name: "Ice Formations"
+                  name: "Ice Formations",
                 };
 
                 this.effects.set(landMassesInstance.id, landMassesInstance);
@@ -931,7 +908,7 @@ export class EffectRegistry {
                   effect: cloudsEffect,
                   priority: 15,
                   enabled: true,
-                  name: "Atmospheric Clouds"
+                  name: "Atmospheric Clouds",
                 };
 
                 this.effects.set(cloudsInstance.id, cloudsInstance);
@@ -954,7 +931,7 @@ export class EffectRegistry {
                   effect: icyFeaturesEffect,
                   priority: 2, // Después del terreno y formaciones, pero antes de nubes
                   enabled: true,
-                  name: "Ice Crystals & Features"
+                  name: "Ice Crystals & Features",
                 };
 
                 this.effects.set(icyFeaturesInstance.id, icyFeaturesInstance);
@@ -968,7 +945,7 @@ export class EffectRegistry {
           case "oceanic":
             // Añadir FluidLayers para corrientes oceánicas transparentes
             const fluidLayersEffect = createFluidLayersFromPythonData(planetRadius, pythonData);
-            
+
             if (fluidLayersEffect) {
               const fluidLayersInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -976,23 +953,19 @@ export class EffectRegistry {
                 effect: fluidLayersEffect,
                 priority: 3,
                 enabled: true,
-                name: "Fluid Ocean Layers"
+                name: "Fluid Ocean Layers",
               };
-              
+
               this.effects.set(fluidLayersInstance.id, fluidLayersInstance);
               effects.push(fluidLayersInstance);
               fluidLayersEffect.addToScene(scene, mesh.position);
-              
+
               console.log("🌊 FluidLayers effect added for oceanic planet");
             }
 
             // Añadir green_patches como masas de tierra para planetas oceánicos
             if (surface.green_patches && surface.green_patches.length > 0) {
-              const landMassesEffect = createLandMassesFromPythonData(
-                planetRadius,
-                surface,
-                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 6000
-              );
+              const landMassesEffect = createLandMassesFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 6000);
 
               if (landMassesEffect) {
                 const landMassesInstance: EffectInstance = {
@@ -1001,7 +974,7 @@ export class EffectRegistry {
                   effect: landMassesEffect,
                   priority: 5, // Prioridad baja para que esté cerca de la superficie
                   enabled: true,
-                  name: "Land Masses (Islands)"
+                  name: "Land Masses (Islands)",
                 };
 
                 this.effects.set(landMassesInstance.id, landMassesInstance);
@@ -1024,7 +997,7 @@ export class EffectRegistry {
                 effect: cloudsEffect,
                 priority: 15,
                 enabled: true,
-                name: "Atmospheric Clouds"
+                name: "Atmospheric Clouds",
               };
 
               this.effects.set(cloudsInstance.id, cloudsInstance);
@@ -1035,16 +1008,12 @@ export class EffectRegistry {
 
           case "tundra":
             // Tundra planets: mix of land masses (earth tones), sparse ice features, and atmospheric clouds
-            
+
             // 1. Land masses with earth-toned colors (browns, greys, muted greens) WITH LOW OPACITY
             if (surface.green_patches && surface.green_patches.length > 0) {
               // NOTE: The opacity is already in the patch data from Python (0.25)
               // The LandMassesEffect will use it automatically
-              const landMassesEffect = createLandMassesFromPythonData(
-                planetRadius,
-                surface,
-                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 6000
-              );
+              const landMassesEffect = createLandMassesFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 6000);
 
               if (landMassesEffect) {
                 const landMassesInstance: EffectInstance = {
@@ -1053,7 +1022,7 @@ export class EffectRegistry {
                   effect: landMassesEffect,
                   priority: 5,
                   enabled: true,
-                  name: "Tundra Terrain"
+                  name: "Tundra Terrain",
                 };
 
                 this.effects.set(landMassesInstance.id, landMassesInstance);
@@ -1064,11 +1033,7 @@ export class EffectRegistry {
             }
 
             // 2. Sparse ice features (seasonal snow patches, sparse crystals)
-            const tundraIcyFeatures = createIcyFeaturesFromPythonData(
-              planetRadius,
-              surface,
-              (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 9000
-            );
+            const tundraIcyFeatures = createIcyFeaturesFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 9000);
 
             if (tundraIcyFeatures) {
               const icyFeaturesInstance: EffectInstance = {
@@ -1077,7 +1042,7 @@ export class EffectRegistry {
                 effect: tundraIcyFeatures,
                 priority: 6,
                 enabled: true,
-                name: "Snow Patches & Ice"
+                name: "Snow Patches & Ice",
               };
 
               this.effects.set(icyFeaturesInstance.id, icyFeaturesInstance);
@@ -1088,11 +1053,7 @@ export class EffectRegistry {
 
             // 3. Atmospheric clouds with earth-like colors
             if (surface.clouds && surface.clouds.length > 0) {
-              const cloudsEffect = createAtmosphereCloudsFromPythonData(
-                planetRadius,
-                surface,
-                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000
-              );
+              const cloudsEffect = createAtmosphereCloudsFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000);
 
               const cloudsInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -1100,7 +1061,7 @@ export class EffectRegistry {
                 effect: cloudsEffect,
                 priority: 15,
                 enabled: true,
-                name: "Atmospheric Clouds"
+                name: "Atmospheric Clouds",
               };
 
               this.effects.set(cloudsInstance.id, cloudsInstance);
@@ -1110,11 +1071,7 @@ export class EffectRegistry {
             }
 
             // 4. Tundra snowflakes effect
-            const snowflakesEffect = createTundraSnowflakesFromPythonData(
-              planetRadius,
-              surface,
-              (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 15000
-            );
+            const snowflakesEffect = createTundraSnowflakesFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 15000);
 
             if (snowflakesEffect) {
               const snowflakesInstance: EffectInstance = {
@@ -1123,7 +1080,7 @@ export class EffectRegistry {
                 effect: snowflakesEffect,
                 priority: 20,
                 enabled: true,
-                name: "Snowflakes"
+                name: "Snowflakes",
               };
 
               this.effects.set(snowflakesInstance.id, snowflakesInstance);
@@ -1137,10 +1094,10 @@ export class EffectRegistry {
             // Planetas anómalos: múltiples efectos extraños y perturbadores
             console.log("🌌 DETECTED ANOMALY PLANET - Creating effects");
             console.log("🌌 Planet data:", { surfaceType: surface.type, planetType: pythonData.planet_info?.type });
-            
+
             // 🚀 MODO SHOWCASE: ACTIVAR TODOS LOS EFECTOS PARA EVALUACIÓN
             console.log("🎭 SHOWCASE MODE: Activating ALL anomaly effects for evaluation");
-            
+
             const allAnomalyEffects = [
               // EffectType.ANOMALY_GLITCH_FIELD, // Desactivado - movido a Unused3DEffects
               // EffectType.ANOMALY_VOID_SPHERE, // Desactivado - movido a Unused3DEffects
@@ -1150,16 +1107,16 @@ export class EffectRegistry {
               // EffectType.ANOMALY_GEOMETRIC_MORPH, // Desactivado - movido a Unused3DEffects
               // EffectType.ANOMALY_GRAVITY_WELL // Desactivado - movido a Unused3DEffects
             ];
-            
+
             const selectedEffects = allAnomalyEffects;
             const anomalySeed = pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000);
             const numEffects = selectedEffects.length;
-            
+
             // Crear los efectos seleccionados
             for (let i = 0; i < numEffects; i++) {
               const effectType = selectedEffects[i];
               const effectSeed = anomalySeed + i * 10000;
-              
+
               const anomalyEffect = this.createEffectFromPythonData(
                 effectType,
                 { ...pythonData, seeds: { ...pythonData.seeds, planet_seed: effectSeed } },
@@ -1167,28 +1124,22 @@ export class EffectRegistry {
                 mesh,
                 10 + i // Prioridad alta para efectos anómalos
               );
-              
+
               if (anomalyEffect) {
                 anomalyEffect.name = effectType.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
                 effects.push(anomalyEffect);
-                
+
                 if (anomalyEffect.effect.addToScene) {
                   anomalyEffect.effect.addToScene(scene, mesh.position);
                 }
-                
+
                 console.log(`🎭 Added anomaly effect: ${anomalyEffect.name}`);
               }
             }
-            
+
             // Añadir atmósfera anómala si está disponible
             if (pythonData.atmosphere && pythonData.atmosphere.type !== "None") {
-              const atmosphereEffect = this.createEffectFromPythonData(
-                EffectType.ATMOSPHERE, 
-                pythonData.atmosphere, 
-                planetRadius, 
-                mesh, 
-                5
-              );
+              const atmosphereEffect = this.createEffectFromPythonData(EffectType.ATMOSPHERE, pythonData.atmosphere, planetRadius, mesh, 5);
               if (atmosphereEffect) {
                 effects.push(atmosphereEffect);
                 atmosphereEffect.effect.addToScene(scene, mesh.position);
@@ -1201,10 +1152,10 @@ export class EffectRegistry {
             // Verificar si es un planeta anómalo por planet_info.type
             if (pythonData.planet_info?.type?.toLowerCase() === "anomaly") {
               console.log("🌌 DETECTED ANOMALY PLANET via planet_info.type - Creating effects");
-              
+
               // 🚀 MODO SHOWCASE: ACTIVAR TODOS LOS EFECTOS PARA EVALUACIÓN
               console.log("🎭 SHOWCASE MODE (alt detection): Activating ALL anomaly effects for evaluation");
-              
+
               const allAnomalyEffects = [
                 // EffectType.ANOMALY_GLITCH_FIELD, // Desactivado - movido a Unused3DEffects
                 // EffectType.ANOMALY_VOID_SPHERE, // Desactivado - movido a Unused3DEffects
@@ -1214,44 +1165,32 @@ export class EffectRegistry {
                 // EffectType.ANOMALY_GEOMETRIC_MORPH, // Desactivado - movido a Unused3DEffects
                 // EffectType.ANOMALY_GRAVITY_WELL // Desactivado - movido a Unused3DEffects
               ];
-              
+
               const selectedEffects = allAnomalyEffects;
               const anomalySeed = pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000);
               const numEffects = selectedEffects.length;
-              
+
               for (let i = 0; i < numEffects; i++) {
                 const effectType = selectedEffects[i];
                 const effectSeed = anomalySeed + i * 10000;
-                
-                const anomalyEffect = this.createEffectFromPythonData(
-                  effectType,
-                  { ...pythonData, seeds: { ...pythonData.seeds, planet_seed: effectSeed } },
-                  planetRadius,
-                  mesh,
-                  10 + i
-                );
-                
+
+                const anomalyEffect = this.createEffectFromPythonData(effectType, { ...pythonData, seeds: { ...pythonData.seeds, planet_seed: effectSeed } }, planetRadius, mesh, 10 + i);
+
                 if (anomalyEffect) {
                   anomalyEffect.name = effectType.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
                   effects.push(anomalyEffect);
-                  
+
                   if (anomalyEffect.effect.addToScene) {
                     anomalyEffect.effect.addToScene(scene, mesh.position);
                   }
-                  
+
                   console.log(`🎭 Added anomaly effect: ${anomalyEffect.name}`);
                 }
               }
-              
+
               // Añadir atmósfera anómala si está disponible
               if (pythonData.atmosphere && pythonData.atmosphere.type !== "None") {
-                const atmosphereEffect = this.createEffectFromPythonData(
-                  EffectType.ATMOSPHERE, 
-                  pythonData.atmosphere, 
-                  planetRadius, 
-                  mesh, 
-                  5
-                );
+                const atmosphereEffect = this.createEffectFromPythonData(EffectType.ATMOSPHERE, pythonData.atmosphere, planetRadius, mesh, 5);
                 if (atmosphereEffect) {
                   effects.push(atmosphereEffect);
                   atmosphereEffect.effect.addToScene(scene, mesh.position);
@@ -1278,7 +1217,7 @@ export class EffectRegistry {
       // 2. Efectos atmosféricos (solo para planetas no-anómalos)
       const planetType = pythonData.planet_info?.type?.toLowerCase() || pythonData.surface_elements?.type?.toLowerCase();
       const isAnomalyPlanet = planetType === "anomaly" || pythonData.surface_elements?.type === "anomaly";
-      
+
       if (pythonData.atmosphere && !isAnomalyPlanet) {
         // Atmosphere Glow - aplicar para planetas con atmósfera dinámica
         if (pythonData.atmosphere.streaks || ["Gas Giant", "Frozen Gas Giant"].includes(pythonData.planet_info?.type)) {
@@ -1309,7 +1248,6 @@ export class EffectRegistry {
         // Atmosphere Brights (resplandor atmosférico)
         // Para planetas oceánicos, reducir la opacidad atmosférica para no ocultar el océano
         if (pythonData.atmosphere.type && pythonData.atmosphere.type !== "None") {
-
           // Ajustar parámetros atmosféricos según el tipo de planeta
           const atmosphereData = { ...pythonData.atmosphere };
           if (planetType === "oceanic") {
@@ -1383,7 +1321,6 @@ export class EffectRegistry {
         if (starFieldEffect && starFieldEffect.effect) {
           starFieldEffect.effect.addToScene(scene, mesh.position);
           effects.push(starFieldEffect);
-          console.log("⭐ StarField added automatically using planet seed:", pythonData.seeds?.planet_seed);
         }
       } catch (error) {
         console.warn("Could not create StarField:", error);
@@ -1497,20 +1434,15 @@ export class EffectRegistry {
    * Actualiza la luz de todos los efectos (incluyendo PlanetLayerSystem)
    */
   updateLightForAllEffects(light: THREE.DirectionalLight): void {
-    console.log("🔆 updateLightForAllEffects called with light position:", light.position);
-    
     // Actualizar PlanetLayerSystem
     if (this.layerSystem) {
       this.layerSystem.updateFromThreeLight(light);
     }
 
     // Actualizar efectos que tienen updateFromThreeLight
-    console.log("🔆 Checking", this.effects.size, "effects for light updates");
     for (const instance of this.effects.values()) {
-      console.log(`🔆 Effect ${instance.type}, enabled: ${instance.enabled}, hasUpdateFromThreeLight: ${!!instance.effect.updateFromThreeLight}`);
       if (instance.enabled && instance.effect.updateFromThreeLight) {
         try {
-          console.log(`🔆 Updating light for effect: ${instance.type}`);
           instance.effect.updateFromThreeLight(light);
         } catch (error) {
           console.error(`Error updating light for effect ${instance.type}:`, error);

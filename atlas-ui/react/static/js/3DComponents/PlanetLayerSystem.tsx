@@ -1537,7 +1537,7 @@ export class PlanetLayerSystem {
       void main() {
         vec3 baseNormal = normalize(vWorldNormal);
         
-        // FACETAS DE DIAMANTE: Crear facetas perfectas y geométricas - TEST FORZADO
+        // FACETAS DE DIAMANTE: Crear facetas perfectas y geométricas
         vec3 normal = diamondFacets(vUv, facetSize, baseNormal);
         
         // Dirección de luz como en README
@@ -1621,11 +1621,7 @@ export class PlanetLayerSystem {
         refractionIndex: { value: params.refractionIndex || 2.42 },
         dispersion: { value: params.dispersion || 0.5 },
         clarity: { value: params.clarity || 0.8 },
-        facetSize: { value: (() => {
-          const val = params.facetSize !== undefined ? params.facetSize : 15.0;
-          console.log("💎 FINAL SHADER facetSize value:", val);
-          return val;
-        })() },
+        facetSize: { value: params.facetSize !== undefined ? params.facetSize : 15.0 },
         brilliance: { value: params.brilliance || 2.0 },
         opacity: { value: params.opacity || 0.9 },
         prismaticIntensity: { value: params.prismaticIntensity || 0.6 },

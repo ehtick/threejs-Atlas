@@ -99,18 +99,7 @@ export function createDiamondSurfaceLayerFromPythonData(layerSystem: PlanetLayer
   // Calidad del diamante procedural (afecta múltiples propiedades)
   const diamondQuality = rng.uniform(0.7, 1.0); // 70% - 100% calidad
 
-  console.log("💎 CURRENT RANGES:", PROCEDURAL_RANGES.FACET_SIZE);
-
-  // TEST DIRECTO: que pasa si forzamos el valor
-  const testUniform = rng.uniform(111, 111);
-  console.log("💎 TEST rng.uniform(111, 111):", testUniform);
-
-  console.log("💎 surfaceProps.facet_size:", surfaceProps.facet_size);
-
-  // IGNORAR datos de Python y usar solo PROCEDURAL_RANGES
-  const baseFacetSize = rng.uniform(PROCEDURAL_RANGES.FACET_SIZE.min, PROCEDURAL_RANGES.FACET_SIZE.max);
-  const finalFacetSize = baseFacetSize * subtleVariation;
-  console.log("💎 DEBUG - baseFacetSize:", baseFacetSize, "subtleVariation:", subtleVariation, "final:", finalFacetSize);
+  const finalFacetSize = rng.uniform(PROCEDURAL_RANGES.FACET_SIZE.min, PROCEDURAL_RANGES.FACET_SIZE.max) * subtleVariation;
 
   return new DiamondSurfaceLayer(layerSystem, {
     color: baseColor ? new THREE.Color(baseColor) : new THREE.Color(0x808080),
