@@ -19,6 +19,7 @@ export interface LavaFlowsParams {
   flowSpeed?: number;
   pulseSpeed?: number;
   turbulence?: number;
+  emergenceHeight?: number; // Altura de emergencia sobre la superficie
   
   // Colores del Molten Core (basados en #FF8C00)
   coreColor?: THREE.Color | number[];
@@ -37,16 +38,17 @@ export interface LavaFlowsParams {
 
 // Rangos para generación procedural basados en color Molten Core
 const PROCEDURAL_RANGES = {
-  FLOW_COUNT: { min: 8, max: 16 }, // Múltiples flujos de lava
-  FLOW_LENGTH: { min: 0.3, max: 0.8 }, // Longitud de los flujos
-  FLOW_WIDTH: { min: 0.02, max: 0.06 }, // Anchura variable
-  FLOW_INTENSITY: { min: 1.2, max: 2.5 }, // Intensidad del brillo
-  FLOW_SPEED: { min: 0.1, max: 0.4 }, // Velocidad más lenta que agua (lava densa)
-  PULSE_SPEED: { min: 0.8, max: 1.8 }, // Pulsación del brillo
-  TURBULENCE: { min: 0.5, max: 1.5 }, // Turbulencia de la lava
-  EMISSIVE_INTENSITY: { min: 2.0, max: 4.0 }, // Intensidad emisiva alta
+  FLOW_COUNT: { min: 20, max: 35 }, // MUCHOS MÁS flujos de lava para cobertura completa
+  FLOW_LENGTH: { min: 0.4, max: 1.2 }, // Flujos más largos que pueden rodear el planeta
+  FLOW_WIDTH: { min: 0.015, max: 0.08 }, // Variedad de anchuras desde finos a gruesos
+  FLOW_INTENSITY: { min: 1.5, max: 3.0 }, // Intensidad del brillo más alta
+  FLOW_SPEED: { min: 0.05, max: 0.3 }, // Velocidad más lenta que agua (lava densa)
+  PULSE_SPEED: { min: 0.5, max: 1.2 }, // Pulsación del brillo más lenta
+  TURBULENCE: { min: 0.8, max: 2.0 }, // Turbulencia más alta
+  EMISSIVE_INTENSITY: { min: 3.0, max: 5.0 }, // Intensidad emisiva muy alta
   GLOW_RADIUS: { min: 1.1, max: 1.3 }, // Radio del resplandor
   TIME_SPEED: { min: 0.1, max: 2.0 }, // Rango de velocidades del tiempo
+  EMERGENCE_HEIGHT: { min: 0.01, max: 0.03 }, // Altura de emergencia sobre la superficie
 };
 
 export class LavaFlowsEffect {
@@ -61,10 +63,12 @@ export class LavaFlowsEffect {
     varying vec3 vNormal;
     varying vec2 vUv;
     varying vec3 vWorldPosition;
+    varying float vEmergence;
     
     uniform float time;
     uniform float flowSpeed;
     uniform float turbulence;
+    uniform float emergenceHeight;
     
     void main() {
       vPosition = position;
@@ -78,15 +82,37 @@ export class LavaFlowsEffect {
       // Movimiento de lava con turbulencia
       vec3 pos = position;
       
-      // Flujo principal a lo largo de la superficie
-      float flowNoise = sin(time * flowSpeed + worldPosition.x * 2.0) * 0.1;
-      flowNoise += cos(time * flowSpeed * 1.3 + worldPosition.z * 1.5) * 0.05;
+      // EMERGENCIA: El flujo sale y entra de la superficie basado en la posición UV
+      // Usar UV.x como progreso a lo largo del flujo (0 = inicio, 1 = fin)
+      float flowProgress = vUv.x;
+      
+      // Crear onda de emergencia que viaja a lo largo del flujo
+      float emergenceWave = sin((flowProgress * 3.14159 * 2.0) - time * flowSpeed * 2.0);
+      
+      // Combinar con patrón secundario para más variación
+      emergenceWave += sin((flowProgress * 6.28318) + time * flowSpeed) * 0.3;
+      
+      // Aplicar función smoothstep para transiciones suaves en los extremos
+      float edgeFade = smoothstep(0.0, 0.1, flowProgress) * smoothstep(1.0, 0.9, flowProgress);
+      emergenceWave *= edgeFade;
+      
+      // Altura de emergencia variable (algunos flujos emergen más que otros)
+      float maxEmergence = emergenceHeight * (1.0 + sin(worldPosition.x * 10.0) * 0.5);
+      
+      // El flujo emerge y se sumerge periódicamente
+      float emergence = emergenceWave * maxEmergence;
+      vEmergence = emergence; // Pasar a fragment shader para efectos visuales
+      
+      // Flujo principal a lo largo de la superficie con emergencia
+      float flowNoise = sin(time * flowSpeed + worldPosition.x * 2.0) * 0.05;
+      flowNoise += cos(time * flowSpeed * 1.3 + worldPosition.z * 1.5) * 0.03;
       
       // Turbulencia adicional para movimiento orgánico
       float turbulentMotion = sin(time * turbulence + worldPosition.y * 3.0) * 0.02;
       turbulentMotion += cos(time * turbulence * 0.7 + length(worldPosition.xz) * 4.0) * 0.015;
       
-      pos += normal * (flowNoise + turbulentMotion);
+      // Aplicar emergencia y movimiento lateral
+      pos += normal * (emergence + flowNoise + turbulentMotion);
       
       gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
     }
@@ -97,6 +123,7 @@ export class LavaFlowsEffect {
     varying vec3 vNormal;
     varying vec2 vUv;
     varying vec3 vWorldPosition;
+    varying float vEmergence;
     
     uniform float time;
     uniform float flowIntensity;
@@ -154,9 +181,11 @@ export class LavaFlowsEffect {
       // Combinar texturas para efecto de lava burbujeante
       float combinedTexture = lavaTexture1 * 0.5 + lavaTexture2 * 0.3 + lavaTexture3 * 0.2;
       
-      // Pulsación de temperatura
+      // Pulsación de temperatura + efecto de emergencia
       float temperaturePulse = sin(time * pulseSpeed) * 0.5 + 0.5;
-      float heatIntensity = combinedTexture + temperaturePulse * 0.3;
+      // Más caliente cuando emerge de la superficie
+      float emergenceGlow = abs(vEmergence) * 5.0; // Brillo extra al emerger
+      float heatIntensity = combinedTexture + temperaturePulse * 0.3 + emergenceGlow;
       
       // Mapeo de color basado en temperatura
       vec3 finalColor;
@@ -230,6 +259,7 @@ export class LavaFlowsEffect {
       emissiveIntensity: params.emissiveIntensity || rng.uniform(PROCEDURAL_RANGES.EMISSIVE_INTENSITY.min, PROCEDURAL_RANGES.EMISSIVE_INTENSITY.max),
       glowRadius: params.glowRadius || rng.uniform(PROCEDURAL_RANGES.GLOW_RADIUS.min, PROCEDURAL_RANGES.GLOW_RADIUS.max),
       sparkleIntensity: params.sparkleIntensity || 1.0,
+      emergenceHeight: params.emergenceHeight || rng.uniform(PROCEDURAL_RANGES.EMERGENCE_HEIGHT.min, PROCEDURAL_RANGES.EMERGENCE_HEIGHT.max),
       
       seed,
       startTime: this.startTime,
@@ -296,10 +326,11 @@ export class LavaFlowsEffect {
         vertex.fromBufferAttribute(positions, j);
         const worldVertex = vertex.clone().add(surfacePosition);
         
-        // Proyectar sobre la superficie esférica con ligera elevación
+        // Proyectar sobre la superficie esférica con elevación variable
         const direction = worldVertex.clone().normalize();
-        const elevation = planetRadius * 0.005; // Lava ligeramente elevada
-        const projectedVertex = direction.multiplyScalar(planetRadius + elevation);
+        // Elevación variable: algunos flujos más superficiales, otros más profundos
+        const baseElevation = rng.uniform(-0.002, 0.008) * planetRadius;
+        const projectedVertex = direction.multiplyScalar(planetRadius + baseElevation);
         
         const localVertex = projectedVertex.sub(surfacePosition);
         positions.setXYZ(j, localVertex.x, localVertex.y, localVertex.z);
@@ -331,6 +362,7 @@ export class LavaFlowsEffect {
         pulseSpeed: { value: this.params.pulseSpeed },
         turbulence: { value: this.params.turbulence },
         flowIntensity: { value: this.params.flowIntensity },
+        emergenceHeight: { value: this.params.emergenceHeight },
         coreColor: { value: this.params.coreColor },
         hotColor: { value: this.params.hotColor },
         coolColor: { value: this.params.coolColor },
@@ -416,11 +448,16 @@ export function createLavaFlowsFromPythonData(
 ): LavaFlowsEffect {
   const seed = globalSeed || Math.floor(Math.random() * 1000000);
   
-  // Para planetas Molten Core, crear flujos procedurales intensos
+  // Para planetas Molten Core, crear MUCHOS flujos procedurales intensos
   const params: LavaFlowsParams = {
-    flowCount: 12, // Muchos flujos para cobertura completa
-    flowIntensity: 2.0, // Alta intensidad
-    emissiveIntensity: 3.0, // Muy brillante
+    flowCount: 28, // MUCHOS MÁS flujos para cobertura completa
+    flowLength: 0.8, // Flujos largos
+    flowWidth: 0.04, // Anchura media
+    flowIntensity: 2.5, // Alta intensidad
+    flowSpeed: 0.15, // Velocidad lenta de lava
+    turbulence: 1.5, // Turbulencia alta
+    emergenceHeight: 0.02, // Emergen bastante de la superficie
+    emissiveIntensity: 4.0, // MUY brillante
     seed: seed + 7000
   };
 
