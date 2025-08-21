@@ -1445,6 +1445,10 @@ export class PlanetLayerSystem {
       uniform float brilliance;
       uniform float opacity;
       uniform float prismaticIntensity;
+      uniform float iridescenceIntensity;
+      uniform float iridescenceRange;
+      uniform float iridescenceSpeed;
+      uniform float iridescenceScale;
       uniform float time;
       uniform vec3 lightDirection;
       uniform vec3 lightPosition;
@@ -1534,6 +1538,39 @@ export class PlanetLayerSystem {
         );
       }
       
+      // Función para iridiscencia - cambio de color según ángulo de vista
+      vec3 calculateIridescence(vec3 viewDir, vec3 normal, vec3 worldPos) {
+        // Ángulo entre la normal y la dirección de vista (efecto Fresnel)
+        float fresnel = 1.0 - abs(dot(normal, viewDir));
+        
+        // Crear variación espacial basada en posición mundial
+        float spatialVariation = sin(worldPos.x * iridescenceScale) * 
+                                cos(worldPos.y * iridescenceScale * 0.8) * 
+                                sin(worldPos.z * iridescenceScale * 1.2);
+        
+        // Variación temporal suave
+        float timeVariation = sin(time * iridescenceSpeed) * 0.5 + 0.5;
+        
+        // Combinar variaciones para crear patrón único
+        float colorShift = (spatialVariation * 0.7 + timeVariation * 0.3) * iridescenceRange;
+        
+        // Crear colores iridiscentes basados en el ángulo de vista
+        float anglePhase = fresnel * 6.28318; // 2PI para ciclo completo de colores
+        
+        // Generar colores espectrales que cambian con el ángulo
+        vec3 iridColor = vec3(
+          sin(anglePhase + colorShift) * 0.5 + 0.5,                    // Rojo-Verde
+          sin(anglePhase + colorShift + 2.094) * 0.5 + 0.5,            // Verde-Azul (120°)
+          sin(anglePhase + colorShift + 4.188) * 0.5 + 0.5             // Azul-Rojo (240°)
+        );
+        
+        // Intensificar el efecto en los bordes (donde fresnel es mayor)
+        float edgeIntensity = pow(fresnel, 2.0);
+        
+        // Aplicar intensidad y hacer que sea más visible en ciertos ángulos
+        return iridColor * edgeIntensity * iridescenceIntensity;
+      }
+      
       void main() {
         vec3 baseNormal = normalize(vWorldNormal);
         
@@ -1571,6 +1608,10 @@ export class PlanetLayerSystem {
         
         // Aplicar efecto prismático más visible
         color = mix(color, prismaticColors, prismaticIntensity * clarity * 0.7);
+        
+        // IRIDISCENCIA: Cambio de color según perspectiva
+        vec3 iridescence = calculateIridescence(viewDir, normal, vWorldPosition);
+        color = mix(color, color + iridescence, clarity * dayNight);
         
         // REFLEXIÓN ESPECULAR INTENSA (características del diamante)
         vec3 halfwayDir = normalize(lightDir + viewDir);
@@ -1625,6 +1666,10 @@ export class PlanetLayerSystem {
         brilliance: { value: params.brilliance || 2.0 },
         opacity: { value: params.opacity || 0.9 },
         prismaticIntensity: { value: params.prismaticIntensity || 0.6 },
+        iridescenceIntensity: { value: params.iridescenceIntensity || 0.5 },
+        iridescenceRange: { value: params.iridescenceRange || 1.0 },
+        iridescenceSpeed: { value: params.iridescenceSpeed || 0.3 },
+        iridescenceScale: { value: params.iridescenceScale || 1.5 },
         lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
         lightPosition: { value: new THREE.Vector3(0, 0, 0) },
         ambientStrength: { value: 0.15 },

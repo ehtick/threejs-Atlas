@@ -975,6 +975,10 @@ import{C as t,S as s,F as c,V as r,b as d,M as m,N as v,D as u}from"./atlas_Ce3h
       uniform float brilliance;
       uniform float opacity;
       uniform float prismaticIntensity;
+      uniform float iridescenceIntensity;
+      uniform float iridescenceRange;
+      uniform float iridescenceSpeed;
+      uniform float iridescenceScale;
       uniform float time;
       uniform vec3 lightDirection;
       uniform vec3 lightPosition;
@@ -1064,6 +1068,39 @@ import{C as t,S as s,F as c,V as r,b as d,M as m,N as v,D as u}from"./atlas_Ce3h
         );
       }
       
+      // Función para iridiscencia - cambio de color según ángulo de vista
+      vec3 calculateIridescence(vec3 viewDir, vec3 normal, vec3 worldPos) {
+        // Ángulo entre la normal y la dirección de vista (efecto Fresnel)
+        float fresnel = 1.0 - abs(dot(normal, viewDir));
+        
+        // Crear variación espacial basada en posición mundial
+        float spatialVariation = sin(worldPos.x * iridescenceScale) * 
+                                cos(worldPos.y * iridescenceScale * 0.8) * 
+                                sin(worldPos.z * iridescenceScale * 1.2);
+        
+        // Variación temporal suave
+        float timeVariation = sin(time * iridescenceSpeed) * 0.5 + 0.5;
+        
+        // Combinar variaciones para crear patrón único
+        float colorShift = (spatialVariation * 0.7 + timeVariation * 0.3) * iridescenceRange;
+        
+        // Crear colores iridiscentes basados en el ángulo de vista
+        float anglePhase = fresnel * 6.28318; // 2PI para ciclo completo de colores
+        
+        // Generar colores espectrales que cambian con el ángulo
+        vec3 iridColor = vec3(
+          sin(anglePhase + colorShift) * 0.5 + 0.5,                    // Rojo-Verde
+          sin(anglePhase + colorShift + 2.094) * 0.5 + 0.5,            // Verde-Azul (120°)
+          sin(anglePhase + colorShift + 4.188) * 0.5 + 0.5             // Azul-Rojo (240°)
+        );
+        
+        // Intensificar el efecto en los bordes (donde fresnel es mayor)
+        float edgeIntensity = pow(fresnel, 2.0);
+        
+        // Aplicar intensidad y hacer que sea más visible en ciertos ángulos
+        return iridColor * edgeIntensity * iridescenceIntensity;
+      }
+      
       void main() {
         vec3 baseNormal = normalize(vWorldNormal);
         
@@ -1101,6 +1138,10 @@ import{C as t,S as s,F as c,V as r,b as d,M as m,N as v,D as u}from"./atlas_Ce3h
         
         // Aplicar efecto prismático más visible
         color = mix(color, prismaticColors, prismaticIntensity * clarity * 0.7);
+        
+        // IRIDISCENCIA: Cambio de color según perspectiva
+        vec3 iridescence = calculateIridescence(viewDir, normal, vWorldPosition);
+        color = mix(color, color + iridescence, clarity * dayNight);
         
         // REFLEXIÓN ESPECULAR INTENSA (características del diamante)
         vec3 halfwayDir = normalize(lightDir + viewDir);
@@ -1140,4 +1181,4 @@ import{C as t,S as s,F as c,V as r,b as d,M as m,N as v,D as u}from"./atlas_Ce3h
         
         gl_FragColor = vec4(finalColor, finalOpacity);
       }
-    `;return new s({vertexShader:a,fragmentShader:o,uniforms:{time:{value:0},diamondColor:{value:e.color||new t(8421504)},refractionIndex:{value:e.refractionIndex||2.42},dispersion:{value:e.dispersion||.5},clarity:{value:e.clarity||.8},facetSize:{value:e.facetSize!==void 0?e.facetSize:15},brilliance:{value:e.brilliance||2},opacity:{value:e.opacity||.9},prismaticIntensity:{value:e.prismaticIntensity||.6},lightDirection:{value:new r(1,1,1).normalize()},lightPosition:{value:new r(0,0,0)},ambientStrength:{value:.15},lightIntensity:{value:.85}},transparent:!0,blending:v,side:u,depthWrite:!1})}getNextScaleFactor(){return 1.001+this.effectLayers.length*.001}getLayerMeshes(){const e={};return this.effectLayers.forEach(a=>{a.name&&a.mesh&&(e[a.name]=a.mesh)}),e}dispose(){this.baseMaterial.dispose(),this.effectLayers.forEach(e=>{e.mesh&&(e.mesh.geometry.dispose(),this.scene&&this.scene.remove(e.mesh)),e.material.dispose()}),this.effectLayers=[]}}export{f as P};
+    `;return new s({vertexShader:a,fragmentShader:o,uniforms:{time:{value:0},diamondColor:{value:e.color||new t(8421504)},refractionIndex:{value:e.refractionIndex||2.42},dispersion:{value:e.dispersion||.5},clarity:{value:e.clarity||.8},facetSize:{value:e.facetSize!==void 0?e.facetSize:15},brilliance:{value:e.brilliance||2},opacity:{value:e.opacity||.9},prismaticIntensity:{value:e.prismaticIntensity||.6},iridescenceIntensity:{value:e.iridescenceIntensity||.5},iridescenceRange:{value:e.iridescenceRange||1},iridescenceSpeed:{value:e.iridescenceSpeed||.3},iridescenceScale:{value:e.iridescenceScale||1.5},lightDirection:{value:new r(1,1,1).normalize()},lightPosition:{value:new r(0,0,0)},ambientStrength:{value:.15},lightIntensity:{value:.85}},transparent:!0,blending:v,side:u,depthWrite:!1})}getNextScaleFactor(){return 1.001+this.effectLayers.length*.001}getLayerMeshes(){const e={};return this.effectLayers.forEach(a=>{a.name&&a.mesh&&(e[a.name]=a.mesh)}),e}dispose(){this.baseMaterial.dispose(),this.effectLayers.forEach(e=>{e.mesh&&(e.mesh.geometry.dispose(),this.scene&&this.scene.remove(e.mesh)),e.material.dispose()}),this.effectLayers=[]}}export{f as P};
