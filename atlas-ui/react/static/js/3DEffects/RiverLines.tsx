@@ -18,13 +18,13 @@ export interface RiverLinesParams {
 
 // Rangos para generación procedural de ríos secos
 const PROCEDURAL_RANGES = {
-  RIVER_COUNT: { min: 2, max: 6 }, // 2-4 ríos por planeta
-  OPACITY: { min: 0.05, max: 0.1 }, // Opacidad visible para ríos secos
-  ELEVATION: { min: 0.006, max: 0.012 }, // Altura variable sobre superficie
+  RIVER_COUNT: { min: 20, max: 30 }, // 2-4 ríos por planeta
+  OPACITY: { min: 0.01, max: 0.04 }, // Opacidad moderada para ríos secos
+  ELEVATION: { min: -0.015, max: -0.010 }, // Mucho más abajo, canales profundos
   THICKNESS: { min: 4, max: 12 }, // Factor de grosor para radio del tubo
-  SEGMENTS: { min: 10, max: 30 }, // Segmentos para resolución variable
+  SEGMENTS: { min: 40, max: 80 }, // Más segmentos para ríos más largos
   CURVE_AMOUNT: { min: 0.05, max: 0.25 }, // Cantidad de curvatura natural
-  STEP_SIZE: { min: 0.02, max: 0.035 } // Tamaño de paso para longitud variable
+  STEP_SIZE: { min: 0.02, max: 0.08 } // Pasos más pequeños = ríos más largos
 };
 
 /**
@@ -42,7 +42,7 @@ export class RiverLinesEffect {
 
     this.params = {
       riverCount: params.riverCount || this.rng.randint(PROCEDURAL_RANGES.RIVER_COUNT.min, PROCEDURAL_RANGES.RIVER_COUNT.max),
-      color: params.color || [0.0, 0.0, 0.0], // Negro absoluto
+      color: params.color || null, // Usar color del planeta por defecto
       opacity: params.opacity || this.rng.uniform(PROCEDURAL_RANGES.OPACITY.min, PROCEDURAL_RANGES.OPACITY.max),
       elevation: params.elevation || this.rng.uniform(PROCEDURAL_RANGES.ELEVATION.min, PROCEDURAL_RANGES.ELEVATION.max),
       seed
@@ -87,11 +87,29 @@ export class RiverLinesEffect {
     for (let i = 1; i < segments; i++) {
       const progress = i / segments;
       
-      // Add gentle curves - simple sine wave
+      // Add varied curves - múltiples tipos de curvatura
       const curveStrength = this.rng.uniform(PROCEDURAL_RANGES.CURVE_AMOUNT.min, PROCEDURAL_RANGES.CURVE_AMOUNT.max);
-      const curveAmount = Math.sin(progress * Math.PI * 2) * curveStrength;
-      const randomCurve = this.rng.uniform(-0.1, 0.1);
-      const totalCurve = (curveAmount + randomCurve) * 0.5;
+      
+      // Diferentes tipos de curvatura
+      const curveType = this.rng.uniform(0, 1);
+      let curveAmount = 0;
+      
+      if (curveType < 0.3) {
+        // Curvatura serpenteante (múltiples ondas)
+        curveAmount = Math.sin(progress * Math.PI * 4) * curveStrength * 0.7;
+      } else if (curveType < 0.6) {
+        // Curvatura gradual (una gran curva)
+        curveAmount = Math.sin(progress * Math.PI) * curveStrength;
+      } else if (curveType < 0.8) {
+        // Curvatura irregular (ruido)
+        curveAmount = (this.rng.uniform(-1, 1) + Math.sin(progress * Math.PI * 3) * 0.5) * curveStrength;
+      } else {
+        // Curvatura en zigzag
+        curveAmount = ((progress * 8) % 2 > 1 ? 1 : -1) * curveStrength * (1 - Math.abs(0.5 - progress) * 2);
+      }
+      
+      const randomCurve = this.rng.uniform(-0.05, 0.05);
+      const totalCurve = (curveAmount + randomCurve) * 0.3;
       
       // Rotate direction slightly for curve
       const normal = currentPos.clone().normalize();
@@ -143,14 +161,20 @@ export class RiverLinesEffect {
     // Crear un grupo para la línea del río
     const riverGroup = new THREE.Group();
     
-    // Simple brown color with tiny variation
-    const baseColor = this.params.color instanceof THREE.Color ? 
-      this.params.color.clone() : 
-      new THREE.Color().setRGB(
-        this.params.color![0], 
-        this.params.color![1], 
-        this.params.color![2]
-      );
+    // Usar color del planeta si no se especifica uno
+    let baseColor: THREE.Color;
+    if (this.params.color) {
+      baseColor = this.params.color instanceof THREE.Color ? 
+        this.params.color.clone() : 
+        new THREE.Color().setRGB(
+          this.params.color[0], 
+          this.params.color[1], 
+          this.params.color[2]
+        );
+    } else {
+      // Color por defecto: marrón seco para ríos
+      baseColor = new THREE.Color(0.3, 0.25, 0.2);
+    }
     
     // Very subtle color variation per river
     const variation = riverIndex * 0.05;
@@ -172,18 +196,19 @@ export class RiverLinesEffect {
       false              // closed
     );
     
-    // Material para el tubo
+    // Material para el tubo - volver a Basic para evitar problemas de iluminación
     const material = new THREE.MeshBasicMaterial({
       color: baseColor,
       opacity: this.params.opacity!,
-      transparent: this.params.opacity! < 1,
+      transparent: true, // Siempre transparente
       depthWrite: false,
-      depthTest: true
+      depthTest: true,
+      side: THREE.DoubleSide // Renderizar ambos lados
     });
     
     // Crear mesh del río
     const riverMesh = new THREE.Mesh(tubeGeometry, material);
-    riverMesh.renderOrder = 1000;
+    riverMesh.renderOrder = 1000; // Mismo nivel que las land masses
     riverGroup.add(riverMesh);
     
     return riverGroup;
@@ -269,9 +294,20 @@ export function createRiverLinesFromPythonData(
   
   const rng = new SeededRandom(riverSeed);
   
+  // Obtener color del planeta y oscurecerlo para ríos secos
+  let riverColor: THREE.Color | null = null;
+  if (riverData.color) {
+    riverColor = riverData.color instanceof THREE.Color ? 
+      riverData.color : 
+      new THREE.Color().fromArray(riverData.color);
+  } else {
+    // Negro simple para ríos secos
+    riverColor = new THREE.Color(0.0, 0.0, 0.0);
+  }
+  
   const params: RiverLinesParams = {
     riverCount: riverData.count || rng.randint(PROCEDURAL_RANGES.RIVER_COUNT.min, PROCEDURAL_RANGES.RIVER_COUNT.max),
-    color: riverData.color || [0.0, 0.0, 0.0], // Negro absoluto
+    color: riverColor,
     opacity: riverData.opacity || rng.uniform(PROCEDURAL_RANGES.OPACITY.min, PROCEDURAL_RANGES.OPACITY.max),
     elevation: riverData.elevation || rng.uniform(PROCEDURAL_RANGES.ELEVATION.min, PROCEDURAL_RANGES.ELEVATION.max),
     seed: riverSeed
