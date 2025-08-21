@@ -284,7 +284,7 @@ export class LandMassesEffect {
           // RELIEVE MÁS AGRESIVO: 15-20% del tamaño de la isla
           const proportionalRelief = size * 0.15; // 15% del tamaño para relieve notable
           const maxRelief = Math.min(proportionalRelief, maxAbsoluteRelief * 0.9); // Hasta 90% de la altura de nubes
-          const minRelief = planetRadius * 0.002; // Elevación base más visible
+          const minRelief = planetRadius * 0.008; // Elevación base MUCHO mayor para evitar z-fighting
           
           // Combinar relieve proporcional con base del planeta
           const baseRadius = planetRadius + minRelief;
@@ -320,9 +320,13 @@ export class LandMassesEffect {
         flatShading: false,
         // Añadir rugosidad para simular textura de tierra/hielo
         bumpScale: 0.002,
-        // Configurar depth sorting para evitar Z-fighting
+        // Configurar depth sorting para evitar Z-fighting - configuración mejorada
         depthWrite: true,
         depthTest: true,
+        // Añadir offset para separar más de la superficie del planeta
+        polygonOffset: true,
+        polygonOffsetFactor: 1,
+        polygonOffsetUnits: 1,
       });
       
       // Crear textura de ruido simple para darle textura

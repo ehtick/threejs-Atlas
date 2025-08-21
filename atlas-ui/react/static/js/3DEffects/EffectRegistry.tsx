@@ -1117,6 +1117,125 @@ export class EffectRegistry {
             }
             break;
 
+          case "arid":
+            // Arid planets: rocky terrain with atmospheric clouds and sparse land masses in dark reddish colors
+            console.log("🏜️ Processing Arid planet - adding atmospheric clouds and land masses");
+
+            // 1. Añadir nubes atmosféricas SIEMPRE para planetas Arid (proceduralmente si no hay datos)
+            let cloudsEffect;
+            if (surface.clouds && surface.clouds.length > 0) {
+              // Usar datos desde Python si están disponibles
+              cloudsEffect = createAtmosphereCloudsFromPythonData(
+                planetRadius,
+                surface,
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000
+              );
+            } else {
+              // Generar proceduralmente si no hay datos desde Python
+              cloudsEffect = new AtmosphereCloudsEffect(planetRadius, {
+                color: new THREE.Color(0.9, 0.8, 0.7), // Color arena/polvo para planetas áridos
+                cloudCount: 20, // Más nubes para mejor cobertura
+                size: 4.2, // Tamaño mucho mayor (rango 3.8-5.5 de PROCEDURAL_RANGES)
+                opacity: 0.7,
+                density: 1.2, // Mayor densidad para visibilidad
+                seed: (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000,
+                rotationSpeed: 0.004,
+                movementAmplitude: 0.012,
+                puffiness: 1.3,
+                timeSpeed: 1.0
+              });
+            }
+
+            if (cloudsEffect) {
+              const cloudsInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "atmosphere_clouds",
+                effect: cloudsEffect,
+                priority: 15,
+                enabled: true,
+                name: "Atmospheric Clouds",
+              };
+
+              this.effects.set(cloudsInstance.id, cloudsInstance);
+              effects.push(cloudsInstance);
+              cloudsEffect.addToScene(scene, mesh.position);
+              console.log("☁️ Atmospheric Clouds added to Arid planet");
+            }
+
+            // 2. Añadir masas de tierra SIEMPRE para planetas Arid con colores áridos
+            let landMassesEffect;
+            if (surface.green_patches && surface.green_patches.length > 0) {
+              // Usar datos desde Python pero modificar colores
+              const modifiedSurface = {
+                ...surface,
+                green_patches: surface.green_patches.map((patch: any) => ({
+                  ...patch,
+                  color: [0.5, 0.0, 0.0, patch.color?.[3] || 1.0] // RGB normalizado del #800000
+                }))
+              };
+
+              landMassesEffect = createLandMassesFromPythonData(
+                planetRadius, 
+                modifiedSurface, 
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 6000
+              );
+            } else {
+              // Generar proceduralmente con colores áridos - COBERTURA EXTENSIVA como planetas oceánicos
+              landMassesEffect = new LandMassesEffect(planetRadius, {
+                seed: (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 6000,
+                // Generar green_patches sintéticas con colores áridos - MUCHOS MÁS PARCHES
+                greenPatches: Array.from({length: 25}, (_, i) => { // Reducir cantidad pero hacer MUCHO más grandes
+                  const seed = (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 6000 + i * 100;
+                  const rng = Math.sin(seed) * 0.5 + 0.5; // Pseudo-random [0,1]
+                  
+                  // Distribución más uniforme en la esfera usando algoritmo mejorado
+                  const phi = Math.acos(1 - 2 * (i + rng) / 25); // Latitud uniforme
+                  const theta = 2 * Math.PI * ((i * 2.399) % 1); // Longitud con espiral dorada
+                  
+                  // Crear diferentes tipos de formaciones: pequeñas, medianas y grandes
+                  let size;
+                  if (i < 8) {
+                    // 8 formaciones GRANDES (continentes áridos)
+                    size = 0.25 + rng * 0.25; // 0.25-0.50 - MUY GRANDES
+                  } else if (i < 16) {
+                    // 8 formaciones medianas (mesetas)
+                    size = 0.15 + rng * 0.15; // 0.15-0.30 - GRANDES
+                  } else {
+                    // 9 formaciones pequeñas (afloramientos)
+                    size = 0.08 + rng * 0.12; // 0.08-0.20 - MEDIANAS
+                  }
+                  
+                  return {
+                    position_3d: [
+                      Math.sin(phi) * Math.cos(theta),
+                      Math.sin(phi) * Math.sin(theta),
+                      Math.cos(phi)
+                    ],
+                    size: size,
+                    sides: 12 + Math.floor(rng * 16), // Geometría variada (12-28 lados)
+                    color: [0.5, 0.0, 0.0, 0.7 + rng * 0.2] // Color árido con opacidad variada (0.7-0.9)
+                  };
+                })
+              });
+            }
+
+            if (landMassesEffect) {
+              const landMassesInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "land_masses",
+                effect: landMassesEffect,
+                priority: 5,
+                enabled: true,
+                name: "Arid Terrain",
+              };
+
+              this.effects.set(landMassesInstance.id, landMassesInstance);
+              effects.push(landMassesInstance);
+              landMassesEffect.addToScene(scene, mesh.position);
+              console.log("🏜️ Arid terrain (LandMasses with dark reddish color) added to Arid planet");
+            }
+            break;
+
           case "anomaly":
             // Planetas anómalos: múltiples efectos extraños y perturbadores
             console.log("🌌 DETECTED ANOMALY PLANET - Creating effects");
