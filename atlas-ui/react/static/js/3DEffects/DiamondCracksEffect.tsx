@@ -195,7 +195,7 @@ export class DiamondCracksEffect {
           vec3 baseColor = crackColor * crackIntensity;
           vec3 glowColor = baseColor * (1.0 + crackGlow * crack * 0.5);
           
-          float alpha = crack * 0.4;
+          float alpha = crack * 0.11;
           
           gl_FragColor = vec4(glowColor, alpha);
         }
