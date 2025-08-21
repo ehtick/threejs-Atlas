@@ -42,34 +42,36 @@ export class DiamondCracksEffect {
   private params: DiamondCracksParams;
 
   constructor(params: DiamondCracksParams = {}) {
-    // Generar valores completamente procedurales con seed aleatorio
-    const seed = Math.floor(Math.random() * 1000000);
-    const rng = new SeededRandom(seed);
+    // Usar seed proporcionada o una seed fija por defecto para determinismo
+    const seed = params.seed !== undefined ? params.seed : 123456;
 
-    // Color aleatorio para las grietas
-    const hue = rng.uniform(0, 360);
-    const saturation = rng.uniform(0.3, 0.8);
-    const lightness = rng.uniform(0.7, 1.0);
+    // Usar una seed fija para parámetros visuales (colores, opacidades, etc.)
+    const visualRng = new SeededRandom(123456);
+
+    // Color determinista pero consistente
+    const hue = visualRng.uniform(0, 360);
+    const saturation = visualRng.uniform(0.3, 0.8);
+    const lightness = visualRng.uniform(0.7, 1.0);
     const crackColor = new THREE.Color().setHSL(hue / 360, saturation, lightness);
 
     this.params = {
-      crackDensity: rng.uniform(PROCEDURAL_RANGES.CRACK_DENSITY.min, PROCEDURAL_RANGES.CRACK_DENSITY.max),
-      crackDepth: rng.uniform(PROCEDURAL_RANGES.CRACK_DEPTH.min, PROCEDURAL_RANGES.CRACK_DEPTH.max),
-      crackComplexity: Math.floor(rng.uniform(PROCEDURAL_RANGES.CRACK_COMPLEXITY.min, PROCEDURAL_RANGES.CRACK_COMPLEXITY.max)),
-      crackScale: rng.uniform(PROCEDURAL_RANGES.CRACK_SCALE.min, PROCEDURAL_RANGES.CRACK_SCALE.max),
-      crackSharpness: rng.uniform(PROCEDURAL_RANGES.CRACK_SHARPNESS.min, PROCEDURAL_RANGES.CRACK_SHARPNESS.max),
+      crackDensity: visualRng.uniform(PROCEDURAL_RANGES.CRACK_DENSITY.min, PROCEDURAL_RANGES.CRACK_DENSITY.max),
+      crackDepth: visualRng.uniform(PROCEDURAL_RANGES.CRACK_DEPTH.min, PROCEDURAL_RANGES.CRACK_DEPTH.max),
+      crackComplexity: Math.floor(visualRng.uniform(PROCEDURAL_RANGES.CRACK_COMPLEXITY.min, PROCEDURAL_RANGES.CRACK_COMPLEXITY.max)),
+      crackScale: visualRng.uniform(PROCEDURAL_RANGES.CRACK_SCALE.min, PROCEDURAL_RANGES.CRACK_SCALE.max),
+      crackSharpness: visualRng.uniform(PROCEDURAL_RANGES.CRACK_SHARPNESS.min, PROCEDURAL_RANGES.CRACK_SHARPNESS.max),
       crackColor,
-      crackOpacity: rng.uniform(PROCEDURAL_RANGES.CRACK_OPACITY.min, PROCEDURAL_RANGES.CRACK_OPACITY.max),
-      internalReflections: rng.uniform(PROCEDURAL_RANGES.INTERNAL_REFLECTIONS.min, PROCEDURAL_RANGES.INTERNAL_REFLECTIONS.max),
-      animationSpeed: rng.uniform(PROCEDURAL_RANGES.ANIMATION_SPEED.min, PROCEDURAL_RANGES.ANIMATION_SPEED.max),
-      seed,
+      crackOpacity: visualRng.uniform(PROCEDURAL_RANGES.CRACK_OPACITY.min, PROCEDURAL_RANGES.CRACK_OPACITY.max),
+      internalReflections: visualRng.uniform(PROCEDURAL_RANGES.INTERNAL_REFLECTIONS.min, PROCEDURAL_RANGES.INTERNAL_REFLECTIONS.max),
+      animationSpeed: visualRng.uniform(PROCEDURAL_RANGES.ANIMATION_SPEED.min, PROCEDURAL_RANGES.ANIMATION_SPEED.max),
+      seed, // Esta es la seed única del planeta para el patrón de líneas
       radius: params.radius || 2.5,
-      lineDrawPercentage: params.lineDrawPercentage !== undefined ? params.lineDrawPercentage : 0.5, // Por defecto 30%
+      lineDrawPercentage: params.lineDrawPercentage !== undefined ? params.lineDrawPercentage : 0.66,
     };
 
     // Esfera que envuelve el diamante
     const geometry = new THREE.SphereGeometry(this.params.radius! * 1.02, 32, 32);
-    
+
     // Shader SIMPLE con Voronoi 2D que SÍ SE VE
     this.material = new THREE.ShaderMaterial({
       vertexShader: `
@@ -103,12 +105,19 @@ export class DiamondCracksEffect {
           return -1.0 + 2.0 * fract(sin(st) * (43758.5453123 + seed));
         }
         
-        // Función para determinar si una línea debe dibujarse (porcentaje ajustable)
-        float shouldDrawLine(vec2 position, float seed, float percentage) {
-          vec2 cellPos = floor(position * 2.0); // Dividir en células más grandes
-          float cellSeed = dot(cellPos, vec2(127.1, 311.7)) + seed;
-          float random = fract(sin(cellSeed) * 43758.5453);
-          return step(random, percentage); // Porcentaje ajustable
+        // Función determinista para determinar si una línea debe dibujarse
+        float shouldDrawLine(vec2 position, float planetSeed, float percentage) {
+          // Usar posición de celda con la seed del planeta para determinismo
+          vec2 cellPos = floor(position * 2.0);
+          
+          // Hash determinista que combina posición y seed del planeta
+          float cellHash = dot(cellPos, vec2(127.1, 311.7));
+          cellHash = fract(sin(cellHash + planetSeed * 0.001) * 43758.5453);
+          
+          // Añadir más variación usando la seed
+          cellHash = fract(cellHash + planetSeed * 0.0001);
+          
+          return step(cellHash, percentage);
         }
         
         // Voronoi único por planeta usando seed
@@ -145,9 +154,9 @@ export class DiamondCracksEffect {
           // Escala variable basada en la seed del planeta
           vec2 st = vUv * (6.0 + mod(planetSeed, 4.0));
           
-          // Verificar si esta posición debe tener líneas (porcentaje ajustable)
+          // Verificar si esta posición debe tener líneas (determinista por planeta)
           float drawChance1 = shouldDrawLine(st, planetSeed, lineDrawPercentage);
-          float drawChance2 = shouldDrawLine(st * 1.5, planetSeed + 500.0, lineDrawPercentage);
+          float drawChance2 = shouldDrawLine(st * 1.5, planetSeed + 1000.0, lineDrawPercentage);
           
           // Si ninguna capa debe dibujarse, descartar
           if(drawChance1 < 0.5 && drawChance2 < 0.5) {
@@ -193,18 +202,18 @@ export class DiamondCracksEffect {
       `,
       uniforms: {
         time: { value: 0.0 },
-        crackColor: { value: this.params.crackColor },
-        crackIntensity: { value: this.params.crackOpacity! * 2.0 },
-        crackGlow: { value: this.params.internalReflections! * 3.0 },
-        planetSeed: { value: this.params.seed! },
-        lineDrawPercentage: { value: this.params.lineDrawPercentage! }
+        crackColor: { value: this.params.crackColor || new THREE.Color(0x00ffff) },
+        crackIntensity: { value: (this.params.crackOpacity || 0.7) * 2.0 },
+        crackGlow: { value: (this.params.internalReflections || 0.7) * 3.0 },
+        planetSeed: { value: this.params.seed || 123456 },
+        lineDrawPercentage: { value: this.params.lineDrawPercentage || 0.66 },
       },
       transparent: true,
       depthWrite: false,
       side: THREE.DoubleSide,
-      blending: THREE.AdditiveBlending // Modo de mezcla aditivo tipo Photoshop
+      blending: THREE.AdditiveBlending, // Modo de mezcla aditivo tipo Photoshop
     });
-    
+
     this.crackMesh = new THREE.Mesh(geometry, this.material);
   }
 
@@ -212,7 +221,6 @@ export class DiamondCracksEffect {
     this.crackMesh.position.copy(planetPosition);
     this.crackMesh.visible = true;
     scene.add(this.crackMesh);
-    console.log('DiamondCracks: Added simple sphere mesh to scene');
   }
 
   removeFromScene(scene: THREE.Scene): void {
@@ -244,12 +252,14 @@ export class DiamondCracksEffect {
 /**
  * Función para crear grietas desde datos de Python
  */
-export function createDiamondCracksFromPythonData(
-  _data: any, 
-  radius: number,
-  _globalSeed?: number
-): DiamondCracksEffect {
+export function createDiamondCracksFromPythonData(_data: any, radius: number, globalSeed?: number): DiamondCracksEffect {
+  // Usar seedOffset como otros efectos para evitar números enormes
+  const seedOffset = 5000; // Offset único para DiamondCracks
+  const seed = globalSeed ? (globalSeed + seedOffset) % 1000000 : Math.floor(Math.random() * 1000000);
+
   return new DiamondCracksEffect({
     radius,
+    seed,
+    lineDrawPercentage: 0.66,
   });
 }

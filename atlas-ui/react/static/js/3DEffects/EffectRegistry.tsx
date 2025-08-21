@@ -801,7 +801,6 @@ export class EffectRegistry {
               effects.push(diamondInstance);
 
               // Añadir grietas internas al diamante como efecto independiente
-              console.log("💎 Creating DiamondCracksEffect for Diamond planet...");
               const cracksEffect = createDiamondCracksFromPythonData(
                 pythonData, 
                 planetRadius,
@@ -820,7 +819,6 @@ export class EffectRegistry {
               
               // CRÍTICO: Añadir el efecto a la escena
               cracksEffect.addToScene(scene, mesh.position);
-              console.log("💎 DiamondCracksEffect created and added to scene!");
 
               // Añadir nubes atmosféricas si están disponibles para planetas Diamond
               if (surface.clouds && surface.clouds.length > 0) {
