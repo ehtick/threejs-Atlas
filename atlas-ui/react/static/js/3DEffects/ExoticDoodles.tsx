@@ -47,7 +47,7 @@ export class ExoticDoodlesEffect {
   
   // Sistema de anillos cósmicos
   private cosmicRingState: CosmicRingState = 'normal';
-  private ringCycleDuration: number = 35; // 30s normal + 5s anillo
+  private ringCycleDuration: number = 10; // 30s normal + 5s anillo
   private ringEventDuration: number = 5; // 5 segundos en modo anillo
   private separationDuration: number = 1.5; // 1.5 segundos para separarse explosivamente
   private returningDuration: number = 1.5; // 1.5 segundos para volver en espiral
@@ -365,53 +365,57 @@ export class ExoticDoodlesEffect {
       // Calculate cosmic ring effect
       const ringEffect = this.calculateCosmicRingEffect(cycleTime, index);
       
-      // Calculate what the surface position SHOULD be at this current time
-      // (where the doodle would be if it were following normal surface animation)
-      const surfacePosition = new THREE.Vector3(0, 0, 0); // Surface position is always (0,0,0) since geometry handles projection
+      // ALWAYS calculate both positions for continuity
+      const surfacePosition = new THREE.Vector3(0, 0, 0); // Surface position (geometry handles projection)
       
-      // Apply cosmic positioning - smooth and stable
-      if (ringEffect.separationFactor > 0.001) {
-        const basePos = this.doodleBasePositions[index];
-        
-        // Fixed separation distance - consistent ring formation
-        const separationDistance = this.planetRadius * (1 + ringEffect.separationFactor * 1.5);
-        
-        // Create stable ring layers
-        const ringLayer = index % 3; // 3 clean ring layers
-        const layerOffset = ringLayer * 0.3 * this.planetRadius * ringEffect.separationFactor;
-        const finalRingPos = basePos.clone().normalize().multiplyScalar(separationDistance + layerOffset);
-        
-        // Clean orbital motion - this is where the speed magic happens
-        const baseAngle = currentTime * ringEffect.orbitalSpeed;
-        const layerSpeedMultiplier = 1 + ringLayer * 0.4; // Different layers at different speeds
-        const angle = baseAngle * layerSpeedMultiplier + index * (Math.PI * 2 / this.doodles.length);
-        
-        // Tight, clean rings
-        const ringRadius = separationDistance * 0.08; // Thinner rings for cleaner look
-        
-        const tangent = new THREE.Vector3().crossVectors(finalRingPos, new THREE.Vector3(0, 1, 0)).normalize();
-        if (tangent.lengthSq() < 0.001) {
-          tangent.set(1, 0, 0).cross(finalRingPos.clone().normalize()).normalize();
-        }
-        const bitangent = new THREE.Vector3().crossVectors(finalRingPos.clone().normalize(), tangent).normalize();
-        
-        const ringPosition = finalRingPos.clone()
-          .add(tangent.multiplyScalar(Math.cos(angle) * ringRadius))
-          .add(bitangent.multiplyScalar(Math.sin(angle) * ringRadius));
-        
-        // During returning phase, interpolate smoothly back to surface position
-        if (this.cosmicRingState === 'returning') {
-          const lerpFactor = 1 - ringEffect.separationFactor; // As separationFactor decreases, lerpFactor increases
-          const finalPos = ringPosition.clone().lerp(surfacePosition, lerpFactor);
-          doodle.position.copy(finalPos);
-        } else {
-          // Full ring position
-          doodle.position.copy(ringPosition);
-        }
-      } else {
-        // Normal surface position - geometry is already projected onto surface
-        doodle.position.copy(surfacePosition);
+      // Calculate target ring position - but use consistent timing
+      const basePos = this.doodleBasePositions[index];
+      const ringLayer = index % 3;
+      const targetSeparationDistance = this.planetRadius * 2.5; // Fixed target distance
+      const layerOffset = ringLayer * 0.3 * this.planetRadius;
+      const targetRingPos = basePos.clone().normalize().multiplyScalar(targetSeparationDistance + layerOffset);
+      
+      // ALWAYS use current time for ring calculation to ensure continuity
+      // The key is that ring position is ALWAYS calculated the same way
+      const ringCalculationTime = currentTime;
+      
+      const baseAngle = ringCalculationTime * 12; // Use ring-mode speed
+      const layerSpeedMultiplier = 1 + ringLayer * 0.4;
+      const targetAngle = baseAngle * layerSpeedMultiplier + index * (Math.PI * 2 / this.doodles.length);
+      const ringRadius = targetSeparationDistance * 0.08;
+      
+      const tangent = new THREE.Vector3().crossVectors(targetRingPos, new THREE.Vector3(0, 1, 0)).normalize();
+      if (tangent.lengthSq() < 0.001) {
+        tangent.set(1, 0, 0).cross(targetRingPos.clone().normalize()).normalize();
       }
+      const bitangent = new THREE.Vector3().crossVectors(targetRingPos.clone().normalize(), tangent).normalize();
+      
+      const targetRingPosition = targetRingPos.clone()
+        .add(tangent.multiplyScalar(Math.cos(targetAngle) * ringRadius))
+        .add(bitangent.multiplyScalar(Math.sin(targetAngle) * ringRadius));
+      
+      // NOW apply smooth interpolation between surface and ring based on separation factor
+      let finalPosition: THREE.Vector3;
+      
+      if (ringEffect.separationFactor <= 0.001) {
+        // On surface
+        finalPosition = surfacePosition.clone();
+      } else {
+        // Interpolate between surface and ring position
+        let lerpFactor = ringEffect.separationFactor;
+        
+        // Apply different easing based on current state for smoother transitions
+        if (this.cosmicRingState === 'separating') {
+          lerpFactor = this.easeOutQuart(lerpFactor);
+        } else if (this.cosmicRingState === 'returning') {
+          lerpFactor = this.easeInOutCubic(lerpFactor);
+        }
+        // ring_mode uses linear interpolation (no additional easing needed)
+        
+        finalPosition = surfacePosition.clone().lerp(targetRingPosition, lerpFactor);
+      }
+      
+      doodle.position.copy(finalPosition);
 
       // Speed multiplier based on cosmic state
       const speed = data.movement_speed * ringEffect.speedMultiplier;
@@ -470,14 +474,14 @@ export class ExoticDoodlesEffect {
 
       case 'separating':
         const separatingProgress = (cycleTime - normalDuration) / this.separationDuration;
-        // Smooth acceleration outward
-        separationFactor = this.smoothstep(0, 1, separatingProgress);
-        orbitalSpeed = 1; // Minimal orbital speed during separation
-        speedMultiplier = 1 + separationFactor * 2; // Gentle speed increase
+        // Ultra-smooth acceleration outward
+        separationFactor = this.easeOutQuart(separatingProgress);
+        orbitalSpeed = 12; // ALWAYS use full orbital speed - let interpolation handle it
+        speedMultiplier = 1 + separationFactor * 7; // Smooth speed increase to ring level
         break;
 
       case 'ring_mode':
-        separationFactor = 1;
+        separationFactor = 1; // Full separation
         orbitalSpeed = 12; // MUCH faster orbital motion - this is the spectacular part!
         speedMultiplier = 8; // Much faster individual rotation
         break;
@@ -485,24 +489,25 @@ export class ExoticDoodlesEffect {
       case 'returning':
         const returningStart = normalDuration + this.separationDuration + (this.ringEventDuration - this.separationDuration - this.returningDuration);
         const returningProgress = (cycleTime - returningStart) / this.returningDuration;
-        // Smooth return to surface
-        separationFactor = 1 - this.smoothstep(0, 1, returningProgress);
-        orbitalSpeed = 1; // Minimal orbital speed during return
-        speedMultiplier = 1 + separationFactor * 2; // Gentle speed decrease
+        // Ultra-smooth return
+        const smoothReturn = this.easeInQuart(returningProgress);
+        separationFactor = 1 - smoothReturn;
+        orbitalSpeed = 12; // ALWAYS use full orbital speed - let interpolation handle it
+        speedMultiplier = 1 + separationFactor * 7; // Smooth speed decrease from ring level
         break;
     }
 
     // Add slight delay/variation per doodle for more organic effect
     const doodleDelayFactor = (doodleIndex / this.doodles.length) * 0.3; // 30% of transition time
     
-    // Apply delay only during transitions (not during full ring mode)
+    // Apply delay only during transitions with ultra-smooth curves
     if (this.cosmicRingState === 'separating') {
       const adjustedProgress = Math.max(0, (cycleTime - normalDuration - doodleDelayFactor * this.separationDuration) / this.separationDuration);
-      separationFactor = this.smoothstep(0, 1, adjustedProgress);
+      separationFactor = this.easeOutQuart(adjustedProgress);
     } else if (this.cosmicRingState === 'returning') {
       const returningStart = normalDuration + this.separationDuration + (this.ringEventDuration - this.separationDuration - this.returningDuration);
       const adjustedProgress = Math.max(0, (cycleTime - returningStart - doodleDelayFactor * this.returningDuration) / this.returningDuration);
-      separationFactor = 1 - this.smoothstep(0, 1, adjustedProgress);
+      separationFactor = 1 - this.easeInQuart(adjustedProgress);
     }
 
     return {
@@ -516,6 +521,21 @@ export class ExoticDoodlesEffect {
   private smoothstep(edge0: number, edge1: number, x: number): number {
     const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
     return t * t * (3 - 2 * t);
+  }
+
+  // Ease-in-out function for ultra-smooth animations (cubic bezier-like)
+  private easeInOutCubic(t: number): number {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  }
+
+  // Ease-out function for smooth deceleration
+  private easeOutQuart(t: number): number {
+    return 1 - Math.pow(1 - t, 4);
+  }
+
+  // Ease-in function for smooth acceleration
+  private easeInQuart(t: number): number {
+    return t * t * t * t;
   }
 
   // Update light direction for all doodle materials
