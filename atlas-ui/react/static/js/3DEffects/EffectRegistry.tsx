@@ -48,6 +48,7 @@ import { AquiferWaterEffect, createAquiferWaterFromPythonData } from "./AquiferW
 import { OceanCurrentsEffect, createOceanCurrentsFromPythonData } from "./OceanCurrentsEffect";
 import { LavaFlowsEffect, createLavaFlowsFromPythonData } from "./LavaFlowsEffect";
 import { MoltenLavaEffect, createMoltenLavaFromPythonData } from "./MoltenLavaEffect";
+import { FireEruptionEffect, createFireEruptionFromPythonData } from "./FireEruptionEffect";
 // Efectos de superficie legacy eliminados - usar solo versiones Layer
 
 // Importar efectos de debug
@@ -103,6 +104,7 @@ export enum EffectType {
   OCEAN_CURRENTS = "ocean_currents",
   LAVA_FLOWS = "lava_flows",
   MOLTEN_LAVA = "molten_lava",
+  FIRE_ERUPTION = "fire_eruption",
   CRYSTAL_FORMATIONS = "crystal_formations",
   CLOUD_LAYERS = "cloud_layers",
   STORM_SYSTEMS = "storm_systems",
@@ -242,6 +244,11 @@ export class EffectRegistry {
     this.registerEffect(EffectType.MOLTEN_LAVA, {
       create: (params, planetRadius, layerSystem) => new MoltenLavaEffect(layerSystem!, params),
       fromPythonData: (data, planetRadius, layerSystem) => createMoltenLavaFromPythonData(layerSystem!, data, data.seeds?.planet_seed),
+    });
+
+    this.registerEffect(EffectType.FIRE_ERUPTION, {
+      create: (params, planetRadius) => new FireEruptionEffect(planetRadius, params),
+      fromPythonData: (data, planetRadius) => createFireEruptionFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed),
     });
 
     // Efectos futuros (placeholders)
@@ -1322,7 +1329,30 @@ export class EffectRegistry {
               console.log("🔥 Lava Flows (fire whips) added to Molten Core planet");
             }
 
-            // 3. Añadir landmasses incandescentes (masas de tierra que brillan como lava)
+            // 3. Añadir erupciones de fuego (llamas que salen de la superficie)
+            const fireEruptionEffect = createFireEruptionFromPythonData(
+              planetRadius,
+              surface,
+              pythonData.seeds?.planet_seed || pythonData.seeds?.shape_seed
+            );
+
+            if (fireEruptionEffect) {
+              const fireEruptionInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "fire_eruption",
+                effect: fireEruptionEffect,
+                priority: 15, // Alta prioridad para renderizar sobre otros efectos
+                enabled: true,
+                name: "Fire Eruptions",
+              };
+
+              this.effects.set(fireEruptionInstance.id, fireEruptionInstance);
+              effects.push(fireEruptionInstance);
+              fireEruptionEffect.addToScene(scene, mesh.position);
+              console.log("🔥 Fire Eruptions added to Molten Core planet");
+            }
+
+            // 4. Añadir landmasses incandescentes (masas de tierra que brillan como lava)
             if (surface.green_patches && surface.green_patches.length > 0) {
               // Modificar los green_patches para que sean incandescentes (color Molten Core)
               const moltenCoreMassesData = {

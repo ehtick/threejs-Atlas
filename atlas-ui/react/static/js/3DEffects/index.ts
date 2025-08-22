@@ -71,6 +71,9 @@ export type { PulsatingCubeParams } from "./PulsatingCube";
 export { PlanetRaysEffect, createPlanetRaysFromPythonData } from "./PlanetRays";
 export type { PlanetRaysParams } from "./PlanetRays";
 
+export { FireEruptionEffect, createFireEruptionFromPythonData } from "./FireEruptionEffect";
+export type { FireEruptionParams } from "./FireEruptionEffect";
+
 // export {
 //   AnomalyGeometricMorphEffect,
 //   createAnomalyGeometricMorphFromPythonData

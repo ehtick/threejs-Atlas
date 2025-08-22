@@ -1382,8 +1382,15 @@ import{C as i,S as s,F as c,V as r,b as d,M as m,N as v,D as u}from"./atlas_Ce3h
         finalColor += vec3(1.0, 0.8, 0.6) * specularStrength * dayNight;
         
         // Efecto emisivo MUY intenso para lava incandescente
+        // ENFOQUE HÍBRIDO: La lava brilla incluso en la oscuridad, pero menos
         vec3 emissive = baseColor * emissiveIntensity * (0.6 + temperaturePulse * 0.4) * heatIntensity;
-        finalColor += emissive;
+        
+        // Factor de emisividad: 20-25% mínimo en oscuridad, 100% en luz
+        // Más sutil en el lado oscuro para mayor realismo
+        float emissiveFactor = mix(0.22, 1.0, dayNight);
+        
+        // Aplicar el factor emisivo manteniendo algo de brillo en la cara oculta
+        finalColor += emissive * emissiveFactor;
         
         // Alpha basado en intensidad de calor
         float alpha = 0.8 + heatIntensity * 0.2;
