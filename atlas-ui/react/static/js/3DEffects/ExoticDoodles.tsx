@@ -39,6 +39,25 @@ export class ExoticDoodlesEffect {
   private time: number = 0;
   private rng: SeededRandom;
 
+  // Helper function to project points onto sphere surface
+  private projectPointOnSphere(localX: number, localY: number, radius: number, baseDirection: THREE.Vector3): THREE.Vector3 {
+    // baseDirection is the unit vector from planet center towards doodle position
+    const normal = baseDirection.clone().normalize();
+    const tangent = new THREE.Vector3(0, 1, 0).cross(normal).normalize();
+    
+    // If normal is parallel to Y axis, use X axis instead
+    if (tangent.lengthSq() < 0.001) {
+      tangent.set(1, 0, 0).cross(normal).normalize();
+    }
+    
+    const bitangent = normal.clone().cross(tangent).normalize();
+
+    // Project the point onto the sphere surface
+    return normal.clone().multiplyScalar(radius)
+      .add(tangent.clone().multiplyScalar(localX))
+      .add(bitangent.clone().multiplyScalar(localY));
+  }
+
   constructor(planetRadius: number, params: ExoticDoodlesParams = {}, seed?: number) {
     this.group = new THREE.Group();
     this.planetRadius = planetRadius;
@@ -118,20 +137,7 @@ export class ExoticDoodlesEffect {
           doodleObject = this.createSquiggleDoodle(doodle);
       }
 
-      // Position on sphere surface
-      const distance = this.planetRadius * 1.015; // Slightly above surface
-      doodleObject.position.set(
-        doodle.position_3d[0] * distance,
-        doodle.position_3d[1] * distance,
-        doodle.position_3d[2] * distance
-      );
-
-      // Make doodle face outward from planet center
-      doodleObject.lookAt(
-        doodleObject.position.x * 2,
-        doodleObject.position.y * 2,
-        doodleObject.position.z * 2
-      );
+      // No need to position or orient - geometry is already projected onto sphere surface
 
       this.doodles.push(doodleObject);
       this.group.add(doodleObject);
@@ -170,8 +176,10 @@ export class ExoticDoodlesEffect {
   private createFractalDoodle(doodle: NonNullable<ExoticDoodlesParams['doodles']>[0]): THREE.Object3D {
     const group = new THREE.Group();
     
-    // Create chaotic scribbled circles and loops (like messy pen doodles)
+    // Create chaotic scribbled circles and loops that follow sphere curvature
     const numElements = Math.floor(doodle.complexity * 0.6) + 2; // 2-15 elements
+    const baseDirection = new THREE.Vector3(...doodle.position_3d);
+    const radius = this.planetRadius * 1.015;
     
     for (let i = 0; i < numElements; i++) {
       // Random position for each scribbled element
@@ -181,20 +189,21 @@ export class ExoticDoodlesEffect {
       // Create irregular, hand-drawn looking circles/loops
       const points: THREE.Vector3[] = [];
       const numPoints = Math.floor(this.rng.random() * 20) + 8; // 8-28 points
-      const baseRadius = this.rng.random() * doodle.size * this.planetRadius * 0.3 + 0.1;
+      const baseCircleRadius = this.rng.random() * doodle.size * this.planetRadius * 0.3 + 0.1;
       
       for (let j = 0; j <= numPoints; j++) {
         const angle = (j / numPoints) * Math.PI * 2;
         
         // Add irregularity to make it look hand-drawn
-        const radiusVariation = baseRadius * (0.7 + this.rng.random() * 0.6);
+        const radiusVariation = baseCircleRadius * (0.7 + this.rng.random() * 0.6);
         const angleJitter = angle + (this.rng.random() - 0.5) * 0.5;
         
-        const x = centerX + Math.cos(angleJitter) * radiusVariation;
-        const y = centerY + Math.sin(angleJitter) * radiusVariation;
-        const z = (this.rng.random() - 0.5) * doodle.size * this.planetRadius * 0.1;
+        const localX = centerX + Math.cos(angleJitter) * radiusVariation;
+        const localY = centerY + Math.sin(angleJitter) * radiusVariation;
         
-        points.push(new THREE.Vector3(x, y, z));
+        // Project point onto sphere surface
+        const pointOnSphere = this.projectPointOnSphere(localX, localY, radius, baseDirection);
+        points.push(pointOnSphere);
       }
       
       // Close the loop
@@ -218,8 +227,10 @@ export class ExoticDoodlesEffect {
   private createSquiggleDoodle(doodle: NonNullable<ExoticDoodlesParams['doodles']>[0]): THREE.Object3D {
     const group = new THREE.Group();
     
-    // Create random scribble-like lines (like the image)
+    // Create random scribble-like lines that follow sphere curvature
     const numStrokes = Math.floor(doodle.complexity * 0.8) + 3; // 3-20 random strokes
+    const baseDirection = new THREE.Vector3(...doodle.position_3d);
+    const radius = this.planetRadius * 1.015;
     
     for (let stroke = 0; stroke < numStrokes; stroke++) {
       const points: THREE.Vector3[] = [];
@@ -228,15 +239,15 @@ export class ExoticDoodlesEffect {
       // Start each stroke at a random position
       let currentX = (this.rng.random() - 0.5) * doodle.size * this.planetRadius;
       let currentY = (this.rng.random() - 0.5) * doodle.size * this.planetRadius;
-      let currentZ = 0;
       
       for (let i = 0; i <= strokeLength; i++) {
-        points.push(new THREE.Vector3(currentX, currentY, currentZ));
+        // Project current position onto sphere surface
+        const pointOnSphere = this.projectPointOnSphere(currentX, currentY, radius, baseDirection);
+        points.push(pointOnSphere);
         
         // Add random movement (chaotic like real scribbles)
         currentX += (this.rng.random() - 0.5) * doodle.size * this.planetRadius * 0.2;
         currentY += (this.rng.random() - 0.5) * doodle.size * this.planetRadius * 0.2;
-        currentZ += (this.rng.random() - 0.5) * doodle.size * this.planetRadius * 0.05;
         
         // Keep within bounds
         const maxSize = doodle.size * this.planetRadius * 0.8;
