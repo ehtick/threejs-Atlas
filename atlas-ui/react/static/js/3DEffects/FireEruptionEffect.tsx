@@ -354,6 +354,11 @@ export class FireEruptionEffect {
     
     // Pre-poblar partículas para erupciones que ya están activas
     this.initializeActiveEruptions();
+    
+    // Realizar la primera actualización de geometría para mostrar las partículas inmediatamente
+    const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!;
+    const currentTime = rawTime % 1000;
+    this.updateParticleGeometry(currentTime);
   }
   
   private initializeStateFromAbsoluteTime(): void {
@@ -444,8 +449,52 @@ export class FireEruptionEffect {
     // Inicializar partículas que representan el estado actual de erupciones activas
     // Similar a como PulsatingCube inicializa partículas en la posición correcta
     
-    // No crear partículas aquí - se calcularán dinámicamente en updateParticleGeometry
-    // basado en el estado actual de cada erupción
+    // Calcular tiempo actual absoluto (igual que en updateParticleGeometry)
+    const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!;
+    const currentTime = rawTime % 1000;
+    
+    // Para cada erupción, verificar TODAS las erupciones pasadas que podrían tener partículas aún vivas
+    for (let eruptionIndex = 0; eruptionIndex < this.eruptions.length; eruptionIndex++) {
+      const eruption = this.eruptions[eruptionIndex];
+      
+      // Calcular parámetros del ciclo
+      const waitTime = 1.0 / this.params.eruptionFrequency!;
+      const totalCycleDuration = this.params.eruptionDuration! + waitTime;
+      const seedOffset = (eruptionIndex * totalCycleDuration * 0.37) % totalCycleDuration;
+      
+      // Encontrar el tiempo de vida máximo de las partículas de esta erupción
+      const maxParticleLifetime = Math.max(...eruption.particleLifetimes);
+      
+      // Calcular cuántos ciclos hacia atrás necesitamos revisar para cubrir todas las partículas posibles
+      const cyclesToCheck = Math.ceil(maxParticleLifetime / totalCycleDuration) + 1;
+      
+      // Revisar cada ciclo hacia atrás
+      for (let cycleBack = 0; cycleBack < cyclesToCheck; cycleBack++) {
+        const pastTime = currentTime - (cycleBack * totalCycleDuration);
+        const cycleTime = (pastTime + seedOffset) % totalCycleDuration;
+        
+        // Si este ciclo pasado tuvo una erupción
+        if (cycleTime < this.params.eruptionDuration!) {
+          const eruptionStartTime = pastTime - cycleTime;
+          
+          // Revisar cada partícula de esta erupción pasada
+          for (let i = 0; i < 150; i++) { // particlesPerEruption
+            const particleDelay = (i / 150) * 0.7;
+            const particleBirthTime = eruptionStartTime + particleDelay * this.params.eruptionDuration!;
+            const particleAge = currentTime - particleBirthTime;
+            
+            // Si la partícula nació y aún está dentro de su tiempo de vida
+            if (particleAge > 0 && particleAge <= eruption.particleLifetimes[i]) {
+              // Solo activar si no está ya activa (evitar sobrescribir)
+              if (!eruption.particleActive[i]) {
+                eruption.particleActive[i] = true;
+                eruption.particleBirthTimes[i] = particleBirthTime;
+              }
+            }
+          }
+        }
+      }
+    }
   }
   
   
