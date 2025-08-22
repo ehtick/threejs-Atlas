@@ -205,16 +205,77 @@ export class CaveSurfaceHolesEffect {
     });
   }
 
+  private createHollowConeGeometry(topRadius: number, height: number, segments: number): THREE.BufferGeometry {
+    const geometry = new THREE.BufferGeometry();
+    const vertices: number[] = [];
+    const indices: number[] = [];
+    const normals: number[] = [];
+    const uvs: number[] = [];
+
+    // Create vertices for cone walls only (no top or bottom caps)
+    for (let i = 0; i <= segments; i++) {
+      const angle = (i / segments) * Math.PI * 2;
+      const x = Math.cos(angle);
+      const z = Math.sin(angle);
+      
+      // Top vertex (wide part of cone)
+      vertices.push(x * topRadius, height / 2, z * topRadius);
+      uvs.push(i / segments, 1);
+      
+      // Bottom vertex (tip of cone)
+      vertices.push(0, -height / 2, 0);
+      uvs.push(i / segments, 0);
+    }
+
+    // Calculate normals and create triangles for cone walls
+    for (let i = 0; i < segments; i++) {
+      const topIndex1 = i * 2;
+      const bottomIndex1 = i * 2 + 1;
+      const topIndex2 = ((i + 1) % (segments + 1)) * 2;
+      const bottomIndex2 = ((i + 1) % (segments + 1)) * 2 + 1;
+
+      // First triangle: top1 -> bottom1 -> top2
+      indices.push(topIndex1, bottomIndex1, topIndex2);
+      
+      // Second triangle: bottom1 -> bottom2 -> top2
+      indices.push(bottomIndex1, bottomIndex2, topIndex2);
+
+      // Calculate normals for this segment
+      const angle = (i / segments) * Math.PI * 2;
+      
+      const normal1x = Math.cos(angle);
+      const normal1z = Math.sin(angle);
+      
+      // Add normals (pointing outward from cone surface)
+      normals.push(normal1x, 0.5, normal1z);  // Top vertex
+      normals.push(normal1x, 0.5, normal1z);  // Bottom vertex
+    }
+    
+    // Add final vertices and normals
+    const angle = 0;
+    const normalX = Math.cos(angle);
+    const normalZ = Math.sin(angle);
+    normals.push(normalX, 0.5, normalZ);  // Top vertex
+    normals.push(normalX, 0.5, normalZ);  // Bottom vertex
+
+    geometry.setIndex(indices);
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+
+    return geometry;
+  }
+
   private createHoleCone(holeData: NonNullable<CaveSurfaceHolesParams['holes']>[0]): void {
     const position = new THREE.Vector3(...holeData.position_3d).normalize();
     const coneRadius = holeData.radius * this.planetRadius;
     const caveDepth = holeData.depth * this.planetRadius * 2;
     
-    // Create a cone that sits exactly in the hole opening, pointing inward
-    const coneGeometry = new THREE.ConeGeometry(coneRadius, caveDepth, 16);
+    // Create a hollow cone (only walls, no caps)
+    const coneGeometry = this.createHollowConeGeometry(coneRadius, caveDepth, 16);
     const coneMaterial = new THREE.MeshLambertMaterial({
       color: new THREE.Color(0x808080), // Gray color for testing alignment
-      transparent: true,
+      transparent: false,
       opacity: 1.0,
       side: THREE.DoubleSide
     });
@@ -225,14 +286,14 @@ export class CaveSurfaceHolesEffect {
     const surfacePosition = position.clone().multiplyScalar(this.planetRadius);
     const inwardDirection = position.clone().negate();
     
-    // Place cone so its wide end is at the surface and tip points inward
+    // Place cone so its wide end is deep inside and tip points outward toward surface
     const conePosition = surfacePosition.clone().add(inwardDirection.clone().multiplyScalar(caveDepth * 0.5));
     coneMesh.position.copy(conePosition);
     
-    // Orient cone so tip points toward planet center
-    // The cone by default points up (0,1,0), we need it to point toward center
+    // Orient cone so tip points toward surface (outward from planet center)
+    // The cone by default points up (0,1,0), we need it to point outward
     const up = new THREE.Vector3(0, 1, 0);
-    const targetDirection = inwardDirection.clone(); // Direction toward center from this position
+    const targetDirection = position.clone(); // Direction toward surface from center
     
     // Create quaternion to rotate from up direction to target direction
     const quaternion = new THREE.Quaternion().setFromUnitVectors(up, targetDirection);
@@ -243,16 +304,7 @@ export class CaveSurfaceHolesEffect {
   }
 
   update(_deltaTime: number): void {
-    // Animate subtle changes in cone lighting for atmospheric effect
-    const time = Date.now() * 0.0001;
-    
-    this.coneMeshes.forEach((mesh, index) => {
-      if (mesh.material instanceof THREE.MeshLambertMaterial) {
-        // Subtle pulsing of opacity
-        const pulseFactor = 0.7 + Math.sin(time + index * 0.5) * 0.1;
-        mesh.material.opacity = pulseFactor;
-      }
-    });
+    // No animation needed for opaque cones
   }
 
   updateLightDirection(direction: THREE.Vector3): void {
