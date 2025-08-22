@@ -1892,9 +1892,9 @@ export class PlanetLayerSystem {
         // ENFOQUE HÍBRIDO: La lava brilla incluso en la oscuridad, pero menos
         vec3 emissive = baseColor * emissiveIntensity * (0.6 + temperaturePulse * 0.4) * heatIntensity;
         
-        // Factor de emisividad: 35% mínimo en oscuridad, 100% en luz
-        // Esto mantiene la lava visible en el lado oscuro pero más tenue
-        float emissiveFactor = mix(0.35, 1.0, dayNight);
+        // Factor de emisividad: 20-25% mínimo en oscuridad, 100% en luz
+        // Más sutil en el lado oscuro para mayor realismo
+        float emissiveFactor = mix(0.22, 1.0, dayNight);
         
         // Aplicar el factor emisivo manteniendo algo de brillo en la cara oculta
         finalColor += emissive * emissiveFactor;

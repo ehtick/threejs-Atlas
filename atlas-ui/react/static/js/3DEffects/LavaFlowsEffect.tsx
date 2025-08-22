@@ -219,13 +219,13 @@ export class LavaFlowsEffect {
       // ENFOQUE HÍBRIDO: Los flujos de lava brillan más cuando emergen Y en el lado iluminado
       vec3 emissive = finalColor * emissiveIntensity * (0.8 + temperaturePulse * 0.4);
       
-      // Factor de emisividad: 40% mínimo en oscuridad, 100% en luz
-      // Los flujos son más brillantes que la superficie base incluso en oscuridad
-      float emissiveFactor = mix(0.4, 1.0, dayNight);
+      // Factor de emisividad: 25% mínimo en oscuridad, 100% en luz
+      // Los flujos son ligeramente más brillantes que la superficie base
+      float emissiveFactor = mix(0.25, 1.0, dayNight);
       
       // Bonus de emergencia: cuando el flujo emerge, brilla más incluso en oscuridad
       float emergenceBonus = abs(vEmergence) * 10.0;
-      emissiveFactor = min(1.0, emissiveFactor + emergenceBonus * 0.3);
+      emissiveFactor = min(1.0, emissiveFactor + emergenceBonus * 0.2); // Bonus reducido también
       
       // Combinar difuso y emisivo con factor híbrido
       vec3 result = diffuse + (emissive * emissiveFactor);
