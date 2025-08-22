@@ -29,7 +29,13 @@ const PROCEDURAL_RANGES = {
   COLOR_SATURATION: { min: 0.6, max: 1.0 },
   COLOR_LIGHTNESS: { min: 0.4, max: 0.9 },
   OPACITY: { min: 0.3, max: 1.0 },
-  TIME_SPEED: { min: 0.1, max: 3.0 } // Rango de velocidades del tiempo para sincronización
+  TIME_SPEED: { min: 0.1, max: 3.0 }, // Rango de velocidades del tiempo para sincronización
+  
+  // Cosmic Ring Event Timing (unique per planet)
+  RING_CYCLE_DURATION: { min: 25, max: 45 }, // Total cycle time (normal + event)
+  RING_EVENT_DURATION: { min: 3, max: 8 }, // How long the ring event lasts
+  SEPARATION_DURATION: { min: 0.8, max: 2.5 }, // Time to separate from surface
+  RETURNING_DURATION: { min: 0.8, max: 2.5 }, // Time to return to surface
 };
 
 // Estados del evento cósmico de anillos
@@ -47,10 +53,10 @@ export class ExoticDoodlesEffect {
   
   // Sistema de anillos cósmicos
   private cosmicRingState: CosmicRingState = 'normal';
-  private ringCycleDuration: number = 10; // 30s normal + 5s anillo
-  private ringEventDuration: number = 5; // 5 segundos en modo anillo
-  private separationDuration: number = 1.5; // 1.5 segundos para separarse explosivamente
-  private returningDuration: number = 1.5; // 1.5 segundos para volver en espiral
+  private ringCycleDuration: number; // Total cycle duration (procedural)
+  private ringEventDuration: number; // Ring event duration (procedural)
+  private separationDuration: number; // Separation duration (procedural)
+  private returningDuration: number; // Return duration (procedural)
   private doodleBasePositions: THREE.Vector3[] = []; // Posiciones originales de cada doodle
 
   // Create lit material for doodles that respects planet lighting
@@ -151,6 +157,15 @@ export class ExoticDoodlesEffect {
     
     // Velocidad del tiempo para sincronización
     this.timeSpeed = this.rng.uniform(PROCEDURAL_RANGES.TIME_SPEED.min, PROCEDURAL_RANGES.TIME_SPEED.max);
+    
+    // Generate unique cosmic ring event timing for this planet
+    this.ringEventDuration = this.rng.uniform(PROCEDURAL_RANGES.RING_EVENT_DURATION.min, PROCEDURAL_RANGES.RING_EVENT_DURATION.max);
+    this.separationDuration = this.rng.uniform(PROCEDURAL_RANGES.SEPARATION_DURATION.min, PROCEDURAL_RANGES.SEPARATION_DURATION.max);
+    this.returningDuration = this.rng.uniform(PROCEDURAL_RANGES.RETURNING_DURATION.min, PROCEDURAL_RANGES.RETURNING_DURATION.max);
+    
+    // Total cycle duration = normal time + event time
+    const normalTime = this.rng.uniform(PROCEDURAL_RANGES.RING_CYCLE_DURATION.min, PROCEDURAL_RANGES.RING_CYCLE_DURATION.max);
+    this.ringCycleDuration = normalTime + this.ringEventDuration;
     
     // Always generate procedurally using PROCEDURAL_RANGES
     // This ensures PROCEDURAL_RANGES changes affect the visual output
