@@ -358,7 +358,11 @@ export class EffectRegistry {
 
     this.registerEffect(EffectType.EXOTIC_DOODLES, {
       create: (params, planetRadius) => new ExoticDoodlesEffect(planetRadius, params),
-      fromPythonData: (data, planetRadius) => createExoticDoodlesFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed),
+      fromPythonData: (data, planetRadius) => createExoticDoodlesFromPythonData(
+        planetRadius, 
+        data.surface_elements || {}, 
+        data.seeds?.planet_seed
+      ),
     });
 
     // Más efectos pueden añadirse aquí fácilmente

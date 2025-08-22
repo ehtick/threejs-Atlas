@@ -11,7 +11,7 @@ export interface ExoticDoodlesParams {
     position_3d: [number, number, number];
     type: 'arc' | 'fractals' | 'squiggle';
     size: number;
-    color: [number, number, number, number];
+    color: [string, number];  // [hexColor, opacity]
     complexity: number;
     movement_speed: number;
     movement_pattern: 'wave' | 'pulse' | 'spiral';
@@ -19,22 +19,86 @@ export interface ExoticDoodlesParams {
   planetRadius?: number;
 }
 
+// Rangos para generación procedural
+const PROCEDURAL_RANGES = {
+  DOODLE_COUNT: { min: 14, max: 18 },
+  DOODLE_SIZE: { min: 0.08, max: 0.20 },
+  COMPLEXITY: { min: 5, max: 20 },
+  MOVEMENT_SPEED: { min: 0.1, max: 0.5 },
+  COLOR_HUE: { min: 0.0, max: 1.0 },
+  COLOR_SATURATION: { min: 0.6, max: 1.0 },
+  COLOR_LIGHTNESS: { min: 0.4, max: 0.9 },
+  OPACITY: { min: 0.7, max: 1.0 }
+};
+
 export class ExoticDoodlesEffect {
   private group: THREE.Group;
   private doodles: THREE.Object3D[] = [];
   private doodleData: ExoticDoodlesParams['doodles'] = [];
   private planetRadius: number;
   private time: number = 0;
+  private rng: SeededRandom;
 
-  constructor(planetRadius: number, params: ExoticDoodlesParams = {}) {
+  constructor(planetRadius: number, params: ExoticDoodlesParams = {}, seed?: number) {
     this.group = new THREE.Group();
     this.planetRadius = planetRadius;
-    this.doodleData = params.doodles || [];
+    this.rng = new SeededRandom(seed || 12345);
+    
+    // Always generate procedurally using PROCEDURAL_RANGES
+    // This ensures PROCEDURAL_RANGES changes affect the visual output
+    this.doodleData = this.generateProceduralDoodles();
 
     if (this.doodleData.length > 0) {
       this.createDoodles();
     }
   }
+
+  private generateProceduralDoodles(): ExoticDoodlesParams['doodles'] {
+    const doodles: NonNullable<ExoticDoodlesParams['doodles']> = [];
+    const doodleCount = this.rng.randint(
+      PROCEDURAL_RANGES.DOODLE_COUNT.min, 
+      PROCEDURAL_RANGES.DOODLE_COUNT.max
+    );
+    
+    const doodleTypes: Array<'arc' | 'fractals' | 'squiggle'> = ['arc', 'fractals', 'squiggle'];
+    const movementPatterns: Array<'wave' | 'pulse' | 'spiral'> = ['wave', 'pulse', 'spiral'];
+    
+    for (let i = 0; i < doodleCount; i++) {
+      // Generate uniform position on sphere
+      const theta = this.rng.random() * 2 * Math.PI;
+      const phi = Math.acos(this.rng.random() * 2 - 1);
+      
+      const position_3d: [number, number, number] = [
+        Math.sin(phi) * Math.cos(theta),
+        Math.sin(phi) * Math.sin(theta),
+        Math.cos(phi)
+      ];
+      
+      // Generate vibrant colors EXACTLY like Python code (line 2120)
+      // Python: f"#{rng.randint(200, 255):02x}{rng.randint(0, 100):02x}{rng.randint(150, 255):02x}"
+      const r = this.rng.randint(200, 255);  // R: 200-255 (bright reds/magentas)
+      const g = this.rng.randint(0, 100);    // G: 0-100 (low green)  
+      const b = this.rng.randint(150, 255);  // B: 150-255 (bright blues)
+      const opacity = this.rng.uniform(PROCEDURAL_RANGES.OPACITY.min, PROCEDURAL_RANGES.OPACITY.max);
+      
+      // Convert to hex string like Python, then to Three.js color
+      const hexColor = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+      console.log(`ExoticDoodle ${i}: ${hexColor} (RGB: ${r}, ${g}, ${b})`);
+      
+      doodles.push({
+        position_3d,
+        type: doodleTypes[this.rng.randint(0, doodleTypes.length - 1)],
+        size: this.rng.uniform(PROCEDURAL_RANGES.DOODLE_SIZE.min, PROCEDURAL_RANGES.DOODLE_SIZE.max),
+        color: [hexColor, opacity],  // Pass hex string instead of RGB array
+        complexity: this.rng.randint(PROCEDURAL_RANGES.COMPLEXITY.min, PROCEDURAL_RANGES.COMPLEXITY.max),
+        movement_speed: this.rng.uniform(PROCEDURAL_RANGES.MOVEMENT_SPEED.min, PROCEDURAL_RANGES.MOVEMENT_SPEED.max),
+        movement_pattern: movementPatterns[this.rng.randint(0, movementPatterns.length - 1)]
+      });
+    }
+    
+    return doodles;
+  }
+
 
   private createDoodles(): void {
     this.doodleData.forEach((doodle) => {
@@ -91,10 +155,10 @@ export class ExoticDoodlesEffect {
     const geometry = new THREE.BufferGeometry().setFromPoints(points);
     
     const material = new THREE.LineBasicMaterial({
-      color: new THREE.Color(doodle.color[0], doodle.color[1], doodle.color[2]),
+      color: new THREE.Color(doodle.color[0]),  // Use hex string
       transparent: true,
-      opacity: doodle.color[3],
-      linewidth: 3
+      opacity: doodle.color[1],  // Use opacity from data
+      // linewidth removed - doesn't work in WebGL
     });
 
     const arc = new THREE.Line(geometry, material);
@@ -106,37 +170,46 @@ export class ExoticDoodlesEffect {
   private createFractalDoodle(doodle: NonNullable<ExoticDoodlesParams['doodles']>[0]): THREE.Object3D {
     const group = new THREE.Group();
     
-    // Create multiple small circles in a fractal pattern
-    for (let i = 0; i < doodle.complexity; i++) {
-      const angle = (i / doodle.complexity) * Math.PI * 2;
-      const radius = doodle.size * this.planetRadius * (0.2 + Math.sin(i * 0.5) * 0.3);
+    // Create chaotic scribbled circles and loops (like messy pen doodles)
+    const numElements = Math.floor(doodle.complexity * 0.6) + 2; // 2-15 elements
+    
+    for (let i = 0; i < numElements; i++) {
+      // Random position for each scribbled element
+      const centerX = (this.rng.random() - 0.5) * doodle.size * this.planetRadius;
+      const centerY = (this.rng.random() - 0.5) * doodle.size * this.planetRadius;
       
-      const geometry = new THREE.RingGeometry(
-        radius * 0.8,
-        radius,
-        16
-      );
+      // Create irregular, hand-drawn looking circles/loops
+      const points: THREE.Vector3[] = [];
+      const numPoints = Math.floor(this.rng.random() * 20) + 8; // 8-28 points
+      const baseRadius = this.rng.random() * doodle.size * this.planetRadius * 0.3 + 0.1;
       
-      const material = new THREE.MeshBasicMaterial({
-        color: new THREE.Color(
-          doodle.color[0] * (0.7 + Math.sin(i) * 0.3),
-          doodle.color[1] * (0.7 + Math.cos(i) * 0.3),
-          doodle.color[2]
-        ),
+      for (let j = 0; j <= numPoints; j++) {
+        const angle = (j / numPoints) * Math.PI * 2;
+        
+        // Add irregularity to make it look hand-drawn
+        const radiusVariation = baseRadius * (0.7 + this.rng.random() * 0.6);
+        const angleJitter = angle + (this.rng.random() - 0.5) * 0.5;
+        
+        const x = centerX + Math.cos(angleJitter) * radiusVariation;
+        const y = centerY + Math.sin(angleJitter) * radiusVariation;
+        const z = (this.rng.random() - 0.5) * doodle.size * this.planetRadius * 0.1;
+        
+        points.push(new THREE.Vector3(x, y, z));
+      }
+      
+      // Close the loop
+      points.push(points[0]);
+      
+      const geometry = new THREE.BufferGeometry().setFromPoints(points);
+      const material = new THREE.LineBasicMaterial({
+        color: new THREE.Color(doodle.color[0]),  // Use hex string directly
         transparent: true,
-        opacity: doodle.color[3] * (0.5 + Math.sin(i * 2) * 0.5),
-        side: THREE.DoubleSide
+        opacity: doodle.color[1],  // Use opacity from data
+        // linewidth removed - doesn't work in WebGL
       });
 
-      const ring = new THREE.Mesh(geometry, material);
-      ring.position.set(
-        Math.cos(angle) * doodle.size * this.planetRadius * 0.5,
-        Math.sin(angle) * doodle.size * this.planetRadius * 0.5,
-        Math.sin(i * 0.3) * doodle.size * this.planetRadius * 0.1
-      );
-      ring.rotation.z = angle;
-      
-      group.add(ring);
+      const line = new THREE.Line(geometry, material);
+      group.add(line);
     }
 
     return group;
@@ -145,38 +218,44 @@ export class ExoticDoodlesEffect {
   private createSquiggleDoodle(doodle: NonNullable<ExoticDoodlesParams['doodles']>[0]): THREE.Object3D {
     const group = new THREE.Group();
     
-    // Create a wavy line
-    const points: THREE.Vector3[] = [];
-    const segments = doodle.complexity * 2;
+    // Create random scribble-like lines (like the image)
+    const numStrokes = Math.floor(doodle.complexity * 0.8) + 3; // 3-20 random strokes
     
-    for (let i = 0; i <= segments; i++) {
-      const t = i / segments;
-      const x = (t - 0.5) * doodle.size * this.planetRadius * 2;
-      const y = Math.sin(t * Math.PI * 4) * doodle.size * this.planetRadius * 0.3;
-      const z = Math.cos(t * Math.PI * 3) * doodle.size * this.planetRadius * 0.1;
+    for (let stroke = 0; stroke < numStrokes; stroke++) {
+      const points: THREE.Vector3[] = [];
+      const strokeLength = this.rng.random() * 15 + 5; // 5-20 points per stroke
       
-      points.push(new THREE.Vector3(x, y, z));
+      // Start each stroke at a random position
+      let currentX = (this.rng.random() - 0.5) * doodle.size * this.planetRadius;
+      let currentY = (this.rng.random() - 0.5) * doodle.size * this.planetRadius;
+      let currentZ = 0;
+      
+      for (let i = 0; i <= strokeLength; i++) {
+        points.push(new THREE.Vector3(currentX, currentY, currentZ));
+        
+        // Add random movement (chaotic like real scribbles)
+        currentX += (this.rng.random() - 0.5) * doodle.size * this.planetRadius * 0.2;
+        currentY += (this.rng.random() - 0.5) * doodle.size * this.planetRadius * 0.2;
+        currentZ += (this.rng.random() - 0.5) * doodle.size * this.planetRadius * 0.05;
+        
+        // Keep within bounds
+        const maxSize = doodle.size * this.planetRadius * 0.8;
+        currentX = Math.max(-maxSize, Math.min(maxSize, currentX));
+        currentY = Math.max(-maxSize, Math.min(maxSize, currentY));
+      }
+
+      // Create the scribble line
+      const geometry = new THREE.BufferGeometry().setFromPoints(points);
+      const material = new THREE.LineBasicMaterial({
+        color: new THREE.Color(doodle.color[0]),  // Use hex string directly
+        transparent: true,
+        opacity: doodle.color[1],  // Use opacity from data
+        // linewidth removed - doesn't work in WebGL
+      });
+
+      const line = new THREE.Line(geometry, material);
+      group.add(line);
     }
-
-    const curve = new THREE.CatmullRomCurve3(points);
-    const tubeGeometry = new THREE.TubeGeometry(
-      curve,
-      segments * 2,
-      doodle.size * this.planetRadius * 0.02,
-      8,
-      false
-    );
-    
-    const material = new THREE.MeshPhongMaterial({
-      color: new THREE.Color(doodle.color[0], doodle.color[1], doodle.color[2]),
-      transparent: true,
-      opacity: doodle.color[3],
-      emissive: new THREE.Color(doodle.color[0] * 0.2, doodle.color[1] * 0.2, doodle.color[2] * 0.2),
-      emissiveIntensity: 0.3
-    });
-
-    const tube = new THREE.Mesh(tubeGeometry, material);
-    group.add(tube);
 
     return group;
   }
@@ -247,17 +326,13 @@ export class ExoticDoodlesEffect {
 
 export function createExoticDoodlesFromPythonData(
   planetRadius: number,
-  surfaceElements: any,
+  _surfaceElements?: any,  // Optional and unused
   seed?: number
 ): ExoticDoodlesEffect | null {
   
-  // Check if we have exotic_doodles data
-  if (!surfaceElements.exotic_doodles || surfaceElements.exotic_doodles.length === 0) {
-    return null;
-  }
-
+  // Always create doodles procedurally using PROCEDURAL_RANGES
+  // No need to check for data from Python since we generate everything
   return new ExoticDoodlesEffect(planetRadius, {
-    doodles: surfaceElements.exotic_doodles,
     planetRadius: planetRadius
-  });
+  }, seed);
 }

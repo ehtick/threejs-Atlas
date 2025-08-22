@@ -1075,51 +1075,20 @@ class PlanetTypeTranslators:
                 "angle": rng.uniform(0, 2 * math.pi)
             })
         
-        # Generate large doodles/scribbles (from lines 2114-2135 in __drawer_cplanet_type.py)  
-        num_doodles = rng.randint(4, 8)
-        exotic_doodles = []
-        
-        for i in range(num_doodles):
-            # Random position
-            theta = rng.uniform(0, 2 * math.pi)
-            phi = math.acos(rng.uniform(-1, 1))
-            
-            doodle_3d_x = math.sin(phi) * math.cos(theta)
-            doodle_3d_y = math.sin(phi) * math.sin(theta)
-            doodle_3d_z = math.cos(phi)
-            
-            # Doodle type (arc, fractals, or complex polygon)
-            doodle_type = rng.choice(["arc", "fractals", "squiggle"])
-            
-            # Color for doodle
-            doodle_color = [
-                rng.uniform(0.78, 1.0),  # R (200-255 / 255)
-                rng.uniform(0.0, 0.39),  # G (0-100 / 255)
-                rng.uniform(0.59, 1.0),  # B (150-255 / 255)
-                rng.uniform(0.7, 1.0)    # A
-            ]
-            
-            exotic_doodles.append({
-                "position_3d": [doodle_3d_x, doodle_3d_y, doodle_3d_z],
-                "type": doodle_type,
-                "size": rng.uniform(0.08, 0.20),  # Larger than geometric shapes
-                "color": doodle_color,
-                "complexity": rng.randint(5, 20),  # For fractals/squiggles
-                "movement_speed": rng.uniform(0.1, 0.5),  # Slow movement
-                "movement_pattern": rng.choice(["wave", "pulse", "spiral"])
-            })
+        # Exotic doodles will be generated procedurally in frontend using PROCEDURAL_RANGES
+        # No need to send specific doodle data from Python
         
         return {
             "type": "exotic",
             "clouds": clouds,
             "small_geometric_shapes": small_geometric_shapes,
-            "exotic_doodles": exotic_doodles,
+            # exotic_doodles generated procedurally in frontend
             "debug": {
                 "original_planet_radius": planet_radius,
                 "center_x": center_x, "center_y": center_y,
                 "cloud_count": num_clouds,
                 "small_shapes_count": num_small_shapes,
-                "doodles_count": num_doodles
+                "doodles_generated_procedurally": True
             }
         }
     
