@@ -372,8 +372,8 @@ export class EffectRegistry {
 
     // Efectos para planetas Cave
     this.registerEffect(EffectType.CAVE_SURFACE_HOLES, {
-      create: (params, planetRadius) => new CaveSurfaceHolesEffect(planetRadius, params),
-      fromPythonData: (data, planetRadius) => createCaveSurfaceHolesFromPythonData(
+      create: (params, planetRadius, layerSystem) => new CaveSurfaceHolesEffect(planetRadius, params),
+      fromPythonData: (data, planetRadius, layerSystem) => createCaveSurfaceHolesFromPythonData(
         planetRadius,
         data,
         data.seeds?.planet_seed
@@ -1631,6 +1631,13 @@ export class EffectRegistry {
               this.effects.set(caveSurfaceHolesInstance.id, caveSurfaceHolesInstance);
               effects.push(caveSurfaceHolesInstance);
               caveSurfaceHolesEffect.addToScene(scene, mesh.position);
+              
+              // Apply hole shader to planet if layerSystem is available
+              if (this.layerSystem) {
+                // Get the current base color from the layer system
+                const baseColor = this.layerSystem.baseMaterial?.uniforms?.baseColor?.value || new THREE.Color(0x8B4513);
+                caveSurfaceHolesEffect.applyToPlanetSystem(this.layerSystem, baseColor);
+              }
             }
             break;
 

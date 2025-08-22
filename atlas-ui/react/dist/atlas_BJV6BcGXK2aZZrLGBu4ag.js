@@ -1,35 +1,4 @@
-/**
- * Planet Layer System - Sistema de capas para efectos de planetas
- *
- * Este sistema permite aplicar múltiples efectos visuales a un planeta
- * sin que se sobrescriban entre sí, manteniendo la iluminación correcta
- * y la parte trasera oscura del planeta.
- *
- * Arquitectura:
- * - Capa Base: Material con iluminación día/noche
- * - Capas de Efectos: Meshes adicionales con transparencia que se superponen
- */
-
-import * as THREE from "three";
-
-export interface LayerEffect {
-  name: string;
-  mesh?: THREE.Mesh;
-  material: THREE.ShaderMaterial;
-  layerObject?: any; // Referencia al objeto de capa (CloudBandsLayer, etc.)
-  update?: (deltaTime: number, planetRotation?: number) => void;
-  dispose?: () => void;
-}
-
-export class PlanetLayerSystem {
-  private baseMesh: THREE.Mesh;
-  private baseMaterial: THREE.ShaderMaterial;
-  private effectLayers: LayerEffect[] = [];
-  private scene?: THREE.Scene;
-  private planetRadius: number;
-
-  // Shader base con iluminación correcta mejorado
-  private static readonly baseVertexShader = `
+import{C as i,S as s,F as c,V as r,b as d,M as m,N as v,D as u}from"./atlas_DoxhO7agDNvhtnb7c3WZw.js";class f{baseMesh;baseMaterial;effectLayers=[];scene;planetRadius;static baseVertexShader=`
     varying vec3 vPosition;
     varying vec3 vNormal;
     varying vec3 vWorldPosition;
@@ -45,9 +14,7 @@ export class PlanetLayerSystem {
       vWorldPosition = worldPos.xyz;
       gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
     }
-  `;
-
-  private static readonly baseFragmentShader = `
+  `;static baseFragmentShader=`
     uniform vec3 baseColor;
     uniform vec3 lightDirection;
     uniform vec3 lightPosition;
@@ -90,72 +57,7 @@ export class PlanetLayerSystem {
       
       gl_FragColor = vec4(finalColor, 1.0);
     }
-  `;
-
-  constructor(baseMesh: THREE.Mesh, baseColor: THREE.Color | number[] = new THREE.Color(0xffa500)) {
-    this.baseMesh = baseMesh;
-
-    // Obtener el radio del planeta desde la geometría
-    const geometry = baseMesh.geometry as THREE.SphereGeometry;
-    this.planetRadius = geometry.parameters.radius || 1;
-
-    // Crear material base con iluminación correcta
-    const color = baseColor instanceof THREE.Color ? baseColor : new THREE.Color(baseColor as any);
-
-    this.baseMaterial = new THREE.ShaderMaterial({
-      vertexShader: PlanetLayerSystem.baseVertexShader,
-      fragmentShader: PlanetLayerSystem.baseFragmentShader,
-      uniforms: {
-        baseColor: { value: color },
-        lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
-        lightPosition: { value: new THREE.Vector3(0, 0, 0) }, // Posición de luz en espacio mundo
-        ambientStrength: { value: 0.15 }, // Más oscuro, igual que otros planetas
-        lightIntensity: { value: 0.85 }, // Intensidad de la luz direccional
-      },
-      side: THREE.FrontSide,
-    });
-
-    // Aplicar material base
-    this.baseMesh.material = this.baseMaterial;
-  }
-
-  /**
-   * Añade una capa de efecto al planeta
-   * Crea un mesh separado ligeramente más grande para evitar z-fighting
-   */
-  addEffectLayer(name: string, material: THREE.ShaderMaterial, scaleFactor: number = 1.001, layerObject?: any): THREE.Mesh {
-    // Crear una geometría ligeramente más grande con más segmentos para eliminar líneas meridanas
-    const layerGeometry = new THREE.SphereGeometry(this.planetRadius * scaleFactor, 256, 256);
-
-    // Crear mesh para la capa
-    const layerMesh = new THREE.Mesh(layerGeometry, material);
-
-    // Copiar posición y rotación del planeta base
-    layerMesh.position.copy(this.baseMesh.position);
-    layerMesh.rotation.copy(this.baseMesh.rotation);
-
-    // Guardar la capa
-    this.effectLayers.push({
-      name,
-      mesh: layerMesh,
-      material,
-      layerObject,
-    });
-
-    // Si ya estamos en una escena, añadir el mesh
-    if (this.scene) {
-      this.scene.add(layerMesh);
-    } else {
-    }
-
-    return layerMesh;
-  }
-
-  /**
-   * Crea un material para CloudBands que funciona como capa
-   */
-  createCloudBandsLayerMaterial(params: any): THREE.ShaderMaterial {
-    const vertexShader = `
+  `;constructor(e,a=new i(16753920)){this.baseMesh=e;const o=e.geometry;this.planetRadius=o.parameters.radius||1;const t=a instanceof i?a:new i(a);this.baseMaterial=new s({vertexShader:f.baseVertexShader,fragmentShader:f.baseFragmentShader,uniforms:{baseColor:{value:t},lightDirection:{value:new r(1,1,1).normalize()},lightPosition:{value:new r(0,0,0)},ambientStrength:{value:.15},lightIntensity:{value:.85}},side:c}),this.baseMesh.material=this.baseMaterial}addEffectLayer(e,a,o=1.001,t){const l=new d(this.planetRadius*o,256,256),n=new m(l,a);return n.position.copy(this.baseMesh.position),n.rotation.copy(this.baseMesh.rotation),this.effectLayers.push({name:e,mesh:n,material:a,layerObject:t}),this.scene&&this.scene.add(n),n}createCloudBandsLayerMaterial(e){const a=`
       varying vec3 vPosition;
       varying vec3 vNormal;
       varying vec2 vUv;
@@ -166,9 +68,7 @@ export class PlanetLayerSystem {
         vUv = uv;
         gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
       }
-    `;
-
-    const fragmentShader = `
+    `,o=`
       uniform float time;
       uniform float seed;
       uniform vec3 bandColor;
@@ -301,37 +201,7 @@ export class PlanetLayerSystem {
         
         gl_FragColor = vec4(color, alpha);
       }
-    `;
-
-    return new THREE.ShaderMaterial({
-      vertexShader,
-      fragmentShader,
-      uniforms: {
-        time: { value: 0 },
-        seed: { value: params.seed || Math.random() * 1000 },
-        bandColor: { value: params.bandColor || new THREE.Color(0xff8c00) },
-        numBands: { value: params.numBands || 8 },
-        rotationAngle: { value: params.rotationAngle || 0 },
-        bandPositions: { value: params.bandPositions || new Array(20).fill(0) },
-        bandWidths: { value: params.bandWidths || new Array(20).fill(0.1) },
-        animationSpeed: { value: params.animationSpeed || 1.0 },
-        turbulence: { value: params.turbulence || 0.5 },
-        noiseScale: { value: params.noiseScale || 3.0 },
-        lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
-        opacity: { value: params.opacity || 0.4 },
-      },
-      transparent: true,
-      blending: THREE.NormalBlending, // Normal blending porque controlamos alpha
-      side: THREE.FrontSide,
-      depthWrite: false,
-    });
-  }
-
-  /**
-   * Crea un material para CloudGyros que funciona como capa
-   */
-  createCloudGyrosLayerMaterial(params: any): THREE.ShaderMaterial {
-    const vertexShader = `
+    `;return new s({vertexShader:a,fragmentShader:o,uniforms:{time:{value:0},seed:{value:e.seed||Math.random()*1e3},bandColor:{value:e.bandColor||new i(16747520)},numBands:{value:e.numBands||8},rotationAngle:{value:e.rotationAngle||0},bandPositions:{value:e.bandPositions||new Array(20).fill(0)},bandWidths:{value:e.bandWidths||new Array(20).fill(.1)},animationSpeed:{value:e.animationSpeed||1},turbulence:{value:e.turbulence||.5},noiseScale:{value:e.noiseScale||3},lightDirection:{value:new r(1,1,1).normalize()},opacity:{value:e.opacity||.4}},transparent:!0,blending:v,side:c,depthWrite:!1})}createCloudGyrosLayerMaterial(e){const a=`
       varying vec3 vPosition;
       varying vec3 vNormal;
       varying vec2 vUv;
@@ -342,9 +212,7 @@ export class PlanetLayerSystem {
         vUv = uv;
         gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
       }
-    `;
-
-    const fragmentShader = `
+    `,o=`
       uniform float time;
       uniform vec3 stormColor;
       uniform float stormIntensity;
@@ -403,44 +271,7 @@ export class PlanetLayerSystem {
         
         gl_FragColor = vec4(color, alpha);
       }
-    `;
-
-    // Convertir storm centers a array plano
-    const centersArray = new Array(10).fill(0);
-    if (params.stormCenters) {
-      params.stormCenters.forEach((center: any, i: number) => {
-        if (i < 5) {
-          centersArray[i * 2] = center.x;
-          centersArray[i * 2 + 1] = center.y;
-        }
-      });
-    }
-
-    return new THREE.ShaderMaterial({
-      vertexShader,
-      fragmentShader,
-      uniforms: {
-        time: { value: 0 },
-        stormColor: { value: params.stormColor || new THREE.Color(0x8b0000) },
-        stormIntensity: { value: params.stormIntensity || 0.8 },
-        spiralSpeed: { value: params.spiralSpeed || 2.0 },
-        animationSpeed: { value: params.animationSpeed || 1.0 },
-        stormCenters: { value: centersArray },
-        numStorms: { value: params.stormCenters ? Math.min(params.stormCenters.length, 5) : 3 },
-        lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
-      },
-      transparent: true,
-      blending: THREE.NormalBlending,
-      side: THREE.FrontSide,
-      depthWrite: false,
-    });
-  }
-
-  /**
-   * Crea un material para MetallicSurface que funciona como capa
-   */
-  createMetallicSurfaceLayerMaterial(params: any): THREE.ShaderMaterial {
-    const vertexShader = `
+    `,t=new Array(10).fill(0);return e.stormCenters&&e.stormCenters.forEach((l,n)=>{n<5&&(t[n*2]=l.x,t[n*2+1]=l.y)}),new s({vertexShader:a,fragmentShader:o,uniforms:{time:{value:0},stormColor:{value:e.stormColor||new i(9109504)},stormIntensity:{value:e.stormIntensity||.8},spiralSpeed:{value:e.spiralSpeed||2},animationSpeed:{value:e.animationSpeed||1},stormCenters:{value:t},numStorms:{value:e.stormCenters?Math.min(e.stormCenters.length,5):3},lightDirection:{value:new r(1,1,1).normalize()}},transparent:!0,blending:v,side:c,depthWrite:!1})}createMetallicSurfaceLayerMaterial(e){const a=`
       varying vec3 vPosition;
       varying vec3 vNormal;
       varying vec3 vWorldPosition;
@@ -456,9 +287,7 @@ export class PlanetLayerSystem {
         vWorldPosition = worldPos.xyz;
         gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
       }
-    `;
-
-    const fragmentShader = `
+    `,o=`
       uniform vec3 metalColor;
       uniform float metalness;
       uniform float roughness;
@@ -664,38 +493,7 @@ export class PlanetLayerSystem {
         
         gl_FragColor = vec4(finalColor, opacity);
       }
-    `;
-
-    return new THREE.ShaderMaterial({
-      vertexShader,
-      fragmentShader,
-      uniforms: {
-        time: { value: 0 },
-        metalColor: { value: params.color || new THREE.Color(0x808080) },
-        metalness: { value: params.metalness || 0.8 },
-        roughness: { value: params.roughness || 0.4 },
-        fragmentationIntensity: { value: params.fragmentationIntensity || 0.5 },
-        opacity: { value: params.opacity || 0.8 },
-        lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
-        lightPosition: { value: new THREE.Vector3(0, 0, 0) }, // Posición de luz en espacio mundo
-        ambientStrength: { value: 0.15 }, // Más oscuro, igual que otros planetas
-        lightIntensity: { value: 0.85 }, // Intensidad de la luz direccional
-        noiseScale: { value: params.noiseScale || 8.0 },
-        noiseIntensity: { value: params.noiseIntensity || 0.3 },
-        crystalScale: { value: params.crystalScale || 80.0 },
-      },
-      transparent: true,
-      blending: THREE.NormalBlending, // Usar el mismo blending que CloudBands
-      side: THREE.FrontSide,
-      depthWrite: false,
-    });
-  }
-
-  /**
-   * Crea un material para IcyTerrain que funciona como capa
-   */
-  createIcyTerrainLayerMaterial(params: any): THREE.ShaderMaterial {
-    const vertexShader = `
+    `;return new s({vertexShader:a,fragmentShader:o,uniforms:{time:{value:0},metalColor:{value:e.color||new i(8421504)},metalness:{value:e.metalness||.8},roughness:{value:e.roughness||.4},fragmentationIntensity:{value:e.fragmentationIntensity||.5},opacity:{value:e.opacity||.8},lightDirection:{value:new r(1,1,1).normalize()},lightPosition:{value:new r(0,0,0)},ambientStrength:{value:.15},lightIntensity:{value:.85},noiseScale:{value:e.noiseScale||8},noiseIntensity:{value:e.noiseIntensity||.3},crystalScale:{value:e.crystalScale||80}},transparent:!0,blending:v,side:c,depthWrite:!1})}createIcyTerrainLayerMaterial(e){const a=`
       varying vec3 vPosition;
       varying vec3 vNormal;
       varying vec3 vWorldPosition;
@@ -711,9 +509,7 @@ export class PlanetLayerSystem {
         vWorldPosition = worldPos.xyz;
         gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
       }
-    `;
-
-    const fragmentShader = `
+    `,o=`
       uniform vec3 iceColor;
       uniform float iceReflectivity;
       uniform float frostDensity;
@@ -875,38 +671,7 @@ export class PlanetLayerSystem {
         
         gl_FragColor = vec4(finalColor, alpha);
       }
-    `;
-
-    return new THREE.ShaderMaterial({
-      vertexShader,
-      fragmentShader,
-      uniforms: {
-        time: { value: 0 },
-        iceColor: { value: params.color || new THREE.Color(0xB0E0E6) },
-        iceReflectivity: { value: params.iceReflectivity || 0.8 },
-        frostDensity: { value: params.frostDensity || 0.5 },
-        crackIntensity: { value: params.crackIntensity || 0.4 },
-        opacity: { value: params.opacity || 0.7 },
-        crystalScale: { value: params.crystalScale || 25.0 }, // Escala procedural de cristales
-        crystalDensity: { value: params.crystalDensity || 0.6 }, // Densidad procedural
-        crystalSharpness: { value: params.crystalSharpness || 150.0 }, // Nitidez procedural
-        frostPattern: { value: params.frostPattern || 12.0 }, // Patrón procedural de escarcha
-        lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
-        lightPosition: { value: new THREE.Vector3(0, 0, 0) }, // Posición de luz en espacio mundo
-        ambientStrength: { value: 0.15 }, // Más oscuro, igual que otros planetas
-        lightIntensity: { value: 0.85 }, // Intensidad de la luz direccional
-      },
-      transparent: true,
-      side: THREE.FrontSide,
-      depthWrite: false
-    });
-  }
-
-  /**
-   * Crea un material para AquiferWater que funciona como capa
-   */
-  createAquiferWaterLayerMaterial(params: any): THREE.ShaderMaterial {
-    const vertexShader = `
+    `;return new s({vertexShader:a,fragmentShader:o,uniforms:{time:{value:0},iceColor:{value:e.color||new i(11591910)},iceReflectivity:{value:e.iceReflectivity||.8},frostDensity:{value:e.frostDensity||.5},crackIntensity:{value:e.crackIntensity||.4},opacity:{value:e.opacity||.7},crystalScale:{value:e.crystalScale||25},crystalDensity:{value:e.crystalDensity||.6},crystalSharpness:{value:e.crystalSharpness||150},frostPattern:{value:e.frostPattern||12},lightDirection:{value:new r(1,1,1).normalize()},lightPosition:{value:new r(0,0,0)},ambientStrength:{value:.15},lightIntensity:{value:.85}},transparent:!0,side:c,depthWrite:!1})}createAquiferWaterLayerMaterial(e){const a=`
       uniform float time;
       uniform float waveHeight;
       uniform float waveFrequency;
@@ -984,9 +749,7 @@ export class PlanetLayerSystem {
         
         gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
       }
-    `;
-
-    const fragmentShader = `
+    `,o=`
       uniform float time;
       uniform vec3 waterColor;
       uniform vec3 deepWaterColor;
@@ -1050,52 +813,7 @@ export class PlanetLayerSystem {
         
         gl_FragColor = vec4(finalColor, transparency);
       }
-    `;
-
-    const waterColor = params.waterColor instanceof THREE.Color ? 
-      params.waterColor : new THREE.Color(params.waterColor || 0x2E8B8B);
-    const deepWaterColor = params.deepWaterColor instanceof THREE.Color ? 
-      params.deepWaterColor : new THREE.Color(params.deepWaterColor || 0x003366);
-    const foamColor = params.foamColor instanceof THREE.Color ? 
-      params.foamColor : new THREE.Color(params.foamColor || 0xffffff);
-
-    return new THREE.ShaderMaterial({
-      vertexShader,
-      fragmentShader,
-      uniforms: {
-        time: { value: 0 },
-        // Offset basado en seed para ondas únicas por planeta
-        seedOffset: { value: (params.seed || 0) % 100 },
-        // Parámetros de olas
-        waveHeight: { value: params.waveHeight || 0.08 },
-        waveFrequency: { value: params.waveFrequency || 3.0 },
-        waveSpeed: { value: params.waveSpeed || 0.5 },  // Reducido de 2.0 a 0.5
-        // Colores
-        waterColor: { value: waterColor },
-        deepWaterColor: { value: deepWaterColor },
-        foamColor: { value: foamColor },
-        // Efectos visuales
-        specularIntensity: { value: params.specularIntensity || 3.0 },
-        transparency: { value: params.transparency || 0.6 },
-        roughness: { value: params.roughness || 0.1 },
-        // Uniformes de luz (EXACTAMENTE como MetallicSurfaceLayer)
-        lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
-        lightPosition: { value: new THREE.Vector3(0, 0, 0) },
-        ambientStrength: { value: 0.15 },
-        lightIntensity: { value: 0.85 },
-      },
-      transparent: true,
-      blending: THREE.NormalBlending,
-      side: THREE.FrontSide,
-      depthWrite: false,
-    });
-  }
-
-  /**
-   * Crea un material para OceanCurrents que funciona como capa
-   */
-  createOceanCurrentsLayerMaterial(params: any): THREE.ShaderMaterial {
-    const vertexShader = `
+    `,t=e.waterColor instanceof i?e.waterColor:new i(e.waterColor||3050379),l=e.deepWaterColor instanceof i?e.deepWaterColor:new i(e.deepWaterColor||13158),n=e.foamColor instanceof i?e.foamColor:new i(e.foamColor||16777215);return new s({vertexShader:a,fragmentShader:o,uniforms:{time:{value:0},seedOffset:{value:(e.seed||0)%100},waveHeight:{value:e.waveHeight||.08},waveFrequency:{value:e.waveFrequency||3},waveSpeed:{value:e.waveSpeed||.5},waterColor:{value:t},deepWaterColor:{value:l},foamColor:{value:n},specularIntensity:{value:e.specularIntensity||3},transparency:{value:e.transparency||.6},roughness:{value:e.roughness||.1},lightDirection:{value:new r(1,1,1).normalize()},lightPosition:{value:new r(0,0,0)},ambientStrength:{value:.15},lightIntensity:{value:.85}},transparent:!0,blending:v,side:c,depthWrite:!1})}createOceanCurrentsLayerMaterial(e){const a=`
       varying vec3 vPosition;
       varying vec3 vNormal;
       varying vec3 vWorldPosition;
@@ -1113,9 +831,7 @@ export class PlanetLayerSystem {
         
         gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
       }
-    `;
-
-    const fragmentShader = `
+    `,o=`
       uniform float time;
       uniform vec3 currentColor;
       uniform vec3 deepCurrentColor;
@@ -1234,203 +950,7 @@ export class PlanetLayerSystem {
         
         gl_FragColor = vec4(finalColor, alpha);
       }
-    `;
-
-    const currentColor = params.currentColor instanceof THREE.Color ? 
-      params.currentColor : new THREE.Color(params.currentColor || 0x4A9B8E);
-    const deepCurrentColor = params.deepCurrentColor instanceof THREE.Color ? 
-      params.deepCurrentColor : new THREE.Color(params.deepCurrentColor || 0x2D5D52);
-
-    return new THREE.ShaderMaterial({
-      vertexShader,
-      fragmentShader,
-      uniforms: {
-        time: { value: 0 },
-        // Offset basado en seed para patrones únicos por planeta
-        seedOffset: { value: (params.seed || 0) % 100 },
-        // Parámetros de corrientes
-        currentIntensity: { value: params.currentIntensity || 0.5 },
-        currentScale: { value: params.currentScale || 2.0 },
-        currentSpeed: { value: params.currentSpeed || 0.2 },
-        secondaryCurrentIntensity: { value: params.secondaryCurrentIntensity || 0.3 },
-        secondaryCurrentScale: { value: params.secondaryCurrentScale || 3.0 },
-        secondaryCurrentSpeed: { value: params.secondaryCurrentSpeed || 0.15 },
-        // Colores
-        currentColor: { value: currentColor },
-        deepCurrentColor: { value: deepCurrentColor },
-        // Efectos visuales
-        opacity: { value: params.opacity || 0.25 },
-        // Uniformes de luz (EXACTAMENTE como otros efectos)
-        lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
-        lightPosition: { value: new THREE.Vector3(0, 0, 0) },
-        ambientStrength: { value: 0.15 },
-        lightIntensity: { value: 0.85 },
-      },
-      transparent: true,
-      blending: THREE.NormalBlending,
-      side: THREE.FrontSide,
-      depthWrite: false,
-    });
-  }
-
-  /**
-   * Añade el sistema a la escena
-   */
-  addToScene(scene: THREE.Scene): void {
-    this.scene = scene;
-
-    // Añadir todas las capas de efectos a la escena
-    this.effectLayers.forEach((layer) => {
-      if (layer.mesh) {
-        scene.add(layer.mesh);
-      }
-    });
-
-    if (this.effectLayers.length === 0) {
-    }
-  }
-
-  /**
-   * Actualiza todos los efectos
-   */
-  update(deltaTime: number, planetRotation?: number): void {
-    // Actualizar uniforms de cada capa
-    this.effectLayers.forEach((layer) => {
-      if (layer.material.uniforms.time) {
-        layer.material.uniforms.time.value += deltaTime;
-      }
-      if (planetRotation !== undefined && layer.material.uniforms.rotationAngle) {
-        layer.material.uniforms.rotationAngle.value = planetRotation;
-      }
-
-      // Actualizar el objeto de capa individual si existe
-      if (layer.layerObject && layer.layerObject.update) {
-        try {
-          layer.layerObject.update(deltaTime, planetRotation);
-        } catch (error) {
-          console.error(`Error updating layer ${layer.name}:`, error);
-        }
-      }
-
-      // Sincronizar rotación con el planeta base
-      if (layer.mesh) {
-        layer.mesh.rotation.copy(this.baseMesh.rotation);
-      }
-    });
-  }
-
-  /**
-   * Actualiza el color base del planeta
-   */
-  updateBaseColor(color: THREE.Color | number[]): void {
-    const newColor = color instanceof THREE.Color ? color : new THREE.Color(color as any);
-    this.baseMaterial.uniforms.baseColor.value = newColor;
-  }
-
-  /**
-   * Actualiza la dirección de la luz
-   */
-  updateLightDirection(direction: THREE.Vector3): void {
-    this.baseMaterial.uniforms.lightDirection.value = direction.clone().normalize();
-
-    // Actualizar también en todas las capas
-    this.effectLayers.forEach((layer) => {
-      if (layer.material.uniforms.lightDirection) {
-        layer.material.uniforms.lightDirection.value = direction.clone().normalize();
-      }
-    });
-  }
-
-  /**
-   * Actualiza la posición de la luz (preferido sobre dirección para cálculos más precisos)
-   */
-  updateLightPosition(position: THREE.Vector3): void {
-    this.baseMaterial.uniforms.lightPosition.value = position.clone();
-
-    // Actualizar también en todas las capas
-    this.effectLayers.forEach((layer) => {
-      if (layer.material.uniforms.lightPosition) {
-        layer.material.uniforms.lightPosition.value = position.clone();
-      }
-    });
-  }
-
-  /**
-   * Actualiza tanto posición como dirección de luz desde una DirectionalLight de Three.js
-   */
-  updateFromThreeLight(light: THREE.DirectionalLight): void {
-    // Usar posición de la luz
-    this.updateLightPosition(light.position);
-
-    // También calcular y actualizar dirección
-    const direction = light.target.position.clone().sub(light.position).normalize();
-    this.updateLightDirection(direction);
-  }
-
-  // Apply a hole shader to the base planet material
-  applyHoleShader(holeShader: THREE.ShaderMaterial): void {
-    // Dispose old material
-    if (this.baseMaterial) {
-      this.baseMaterial.dispose();
-    }
-    
-    // Set new hole shader as base material
-    this.baseMaterial = holeShader;
-    this.baseMesh.material = holeShader;
-  }
-
-  /**
-   * Crea un material genérico para capa con soporte de iluminación mejorado
-   */
-  createGenericLayerMaterial(vertexShader: string, fragmentShader: string, uniforms: any, transparent: boolean = true, blending: THREE.Blending = THREE.NormalBlending): THREE.ShaderMaterial {
-    // Añadir uniforms de iluminación si no existen
-    if (!uniforms.lightDirection) {
-      uniforms.lightDirection = { value: new THREE.Vector3(1, 1, 1).normalize() };
-    }
-    if (!uniforms.lightPosition) {
-      uniforms.lightPosition = { value: new THREE.Vector3(0, 0, 0) };
-    }
-
-    return new THREE.ShaderMaterial({
-      vertexShader,
-      fragmentShader,
-      uniforms,
-      transparent,
-      blending,
-      side: THREE.FrontSide,
-      depthWrite: false,
-    });
-  }
-
-  /**
-   * Método helper para convertir efectos existentes a capas
-   */
-  convertEffectToLayer(effectName: string, originalMaterial: THREE.Material | THREE.ShaderMaterial, scaleFactor: number = 1.001): THREE.Mesh | null {
-    if (originalMaterial instanceof THREE.ShaderMaterial) {
-      // Clonar el material pero hacerlo transparente
-      const layerMaterial = originalMaterial.clone();
-      layerMaterial.transparent = true;
-      layerMaterial.depthWrite = false;
-
-      // Añadir soporte de iluminación si no existe
-      if (!layerMaterial.uniforms.lightDirection) {
-        layerMaterial.uniforms.lightDirection = {
-          value: new THREE.Vector3(1, 1, 1).normalize(),
-        };
-      }
-
-      return this.addEffectLayer(effectName, layerMaterial, scaleFactor);
-    }
-
-    console.warn(`Cannot convert non-shader material to layer: ${effectName}`);
-    return null;
-  }
-
-  /**
-   * Crea un material para DiamondSurface que funciona como capa
-   */
-  createDiamondSurfaceLayerMaterial(params: any): THREE.ShaderMaterial {
-    const vertexShader = `
+    `,t=e.currentColor instanceof i?e.currentColor:new i(e.currentColor||4889486),l=e.deepCurrentColor instanceof i?e.deepCurrentColor:new i(e.deepCurrentColor||2973010);return new s({vertexShader:a,fragmentShader:o,uniforms:{time:{value:0},seedOffset:{value:(e.seed||0)%100},currentIntensity:{value:e.currentIntensity||.5},currentScale:{value:e.currentScale||2},currentSpeed:{value:e.currentSpeed||.2},secondaryCurrentIntensity:{value:e.secondaryCurrentIntensity||.3},secondaryCurrentScale:{value:e.secondaryCurrentScale||3},secondaryCurrentSpeed:{value:e.secondaryCurrentSpeed||.15},currentColor:{value:t},deepCurrentColor:{value:l},opacity:{value:e.opacity||.25},lightDirection:{value:new r(1,1,1).normalize()},lightPosition:{value:new r(0,0,0)},ambientStrength:{value:.15},lightIntensity:{value:.85}},transparent:!0,blending:v,side:c,depthWrite:!1})}addToScene(e){this.scene=e,this.effectLayers.forEach(a=>{a.mesh&&e.add(a.mesh)}),this.effectLayers.length}update(e,a){this.effectLayers.forEach(o=>{if(o.material.uniforms.time&&(o.material.uniforms.time.value+=e),a!==void 0&&o.material.uniforms.rotationAngle&&(o.material.uniforms.rotationAngle.value=a),o.layerObject&&o.layerObject.update)try{o.layerObject.update(e,a)}catch(t){console.error(`Error updating layer ${o.name}:`,t)}o.mesh&&o.mesh.rotation.copy(this.baseMesh.rotation)})}updateBaseColor(e){const a=e instanceof i?e:new i(e);this.baseMaterial.uniforms.baseColor.value=a}updateLightDirection(e){this.baseMaterial.uniforms.lightDirection.value=e.clone().normalize(),this.effectLayers.forEach(a=>{a.material.uniforms.lightDirection&&(a.material.uniforms.lightDirection.value=e.clone().normalize())})}updateLightPosition(e){this.baseMaterial.uniforms.lightPosition.value=e.clone(),this.effectLayers.forEach(a=>{a.material.uniforms.lightPosition&&(a.material.uniforms.lightPosition.value=e.clone())})}updateFromThreeLight(e){this.updateLightPosition(e.position);const a=e.target.position.clone().sub(e.position).normalize();this.updateLightDirection(a)}applyHoleShader(e){this.baseMaterial&&this.baseMaterial.dispose(),this.baseMaterial=e,this.baseMesh.material=e}createGenericLayerMaterial(e,a,o,t=!0,l=v){return o.lightDirection||(o.lightDirection={value:new r(1,1,1).normalize()}),o.lightPosition||(o.lightPosition={value:new r(0,0,0)}),new s({vertexShader:e,fragmentShader:a,uniforms:o,transparent:t,blending:l,side:c,depthWrite:!1})}convertEffectToLayer(e,a,o=1.001){if(a instanceof s){const t=a.clone();return t.transparent=!0,t.depthWrite=!1,t.uniforms.lightDirection||(t.uniforms.lightDirection={value:new r(1,1,1).normalize()}),this.addEffectLayer(e,t,o)}return console.warn(`Cannot convert non-shader material to layer: ${e}`),null}createDiamondSurfaceLayerMaterial(e){const a=`
       varying vec3 vPosition;
       varying vec3 vNormal;
       varying vec3 vWorldPosition;
@@ -1446,9 +966,7 @@ export class PlanetLayerSystem {
         vWorldPosition = worldPos.xyz;
         gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
       }
-    `;
-
-    const fragmentShader = `
+    `,o=`
       uniform vec3 diamondColor;
       uniform float refractionIndex;
       uniform float dispersion;
@@ -1663,42 +1181,7 @@ export class PlanetLayerSystem {
         
         gl_FragColor = vec4(finalColor, finalOpacity);
       }
-    `;
-
-    return new THREE.ShaderMaterial({
-      vertexShader,
-      fragmentShader,
-      uniforms: {
-        time: { value: 0 },
-        diamondColor: { value: params.color || new THREE.Color(0x808080) },
-        refractionIndex: { value: params.refractionIndex || 2.42 },
-        dispersion: { value: params.dispersion || 0.5 },
-        clarity: { value: params.clarity || 0.8 },
-        facetSize: { value: params.facetSize !== undefined ? params.facetSize : 15.0 },
-        brilliance: { value: params.brilliance || 2.0 },
-        opacity: { value: params.opacity || 0.9 },
-        prismaticIntensity: { value: params.prismaticIntensity || 0.6 },
-        iridescenceIntensity: { value: params.iridescenceIntensity || 0.5 },
-        iridescenceRange: { value: params.iridescenceRange || 1.0 },
-        iridescenceSpeed: { value: params.iridescenceSpeed || 0.3 },
-        iridescenceScale: { value: params.iridescenceScale || 1.5 },
-        lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
-        lightPosition: { value: new THREE.Vector3(0, 0, 0) },
-        ambientStrength: { value: 0.15 },
-        lightIntensity: { value: 0.85 },
-      },
-      transparent: true,
-      blending: THREE.NormalBlending,
-      side: THREE.DoubleSide,
-      depthWrite: false,
-    });
-  }
-
-  /**
-   * Crea un material para MoltenLava que funciona como capa (adaptado de AquiferWater pero para lava)
-   */
-  createMoltenLavaLayerMaterial(params: any): THREE.ShaderMaterial {
-    const vertexShader = `
+    `;return new s({vertexShader:a,fragmentShader:o,uniforms:{time:{value:0},diamondColor:{value:e.color||new i(8421504)},refractionIndex:{value:e.refractionIndex||2.42},dispersion:{value:e.dispersion||.5},clarity:{value:e.clarity||.8},facetSize:{value:e.facetSize!==void 0?e.facetSize:15},brilliance:{value:e.brilliance||2},opacity:{value:e.opacity||.9},prismaticIntensity:{value:e.prismaticIntensity||.6},iridescenceIntensity:{value:e.iridescenceIntensity||.5},iridescenceRange:{value:e.iridescenceRange||1},iridescenceSpeed:{value:e.iridescenceSpeed||.3},iridescenceScale:{value:e.iridescenceScale||1.5},lightDirection:{value:new r(1,1,1).normalize()},lightPosition:{value:new r(0,0,0)},ambientStrength:{value:.15},lightIntensity:{value:.85}},transparent:!0,blending:v,side:u,depthWrite:!1})}createMoltenLavaLayerMaterial(e){const a=`
       uniform float time;
       uniform float lavaWaveHeight;
       uniform float lavaWaveFrequency;
@@ -1778,9 +1261,7 @@ export class PlanetLayerSystem {
         
         gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
       }
-    `;
-
-    const fragmentShader = `
+    `,o=`
       uniform float time;
       uniform vec3 moltenColor;
       uniform vec3 coreColor;
@@ -1916,85 +1397,4 @@ export class PlanetLayerSystem {
         
         gl_FragColor = vec4(finalColor, alpha);
       }
-    `;
-
-    const moltenColor = params.moltenColor instanceof THREE.Color ? 
-      params.moltenColor : new THREE.Color(params.moltenColor || 0xFF8C00);
-    const coreColor = params.coreColor instanceof THREE.Color ? 
-      params.coreColor : new THREE.Color(params.coreColor || 0xFFB347);
-    const coolingColor = params.coolingColor instanceof THREE.Color ? 
-      params.coolingColor : new THREE.Color(params.coolingColor || 0xCC4400);
-
-    return new THREE.ShaderMaterial({
-      vertexShader,
-      fragmentShader,
-      uniforms: {
-        time: { value: 0 },
-        // Offset basado en seed para lava única por planeta
-        seedOffset: { value: (params.seed || 0) % 100 },
-        // Parámetros de olas de lava (MUY lentas)
-        lavaWaveHeight: { value: params.lavaWaveHeight || 0.04 },
-        lavaWaveFrequency: { value: params.lavaWaveFrequency || 2.0 },
-        lavaWaveSpeed: { value: params.lavaWaveSpeed || 0.05 }, // EXTREMADAMENTE lento
-        viscosity: { value: params.viscosity || 0.8 },
-        // Colores incandescentes
-        moltenColor: { value: moltenColor },
-        coreColor: { value: coreColor },
-        coolingColor: { value: coolingColor },
-        // Efectos visuales de lava
-        emissiveIntensity: { value: params.emissiveIntensity || 4.0 },
-        glowIntensity: { value: params.glowIntensity || 3.0 },
-        temperature: { value: params.temperature || 0.9 },
-        lavaRoughness: { value: params.lavaRoughness || 0.8 },
-        // Uniformes de luz (EXACTAMENTE como AquiferWater)
-        lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
-        lightPosition: { value: new THREE.Vector3(0, 0, 0) },
-        ambientStrength: { value: 0.15 },
-        lightIntensity: { value: 0.85 },
-      },
-      transparent: true,
-      blending: THREE.NormalBlending,
-      side: THREE.FrontSide,
-      depthWrite: false,
-    });
-  }
-
-  /**
-   * Obtiene el siguiente factor de escala disponible para evitar z-fighting
-   */
-  getNextScaleFactor(): number {
-    const baseScale = 1.001;
-    const increment = 0.001;
-    return baseScale + this.effectLayers.length * increment;
-  }
-
-  /**
-   * Obtiene un mapa de todas las capas de efectos por nombre
-   */
-  getLayerMeshes(): Record<string, THREE.Mesh | undefined> {
-    const meshes: Record<string, THREE.Mesh | undefined> = {};
-    this.effectLayers.forEach(layer => {
-      if (layer.name && layer.mesh) {
-        meshes[layer.name] = layer.mesh;
-      }
-    });
-    return meshes;
-  }
-
-  /**
-   * Limpia todos los recursos
-   */
-  dispose(): void {
-    this.baseMaterial.dispose();
-
-    this.effectLayers.forEach((layer) => {
-      if (layer.mesh) {
-        layer.mesh.geometry.dispose();
-        if (this.scene) {
-          this.scene.remove(layer.mesh);
-        }
-      }
-      layer.material.dispose();
-    });
-  }
-}
+    `,t=e.moltenColor instanceof i?e.moltenColor:new i(e.moltenColor||16747520),l=e.coreColor instanceof i?e.coreColor:new i(e.coreColor||16757575),n=e.coolingColor instanceof i?e.coolingColor:new i(e.coolingColor||13386752);return new s({vertexShader:a,fragmentShader:o,uniforms:{time:{value:0},seedOffset:{value:(e.seed||0)%100},lavaWaveHeight:{value:e.lavaWaveHeight||.04},lavaWaveFrequency:{value:e.lavaWaveFrequency||2},lavaWaveSpeed:{value:e.lavaWaveSpeed||.05},viscosity:{value:e.viscosity||.8},moltenColor:{value:t},coreColor:{value:l},coolingColor:{value:n},emissiveIntensity:{value:e.emissiveIntensity||4},glowIntensity:{value:e.glowIntensity||3},temperature:{value:e.temperature||.9},lavaRoughness:{value:e.lavaRoughness||.8},lightDirection:{value:new r(1,1,1).normalize()},lightPosition:{value:new r(0,0,0)},ambientStrength:{value:.15},lightIntensity:{value:.85}},transparent:!0,blending:v,side:c,depthWrite:!1})}getNextScaleFactor(){return 1.001+this.effectLayers.length*.001}getLayerMeshes(){const e={};return this.effectLayers.forEach(a=>{a.name&&a.mesh&&(e[a.name]=a.mesh)}),e}dispose(){this.baseMaterial.dispose(),this.effectLayers.forEach(e=>{e.mesh&&(e.mesh.geometry.dispose(),this.scene&&this.scene.remove(e.mesh)),e.material.dispose()})}}export{f as P};

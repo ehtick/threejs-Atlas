@@ -1,7 +1,6 @@
 /**
  * Cave Surface Holes Effect
- * Creates realistic cave holes and depressions on planet surfaces
- * Procedural generation with depth perception and proper lighting
+ * Creates transparent holes as a layer over the planet surface with depth cones
  */
 
 import * as THREE from 'three';
@@ -35,10 +34,9 @@ export class CaveSurfaceHolesEffect {
   private planetRadius: number;
   private rng: SeededRandom;
   private holesData: CaveSurfaceHolesParams['holes'] = [];
-  private holeMeshes: THREE.Mesh[] = [];
-  private baseColor: THREE.Color;
+  private coneMeshes: THREE.Mesh[] = [];
+  private holeMask?: THREE.Mesh;
   private holeColor: THREE.Color;
-  private lightDirection: THREE.Vector3 = new THREE.Vector3(1, 1, 1).normalize();
 
   constructor(planetRadius: number, params: CaveSurfaceHolesParams = {}, seed?: number) {
     this.group = new THREE.Group();
@@ -47,14 +45,9 @@ export class CaveSurfaceHolesEffect {
     const actualSeed = seed || 12345;
     this.rng = new SeededRandom(actualSeed);
     
-    // Set colors
-    this.baseColor = params.baseColor instanceof THREE.Color 
-      ? params.baseColor 
-      : new THREE.Color(params.baseColor || '#4a3f36'); // Dark brown/gray for caves
-    
     this.holeColor = params.holeColor instanceof THREE.Color
       ? params.holeColor
-      : new THREE.Color(params.holeColor || '#1a1512'); // Very dark for depth
+      : new THREE.Color(params.holeColor || '#000000');
     
     // Generate procedural holes if not provided
     if (params.holes) {
@@ -98,178 +91,197 @@ export class CaveSurfaceHolesEffect {
     return holes;
   }
 
-  private createHoleMaterial(holeData: NonNullable<CaveSurfaceHolesParams['holes']>[0]): THREE.ShaderMaterial {
+  // Create planet base material with transparent holes
+  createPlanetHoleShader(baseColor: THREE.Color): THREE.ShaderMaterial {
+    const maxHoles = Math.max(this.holesData.length, 1);
+    
     const vertexShader = `
+      varying vec3 vPosition;
+      varying vec3 vNormal;
       varying vec3 vWorldPosition;
       varying vec3 vWorldNormal;
-      varying vec3 vLocalPosition;
-      varying float vDepth;
-      
-      uniform float holeRadius;
-      uniform float holeDepth;
+      varying vec2 vUv;
       
       void main() {
-        vLocalPosition = position;
-        
-        // Calculate depth based on distance from center
-        float distFromCenter = length(position.xy);
-        float depthFactor = smoothstep(holeRadius, 0.0, distFromCenter);
-        vDepth = depthFactor;
-        
-        // Displace vertices inward to create hole
-        vec3 displacedPosition = position;
-        if (distFromCenter < holeRadius) {
-          float displacement = -holeDepth * depthFactor * depthFactor;
-          displacedPosition = position + normal * displacement;
-        }
-        
-        vec4 worldPosition = modelMatrix * vec4(displacedPosition, 1.0);
-        vWorldPosition = worldPosition.xyz;
-        vWorldNormal = normalize(mat3(modelMatrix) * normal);
-        
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(displacedPosition, 1.0);
+        vPosition = position;
+        vNormal = normalMatrix * normal;
+        vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);
+        vUv = uv;
+        vec4 worldPos = modelMatrix * vec4(position, 1.0);
+        vWorldPosition = worldPos.xyz;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
       }
     `;
 
     const fragmentShader = `
       uniform vec3 baseColor;
-      uniform vec3 holeColor;
       uniform vec3 lightDirection;
-      uniform float roughness;
-      uniform float colorVariation;
+      uniform vec3 lightPosition;
       uniform float ambientStrength;
       uniform float lightIntensity;
+      uniform vec3 holePositions[${maxHoles}];
+      uniform float holeRadii[${maxHoles}];
+      uniform int numHoles;
       
+      varying vec3 vPosition;
+      varying vec3 vNormal;
       varying vec3 vWorldPosition;
       varying vec3 vWorldNormal;
-      varying vec3 vLocalPosition;
-      varying float vDepth;
-      
-      // Simple noise function for roughness
-      float hash(vec2 p) {
-        vec3 p3 = fract(vec3(p.xyx) * 0.13);
-        p3 += dot(p3, p3.yzx + 3.333);
-        return fract((p3.x + p3.y) * p3.z);
-      }
+      varying vec2 vUv;
       
       void main() {
+        vec3 worldPos = normalize(vWorldPosition);
+        
+        // Check if this fragment is inside any hole
+        for(int i = 0; i < ${maxHoles}; i++) {
+          if(i >= numHoles) break;
+          
+          vec3 holePos = normalize(holePositions[i]);
+          float dist = distance(worldPos, holePos);
+          float holeRadius = holeRadii[i];
+          
+          // If we're inside a hole, discard this fragment (make it completely transparent)
+          if(dist < holeRadius) {
+            discard;
+          }
+        }
+        
+        // Calculate lighting for non-hole areas (same as base planet shader)
         vec3 normal = normalize(vWorldNormal);
         
-        // Add roughness to normal
-        vec2 noiseCoord = vLocalPosition.xy * 10.0;
-        float noise = hash(noiseCoord) * roughness;
-        normal = normalize(normal + vec3(noise * 0.1 - 0.05));
+        vec3 lightDir;
+        if (length(lightPosition) > 0.0) {
+          lightDir = normalize(lightPosition - vWorldPosition);
+        } else {
+          lightDir = normalize(-lightDirection);
+        }
         
-        // Calculate lighting
-        vec3 lightDir = normalize(-lightDirection);
         float dotNL = dot(normal, lightDir);
-        float lightingFactor = max(0.0, dotNL);
+        float dayNight = smoothstep(-0.3, 0.1, dotNL);
         
-        // Shadow inside holes
-        float shadowFactor = 1.0 - vDepth * 0.7;
-        lightingFactor *= shadowFactor;
-        
-        // Mix colors based on depth
-        vec3 color = mix(baseColor, holeColor, vDepth);
-        
-        // Add color variation
-        float colorNoise = hash(vLocalPosition.xy * 5.0) * colorVariation;
-        color = color * (1.0 - colorNoise) + holeColor * colorNoise;
+        // Add rim lighting
+        float rimLight = 1.0 - abs(dotNL);
+        rimLight = pow(rimLight, 3.0) * 0.1;
         
         // Apply lighting
-        float totalLight = ambientStrength + (lightIntensity * lightingFactor);
-        totalLight = clamp(totalLight, 0.2, 1.0);
-        
-        vec3 finalColor = color * totalLight;
-        
-        // Add rim lighting for depth perception
-        float rimLight = 1.0 - abs(dotNL);
-        rimLight = pow(rimLight, 3.0) * 0.1 * (1.0 - vDepth);
-        finalColor += vec3(rimLight);
+        float totalLight = ambientStrength + (lightIntensity * dayNight) + rimLight;
+        vec3 finalColor = baseColor * totalLight;
         
         gl_FragColor = vec4(finalColor, 1.0);
       }
     `;
 
+    const holePositions = new Array(maxHoles).fill(null).map((_, i) => 
+      i < this.holesData.length 
+        ? new THREE.Vector3(...this.holesData[i].position_3d)
+        : new THREE.Vector3(0, 0, 0)
+    );
+    
+    const holeRadii = new Array(maxHoles).fill(null).map((_, i) => 
+      i < this.holesData.length ? this.holesData[i].radius : 0
+    );
+
     return new THREE.ShaderMaterial({
       vertexShader,
       fragmentShader,
       uniforms: {
-        baseColor: { value: this.baseColor },
-        holeColor: { value: this.holeColor },
-        lightDirection: { value: this.lightDirection.clone() },
-        holeRadius: { value: holeData.radius * this.planetRadius },
-        holeDepth: { value: holeData.depth * this.planetRadius },
-        roughness: { value: holeData.roughness },
-        colorVariation: { value: holeData.color_variation },
-        ambientStrength: { value: 0.4 },
-        lightIntensity: { value: 0.8 }
+        baseColor: { value: baseColor },
+        lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
+        lightPosition: { value: new THREE.Vector3(0, 0, 0) },
+        ambientStrength: { value: 0.15 },
+        lightIntensity: { value: 0.85 },
+        holePositions: { value: holePositions },
+        holeRadii: { value: holeRadii },
+        numHoles: { value: this.holesData.length }
       },
-      side: THREE.DoubleSide
+      side: THREE.FrontSide
     });
   }
 
   private createHoles(): void {
+    // Create depth cones for each hole
     this.holesData.forEach((holeData) => {
-      // Create a plane geometry for each hole
-      const holeSize = holeData.radius * this.planetRadius * 2.5;
-      const segments = Math.floor(32 * holeData.radius / 0.1); // More segments for larger holes
-      const geometry = new THREE.PlaneGeometry(holeSize, holeSize, segments, segments);
-      
-      // Create material with hole-specific parameters
-      const material = this.createHoleMaterial(holeData);
-      
-      // Create mesh
-      const holeMesh = new THREE.Mesh(geometry, material);
-      
-      // Position on sphere surface
-      const position = new THREE.Vector3(...holeData.position_3d).normalize();
-      const surfacePosition = position.multiplyScalar(this.planetRadius * 1.001); // Slightly above to prevent z-fighting
-      holeMesh.position.copy(surfacePosition);
-      
-      // Orient to face outward from planet center
-      holeMesh.lookAt(surfacePosition.clone().multiplyScalar(2));
-      
-      this.holeMeshes.push(holeMesh);
-      this.group.add(holeMesh);
+      this.createHoleCone(holeData);
     });
   }
 
-  update(deltaTime: number): void {
-    // Animate subtle changes in hole darkness for atmospheric effect
+  private createHoleCone(holeData: NonNullable<CaveSurfaceHolesParams['holes']>[0]): void {
+    const position = new THREE.Vector3(...holeData.position_3d).normalize();
+    const coneRadius = holeData.radius * this.planetRadius;
+    const caveDepth = holeData.depth * this.planetRadius * 2;
+    
+    // Create a cone that sits exactly in the hole opening, pointing inward
+    const coneGeometry = new THREE.ConeGeometry(coneRadius, caveDepth, 16);
+    const coneMaterial = new THREE.MeshLambertMaterial({
+      color: new THREE.Color(0x808080), // Gray color for testing alignment
+      transparent: true,
+      opacity: 1.0,
+      side: THREE.DoubleSide
+    });
+    
+    const coneMesh = new THREE.Mesh(coneGeometry, coneMaterial);
+    
+    // Position cone exactly at the hole location on planet surface
+    const surfacePosition = position.clone().multiplyScalar(this.planetRadius);
+    const inwardDirection = position.clone().negate();
+    
+    // Place cone so its wide end is at the surface and tip points inward
+    const conePosition = surfacePosition.clone().add(inwardDirection.clone().multiplyScalar(caveDepth * 0.5));
+    coneMesh.position.copy(conePosition);
+    
+    // Orient cone so tip points toward planet center
+    // The cone by default points up (0,1,0), we need it to point toward center
+    const up = new THREE.Vector3(0, 1, 0);
+    const targetDirection = inwardDirection.clone(); // Direction toward center from this position
+    
+    // Create quaternion to rotate from up direction to target direction
+    const quaternion = new THREE.Quaternion().setFromUnitVectors(up, targetDirection);
+    coneMesh.setRotationFromQuaternion(quaternion);
+    
+    this.coneMeshes.push(coneMesh);
+    this.group.add(coneMesh);
+  }
+
+  update(_deltaTime: number): void {
+    // Animate subtle changes in cone lighting for atmospheric effect
     const time = Date.now() * 0.0001;
     
-    this.holeMeshes.forEach((mesh, index) => {
-      if (mesh.material instanceof THREE.ShaderMaterial) {
-        const uniforms = mesh.material.uniforms;
-        
-        // Subtle pulsing of shadow depth
-        const pulseFactor = 0.95 + Math.sin(time + index) * 0.05;
-        uniforms.ambientStrength.value = 0.4 * pulseFactor;
+    this.coneMeshes.forEach((mesh, index) => {
+      if (mesh.material instanceof THREE.MeshLambertMaterial) {
+        // Subtle pulsing of opacity
+        const pulseFactor = 0.7 + Math.sin(time + index * 0.5) * 0.1;
+        mesh.material.opacity = pulseFactor;
       }
     });
   }
 
   updateLightDirection(direction: THREE.Vector3): void {
-    this.lightDirection.copy(direction).normalize();
-    
-    // Update all hole materials
-    this.holeMeshes.forEach(mesh => {
-      if (mesh.material instanceof THREE.ShaderMaterial) {
-        mesh.material.uniforms.lightDirection.value.copy(this.lightDirection);
-      }
-    });
+    if (this.planetShader) {
+      this.planetShader.uniforms.lightDirection.value.copy(direction.normalize());
+    }
   }
 
   updateFromThreeLight(light: THREE.DirectionalLight): void {
-    const direction = light.position.clone().normalize();
-    this.updateLightDirection(direction);
+    if (this.planetShader) {
+      this.planetShader.uniforms.lightPosition.value.copy(light.position);
+      const direction = light.target.position.clone().sub(light.position).normalize();
+      this.planetShader.uniforms.lightDirection.value.copy(direction);
+    }
   }
 
   addToScene(scene: THREE.Scene, planetPosition: THREE.Vector3): void {
     this.group.position.copy(planetPosition);
     scene.add(this.group);
   }
+
+  // Apply hole shader to planet layer system
+  applyToPlanetSystem(planetSystem: any, baseColor: THREE.Color): void {
+    const holeShader = this.createPlanetHoleShader(baseColor);
+    planetSystem.applyHoleShader(holeShader);
+    this.planetShader = holeShader;
+  }
+
+  private planetShader?: THREE.ShaderMaterial;
 
   removeFromScene(scene: THREE.Scene): void {
     scene.remove(this.group);
@@ -280,13 +292,18 @@ export class CaveSurfaceHolesEffect {
   }
 
   dispose(): void {
-    this.holeMeshes.forEach(mesh => {
+    this.coneMeshes.forEach(mesh => {
       mesh.geometry.dispose();
       if (mesh.material instanceof THREE.Material) {
         mesh.material.dispose();
       }
     });
-    this.holeMeshes = [];
+    this.coneMeshes = [];
+    
+    if (this.planetShader) {
+      this.planetShader.dispose();
+      this.planetShader = undefined;
+    }
   }
 }
 
@@ -302,10 +319,6 @@ export function createCaveSurfaceHolesFromPythonData(
   
   if (caveData?.holes) {
     params.holes = caveData.holes;
-  }
-  
-  if (caveData?.base_color) {
-    params.baseColor = caveData.base_color;
   }
   
   if (caveData?.hole_color) {
