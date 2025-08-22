@@ -52,10 +52,14 @@ export class ExoticDoodlesEffect {
     
     const bitangent = normal.clone().cross(tangent).normalize();
 
-    // Project the point onto the sphere surface
-    return normal.clone().multiplyScalar(radius)
-      .add(tangent.clone().multiplyScalar(localX))
+    // Create local position on tangent plane
+    const localPosition = tangent.clone().multiplyScalar(localX)
       .add(bitangent.clone().multiplyScalar(localY));
+    
+    // Project onto sphere surface by normalizing and scaling to radius
+    const surfacePosition = normal.clone().add(localPosition).normalize().multiplyScalar(radius);
+    
+    return surfacePosition;
   }
 
   constructor(planetRadius: number, params: ExoticDoodlesParams = {}, seed?: number) {
@@ -179,7 +183,7 @@ export class ExoticDoodlesEffect {
     // Create chaotic scribbled circles and loops that follow sphere curvature
     const numElements = Math.floor(doodle.complexity * 0.6) + 2; // 2-15 elements
     const baseDirection = new THREE.Vector3(...doodle.position_3d);
-    const radius = this.planetRadius * 1.015;
+    const radius = this.planetRadius;
     
     for (let i = 0; i < numElements; i++) {
       // Random position for each scribbled element
@@ -230,7 +234,7 @@ export class ExoticDoodlesEffect {
     // Create random scribble-like lines that follow sphere curvature
     const numStrokes = Math.floor(doodle.complexity * 0.8) + 3; // 3-20 random strokes
     const baseDirection = new THREE.Vector3(...doodle.position_3d);
-    const radius = this.planetRadius * 1.015;
+    const radius = this.planetRadius;
     
     for (let stroke = 0; stroke < numStrokes; stroke++) {
       const points: THREE.Vector3[] = [];
@@ -283,15 +287,13 @@ export class ExoticDoodlesEffect {
       
       switch (data.movement_pattern) {
         case 'wave':
-          // Gentle wave motion
+          // Gentle wave motion - only rotate around surface normal (Z axis)
           doodle.rotation.z = Math.sin(this.time * speed) * 0.2;
-          doodle.rotation.x = Math.cos(this.time * speed * 0.7) * 0.1;
           break;
           
         case 'pulse':
-          // Pulsing scale
-          const pulseScale = 1 + Math.sin(this.time * speed * 2) * 0.1;
-          doodle.scale.setScalar(pulseScale);
+          // Gentle rotation instead of scale to avoid projecting outside surface
+          doodle.rotation.z = Math.sin(this.time * speed * 2) * 0.15;
           break;
           
         case 'spiral':
