@@ -28,7 +28,8 @@ const PROCEDURAL_RANGES = {
   COLOR_HUE: { min: 0.0, max: 1.0 },
   COLOR_SATURATION: { min: 0.6, max: 1.0 },
   COLOR_LIGHTNESS: { min: 0.4, max: 0.9 },
-  OPACITY: { min: 0.3, max: 1.0 }
+  OPACITY: { min: 0.3, max: 1.0 },
+  TIME_SPEED: { min: 0.1, max: 3.0 } // Rango de velocidades del tiempo para sincronización
 };
 
 export class ExoticDoodlesEffect {
@@ -36,7 +37,8 @@ export class ExoticDoodlesEffect {
   private doodles: THREE.Object3D[] = [];
   private doodleData: ExoticDoodlesParams['doodles'] = [];
   private planetRadius: number;
-  private time: number = 0;
+  private startTime: number; // Tiempo inicial determinista
+  private timeSpeed: number; // Velocidad del tiempo para sincronización
   private rng: SeededRandom;
   private lightDirection: THREE.Vector3 = new THREE.Vector3(1, 1, 1).normalize();
 
@@ -129,7 +131,15 @@ export class ExoticDoodlesEffect {
   constructor(planetRadius: number, params: ExoticDoodlesParams = {}, seed?: number) {
     this.group = new THREE.Group();
     this.planetRadius = planetRadius;
-    this.rng = new SeededRandom(seed || 12345);
+    
+    const actualSeed = seed || 12345;
+    this.rng = new SeededRandom(actualSeed);
+    
+    // Tiempo inicial determinista basado en el seed (igual que PulsatingCube)
+    this.startTime = (actualSeed % 10000) / 1000;
+    
+    // Velocidad del tiempo para sincronización
+    this.timeSpeed = this.rng.uniform(PROCEDURAL_RANGES.TIME_SPEED.min, PROCEDURAL_RANGES.TIME_SPEED.max);
     
     // Always generate procedurally using PROCEDURAL_RANGES
     // This ensures PROCEDURAL_RANGES changes affect the visual output
@@ -324,10 +334,12 @@ export class ExoticDoodlesEffect {
     return group;
   }
 
-  update(deltaTime: number): void {
-    this.time += deltaTime;
+  update(_deltaTime: number): void {
+    // Sistema de tiempo determinista sincronizado con PulsatingCube
+    const rawTime = this.startTime + (Date.now() / 1000) * this.timeSpeed;
+    const currentTime = rawTime % 1000; // Mantener el tiempo en un ciclo de 1000 segundos
 
-    // Animate doodles based on their movement patterns
+    // Animate doodles based on their movement patterns using absolute time
     this.doodles.forEach((doodle, index) => {
       const data = this.doodleData[index];
       if (!data) return;
@@ -337,17 +349,17 @@ export class ExoticDoodlesEffect {
       switch (data.movement_pattern) {
         case 'wave':
           // Gentle wave motion - only rotate around surface normal (Z axis)
-          doodle.rotation.z = Math.sin(this.time * speed) * 0.2;
+          doodle.rotation.z = Math.sin(currentTime * speed) * 0.2;
           break;
           
         case 'pulse':
           // Gentle rotation instead of scale to avoid projecting outside surface
-          doodle.rotation.z = Math.sin(this.time * speed * 2) * 0.15;
+          doodle.rotation.z = Math.sin(currentTime * speed * 2) * 0.15;
           break;
           
         case 'spiral':
-          // Continuous rotation
-          doodle.rotation.z += speed * deltaTime;
+          // Continuous rotation using absolute time
+          doodle.rotation.z = currentTime * speed;
           break;
       }
     });
