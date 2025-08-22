@@ -33,6 +33,8 @@ import { IcyTerrainLayer, createIcyTerrainLayerFromPythonData } from "./IcyTerra
 import { MetallicSurfaceLayer, createMetallicSurfaceLayerFromPythonData } from "./MetallicSurfaceLayer";
 import { DiamondSurfaceLayer, createDiamondSurfaceLayerFromPythonData } from "./DiamondSurfaceLayer";
 import { DiamondCracksEffect, createDiamondCracksFromPythonData } from "./DiamondCracksEffect";
+import { ExoticGeometricShapesEffect, createExoticGeometricShapesFromPythonData } from "./ExoticGeometricShapes";
+import { ExoticDoodlesEffect, createExoticDoodlesFromPythonData } from "./ExoticDoodles";
 
 // Efectos legacy eliminados - usar solo versiones Layer
 
@@ -134,6 +136,10 @@ export enum EffectType {
 
   // Efectos de debug
   VISUAL_DEBUG_3D = "visual_debug_3d",
+  
+  // Efectos para planetas Exotic
+  EXOTIC_GEOMETRIC_SHAPES = "exotic_geometric_shapes",
+  EXOTIC_DOODLES = "exotic_doodles",
 }
 
 // Interfaz para creadores de efectos
@@ -334,6 +340,17 @@ export class EffectRegistry {
     this.registerEffect("diamond_cracks", {
       create: (params, planetRadius) => new DiamondCracksEffect({ ...params, radius: planetRadius }),
       fromPythonData: (data, planetRadius) => createDiamondCracksFromPythonData(data, planetRadius, data.seeds?.shape_seed || data.seeds?.planet_seed),
+    });
+
+    // Efectos para planetas Exotic
+    this.registerEffect(EffectType.EXOTIC_GEOMETRIC_SHAPES, {
+      create: (params, planetRadius) => new ExoticGeometricShapesEffect(planetRadius, params),
+      fromPythonData: (data, planetRadius) => createExoticGeometricShapesFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed),
+    });
+
+    this.registerEffect(EffectType.EXOTIC_DOODLES, {
+      create: (params, planetRadius) => new ExoticDoodlesEffect(planetRadius, params),
+      fromPythonData: (data, planetRadius) => createExoticDoodlesFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed),
     });
 
     // Más efectos pueden añadirse aquí fácilmente
@@ -1409,6 +1426,80 @@ export class EffectRegistry {
               effects.push(moltenCloudsInstance);
               moltenCloudsEffect.addToScene(scene, mesh.position);
               console.log("🌫️ Molten Atmospheric Clouds added to Molten Core planet");
+            }
+            break;
+
+          case "exotic":
+            // Planetas Exotic: nubes alienígenas, figuras geométricas y doodles
+            console.log("👽 Processing Exotic planet");
+            
+            // 1. Añadir nubes atmosféricas si están disponibles
+            if (surface.clouds && surface.clouds.length > 0) {
+              const cloudsEffect = createAtmosphereCloudsFromPythonData(
+                planetRadius,
+                surface,
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000
+              );
+              
+              const cloudsInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "atmosphere_clouds",
+                effect: cloudsEffect,
+                priority: 15,
+                enabled: true,
+                name: "Exotic Atmospheric Clouds",
+              };
+              
+              this.effects.set(cloudsInstance.id, cloudsInstance);
+              effects.push(cloudsInstance);
+              cloudsEffect.addToScene(scene, mesh.position);
+              console.log("☁️ Exotic Atmospheric Clouds added");
+            }
+            
+            // 2. Añadir figuras geométricas pequeñas
+            const geometricShapesEffect = createExoticGeometricShapesFromPythonData(
+              planetRadius,
+              surface,
+              (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 5000
+            );
+            
+            if (geometricShapesEffect) {
+              const shapesInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: EffectType.EXOTIC_GEOMETRIC_SHAPES,
+                effect: geometricShapesEffect,
+                priority: 10,
+                enabled: true,
+                name: "Exotic Geometric Shapes",
+              };
+              
+              this.effects.set(shapesInstance.id, shapesInstance);
+              effects.push(shapesInstance);
+              geometricShapesEffect.addToScene(scene, mesh.position);
+              console.log("🔷 Exotic Geometric Shapes added");
+            }
+            
+            // 3. Añadir doodles/garabatos grandes
+            const doodlesEffect = createExoticDoodlesFromPythonData(
+              planetRadius,
+              surface,
+              (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 6000
+            );
+            
+            if (doodlesEffect) {
+              const doodlesInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: EffectType.EXOTIC_DOODLES,
+                effect: doodlesEffect,
+                priority: 12,
+                enabled: true,
+                name: "Exotic Doodles",
+              };
+              
+              this.effects.set(doodlesInstance.id, doodlesInstance);
+              effects.push(doodlesInstance);
+              doodlesEffect.addToScene(scene, mesh.position);
+              console.log("🎨 Exotic Doodles added");
             }
             break;
 

@@ -1009,7 +1009,119 @@ class PlanetTypeTranslators:
     
     def translate_exotic(self, planet_radius: int, rng: random.Random, 
                         seed: int, planet_name: str) -> Dict[str, Any]:
-        return {"type": "exotic"}
+        """Translate Exotic planet elements - alien worlds with geometric patterns and strange clouds"""
+        center_x, center_y = 200, 200  # Pillow center coordinates
+        
+        # Generate atmospheric clouds for exotic planets (strange alien atmospheres)
+        num_clouds = rng.randint(8, 16)  # Moderate to rich atmospheric activity
+        clouds = []
+        for i in range(num_clouds):
+            cloud_radius = rng.randint(15, 40)  # Variable sized clouds
+            max_offset = planet_radius - cloud_radius
+            cloud_x = center_x + rng.randint(-max_offset, max_offset)
+            cloud_y = center_y + rng.randint(-max_offset, max_offset)
+            
+            # Convert to normalized coordinates
+            normalized_coords = self.common_utils.normalize_coordinates(
+                cloud_x, cloud_y, center_x, center_y, planet_radius
+            )
+            
+            # Exotic clouds - random colors for alien atmosphere
+            exotic_color = [
+                rng.uniform(0.3, 1.0),  # R
+                rng.uniform(0.3, 1.0),  # G  
+                rng.uniform(0.3, 1.0),  # B
+                rng.uniform(0.5, 0.9)   # A
+            ]
+            
+            clouds.append({
+                "position": normalized_coords,
+                "radius": cloud_radius / planet_radius,
+                "color": exotic_color,
+                "type": "cloud",
+                "seed": f"{planet_name}_exotic_cloud_{i}"
+            })
+        
+        # Generate small geometric shapes (from lines 2136-2150 in __drawer_cplanet_type.py)
+        num_small_shapes = rng.randint(12, 18)
+        small_geometric_shapes = []
+        
+        for i in range(num_small_shapes):
+            # Random position on sphere
+            theta = rng.uniform(0, 2 * math.pi)
+            phi = math.acos(rng.uniform(-1, 1))
+            
+            shape_3d_x = math.sin(phi) * math.cos(theta)
+            shape_3d_y = math.sin(phi) * math.sin(theta)
+            shape_3d_z = math.cos(phi)
+            
+            # Number of sides (3, 4, 6, 7, etc.)
+            num_sides = rng.choice([3, 4, 5, 6, 7, 8])
+            
+            # Random color
+            shape_color = [
+                rng.uniform(0.4, 1.0),
+                rng.uniform(0.4, 1.0),
+                rng.uniform(0.4, 1.0),
+                rng.uniform(0.6, 0.9)
+            ]
+            
+            small_geometric_shapes.append({
+                "position_3d": [shape_3d_x, shape_3d_y, shape_3d_z],
+                "sides": num_sides,
+                "size": rng.uniform(0.02, 0.06),  # Small size
+                "rotation_speed": rng.uniform(-2.0, 2.0),  # Different rotation speeds
+                "color": shape_color,
+                "angle": rng.uniform(0, 2 * math.pi)
+            })
+        
+        # Generate large doodles/scribbles (from lines 2114-2135 in __drawer_cplanet_type.py)  
+        num_doodles = rng.randint(4, 8)
+        exotic_doodles = []
+        
+        for i in range(num_doodles):
+            # Random position
+            theta = rng.uniform(0, 2 * math.pi)
+            phi = math.acos(rng.uniform(-1, 1))
+            
+            doodle_3d_x = math.sin(phi) * math.cos(theta)
+            doodle_3d_y = math.sin(phi) * math.sin(theta)
+            doodle_3d_z = math.cos(phi)
+            
+            # Doodle type (arc, fractals, or complex polygon)
+            doodle_type = rng.choice(["arc", "fractals", "squiggle"])
+            
+            # Color for doodle
+            doodle_color = [
+                rng.uniform(0.78, 1.0),  # R (200-255 / 255)
+                rng.uniform(0.0, 0.39),  # G (0-100 / 255)
+                rng.uniform(0.59, 1.0),  # B (150-255 / 255)
+                rng.uniform(0.7, 1.0)    # A
+            ]
+            
+            exotic_doodles.append({
+                "position_3d": [doodle_3d_x, doodle_3d_y, doodle_3d_z],
+                "type": doodle_type,
+                "size": rng.uniform(0.08, 0.20),  # Larger than geometric shapes
+                "color": doodle_color,
+                "complexity": rng.randint(5, 20),  # For fractals/squiggles
+                "movement_speed": rng.uniform(0.1, 0.5),  # Slow movement
+                "movement_pattern": rng.choice(["wave", "pulse", "spiral"])
+            })
+        
+        return {
+            "type": "exotic",
+            "clouds": clouds,
+            "small_geometric_shapes": small_geometric_shapes,
+            "exotic_doodles": exotic_doodles,
+            "debug": {
+                "original_planet_radius": planet_radius,
+                "center_x": center_x, "center_y": center_y,
+                "cloud_count": num_clouds,
+                "small_shapes_count": num_small_shapes,
+                "doodles_count": num_doodles
+            }
+        }
     
     def translate_anomaly(self, planet_radius: int, rng: random.Random, 
                          seed: int, planet_name: str, orbital_period_years: float = 5.0) -> Dict[str, Any]:
