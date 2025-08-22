@@ -672,7 +672,122 @@ class PlanetTypeTranslators:
     
     def translate_cave(self, planet_radius: int, rng: random.Random, 
                       seed: int, planet_name: str) -> Dict[str, Any]:
-        return {"type": "cave"}
+        """Translate Cave planet elements - rocky world with cave holes, atmospheric clouds, and land masses"""
+        center_x, center_y = 200, 200  # Pillow center coordinates
+        
+        # Generate atmospheric clouds for cave planets (misty atmosphere from underground moisture)
+        num_clouds = rng.randint(8, 15)  # Moderate amount of clouds
+        clouds = []
+        for i in range(num_clouds):
+            cloud_radius = rng.randint(20, 40)  # Medium-sized clouds
+            max_offset = planet_radius - cloud_radius
+            cloud_x = center_x + rng.randint(-max_offset, max_offset)
+            cloud_y = center_y + rng.randint(-max_offset, max_offset)
+            
+            # Convert to normalized coordinates
+            normalized_coords = self.common_utils.normalize_coordinates(
+                cloud_x, cloud_y, center_x, center_y, planet_radius
+            )
+            
+            # Cave clouds - gray/white tinted from underground moisture and mist
+            cloud_colors = [
+                "#c0c0c0",  # Light gray
+                "#a8a8a8",  # Medium gray  
+                "#d0d0d0",  # Light silver
+                "#b8b8b8",  # Medium light gray
+                "#e0e0e0"   # Very light gray
+            ]
+            
+            clouds.append({
+                "position_3d": normalized_coords,
+                "radius": cloud_radius / planet_radius,
+                "density": rng.uniform(0.6, 0.9),
+                "color": rng.choice(cloud_colors),
+                "opacity": rng.uniform(0.5, 0.8),
+                "movement_speed": rng.uniform(0.002, 0.008),
+                "vertical_offset": rng.uniform(-0.1, 0.1)
+            })
+        
+        # Generate land masses for cave planets (rocky terrain with exposed surfaces)
+        # Use "green_patches" format that LandMasses effect expects
+        # Make them large like Arid planets for better visibility
+        num_landmasses = rng.randint(6, 12)  # More landmasses for better coverage
+        green_patches = []
+        for i in range(num_landmasses):
+            # Generate uniform position on sphere (better distribution than 2D projection)
+            theta = rng.uniform(0, 2 * math.pi)
+            phi = rng.uniform(0, math.pi)
+            
+            position_3d = [
+                math.sin(phi) * math.cos(theta),
+                math.sin(phi) * math.sin(theta),
+                math.cos(phi)
+            ]
+            
+            # Size distribution similar to Arid planets - much larger sizes
+            if i < 4:
+                # Large cave formations (major exposed rocky areas)
+                size = rng.uniform(0.20, 0.40)  # Very large formations
+            elif i < 8:
+                # Medium cave formations (rocky outcrops)
+                size = rng.uniform(0.12, 0.25)  # Large formations
+            else:
+                # Small cave formations (scattered rocky patches)
+                size = rng.uniform(0.08, 0.15)  # Medium formations
+            
+            # Cave landmass colors - dark browns and grays representing rocky cave terrain
+            # Convert hex colors to RGB [0-1] format that LandMasses expects
+            landmass_color_choices = [
+                [0.29, 0.25, 0.21],  # Dark brown #4a3f36
+                [0.36, 0.29, 0.23],  # Medium brown #5c4a3a  
+                [0.24, 0.20, 0.16],  # Dark olive brown #3d3429
+                [0.32, 0.27, 0.22],  # Gray brown #524639
+                [0.42, 0.36, 0.31]   # Light brown #6b5b4f
+            ]
+            
+            green_patches.append({
+                "position_3d": position_3d,
+                "size": size,  # Much larger sizes like Arid planets
+                "color": rng.choice(landmass_color_choices) + [rng.uniform(0.75, 0.90)],  # Add variable opacity
+                "sides": rng.randint(12, 20),  # Polygon complexity for rocky terrain
+                "height": rng.uniform(0.02, 0.06),  # Elevation
+                "roughness": rng.uniform(0.6, 0.9)  # Surface roughness
+            })
+        
+        # Generate cave holes in the surface
+        num_holes = rng.randint(15, 25)  # Multiple cave openings
+        cave_holes = []
+        for i in range(num_holes):
+            # Generate uniform position on sphere
+            theta = rng.uniform(0, 2 * math.pi)
+            phi = rng.uniform(0, math.pi)
+            
+            position_3d = [
+                math.sin(phi) * math.cos(theta),
+                math.sin(phi) * math.sin(theta),
+                math.cos(phi)
+            ]
+            
+            cave_holes.append({
+                "position_3d": position_3d,
+                "radius": rng.uniform(0.03, 0.10),  # Various hole sizes
+                "depth": rng.uniform(0.02, 0.05),   # Depth perception
+                "roughness": rng.uniform(0.4, 0.8),  # Natural cave roughness
+                "color_variation": rng.uniform(0.2, 0.5)  # Color depth variation
+            })
+        
+        return {
+            "type": "cave",
+            "atmosphere_clouds": {
+                "clouds": clouds
+            },
+            "green_patches": green_patches,  # Land masses in the format LandMasses expects
+            "cave_holes": {
+                "holes": cave_holes,
+                "base_color": "#4a3f36",  # Dark cave brown
+                "hole_color": "#1a1512"   # Very dark for depth
+            }
+        }
     
     def translate_crystalline(self, planet_radius: int, rng: random.Random, 
                              seed: int, planet_name: str) -> Dict[str, Any]:

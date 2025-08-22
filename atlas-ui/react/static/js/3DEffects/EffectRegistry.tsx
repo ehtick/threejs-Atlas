@@ -6,6 +6,7 @@
  */
 
 import * as THREE from "three";
+import { SeededRandom } from "../Utils/SeededRandom";
 
 // Importar todos los efectos disponibles
 import { RingSystemEffect, createRingSystemFromPythonData, RingSystemParams } from "./RingSystem";
@@ -35,6 +36,7 @@ import { DiamondSurfaceLayer, createDiamondSurfaceLayerFromPythonData } from "./
 import { DiamondCracksEffect, createDiamondCracksFromPythonData } from "./DiamondCracksEffect";
 import { ExoticGeometricShapesEffect, createExoticGeometricShapesFromPythonData } from "./ExoticGeometricShapes";
 import { ExoticDoodlesEffect, createExoticDoodlesFromPythonData } from "./ExoticDoodles";
+import { CaveSurfaceHolesEffect, createCaveSurfaceHolesFromPythonData } from "./CaveSurfaceHoles";
 
 // Efectos legacy eliminados - usar solo versiones Layer
 
@@ -140,6 +142,9 @@ export enum EffectType {
   // Efectos para planetas Exotic
   EXOTIC_GEOMETRIC_SHAPES = "exotic_geometric_shapes",
   EXOTIC_DOODLES = "exotic_doodles",
+  
+  // Efectos para planetas Cave
+  CAVE_SURFACE_HOLES = "cave_surface_holes",
 }
 
 // Interfaz para creadores de efectos
@@ -361,6 +366,16 @@ export class EffectRegistry {
       fromPythonData: (data, planetRadius) => createExoticDoodlesFromPythonData(
         planetRadius, 
         data.surface_elements || {}, 
+        data.seeds?.planet_seed
+      ),
+    });
+
+    // Efectos para planetas Cave
+    this.registerEffect(EffectType.CAVE_SURFACE_HOLES, {
+      create: (params, planetRadius) => new CaveSurfaceHolesEffect(planetRadius, params),
+      fromPythonData: (data, planetRadius) => createCaveSurfaceHolesFromPythonData(
+        planetRadius,
+        data,
         data.seeds?.planet_seed
       ),
     });
@@ -1486,6 +1501,136 @@ export class EffectRegistry {
               this.effects.set(doodlesInstance.id, doodlesInstance);
               effects.push(doodlesInstance);
               doodlesEffect.addToScene(scene, mesh.position);
+            }
+            break;
+
+          case "cave":
+            // Cave planets: atmospheric clouds, land masses, and surface holes
+            
+            // 1. Add atmospheric clouds ALWAYS for Cave planets (procedurally if no data from Python)
+            let caveCloudsEffect;
+            if (surface.atmosphere_clouds && surface.atmosphere_clouds.clouds && surface.atmosphere_clouds.clouds.length > 0) {
+              // Use data from Python if available
+              caveCloudsEffect = createAtmosphereCloudsFromPythonData(
+                planetRadius,
+                surface.atmosphere_clouds,
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000
+              );
+            } else {
+              // Generate procedurally if no data from Python
+              caveCloudsEffect = new AtmosphereCloudsEffect(planetRadius, {
+                color: new THREE.Color(0.75, 0.75, 0.75), // Gray misty color for caves
+                cloudCount: 12, // Moderate amount of clouds
+                size: 3.5, // Medium-sized clouds
+                opacity: 0.65,
+                density: 0.8,
+                seed: (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000,
+                rotationSpeed: 0.003,
+                movementAmplitude: 0.008,
+                puffiness: 1.1,
+                timeSpeed: 0.8
+              });
+            }
+
+            if (caveCloudsEffect) {
+              const caveCloudsInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "atmosphere_clouds",
+                effect: caveCloudsEffect,
+                priority: 15,
+                enabled: true,
+                name: "Cave Atmospheric Clouds",
+              };
+
+              this.effects.set(caveCloudsInstance.id, caveCloudsInstance);
+              effects.push(caveCloudsInstance);
+              caveCloudsEffect.addToScene(scene, mesh.position);
+            }
+
+            // 2. Add land masses ALWAYS for Cave planets (procedurally if no data from Python)
+            let caveLandMassesEffect;
+            if (surface.green_patches && surface.green_patches.length > 0) {
+              // Use data from Python if available (green_patches format)
+              caveLandMassesEffect = createLandMassesFromPythonData(
+                planetRadius,
+                surface,  // Pass full surface data since createLandMassesFromPythonData looks for green_patches in surfaceData
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 5000
+              );
+            } else {
+              // Generate procedurally if no data from Python - make them large like Arid planets
+              const rng = new SeededRandom((pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 5000);
+              const largeGreenPatches = [];
+              
+              // Generate 8-12 large cave landmasses similar to Arid distribution
+              for (let i = 0; i < 10; i++) {
+                const theta = rng.random() * 2 * Math.PI;
+                const phi = Math.acos(rng.random() * 2 - 1);
+                
+                let size;
+                if (i < 3) {
+                  // Very large cave formations
+                  size = 0.20 + rng.random() * 0.20; // 0.20-0.40
+                } else if (i < 7) {
+                  // Large cave formations
+                  size = 0.12 + rng.random() * 0.13; // 0.12-0.25
+                } else {
+                  // Medium cave formations
+                  size = 0.08 + rng.random() * 0.07; // 0.08-0.15
+                }
+                
+                largeGreenPatches.push({
+                  position_3d: [
+                    Math.sin(phi) * Math.cos(theta),
+                    Math.sin(phi) * Math.sin(theta),
+                    Math.cos(phi)
+                  ],
+                  size: size,
+                  sides: 12 + Math.floor(rng.random() * 8), // 12-20 sides
+                  color: [0.29, 0.25, 0.21, 0.75 + rng.random() * 0.15] // Cave brown with variable opacity
+                });
+              }
+              
+              caveLandMassesEffect = new LandMassesEffect(planetRadius, {
+                greenPatches: largeGreenPatches,
+                seed: (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 5000
+              });
+            }
+
+            if (caveLandMassesEffect) {
+              const caveLandMassesInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "land_masses",
+                effect: caveLandMassesEffect,
+                priority: 5,
+                enabled: true,
+                name: "Cave Land Masses",
+              };
+
+              this.effects.set(caveLandMassesInstance.id, caveLandMassesInstance);
+              effects.push(caveLandMassesInstance);
+              caveLandMassesEffect.addToScene(scene, mesh.position);
+            }
+
+            // 3. Add cave surface holes (cave openings with depth)
+            const caveSurfaceHolesEffect = createCaveSurfaceHolesFromPythonData(
+              planetRadius,
+              pythonData,
+              (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 6000
+            );
+
+            if (caveSurfaceHolesEffect) {
+              const caveSurfaceHolesInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: EffectType.CAVE_SURFACE_HOLES,
+                effect: caveSurfaceHolesEffect,
+                priority: 10,
+                enabled: true,
+                name: "Cave Surface Holes",
+              };
+
+              this.effects.set(caveSurfaceHolesInstance.id, caveSurfaceHolesInstance);
+              effects.push(caveSurfaceHolesInstance);
+              caveSurfaceHolesEffect.addToScene(scene, mesh.position);
             }
             break;
 

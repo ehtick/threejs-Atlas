@@ -48,6 +48,9 @@ export type { TundraSnowflakesParams } from "./TundraSnowflakes";
 export { RiverLinesEffect, createRiverLinesFromPythonData, createRiverLinesWithPreset } from "./RiverLines";
 export type { RiverLinesParams, RiverSegment } from "./RiverLines";
 
+export { CaveSurfaceHolesEffect, createCaveSurfaceHolesFromPythonData } from "./CaveSurfaceHoles";
+export type { CaveSurfaceHolesParams } from "./CaveSurfaceHoles";
+
 // Efectos anómalos
 // AnomalyGlitchFieldEffect, AnomalyGeometricMorphEffect y AnomalyVoidSphereEffect movidos a Unused3DEffects
 // export {
@@ -118,6 +121,7 @@ export const AVAILABLE_EFFECTS = [
   "thermal_emissions",
   "tundra_snowflakes",
   "river_lines",
+  "cave_surface_holes",
   // Efectos anómalos (algunos desactivados)
   // 'anomaly_glitch_field', // Movido a Unused3DEffects
   // 'anomaly_void_sphere', // Movido a Unused3DEffects
@@ -198,6 +202,12 @@ export const DEFAULT_EFFECT_CONFIGS = {
     curviness: 0.8,
     branching: 0.3,
     density: 1.0,
+  },
+
+  cave_surface_holes: {
+    baseColor: "#4a3f36",
+    holeColor: "#1a1512",
+    enableShadows: true,
   },
 
   // ocean_waves eliminado - no respeta datos de Python
