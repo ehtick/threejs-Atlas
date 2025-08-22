@@ -248,7 +248,7 @@ export class EffectRegistry {
 
     this.registerEffect(EffectType.FIRE_ERUPTION, {
       create: (params, planetRadius) => new FireEruptionEffect(planetRadius, params),
-      fromPythonData: (data, planetRadius) => createFireEruptionFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed),
+      fromPythonData: (data, planetRadius, layerSystem) => createFireEruptionFromPythonData(data, planetRadius, layerSystem),
     });
 
     // Efectos futuros (placeholders)
@@ -1330,11 +1330,12 @@ export class EffectRegistry {
             }
 
             // 3. Añadir erupciones de fuego (llamas que salen de la superficie)
-            const fireEruptionEffect = createFireEruptionFromPythonData(
+            const fireEruptionEffect = this.createEffectFromPythonData(
+              EffectType.FIRE_ERUPTION,
+              pythonData,
               planetRadius,
-              surface,
-              pythonData.seeds?.planet_seed || pythonData.seeds?.shape_seed
-            );
+              mesh
+            )?.effect;
 
             if (fireEruptionEffect) {
               const fireEruptionInstance: EffectInstance = {

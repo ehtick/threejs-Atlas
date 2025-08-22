@@ -518,24 +518,19 @@ export class FireEruptionEffect {
   
   private calculateTemperatureActivation(): number {
     // Solo activar en planetas muy calientes (principalmente Molten Core)
-    // Molten Core: 1000-2000°C base, modificado por distancia orbital y atmósfera
-    // Rango final típico: ~355-10112°C
-    // Umbral simple: activar para planetas > 2500°C para asegurar visibilidad
     const temperature = this.params.planetTemperature || 0;
     
-    if (temperature < 2500) {
-      return 0; // No activo (la mayoría de planetas no-Molten Core)
+    if (temperature < 1500) {
+      return 0; // No activo para planetas fríos
     }
     
-    // Activación gradual a partir de 2500°C
-    // Activación completa a partir de 5000°C
-    if (temperature >= 5000) {
+    if (temperature >= 3000) {
       return 1; // Activación máxima
     }
     
-    // Activación gradual entre 2500-5000°C
-    const activationRange = 5000 - 2500;
-    const temperatureInRange = temperature - 2500;
+    // Activación gradual entre 1500-3000°C
+    const activationRange = 3000 - 1500;
+    const temperatureInRange = temperature - 1500;
     return temperatureInRange / activationRange;
   }
   
@@ -545,7 +540,8 @@ export class FireEruptionEffect {
       return 1; // Siempre visible si no hay datos orbitales
     }
     
-    const currentTime = this.params.currentTime || 0;
+    // Usar tiempo actual del universo, no el tiempo fijo de inicialización
+    const currentTime = (this.params.currentTime || 0) + ((Date.now() / 1000) - this.startTime) / (365.25 * 24 * 3600);
     const cycleProgress = (currentTime % this.params.orbitalData.cycle_duration_years) / 
                          this.params.orbitalData.cycle_duration_years;
     const visibleFraction = this.params.orbitalData.visible_duration_years / 
@@ -772,26 +768,38 @@ export class FireEruptionEffect {
  * Función para crear desde datos de Python
  */
 export function createFireEruptionFromPythonData(
+  pythonData: any,
   planetRadius: number,
-  _surfaceData: any,
-  globalSeed?: number,
-  pythonData?: any
+  _layerSystem?: any
 ): FireEruptionEffect {
-  const seed = globalSeed || Math.floor(Math.random() * 1000000);
+  const seed = pythonData?.seeds?.planet_seed || Math.floor(Math.random() * 1000000);
   
-  // Extraer temperatura del planeta desde Python data
-  const planetTemperature = pythonData?.surface_temperature || 0;
+  // Los datos de temperatura están en original_planet_data
+  const planetTemperature = pythonData?.original_planet_data?.surface_temperature || 0;
   
   // Extraer datos orbitales desde Python data (similar a PulsatingCube)
   const currentTimeYears = pythonData?.timing?.elapsed_time ? pythonData.timing.elapsed_time / (365.25 * 24 * 3600) : 0;
   
-  // Configurar datos orbitales para activación cíclica
+  // Usar periodo orbital real del planeta desde original_planet_data
+  const orbitalPeriodYears = pythonData?.original_planet_data?.orbital_period_seconds ? 
+    pythonData.original_planet_data.orbital_period_seconds / (365.25 * 24 * 3600) : 1.0;
+  
+  // Configurar datos orbitales basados en el periodo real del planeta
   const fireData = pythonData?.fire_eruption_data || {};
-  const orbitalData = fireData.enabled ? {
-    enabled: true,
-    cycle_duration_years: fireData.cycle_duration_years || 10, // Ciclo orbital por defecto
-    visible_duration_years: fireData.visible_duration_years || 2 // Visible durante 2 años del ciclo
-  } : { enabled: false, cycle_duration_years: 1, visible_duration_years: 1 };
+  const rng = new SeededRandom(seed + 9001); // Para generar parámetros orbitales deterministas
+  
+  // Calcular duración del ciclo primero - DEBE ser menor que el periodo orbital
+  const cycleDuration = fireData.cycle_duration_years || 
+    rng.uniform(orbitalPeriodYears * 0.1, orbitalPeriodYears * 0.8);
+  
+  const orbitalData = {
+    enabled: fireData.enabled !== undefined ? fireData.enabled : true, // Activo por defecto
+    // Ciclo basado en el periodo orbital real (como otros efectos)
+    cycle_duration_years: cycleDuration,
+    // Visible durante ~47% del ciclo (menos frecuente, más especial)
+    visible_duration_years: fireData.visible_duration_years || 
+      rng.uniform(cycleDuration * 0.4, cycleDuration * 0.55)
+  };
   
   const params: FireEruptionParams = {
     seed: seed + 9000, // Seed único para FireEruption
