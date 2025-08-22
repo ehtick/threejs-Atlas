@@ -22,9 +22,9 @@ export interface CaveSurfaceHolesParams {
 
 // Rangos para generación procedural
 const PROCEDURAL_RANGES = {
-  HOLE_COUNT: { min: 16, max: 32 },
-  HOLE_RADIUS: { min: 0.03, max: 0.15 },
-  HOLE_DEPTH: { min: 0.02, max: 0.08 },
+  HOLE_COUNT: { min: 22, max: 36 },
+  HOLE_RADIUS: { min: 0.03, max: 0.10 },
+  HOLE_DEPTH: { min: 0.02, max: 0.12 },
   ROUGHNESS: { min: 0.4, max: 0.8 },
   COLOR_VARIATION: { min: 0.2, max: 0.5 },
 };
