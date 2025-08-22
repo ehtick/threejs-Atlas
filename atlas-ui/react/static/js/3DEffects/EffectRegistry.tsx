@@ -671,8 +671,6 @@ export class EffectRegistry {
 
           case "aquifer":
             // Planetas Aquifer - superficie acuática con efectos de olas realistas
-            console.log("🌊 Processing Aquifer planet with surface data:", surface);
-            console.log("🌊 Surface.clouds:", surface.clouds);
             const aquiferWaterEffect = createAquiferWaterFromPythonData(this.layerSystem!, pythonData);
 
             if (aquiferWaterEffect) {
@@ -690,7 +688,6 @@ export class EffectRegistry {
 
               // Como MetallicSurfaceLayer, ya no necesita apply() ni addToScene()
               // porque se integra automáticamente con PlanetLayerSystem
-              console.log("🌊 AquiferWater effect added for aquifer planet");
             }
 
             // Añadir corrientes oceánicas para todos los planetas acuáticos
@@ -709,7 +706,6 @@ export class EffectRegistry {
               this.effects.set(oceanCurrentsInstance.id, oceanCurrentsInstance);
               effects.push(oceanCurrentsInstance);
 
-              console.log("🌊 Ocean Currents effect added for aquifer planet");
             }
 
             // Añadir nubes atmosféricas si están disponibles para planetas acuáticos
@@ -730,7 +726,6 @@ export class EffectRegistry {
               this.effects.set(cloudsInstance.id, cloudsInstance);
               effects.push(cloudsInstance);
               cloudsEffect.addToScene(scene, mesh.position);
-              console.log("☁️ Atmospheric Clouds added to Aquifer planet");
             }
 
             // Añadir masas de tierra emergentes si están disponibles
@@ -971,7 +966,6 @@ export class EffectRegistry {
                 this.effects.set(landMassesInstance.id, landMassesInstance);
                 effects.push(landMassesInstance);
                 transparentLandMasses.addToScene(scene, mesh.position);
-                console.log("🧊 Ice Formations (transparent LandMasses) added to Icy planet");
               } else {
                 console.warn("❄️ Failed to create transparent LandMasses for Icy planet");
               }
@@ -996,7 +990,6 @@ export class EffectRegistry {
                 this.effects.set(cloudsInstance.id, cloudsInstance);
                 effects.push(cloudsInstance);
                 cloudsEffect.addToScene(scene, mesh.position);
-                console.log("☁️ Atmospheric Clouds added to Icy planet");
               }
 
               // Añadir características heladas (cristales, grietas, casquetes)
@@ -1019,7 +1012,6 @@ export class EffectRegistry {
                 this.effects.set(icyFeaturesInstance.id, icyFeaturesInstance);
                 effects.push(icyFeaturesInstance);
                 icyFeaturesEffect.addToScene(scene, mesh.position);
-                console.log("❄️ Icy Features (crystals, cracks, ice caps) added to Icy planet");
               }
             }
             break;
@@ -1042,7 +1034,6 @@ export class EffectRegistry {
               effects.push(fluidLayersInstance);
               fluidLayersEffect.addToScene(scene, mesh.position);
 
-              console.log("🌊 FluidLayers effect added for oceanic planet");
             }
 
             // Añadir green_patches como masas de tierra para planetas oceánicos
@@ -1110,7 +1101,6 @@ export class EffectRegistry {
                 this.effects.set(landMassesInstance.id, landMassesInstance);
                 effects.push(landMassesInstance);
                 landMassesEffect.addToScene(scene, mesh.position);
-                console.log("🏔️ Tundra terrain (LandMasses) added");
               }
             }
 
@@ -1130,7 +1120,6 @@ export class EffectRegistry {
               this.effects.set(icyFeaturesInstance.id, icyFeaturesInstance);
               effects.push(icyFeaturesInstance);
               tundraIcyFeatures.addToScene(scene, mesh.position);
-              console.log("❄️ Sparse ice features added to Tundra planet");
             }
 
             // 3. Atmospheric clouds with earth-like colors
@@ -1149,7 +1138,6 @@ export class EffectRegistry {
               this.effects.set(cloudsInstance.id, cloudsInstance);
               effects.push(cloudsInstance);
               cloudsEffect.addToScene(scene, mesh.position);
-              console.log("☁️ Atmospheric clouds added to Tundra planet");
             }
 
             // 4. Tundra snowflakes effect
@@ -1168,13 +1156,11 @@ export class EffectRegistry {
               this.effects.set(snowflakesInstance.id, snowflakesInstance);
               effects.push(snowflakesInstance);
               snowflakesEffect.addToScene(scene, mesh.position);
-              console.log("❄️ Tundra snowflakes added to Tundra planet");
             }
             break;
 
           case "arid":
             // Arid planets: rocky terrain with atmospheric clouds and sparse land masses in dark reddish colors
-            console.log("🏜️ Processing Arid planet - adding atmospheric clouds and land masses");
 
             // 1. Añadir nubes atmosféricas SIEMPRE para planetas Arid (proceduralmente si no hay datos)
             let cloudsEffect;
@@ -1214,7 +1200,6 @@ export class EffectRegistry {
               this.effects.set(cloudsInstance.id, cloudsInstance);
               effects.push(cloudsInstance);
               cloudsEffect.addToScene(scene, mesh.position);
-              console.log("☁️ Atmospheric Clouds added to Arid planet");
             }
 
             // 2. Añadir masas de tierra SIEMPRE para planetas Arid con colores áridos
@@ -1287,7 +1272,6 @@ export class EffectRegistry {
               this.effects.set(landMassesInstance.id, landMassesInstance);
               effects.push(landMassesInstance);
               landMassesEffect.addToScene(scene, mesh.position);
-              console.log("🏜️ Arid terrain (LandMasses with dark reddish color) added to Arid planet");
             }
 
             // 3. Añadir ríos secos para dar más detalle al terreno árido
@@ -1308,14 +1292,12 @@ export class EffectRegistry {
               this.effects.set(riverLinesInstance.id, riverLinesInstance);
               effects.push(riverLinesInstance);
               riverLinesEffect.addToScene(scene, mesh.position);
-              console.log("🏜️ Dried river channels added to Arid planet");
             }
             break;
 
           case "molten_core":
           case "molten core":
             // Planetas Molten Core: superficie de lava incandescente con efectos de fuego
-            console.log("🌋 Processing Molten Core planet - adding lava effects");
 
             // 1. Añadir superficie de lava como capa base
             const moltenLavaEffect = createMoltenLavaFromPythonData(this.layerSystem!, pythonData);
@@ -1332,7 +1314,6 @@ export class EffectRegistry {
 
               this.effects.set(moltenLavaInstance.id, moltenLavaInstance);
               effects.push(moltenLavaInstance);
-              console.log("🌋 Molten Lava surface layer added for Molten Core planet");
             }
 
             // 2. Añadir flujos de lava y látigos de fuego
@@ -1355,7 +1336,6 @@ export class EffectRegistry {
               this.effects.set(lavaFlowsInstance.id, lavaFlowsInstance);
               effects.push(lavaFlowsInstance);
               lavaFlowsEffect.addToScene(scene, mesh.position);
-              console.log("🔥 Lava Flows (fire whips) added to Molten Core planet");
             }
 
             // 3. Añadir erupciones de fuego (llamas que salen de la superficie)
@@ -1379,7 +1359,6 @@ export class EffectRegistry {
               this.effects.set(fireEruptionInstance.id, fireEruptionInstance);
               effects.push(fireEruptionInstance);
               fireEruptionEffect.addToScene(scene, mesh.position);
-              console.log("🔥 Fire Eruptions added to Molten Core planet");
             }
 
             // 4. Añadir landmasses incandescentes (masas de tierra que brillan como lava)
@@ -1413,7 +1392,6 @@ export class EffectRegistry {
                 this.effects.set(landMassesInstance.id, landMassesInstance);
                 effects.push(landMassesInstance);
                 incandescientLandMasses.addToScene(scene, mesh.position);
-                console.log("🌋 Incandescent Land Masses added to Molten Core planet");
               }
             }
 
@@ -1437,15 +1415,12 @@ export class EffectRegistry {
               this.effects.set(moltenCloudsInstance.id, moltenCloudsInstance);
               effects.push(moltenCloudsInstance);
               moltenCloudsEffect.addToScene(scene, mesh.position);
-              console.log("🌫️ Molten Atmospheric Clouds added to Molten Core planet");
             }
             break;
 
           case "exotic":
             // Planetas Exotic: nubes alienígenas, figuras geométricas y doodles
-            console.log("👽 Processing Exotic planet");
             
-            // 1. Añadir nubes atmosféricas si están disponibles
             if (surface.clouds && surface.clouds.length > 0) {
               const cloudsEffect = createAtmosphereCloudsFromPythonData(
                 planetRadius,
@@ -1465,7 +1440,6 @@ export class EffectRegistry {
               this.effects.set(cloudsInstance.id, cloudsInstance);
               effects.push(cloudsInstance);
               cloudsEffect.addToScene(scene, mesh.position);
-              console.log("☁️ Exotic Atmospheric Clouds added");
             }
             
             // 2. Añadir figuras geométricas pequeñas
@@ -1489,14 +1463,14 @@ export class EffectRegistry {
               this.effects.set(shapesInstance.id, shapesInstance);
               effects.push(shapesInstance);
               geometricShapesEffect.addToScene(scene, mesh.position);
-              console.log("🔷 Exotic Geometric Shapes added");
             }
             
             // 3. Añadir doodles/garabatos grandes
             const doodlesEffect = createExoticDoodlesFromPythonData(
               planetRadius,
               surface,
-              (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 6000
+              (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 6000,
+              pythonData  // Pass complete pythonData for orbital timing
             );
             
             if (doodlesEffect) {
@@ -1512,17 +1486,13 @@ export class EffectRegistry {
               this.effects.set(doodlesInstance.id, doodlesInstance);
               effects.push(doodlesInstance);
               doodlesEffect.addToScene(scene, mesh.position);
-              console.log("🎨 Exotic Doodles added");
             }
             break;
 
           case "anomaly":
             // Planetas anómalos: múltiples efectos extraños y perturbadores
-            console.log("🌌 DETECTED ANOMALY PLANET - Creating effects");
-            console.log("🌌 Planet data:", { surfaceType: surface.type, planetType: pythonData.planet_info?.type });
 
             // 🚀 MODO SHOWCASE: ACTIVAR TODOS LOS EFECTOS PARA EVALUACIÓN
-            console.log("🎭 SHOWCASE MODE: Activating ALL anomaly effects for evaluation");
 
             const allAnomalyEffects = [
               // EffectType.ANOMALY_GLITCH_FIELD, // Desactivado - movido a Unused3DEffects
@@ -1558,8 +1528,6 @@ export class EffectRegistry {
                 if (anomalyEffect.effect.addToScene) {
                   anomalyEffect.effect.addToScene(scene, mesh.position);
                 }
-
-                console.log(`🎭 Added anomaly effect: ${anomalyEffect.name}`);
               }
             }
 
@@ -1569,7 +1537,6 @@ export class EffectRegistry {
               if (atmosphereEffect) {
                 effects.push(atmosphereEffect);
                 atmosphereEffect.effect.addToScene(scene, mesh.position);
-                console.log("🌫️ Anomalous atmosphere added");
               }
             }
             break;
@@ -1577,10 +1544,6 @@ export class EffectRegistry {
           default:
             // Verificar si es un planeta anómalo por planet_info.type
             if (pythonData.planet_info?.type?.toLowerCase() === "anomaly") {
-              console.log("🌌 DETECTED ANOMALY PLANET via planet_info.type - Creating effects");
-
-              // 🚀 MODO SHOWCASE: ACTIVAR TODOS LOS EFECTOS PARA EVALUACIÓN
-              console.log("🎭 SHOWCASE MODE (alt detection): Activating ALL anomaly effects for evaluation");
 
               const allAnomalyEffects = [
                 // EffectType.ANOMALY_GLITCH_FIELD, // Desactivado - movido a Unused3DEffects
@@ -1610,7 +1573,6 @@ export class EffectRegistry {
                     anomalyEffect.effect.addToScene(scene, mesh.position);
                   }
 
-                  console.log(`🎭 Added anomaly effect: ${anomalyEffect.name}`);
                 }
               }
 
@@ -1620,7 +1582,6 @@ export class EffectRegistry {
                 if (atmosphereEffect) {
                   effects.push(atmosphereEffect);
                   atmosphereEffect.effect.addToScene(scene, mesh.position);
-                  console.log("🌫️ Anomalous atmosphere added");
                 }
               }
             } else {
@@ -1804,7 +1765,6 @@ export class EffectRegistry {
         const object3D = effect.getObject3D();
         if (object3D) {
           object3D.visible = effectInstance.enabled;
-          console.log(`🎮 Toggle effect ${effectInstance.type}: visible = ${effectInstance.enabled}`);
         }
       }
 

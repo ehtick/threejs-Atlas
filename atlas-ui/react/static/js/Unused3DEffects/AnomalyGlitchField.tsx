@@ -238,11 +238,6 @@ export class AnomalyGlitchFieldEffect {
     
     if (shouldBeVisible !== this.isVisible) {
       this.isVisible = shouldBeVisible;
-      if (this.isVisible) {
-        console.log("💜 Glitch field appearing!");
-      } else {
-        console.log("👻 Glitch field disappearing!");
-      }
     }
     
     // Fade mucho más suave y menos notorio cuando está invisible

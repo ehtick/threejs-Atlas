@@ -57,6 +57,9 @@ export class ExoticDoodlesEffect {
   private timeSpeed: number; // Velocidad del tiempo para sincronización
   private rng: SeededRandom;
   private lightDirection: THREE.Vector3 = new THREE.Vector3(1, 1, 1).normalize();
+  private lastDebugTime: number = 0; // For periodic debug logging
+  private debugInterval: number = 30; // Log every 30 seconds
+  public debugMode: boolean = false; // Enable/disable debug logging
   
   // Sistema de anillos cósmicos
   private cosmicRingState: CosmicRingState = 'normal';
@@ -184,6 +187,9 @@ export class ExoticDoodlesEffect {
     // Calculate initial orbital visibility factor
     this.orbitalVisibilityFactor = this.calculateOrbitalVisibility();
     
+    // Initialize debug mode (disabled by default)
+    this.debugMode = false;
+    
     // Always generate procedurally using PROCEDURAL_RANGES
     // This ensures PROCEDURAL_RANGES changes affect the visual output
     this.doodleData = this.generateProceduralDoodles();
@@ -223,7 +229,6 @@ export class ExoticDoodlesEffect {
       
       // Convert to hex string like Python, then to Three.js color
       const hexColor = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-      console.log(`ExoticDoodle ${i}: ${hexColor} (RGB: ${r}, ${g}, ${b})`);
       
       doodles.push({
         position_3d,
@@ -386,7 +391,35 @@ export class ExoticDoodlesEffect {
     const currentTime = rawTime % 1000; // Mantener el tiempo en un ciclo de 1000 segundos
 
     // Update orbital visibility factor (recalcular en tiempo real)
+    const previousVisibility = this.orbitalVisibilityFactor;
     this.orbitalVisibilityFactor = this.calculateOrbitalVisibility();
+    
+    // Periodic debug logging (only if debug mode is enabled)
+    if (this.debugMode) {
+      const now = Date.now() / 1000;
+      if (now - this.lastDebugTime > this.debugInterval) {
+        this.lastDebugTime = now;
+        this.logOrbitalStatus();
+      }
+      
+      // Log state transitions only if debug mode is enabled
+      if (previousVisibility <= 0.001 && this.orbitalVisibilityFactor > 0.001) {
+        // Becoming visible
+      } else if (previousVisibility > 0.001 && this.orbitalVisibilityFactor <= 0.001) {
+        // Becoming hidden
+      }
+    }
+    
+    // CHECK: Should we be doing orbital animations at all?
+    if (!this.orbitalData || !this.orbitalData.enabled) {
+      // NO orbital animation - keep doodles on surface always
+      this.cosmicRingState = 'normal';
+      this.doodles.forEach(doodle => {
+        doodle.position.set(0, 0, 0);
+      });
+      this.applyNormalAnimations(currentTime);
+      return;  // EXIT EARLY - no cosmic ring animations
+    }
     
     // Si no estamos en el periodo orbital visible, forzar el estado a normal
     if (this.orbitalVisibilityFactor <= 0.001) {
@@ -622,6 +655,52 @@ export class ExoticDoodlesEffect {
     const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
     return t * t * (3 - 2 * t);
   }
+  
+  /**
+   * Debug method to log current orbital status and time until next appearance
+   */
+  private logOrbitalStatus(): void {
+    if (!this.orbitalData || !this.orbitalData.enabled) {
+      return;
+    }
+    
+    const currentTime = this.currentTimeYears;
+    const cycleProgress = (currentTime % this.orbitalData.cycle_duration_years) / 
+                         this.orbitalData.cycle_duration_years;
+    const visibleFraction = this.orbitalData.visible_duration_years / 
+                           this.orbitalData.cycle_duration_years;
+    
+    const isCurrentlyVisible = cycleProgress < visibleFraction;
+    const cycleTimeYears = currentTime % this.orbitalData.cycle_duration_years;
+    
+    let timeUntilNextEvent: number;
+    let nextEventType: string;
+    
+    if (isCurrentlyVisible) {
+      // Currently visible - calculate time until it disappears
+      timeUntilNextEvent = this.orbitalData.visible_duration_years - cycleTimeYears;
+      nextEventType = 'DISAPPEAR';
+    } else {
+      // Currently hidden - calculate time until it appears
+      timeUntilNextEvent = this.orbitalData.cycle_duration_years - cycleTimeYears;
+      nextEventType = 'APPEAR';
+    }
+    
+    // Convert to more readable units
+    const timeInDays = timeUntilNextEvent * 365.25;
+    const timeInHours = timeInDays * 24;
+    const timeInMinutes = timeInHours * 60;
+    
+    let timeString: string;
+    if (timeInDays > 1) {
+      timeString = `${timeInDays.toFixed(1)} days`;
+    } else if (timeInHours > 1) {
+      timeString = `${timeInHours.toFixed(1)} hours`;
+    } else {
+      timeString = `${timeInMinutes.toFixed(1)} minutes`;
+    }
+    
+  }
 
   // Ease-in-out function for ultra-smooth animations (cubic bezier-like)
   private easeInOutCubic(t: number): number {
@@ -707,16 +786,12 @@ export function createExoticDoodlesFromPythonData(
   // Buscar datos de doodles exóticos en pythonData
   const doodleData = pythonData?.surface_elements?.exotic_doodles;
   
-  // Si no está habilitado, retornar null
-  if (doodleData && !doodleData.enabled) {
-    return null;
-  }
-  
-  // Always create doodles procedurally using PROCEDURAL_RANGES
+  // ALWAYS create doodles for Exotic planets
+  // The orbital data controls the cosmic ring expansion animation, not visibility
   return new ExoticDoodlesEffect(planetRadius, {
     planetRadius: planetRadius,
-    // Datos orbitales desde Python (como PulsatingCube)
-    orbitalData: doodleData,
+    // Datos orbitales desde Python (si existen, controlan la animación de expansión)
+    orbitalData: doodleData,  // Can be null - doodles will stay on surface
     currentTime: currentTimeYears
   }, seed);
 }

@@ -1008,7 +1008,7 @@ class PlanetTypeTranslators:
         }
     
     def translate_exotic(self, planet_radius: int, rng: random.Random, 
-                        seed: int, planet_name: str) -> Dict[str, Any]:
+                        seed: int, planet_name: str, orbital_period_years: float = 15.0) -> Dict[str, Any]:
         """Translate Exotic planet elements - alien worlds with geometric patterns and strange clouds"""
         center_x, center_y = 200, 200  # Pillow center coordinates
         
@@ -1075,19 +1075,41 @@ class PlanetTypeTranslators:
                 "angle": rng.uniform(0, 2 * math.pi)
             })
         
-        # Exotic doodles will be generated procedurally in frontend using PROCEDURAL_RANGES
-        # No need to send specific doodle data from Python
+        # Exotic doodles orbital data - similar to PulsatingCube pattern
+        exotic_doodles = None
+        doodle_roll = rng.random()
+        if doodle_roll < 0.8:  # 80% chance for exotic planets to have doodles
+            # Calculate visibility cycle based on orbital period
+            # Doodles appear and disappear in cycles during specific orbital periods
+            cycle_duration_years = rng.uniform(orbital_period_years * 0.4, orbital_period_years * 1.8)
+            visible_duration_years = rng.uniform(cycle_duration_years * 0.25, cycle_duration_years * 0.6)
+            
+            exotic_doodles = {
+                "enabled": True,
+                "cycle_duration_years": cycle_duration_years,
+                "visible_duration_years": visible_duration_years,
+                # Debug information for orbital timing
+                "debug_orbital": {
+                    "orbital_period_years": orbital_period_years,
+                    "cycle_duration_years": cycle_duration_years,
+                    "visible_duration_years": visible_duration_years,
+                    "visible_percentage": (visible_duration_years / cycle_duration_years) * 100,
+                    "cycles_per_orbit": orbital_period_years / cycle_duration_years,
+                    "visibility_windows": f"Visible for {visible_duration_years:.2f} years every {cycle_duration_years:.2f} years"
+                }
+            }
         
         return {
             "type": "exotic",
             "clouds": clouds,
             "small_geometric_shapes": small_geometric_shapes,
-            # exotic_doodles generated procedurally in frontend
+            "exotic_doodles": exotic_doodles,  # Now passing orbital data like PulsatingCube
             "debug": {
                 "original_planet_radius": planet_radius,
                 "center_x": center_x, "center_y": center_y,
                 "cloud_count": num_clouds,
                 "small_shapes_count": num_small_shapes,
+                "has_exotic_doodles": exotic_doodles is not None,
                 "doodles_generated_procedurally": True
             }
         }

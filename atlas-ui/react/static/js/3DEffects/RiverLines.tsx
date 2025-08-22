@@ -284,7 +284,6 @@ export function createRiverLinesFromPythonData(
   globalSeed?: number
 ): RiverLinesEffect | null {
   
-  console.log("Creating ULTRA SIMPLE dried river lines for arid planet");
   
   const seed = globalSeed || Math.floor(Math.random() * 1000000);
   const riverSeed = seed + 8000;
@@ -313,7 +312,6 @@ export function createRiverLinesFromPythonData(
     seed: riverSeed
   };
   
-  console.log(`Creating ${params.riverCount} ULTRA SIMPLE dried river lines (seed: ${riverSeed})`);
   
   return new RiverLinesEffect(planetRadius, params);
 }
@@ -358,7 +356,6 @@ export function createRiverLinesWithPreset(
   const preset = RIVER_PRESETS[presetName];
   const params = { ...preset, ...customParams };
   
-  console.log(`Creating ULTRA SIMPLE RiverLines with '${presetName}' preset`);
   
   return new RiverLinesEffect(planetRadius, params);
 }

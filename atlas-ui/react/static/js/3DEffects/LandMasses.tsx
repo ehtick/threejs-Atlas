@@ -504,7 +504,6 @@ export function createTransparentLandMassesForIcyPlanet(
     });
   }
   
-  console.log(`🧊 Creating ${numPatches} transparent ice formations for Icy planet with seed ${seed + 7000}`);
   
   return new LandMassesEffect(planetRadius, {
     greenPatches: syntheticPatches,

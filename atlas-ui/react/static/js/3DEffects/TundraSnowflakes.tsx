@@ -251,18 +251,7 @@ export class TundraSnowflakesEffect {
     
     // DEBUG: Temporalmente siempre visible para verificar funcionamiento
     this.snowflakeGroup.visible = true; // TEMPORAL - siempre visible
-    
-    // DEBUG: Log de intensidad cada 5 segundos
-    if (Math.floor(burstTime) % 5 === 0 && burstTime % 1 < 0.1) {
-      console.log("❄️ Burst Debug:", { 
-        burstTime: Math.round(burstTime), 
-        burstIntensity: Math.round(burstIntensity * 100) / 100,
-        cycleDuration: Math.round(this.burstCycleDuration),
-        burstDuration: Math.round(this.burstDuration)
-      });
-    }
-    
-    // No global rotation - particles only appear in specific zones
+
     // this.snowflakeGroup.rotation.y = currentTime * this.rotationSpeed; // Disabled for zone-based wind
     
     this.particleSystems.forEach((line, index) => {

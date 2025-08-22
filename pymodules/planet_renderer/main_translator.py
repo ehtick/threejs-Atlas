@@ -107,7 +107,7 @@ class PlanetRenderingTranslator:
             orbital_period_years = planet.orbital_period_seconds / (365.25 * 24 * 3600) if planet.orbital_period_seconds else 1.0
             
             # Check if this is a planet type that needs orbital period
-            if planet_type in ["Gas Giant", "Frozen Gas Giant", "Nebulous", "Anomaly"]:
+            if planet_type in ["Gas Giant", "Frozen Gas Giant", "Nebulous", "Anomaly", "Exotic"]:
                 planet_specific_data = self.planet_types[planet_type](
                     planet_radius, rng, config.seed, spaced_planet_name, orbital_period_years
                 )

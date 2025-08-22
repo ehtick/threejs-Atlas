@@ -191,7 +191,6 @@ export class AnomalyVoidSphereEffect {
     
     this.generateVoidSpheres(planetRadius);
     
-    console.log("🕳️ AnomalyVoidSphere created with", this.sphereCount, "spheres");
   }
 
   private generateVoidSpheres(planetRadius: number): void {
@@ -256,10 +255,8 @@ export class AnomalyVoidSphereEffect {
   addToScene(scene: THREE.Scene, planetPosition?: THREE.Vector3): void {
     if (planetPosition) {
       this.voidSystem.position.copy(planetPosition);
-      console.log("🕳️ AnomalyVoidSphere positioned at:", planetPosition);
     }
     scene.add(this.voidSystem);
-    console.log("🕳️ AnomalyVoidSphere added to scene");
   }
 
   update(deltaTime: number): void {
