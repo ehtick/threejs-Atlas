@@ -21,14 +21,14 @@ export interface ExoticDoodlesParams {
 
 // Rangos para generación procedural
 const PROCEDURAL_RANGES = {
-  DOODLE_COUNT: { min: 14, max: 18 },
+  DOODLE_COUNT: { min: 24, max: 32 },
   DOODLE_SIZE: { min: 0.08, max: 0.20 },
-  COMPLEXITY: { min: 5, max: 20 },
-  MOVEMENT_SPEED: { min: 0.1, max: 0.5 },
+  COMPLEXITY: { min: 15, max: 35 },
+  MOVEMENT_SPEED: { min: 0.03, max: 0.09 },
   COLOR_HUE: { min: 0.0, max: 1.0 },
   COLOR_SATURATION: { min: 0.6, max: 1.0 },
   COLOR_LIGHTNESS: { min: 0.4, max: 0.9 },
-  OPACITY: { min: 0.7, max: 1.0 }
+  OPACITY: { min: 0.3, max: 1.0 }
 };
 
 export class ExoticDoodlesEffect {
@@ -67,18 +67,18 @@ export class ExoticDoodlesEffect {
       
       void main() {
         vec3 normal = normalize(vWorldNormal);
-        vec3 lightDir = normalize(lightDirection);
+        vec3 lightDir = normalize(-lightDirection); // Negativo porque lightDirection apunta hacia la luz
         
         // Lambertian lighting with smooth day/night transition
         float dotNL = dot(normal, lightDir);
-        float dayNight = smoothstep(-0.3, 0.1, dotNL);
+        float lightingFactor = max(0.0, dotNL); // Simple Lambertian
         
         // Rim lighting for enhanced visibility
         float rimLight = 1.0 - abs(dotNL);
         rimLight = pow(rimLight, 3.0) * 0.1;
         
         // Final lighting calculation with preserved color intensity
-        float totalLight = ambientStrength + (lightIntensity * dayNight) + rimLight;
+        float totalLight = ambientStrength + (lightIntensity * lightingFactor) + rimLight;
         totalLight = clamp(totalLight, 0.6, 1.2); // Higher minimum, allow slight overbrightening
         
         // Preserve color vibrancy by mixing original color with lit color
@@ -367,6 +367,12 @@ export class ExoticDoodlesEffect {
         }
       });
     });
+  }
+
+  // Update from Three.js DirectionalLight - interface expected by EffectRegistry
+  updateFromThreeLight(light: THREE.DirectionalLight): void {
+    const direction = light.position.clone().normalize();
+    this.updateLightDirection(direction);
   }
 
   addToScene(scene: THREE.Scene, planetPosition: THREE.Vector3): void {
