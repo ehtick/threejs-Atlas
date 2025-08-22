@@ -692,7 +692,50 @@ class PlanetTypeTranslators:
     
     def translate_molten_core(self, planet_radius: int, rng: random.Random, 
                              seed: int, planet_name: str) -> Dict[str, Any]:
-        return {"type": "molten_core"}
+        """Translate Molten Core planet elements - volcanic world with large atmospheric clouds"""
+        center_x, center_y = 200, 200  # Pillow center coordinates
+        
+        # Generate LARGE atmospheric clouds for molten core planets (volcanic activity creates massive atmospheres)
+        num_clouds = rng.randint(12, 20)  # Many clouds from volcanic activity
+        clouds = []
+        for i in range(num_clouds):
+            cloud_radius = rng.randint(35, 60)  # MUCH larger clouds than other planets
+            max_offset = planet_radius - cloud_radius
+            cloud_x = center_x + rng.randint(-max_offset, max_offset)
+            cloud_y = center_y + rng.randint(-max_offset, max_offset)
+            
+            # Convert to normalized coordinates
+            normalized_coords = self.common_utils.normalize_coordinates(
+                cloud_x, cloud_y, center_x, center_y, planet_radius
+            )
+            
+            # Molten core clouds - orange/red tinted from volcanic ash and heat
+            cloud_colors = [
+                [1.0, 0.9, 0.7, 0.85],     # Light orange-white (hot vapor)
+                [1.0, 0.85, 0.6, 0.8],     # Warm orange tint
+                [0.95, 0.82, 0.65, 0.9],   # Slightly darker orange
+                [1.0, 0.88, 0.75, 0.75],   # Pale orange-white
+            ]
+            
+            cloud_color = rng.choice(cloud_colors)
+            
+            clouds.append({
+                "position": normalized_coords,
+                "radius": cloud_radius / planet_radius,  # Large radius for dramatic clouds
+                "color": cloud_color,
+                "type": "cloud",
+                "seed": f"{planet_name}_molten_cloud_{i}"
+            })
+        
+        return {
+            "type": "molten_core",
+            "clouds": clouds,
+            "debug": {
+                "cloud_count": len(clouds),
+                "avg_cloud_radius": sum(c["radius"] for c in clouds) / len(clouds) if clouds else 0,
+                "planet_radius": planet_radius
+            }
+        }
     
     def translate_carbon(self, planet_radius: int, rng: random.Random, 
                         seed: int, planet_name: str) -> Dict[str, Any]:
