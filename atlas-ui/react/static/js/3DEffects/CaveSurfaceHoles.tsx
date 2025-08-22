@@ -22,11 +22,11 @@ export interface CaveSurfaceHolesParams {
 
 // Rangos para generación procedural
 const PROCEDURAL_RANGES = {
-  HOLE_COUNT: { min: 15, max: 30 },
-  HOLE_RADIUS: { min: 0.03, max: 0.12 },
-  HOLE_DEPTH: { min: 0.02, max: 0.06 },
-  ROUGHNESS: { min: 0.3, max: 0.8 },
-  COLOR_VARIATION: { min: 0.1, max: 0.4 },
+  HOLE_COUNT: { min: 16, max: 32 },
+  HOLE_RADIUS: { min: 0.20, max: 0.22 },
+  HOLE_DEPTH: { min: 0.20, max: 0.20 },
+  ROUGHNESS: { min: 0.4, max: 0.8 },
+  COLOR_VARIATION: { min: 0.2, max: 0.5 },
 };
 
 export class CaveSurfaceHolesEffect {
@@ -49,12 +49,8 @@ export class CaveSurfaceHolesEffect {
       ? params.holeColor
       : new THREE.Color(params.holeColor || '#000000');
     
-    // Generate procedural holes if not provided
-    if (params.holes) {
-      this.holesData = params.holes;
-    } else {
-      this.holesData = this.generateProceduralHoles();
-    }
+    // Always use procedural generation to ensure PROCEDURAL_RANGES are applied
+    this.holesData = this.generateProceduralHoles();
     
     if (this.holesData.length > 0) {
       this.createHoles();
@@ -93,7 +89,9 @@ export class CaveSurfaceHolesEffect {
 
   // Create planet base material with transparent holes
   createPlanetHoleShader(baseColor: THREE.Color): THREE.ShaderMaterial {
-    const maxHoles = Math.max(this.holesData.length, 1);
+    // Limit shader holes to avoid GPU uniform limits
+    const MAX_SHADER_HOLES = 64;
+    const maxHoles = Math.min(this.holesData.length, MAX_SHADER_HOLES);
     
     const vertexShader = `
       varying vec3 vPosition;
@@ -192,15 +190,18 @@ export class CaveSurfaceHolesEffect {
         lightIntensity: { value: 0.85 },
         holePositions: { value: holePositions },
         holeRadii: { value: holeRadii },
-        numHoles: { value: this.holesData.length }
+        numHoles: { value: maxHoles }
       },
       side: THREE.FrontSide
     });
   }
 
   private createHoles(): void {
-    // Create depth cones for each hole
-    this.holesData.forEach((holeData) => {
+    // Create depth cones only for holes that the shader can process
+    const MAX_SHADER_HOLES = 64;
+    const holesForCones = this.holesData.slice(0, MAX_SHADER_HOLES);
+    
+    holesForCones.forEach((holeData) => {
       this.createHoleCone(holeData);
     });
   }

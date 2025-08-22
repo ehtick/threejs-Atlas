@@ -755,7 +755,7 @@ class PlanetTypeTranslators:
             })
         
         # Generate cave holes in the surface
-        num_holes = rng.randint(15, 25)  # Multiple cave openings
+        num_holes = rng.randint(115, 130)  # Multiple cave openings
         cave_holes = []
         for i in range(num_holes):
             # Generate uniform position on sphere
