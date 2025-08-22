@@ -16,6 +16,7 @@ export interface ExoticGeometricShapesParams {
     angle: number;
   }>;
   planetRadius?: number;
+  planetColor?: THREE.Color;  // Add planet base color
 }
 
 export class ExoticGeometricShapesEffect {
@@ -23,10 +24,12 @@ export class ExoticGeometricShapesEffect {
   private shapes: THREE.Mesh[] = [];
   private rotationSpeeds: number[] = [];
   private planetRadius: number;
+  private planetColor: THREE.Color;
 
   constructor(planetRadius: number, params: ExoticGeometricShapesParams = {}) {
     this.group = new THREE.Group();
     this.planetRadius = planetRadius;
+    this.planetColor = params.planetColor || new THREE.Color(0x800080); // Default exotic purple
 
     if (params.shapes && params.shapes.length > 0) {
       this.createShapes(params.shapes);
@@ -37,66 +40,44 @@ export class ExoticGeometricShapesEffect {
     if (!shapesData) return;
 
     shapesData.forEach((shapeData) => {
-      // Create geometry based on number of sides
-      let geometry: THREE.BufferGeometry;
-      
-      if (shapeData.sides === 3) {
-        // Triangle
-        geometry = new THREE.ConeGeometry(shapeData.size * this.planetRadius, shapeData.size * this.planetRadius * 0.8, 3);
-      } else if (shapeData.sides === 4) {
-        // Square/Diamond
-        geometry = new THREE.BoxGeometry(
-          shapeData.size * this.planetRadius,
-          shapeData.size * this.planetRadius,
-          shapeData.size * this.planetRadius * 0.3
-        );
-      } else if (shapeData.sides === 6) {
-        // Hexagon
-        geometry = new THREE.CylinderGeometry(
-          shapeData.size * this.planetRadius,
-          shapeData.size * this.planetRadius,
-          shapeData.size * this.planetRadius * 0.3,
-          6
-        );
-      } else {
-        // Other polygons (5, 7, 8 sides)
-        geometry = new THREE.CylinderGeometry(
-          shapeData.size * this.planetRadius,
-          shapeData.size * this.planetRadius,
-          shapeData.size * this.planetRadius * 0.3,
-          shapeData.sides
-        );
-      }
+      // Create FLAT geometry using CircleGeometry for all shapes
+      // This creates a flat disc with N sides that lies in the XY plane
+      const geometry = new THREE.CircleGeometry(
+        shapeData.size * this.planetRadius,  // radius
+        shapeData.sides  // number of segments (3 = triangle, 4 = square, etc.)
+      );
 
-      // Create material with color
+      // Use planet color but darker (multiply by 0.6-0.8)
+      const darkerFactor = 0.7;
+      const shapeColor = this.planetColor.clone();
+      shapeColor.multiplyScalar(darkerFactor);
+      
+      // Create material with darker planet color
       const material = new THREE.MeshPhongMaterial({
-        color: new THREE.Color(shapeData.color[0], shapeData.color[1], shapeData.color[2]),
+        color: shapeColor,
         transparent: true,
-        opacity: shapeData.color[3],
-        emissive: new THREE.Color(shapeData.color[0] * 0.3, shapeData.color[1] * 0.3, shapeData.color[2] * 0.3),
-        emissiveIntensity: 0.5,
-        shininess: 100,
+        opacity: 0.8,  // Slightly transparent
+        emissive: shapeColor.clone().multiplyScalar(0.3),
+        emissiveIntensity: 0.3,
+        shininess: 60,
         side: THREE.DoubleSide
       });
 
       const mesh = new THREE.Mesh(geometry, material);
 
-      // Position on sphere surface
-      const distance = this.planetRadius * 1.02; // Slightly above surface
+      // Position directly on sphere surface
+      const distance = this.planetRadius * 1.005; // Slightly above to avoid z-fighting
       mesh.position.set(
         shapeData.position_3d[0] * distance,
         shapeData.position_3d[1] * distance,
         shapeData.position_3d[2] * distance
       );
 
-      // Make shape face outward from planet center
-      mesh.lookAt(
-        mesh.position.x * 2,
-        mesh.position.y * 2,
-        mesh.position.z * 2
-      );
-
-      // Apply initial rotation
+      // Make the flat shape face outward from planet center
+      // CircleGeometry lies in XY plane, we need it perpendicular to the radius
+      mesh.lookAt(0, 0, 0);  // Look at planet center
+      
+      // Apply initial rotation around the surface normal (spin the shape)
       mesh.rotateZ(shapeData.angle);
 
       this.shapes.push(mesh);
@@ -106,7 +87,7 @@ export class ExoticGeometricShapesEffect {
   }
 
   update(deltaTime: number): void {
-    // Rotate each shape at its own speed
+    // Rotate each shape around its local Z axis (perpendicular to surface)
     this.shapes.forEach((shape, index) => {
       shape.rotateZ(this.rotationSpeeds[index] * deltaTime);
     });
@@ -139,7 +120,8 @@ export class ExoticGeometricShapesEffect {
 export function createExoticGeometricShapesFromPythonData(
   planetRadius: number,
   surfaceElements: any,
-  seed?: number
+  seed?: number,
+  planetColor?: THREE.Color
 ): ExoticGeometricShapesEffect | null {
   
   // Check if we have small_geometric_shapes data
@@ -149,6 +131,7 @@ export function createExoticGeometricShapesFromPythonData(
 
   return new ExoticGeometricShapesEffect(planetRadius, {
     shapes: surfaceElements.small_geometric_shapes,
-    planetRadius: planetRadius
+    planetRadius: planetRadius,
+    planetColor: planetColor
   });
 }

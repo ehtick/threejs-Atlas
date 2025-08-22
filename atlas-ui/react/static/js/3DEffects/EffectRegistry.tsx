@@ -345,7 +345,15 @@ export class EffectRegistry {
     // Efectos para planetas Exotic
     this.registerEffect(EffectType.EXOTIC_GEOMETRIC_SHAPES, {
       create: (params, planetRadius) => new ExoticGeometricShapesEffect(planetRadius, params),
-      fromPythonData: (data, planetRadius) => createExoticGeometricShapesFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed),
+      fromPythonData: (data, planetRadius) => {
+        const baseColor = getPlanetBaseColor(data);
+        return createExoticGeometricShapesFromPythonData(
+          planetRadius, 
+          data.surface_elements || {}, 
+          data.seeds?.planet_seed,
+          baseColor
+        );
+      },
     });
 
     this.registerEffect(EffectType.EXOTIC_DOODLES, {
@@ -1460,7 +1468,8 @@ export class EffectRegistry {
             const geometricShapesEffect = createExoticGeometricShapesFromPythonData(
               planetRadius,
               surface,
-              (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 5000
+              (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 5000,
+              baseColor  // Pass the planet base color
             );
             
             if (geometricShapesEffect) {
