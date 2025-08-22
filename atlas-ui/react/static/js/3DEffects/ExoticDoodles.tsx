@@ -17,6 +17,13 @@ export interface ExoticDoodlesParams {
     movement_pattern: 'wave' | 'pulse' | 'spiral';
   }>;
   planetRadius?: number;
+  // Orbital visibility data (similar to PulsatingCube)
+  orbitalData?: {
+    enabled: boolean;
+    cycle_duration_years: number;
+    visible_duration_years: number;
+  };
+  currentTime?: number; // Tiempo actual en años para calcular ciclos orbitales
 }
 
 // Rangos para generación procedural
@@ -58,6 +65,9 @@ export class ExoticDoodlesEffect {
   private separationDuration: number; // Separation duration (procedural)
   private returningDuration: number; // Return duration (procedural)
   private doodleBasePositions: THREE.Vector3[] = []; // Posiciones originales de cada doodle
+  private orbitalVisibilityFactor: number; // Factor de visibilidad basado en periodo orbital (0-1)
+  private orbitalData?: ExoticDoodlesParams['orbitalData'];
+  private currentTimeYears: number;
 
   // Create lit material for doodles that respects planet lighting
   private createLitMaterial(color: string, opacity: number): THREE.ShaderMaterial {
@@ -166,6 +176,13 @@ export class ExoticDoodlesEffect {
     // Total cycle duration = normal time + event time
     const normalTime = this.rng.uniform(PROCEDURAL_RANGES.RING_CYCLE_DURATION.min, PROCEDURAL_RANGES.RING_CYCLE_DURATION.max);
     this.ringCycleDuration = normalTime + this.ringEventDuration;
+    
+    // Initialize orbital data and current time
+    this.orbitalData = params.orbitalData;
+    this.currentTimeYears = params.currentTime || 0;
+    
+    // Calculate initial orbital visibility factor
+    this.orbitalVisibilityFactor = this.calculateOrbitalVisibility();
     
     // Always generate procedurally using PROCEDURAL_RANGES
     // This ensures PROCEDURAL_RANGES changes affect the visual output
@@ -368,6 +385,21 @@ export class ExoticDoodlesEffect {
     const rawTime = this.startTime + (Date.now() / 1000) * this.timeSpeed;
     const currentTime = rawTime % 1000; // Mantener el tiempo en un ciclo de 1000 segundos
 
+    // Update orbital visibility factor (recalcular en tiempo real)
+    this.orbitalVisibilityFactor = this.calculateOrbitalVisibility();
+    
+    // Si no estamos en el periodo orbital visible, forzar el estado a normal
+    if (this.orbitalVisibilityFactor <= 0.001) {
+      this.cosmicRingState = 'normal';
+      // Mantener doodles en superficie durante periodos inactivos
+      this.doodles.forEach(doodle => {
+        doodle.position.set(0, 0, 0);
+      });
+      // Still apply normal animations
+      this.applyNormalAnimations(currentTime);
+      return;
+    }
+
     // Determinar estado del evento cósmico
     const cycleTime = currentTime % this.ringCycleDuration;
     this.updateCosmicRingState(cycleTime);
@@ -448,6 +480,59 @@ export class ExoticDoodlesEffect {
           
         case 'spiral':
           // Continuous rotation using absolute time
+          doodle.rotation.z = currentTime * speed;
+          break;
+      }
+    });
+  }
+
+  /**
+   * Calcular factor de visibilidad basado en datos orbitales (como PulsatingCube)
+   */
+  private calculateOrbitalVisibility(): number {
+    // Si no hay datos orbitales, usar visibilidad completa (comportamiento por defecto)
+    if (!this.orbitalData || !this.orbitalData.enabled) {
+      return 1.0;
+    }
+
+    const currentTime = this.currentTimeYears;
+    const cycleProgress = (currentTime % this.orbitalData.cycle_duration_years) / 
+                         this.orbitalData.cycle_duration_years;
+    const visibleFraction = this.orbitalData.visible_duration_years / 
+                           this.orbitalData.cycle_duration_years;
+    
+    // El efecto es visible solo durante la primera parte del ciclo orbital
+    if (cycleProgress < visibleFraction) {
+      // Transiciones suaves al principio y final del periodo visible
+      const localProgress = cycleProgress / visibleFraction;
+      if (localProgress < 0.1) {
+        return localProgress / 0.1; // Fade in
+      } else if (localProgress > 0.9) {
+        return (1 - localProgress) / 0.1; // Fade out
+      } else {
+        return 1.0; // Completamente visible
+      }
+    } else {
+      return 0.0; // No visible fuera del periodo
+    }
+  }
+
+  // Apply normal surface animations when not in cosmic event mode
+  private applyNormalAnimations(currentTime: number): void {
+    this.doodles.forEach((doodle, index) => {
+      const data = this.doodleData[index];
+      if (!data) return;
+
+      const speed = data.movement_speed;
+      
+      switch (data.movement_pattern) {
+        case 'wave':
+          doodle.rotation.z = Math.sin(currentTime * speed) * 0.2;
+          break;
+        case 'pulse':
+          doodle.rotation.z = Math.sin(currentTime * speed * 2) * 0.15;
+          break;
+        case 'spiral':
           doodle.rotation.z = currentTime * speed;
           break;
       }
@@ -611,12 +696,27 @@ export class ExoticDoodlesEffect {
 export function createExoticDoodlesFromPythonData(
   planetRadius: number,
   _surfaceElements?: any,  // Optional and unused
-  seed?: number
+  seed?: number,
+  pythonData?: any
 ): ExoticDoodlesEffect | null {
   
+  // Obtener tiempo actual desde pythonData si está disponible
+  const currentTimeYears = pythonData?.timing?.elapsed_time ? 
+    pythonData.timing.elapsed_time / (365.25 * 24 * 3600) : 0;
+  
+  // Buscar datos de doodles exóticos en pythonData
+  const doodleData = pythonData?.surface_elements?.exotic_doodles;
+  
+  // Si no está habilitado, retornar null
+  if (doodleData && !doodleData.enabled) {
+    return null;
+  }
+  
   // Always create doodles procedurally using PROCEDURAL_RANGES
-  // No need to check for data from Python since we generate everything
   return new ExoticDoodlesEffect(planetRadius, {
-    planetRadius: planetRadius
+    planetRadius: planetRadius,
+    // Datos orbitales desde Python (como PulsatingCube)
+    orbitalData: doodleData,
+    currentTime: currentTimeYears
   }, seed);
 }
