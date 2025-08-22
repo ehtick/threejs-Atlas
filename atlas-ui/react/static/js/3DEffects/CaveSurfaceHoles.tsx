@@ -206,7 +206,7 @@ export class CaveSurfaceHolesEffect {
     });
   }
 
-  private createHollowConeGeometry(topRadius: number, height: number, segments: number): THREE.BufferGeometry {
+  private createHollowConeGeometry(topRadius: number, height: number, segments: number, planetRadius: number): THREE.BufferGeometry {
     const geometry = new THREE.BufferGeometry();
     const vertices: number[] = [];
     const indices: number[] = [];
@@ -219,11 +219,20 @@ export class CaveSurfaceHolesEffect {
       const x = Math.cos(angle);
       const z = Math.sin(angle);
       
-      // Top vertex (wide part of cone)
-      vertices.push(x * topRadius, height / 2, z * topRadius);
+      // Top vertex (wide part of cone) - slightly curved to follow planet surface
+      const topX = x * topRadius;
+      const topZ = z * topRadius;
+      const topY = height / 2;
+      
+      // Apply subtle curvature - just bend the edges down slightly
+      const radiusFromCenter = Math.sqrt(topX * topX + topZ * topZ);
+      const curvatureFactor = (radiusFromCenter * radiusFromCenter) / (planetRadius * 2); // Subtle curve
+      const curvedY = topY - curvatureFactor;
+      
+      vertices.push(topX, curvedY, topZ);
       uvs.push(i / segments, 1);
       
-      // Bottom vertex (tip of cone)
+      // Bottom vertex (tip of cone) - remains unchanged
       vertices.push(0, -height / 2, 0);
       uvs.push(i / segments, 0);
     }
@@ -272,8 +281,8 @@ export class CaveSurfaceHolesEffect {
     const coneRadius = holeData.radius * this.planetRadius;
     const caveDepth = holeData.depth * this.planetRadius * 2;
     
-    // Create a hollow cone (only walls, no caps)
-    const coneGeometry = this.createHollowConeGeometry(coneRadius, caveDepth, 16);
+    // Create a hollow cone (only walls, no caps) curved to follow planet surface
+    const coneGeometry = this.createHollowConeGeometry(coneRadius, caveDepth, 16, this.planetRadius);
     const coneMaterial = new THREE.MeshLambertMaterial({
       color: new THREE.Color(0x808080), // Gray color for testing alignment
       transparent: false,
