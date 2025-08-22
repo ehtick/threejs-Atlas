@@ -42,16 +42,16 @@ export interface FireEruptionParams {
 
 // Rangos para generación procedural
 const PROCEDURAL_RANGES = {
-  ERUPTION_COUNT: { min: 8, max: 15 }, // Múltiples puntos de erupción
+  ERUPTION_COUNT: { min: 15, max: 35 }, // Múltiples puntos de erupción
   ERUPTION_FREQUENCY: { min: 0.2, max: 0.8 }, // Frecuencia variable
   ERUPTION_DURATION: { min: 2.0, max: 5.0 }, // Duración de cada erupción
-  ERUPTION_HEIGHT: { min: 0.15, max: 0.35 }, // Altura relativa al radio del planeta
-  ERUPTION_SPREAD: { min: 0.3, max: 0.7 }, // Cono de dispersión
+  ERUPTION_HEIGHT: { min: 0.05, max: 0.15 }, // Altura relativa al radio del planeta
+  ERUPTION_SPREAD: { min: 0.6, max: 1.9 }, // Cono de dispersión
   PARTICLES_PER_ERUPTION: { min: 50, max: 150 }, // Muchas partículas para efecto denso
   PARTICLE_SIZE: { min: 0.07, max: 0.09 }, // Tamaños variados
   PARTICLE_LIFETIME: { min: 1.5, max: 3.5 }, // Vida de las partículas
-  PARTICLE_SPEED: { min: 0.05, max: 0.25 }, // Velocidad de salida
-  EMISSIVE_INTENSITY: { min: 4.0, max: 8.0 }, // Muy brillante
+  PARTICLE_SPEED: { min: 0.1, max: 0.4 }, // Velocidad de salida
+  EMISSIVE_INTENSITY: { min: 2.0, max: 4.0 }, // Muy brillante
   TURBULENCE: { min: 0.5, max: 1.5 }, // Turbulencia del fuego
 };
 
@@ -69,6 +69,10 @@ class FireEruption {
   public particleSpeeds: number[] = [];
   public particleSizes: number[] = [];
   public particleLifetimes: number[] = [];
+  
+  // Nuevos arrays para rastrear partículas activas individualmente
+  public particleBirthTimes: number[] = []; // Cuándo nació cada partícula
+  public particleActive: boolean[] = []; // Si cada partícula está activa
   
   constructor(position: THREE.Vector3, seed: number, frequency: number, duration: number, particlesPerEruption: number, spreadAngle: number, particleSpeed: number, particleSize: number, particleLifetime: number, planetRadius: number) {
     this.position = position;
@@ -88,6 +92,10 @@ class FireEruption {
       
       // Vida con variación determinista
       this.particleLifetimes.push(particleLifetime * (0.8 + this.rng.random() * 0.4));
+      
+      // Inicializar estado de partículas
+      this.particleBirthTimes.push(-1); // -1 significa que aún no ha nacido
+      this.particleActive.push(false);
     }
     
     // Estado inicial - se configurará desde initializeStateFromAbsoluteTime
@@ -113,11 +121,50 @@ class FireEruption {
       this.isActive = true;
       this.eruptionStartTime = currentTime - cycleTime; // CLAVE: inicio ajustado al pasado
       this.lastEruptionTime = this.eruptionStartTime - waitTime;
+      
+      // Inicializar partículas que ya deberían estar activas
+      const eruptionAge = currentTime - this.eruptionStartTime;
+      const eruptionProgress = Math.min(eruptionAge / duration, 1.0);
+      
+      for (let i = 0; i < this.particleDirections.length; i++) {
+        const particleDelay = (i / this.particleDirections.length) * 0.7;
+        
+        if (eruptionProgress > particleDelay) {
+          // Esta partícula ya debería estar activa
+          this.particleActive[i] = true;
+          this.particleBirthTimes[i] = this.eruptionStartTime + particleDelay * duration;
+          
+          // Verificar si la partícula ya ha superado su tiempo de vida
+          const particleAge = currentTime - this.particleBirthTimes[i];
+          if (particleAge > this.particleLifetimes[i]) {
+            this.particleActive[i] = false;
+          }
+        }
+      }
     } else {
       // Estamos en periodo de espera
       this.isActive = false;
       this.lastEruptionTime = currentTime - cycleTime + duration - waitTime;
       this.eruptionStartTime = 0;
+      
+      // Verificar si hay partículas de una erupción anterior que aún deberían estar activas
+      const lastEruptionStart = currentTime - cycleTime; // Cuando comenzó la última erupción
+      const lastEruptionEnd = lastEruptionStart + duration; // Cuando terminó la última erupción
+      
+      for (let i = 0; i < this.particleDirections.length; i++) {
+        const particleDelay = (i / this.particleDirections.length) * 0.7;
+        const particleBirthTime = lastEruptionStart + particleDelay * duration;
+        
+        if (particleBirthTime < lastEruptionEnd) {
+          const particleAge = currentTime - particleBirthTime;
+          
+          // Si la partícula aún está dentro de su tiempo de vida, mantenerla activa
+          if (particleAge > 0 && particleAge <= this.particleLifetimes[i]) {
+            this.particleActive[i] = true;
+            this.particleBirthTimes[i] = particleBirthTime;
+          }
+        }
+      }
     }
   }
   
@@ -216,9 +263,12 @@ export class FireEruptionEffect {
       vec2 center = gl_PointCoord - vec2(0.5);
       float dist = length(center);
       
-      // Suavizar los bordes
-      float alpha = 1.0 - smoothstep(0.3, 0.5, dist);
+      // Suavizar los bordes con fadeout más gradual
+      float alpha = 1.0 - smoothstep(0.2, 0.5, dist);
       alpha *= vOpacity;
+      
+      // Fadeout adicional basado en opacidad para transición más suave
+      alpha *= smoothstep(0.0, 0.3, vOpacity);
       
       // Descartar píxeles transparentes
       if (alpha < 0.01) discard;
@@ -408,11 +458,11 @@ export class FireEruptionEffect {
     let particleIndex = 0;
     const particlesPerEruption = 150; // Número fijo de partículas por erupción
     
-    // Para cada erupción, calcular las partículas basado en su progreso (como PulsatingCube)
+    // Para cada erupción, manejar partículas individuales
     for (let eruptionIndex = 0; eruptionIndex < this.eruptions.length; eruptionIndex++) {
       const eruption = this.eruptions[eruptionIndex];
       
-      // Recalcular el estado actual basado en el tiempo absoluto (como PulsatingCube)
+      // Recalcular el estado actual basado en el tiempo absoluto
       const waitTime = 1.0 / this.params.eruptionFrequency!;
       const totalCycleDuration = this.params.eruptionDuration! + waitTime;
       const seedOffset = (eruptionIndex * totalCycleDuration * 0.37) % totalCycleDuration;
@@ -420,50 +470,77 @@ export class FireEruptionEffect {
       
       const isCurrentlyActive = cycleTime < this.params.eruptionDuration!;
       
+      // Actualizar el estado de la erupción
+      if (isCurrentlyActive && !eruption.isActive) {
+        eruption.isActive = true;
+        eruption.eruptionStartTime = currentTime - cycleTime;
+      } else if (!isCurrentlyActive && eruption.isActive) {
+        eruption.isActive = false;
+      }
+      
+      // Si la erupción está activa, crear nuevas partículas
       if (isCurrentlyActive) {
-        // Actualizar el estado de la erupción
-        if (!eruption.isActive) {
-          eruption.isActive = true;
-          eruption.eruptionStartTime = currentTime - cycleTime;
-        }
-        
         const eruptionAge = currentTime - eruption.eruptionStartTime;
         const eruptionProgress = Math.min(eruptionAge / this.params.eruptionDuration!, 1.0);
         
-        // Usar las propiedades pre-calculadas (como PulsatingCube)
-        for (let i = 0; i < particlesPerEruption && particleIndex < this.maxParticles; i++) {
-          // Progreso individual de cada partícula (escalonado como en PulsatingCube)
-          const particleDelay = (i / particlesPerEruption) * 0.7; // Las partículas aparecen escalonadamente
-          const individualProgress = Math.max(0, Math.min(1, eruptionProgress - particleDelay));
+        // Activar partículas escalonadamente durante la erupción
+        for (let i = 0; i < particlesPerEruption; i++) {
+          const particleDelay = (i / particlesPerEruption) * 0.7;
+          const shouldBeActive = eruptionProgress > particleDelay;
           
-          if (individualProgress > 0) {
-            // Usar direcciones pre-calculadas (deterministas)
-            const direction = eruption.particleDirections[i].clone();
-            const speed = eruption.particleSpeeds[i];
-            
-            // Calcular posición basada en física simple: posición = inicio + velocidad * tiempo
-            const particleAge = individualProgress * this.params.eruptionDuration!;
-            const distance = speed * particleAge;
-            const position = eruption.position.clone().add(direction.multiplyScalar(distance));
-            
-            // Aplicar gravedad (y = y0 + vt - 0.5*g*t²)
-            const gravityEffect = this.params.particleGravity! * particleAge * particleAge * 0.5;
-            position.y -= gravityEffect;
-            
-            // Turbulencia determinista muy sutil
-            const turbulence = new THREE.Vector3(
-              Math.sin(currentTime * 0.5 + i * 0.1) * 0.01,
-              Math.cos(currentTime * 0.3 + i * 0.1) * 0.005,
-              Math.sin(currentTime * 0.7 + i * 0.1) * 0.01
-            );
-            position.add(turbulence);
-            
-            // Calcular temperatura y opacidad basado en progreso
-            const temperature = Math.max(0, 1.0 - individualProgress * 0.8);
-            const opacity = this.smoothstep(0, 0.2, individualProgress) * this.smoothstep(1, 0.6, individualProgress);
-            const size = eruption.particleSizes[i];
-            
-            // Asignar valores
+          // Si la partícula debería estar activa pero no lo está, activarla ahora
+          if (shouldBeActive && !eruption.particleActive[i]) {
+            eruption.particleActive[i] = true;
+            eruption.particleBirthTimes[i] = currentTime - (eruptionProgress - particleDelay) * this.params.eruptionDuration!;
+          }
+        }
+      }
+      
+      // Renderizar todas las partículas activas (independientemente del estado de la erupción)
+      for (let i = 0; i < particlesPerEruption && particleIndex < this.maxParticles; i++) {
+        if (eruption.particleActive[i]) {
+          const particleAge = currentTime - eruption.particleBirthTimes[i];
+          const particleLifetime = eruption.particleLifetimes[i];
+          
+          // Si la partícula ha superado su tiempo de vida, desactivarla
+          if (particleAge > particleLifetime) {
+            eruption.particleActive[i] = false;
+            continue;
+          }
+          
+          // Usar direcciones pre-calculadas (deterministas)
+          const direction = eruption.particleDirections[i].clone();
+          const speed = eruption.particleSpeeds[i];
+          
+          // Calcular posición basada en física simple
+          const distance = speed * particleAge;
+          const position = eruption.position.clone().add(direction.multiplyScalar(distance));
+          
+          // Aplicar gravedad
+          const gravityEffect = this.params.particleGravity! * particleAge * particleAge * 0.5;
+          position.y -= gravityEffect;
+          
+          // Turbulencia determinista muy sutil
+          const turbulence = new THREE.Vector3(
+            Math.sin(currentTime * 0.5 + i * 0.1) * 0.01,
+            Math.cos(currentTime * 0.3 + i * 0.1) * 0.005,
+            Math.sin(currentTime * 0.7 + i * 0.1) * 0.01
+          );
+          position.add(turbulence);
+          
+          // Calcular temperatura y opacidad basado en la edad real de la partícula
+          const particleProgress = particleAge / particleLifetime;
+          const temperature = Math.max(0, 1.0 - particleProgress * 0.9);
+          
+          // Fadeout muy suave basado en el tiempo de vida de la partícula
+          const fadeIn = this.smoothstep(0, 0.1, particleProgress);
+          const fadeOut = this.smoothstep(1.0, 0.7, particleProgress); // Comienza el fadeout al 70%
+          const opacity = fadeIn * fadeOut;
+          
+          const size = eruption.particleSizes[i];
+          
+          // Solo asignar si la partícula es visible
+          if (opacity > 0.01) {
             positions.setXYZ(particleIndex, position.x, position.y, position.z);
             sizes.setX(particleIndex, size);
             temperatures.setX(particleIndex, temperature);
@@ -472,9 +549,6 @@ export class FireEruptionEffect {
             particleIndex++;
           }
         }
-      } else {
-        // Erupción no activa
-        eruption.isActive = false;
       }
     }
     
