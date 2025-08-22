@@ -38,6 +38,70 @@ export class ExoticDoodlesEffect {
   private planetRadius: number;
   private time: number = 0;
   private rng: SeededRandom;
+  private lightDirection: THREE.Vector3 = new THREE.Vector3(1, 1, 1).normalize();
+
+  // Create lit material for doodles that respects planet lighting
+  private createLitMaterial(color: string, opacity: number): THREE.ShaderMaterial {
+    const vertexShader = `
+      varying vec3 vWorldPosition;
+      varying vec3 vWorldNormal;
+      
+      void main() {
+        vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+        vWorldPosition = worldPosition.xyz;
+        vWorldNormal = normalize(mat3(modelMatrix) * normal);
+        
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `;
+
+    const fragmentShader = `
+      uniform vec3 color;
+      uniform float opacity;
+      uniform vec3 lightDirection;
+      uniform float ambientStrength;
+      uniform float lightIntensity;
+      
+      varying vec3 vWorldPosition;
+      varying vec3 vWorldNormal;
+      
+      void main() {
+        vec3 normal = normalize(vWorldNormal);
+        vec3 lightDir = normalize(lightDirection);
+        
+        // Lambertian lighting with smooth day/night transition
+        float dotNL = dot(normal, lightDir);
+        float dayNight = smoothstep(-0.3, 0.1, dotNL);
+        
+        // Rim lighting for enhanced visibility
+        float rimLight = 1.0 - abs(dotNL);
+        rimLight = pow(rimLight, 3.0) * 0.1;
+        
+        // Final lighting calculation with preserved color intensity
+        float totalLight = ambientStrength + (lightIntensity * dayNight) + rimLight;
+        totalLight = clamp(totalLight, 0.6, 1.2); // Higher minimum, allow slight overbrightening
+        
+        // Preserve color vibrancy by mixing original color with lit color
+        vec3 finalColor = mix(color * 0.8, color * totalLight, 0.7);
+        
+        gl_FragColor = vec4(finalColor, opacity);
+      }
+    `;
+
+    return new THREE.ShaderMaterial({
+      vertexShader,
+      fragmentShader,
+      uniforms: {
+        color: { value: new THREE.Color(color) },
+        opacity: { value: opacity },
+        lightDirection: { value: this.lightDirection.clone() },
+        ambientStrength: { value: 0.5 },
+        lightIntensity: { value: 0.8 }
+      },
+      transparent: true,
+      side: THREE.DoubleSide
+    });
+  }
 
   // Helper function to project points onto sphere surface
   private projectPointOnSphere(localX: number, localY: number, radius: number, baseDirection: THREE.Vector3): THREE.Vector3 {
@@ -164,12 +228,7 @@ export class ExoticDoodlesEffect {
     const points = curve.getPoints(50);
     const geometry = new THREE.BufferGeometry().setFromPoints(points);
     
-    const material = new THREE.LineBasicMaterial({
-      color: new THREE.Color(doodle.color[0]),  // Use hex string
-      transparent: true,
-      opacity: doodle.color[1],  // Use opacity from data
-      // linewidth removed - doesn't work in WebGL
-    });
+    const material = this.createLitMaterial(doodle.color[0], doodle.color[1]);
 
     const arc = new THREE.Line(geometry, material);
     group.add(arc);
@@ -214,12 +273,7 @@ export class ExoticDoodlesEffect {
       points.push(points[0]);
       
       const geometry = new THREE.BufferGeometry().setFromPoints(points);
-      const material = new THREE.LineBasicMaterial({
-        color: new THREE.Color(doodle.color[0]),  // Use hex string directly
-        transparent: true,
-        opacity: doodle.color[1],  // Use opacity from data
-        // linewidth removed - doesn't work in WebGL
-      });
+      const material = this.createLitMaterial(doodle.color[0], doodle.color[1]);
 
       const line = new THREE.Line(geometry, material);
       group.add(line);
@@ -261,12 +315,7 @@ export class ExoticDoodlesEffect {
 
       // Create the scribble line
       const geometry = new THREE.BufferGeometry().setFromPoints(points);
-      const material = new THREE.LineBasicMaterial({
-        color: new THREE.Color(doodle.color[0]),  // Use hex string directly
-        transparent: true,
-        opacity: doodle.color[1],  // Use opacity from data
-        // linewidth removed - doesn't work in WebGL
-      });
+      const material = this.createLitMaterial(doodle.color[0], doodle.color[1]);
 
       const line = new THREE.Line(geometry, material);
       group.add(line);
@@ -301,6 +350,22 @@ export class ExoticDoodlesEffect {
           doodle.rotation.z += speed * deltaTime;
           break;
       }
+    });
+  }
+
+  // Update light direction for all doodle materials
+  updateLightDirection(direction: THREE.Vector3): void {
+    this.lightDirection.copy(direction).normalize();
+    
+    // Update all doodle materials
+    this.doodles.forEach(doodle => {
+      doodle.traverse((child) => {
+        if (child instanceof THREE.Line && child.material instanceof THREE.ShaderMaterial) {
+          if (child.material.uniforms.lightDirection) {
+            child.material.uniforms.lightDirection.value.copy(this.lightDirection);
+          }
+        }
+      });
     });
   }
 
