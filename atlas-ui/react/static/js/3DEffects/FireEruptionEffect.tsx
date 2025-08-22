@@ -48,9 +48,9 @@ const PROCEDURAL_RANGES = {
   ERUPTION_HEIGHT: { min: 0.15, max: 0.35 }, // Altura relativa al radio del planeta
   ERUPTION_SPREAD: { min: 0.3, max: 0.7 }, // Cono de dispersión
   PARTICLES_PER_ERUPTION: { min: 50, max: 150 }, // Muchas partículas para efecto denso
-  PARTICLE_SIZE: { min: 0.008, max: 0.02 }, // Tamaños variados
+  PARTICLE_SIZE: { min: 0.07, max: 0.09 }, // Tamaños variados
   PARTICLE_LIFETIME: { min: 1.5, max: 3.5 }, // Vida de las partículas
-  PARTICLE_SPEED: { min: 0.2, max: 0.5 }, // Velocidad de salida
+  PARTICLE_SPEED: { min: 0.05, max: 0.25 }, // Velocidad de salida
   EMISSIVE_INTENSITY: { min: 4.0, max: 8.0 }, // Muy brillante
   TURBULENCE: { min: 0.5, max: 1.5 }, // Turbulencia del fuego
 };
@@ -541,20 +541,10 @@ export function createFireEruptionFromPythonData(
 ): FireEruptionEffect {
   const seed = globalSeed || Math.floor(Math.random() * 1000000);
   
-  // Configuración para planetas Molten Core
+  // Usar los PROCEDURAL_RANGES para generar valores dinámicos
   const params: FireEruptionParams = {
-    eruptionCount: 12, // Múltiples puntos de erupción
-    eruptionFrequency: 0.5, // Erupciones frecuentes
-    eruptionDuration: 3.5, // Duración media
-    eruptionHeight: 0.25, // Altura considerable
-    eruptionSpread: 0.5, // Dispersión media
-    particlesPerEruption: 100, // Muchas partículas
-    particleSize: 0.015, // Tamaño medio
-    particleLifetime: 2.5, // Vida media
-    particleSpeed: 0.35, // Velocidad media
-    emissiveIntensity: 6.0, // Muy brillante
-    turbulenceStrength: 1.0, // Turbulencia media
     seed: seed + 9000 // Seed único para FireEruption
+    // NO especificar otros parámetros para que use PROCEDURAL_RANGES
   };
   
   return new FireEruptionEffect(planetRadius, params);
