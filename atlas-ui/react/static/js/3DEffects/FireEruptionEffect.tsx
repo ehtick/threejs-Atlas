@@ -38,6 +38,15 @@ export interface FireEruptionParams {
   seed?: number;
   startTime?: number;
   timeSpeed?: number;
+  
+  // Orbital activation data (similar to PulsatingCube)
+  orbitalData?: {
+    enabled: boolean;
+    cycle_duration_years: number;
+    visible_duration_years: number;
+  };
+  currentTime?: number; // Tiempo actual en años para calcular ciclos orbitales
+  planetTemperature?: number; // Temperatura del planeta para activación condicional
 }
 
 // Rangos para generación procedural
@@ -229,6 +238,8 @@ export class FireEruptionEffect {
   private startTime: number;
   private planetRadius: number;
   private maxParticles: number = 5000; // Límite máximo de partículas para rendimiento
+  private orbitalVisibilityFactor: number; // Factor de visibilidad basado en periodo orbital (0-1)
+  private temperatureActivationFactor: number; // Factor de activación basado en temperatura (0-1)
   
   private static readonly vertexShader = `
     attribute float size;
@@ -338,8 +349,16 @@ export class FireEruptionEffect {
       windStrength: params.windStrength || 0.1,
       seed,
       startTime: this.startTime,
-      timeSpeed: params.timeSpeed || rng.uniform(0.1, 2.0) // Determinista como PulsatingCube
+      timeSpeed: params.timeSpeed || rng.uniform(0.1, 2.0), // Determinista como PulsatingCube
+      // Orbital and temperature data
+      orbitalData: params.orbitalData,
+      currentTime: params.currentTime || 0,
+      planetTemperature: params.planetTemperature || 0
     };
+    
+    // Calcular factores de activación
+    this.temperatureActivationFactor = this.calculateTemperatureActivation();
+    this.orbitalVisibilityFactor = this.calculateOrbitalVisibility();
     
     this.fireGroup = new THREE.Group();
     
@@ -497,6 +516,62 @@ export class FireEruptionEffect {
     }
   }
   
+  private calculateTemperatureActivation(): number {
+    // Solo activar en planetas muy calientes (principalmente Molten Core)
+    // Molten Core: 1000-2000°C base, modificado por distancia orbital y atmósfera
+    // Rango final típico: ~355-10112°C
+    // Umbral simple: activar para planetas > 2500°C para asegurar visibilidad
+    const temperature = this.params.planetTemperature || 0;
+    
+    if (temperature < 2500) {
+      return 0; // No activo (la mayoría de planetas no-Molten Core)
+    }
+    
+    // Activación gradual a partir de 2500°C
+    // Activación completa a partir de 5000°C
+    if (temperature >= 5000) {
+      return 1; // Activación máxima
+    }
+    
+    // Activación gradual entre 2500-5000°C
+    const activationRange = 5000 - 2500;
+    const temperatureInRange = temperature - 2500;
+    return temperatureInRange / activationRange;
+  }
+  
+  private calculateOrbitalVisibility(): number {
+    // Similar a PulsatingCube - calcular visibilidad basada en periodo orbital
+    if (!this.params.orbitalData || !this.params.orbitalData.enabled) {
+      return 1; // Siempre visible si no hay datos orbitales
+    }
+    
+    const currentTime = this.params.currentTime || 0;
+    const cycleProgress = (currentTime % this.params.orbitalData.cycle_duration_years) / 
+                         this.params.orbitalData.cycle_duration_years;
+    const visibleFraction = this.params.orbitalData.visible_duration_years / 
+                           this.params.orbitalData.cycle_duration_years;
+    
+    // Determinar si estamos en la fase visible del ciclo orbital
+    if (cycleProgress <= visibleFraction) {
+      // Estamos en la fase visible - calcular fade suave
+      const visibleProgress = cycleProgress / visibleFraction;
+      
+      // Fade in durante el primer 10% de la fase visible
+      if (visibleProgress < 0.1) {
+        return visibleProgress / 0.1;
+      }
+      // Fade out durante el último 10% de la fase visible
+      else if (visibleProgress > 0.9) {
+        return (1.0 - visibleProgress) / 0.1;
+      }
+      // Completamente visible en el medio
+      else {
+        return 1.0;
+      }
+    }
+    
+    return 0; // No visible fuera de la fase orbital
+  }
   
   private updateParticleGeometry(currentTime: number): void {
     const positions = this.particleGeometry.attributes.position as THREE.BufferAttribute;
@@ -628,11 +703,50 @@ export class FireEruptionEffect {
     const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!;
     const currentTime = rawTime % 1000; // Evitar overflow después de mucho tiempo
     
-    // NO llamar shouldErupt() - el estado ya se configuró correctamente en initializeStateFromAbsoluteTime
-    // Las erupciones manejan sus propios ciclos basados en el tiempo absoluto
+    // Actualizar factor de visibilidad orbital (puede cambiar con el tiempo)
+    this.orbitalVisibilityFactor = this.calculateOrbitalVisibility();
     
-    // Actualizar geometría de partículas basado en progreso de erupciones (como PulsatingCube)
-    this.updateParticleGeometry(currentTime);
+    // Calcular factor de activación combinado
+    const totalActivationFactor = this.temperatureActivationFactor * this.orbitalVisibilityFactor;
+    
+    // Solo procesar erupciones si el efecto está activo
+    if (totalActivationFactor > 0) {
+      // Actualizar geometría de partículas basado en progreso de erupciones
+      this.updateParticleGeometry(currentTime);
+      
+      // Aplicar factor de activación a la opacidad global del sistema
+      if (this.particleMaterial && this.particleMaterial.uniforms) {
+        // Modular la intensidad emisiva basada en el factor de activación
+        const baseEmissive = this.params.emissiveIntensity || 1.0;
+        this.particleMaterial.uniforms.emissiveIntensity.value = baseEmissive * totalActivationFactor;
+      }
+    } else {
+      // Si no está activo, ocultar todas las partículas
+      this.hideAllParticles();
+    }
+  }
+  
+  private hideAllParticles(): void {
+    const positions = this.particleGeometry.attributes.position as THREE.BufferAttribute;
+    const sizes = this.particleGeometry.attributes.size as THREE.BufferAttribute;
+    const opacities = this.particleGeometry.attributes.opacity as THREE.BufferAttribute;
+    const temperatures = this.particleGeometry.attributes.temperature as THREE.BufferAttribute;
+    
+    // Ocultar todas las partículas
+    for (let i = 0; i < this.maxParticles; i++) {
+      positions.setXYZ(i, 0, 0, 0);
+      sizes.setX(i, 0);
+      opacities.setX(i, 0);
+      temperatures.setX(i, 0);
+    }
+    
+    positions.needsUpdate = true;
+    sizes.needsUpdate = true;
+    temperatures.needsUpdate = true;
+    opacities.needsUpdate = true;
+    
+    // Actualizar el rango de dibujo
+    this.particleGeometry.setDrawRange(0, 0);
   }
   
   addToScene(scene: THREE.Scene, planetPosition?: THREE.Vector3): void {
@@ -660,13 +774,30 @@ export class FireEruptionEffect {
 export function createFireEruptionFromPythonData(
   planetRadius: number,
   _surfaceData: any,
-  globalSeed?: number
+  globalSeed?: number,
+  pythonData?: any
 ): FireEruptionEffect {
   const seed = globalSeed || Math.floor(Math.random() * 1000000);
   
-  // Usar los PROCEDURAL_RANGES para generar valores dinámicos
+  // Extraer temperatura del planeta desde Python data
+  const planetTemperature = pythonData?.surface_temperature || 0;
+  
+  // Extraer datos orbitales desde Python data (similar a PulsatingCube)
+  const currentTimeYears = pythonData?.timing?.elapsed_time ? pythonData.timing.elapsed_time / (365.25 * 24 * 3600) : 0;
+  
+  // Configurar datos orbitales para activación cíclica
+  const fireData = pythonData?.fire_eruption_data || {};
+  const orbitalData = fireData.enabled ? {
+    enabled: true,
+    cycle_duration_years: fireData.cycle_duration_years || 10, // Ciclo orbital por defecto
+    visible_duration_years: fireData.visible_duration_years || 2 // Visible durante 2 años del ciclo
+  } : { enabled: false, cycle_duration_years: 1, visible_duration_years: 1 };
+  
   const params: FireEruptionParams = {
-    seed: seed + 9000 // Seed único para FireEruption
+    seed: seed + 9000, // Seed único para FireEruption
+    planetTemperature: planetTemperature,
+    orbitalData: orbitalData,
+    currentTime: currentTimeYears
     // NO especificar otros parámetros para que use PROCEDURAL_RANGES
   };
   
