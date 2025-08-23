@@ -1639,6 +1639,28 @@ export class EffectRegistry {
                 caveSurfaceHolesEffect.applyToPlanetSystem(this.layerSystem, baseColor);
               }
             }
+
+            // 4. Add river lines for cave drainage channels (static asteroid lines)
+            const caveRiverLinesEffect = createRiverLinesFromPythonData(
+              planetRadius,
+              surface,
+              (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 7000
+            );
+
+            if (caveRiverLinesEffect) {
+              const caveRiverLinesInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: EffectType.RIVER_LINES,
+                effect: caveRiverLinesEffect,
+                priority: 8,
+                enabled: true,
+                name: "Cave Drainage Channels",
+              };
+
+              this.effects.set(caveRiverLinesInstance.id, caveRiverLinesInstance);
+              effects.push(caveRiverLinesInstance);
+              caveRiverLinesEffect.addToScene(scene, mesh.position);
+            }
             break;
 
           case "anomaly":
