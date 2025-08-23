@@ -854,7 +854,109 @@ class PlanetTypeTranslators:
     
     def translate_carbon(self, planet_radius: int, rng: random.Random, 
                         seed: int, planet_name: str) -> Dict[str, Any]:
-        return {"type": "carbon"}
+        """Translate Carbon planet elements - carbonaceous worlds with matte surfaces and dust particles"""
+        center_x, center_y = 200, 200  # Pillow center coordinates
+        
+        # Generate atmospheric clouds for carbon planets (dust and particulates)
+        num_clouds = rng.randint(6, 12)  # Moderate atmospheric dust
+        clouds = []
+        for i in range(num_clouds):
+            cloud_radius = rng.randint(15, 30)  # Medium-small clouds
+            max_offset = planet_radius - cloud_radius
+            cloud_x = center_x + rng.randint(-max_offset, max_offset)
+            cloud_y = center_y + rng.randint(-max_offset, max_offset)
+            
+            # Convert to normalized coordinates
+            normalized_coords = self.common_utils.normalize_coordinates(
+                cloud_x, cloud_y, center_x, center_y, planet_radius
+            )
+            
+            # Carbon clouds - dark gray to light gray (carbon dust and particles)
+            cloud_colors = [
+                [0.4, 0.4, 0.4, 0.7],      # Dark gray carbon dust
+                [0.5, 0.5, 0.5, 0.6],      # Medium gray particles
+                [0.3, 0.3, 0.3, 0.8],      # Darker carbon particles
+                [0.45, 0.45, 0.45, 0.5],   # Light carbon dust
+            ]
+            
+            clouds.append({
+                "position": normalized_coords,
+                "radius": cloud_radius / planet_radius,
+                "color": rng.choice(cloud_colors),
+                "type": "cloud",
+                "seed": f"{planet_name}_carbon_cloud_{i}"
+            })
+        
+        # Generate land masses for carbon planets (slightly lighter areas of carbon)
+        num_landmasses = rng.randint(4, 10)  # Moderate coverage
+        green_patches = []
+        
+        for i in range(num_landmasses):
+            # Generate uniform position on sphere
+            theta = rng.uniform(0, 2 * math.pi)
+            phi = math.acos(rng.uniform(-1, 1))
+            
+            position_3d = [
+                math.sin(phi) * math.cos(theta),
+                math.sin(phi) * math.sin(theta),
+                math.cos(phi)
+            ]
+            
+            # Size distribution - varied carbon formation sizes (más grandes para visibilidad)
+            if i < 3:
+                # Large carbon formations (muy grandes para contrastar con el negro)
+                size = rng.uniform(0.25, 0.45)
+            elif i < 6:
+                # Medium carbon formations  
+                size = rng.uniform(0.15, 0.28)
+            else:
+                # Small carbon patches
+                size = rng.uniform(0.08, 0.18)
+            
+            # Carbon colors - very dark but slightly lighter than base planet
+            # Base planet is #090909, so make these slightly lighter
+            carbon_grays = [
+                [0.05, 0.05, 0.05],  # Slightly lighter than base
+                [0.04, 0.04, 0.04],  # Almost as dark as base
+                [0.06, 0.06, 0.06],  # Bit lighter gray
+                [0.03, 0.03, 0.03],  # Very dark gray
+            ]
+            
+            green_patches.append({
+                "position_3d": position_3d,
+                "size": size,
+                "color": rng.choice(carbon_grays) + [rng.uniform(0.7, 0.9)],  # Add variable opacity
+                "sides": rng.randint(12, 24),  # Irregular carbon formations
+                "roughness": rng.uniform(0.8, 0.95)  # Very rough carbon surface
+            })
+        
+        # Carbon-specific surface properties
+        surface_properties = {
+            "roughness": rng.uniform(0.85, 0.95),        # Very high roughness
+            "metalness": rng.uniform(0.0, 0.08),         # Very low metalness
+            "mineral_spots": rng.random() < 0.4,         # 40% chance for mineral spots
+            "mineral_intensity": rng.uniform(0.2, 0.4),  # Low mineral reflection
+            "bump_scale": rng.uniform(0.015, 0.025),     # Subtle surface bumps
+            "normal_scale": rng.uniform(0.4, 0.6),       # Surface normal variations
+            "specular_intensity": rng.uniform(0.05, 0.12), # Very low specular
+            "crater_density": rng.uniform(6.0, 10.0),    # Surface crater patterns
+            "surface_roughness": rng.uniform(0.12, 0.18) # Additional roughness factor
+        }
+        
+        return {
+            "type": "carbon", 
+            "clouds": clouds,
+            "green_patches": green_patches,  # Land masses format that LandMasses effect expects
+            "surface_properties": surface_properties,
+            "debug": {
+                "original_planet_radius": planet_radius,
+                "center_x": center_x, "center_y": center_y,
+                "cloud_count": num_clouds,
+                "landmass_count": num_landmasses,
+                "surface_roughness": surface_properties["roughness"],
+                "mineral_spots_enabled": surface_properties["mineral_spots"]
+            }
+        }
     
     def translate_diamond(self, planet_radius: int, rng: random.Random, 
                          seed: int, planet_name: str) -> Dict[str, Any]:

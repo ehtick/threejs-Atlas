@@ -16,7 +16,7 @@ import { AtmosphereGlowEffect, createAtmosphereGlowFromPythonData, AtmosphereGlo
 import { AtmosphereCloudsEffect, createAtmosphereCloudsFromPythonData, AtmosphereCloudsParams } from "./AtmosphereClouds";
 import { LandMassesEffect, createLandMassesFromPythonData, createTransparentLandMassesForIcyPlanet, LandMassesParams } from "./LandMasses";
 import { IcyFeaturesEffect, createIcyFeaturesFromPythonData } from "./IcyFeatures";
-import { TundraSnowflakesEffect, createTundraSnowflakesFromPythonData } from "./TundraSnowflakes";
+import { TundraSnowflakesEffect, createTundraSnowflakesFromPythonData, createCarbonDustParticlesFromPythonData } from "./TundraSnowflakes";
 import { RiverLinesEffect, createRiverLinesFromPythonData } from "./RiverLines";
 
 // Efectos anómalos
@@ -37,6 +37,8 @@ import { DiamondCracksEffect, createDiamondCracksFromPythonData } from "./Diamon
 import { ExoticGeometricShapesEffect, createExoticGeometricShapesFromPythonData } from "./ExoticGeometricShapes";
 import { ExoticDoodlesEffect, createExoticDoodlesFromPythonData } from "./ExoticDoodles";
 import { CaveSurfaceHolesEffect, createCaveSurfaceHolesFromPythonData } from "./CaveSurfaceHoles";
+
+// Los planetas Carbon usan efectos existentes (TundraSnowflakes, AtmosphereClouds, LandMasses)
 
 // Efectos legacy eliminados - usar solo versiones Layer
 
@@ -1712,6 +1714,87 @@ export class EffectRegistry {
                 effects.push(atmosphereEffect);
                 atmosphereEffect.effect.addToScene(scene, mesh.position);
               }
+            }
+            break;
+
+          case "carbon":
+            // Planetas Carbon: usar efectos existentes simples que se vean bien
+            
+            // 1. Añadir nubes atmosféricas (polvo de carbón)
+            if (surface.clouds && surface.clouds.length > 0) {
+              const carbonCloudsEffect = createAtmosphereCloudsFromPythonData(
+                planetRadius,
+                surface,
+                (pythonData.seeds?.planet_seed || pythonData.seeds?.shape_seed) + 4000
+              );
+
+              const carbonCloudsInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "atmosphere_clouds",
+                effect: carbonCloudsEffect,
+                priority: 15,
+                enabled: true,
+                name: "Carbon Atmospheric Dust",
+              };
+              this.effects.set(carbonCloudsInstance.id, carbonCloudsInstance);
+              effects.push(carbonCloudsInstance);
+              carbonCloudsEffect.addToScene(scene, mesh.position);
+            }
+
+            // 2. Añadir masas de tierra (áreas ligeramente más claras que se vean)
+            if (surface.green_patches && surface.green_patches.length > 0) {
+              // Hacer las masas de tierra visibles con colores más claros y más grandes
+              const modifiedSurface = {
+                ...surface,
+                green_patches: surface.green_patches.map((patch: any) => ({
+                  ...patch,
+                  // Color aún más oscuro pero que siga siendo visible contra el negro
+                  color: [0.10, 0.07, 0.06, patch.color?.[3] || 0.9], // Marrón carbonoso muy oscuro
+                  // Hacer las formaciones de carbón más grandes para mejor visibilidad
+                  size: (patch.size || 0.1) * 1.5 // 50% más grandes
+                }))
+              };
+
+              const carbonLandMassesEffect = createLandMassesFromPythonData(
+                planetRadius,
+                modifiedSurface,
+                (pythonData.seeds?.planet_seed || pythonData.seeds?.shape_seed) + 6000
+              );
+
+              if (carbonLandMassesEffect) {
+                const carbonLandMassesInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "land_masses",
+                  effect: carbonLandMassesEffect,
+                  priority: 5,
+                  enabled: true,
+                  name: "Carbon Formations",
+                };
+                this.effects.set(carbonLandMassesInstance.id, carbonLandMassesInstance);
+                effects.push(carbonLandMassesInstance);
+                carbonLandMassesEffect.addToScene(scene, mesh.position);
+              }
+            }
+
+            // 3. Añadir tundra_snowflakes (partículas de polvo de carbón flotando)
+            const carbonDustEffect = createCarbonDustParticlesFromPythonData(
+              planetRadius,
+              surface,
+              (pythonData.seeds?.planet_seed || pythonData.seeds?.shape_seed) + 15000
+            );
+
+            if (carbonDustEffect) {
+              const carbonDustInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "tundra_snowflakes",
+                effect: carbonDustEffect,
+                priority: 20,
+                enabled: true,
+                name: "Carbon Dust Particles",
+              };
+              this.effects.set(carbonDustInstance.id, carbonDustInstance);
+              effects.push(carbonDustInstance);
+              carbonDustEffect.addToScene(scene, mesh.position);
             }
             break;
 
