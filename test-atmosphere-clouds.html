@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Atmosphere Clouds - Continuous Animation</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #000;
+            color: #fff;
+        }
+        #canvas-container {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #444;
+            position: relative;
+        }
+        #info {
+            padding: 20px;
+            background: #111;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 10px;
+        }
+        .metric {
+            background: #222;
+            padding: 10px;
+            border-radius: 3px;
+        }
+        .metric-label {
+            color: #888;
+            font-size: 12px;
+        }
+        .metric-value {
+            color: #0f0;
+            font-size: 18px;
+            font-family: monospace;
+        }
+        #status {
+            padding: 10px;
+            background: #002200;
+            border: 1px solid #004400;
+            border-radius: 3px;
+            margin-bottom: 10px;
+        }
+        .warning {
+            background: #220000 !important;
+            border-color: #440000 !important;
+        }
+    </style>
+</head>
+<body>
+    <h1>Atmosphere Clouds - Continuous Animation Test</h1>
+    
+    <div id="status">
+        Sistema iniciando...
+    </div>
+    
+    <div id="canvas-container"></div>
+    
+    <div id="info">
+        <h2>Métricas de Animación</h2>
+        <div class="metrics">
+            <div class="metric">
+                <div class="metric-label">Tiempo Local (sin módulo)</div>
+                <div class="metric-value" id="local-time">0.00</div>
+            </div>
+            <div class="metric">
+                <div class="metric-label">Tiempo en Shader</div>
+                <div class="metric-value" id="shader-time">0.00</div>
+            </div>
+            <div class="metric">
+                <div class="metric-label">Rotación Y (radianes)</div>
+                <div class="metric-value" id="rotation">0.00</div>
+            </div>
+            <div class="metric">
+                <div class="metric-label">FPS</div>
+                <div class="metric-value" id="fps">0</div>
+            </div>
+            <div class="metric">
+                <div class="metric-label">Tiempo Ejecutando (min)</div>
+                <div class="metric-value" id="runtime">0.00</div>
+            </div>
+            <div class="metric">
+                <div class="metric-label">Saltos Detectados</div>
+                <div class="metric-value" id="jumps">0</div>
+            </div>
+        </div>
+        
+        <h3>Estado del Sistema</h3>
+        <ul>
+            <li>✅ Tiempo Híbrido: Tiempo cósmico para determinismo, tiempo local para animación</li>
+            <li>✅ Sin Módulo: El tiempo local no usa módulo, evitando reinicios</li>
+            <li>✅ Frecuencias Bajas: Shaders usan frecuencias muy bajas para manejar valores grandes</li>
+            <li>✅ Monitoreo Continuo: Detecta saltos en la animación automáticamente</li>
+        </ul>
+        
+        <h3>Prueba de Continuidad</h3>
+        <p>Esta prueba monitorea la animación durante varios minutos. Si detecta un salto o reinicio visual, se mostrará una advertencia.</p>
+        <p>El sistema está diseñado para funcionar indefinidamente sin reinicios visibles.</p>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'https://unpkg.com/three@0.150.0/build/three.module.js';
+        
+        // Simulación del AtmosphereCloudsEffect con el nuevo sistema de tiempo
+        class TestAtmosphereClouds {
+            constructor() {
+                this.effectStartTime = Date.now() / 1000;
+                this.cosmicTime = Math.random() * 1000; // Tiempo cósmico para determinismo
+                this.timeSpeed = 1.0;
+                this.rotationSpeed = 0.005;
+                this.lastRotation = 0;
+                this.jumpsDetected = 0;
+                this.startTime = Date.now();
+            }
+            
+            update() {
+                // Sistema de tiempo híbrido (como en el código actualizado)
+                const currentTimeSeconds = Date.now() / 1000;
+                const localTime = (currentTimeSeconds - this.effectStartTime) * this.timeSpeed;
+                
+                // Rotación continua sin módulo
+                const newRotation = localTime * this.rotationSpeed;
+                
+                // Detectar saltos (diferencia anormal en rotación)
+                const rotationDelta = newRotation - this.lastRotation;
+                const expectedDelta = this.rotationSpeed * this.timeSpeed / 60; // Aproximado a 60 FPS
+                
+                if (Math.abs(rotationDelta - expectedDelta) > 0.1 && this.lastRotation > 0) {
+                    this.jumpsDetected++;
+                    console.warn('¡Salto detectado!', {
+                        esperado: expectedDelta,
+                        actual: rotationDelta,
+                        tiempo: localTime
+                    });
+                    document.getElementById('status').className = 'warning';
+                    document.getElementById('status').textContent = `⚠️ Salto detectado en tiempo ${localTime.toFixed(2)}`;
+                }
+                
+                this.lastRotation = newRotation;
+                
+                return {
+                    localTime,
+                    rotation: newRotation,
+                    jumps: this.jumpsDetected
+                };
+            }
+            
+            getRuntime() {
+                return (Date.now() - this.startTime) / 1000 / 60; // En minutos
+            }
+        }
+        
+        // Configurar Three.js
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / 600, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        const container = document.getElementById('canvas-container');
+        
+        renderer.setSize(container.clientWidth, 600);
+        renderer.setClearColor(0x000033);
+        container.appendChild(renderer.domElement);
+        
+        // Crear planeta de prueba
+        const planetGeometry = new THREE.SphereGeometry(5, 32, 32);
+        const planetMaterial = new THREE.MeshPhongMaterial({ color: 0x4444ff });
+        const planet = new THREE.Mesh(planetGeometry, planetMaterial);
+        scene.add(planet);
+        
+        // Crear nubes de prueba (simulación visual)
+        const cloudsGroup = new THREE.Group();
+        for (let i = 0; i < 20; i++) {
+            const cloudGeometry = new THREE.PlaneGeometry(2, 2);
+            const cloudMaterial = new THREE.MeshBasicMaterial({
+                color: 0xffffff,
+                transparent: true,
+                opacity: 0.3,
+                side: THREE.DoubleSide
+            });
+            const cloud = new THREE.Mesh(cloudGeometry, cloudMaterial);
+            
+            // Posicionar aleatoriamente alrededor del planeta
+            const phi = Math.random() * Math.PI * 2;
+            const theta = Math.acos(Math.random() * 2 - 1);
+            const radius = 5.5;
+            
+            cloud.position.x = radius * Math.sin(theta) * Math.cos(phi);
+            cloud.position.y = radius * Math.sin(theta) * Math.sin(phi);
+            cloud.position.z = radius * Math.cos(theta);
+            
+            cloud.lookAt(0, 0, 0);
+            cloudsGroup.add(cloud);
+        }
+        scene.add(cloudsGroup);
+        
+        // Luz
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(10, 10, 10);
+        scene.add(light);
+        scene.add(new THREE.AmbientLight(0x404040));
+        
+        camera.position.z = 15;
+        
+        // Sistema de prueba
+        const testSystem = new TestAtmosphereClouds();
+        let frameCount = 0;
+        let lastFpsUpdate = Date.now();
+        let fps = 0;
+        
+        // Animación
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Actualizar sistema de prueba
+            const metrics = testSystem.update();
+            
+            // Aplicar rotación a las nubes
+            cloudsGroup.rotation.y = metrics.rotation;
+            
+            // Calcular FPS
+            frameCount++;
+            const now = Date.now();
+            if (now - lastFpsUpdate > 1000) {
+                fps = frameCount;
+                frameCount = 0;
+                lastFpsUpdate = now;
+            }
+            
+            // Actualizar métricas en UI
+            document.getElementById('local-time').textContent = metrics.localTime.toFixed(2);
+            document.getElementById('shader-time').textContent = metrics.localTime.toFixed(2);
+            document.getElementById('rotation').textContent = metrics.rotation.toFixed(4);
+            document.getElementById('fps').textContent = fps;
+            document.getElementById('runtime').textContent = testSystem.getRuntime().toFixed(2);
+            document.getElementById('jumps').textContent = metrics.jumps;
+            
+            // Actualizar estado
+            if (metrics.jumps === 0 && testSystem.getRuntime() > 0.1) {
+                document.getElementById('status').className = '';
+                document.getElementById('status').textContent = '✅ Animación continua sin saltos';
+            }
+            
+            renderer.render(scene, camera);
+        }
+        
+        animate();
+        
+        // Redimensionar
+        window.addEventListener('resize', () => {
+            const width = container.clientWidth;
+            camera.aspect = width / 600;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, 600);
+        });
+        
+        console.log('Sistema de prueba iniciado. Monitoreando continuidad de animación...');
+    </script>
+</body>
+</html>

@@ -54,6 +54,8 @@ export class AtmosphereCloudsEffect {
   private cloudCount: number;
   private clouds: THREE.Mesh[] = [];
   private startTime: number;
+  private effectStartTime: number; // Tiempo local de creación del efecto
+  private cosmicTime: number; // Tiempo cósmico para determinismo inicial
 
   private static readonly vertexShader = `
     varying vec3 vPosition;
@@ -73,10 +75,12 @@ export class AtmosphereCloudsEffect {
       vec4 worldPosition = modelMatrix * vec4(position, 1.0);
       vWorldPosition = worldPosition.xyz;
       
-      // Movimiento sutil de las nubes
+      // Movimiento sutil de las nubes con frecuencias bajas para evitar problemas con valores grandes
       vec3 pos = position;
-      pos += sin(time * 0.1 + worldPosition.x * 0.01) * movementAmplitude * 0.1;
-      pos += cos(time * 0.08 + worldPosition.z * 0.01) * movementAmplitude * 0.1;
+      // Usar frecuencias muy bajas para que funcionen bien con valores grandes de tiempo
+      float slowTime = time * 0.01; // Reducir la velocidad del tiempo para el movimiento
+      pos += sin(slowTime + worldPosition.x * 0.01) * movementAmplitude * 0.1;
+      pos += cos(slowTime * 0.8 + worldPosition.z * 0.01) * movementAmplitude * 0.1;
       
       gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
     }
@@ -140,13 +144,18 @@ export class AtmosphereCloudsEffect {
       float circularMask = 1.0 - smoothstep(0.1, 0.5, distFromCenter);
       
       // Ruido volumétrico para textura de nube realista
-      vec2 noiseUv1 = vUv * 4.0 + noiseOffset + time * 0.008;
+      // Usar velocidades de animación muy lentas para evitar saltos con valores grandes
+      float animSpeed1 = time * 0.002; // Muy lento para valores grandes
+      float animSpeed2 = time * 0.001;
+      float animSpeed3 = time * 0.0005;
+      
+      vec2 noiseUv1 = vUv * 4.0 + noiseOffset + vec2(animSpeed1, animSpeed1 * 0.7);
       float noise1 = fbm(noiseUv1) * 0.7;
       
-      vec2 noiseUv2 = vUv * 8.0 + noiseOffset * 1.3 + time * 0.005;
+      vec2 noiseUv2 = vUv * 8.0 + noiseOffset * 1.3 + vec2(animSpeed2, animSpeed2 * 0.8);
       float noise2 = fbm(noiseUv2) * 0.5;
       
-      vec2 noiseUv3 = vUv * 16.0 + noiseOffset * 2.1 + time * 0.003;
+      vec2 noiseUv3 = vUv * 16.0 + noiseOffset * 2.1 + vec2(animSpeed3, animSpeed3 * 0.9);
       float noise3 = fbm(noiseUv3) * 0.3;
       
       // Combinar múltiples octavas de ruido
@@ -207,8 +216,13 @@ export class AtmosphereCloudsEffect {
     const seed = params.seed || Math.floor(Math.random() * 1000000);
     const rng = new SeededRandom(seed);
     
-    // Tiempo inicial determinista basado en el seed
-    this.startTime = params.startTime || (seed % 10000) / 1000; // Convertir seed a tiempo inicial
+    // Sistema de tiempo híbrido:
+    // 1. Tiempo cósmico: para posicionamiento inicial determinista
+    this.cosmicTime = params.startTime || (seed % 10000) / 1000;
+    // 2. Tiempo local: para animaciones suaves (empieza en 0)
+    this.effectStartTime = Date.now() / 1000;
+    // Mantener startTime por compatibilidad
+    this.startTime = this.cosmicTime;
     
     this.params = {
       color: params.color || new THREE.Color(0xffffff),
@@ -235,6 +249,9 @@ export class AtmosphereCloudsEffect {
     const baseColor = this.params.color instanceof THREE.Color ? this.params.color : new THREE.Color(this.params.color as any);
     const seed = this.params.seed || Math.floor(Math.random() * 1000000);
     const rng = new SeededRandom(seed);
+    
+    // Usar tiempo cósmico para generar offsets únicos pero deterministas
+    const cosmicOffsetBase = this.cosmicTime * 100;
 
     // Verificar si tenemos datos de Python
     const cloudsFromPython = this.params.cloudsFromPython;
@@ -342,10 +359,11 @@ export class AtmosphereCloudsEffect {
       const cloudMaterial = this.material.clone();
       cloudMaterial.uniforms.cloudColor.value = cloudColor;
       cloudMaterial.uniforms.density.value = this.params.density! * rng.uniform(0.8, 1.2);
-      // Offset aleatorio para que cada nube tenga un patrón de ruido único
+      // Offset determinista basado en tiempo cósmico + variación aleatoria
+      // Esto asegura que cada planeta tenga un patrón único pero determinista
       cloudMaterial.uniforms.noiseOffset.value = new THREE.Vector2(
-        rng.uniform(0, 100),
-        rng.uniform(0, 100)
+        (cosmicOffsetBase + rng.uniform(0, 100)) % 100,
+        (cosmicOffsetBase + rng.uniform(0, 100)) % 100
       );
       // Variación de forma única para cada nube
       cloudMaterial.uniforms.shapeVariation.value = rng.uniform(-1.0, 1.0);
@@ -399,21 +417,24 @@ export class AtmosphereCloudsEffect {
   }
 
   update(deltaTime: number, camera?: THREE.Camera): void {
-    // Calcular tiempo absoluto determinista desde el inicio con ciclo y velocidad procedural
-    const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!; // Velocidad procedural
-    const currentTime = rawTime % 1000; // Mantener el tiempo en un ciclo de 1000 segundos
+    // Sistema de tiempo híbrido:
+    // Usar tiempo LOCAL para animaciones suaves (sin módulo, sin reinicios)
+    const currentTimeSeconds = Date.now() / 1000;
+    const localTime = (currentTimeSeconds - this.effectStartTime) * this.params.timeSpeed!;
     
     // Actualizar tiempo en todos los materiales de las nubes
     this.clouds.forEach(cloud => {
       const material = cloud.material as THREE.ShaderMaterial;
-      material.uniforms.time.value = currentTime;
+      // Usar tiempo local directamente - sin módulo para evitar reinicios
+      material.uniforms.time.value = localTime;
       
       // ORIENTACIÓN ATMOSFÉRICA: Las nubes ya están orientadas al planeta
       // No necesitan lookAt dinámico porque están pre-orientadas
     });
 
-    // Rotación procedural del sistema de nubes usando tiempo absoluto
-    this.cloudSystem.rotation.y = currentTime * this.params.rotationSpeed!;
+    // Rotación del sistema usando tiempo local continuo
+    // Sin módulo para rotación infinita y suave
+    this.cloudSystem.rotation.y = localTime * this.params.rotationSpeed!;
   }
 
   updateParams(newParams: Partial<AtmosphereCloudsParams>): void {
