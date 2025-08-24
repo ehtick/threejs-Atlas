@@ -120,9 +120,8 @@ class PlanetRendererAPI:
             galaxy = universe.get_galaxy(*galaxy_data["coordinates"])
             system = galaxy.get_solar_system(system_index)
             
-            # CRITICAL: Use SAME cosmic_origin_time as DOM data to ensure consistency
-            # DOM uses a fixed cosmic_origin_time, API should match it
-            cosmic_origin_time = 514080000  # FIXED: Same as DOM
+            # Use cosmic_origin_time from config to ensure consistency
+            cosmic_origin_time = config.cosmic_origin_time
             current_time = int(time.time())
             
             # Calculate system max orbital radius (same logic as planet API)

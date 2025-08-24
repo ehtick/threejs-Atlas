@@ -38,6 +38,7 @@ export interface FireEruptionParams {
   seed?: number;
   startTime?: number;
   timeSpeed?: number;
+  cosmicOriginTime?: number;
   
   // Orbital activation data (similar to PulsatingCube)
   orbitalData?: {
@@ -542,8 +543,8 @@ export class FireEruptionEffect {
     }
     
     // Calculate time from cosmic origin, same as Python and CarbonTrails
-    const COSMIC_ORIGIN_TIME = 514080000; // Same as Python: cosmic_origin_time
-    const currentTimeSeconds = Date.now() / 1000 - COSMIC_ORIGIN_TIME;
+    const cosmicOriginTime = this.params.cosmicOriginTime || 514080000;
+    const currentTimeSeconds = Date.now() / 1000 - cosmicOriginTime;
     const currentTime = currentTimeSeconds / (365.25 * 24 * 3600); // Convert to years
     
     const cycleProgress = (currentTime % this.params.orbitalData.cycle_duration_years) / 
@@ -814,7 +815,8 @@ export function createFireEruptionFromPythonData(
     seed: seed + 9000, // Seed único para FireEruption
     planetTemperature: planetTemperature,
     orbitalData: orbitalData,
-    currentTime: currentTimeYears
+    currentTime: currentTimeYears,
+    cosmicOriginTime: pythonData?.timing?.cosmic_origin_time
     // NO especificar otros parámetros para que use PROCEDURAL_RANGES
   };
   

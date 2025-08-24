@@ -73,8 +73,8 @@ class PlanetRenderingTranslator:
         planet_type = planet.planet_type.replace("_", " ")
         
         # Calculate exact seeds as in Pillow
-        # CRITICAL: Use SAME cosmic_origin_time as System endpoint to ensure consistency
-        cosmic_origin_time = 514080000  # FIXED: Same as System API
+        # Use cosmic_origin_time from config to ensure consistency
+        cosmic_origin_time = config.cosmic_origin_time
         current_time = time.time()
         time_elapsed_seconds = current_time - cosmic_origin_time
         

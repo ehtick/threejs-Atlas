@@ -196,7 +196,7 @@ export class EffectRegistry {
 
     this.registerEffect(EffectType.ATMOSPHERE_CLOUDS, {
       create: (params, planetRadius) => new AtmosphereCloudsEffect(planetRadius, params),
-      fromPythonData: (data, planetRadius) => createAtmosphereCloudsFromPythonData(planetRadius, data.surface_elements || {}),
+      fromPythonData: (data, planetRadius) => createAtmosphereCloudsFromPythonData(planetRadius, data.surface_elements || {}, undefined, data.timing?.cosmic_origin_time),
     });
 
     this.registerEffect(EffectType.ATMOSPHERIC_STREAKS, {
@@ -737,7 +737,8 @@ export class EffectRegistry {
               const cloudsEffect = createAtmosphereCloudsFromPythonData(
                 planetRadius,
                 surface,
-                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000 // Seed específica para nubes
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000, // Seed específica para nubes
+                pythonData.timing?.cosmic_origin_time
               );
               const cloudsInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -772,7 +773,7 @@ export class EffectRegistry {
 
             // Añadir atmósfera sutil si está disponible
             if (surface.atmosphere_clouds && surface.atmosphere_clouds.length > 0) {
-              const cloudsEffect = createAtmosphereCloudsFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 8000);
+              const cloudsEffect = createAtmosphereCloudsFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 8000, pythonData.timing?.cosmic_origin_time);
               if (cloudsEffect) {
                 const cloudsInstance: EffectInstance = {
                   id: `effect_${this.nextId++}`,
@@ -899,7 +900,8 @@ export class EffectRegistry {
                 const cloudsEffect = createAtmosphereCloudsFromPythonData(
                   planetRadius,
                   surface,
-                  (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000 // Seed específica para nubes
+                  (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000, // Seed específica para nubes
+                  pythonData.timing?.cosmic_origin_time
                 );
 
                 const cloudsInstance: EffectInstance = {
@@ -937,7 +939,8 @@ export class EffectRegistry {
                 const cloudsEffect = createAtmosphereCloudsFromPythonData(
                   planetRadius,
                   surface,
-                  (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000 // Seed específica para nubes
+                  (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000, // Seed específica para nubes
+                  pythonData.timing?.cosmic_origin_time
                 );
 
                 const cloudsInstance: EffectInstance = {
@@ -999,7 +1002,8 @@ export class EffectRegistry {
                 const cloudsEffect = createAtmosphereCloudsFromPythonData(
                   planetRadius,
                   surface,
-                  (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000 // Seed específica para nubes
+                  (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000, // Seed específica para nubes
+                  pythonData.timing?.cosmic_origin_time
                 );
 
                 const cloudsInstance: EffectInstance = {
@@ -1085,7 +1089,8 @@ export class EffectRegistry {
               const cloudsEffect = createAtmosphereCloudsFromPythonData(
                 planetRadius,
                 surface,
-                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000 // Seed específica para nubes
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000, // Seed específica para nubes
+                pythonData.timing?.cosmic_origin_time
               );
 
               const cloudsInstance: EffectInstance = {
@@ -1148,7 +1153,7 @@ export class EffectRegistry {
 
             // 3. Atmospheric clouds with earth-like colors
             if (surface.clouds && surface.clouds.length > 0) {
-              const cloudsEffect = createAtmosphereCloudsFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000);
+              const cloudsEffect = createAtmosphereCloudsFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000, pythonData.timing?.cosmic_origin_time);
 
               const cloudsInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -1193,7 +1198,8 @@ export class EffectRegistry {
               cloudsEffect = createAtmosphereCloudsFromPythonData(
                 planetRadius,
                 surface,
-                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000,
+                pythonData.timing?.cosmic_origin_time
               );
             } else {
               // Generar proceduralmente si no hay datos desde Python
@@ -1424,7 +1430,8 @@ export class EffectRegistry {
               const moltenCloudsEffect = createAtmosphereCloudsFromPythonData(
                 planetRadius,
                 surface,
-                (pythonData.seeds?.planet_seed || pythonData.seeds?.shape_seed) + 4000
+                (pythonData.seeds?.planet_seed || pythonData.seeds?.shape_seed) + 4000,
+                pythonData.timing?.cosmic_origin_time
               );
 
               const moltenCloudsInstance: EffectInstance = {
@@ -1449,7 +1456,8 @@ export class EffectRegistry {
               const cloudsEffect = createAtmosphereCloudsFromPythonData(
                 planetRadius,
                 surface,
-                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000,
+                pythonData.timing?.cosmic_origin_time
               );
               
               const cloudsInstance: EffectInstance = {
@@ -1523,7 +1531,8 @@ export class EffectRegistry {
               caveCloudsEffect = createAtmosphereCloudsFromPythonData(
                 planetRadius,
                 surface.atmosphere_clouds,
-                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000,
+                pythonData.timing?.cosmic_origin_time
               );
             } else {
               // Generate procedurally if no data from Python
@@ -1732,7 +1741,8 @@ export class EffectRegistry {
               const carbonCloudsEffect = createAtmosphereCloudsFromPythonData(
                 planetRadius,
                 surface,
-                (pythonData.seeds?.planet_seed || pythonData.seeds?.shape_seed) + 4000
+                (pythonData.seeds?.planet_seed || pythonData.seeds?.shape_seed) + 4000,
+                pythonData.timing?.cosmic_origin_time
               );
 
               const carbonCloudsInstance: EffectInstance = {

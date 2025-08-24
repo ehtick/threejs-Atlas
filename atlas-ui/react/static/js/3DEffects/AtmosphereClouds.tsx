@@ -217,8 +217,7 @@ export class AtmosphereCloudsEffect {
     
     // Sistema de tiempo híbrido igual que CarbonTrails y FireEruption:
     // 1. Usar cosmic_origin_time como base determinística
-    const COSMIC_ORIGIN_TIME = 514080000; // Same as Python: cosmic_origin_time
-    this.cosmicOriginTime = params.cosmicOriginTime || COSMIC_ORIGIN_TIME;
+    this.cosmicOriginTime = params.cosmicOriginTime || 514080000;
     // 2. Offset único por planeta para variación
     this.cosmicOffset = (seed % 3600) * 10;
     
@@ -500,7 +499,7 @@ export class AtmosphereCloudsEffect {
 /**
  * Función de utilidad para crear efecto desde datos de Python
  */
-export function createAtmosphereCloudsFromPythonData(planetRadius: number, surfaceData: any, globalSeed?: number): AtmosphereCloudsEffect {
+export function createAtmosphereCloudsFromPythonData(planetRadius: number, surfaceData: any, globalSeed?: number, cosmicOriginTime?: number): AtmosphereCloudsEffect {
   // Los datos de nubes vienen en surface_elements.clouds (no atmosphere)
   const cloudsArray = surfaceData.clouds || [];
   
@@ -521,6 +520,7 @@ export function createAtmosphereCloudsFromPythonData(planetRadius: number, surfa
       movementAmplitude: 0.02, // Movimiento sutil
       puffiness: 1.5,
       timeSpeed: rng.uniform(PROCEDURAL_RANGES.TIME_SPEED.min, PROCEDURAL_RANGES.TIME_SPEED.max),
+      cosmicOriginTime: cosmicOriginTime,
     };
 
     return new AtmosphereCloudsEffect(planetRadius, params);
@@ -541,6 +541,7 @@ export function createAtmosphereCloudsFromPythonData(planetRadius: number, surfa
     movementAmplitude: rng.uniform(PROCEDURAL_RANGES.MOVEMENT_AMPLITUDE.min, PROCEDURAL_RANGES.MOVEMENT_AMPLITUDE.max),
     puffiness: rng.uniform(PROCEDURAL_RANGES.PUFFINESS.min, PROCEDURAL_RANGES.PUFFINESS.max),
     timeSpeed: rng.uniform(PROCEDURAL_RANGES.TIME_SPEED.min, PROCEDURAL_RANGES.TIME_SPEED.max),
+    cosmicOriginTime: cosmicOriginTime,
     cloudsFromPython: cloudsArray, // Pasar los datos de Python
   };
 

@@ -39,6 +39,7 @@ export interface CarbonTrailsParams {
   seed?: number;
   startTime?: number;
   timeSpeed?: number;
+  cosmicOriginTime?: number;
 
   // Orbital activation data
   orbitalData?: {
@@ -350,8 +351,8 @@ export class CarbonTrailsEffect {
     }
 
     // Calculate time from cosmic origin, same as Python
-    const COSMIC_ORIGIN_TIME = 514080000; // Same as Python: cosmic_origin_time
-    const currentTimeSeconds = Date.now() / 1000 - COSMIC_ORIGIN_TIME;
+    const cosmicOriginTime = this.params.cosmicOriginTime || 514080000;
+    const currentTimeSeconds = Date.now() / 1000 - cosmicOriginTime;
     const currentTime = currentTimeSeconds / (365.25 * 24 * 3600); // Convert to years
 
     const cycleProgress = (currentTime % this.params.orbitalData.cycle_duration_years) / this.params.orbitalData.cycle_duration_years;
@@ -565,6 +566,7 @@ export function createCarbonTrailsFromPythonData(pythonData: any, planetRadius: 
     planetTemperature: planetTemperature,
     orbitalData: orbitalData,
     currentTime: currentTimeYears,
+    cosmicOriginTime: pythonData?.timing?.cosmic_origin_time,
   };
 
   return new CarbonTrailsEffect(planetRadius, params);

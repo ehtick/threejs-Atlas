@@ -23,7 +23,7 @@
         <div>Watch for smooth transitions without abrupt restarts</div>
         <div>Time: <span id="time">0</span>s</div>
         <div>Animation Time: <span id="animTime">0</span>s</div>
-        <div>Cosmic Origin Time: 514080000</div>
+        <div>Cosmic Origin Time: <span id="cosmicOriginTime">514080000</span></div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r155/three.min.js"></script>
@@ -46,8 +46,8 @@
         const planet = new THREE.Mesh(planetGeometry, planetMaterial);
         scene.add(planet);
 
-        // Test the timing system directly
-        const COSMIC_ORIGIN_TIME = 514080000;
+        // Test the timing system directly - use configurable cosmic origin time
+        const COSMIC_ORIGIN_TIME = window.cosmicOriginTime || 514080000;
         const seed = 12345;
         const cosmicOffset = (seed % 3600) * 10;
         const timeSpeed = 1.0;
@@ -83,6 +83,9 @@
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
+
+        // Update the display with the actual cosmic origin time being used
+        document.getElementById('cosmicOriginTime').textContent = COSMIC_ORIGIN_TIME;
 
         console.log('✅ Testing new AtmosphereClouds time system');
         console.log('📊 Cosmic Origin Time:', COSMIC_ORIGIN_TIME);
