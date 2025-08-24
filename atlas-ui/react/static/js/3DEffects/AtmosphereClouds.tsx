@@ -27,6 +27,7 @@ export interface AtmosphereCloudsParams {
   cloudsFromPython?: any[]; // Datos de nubes desde Python API
   startTime?: number; // Tiempo inicial fijo para determinismo
   timeSpeed?: number; // Velocidad del tiempo para movimiento de nubes (0.1 - 3.0)
+  currentTime?: number; // Tiempo cósmico actual calculado desde cosmic_origin_time
 }
 
 // Rangos para generación procedural basados en generate_clouds de Python
@@ -73,7 +74,7 @@ export class AtmosphereCloudsEffect {
       vec4 worldPosition = modelMatrix * vec4(position, 1.0);
       vWorldPosition = worldPosition.xyz;
       
-      // Movimiento sutil de las nubes
+      // Movimiento sutil de las nubes - sin módulo
       vec3 pos = position;
       pos += sin(time * 0.1 + worldPosition.x * 0.01) * movementAmplitude * 0.1;
       pos += cos(time * 0.08 + worldPosition.z * 0.01) * movementAmplitude * 0.1;
@@ -139,7 +140,8 @@ export class AtmosphereCloudsEffect {
       // Máscara circular con bordes súper suaves (soft particles)
       float circularMask = 1.0 - smoothstep(0.1, 0.5, distFromCenter);
       
-      // Ruido volumétrico para textura de nube realista
+      // Ruido volumétrico para textura de nube realista - sin módulo
+      // Las funciones sin/cos en GPU manejan valores grandes correctamente
       vec2 noiseUv1 = vUv * 4.0 + noiseOffset + time * 0.008;
       float noise1 = fbm(noiseUv1) * 0.7;
       
@@ -207,8 +209,8 @@ export class AtmosphereCloudsEffect {
     const seed = params.seed || Math.floor(Math.random() * 1000000);
     const rng = new SeededRandom(seed);
     
-    // Tiempo inicial determinista basado en el seed
-    this.startTime = params.startTime || (seed % 10000) / 1000; // Convertir seed a tiempo inicial
+    // Tiempo inicial determinista basado en el seed para posición procedural
+    this.startTime = params.startTime || (seed % 100000) / 10; // Valor más grande para mejor distribución temporal
     
     this.params = {
       color: params.color || new THREE.Color(0xffffff),
@@ -399,9 +401,19 @@ export class AtmosphereCloudsEffect {
   }
 
   update(deltaTime: number, camera?: THREE.Camera): void {
-    // Calcular tiempo absoluto determinista desde el inicio con ciclo y velocidad procedural
-    const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!; // Velocidad procedural
-    const currentTime = rawTime % 1000; // Mantener el tiempo en un ciclo de 1000 segundos
+    // Usar tiempo cósmico si está disponible, sino fallback a Date.now()
+    let baseTime: number;
+    if (this.params.currentTime !== undefined) {
+      // Tiempo cósmico desde cosmic_origin_time (como PulsatingCube)
+      baseTime = this.params.currentTime;
+    } else {
+      // Fallback a tiempo real
+      baseTime = Date.now() / 1000;
+    }
+    
+    // Aplicar velocidad procedural y offset de seed
+    const rawTime = this.startTime + baseTime * this.params.timeSpeed!;
+    const currentTime = rawTime % (Math.PI * 200); // ~628 segundos, múltiplo de 2π
     
     // Actualizar tiempo en todos los materiales de las nubes
     this.clouds.forEach(cloud => {
@@ -431,6 +443,11 @@ export class AtmosphereCloudsEffect {
         material.uniforms.movementAmplitude.value = newParams.movementAmplitude;
       }
     });
+  }
+
+  // Método para actualizar el tiempo cósmico desde el sistema padre
+  updateCurrentTime(currentTime: number): void {
+    this.params.currentTime = currentTime;
   }
 
   // MÉTODOS PARA INTEGRACIÓN CON SISTEMA DE LUZ
