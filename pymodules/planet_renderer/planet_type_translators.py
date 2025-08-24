@@ -67,6 +67,7 @@ class PlanetTypeTranslators:
             # Hexagon appears and disappears multiple times per orbit
             cycle_duration_years = rng.uniform(orbital_period_years * 0.3, orbital_period_years * 0.5)
             visible_duration_years = rng.uniform(cycle_duration_years * 0.3, cycle_duration_years * 0.7)
+            phase_offset_years = rng.uniform(0, cycle_duration_years)
             
             # Determine which pole (north or south)
             pole = rng.choice(['north', 'south'])
@@ -79,6 +80,7 @@ class PlanetTypeTranslators:
                 "color_darken_factor": rng.uniform(0.15, 0.25),  # How much darker than planet
                 "cycle_duration_years": cycle_duration_years,
                 "visible_duration_years": visible_duration_years,
+                "phase_offset_years": phase_offset_years,
                 "opacity": rng.uniform(0.6, 0.9)
             }
         
@@ -950,11 +952,13 @@ class PlanetTypeTranslators:
             # Carbon trails appear and disappear multiple times per orbit
             cycle_duration_years = rng.uniform(orbital_period_years * 0.3, orbital_period_years * 0.5)
             visible_duration_years = rng.uniform(cycle_duration_years * 0.4, cycle_duration_years * 0.7)
+            phase_offset_years = rng.uniform(0, cycle_duration_years)
             
             carbon_trails_data = {
                 "enabled": True,
                 "cycle_duration_years": cycle_duration_years,
                 "visible_duration_years": visible_duration_years,
+                "phase_offset_years": phase_offset_years,
                 # Debug information for orbital timing
                 "debug_orbital": {
                     "orbital_period_years": orbital_period_years,
@@ -1107,6 +1111,7 @@ class PlanetTypeTranslators:
             # Hexagon appears and disappears multiple times per orbit
             cycle_duration_years = rng.uniform(orbital_period_years * 0.3, orbital_period_years * 0.5)
             visible_duration_years = rng.uniform(cycle_duration_years * 0.4, cycle_duration_years * 0.8)
+            phase_offset_years = rng.uniform(0, cycle_duration_years)
             
             pole = rng.choice(['north', 'south'])
             
@@ -1118,6 +1123,7 @@ class PlanetTypeTranslators:
                 "color_darken_factor": rng.uniform(0.12, 0.20),
                 "cycle_duration_years": cycle_duration_years,
                 "visible_duration_years": visible_duration_years,
+                "phase_offset_years": phase_offset_years,
                 "opacity": rng.uniform(0.7, 0.95)
             }
         
@@ -1161,6 +1167,7 @@ class PlanetTypeTranslators:
             # Hexagon appears and disappears multiple times per orbit
             cycle_duration_years = rng.uniform(orbital_period_years * 0.3, orbital_period_years * 0.5)
             visible_duration_years = rng.uniform(cycle_duration_years * 0.35, cycle_duration_years * 0.75)
+            phase_offset_years = rng.uniform(0, cycle_duration_years)
             
             pole = rng.choice(['north', 'south'])
             
@@ -1172,6 +1179,7 @@ class PlanetTypeTranslators:
                 "color_darken_factor": rng.uniform(0.18, 0.28),  # More contrast for nebulous
                 "cycle_duration_years": cycle_duration_years,
                 "visible_duration_years": visible_duration_years,
+                "phase_offset_years": phase_offset_years,
                 "opacity": rng.uniform(0.5, 0.85),
                 "nebula_blend": True  # Special blending for nebulous planets
             }
@@ -1331,11 +1339,13 @@ class PlanetTypeTranslators:
             # Doodles appear and disappear multiple times per orbit
             cycle_duration_years = rng.uniform(orbital_period_years * 0.3, orbital_period_years * 0.5)
             visible_duration_years = rng.uniform(cycle_duration_years * 0.25, cycle_duration_years * 0.6)
+            phase_offset_years = rng.uniform(0, cycle_duration_years)
             
             exotic_doodles = {
                 "enabled": True,
                 "cycle_duration_years": cycle_duration_years,
                 "visible_duration_years": visible_duration_years,
+                "phase_offset_years": phase_offset_years,
                 # Debug information for orbital timing
                 "debug_orbital": {
                     "orbital_period_years": orbital_period_years,
@@ -1373,11 +1383,13 @@ class PlanetTypeTranslators:
             # Cube appears and disappears multiple times per orbit
             cycle_duration_years = rng.uniform(orbital_period_years * 0.3, orbital_period_years * 0.5)
             visible_duration_years = rng.uniform(cycle_duration_years * 0.2, cycle_duration_years * 0.5)
+            phase_offset_years = rng.uniform(0, cycle_duration_years)
             
             pulsating_cube = {
                 "enabled": True,
                 "cycle_duration_years": cycle_duration_years,
-                "visible_duration_years": visible_duration_years
+                "visible_duration_years": visible_duration_years,
+                "phase_offset_years": phase_offset_years
             }
         
         return {
