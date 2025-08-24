@@ -173,7 +173,6 @@ export class CarbonTrailsEffect {
   private planetRadius: number;
   private maxParticles: number = 1200; // Límite razonable para rendimiento
   private orbitalVisibilityFactor: number;
-  private temperatureActivationFactor: number;
 
   private static readonly vertexShader = `
     attribute float size;
@@ -258,7 +257,6 @@ export class CarbonTrailsEffect {
     };
 
     // Calcular factores de activación
-    this.temperatureActivationFactor = this.calculateTemperatureActivation();
     this.orbitalVisibilityFactor = this.calculateOrbitalVisibility();
 
     this.trailGroup = new THREE.Group();
@@ -345,29 +343,6 @@ export class CarbonTrailsEffect {
     // Ya no es necesario - se hace en initializeStateFromAbsoluteTime
   }
 
-  private calculateTemperatureActivation(): number {
-    const temperature = this.params.planetTemperature || 0;
-
-    // Solo desactivar en temperaturas extremas
-    if (temperature > 1200) {
-      return 0;
-    }
-
-    if (temperature < -200) {
-      return 0.2; // Mínima actividad en planetas muy fríos
-    }
-
-    if (temperature >= -100 && temperature <= 600) {
-      return 1; // Activación máxima en rango ampliado
-    }
-
-    // Activación gradual fuera del rango óptimo
-    if (temperature < -100) {
-      return 0.2 + ((temperature + 200) / 100) * 0.8;
-    } else {
-      return 1.0 - ((temperature - 600) / 600) * 1.0;
-    }
-  }
 
   private calculateOrbitalVisibility(): number {
     if (!this.params.orbitalData || !this.params.orbitalData.enabled) {
@@ -509,15 +484,14 @@ export class CarbonTrailsEffect {
 
     // Actualizar factores de activación
     this.orbitalVisibilityFactor = this.calculateOrbitalVisibility();
-    const totalActivationFactor = this.temperatureActivationFactor * this.orbitalVisibilityFactor;
 
-    if (totalActivationFactor > 0) {
+    if (this.orbitalVisibilityFactor > 0) {
       this.updateParticleGeometry(currentTime);
 
       // Aplicar factor de activación a la opacidad global
       if (this.particleMaterial && this.particleMaterial.uniforms) {
         const baseOpacity = this.params.opacity || 1.0;
-        this.particleMaterial.uniforms.globalOpacity.value = baseOpacity * totalActivationFactor;
+        this.particleMaterial.uniforms.globalOpacity.value = baseOpacity * this.orbitalVisibilityFactor;
       }
     } else {
       this.hideAllParticles();
@@ -567,28 +541,24 @@ export class CarbonTrailsEffect {
 /**
  * Función para crear desde datos de Python
  */
-export function createCarbonTrailsFromPythonData(pythonData: any, planetRadius: number, _layerSystem?: any): CarbonTrailsEffect {
-  const seed = pythonData?.seeds?.planet_seed || Math.floor(Math.random() * 1000000);
-
-  const planetTemperature = pythonData?.original_planet_data?.surface_temperature || 0;
-
-  const currentTimeYears = pythonData?.timing?.elapsed_time ? pythonData.timing.elapsed_time / (365.25 * 24 * 3600) : 0;
-
+export function createCarbonTrailsFromPythonData(pythonData: any, planetRadius: number, _layerSystem?: any): CarbonTrailsEffect | null {
   // Use carbon_trails_data from Python backend (similar to PulsatingCube pattern)
   const carbonData = pythonData?.surface_elements?.carbon_trails_data;
 
   // If no carbon_trails_data from Python, the effect is disabled (33% probability handled in Python)
-  const orbitalData = carbonData
-    ? {
-        enabled: true,
-        cycle_duration_years: carbonData.cycle_duration_years,
-        visible_duration_years: carbonData.visible_duration_years,
-      }
-    : {
-        enabled: false,
-        cycle_duration_years: 0,
-        visible_duration_years: 0,
-      };
+  if (!carbonData?.enabled) {
+    return null;
+  }
+
+  const seed = pythonData?.seeds?.planet_seed || Math.floor(Math.random() * 1000000);
+  const planetTemperature = pythonData?.original_planet_data?.surface_temperature || 0;
+  const currentTimeYears = pythonData?.timing?.elapsed_time ? pythonData.timing.elapsed_time / (365.25 * 24 * 3600) : 0;
+
+  const orbitalData = {
+    enabled: true,
+    cycle_duration_years: carbonData.cycle_duration_years,
+    visible_duration_years: carbonData.visible_duration_years,
+  };
 
   const params: CarbonTrailsParams = {
     seed: seed + 11000,

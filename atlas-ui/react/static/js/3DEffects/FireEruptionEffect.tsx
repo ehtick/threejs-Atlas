@@ -799,7 +799,7 @@ export function createFireEruptionFromPythonData(
   
   // Calcular duración del ciclo primero - DEBE ser menor que el periodo orbital
   const cycleDuration = fireData.cycle_duration_years || 
-    rng.uniform(orbitalPeriodYears * 0.1, orbitalPeriodYears * 0.8);
+    rng.uniform(orbitalPeriodYears * 0.3, orbitalPeriodYears * 0.5);
   
   const orbitalData = {
     enabled: fireData.enabled !== undefined ? fireData.enabled : true, // Activo por defecto

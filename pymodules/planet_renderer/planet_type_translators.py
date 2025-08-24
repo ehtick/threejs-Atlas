@@ -63,9 +63,9 @@ class PlanetTypeTranslators:
         # Polar hexagon generation (like Saturn)
         polar_hexagon = None
         if rng.random() < 0.3:  # 30% chance to have a polar hexagon
-            # Calculate visibility cycle based on orbital period
-            # Hexagon appears and disappears in cycles
-            cycle_duration_years = rng.uniform(orbital_period_years * 0.5, orbital_period_years * 2.0)
+            # Calculate visibility cycle as percentage of orbital period (30-50% for frequent cycles)
+            # Hexagon appears and disappears multiple times per orbit
+            cycle_duration_years = rng.uniform(orbital_period_years * 0.3, orbital_period_years * 0.5)
             visible_duration_years = rng.uniform(cycle_duration_years * 0.3, cycle_duration_years * 0.7)
             
             # Determine which pole (north or south)
@@ -946,9 +946,9 @@ class PlanetTypeTranslators:
         # Carbon trails effect (similar to PulsatingCube orbital pattern)
         carbon_trails_data = None
         if rng.random() < 0.33:  # 33% of carbon planets have carbon trails effect
-            # Calculate visibility cycle based on orbital period
-            # Carbon trails appear and disappear in cycles during specific orbital periods
-            cycle_duration_years = rng.uniform(orbital_period_years * 0.3, orbital_period_years * 1.2)
+            # Calculate visibility cycle as percentage of orbital period (30-50% for frequent cycles)
+            # Carbon trails appear and disappear multiple times per orbit
+            cycle_duration_years = rng.uniform(orbital_period_years * 0.3, orbital_period_years * 0.5)
             visible_duration_years = rng.uniform(cycle_duration_years * 0.4, cycle_duration_years * 0.7)
             
             carbon_trails_data = {
@@ -1103,8 +1103,11 @@ class PlanetTypeTranslators:
         # Polar hexagon - higher chance for frozen gas giants
         polar_hexagon = None
         if rng.random() < 0.4:  # 40% chance for frozen gas giants
-            cycle_duration_years = rng.uniform(orbital_period_years * 0.8, orbital_period_years * 3.0)
+            # Calculate visibility cycle as percentage of orbital period (30-50% for frequent cycles)
+            # Hexagon appears and disappears multiple times per orbit
+            cycle_duration_years = rng.uniform(orbital_period_years * 0.3, orbital_period_years * 0.5)
             visible_duration_years = rng.uniform(cycle_duration_years * 0.4, cycle_duration_years * 0.8)
+            
             pole = rng.choice(['north', 'south'])
             
             polar_hexagon = {
@@ -1154,8 +1157,11 @@ class PlanetTypeTranslators:
         # Polar hexagon - medium chance for nebulous
         polar_hexagon = None
         if rng.random() < 0.35:  # 35% chance
-            cycle_duration_years = rng.uniform(orbital_period_years * 0.6, orbital_period_years * 2.5)
+            # Calculate visibility cycle as percentage of orbital period (30-50% for frequent cycles)
+            # Hexagon appears and disappears multiple times per orbit
+            cycle_duration_years = rng.uniform(orbital_period_years * 0.3, orbital_period_years * 0.5)
             visible_duration_years = rng.uniform(cycle_duration_years * 0.35, cycle_duration_years * 0.75)
+            
             pole = rng.choice(['north', 'south'])
             
             polar_hexagon = {
@@ -1321,9 +1327,9 @@ class PlanetTypeTranslators:
         exotic_doodles = None
         doodle_roll = rng.random()
         if doodle_roll < 0.8:  # 80% chance for exotic planets to have doodles
-            # Calculate visibility cycle based on orbital period
-            # Doodles appear and disappear in cycles during specific orbital periods
-            cycle_duration_years = rng.uniform(orbital_period_years * 0.4, orbital_period_years * 1.8)
+            # Calculate visibility cycle as percentage of orbital period (30-50% for frequent cycles)
+            # Doodles appear and disappear multiple times per orbit
+            cycle_duration_years = rng.uniform(orbital_period_years * 0.3, orbital_period_years * 0.5)
             visible_duration_years = rng.uniform(cycle_duration_years * 0.25, cycle_duration_years * 0.6)
             
             exotic_doodles = {
@@ -1363,9 +1369,9 @@ class PlanetTypeTranslators:
         # Pulsating cube effect for anomaly planets
         pulsating_cube = None
         if rng.random() < 0.7:  # 70% chance for anomaly planets to have pulsating cube
-            # Calculate visibility cycle based on orbital period
-            # Cube appears and disappears in cycles
-            cycle_duration_years = rng.uniform(orbital_period_years * 0.3, orbital_period_years * 1.5)
+            # Calculate visibility cycle as percentage of orbital period (30-50% for frequent cycles)
+            # Cube appears and disappears multiple times per orbit
+            cycle_duration_years = rng.uniform(orbital_period_years * 0.3, orbital_period_years * 0.5)
             visible_duration_years = rng.uniform(cycle_duration_years * 0.2, cycle_duration_years * 0.5)
             
             pulsating_cube = {
