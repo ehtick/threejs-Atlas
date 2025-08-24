@@ -853,7 +853,7 @@ class PlanetTypeTranslators:
         }
     
     def translate_carbon(self, planet_radius: int, rng: random.Random, 
-                        seed: int, planet_name: str) -> Dict[str, Any]:
+                        seed: int, planet_name: str, orbital_period_years: float = 8.0) -> Dict[str, Any]:
         """Translate Carbon planet elements - carbonaceous worlds with matte surfaces and dust particles"""
         center_x, center_y = 200, 200  # Pillow center coordinates
         
@@ -943,18 +943,43 @@ class PlanetTypeTranslators:
             "surface_roughness": rng.uniform(0.12, 0.18) # Additional roughness factor
         }
         
+        # Carbon trails effect (similar to PulsatingCube orbital pattern)
+        carbon_trails_data = None
+        if rng.random() < 0.33:  # 33% of carbon planets have carbon trails effect
+            # Calculate visibility cycle based on orbital period
+            # Carbon trails appear and disappear in cycles during specific orbital periods
+            cycle_duration_years = rng.uniform(orbital_period_years * 0.3, orbital_period_years * 1.2)
+            visible_duration_years = rng.uniform(cycle_duration_years * 0.4, cycle_duration_years * 0.7)
+            
+            carbon_trails_data = {
+                "enabled": True,
+                "cycle_duration_years": cycle_duration_years,
+                "visible_duration_years": visible_duration_years,
+                # Debug information for orbital timing
+                "debug_orbital": {
+                    "orbital_period_years": orbital_period_years,
+                    "cycle_duration_years": cycle_duration_years,
+                    "visible_duration_years": visible_duration_years,
+                    "visible_percentage": (visible_duration_years / cycle_duration_years) * 100,
+                    "cycles_per_orbit": orbital_period_years / cycle_duration_years,
+                    "visibility_windows": f"Visible for {visible_duration_years:.2f} years every {cycle_duration_years:.2f} years"
+                }
+            }
+
         return {
             "type": "carbon", 
             "clouds": clouds,
             "green_patches": green_patches,  # Land masses format that LandMasses effect expects
             "surface_properties": surface_properties,
+            "carbon_trails_data": carbon_trails_data,  # Add carbon trails orbital data
             "debug": {
                 "original_planet_radius": planet_radius,
                 "center_x": center_x, "center_y": center_y,
                 "cloud_count": num_clouds,
                 "landmass_count": num_landmasses,
                 "surface_roughness": surface_properties["roughness"],
-                "mineral_spots_enabled": surface_properties["mineral_spots"]
+                "mineral_spots_enabled": surface_properties["mineral_spots"],
+                "has_carbon_trails": carbon_trails_data is not None
             }
         }
     

@@ -573,17 +573,18 @@ export function createCarbonTrailsFromPythonData(pythonData: any, planetRadius: 
 
   const currentTimeYears = pythonData?.timing?.elapsed_time ? pythonData.timing.elapsed_time / (365.25 * 24 * 3600) : 0;
 
-  const orbitalPeriodYears = pythonData?.original_planet_data?.orbital_period_seconds ? pythonData.original_planet_data.orbital_period_seconds / (365.25 * 24 * 3600) : 1.0;
-
-  const carbonData = pythonData?.carbon_trails_data || {};
-  const rng = new SeededRandom(seed + 11001);
-
-  const cycleDuration = carbonData.cycle_duration_years || rng.uniform(orbitalPeriodYears * 0.2, orbitalPeriodYears * 0.9);
-
-  const orbitalData = {
-    enabled: carbonData.enabled !== undefined ? carbonData.enabled : true,
-    cycle_duration_years: cycleDuration,
-    visible_duration_years: carbonData.visible_duration_years || rng.uniform(cycleDuration * 0.5, cycleDuration * 0.75),
+  // Use carbon_trails_data from Python backend (similar to PulsatingCube pattern)
+  const carbonData = pythonData?.surface_elements?.carbon_trails_data;
+  
+  // If no carbon_trails_data from Python, the effect is disabled (33% probability handled in Python)
+  const orbitalData = carbonData ? {
+    enabled: true,
+    cycle_duration_years: carbonData.cycle_duration_years,
+    visible_duration_years: carbonData.visible_duration_years,
+  } : {
+    enabled: false,
+    cycle_duration_years: 0,
+    visible_duration_years: 0,
   };
 
   const params: CarbonTrailsParams = {
