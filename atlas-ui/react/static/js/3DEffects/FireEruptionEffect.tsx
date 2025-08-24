@@ -534,39 +534,65 @@ export class FireEruptionEffect {
     return temperatureInRange / activationRange;
   }
   
+  private lastOrbitalDebugTime: number = 0;
+  
   private calculateOrbitalVisibility(): number {
     // Similar a PulsatingCube - calcular visibilidad basada en periodo orbital
     if (!this.params.orbitalData || !this.params.orbitalData.enabled) {
       return 1; // Siempre visible si no hay datos orbitales
     }
     
-    // Usar tiempo actual del universo, no el tiempo fijo de inicialización
-    const currentTime = (this.params.currentTime || 0) + ((Date.now() / 1000) - this.startTime) / (365.25 * 24 * 3600);
+    // Calculate time from cosmic origin, same as Python and CarbonTrails
+    const COSMIC_ORIGIN_TIME = 514080000; // Same as Python: cosmic_origin_time
+    const currentTimeSeconds = Date.now() / 1000 - COSMIC_ORIGIN_TIME;
+    const currentTime = currentTimeSeconds / (365.25 * 24 * 3600); // Convert to years
+    
     const cycleProgress = (currentTime % this.params.orbitalData.cycle_duration_years) / 
                          this.params.orbitalData.cycle_duration_years;
     const visibleFraction = this.params.orbitalData.visible_duration_years / 
                            this.params.orbitalData.cycle_duration_years;
     
+    const isInVisiblePeriod = cycleProgress <= visibleFraction;
+    let visibility = 0;
+    
     // Determinar si estamos en la fase visible del ciclo orbital
-    if (cycleProgress <= visibleFraction) {
+    if (isInVisiblePeriod) {
       // Estamos en la fase visible - calcular fade suave
       const visibleProgress = cycleProgress / visibleFraction;
       
       // Fade in durante el primer 10% de la fase visible
       if (visibleProgress < 0.1) {
-        return visibleProgress / 0.1;
+        visibility = visibleProgress / 0.1;
       }
       // Fade out durante el último 10% de la fase visible
       else if (visibleProgress > 0.9) {
-        return (1.0 - visibleProgress) / 0.1;
+        visibility = (1.0 - visibleProgress) / 0.1;
       }
       // Completamente visible en el medio
       else {
-        return 1.0;
+        visibility = 1.0;
       }
     }
     
-    return 0; // No visible fuera de la fase orbital
+    // Debug logging every 5 seconds (same as CarbonTrails)
+    const debugInterval = 5000;
+    const currentDebugTime = Date.now();
+    if (!this.lastOrbitalDebugTime || currentDebugTime - this.lastOrbitalDebugTime > debugInterval) {
+      console.log("🔥 FireEruption ORBITAL VISIBILITY DEBUG:");
+      console.log(`   🌍 Cosmic origin: ${COSMIC_ORIGIN_TIME} (${new Date(COSMIC_ORIGIN_TIME * 1000).toISOString()})`);
+      console.log(`   ⏰ Current time: ${currentTime.toFixed(2)} years since cosmic origin`);
+      console.log(`   📅 Real date: ${new Date().toISOString()}`);
+      console.log(`   🔄 Cycle duration: ${this.params.orbitalData.cycle_duration_years.toFixed(2)} years`);
+      console.log(`   👁️  Visible duration: ${this.params.orbitalData.visible_duration_years.toFixed(2)} years`);
+      console.log(`   📊 Cycle progress: ${(cycleProgress * 100).toFixed(1)}% (${cycleProgress.toFixed(4)})`);
+      console.log(`   🎯 Visible fraction: ${(visibleFraction * 100).toFixed(1)}% (${visibleFraction.toFixed(4)})`);
+      console.log(`   ${isInVisiblePeriod ? '✅' : '❌'} In visible period: ${isInVisiblePeriod}`);
+      console.log(`   💫 Final visibility: ${(visibility * 100).toFixed(1)}% (${visibility.toFixed(4)})`);
+      
+      this.lastOrbitalDebugTime = currentDebugTime;
+    }
+    
+    return visibility;
   }
   
   private updateParticleGeometry(currentTime: number): void {
@@ -787,6 +813,11 @@ export function createFireEruptionFromPythonData(
   // Configurar datos orbitales basados en el periodo real del planeta
   const fireData = pythonData?.fire_eruption_data || {};
   const rng = new SeededRandom(seed + 9001); // Para generar parámetros orbitales deterministas
+  
+  console.log("🔥 FireEruption Creation Debug:");
+  console.log(`   🌍 Planet: ${pythonData?.planet_info?.name || 'Unknown'}`);
+  console.log(`   📦 fireData from Python:`, fireData);
+  console.log(`   ${fireData?.enabled ? '✅' : '❌'} Effect enabled: ${fireData?.enabled ? 'YES' : 'NO'}`);
   
   // Calcular duración del ciclo primero - DEBE ser menor que el periodo orbital
   const cycleDuration = fireData.cycle_duration_years || 
