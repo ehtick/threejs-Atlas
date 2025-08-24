@@ -55,6 +55,7 @@ import { OceanCurrentsEffect, createOceanCurrentsFromPythonData } from "./OceanC
 import { LavaFlowsEffect, createLavaFlowsFromPythonData } from "./LavaFlowsEffect";
 import { MoltenLavaEffect, createMoltenLavaFromPythonData } from "./MoltenLavaEffect";
 import { FireEruptionEffect, createFireEruptionFromPythonData } from "./FireEruptionEffect";
+import { CarbonTrailsEffect, createCarbonTrailsFromPythonData } from "./CarbonTrails";
 // Efectos de superficie legacy eliminados - usar solo versiones Layer
 
 // Importar efectos de debug
@@ -111,6 +112,7 @@ export enum EffectType {
   LAVA_FLOWS = "lava_flows",
   MOLTEN_LAVA = "molten_lava",
   FIRE_ERUPTION = "fire_eruption",
+  CARBON_TRAILS = "carbon_trails",
   CRYSTAL_FORMATIONS = "crystal_formations",
   CLOUD_LAYERS = "cloud_layers",
   STORM_SYSTEMS = "storm_systems",
@@ -262,6 +264,11 @@ export class EffectRegistry {
     this.registerEffect(EffectType.FIRE_ERUPTION, {
       create: (params, planetRadius) => new FireEruptionEffect(planetRadius, params),
       fromPythonData: (data, planetRadius, layerSystem) => createFireEruptionFromPythonData(data, planetRadius, layerSystem),
+    });
+
+    this.registerEffect(EffectType.CARBON_TRAILS, {
+      create: (params, planetRadius) => new CarbonTrailsEffect(planetRadius, params),
+      fromPythonData: (data, planetRadius, layerSystem) => createCarbonTrailsFromPythonData(data, planetRadius, layerSystem),
     });
 
     // Efectos futuros (placeholders)
@@ -1795,6 +1802,28 @@ export class EffectRegistry {
               this.effects.set(carbonDustInstance.id, carbonDustInstance);
               effects.push(carbonDustInstance);
               carbonDustEffect.addToScene(scene, mesh.position);
+            }
+
+            // 4. Añadir estelas de gases de carbono que se desvanecen
+            const carbonTrailsEffect = this.createEffectFromPythonData(
+              EffectType.CARBON_TRAILS,
+              pythonData,
+              planetRadius,
+              mesh
+            );
+
+            if (carbonTrailsEffect) {
+              const carbonTrailsInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "carbon_trails",
+                effect: carbonTrailsEffect.effect,
+                priority: 25,
+                enabled: true,
+                name: "Carbon Gas Trails",
+              };
+              this.effects.set(carbonTrailsInstance.id, carbonTrailsInstance);
+              effects.push(carbonTrailsInstance);
+              carbonTrailsEffect.effect.addToScene(scene, mesh.position);
             }
             break;
 
