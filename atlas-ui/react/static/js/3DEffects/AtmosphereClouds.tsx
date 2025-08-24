@@ -25,7 +25,7 @@ export interface AtmosphereCloudsParams {
   movementAmplitude?: number; // Amplitud del movimiento individual
   puffiness?: number; // Factor de esponjosidad de las nubes
   cloudsFromPython?: any[]; // Datos de nubes desde Python API
-  startTime?: number; // Tiempo inicial fijo para determinismo
+  cosmicOriginTime?: number; // Tiempo de origen cósmico para determinismo
   timeSpeed?: number; // Velocidad del tiempo para movimiento de nubes (0.1 - 3.0)
 }
 
@@ -53,9 +53,8 @@ export class AtmosphereCloudsEffect {
   private params: AtmosphereCloudsParams;
   private cloudCount: number;
   private clouds: THREE.Mesh[] = [];
-  private startTime: number;
-  private effectStartTime: number; // Tiempo local de creación del efecto
-  private cosmicTime: number; // Tiempo cósmico para determinismo inicial
+  private cosmicOriginTime: number; // Tiempo de origen cósmico para determinismo
+  private cosmicOffset: number; // Offset único por planeta
 
   private static readonly vertexShader = `
     varying vec3 vPosition;
@@ -216,13 +215,12 @@ export class AtmosphereCloudsEffect {
     const seed = params.seed || Math.floor(Math.random() * 1000000);
     const rng = new SeededRandom(seed);
     
-    // Sistema de tiempo híbrido:
-    // 1. Tiempo cósmico: para posicionamiento inicial determinista
-    this.cosmicTime = params.startTime || (seed % 10000) / 1000;
-    // 2. Tiempo local: para animaciones suaves (empieza en 0)
-    this.effectStartTime = Date.now() / 1000;
-    // Mantener startTime por compatibilidad
-    this.startTime = this.cosmicTime;
+    // Sistema de tiempo híbrido igual que CarbonTrails y FireEruption:
+    // 1. Usar cosmic_origin_time como base determinística
+    const COSMIC_ORIGIN_TIME = 514080000; // Same as Python: cosmic_origin_time
+    this.cosmicOriginTime = params.cosmicOriginTime || COSMIC_ORIGIN_TIME;
+    // 2. Offset único por planeta para variación
+    this.cosmicOffset = (seed % 3600) * 10;
     
     this.params = {
       color: params.color || new THREE.Color(0xffffff),
@@ -235,7 +233,7 @@ export class AtmosphereCloudsEffect {
       puffiness: params.puffiness || rng.uniform(PROCEDURAL_RANGES.PUFFINESS.min, PROCEDURAL_RANGES.PUFFINESS.max),
       timeSpeed: params.timeSpeed || rng.uniform(PROCEDURAL_RANGES.TIME_SPEED.min, PROCEDURAL_RANGES.TIME_SPEED.max),
       seed: seed,
-      startTime: this.startTime,
+      cosmicOriginTime: this.cosmicOriginTime,
     };
 
     this.cloudCount = this.params.cloudCount!;
@@ -251,7 +249,7 @@ export class AtmosphereCloudsEffect {
     const rng = new SeededRandom(seed);
     
     // Usar tiempo cósmico para generar offsets únicos pero deterministas
-    const cosmicOffsetBase = this.cosmicTime * 100;
+    const cosmicOffsetBase = this.cosmicOriginTime + this.cosmicOffset;
 
     // Verificar si tenemos datos de Python
     const cloudsFromPython = this.params.cloudsFromPython;
@@ -417,24 +415,26 @@ export class AtmosphereCloudsEffect {
   }
 
   update(deltaTime: number, camera?: THREE.Camera): void {
-    // Sistema de tiempo híbrido:
-    // Usar tiempo LOCAL para animaciones suaves (sin módulo, sin reinicios)
+    // Calcular tiempo igual que CarbonTrails y FireEruption
     const currentTimeSeconds = Date.now() / 1000;
-    const localTime = (currentTimeSeconds - this.effectStartTime) * this.params.timeSpeed!;
-    
+    const timeSinceCosmicOrigin = currentTimeSeconds - this.cosmicOriginTime;
+    const animTime = (timeSinceCosmicOrigin + this.cosmicOffset) * this.params.timeSpeed!;
+
+    // Aplicar ventana deslizante SOLO para GPU, no para lógica
+    const windowedTime = animTime % 10000; // Para shaders
+
     // Actualizar tiempo en todos los materiales de las nubes
     this.clouds.forEach(cloud => {
       const material = cloud.material as THREE.ShaderMaterial;
-      // Usar tiempo local directamente - sin módulo para evitar reinicios
-      material.uniforms.time.value = localTime;
+      // Usar ventana deslizante para GPU manteniendo continuidad
+      material.uniforms.time.value = windowedTime;
       
       // ORIENTACIÓN ATMOSFÉRICA: Las nubes ya están orientadas al planeta
       // No necesitan lookAt dinámico porque están pre-orientadas
     });
 
-    // Rotación del sistema usando tiempo local continuo
-    // Sin módulo para rotación infinita y suave
-    this.cloudSystem.rotation.y = localTime * this.params.rotationSpeed!;
+    // Rotación del sistema usando tiempo continuo (sin ventana para evitar saltos)
+    this.cloudSystem.rotation.y = animTime * this.params.rotationSpeed!;
   }
 
   updateParams(newParams: Partial<AtmosphereCloudsParams>): void {
