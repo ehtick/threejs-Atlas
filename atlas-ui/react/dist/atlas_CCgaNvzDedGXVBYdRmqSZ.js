@@ -1,4 +1,4 @@
-import{C as i,S as s,F as c,V as r,b as d,M as m,N as v,D as u}from"./atlas_BjkcO1_mNssSqp05cLhjd.js";class f{baseMesh;baseMaterial;effectLayers=[];scene;planetRadius;static baseVertexShader=`
+import{C as i,S as n,F as c,V as r,b as d,M as m,N as v,D as u}from"./atlas_BjkcO1_mNssSqp05cLhjd.js";class f{baseMesh;baseMaterial;effectLayers=[];scene;planetRadius;static baseVertexShader=`
     varying vec3 vPosition;
     varying vec3 vNormal;
     varying vec3 vWorldPosition;
@@ -57,7 +57,7 @@ import{C as i,S as s,F as c,V as r,b as d,M as m,N as v,D as u}from"./atlas_Bjkc
       
       gl_FragColor = vec4(finalColor, 1.0);
     }
-  `;constructor(e,a=new i(16753920)){this.baseMesh=e;const o=e.geometry;this.planetRadius=o.parameters.radius||1;const t=a instanceof i?a:new i(a);this.baseMaterial=new s({vertexShader:f.baseVertexShader,fragmentShader:f.baseFragmentShader,uniforms:{baseColor:{value:t},lightDirection:{value:new r(1,1,1).normalize()},lightPosition:{value:new r(0,0,0)},ambientStrength:{value:.15},lightIntensity:{value:.85}},side:c}),this.baseMesh.material=this.baseMaterial}addEffectLayer(e,a,o=1.001,t){const l=new d(this.planetRadius*o,256,256),n=new m(l,a);return n.position.copy(this.baseMesh.position),n.rotation.copy(this.baseMesh.rotation),this.effectLayers.push({name:e,mesh:n,material:a,layerObject:t}),this.scene&&this.scene.add(n),n}createCloudBandsLayerMaterial(e){const a=`
+  `;constructor(e,a=new i(16753920)){this.baseMesh=e;const o=e.geometry;this.planetRadius=o.parameters.radius||1;const t=a instanceof i?a:new i(a);this.baseMaterial=new n({vertexShader:f.baseVertexShader,fragmentShader:f.baseFragmentShader,uniforms:{baseColor:{value:t},lightDirection:{value:new r(1,1,1).normalize()},lightPosition:{value:new r(0,0,0)},ambientStrength:{value:.15},lightIntensity:{value:.85}},side:c}),this.baseMesh.material=this.baseMaterial}addEffectLayer(e,a,o=1.001,t){const l=new d(this.planetRadius*o,256,256),s=new m(l,a);return s.position.copy(this.baseMesh.position),s.rotation.copy(this.baseMesh.rotation),this.effectLayers.push({name:e,mesh:s,material:a,layerObject:t}),this.scene&&this.scene.add(s),s}createCloudBandsLayerMaterial(e){const a=`
       varying vec3 vPosition;
       varying vec3 vNormal;
       varying vec2 vUv;
@@ -201,77 +201,7 @@ import{C as i,S as s,F as c,V as r,b as d,M as m,N as v,D as u}from"./atlas_Bjkc
         
         gl_FragColor = vec4(color, alpha);
       }
-    `;return new s({vertexShader:a,fragmentShader:o,uniforms:{time:{value:0},seed:{value:e.seed||Math.random()*1e3},bandColor:{value:e.bandColor||new i(16747520)},numBands:{value:e.numBands||8},rotationAngle:{value:e.rotationAngle||0},bandPositions:{value:e.bandPositions||new Array(20).fill(0)},bandWidths:{value:e.bandWidths||new Array(20).fill(.1)},animationSpeed:{value:e.animationSpeed||1},turbulence:{value:e.turbulence||.5},noiseScale:{value:e.noiseScale||3},lightDirection:{value:new r(1,1,1).normalize()},opacity:{value:e.opacity||.4}},transparent:!0,blending:v,side:c,depthWrite:!1})}createCloudGyrosLayerMaterial(e){const a=`
-      varying vec3 vPosition;
-      varying vec3 vNormal;
-      varying vec2 vUv;
-      
-      void main() {
-        vPosition = position;
-        vNormal = normal;
-        vUv = uv;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-      }
-    `,o=`
-      uniform float time;
-      uniform vec3 stormColor;
-      uniform float stormIntensity;
-      uniform float spiralSpeed;
-      uniform float animationSpeed;
-      uniform vec2 stormCenters[5];
-      uniform int numStorms;
-      uniform vec3 lightDirection;
-      
-      varying vec3 vPosition;
-      varying vec3 vNormal;
-      varying vec2 vUv;
-      
-      float createGyroSpirals(vec3 pos) {
-        float storms = 0.0;
-        
-        for(int i = 0; i < 5; i++) {
-          if(i >= numStorms) break;
-          
-          vec2 stormCenter = stormCenters[i];
-          float distToStorm = distance(pos.xy, stormCenter);
-          
-          if(distToStorm < 0.4) {
-            float angle = atan(pos.y - stormCenter.y, pos.x - stormCenter.x);
-            float spiral = sin(angle * 8.0 + distToStorm * 20.0 - time * animationSpeed * spiralSpeed);
-            
-            float stormIntensityValue = (1.0 - distToStorm / 0.4) * 0.9;
-            stormIntensityValue *= (0.3 + 0.7 * spiral);
-            stormIntensityValue *= stormIntensity;
-            
-            storms += stormIntensityValue;
-          }
-        }
-        
-        return clamp(storms, 0.0, 1.0);
-      }
-      
-      void main() {
-        vec3 pos = normalize(vPosition);
-        vec3 normal = normalize(vNormal);
-        vec3 lightDir = normalize(lightDirection);
-        
-        // Calcular si estamos en la parte iluminada
-        float dotNL = dot(normal, lightDir);
-        
-        // Solo mostrar tormentas en la parte iluminada
-        float storms = createGyroSpirals(pos);
-        
-        // CRÍTICO: hacer las tormentas completamente transparentes en la parte oscura
-        float lightIntensity = max(0.0, dotNL);
-        lightIntensity = pow(lightIntensity, 2.0); // Caída más agresiva hacia la oscuridad
-        
-        // Color de las tormentas con transparencia
-        vec3 color = stormColor;
-        float alpha = storms * 0.6 * lightIntensity; // Transparencia basada en iluminación
-        
-        gl_FragColor = vec4(color, alpha);
-      }
-    `,t=new Array(10).fill(0);return e.stormCenters&&e.stormCenters.forEach((l,n)=>{n<5&&(t[n*2]=l.x,t[n*2+1]=l.y)}),new s({vertexShader:a,fragmentShader:o,uniforms:{time:{value:0},stormColor:{value:e.stormColor||new i(9109504)},stormIntensity:{value:e.stormIntensity||.8},spiralSpeed:{value:e.spiralSpeed||2},animationSpeed:{value:e.animationSpeed||1},stormCenters:{value:t},numStorms:{value:e.stormCenters?Math.min(e.stormCenters.length,5):3},lightDirection:{value:new r(1,1,1).normalize()}},transparent:!0,blending:v,side:c,depthWrite:!1})}createMetallicSurfaceLayerMaterial(e){const a=`
+    `;return new n({vertexShader:a,fragmentShader:o,uniforms:{time:{value:0},seed:{value:e.seed||Math.random()*1e3},bandColor:{value:e.bandColor||new i(16747520)},numBands:{value:e.numBands||8},rotationAngle:{value:e.rotationAngle||0},bandPositions:{value:e.bandPositions||new Array(20).fill(0)},bandWidths:{value:e.bandWidths||new Array(20).fill(.1)},animationSpeed:{value:e.animationSpeed||1},turbulence:{value:e.turbulence||.5},noiseScale:{value:e.noiseScale||3},lightDirection:{value:new r(1,1,1).normalize()},opacity:{value:e.opacity||.4}},transparent:!0,blending:v,side:c,depthWrite:!1})}createMetallicSurfaceLayerMaterial(e){const a=`
       varying vec3 vPosition;
       varying vec3 vNormal;
       varying vec3 vWorldPosition;
@@ -493,7 +423,7 @@ import{C as i,S as s,F as c,V as r,b as d,M as m,N as v,D as u}from"./atlas_Bjkc
         
         gl_FragColor = vec4(finalColor, opacity);
       }
-    `;return new s({vertexShader:a,fragmentShader:o,uniforms:{time:{value:0},metalColor:{value:e.color||new i(8421504)},metalness:{value:e.metalness||.8},roughness:{value:e.roughness||.4},fragmentationIntensity:{value:e.fragmentationIntensity||.5},opacity:{value:e.opacity||.8},lightDirection:{value:new r(1,1,1).normalize()},lightPosition:{value:new r(0,0,0)},ambientStrength:{value:.15},lightIntensity:{value:.85},noiseScale:{value:e.noiseScale||8},noiseIntensity:{value:e.noiseIntensity||.3},crystalScale:{value:e.crystalScale||80}},transparent:!0,blending:v,side:c,depthWrite:!1})}createIcyTerrainLayerMaterial(e){const a=`
+    `;return new n({vertexShader:a,fragmentShader:o,uniforms:{time:{value:0},metalColor:{value:e.color||new i(8421504)},metalness:{value:e.metalness||.8},roughness:{value:e.roughness||.4},fragmentationIntensity:{value:e.fragmentationIntensity||.5},opacity:{value:e.opacity||.8},lightDirection:{value:new r(1,1,1).normalize()},lightPosition:{value:new r(0,0,0)},ambientStrength:{value:.15},lightIntensity:{value:.85},noiseScale:{value:e.noiseScale||8},noiseIntensity:{value:e.noiseIntensity||.3},crystalScale:{value:e.crystalScale||80}},transparent:!0,blending:v,side:c,depthWrite:!1})}createIcyTerrainLayerMaterial(e){const a=`
       varying vec3 vPosition;
       varying vec3 vNormal;
       varying vec3 vWorldPosition;
@@ -671,7 +601,7 @@ import{C as i,S as s,F as c,V as r,b as d,M as m,N as v,D as u}from"./atlas_Bjkc
         
         gl_FragColor = vec4(finalColor, alpha);
       }
-    `;return new s({vertexShader:a,fragmentShader:o,uniforms:{time:{value:0},iceColor:{value:e.color||new i(11591910)},iceReflectivity:{value:e.iceReflectivity||.8},frostDensity:{value:e.frostDensity||.5},crackIntensity:{value:e.crackIntensity||.4},opacity:{value:e.opacity||.7},crystalScale:{value:e.crystalScale||25},crystalDensity:{value:e.crystalDensity||.6},crystalSharpness:{value:e.crystalSharpness||150},frostPattern:{value:e.frostPattern||12},lightDirection:{value:new r(1,1,1).normalize()},lightPosition:{value:new r(0,0,0)},ambientStrength:{value:.15},lightIntensity:{value:.85}},transparent:!0,side:c,depthWrite:!1})}createAquiferWaterLayerMaterial(e){const a=`
+    `;return new n({vertexShader:a,fragmentShader:o,uniforms:{time:{value:0},iceColor:{value:e.color||new i(11591910)},iceReflectivity:{value:e.iceReflectivity||.8},frostDensity:{value:e.frostDensity||.5},crackIntensity:{value:e.crackIntensity||.4},opacity:{value:e.opacity||.7},crystalScale:{value:e.crystalScale||25},crystalDensity:{value:e.crystalDensity||.6},crystalSharpness:{value:e.crystalSharpness||150},frostPattern:{value:e.frostPattern||12},lightDirection:{value:new r(1,1,1).normalize()},lightPosition:{value:new r(0,0,0)},ambientStrength:{value:.15},lightIntensity:{value:.85}},transparent:!0,side:c,depthWrite:!1})}createAquiferWaterLayerMaterial(e){const a=`
       uniform float time;
       uniform float waveHeight;
       uniform float waveFrequency;
@@ -813,7 +743,7 @@ import{C as i,S as s,F as c,V as r,b as d,M as m,N as v,D as u}from"./atlas_Bjkc
         
         gl_FragColor = vec4(finalColor, transparency);
       }
-    `,t=e.waterColor instanceof i?e.waterColor:new i(e.waterColor||3050379),l=e.deepWaterColor instanceof i?e.deepWaterColor:new i(e.deepWaterColor||13158),n=e.foamColor instanceof i?e.foamColor:new i(e.foamColor||16777215);return new s({vertexShader:a,fragmentShader:o,uniforms:{time:{value:0},seedOffset:{value:(e.seed||0)%100},waveHeight:{value:e.waveHeight||.08},waveFrequency:{value:e.waveFrequency||3},waveSpeed:{value:e.waveSpeed||.5},waterColor:{value:t},deepWaterColor:{value:l},foamColor:{value:n},specularIntensity:{value:e.specularIntensity||3},transparency:{value:e.transparency||.6},roughness:{value:e.roughness||.1},lightDirection:{value:new r(1,1,1).normalize()},lightPosition:{value:new r(0,0,0)},ambientStrength:{value:.15},lightIntensity:{value:.85}},transparent:!0,blending:v,side:c,depthWrite:!1})}createOceanCurrentsLayerMaterial(e){const a=`
+    `,t=e.waterColor instanceof i?e.waterColor:new i(e.waterColor||3050379),l=e.deepWaterColor instanceof i?e.deepWaterColor:new i(e.deepWaterColor||13158),s=e.foamColor instanceof i?e.foamColor:new i(e.foamColor||16777215);return new n({vertexShader:a,fragmentShader:o,uniforms:{time:{value:0},seedOffset:{value:(e.seed||0)%100},waveHeight:{value:e.waveHeight||.08},waveFrequency:{value:e.waveFrequency||3},waveSpeed:{value:e.waveSpeed||.5},waterColor:{value:t},deepWaterColor:{value:l},foamColor:{value:s},specularIntensity:{value:e.specularIntensity||3},transparency:{value:e.transparency||.6},roughness:{value:e.roughness||.1},lightDirection:{value:new r(1,1,1).normalize()},lightPosition:{value:new r(0,0,0)},ambientStrength:{value:.15},lightIntensity:{value:.85}},transparent:!0,blending:v,side:c,depthWrite:!1})}createOceanCurrentsLayerMaterial(e){const a=`
       varying vec3 vPosition;
       varying vec3 vNormal;
       varying vec3 vWorldPosition;
@@ -950,7 +880,7 @@ import{C as i,S as s,F as c,V as r,b as d,M as m,N as v,D as u}from"./atlas_Bjkc
         
         gl_FragColor = vec4(finalColor, alpha);
       }
-    `,t=e.currentColor instanceof i?e.currentColor:new i(e.currentColor||4889486),l=e.deepCurrentColor instanceof i?e.deepCurrentColor:new i(e.deepCurrentColor||2973010);return new s({vertexShader:a,fragmentShader:o,uniforms:{time:{value:0},seedOffset:{value:(e.seed||0)%100},currentIntensity:{value:e.currentIntensity||.5},currentScale:{value:e.currentScale||2},currentSpeed:{value:e.currentSpeed||.2},secondaryCurrentIntensity:{value:e.secondaryCurrentIntensity||.3},secondaryCurrentScale:{value:e.secondaryCurrentScale||3},secondaryCurrentSpeed:{value:e.secondaryCurrentSpeed||.15},currentColor:{value:t},deepCurrentColor:{value:l},opacity:{value:e.opacity||.25},lightDirection:{value:new r(1,1,1).normalize()},lightPosition:{value:new r(0,0,0)},ambientStrength:{value:.15},lightIntensity:{value:.85}},transparent:!0,blending:v,side:c,depthWrite:!1})}addToScene(e){this.scene=e,this.effectLayers.forEach(a=>{a.mesh&&e.add(a.mesh)}),this.effectLayers.length}update(e,a){this.effectLayers.forEach(o=>{if(o.material.uniforms.time&&(o.material.uniforms.time.value+=e),a!==void 0&&o.material.uniforms.rotationAngle&&(o.material.uniforms.rotationAngle.value=a),o.layerObject&&o.layerObject.update)try{o.layerObject.update(e,a)}catch(t){console.error(`Error updating layer ${o.name}:`,t)}o.mesh&&o.mesh.rotation.copy(this.baseMesh.rotation)})}updateBaseColor(e){const a=e instanceof i?e:new i(e);this.baseMaterial.uniforms.baseColor.value=a}updateLightDirection(e){this.baseMaterial.uniforms.lightDirection.value=e.clone().normalize(),this.effectLayers.forEach(a=>{a.material.uniforms.lightDirection&&(a.material.uniforms.lightDirection.value=e.clone().normalize())})}updateLightPosition(e){this.baseMaterial.uniforms.lightPosition.value=e.clone(),this.effectLayers.forEach(a=>{a.material.uniforms.lightPosition&&(a.material.uniforms.lightPosition.value=e.clone())})}updateFromThreeLight(e){this.updateLightPosition(e.position);const a=e.target.position.clone().sub(e.position).normalize();this.updateLightDirection(a)}applyHoleShader(e){this.baseMaterial&&this.baseMaterial.dispose(),this.baseMaterial=e,this.baseMesh.material=e}createGenericLayerMaterial(e,a,o,t=!0,l=v){return o.lightDirection||(o.lightDirection={value:new r(1,1,1).normalize()}),o.lightPosition||(o.lightPosition={value:new r(0,0,0)}),new s({vertexShader:e,fragmentShader:a,uniforms:o,transparent:t,blending:l,side:c,depthWrite:!1})}convertEffectToLayer(e,a,o=1.001){if(a instanceof s){const t=a.clone();return t.transparent=!0,t.depthWrite=!1,t.uniforms.lightDirection||(t.uniforms.lightDirection={value:new r(1,1,1).normalize()}),this.addEffectLayer(e,t,o)}return console.warn(`Cannot convert non-shader material to layer: ${e}`),null}createDiamondSurfaceLayerMaterial(e){const a=`
+    `,t=e.currentColor instanceof i?e.currentColor:new i(e.currentColor||4889486),l=e.deepCurrentColor instanceof i?e.deepCurrentColor:new i(e.deepCurrentColor||2973010);return new n({vertexShader:a,fragmentShader:o,uniforms:{time:{value:0},seedOffset:{value:(e.seed||0)%100},currentIntensity:{value:e.currentIntensity||.5},currentScale:{value:e.currentScale||2},currentSpeed:{value:e.currentSpeed||.2},secondaryCurrentIntensity:{value:e.secondaryCurrentIntensity||.3},secondaryCurrentScale:{value:e.secondaryCurrentScale||3},secondaryCurrentSpeed:{value:e.secondaryCurrentSpeed||.15},currentColor:{value:t},deepCurrentColor:{value:l},opacity:{value:e.opacity||.25},lightDirection:{value:new r(1,1,1).normalize()},lightPosition:{value:new r(0,0,0)},ambientStrength:{value:.15},lightIntensity:{value:.85}},transparent:!0,blending:v,side:c,depthWrite:!1})}addToScene(e){this.scene=e,this.effectLayers.forEach(a=>{a.mesh&&e.add(a.mesh)}),this.effectLayers.length}update(e,a){this.effectLayers.forEach(o=>{if(o.material.uniforms.time&&(o.material.uniforms.time.value+=e),a!==void 0&&o.material.uniforms.rotationAngle&&(o.material.uniforms.rotationAngle.value=a),o.layerObject&&o.layerObject.update)try{o.layerObject.update(e,a)}catch(t){console.error(`Error updating layer ${o.name}:`,t)}o.mesh&&o.mesh.rotation.copy(this.baseMesh.rotation)})}updateBaseColor(e){const a=e instanceof i?e:new i(e);this.baseMaterial.uniforms.baseColor.value=a}updateLightDirection(e){this.baseMaterial.uniforms.lightDirection.value=e.clone().normalize(),this.effectLayers.forEach(a=>{a.material.uniforms.lightDirection&&(a.material.uniforms.lightDirection.value=e.clone().normalize())})}updateLightPosition(e){this.baseMaterial.uniforms.lightPosition.value=e.clone(),this.effectLayers.forEach(a=>{a.material.uniforms.lightPosition&&(a.material.uniforms.lightPosition.value=e.clone())})}updateFromThreeLight(e){this.updateLightPosition(e.position);const a=e.target.position.clone().sub(e.position).normalize();this.updateLightDirection(a)}applyHoleShader(e){this.baseMaterial&&this.baseMaterial.dispose(),this.baseMaterial=e,this.baseMesh.material=e}createGenericLayerMaterial(e,a,o,t=!0,l=v){return o.lightDirection||(o.lightDirection={value:new r(1,1,1).normalize()}),o.lightPosition||(o.lightPosition={value:new r(0,0,0)}),new n({vertexShader:e,fragmentShader:a,uniforms:o,transparent:t,blending:l,side:c,depthWrite:!1})}convertEffectToLayer(e,a,o=1.001){if(a instanceof n){const t=a.clone();return t.transparent=!0,t.depthWrite=!1,t.uniforms.lightDirection||(t.uniforms.lightDirection={value:new r(1,1,1).normalize()}),this.addEffectLayer(e,t,o)}return console.warn(`Cannot convert non-shader material to layer: ${e}`),null}createDiamondSurfaceLayerMaterial(e){const a=`
       varying vec3 vPosition;
       varying vec3 vNormal;
       varying vec3 vWorldPosition;
@@ -1181,7 +1111,7 @@ import{C as i,S as s,F as c,V as r,b as d,M as m,N as v,D as u}from"./atlas_Bjkc
         
         gl_FragColor = vec4(finalColor, finalOpacity);
       }
-    `;return new s({vertexShader:a,fragmentShader:o,uniforms:{time:{value:0},diamondColor:{value:e.color||new i(8421504)},refractionIndex:{value:e.refractionIndex||2.42},dispersion:{value:e.dispersion||.5},clarity:{value:e.clarity||.8},facetSize:{value:e.facetSize!==void 0?e.facetSize:15},brilliance:{value:e.brilliance||2},opacity:{value:e.opacity||.9},prismaticIntensity:{value:e.prismaticIntensity||.6},iridescenceIntensity:{value:e.iridescenceIntensity||.5},iridescenceRange:{value:e.iridescenceRange||1},iridescenceSpeed:{value:e.iridescenceSpeed||.3},iridescenceScale:{value:e.iridescenceScale||1.5},lightDirection:{value:new r(1,1,1).normalize()},lightPosition:{value:new r(0,0,0)},ambientStrength:{value:.15},lightIntensity:{value:.85}},transparent:!0,blending:v,side:u,depthWrite:!1})}createMoltenLavaLayerMaterial(e){const a=`
+    `;return new n({vertexShader:a,fragmentShader:o,uniforms:{time:{value:0},diamondColor:{value:e.color||new i(8421504)},refractionIndex:{value:e.refractionIndex||2.42},dispersion:{value:e.dispersion||.5},clarity:{value:e.clarity||.8},facetSize:{value:e.facetSize!==void 0?e.facetSize:15},brilliance:{value:e.brilliance||2},opacity:{value:e.opacity||.9},prismaticIntensity:{value:e.prismaticIntensity||.6},iridescenceIntensity:{value:e.iridescenceIntensity||.5},iridescenceRange:{value:e.iridescenceRange||1},iridescenceSpeed:{value:e.iridescenceSpeed||.3},iridescenceScale:{value:e.iridescenceScale||1.5},lightDirection:{value:new r(1,1,1).normalize()},lightPosition:{value:new r(0,0,0)},ambientStrength:{value:.15},lightIntensity:{value:.85}},transparent:!0,blending:v,side:u,depthWrite:!1})}createMoltenLavaLayerMaterial(e){const a=`
       uniform float time;
       uniform float lavaWaveHeight;
       uniform float lavaWaveFrequency;
@@ -1397,4 +1327,4 @@ import{C as i,S as s,F as c,V as r,b as d,M as m,N as v,D as u}from"./atlas_Bjkc
         
         gl_FragColor = vec4(finalColor, alpha);
       }
-    `,t=e.moltenColor instanceof i?e.moltenColor:new i(e.moltenColor||16747520),l=e.coreColor instanceof i?e.coreColor:new i(e.coreColor||16757575),n=e.coolingColor instanceof i?e.coolingColor:new i(e.coolingColor||13386752);return new s({vertexShader:a,fragmentShader:o,uniforms:{time:{value:0},seedOffset:{value:(e.seed||0)%100},lavaWaveHeight:{value:e.lavaWaveHeight||.04},lavaWaveFrequency:{value:e.lavaWaveFrequency||2},lavaWaveSpeed:{value:e.lavaWaveSpeed||.05},viscosity:{value:e.viscosity||.8},moltenColor:{value:t},coreColor:{value:l},coolingColor:{value:n},emissiveIntensity:{value:e.emissiveIntensity||4},glowIntensity:{value:e.glowIntensity||3},temperature:{value:e.temperature||.9},lavaRoughness:{value:e.lavaRoughness||.8},lightDirection:{value:new r(1,1,1).normalize()},lightPosition:{value:new r(0,0,0)},ambientStrength:{value:.15},lightIntensity:{value:.85}},transparent:!0,blending:v,side:c,depthWrite:!1})}getNextScaleFactor(){return 1.001+this.effectLayers.length*.001}getLayerMeshes(){const e={};return this.effectLayers.forEach(a=>{a.name&&a.mesh&&(e[a.name]=a.mesh)}),e}dispose(){this.baseMaterial.dispose(),this.effectLayers.forEach(e=>{e.mesh&&(e.mesh.geometry.dispose(),this.scene&&this.scene.remove(e.mesh)),e.material.dispose()})}}export{f as P};
+    `,t=e.moltenColor instanceof i?e.moltenColor:new i(e.moltenColor||16747520),l=e.coreColor instanceof i?e.coreColor:new i(e.coreColor||16757575),s=e.coolingColor instanceof i?e.coolingColor:new i(e.coolingColor||13386752);return new n({vertexShader:a,fragmentShader:o,uniforms:{time:{value:0},seedOffset:{value:(e.seed||0)%100},lavaWaveHeight:{value:e.lavaWaveHeight||.04},lavaWaveFrequency:{value:e.lavaWaveFrequency||2},lavaWaveSpeed:{value:e.lavaWaveSpeed||.05},viscosity:{value:e.viscosity||.8},moltenColor:{value:t},coreColor:{value:l},coolingColor:{value:s},emissiveIntensity:{value:e.emissiveIntensity||4},glowIntensity:{value:e.glowIntensity||3},temperature:{value:e.temperature||.9},lavaRoughness:{value:e.lavaRoughness||.8},lightDirection:{value:new r(1,1,1).normalize()},lightPosition:{value:new r(0,0,0)},ambientStrength:{value:.15},lightIntensity:{value:.85}},transparent:!0,blending:v,side:c,depthWrite:!1})}getNextScaleFactor(){return 1.001+this.effectLayers.length*.001}getLayerMeshes(){const e={};return this.effectLayers.forEach(a=>{a.name&&a.mesh&&(e[a.name]=a.mesh)}),e}dispose(){this.baseMaterial.dispose(),this.effectLayers.forEach(e=>{e.mesh&&(e.mesh.geometry.dispose(),this.scene&&this.scene.remove(e.mesh)),e.material.dispose()})}}export{f as P};
