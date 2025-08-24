@@ -174,7 +174,6 @@ export class CarbonTrailsEffect {
   private maxParticles: number = 1200; // Límite razonable para rendimiento
   private orbitalVisibilityFactor: number;
   private temperatureActivationFactor: number;
-  private lastDebugTime: number = 0;
 
   private static readonly vertexShader = `
     attribute float size;
@@ -398,36 +397,6 @@ export class CarbonTrailsEffect {
       }
     }
 
-    // Debug logging every 5 seconds
-    const debugInterval = 5000;
-    const currentDebugTime = Date.now();
-    if (!this.lastDebugTime || currentDebugTime - this.lastDebugTime > debugInterval) {
-      console.log("🌫️ CarbonTrails ORBITAL VISIBILITY DEBUG:");
-      console.log(`   🌍 Cosmic origin: ${COSMIC_ORIGIN_TIME} (${new Date(COSMIC_ORIGIN_TIME * 1000).toISOString()})`);
-      console.log(`   ⏰ Current time: ${currentTime.toFixed(2)} years since cosmic origin`);
-      console.log(`   📅 Real date: ${new Date().toISOString()}`);
-      console.log(`   🔄 Cycle duration: ${this.params.orbitalData.cycle_duration_years.toFixed(2)} years`);
-      console.log(`   👁️  Visible duration: ${this.params.orbitalData.visible_duration_years.toFixed(2)} years`);
-      console.log(`   📊 Cycle progress: ${(cycleProgress * 100).toFixed(1)}% (${cycleProgress.toFixed(4)})`);
-      console.log(`   🎯 Visible fraction: ${(visibleFraction * 100).toFixed(1)}% (${visibleFraction.toFixed(4)})`);
-      console.log(`   ${isInVisiblePeriod ? "✅" : "❌"} In visible period: ${isInVisiblePeriod}`);
-      console.log(`   💫 Final visibility: ${(visibility * 100).toFixed(1)}% (${visibility.toFixed(4)})`);
-
-      // Calculate next visibility window
-      const currentCycleStart = Math.floor(currentTime / this.params.orbitalData.cycle_duration_years) * this.params.orbitalData.cycle_duration_years;
-      const nextVisibleStart = cycleProgress <= visibleFraction ? currentCycleStart : currentCycleStart + this.params.orbitalData.cycle_duration_years;
-      const nextHiddenStart = currentCycleStart + this.params.orbitalData.visible_duration_years;
-
-      if (!isInVisiblePeriod) {
-        const yearsUntilVisible = nextVisibleStart - currentTime;
-        console.log(`   ⏳ Next visible in: ${yearsUntilVisible.toFixed(2)} years (year ${new Date(Date.now() + yearsUntilVisible * 365.25 * 24 * 3600 * 1000).getFullYear()})`);
-      } else {
-        const yearsUntilHidden = nextHiddenStart - currentTime;
-        console.log(`   ⏳ Will hide in: ${yearsUntilHidden.toFixed(2)} years (year ${new Date(Date.now() + yearsUntilHidden * 365.25 * 24 * 3600 * 1000).getFullYear()})`);
-      }
-
-      this.lastDebugTime = currentDebugTime;
-    }
 
     return visibility;
   }

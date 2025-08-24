@@ -1,3 +1,0 @@
-│ > Ahora fíjate en PulsatingCube.tsx, si te fijas, solo aparece en determinados momentos del periodo orbital, habría que hacer que solo un 33% de los   │
-│   planetas tengan el efecto activado y que, una vez activado, solo se active durante X periodos del periodo orbital, por ejemplo si el periodo         │
-│   orbital es de 21 años, que aparezca solo durante X momentos del periodo orbital                                                                      │
