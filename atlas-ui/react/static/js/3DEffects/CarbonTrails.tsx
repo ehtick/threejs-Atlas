@@ -52,19 +52,19 @@ export interface CarbonTrailsParams {
 
 // Rangos para generación procedural - AJUSTADOS PARA MAYOR VISIBILIDAD
 const PROCEDURAL_RANGES = {
-  TRAIL_COUNT: { min: 6, max: 10 },
-  EMISSION_FREQUENCY: { min: 0.4, max: 0.8 },
-  TRAIL_HEIGHT: { min: 0.2, max: 0.6 },
-  TRAIL_SPREAD: { min: 0.2, max: 1.0 },
-  PARTICLES_PER_TRAIL: { min: 25, max: 35 },
-  PARTICLE_SIZE: { min: 0.1, max: 0.18 },
-  PARTICLE_LIFETIME: { min: 2.0, max: 4.0 }, // Vida para ver el movimiento
-  PARTICLE_SPEED: { min: 0.1, max: 0.3 }, // VELOCIDAD ALTA PARA MOVIMIENTO VISIBLE
-  PARTICLE_DRAG: { min: 0.8, max: 1.2 }, // Menos drag = más movimiento
-  ATMOSPHERE_HEIGHT: { min: 6.0, max: 12.0 },
-  OPACITY: { min: 0.2, max: 0.4 }, // Más opacas para ver mejor
-  TURBULENCE: { min: 0.6, max: 2.4 }, // Turbulencia ALTA para movimiento visible
-  WIND_STRENGTH: { min: 0.1, max: 0.2 },
+  TRAIL_COUNT: { min: 8, max: 15 }, // Mayor variabilidad entre planetas
+  EMISSION_FREQUENCY: { min: 0.3, max: 1.2 }, // Amplio rango para diferentes ritmos
+  TRAIL_HEIGHT: { min: 0.3, max: 0.8 },
+  TRAIL_SPREAD: { min: 0.4, max: 1.4 }, // Mayor variación en dispersión
+  PARTICLES_PER_TRAIL: { min: 20, max: 40 }, // Rango eficiente pero variable
+  PARTICLE_SIZE: { min: 0.08, max: 0.22 }, // Mayor rango de tamaños
+  PARTICLE_LIFETIME: { min: 1.5, max: 5.0 }, // Amplio rango para diferentes efectos
+  PARTICLE_SPEED: { min: 0.08, max: 0.35 }, // Desde lentas hasta rápidas
+  PARTICLE_DRAG: { min: 0.85, max: 0.98 }, // Variedad en comportamiento de curvas
+  ATMOSPHERE_HEIGHT: { min: 4.0, max: 10.0 }, // Diferentes alturas atmosféricas
+  OPACITY: { min: 0.15, max: 0.45 }, // Desde sutiles hasta prominentes
+  TURBULENCE: { min: 0.3, max: 1.8 }, // Desde suaves hasta muy turbulentas
+  WIND_STRENGTH: { min: 0.05, max: 0.25 }, // Variedad en efectos de viento
 };
 
 // Clase para manejar una estela individual
@@ -402,7 +402,6 @@ export class CarbonTrailsEffect {
     let particleIndex = 0;
 
     // Optimizaciones: precalcular valores que no cambian en el loop
-    const emissionInterval = 1.0 / this.params.emissionFrequency!;
     const maxDistance = this.planetRadius * this.params.atmosphereHeight!;
 
     for (let trailIndex = 0; trailIndex < this.trails.length; trailIndex++) {
