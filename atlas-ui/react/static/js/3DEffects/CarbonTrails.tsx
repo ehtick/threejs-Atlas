@@ -109,14 +109,27 @@ class CarbonTrail {
   }
   
   initializeStateFromAbsoluteTime(currentTime: number, frequency: number, trailIndex: number): void {
-    // SIMPLIFICADO: Solo establecer un tiempo de emisión inicial aleatorio
     const emissionInterval = 1.0 / frequency;
-    const randomOffset = (trailIndex * 0.3) % emissionInterval; // Offset pequeño para variedad
     
-    this.lastEmissionTime = currentTime - randomOffset; // Listo para empezar a emitir
+    // Offset determinístico basado en el índice (como AtmosphereClouds)
+    const phaseOffset = (trailIndex * 0.618) % 1.0; // Golden ratio
     
-    // NO inicializar partículas pasadas - que empiecen desde cero
-    // Esto evita bugs de estado inicial complejo
+    // Esta estela empezó a emitir con este offset
+    this.lastEmissionTime = currentTime - (phaseOffset * emissionInterval);
+    
+    // Activar algunas partículas iniciales de forma determinística
+    const particlesToActivate = Math.min(10, this.particleLifetimes.length);
+    for (let i = 0; i < particlesToActivate; i++) {
+      const emissionTime = this.lastEmissionTime - (i * emissionInterval);
+      const age = currentTime - emissionTime;
+      
+      if (age >= 0 && age < this.particleLifetimes[i]) {
+        this.particleActive[i] = true;
+        this.particleBirthTimes[i] = emissionTime;
+      }
+    }
+    
+    this.isActive = true;
   }
   
   shouldEmit(currentTime: number, frequency: number): boolean {
@@ -352,18 +365,7 @@ export class CarbonTrailsEffect {
   }
   
   private initializeActiveTrails(): void {
-    // Activar inmediatamente algunas partículas de cada estela
-    const initialTime = this.startTime;
-    
-    for (let trailIndex = 0; trailIndex < this.trails.length; trailIndex++) {
-      const trail = this.trails[trailIndex];
-      
-      // Activar las primeras 20 partículas de cada estela con tiempos escalonados
-      for (let i = 0; i < Math.min(20, this.params.particlesPerTrail!); i++) {
-        trail.particleActive[i] = true;
-        trail.particleBirthTimes[i] = initialTime - (i * 0.5); // Escalonar nacimientos
-      }
-    }
+    // Ya no es necesario - se hace en initializeStateFromAbsoluteTime
   }
   
   private calculateTemperatureActivation(): number {
@@ -427,30 +429,21 @@ export class CarbonTrailsEffect {
     for (let trailIndex = 0; trailIndex < this.trails.length; trailIndex++) {
       const trail = this.trails[trailIndex];
       
-      // Verificar si la estela debe emitir nuevas partículas
-      if (trail.shouldEmit(currentTime, this.params.emissionFrequency!)) {
-        // Encontrar una partícula inactiva para activar
-        for (let i = 0; i < this.params.particlesPerTrail!; i++) {
-          if (!trail.particleActive[i]) {
-            trail.particleActive[i] = true;
-            trail.particleBirthTimes[i] = currentTime;
-            trail.startEmission(currentTime);
-            break;
-          }
-        }
-      }
+      // ELIMINADO: No más emisión dinámica
       
-      // Renderizar partículas activas
+      // Calcular todas las partículas basadas en tiempo absoluto (como PulsatingCube)
       for (let i = 0; i < this.params.particlesPerTrail! && particleIndex < this.maxParticles; i++) {
-        if (trail.particleActive[i]) {
-          const particleAge = currentTime - trail.particleBirthTimes[i];
-          const particleLifetime = trail.particleLifetimes[i];
-          
-          // Desactivar partículas que han excedido su tiempo de vida o se han alejado demasiado
-          if (particleAge > particleLifetime) {
-            trail.particleActive[i] = false;
-            continue;
-          }
+        
+        // Calcular el tiempo de emisión de esta partícula (determinístico)
+        const emissionInterval = 1.0 / this.params.emissionFrequency!;
+        const phaseOffset = ((trailIndex * 0.618) + (i * 0.1)) % 1.0;
+        const particleEmissionTime = currentTime - (phaseOffset * trail.particleLifetimes[i]);
+        
+        // Edad de la partícula basada en tiempo absoluto
+        const particleAge = ((currentTime - particleEmissionTime) % (trail.particleLifetimes[i] + emissionInterval));
+        
+        // Solo mostrar si está en su tiempo de vida
+        if (particleAge >= 0 && particleAge < trail.particleLifetimes[i]) {
           
           // Física mejorada: trayectorias curvas que pueden volver al planeta
           const direction = trail.particleDirections[i].clone();
@@ -513,7 +506,7 @@ export class CarbonTrailsEffect {
           }
           
           // Fade basado en edad de partícula y desvanecimiento atmosférico
-          const ageProgress = particleAge / particleLifetime;
+          const ageProgress = particleAge / trail.particleLifetimes[i];
           const ageFadeIn = this.smoothstep(0, 0.15, ageProgress);
           const ageFadeOut = this.smoothstep(1.0, 0.7, ageProgress);
           opacity *= ageFadeIn * ageFadeOut;
@@ -559,15 +552,13 @@ export class CarbonTrailsEffect {
   }
   
   update(_deltaTime: number): void {
+    // Tiempo absoluto determinístico (igual que AtmosphereClouds)
     const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!;
     const currentTime = rawTime % 1000;
     
     // Actualizar factores de activación
     this.orbitalVisibilityFactor = this.calculateOrbitalVisibility();
     const totalActivationFactor = this.temperatureActivationFactor * this.orbitalVisibilityFactor;
-    
-    // Debug minimal - solo para verificar funcionamiento
-    // (se puede remover en producción)
     
     if (totalActivationFactor > 0) {
       this.updateParticleGeometry(currentTime);
