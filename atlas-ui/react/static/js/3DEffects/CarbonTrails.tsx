@@ -174,6 +174,7 @@ export class CarbonTrailsEffect {
   private maxParticles: number = 1200; // Límite razonable para rendimiento
   private orbitalVisibilityFactor: number;
   private temperatureActivationFactor: number;
+  private lastDebugTime: number = 0;
 
   private static readonly vertexShader = `
     attribute float size;
@@ -374,23 +375,61 @@ export class CarbonTrailsEffect {
       return 1;
     }
 
-    const currentTime = (this.params.currentTime || 0) + (Date.now() / 1000 - this.startTime) / (365.25 * 24 * 3600);
+    // Calculate time from cosmic origin, same as Python
+    const COSMIC_ORIGIN_TIME = 514080000; // Same as Python: cosmic_origin_time
+    const currentTimeSeconds = Date.now() / 1000 - COSMIC_ORIGIN_TIME;
+    const currentTime = currentTimeSeconds / (365.25 * 24 * 3600); // Convert to years
+
     const cycleProgress = (currentTime % this.params.orbitalData.cycle_duration_years) / this.params.orbitalData.cycle_duration_years;
     const visibleFraction = this.params.orbitalData.visible_duration_years / this.params.orbitalData.cycle_duration_years;
 
-    if (cycleProgress <= visibleFraction) {
+    const isInVisiblePeriod = cycleProgress <= visibleFraction;
+    let visibility = 0;
+
+    if (isInVisiblePeriod) {
       const visibleProgress = cycleProgress / visibleFraction;
 
       if (visibleProgress < 0.15) {
-        return visibleProgress / 0.15;
+        visibility = visibleProgress / 0.15;
       } else if (visibleProgress > 0.85) {
-        return (1.0 - visibleProgress) / 0.15;
+        visibility = (1.0 - visibleProgress) / 0.15;
       } else {
-        return 1.0;
+        visibility = 1.0;
       }
     }
 
-    return 0;
+    // Debug logging every 5 seconds
+    const debugInterval = 5000;
+    const currentDebugTime = Date.now();
+    if (!this.lastDebugTime || currentDebugTime - this.lastDebugTime > debugInterval) {
+      console.log("🌫️ CarbonTrails ORBITAL VISIBILITY DEBUG:");
+      console.log(`   🌍 Cosmic origin: ${COSMIC_ORIGIN_TIME} (${new Date(COSMIC_ORIGIN_TIME * 1000).toISOString()})`);
+      console.log(`   ⏰ Current time: ${currentTime.toFixed(2)} years since cosmic origin`);
+      console.log(`   📅 Real date: ${new Date().toISOString()}`);
+      console.log(`   🔄 Cycle duration: ${this.params.orbitalData.cycle_duration_years.toFixed(2)} years`);
+      console.log(`   👁️  Visible duration: ${this.params.orbitalData.visible_duration_years.toFixed(2)} years`);
+      console.log(`   📊 Cycle progress: ${(cycleProgress * 100).toFixed(1)}% (${cycleProgress.toFixed(4)})`);
+      console.log(`   🎯 Visible fraction: ${(visibleFraction * 100).toFixed(1)}% (${visibleFraction.toFixed(4)})`);
+      console.log(`   ${isInVisiblePeriod ? "✅" : "❌"} In visible period: ${isInVisiblePeriod}`);
+      console.log(`   💫 Final visibility: ${(visibility * 100).toFixed(1)}% (${visibility.toFixed(4)})`);
+
+      // Calculate next visibility window
+      const currentCycleStart = Math.floor(currentTime / this.params.orbitalData.cycle_duration_years) * this.params.orbitalData.cycle_duration_years;
+      const nextVisibleStart = cycleProgress <= visibleFraction ? currentCycleStart : currentCycleStart + this.params.orbitalData.cycle_duration_years;
+      const nextHiddenStart = currentCycleStart + this.params.orbitalData.visible_duration_years;
+
+      if (!isInVisiblePeriod) {
+        const yearsUntilVisible = nextVisibleStart - currentTime;
+        console.log(`   ⏳ Next visible in: ${yearsUntilVisible.toFixed(2)} years (year ${new Date(Date.now() + yearsUntilVisible * 365.25 * 24 * 3600 * 1000).getFullYear()})`);
+      } else {
+        const yearsUntilHidden = nextHiddenStart - currentTime;
+        console.log(`   ⏳ Will hide in: ${yearsUntilHidden.toFixed(2)} years (year ${new Date(Date.now() + yearsUntilHidden * 365.25 * 24 * 3600 * 1000).getFullYear()})`);
+      }
+
+      this.lastDebugTime = currentDebugTime;
+    }
+
+    return visibility;
   }
 
   private updateParticleGeometry(currentTime: number): void {
@@ -486,13 +525,6 @@ export class CarbonTrailsEffect {
     opacities.needsUpdate = true;
     atmosphereFades.needsUpdate = true;
 
-    // Debug - verificar activación de partículas
-    if (particleIndex > 0) {
-      console.log(`CarbonTrails: ${particleIndex} partículas activas`);
-    } else {
-      console.log(`CarbonTrails: NO HAY PARTÍCULAS ACTIVAS - Revisar tiempo absoluto`);
-    }
-
     this.particleGeometry.setDrawRange(0, particleIndex);
   }
 
@@ -575,17 +607,19 @@ export function createCarbonTrailsFromPythonData(pythonData: any, planetRadius: 
 
   // Use carbon_trails_data from Python backend (similar to PulsatingCube pattern)
   const carbonData = pythonData?.surface_elements?.carbon_trails_data;
-  
+
   // If no carbon_trails_data from Python, the effect is disabled (33% probability handled in Python)
-  const orbitalData = carbonData ? {
-    enabled: true,
-    cycle_duration_years: carbonData.cycle_duration_years,
-    visible_duration_years: carbonData.visible_duration_years,
-  } : {
-    enabled: false,
-    cycle_duration_years: 0,
-    visible_duration_years: 0,
-  };
+  const orbitalData = carbonData
+    ? {
+        enabled: true,
+        cycle_duration_years: carbonData.cycle_duration_years,
+        visible_duration_years: carbonData.visible_duration_years,
+      }
+    : {
+        enabled: false,
+        cycle_duration_years: 0,
+        visible_duration_years: 0,
+      };
 
   const params: CarbonTrailsParams = {
     seed: seed + 11000,
