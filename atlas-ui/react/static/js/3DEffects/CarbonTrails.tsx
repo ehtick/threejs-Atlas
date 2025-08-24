@@ -219,11 +219,11 @@ export class CarbonTrailsEffect {
     
     this.startTime = params.startTime || (seed % 10000) / 1000;
     
-    // Colores grises más sutiles y naturales
+    // Colores grises más oscuros y naturales
     const baseColor = params.baseColor instanceof THREE.Color ? params.baseColor :
-      new THREE.Color(0.4, 0.4, 0.45); // Gris medio más sutil
+      new THREE.Color(0.25, 0.25, 0.28); // Gris oscuro más natural
     const atmosphereColor = params.atmosphereColor instanceof THREE.Color ? params.atmosphereColor :
-      new THREE.Color(0.6, 0.6, 0.65); // Gris claro al desvanecerse
+      new THREE.Color(0.35, 0.35, 0.38); // Gris medio al desvanecerse
     
     this.params = {
       trailCount: params.trailCount || Math.floor(rng.uniform(PROCEDURAL_RANGES.TRAIL_COUNT.min, PROCEDURAL_RANGES.TRAIL_COUNT.max)),
