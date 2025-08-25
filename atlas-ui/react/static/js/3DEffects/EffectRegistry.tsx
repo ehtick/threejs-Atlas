@@ -243,6 +243,11 @@ export class EffectRegistry {
       fromPythonData: (data, planetRadius, layerSystem) => createAquiferWaterFromPythonData(layerSystem!, data),
     });
 
+    this.registerEffect(EffectType.OCEAN_CURRENTS, {
+      create: (params, planetRadius, layerSystem) => new OceanCurrentsEffect(layerSystem!, params),
+      fromPythonData: (data, planetRadius, layerSystem) => createOceanCurrentsFromPythonData(layerSystem!, data),
+    });
+
     this.registerEffect(EffectType.FLUID_LAYERS, {
       create: (params, planetRadius) => new FluidLayersEffect(planetRadius, params),
       fromPythonData: (data, planetRadius) => createFluidLayersFromPythonData(planetRadius, data),
