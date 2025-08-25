@@ -8,6 +8,7 @@
 import * as THREE from 'three';
 import { PlanetLayerSystem } from '../3DComponents/PlanetLayerSystem';
 import { SeededRandom } from '../Utils/SeededRandom';
+import { getAnimatedUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime";
 
 export interface MoltenLavaParams {
   // Configuración de olas de lava (más lentas que agua)
@@ -44,6 +45,7 @@ export interface MoltenLavaParams {
   seed?: number;
   startTime?: number;
   timeSpeed?: number; // Velocidad reducida para lava viscosa (0.05 - 0.5)
+  cosmicOriginTime?: number;
 }
 
 // Rangos para generación procedural - adaptados para lava viscosa
@@ -125,8 +127,8 @@ export class MoltenLavaEffect {
 
   update(deltaTime: number): void {
     // Calcular tiempo absoluto determinista MUY LENTO para lava viscosa
-    const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!;
-    const currentTime = rawTime % 1000;
+    const cosmicOriginTime = DEFAULT_COSMIC_ORIGIN_TIME; // No params.cosmicOriginTime available here
+    const currentTime = getAnimatedUniverseTime(cosmicOriginTime, this.params.timeSpeed!, this.startTime);
     
     // Actualizar tiempo en el material
     if (this.material.uniforms.time) {

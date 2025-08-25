@@ -7,6 +7,7 @@
 
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom";
+import { getAnimatedUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime";
 
 export interface FireEruptionParams {
   // Configuración de erupciones
@@ -376,15 +377,15 @@ export class FireEruptionEffect {
     this.initializeActiveEruptions();
     
     // Realizar la primera actualización de geometría para mostrar las partículas inmediatamente
-    const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!;
-    const currentTime = rawTime % 1000;
+    const cosmicOriginTime = this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME;
+    const currentTime = getAnimatedUniverseTime(cosmicOriginTime, this.params.timeSpeed, this.startTime);
     this.updateParticleGeometry(currentTime);
   }
   
   private initializeStateFromAbsoluteTime(): void {
     // Calcular tiempo actual absoluto (igual que PulsatingCube)
-    const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!;
-    const currentTime = rawTime % 1000;
+    const cosmicOriginTime = this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME;
+    const currentTime = getAnimatedUniverseTime(cosmicOriginTime, this.params.timeSpeed, this.startTime);
     
     // Inicializar cada erupción en el estado correcto
     for (let i = 0; i < this.eruptions.length; i++) {
@@ -470,8 +471,8 @@ export class FireEruptionEffect {
     // Similar a como PulsatingCube inicializa partículas en la posición correcta
     
     // Calcular tiempo actual absoluto (igual que en updateParticleGeometry)
-    const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!;
-    const currentTime = rawTime % 1000;
+    const cosmicOriginTime = this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME;
+    const currentTime = getAnimatedUniverseTime(cosmicOriginTime, this.params.timeSpeed, this.startTime);
     
     // Para cada erupción, verificar TODAS las erupciones pasadas que podrían tener partículas aún vivas
     for (let eruptionIndex = 0; eruptionIndex < this.eruptions.length; eruptionIndex++) {
@@ -705,8 +706,8 @@ export class FireEruptionEffect {
   
   update(_deltaTime: number): void {
     // Calcular tiempo determinista usando el patrón estándar del codebase
-    const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!;
-    const currentTime = rawTime % 1000; // Evitar overflow después de mucho tiempo
+    const cosmicOriginTime = this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME;
+    const currentTime = getAnimatedUniverseTime(cosmicOriginTime, this.params.timeSpeed, this.startTime);
     
     // Actualizar factor de visibilidad orbital (puede cambiar con el tiempo)
     this.orbitalVisibilityFactor = this.calculateOrbitalVisibility();

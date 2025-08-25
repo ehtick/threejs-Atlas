@@ -8,6 +8,7 @@
 import * as THREE from 'three';
 import { PlanetLayerSystem } from '../3DComponents/PlanetLayerSystem';
 import { SeededRandom } from '../Utils/SeededRandom';
+import { getAnimatedUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime";
 
 export interface AquiferWaterParams {
   // Configuración de olas principales
@@ -42,6 +43,7 @@ export interface AquiferWaterParams {
   seed?: number;
   startTime?: number; // Tiempo inicial fijo para determinismo
   timeSpeed?: number; // Velocidad del tiempo para movimiento de olas (0.1 - 1.0)
+  cosmicOriginTime?: number;
 }
 
 // Rangos para generación procedural
@@ -115,8 +117,8 @@ export class AquiferWaterEffect {
 
   update(deltaTime: number): void {
     // Calcular tiempo absoluto determinista desde el inicio con ciclo y velocidad procedural
-    const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!;
-    const currentTime = rawTime % 1000; // Mantener el tiempo en un ciclo de 1000 segundos
+    const cosmicOriginTime = this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME;
+    const currentTime = getAnimatedUniverseTime(cosmicOriginTime, this.params.timeSpeed!, this.startTime);
     
     // Actualizar tiempo en el material con el tiempo determinista
     if (this.material.uniforms.time) {
@@ -170,6 +172,7 @@ export function createAquiferWaterFromPythonData(layerSystem: PlanetLayerSystem,
     metalness: 0.1,
     normalScale: 0.02,
     normalSpeed: 0.6,
+    cosmicOriginTime: pythonData.timing?.cosmic_origin_time,
     seed
   };
   

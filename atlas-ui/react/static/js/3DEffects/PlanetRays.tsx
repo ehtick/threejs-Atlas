@@ -7,6 +7,7 @@
 
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom";
+import { getAnimatedUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime";
 
 export interface PlanetRaysParams {
   rayCount?: number;
@@ -18,6 +19,7 @@ export interface PlanetRaysParams {
   timeSpeed?: number;
   startTime?: number;
   colorVariation?: number;
+  cosmicOriginTime?: number;
 }
 
 const PROCEDURAL_RANGES = {
@@ -245,8 +247,8 @@ export class PlanetRaysEffect {
 
   update(): void {
     // Calcular tiempo absoluto determinista EXACTAMENTE como PolarHexagon
-    const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!;
-    const currentTime = rawTime % 1000; // Mantener en ciclo de 1000 segundos como PolarHexagon
+    const cosmicOriginTime = DEFAULT_COSMIC_ORIGIN_TIME; // No params.cosmicOriginTime available here
+    const currentTime = getAnimatedUniverseTime(cosmicOriginTime, this.params.timeSpeed!, this.startTime);
 
     // Animar cada rayo usando solo el tiempo determinista (sin sistema complejo de estados)
     this.rayMaterials.forEach((material, index) => {

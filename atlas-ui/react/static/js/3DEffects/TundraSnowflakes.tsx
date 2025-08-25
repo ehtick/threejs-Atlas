@@ -4,6 +4,7 @@
 
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom";
+import { getAnimatedUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime";
 
 export interface TundraSnowflakesParams {
   particleCount?: number;
@@ -12,6 +13,7 @@ export interface TundraSnowflakesParams {
   opacity?: number;
   colors?: THREE.Color[];
   seed?: number;
+  cosmicOriginTime?: number;
 }
 
 /**
@@ -218,8 +220,8 @@ export class TundraSnowflakesEffect {
 
   update(_deltaTime: number = 0.016): void {
     // TIEMPO PROCEDURAL DETERMINISTA como AtmosphereClouds
-    const rawTime = this.startTime + (Date.now() / 1000) * this.timeSpeed;
-    const currentTime = rawTime % 1000; // Ciclo de 1000 segundos
+    const cosmicOriginTime = DEFAULT_COSMIC_ORIGIN_TIME; // No params.cosmicOriginTime available here
+    const currentTime = getAnimatedUniverseTime(cosmicOriginTime, this.timeSpeed, this.startTime);
 
     // CALCULAR INTENSIDAD DE RÁFAGA PROCEDURAL
     const realTime = Date.now() / 1000; // Tiempo real para ráfagas

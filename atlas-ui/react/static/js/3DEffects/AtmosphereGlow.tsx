@@ -12,6 +12,7 @@
 
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom";
+import { getAnimatedUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime";
 
 export interface AtmosphereGlowParams {
   color?: THREE.Color | number;
@@ -25,6 +26,7 @@ export interface AtmosphereGlowParams {
   movementAmplitude?: number; // Amplitud del movimiento individual
   startTime?: number; // Tiempo inicial fijo para determinismo
   timeSpeed?: number; // Velocidad del tiempo para movimiento procedural (0.1 - 3.0)
+  cosmicOriginTime?: number;
 }
 
 // Rangos para generación procedural
@@ -203,8 +205,8 @@ export class AtmosphereGlowEffect {
 
   update(deltaTime: number): void {
     // Calcular tiempo absoluto determinista desde el inicio con ciclo y velocidad procedural
-    const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!; // Velocidad procedural
-    const currentTime = rawTime % 1000; // Mantener el tiempo en un ciclo de 1000 segundos
+    const cosmicOriginTime = DEFAULT_COSMIC_ORIGIN_TIME; // No params.cosmicOriginTime available here
+    const currentTime = getAnimatedUniverseTime(cosmicOriginTime, this.params.timeSpeed!, this.startTime);
     
     this.material.uniforms.time.value = currentTime;
 

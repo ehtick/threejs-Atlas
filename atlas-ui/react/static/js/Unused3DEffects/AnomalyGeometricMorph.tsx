@@ -8,6 +8,7 @@
 
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom";
+import { getAnimatedUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime";
 
 export interface AnomalyGeometricMorphParams {
   growthSpeed?: number;
@@ -16,6 +17,7 @@ export interface AnomalyGeometricMorphParams {
   timeSpeed?: number;
   planetColor?: THREE.Color;
   cycleDuration?: number;
+  cosmicOriginTime?: number;
 }
 
 const PROCEDURAL_RANGES = {
@@ -135,8 +137,8 @@ export class AnomalyGeometricMorphEffect {
   }
 
   update(deltaTime: number): void {
-    const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!;
-    const currentTime = rawTime % 1000;
+    const cosmicOriginTime = this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME;
+    const currentTime = getAnimatedUniverseTime(cosmicOriginTime, this.params.timeSpeed!, this.startTime);
     
     // Ciclo de aparición y desaparición
     const cycleTime = currentTime % this.params.cycleDuration!;

@@ -8,6 +8,7 @@
 
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom";
+import { getAnimatedUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime";
 
 export interface CarbonTrailsParams {
   // Configuración de estelas
@@ -275,14 +276,14 @@ export class CarbonTrailsEffect {
     this.initializeActiveTrails();
 
     // Primera actualización de geometría
-    const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!;
-    const currentTime = rawTime % 1000;
+    const cosmicOriginTime = this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME;
+    const currentTime = getAnimatedUniverseTime(cosmicOriginTime, this.params.timeSpeed!, this.startTime);
     this.updateParticleGeometry(currentTime);
   }
 
   private initializeStateFromAbsoluteTime(): void {
-    const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!;
-    const currentTime = rawTime % 1000;
+    const cosmicOriginTime = this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME;
+    const currentTime = getAnimatedUniverseTime(cosmicOriginTime, this.params.timeSpeed!, this.startTime);
 
     for (let i = 0; i < this.trails.length; i++) {
       this.trails[i].initializeStateFromAbsoluteTime(currentTime, this.params.emissionFrequency!, i);
@@ -480,8 +481,8 @@ export class CarbonTrailsEffect {
 
   update(_deltaTime: number): void {
     // Tiempo absoluto determinístico (igual que AtmosphereClouds)
-    const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!;
-    const currentTime = rawTime % 1000;
+    const cosmicOriginTime = this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME;
+    const currentTime = getAnimatedUniverseTime(cosmicOriginTime, this.params.timeSpeed!, this.startTime);
 
     // Actualizar factores de activación
     this.orbitalVisibilityFactor = this.calculateOrbitalVisibility();

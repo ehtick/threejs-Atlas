@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom";
+import { getAnimatedUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime";
 
 // Rangos procedurales para hexágonos polares basados en observaciones de Saturno
 const PROCEDURAL_RANGES = {
@@ -132,6 +133,7 @@ export interface PolarHexagonParams {
   seed?: number; // Seed for procedural generation
   startTime?: number; // Deterministic start time
   timeSpeed?: number; // Speed multiplier for time
+  cosmicOriginTime?: number;
 }
 
 export class PolarHexagonEffect {
@@ -232,8 +234,8 @@ export class PolarHexagonEffect {
 
   update(deltaTime: number): void {
     // Calcular tiempo absoluto determinista como AtmosphereClouds
-    const rawTime = this.startTime + (Date.now() / 1000) * this.proceduralParams.timeSpeed;
-    const currentTime = rawTime % 1000; // Mantener en ciclo de 1000 segundos
+    const cosmicOriginTime = DEFAULT_COSMIC_ORIGIN_TIME; // No params.cosmicOriginTime available here
+    const currentTime = getAnimatedUniverseTime(cosmicOriginTime, this.proceduralParams.timeSpeed, this.startTime);
 
     // Update time uniform for rotation with deterministic time
     this.material.uniforms.time.value = currentTime;

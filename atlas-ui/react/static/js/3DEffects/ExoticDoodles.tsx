@@ -5,6 +5,7 @@
 
 import * as THREE from 'three';
 import { SeededRandom } from '../Utils/SeededRandom';
+import { getAnimatedUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime";
 
 export interface ExoticDoodlesParams {
   doodles?: Array<{
@@ -24,6 +25,7 @@ export interface ExoticDoodlesParams {
     visible_duration_years: number;
   };
   currentTime?: number; // Tiempo actual en años para calcular ciclos orbitales
+  cosmicOriginTime?: number;
 }
 
 // Rangos para generación procedural
@@ -387,8 +389,8 @@ export class ExoticDoodlesEffect {
 
   update(_deltaTime: number): void {
     // Sistema de tiempo determinista sincronizado con PulsatingCube
-    const rawTime = this.startTime + (Date.now() / 1000) * this.timeSpeed;
-    const currentTime = rawTime % 1000; // Mantener el tiempo en un ciclo de 1000 segundos
+    const cosmicOriginTime = DEFAULT_COSMIC_ORIGIN_TIME; // No params.cosmicOriginTime available here
+    const currentTime = getAnimatedUniverseTime(cosmicOriginTime, this.timeSpeed, this.startTime);
 
     // Update orbital visibility factor (recalcular en tiempo real)
     const previousVisibility = this.orbitalVisibilityFactor;

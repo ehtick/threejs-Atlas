@@ -7,6 +7,7 @@
 
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom";
+import { getAnimatedUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime";
 
 export interface LavaFlowsParams {
   // Configuración de flujos principales
@@ -34,6 +35,7 @@ export interface LavaFlowsParams {
   seed?: number;
   startTime?: number;
   timeSpeed?: number; // Velocidad del tiempo para animación (0.1 - 2.0)
+  cosmicOriginTime?: number;
 }
 
 // Rangos para generación procedural basados en color Molten Core
@@ -400,8 +402,8 @@ export class LavaFlowsEffect {
 
   update(deltaTime: number): void {
     // Calcular tiempo absoluto determinista
-    const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!;
-    const currentTime = rawTime % 1000;
+    const cosmicOriginTime = DEFAULT_COSMIC_ORIGIN_TIME; // No params.cosmicOriginTime available here
+    const currentTime = getAnimatedUniverseTime(cosmicOriginTime, this.params.timeSpeed!, this.startTime);
     
     // Actualizar tiempo en todos los materiales de flujos
     this.lavaFlows.forEach(flow => {

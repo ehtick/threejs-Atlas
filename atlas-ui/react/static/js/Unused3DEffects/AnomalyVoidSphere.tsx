@@ -7,6 +7,7 @@
 
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom";
+import { getAnimatedUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime";
 
 export interface AnomalyVoidSphereParams {
   sphereCount?: number;
@@ -16,6 +17,7 @@ export interface AnomalyVoidSphereParams {
   seed?: number;
   timeSpeed?: number;
   gravitationalPull?: number;
+  cosmicOriginTime?: number;
 }
 
 const PROCEDURAL_RANGES = {
@@ -260,8 +262,8 @@ export class AnomalyVoidSphereEffect {
   }
 
   update(deltaTime: number): void {
-    const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!;
-    const currentTime = rawTime % 1000;
+    const cosmicOriginTime = this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME;
+    const currentTime = getAnimatedUniverseTime(cosmicOriginTime, this.params.timeSpeed!, this.startTime);
     
     // Actualizar cada esfera de vacío
     this.voidSpheres.forEach((sphere, index) => {

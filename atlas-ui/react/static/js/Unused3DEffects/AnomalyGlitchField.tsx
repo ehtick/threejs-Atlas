@@ -8,6 +8,7 @@
 
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom";
+import { getAnimatedUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime";
 
 export interface AnomalyGlitchFieldParams {
   intensity?: number;
@@ -17,6 +18,7 @@ export interface AnomalyGlitchFieldParams {
   seed?: number;
   timeSpeed?: number;
   pulseAmplitude?: number;
+  cosmicOriginTime?: number;
 }
 
 const PROCEDURAL_RANGES = {
@@ -227,8 +229,8 @@ export class AnomalyGlitchFieldEffect {
   }
 
   update(deltaTime: number, planetRotation?: THREE.Euler): void {
-    const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!;
-    const currentTime = rawTime % 1000;
+    const cosmicOriginTime = this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME;
+    const currentTime = getAnimatedUniverseTime(cosmicOriginTime, this.params.timeSpeed!, this.startTime);
     
     this.material.uniforms.time.value = currentTime;
     

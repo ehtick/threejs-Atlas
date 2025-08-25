@@ -7,6 +7,7 @@
 
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom";
+import { getAnimatedUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime";
 
 export interface AnomalyPhaseMatterParams {
   particleCount?: number;
@@ -17,6 +18,7 @@ export interface AnomalyPhaseMatterParams {
   timeSpeed?: number;
   phaseStates?: number;
   startTime?: number; // Tiempo inicial fijo para determinismo
+  cosmicOriginTime?: number;
 }
 
 const PROCEDURAL_RANGES = {
@@ -318,8 +320,8 @@ export class AnomalyPhaseMatterEffect {
 
   update(): void {
     // Calcular tiempo absoluto determinista desde el inicio con ciclo y velocidad procedural
-    const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!;
-    const currentTime = rawTime % 1000; // Mantener el tiempo en un ciclo de 1000 segundos
+    const cosmicOriginTime = DEFAULT_COSMIC_ORIGIN_TIME; // No params.cosmicOriginTime available here
+    const currentTime = getAnimatedUniverseTime(cosmicOriginTime, this.params.timeSpeed!, this.startTime);
     
     this.material.uniforms.time.value = currentTime;
     

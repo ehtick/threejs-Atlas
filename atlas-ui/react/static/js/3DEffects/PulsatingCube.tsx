@@ -8,6 +8,7 @@
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry";
+import { getAnimatedUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime";
 
 export interface PulsatingCubeParams {
   color?: THREE.Color | number;
@@ -29,6 +30,7 @@ export interface PulsatingCubeParams {
     visible_duration_years: number;
   };
   currentTime?: number; // Tiempo actual en años para calcular ciclos orbitales
+  cosmicOriginTime?: number;
 }
 
 // Rangos para generación procedural
@@ -178,8 +180,8 @@ export class PulsatingCubeEffect {
 
   private initializeStateFromAbsoluteTime(): void {
     // Calcular tiempo actual absoluto
-    const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!;
-    const currentTime = rawTime % 1000;
+    const cosmicOriginTime = this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME;
+    const currentTime = getAnimatedUniverseTime(cosmicOriginTime, this.params.timeSpeed!, this.startTime);
     
     // Calcular la duración total de un ciclo completo
     const avgPulseInterval = (this.params.pulseInterval![0] + this.params.pulseInterval![1]) / 2;
@@ -257,8 +259,8 @@ export class PulsatingCubeEffect {
 
   update(_deltaTime: number): void {
     // Sistema de tiempo determinista sincronizado con AtmosphereClouds
-    const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!;
-    const currentTime = rawTime % 1000; // Mantener el tiempo en un ciclo de 1000 segundos
+    const cosmicOriginTime = this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME;
+    const currentTime = getAnimatedUniverseTime(cosmicOriginTime, this.params.timeSpeed!, this.startTime);
     const timeSinceStart = currentTime - this.stateStartTime;
 
     // Actualizar factor de visibilidad orbital (recalcular en tiempo real)
