@@ -25,8 +25,8 @@ const PROCEDURAL_RANGES = {
   PARTICLE_COUNT: { min: 60, max: 150 },
   PHASE_INTENSITY: { min: 0.4, max: 0.9 },
   TRANSITION_SPEED: { min: 1.0, max: 4.0 },
-  COHERENCE_LEVEL: { min: 0.2, max: 0.7 },
-  TIME_SPEED: { min: 0.6, max: 2.2 },
+  COHERENCE_LEVEL: { min: 0.7, max: 0.7 },
+  TIME_SPEED: { min: 0.0003, max: 0.0006 },
   PHASE_STATES: { min: 3, max: 6 }
 };
 
