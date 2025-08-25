@@ -30,7 +30,7 @@ export interface VegetationParams {
 const PROCEDURAL_RANGES = {
   PATCH_COUNT: { min: 20, max: 40 }, // Muchos parches para cobertura densa
   DENSITY: { min: 0.8, max: 1.5 }, // Densidad alta para bosques
-  SIZE: { min: 0.03, max: 0.12 }, // Variedad de tamaños de parches
+  SIZE: { min: 0.08, max: 0.25 }, // Variedad de tamaños de parches (más grandes para mayor visibilidad)
   OPACITY: { min: 0.7, max: 0.95 }, // Opacidad alta para vegetación densa
   TREE_HEIGHT: { min: 0.015, max: 0.035 }, // Altura de árboles en proporción al planeta
   TIME_SPEED: { min: 0.05, max: 0.2 } // Animación muy sutil para simular viento
@@ -137,27 +137,50 @@ export class VegetationEffect {
     }
     
     void main() {
-      // Gradiente vertical para simular diferentes tipos de vegetación
-      float heightGradient = vUv.y;
+      // Distancia radial desde el centro para crear transiciones orgánicas
+      vec2 center = vec2(0.5);
+      float distFromCenter = length(vUv - center);
       
-      // Base de vegetación con variación de ruido
-      vec2 noiseUv = vUv * 8.0 + time * 0.01;
-      float vegetationNoise = fbm(noiseUv);
+      // Base de vegetación con múltiples capas de ruido para textura orgánica
+      vec2 noiseUv1 = vUv * 12.0 + time * 0.008;
+      float vegetationNoise1 = fbm(noiseUv1);
       
-      // Crear variaciones de color para simular diferentes plantas
+      vec2 noiseUv2 = vUv * 6.0 + time * 0.005;
+      float vegetationNoise2 = fbm(noiseUv2);
+      
+      vec2 noiseUv3 = vUv * 20.0 + time * 0.012;
+      float vegetationNoise3 = fbm(noiseUv3) * 0.5;
+      
+      // Combinar capas de ruido para textura compleja
+      float combinedNoise = vegetationNoise1 * 0.6 + vegetationNoise2 * 0.3 + vegetationNoise3 * 0.1;
+      
+      // Crear variaciones de color para simular follaje denso
       vec3 baseColor = vegetationColor;
       
-      // Vegetación más oscura en la base (arbustos), más clara en el tope (hojas)
-      float colorVariation = mix(0.6, 1.2, heightGradient);
-      colorVariation *= (0.8 + vegetationNoise * 0.4);
+      // Variaciones de color más complejas para simular hojas, ramas, sombras
+      float colorVariation = 0.7 + combinedNoise * 0.6;
       
-      // Añadir variaciones de color (marrones para troncos, verdes para hojas)
+      // Crear zonas más oscuras (sombras entre hojas) y más claras (hojas al sol)
+      float leafPattern = sin(vUv.x * 15.0) * sin(vUv.y * 12.0) * 0.15;
+      colorVariation += leafPattern;
+      
       vec3 finalColor = baseColor * colorVariation;
       
-      // En las partes bajas, añadir tonos marrones para simular troncos/tierra
-      if (heightGradient < 0.3) {
-        vec3 brownTone = vec3(0.4, 0.3, 0.2);
-        finalColor = mix(finalColor, brownTone, (0.3 - heightGradient) * 0.6);
+      // Añadir variaciones de color naturales (diferentes tonos de verde y marrón)
+      vec3 darkGreen = vec3(0.15, 0.35, 0.12);  // Verde oscuro para sombras
+      vec3 lightGreen = vec3(0.25, 0.50, 0.18); // Verde claro para hojas iluminadas
+      vec3 brownTone = vec3(0.35, 0.25, 0.15);  // Marrón para ramas/troncos
+      
+      // Mezclar colores basado en el ruido para crear variedad natural
+      if (combinedNoise < 0.3) {
+        finalColor = mix(finalColor, darkGreen, 0.4);
+      } else if (combinedNoise > 0.7) {
+        finalColor = mix(finalColor, lightGreen, 0.3);
+      }
+      
+      // Añadir algunos elementos marrones para simular ramas
+      if (vegetationNoise3 > 0.8) {
+        finalColor = mix(finalColor, brownTone, 0.2);
       }
       
       // Iluminación planetaria real
@@ -172,23 +195,34 @@ export class VegetationEffect {
       vec3 planetNormal = normalize(vWorldPosition);
       float dotNL = dot(planetNormal, lightDir);
       
-      // Iluminación suave para vegetación (plantas reciben luz difusa)
-      float lighting = smoothstep(-0.4, 0.6, dotNL);
-      lighting = mix(0.4, 1.0, lighting); // Siempre algo de luz ambiental
+      // Iluminación más compleja para vegetación densa
+      float lighting = smoothstep(-0.3, 0.8, dotNL);
+      lighting = mix(0.3, 1.0, lighting); // Luz ambiental para simular luz filtrada
       
-      // Añadir iluminación interna sutil (subsurface scattering simulado)
-      float subsurface = pow(max(0.0, dot(vWorldNormal, lightDir)), 0.5) * 0.3;
+      // Añadir scattering subsuperficial más pronunciado para hojas
+      float subsurface = pow(max(0.0, dot(vWorldNormal, lightDir)), 0.8) * 0.4;
       lighting += subsurface;
+      
+      // Simular oclusión ambiental en áreas densas
+      float ambientOcclusion = 1.0 - (combinedNoise * 0.2);
+      lighting *= ambientOcclusion;
       
       finalColor *= lighting;
       
-      // Alpha con variación para crear densidad irregular
+      // Alpha con patrón orgánico para bordes naturales
       float alpha = opacity * density;
-      alpha *= (0.7 + vegetationNoise * 0.3); // Variación en la opacidad
       
-      // Más transparente en los bordes para transiciones suaves
-      float edgeFade = 1.0 - pow(abs(vUv.x - 0.5) * 2.0, 2.0);
-      alpha *= edgeFade;
+      // Crear máscara orgánica basada en ruido para bordes irregulares
+      float organicMask = smoothstep(0.2, 1.0, combinedNoise);
+      
+      // Transición suave desde el centro hacia los bordes
+      float radialFade = 1.0 - smoothstep(0.3, 0.9, distFromCenter);
+      
+      // Combinar máscaras para efecto natural
+      alpha *= organicMask * radialFade;
+      
+      // Añadir variación adicional para evitar uniformidad
+      alpha *= (0.8 + sin(vUv.x * 25.0) * sin(vUv.y * 30.0) * 0.15);
       
       gl_FragColor = vec4(finalColor, alpha);
     }
@@ -281,22 +315,18 @@ export class VegetationEffect {
     
     // Posición en la superficie del planeta
     const sphericalPos = new THREE.Vector3(position[0], position[1], position[2]).normalize();
-    const surfacePosition = sphericalPos.clone().multiplyScalar(planetRadius * 1.001); // Ligeramente elevado
     
     // Crear múltiples capas de vegetación para densidad
-    this.createVegetationBase(planetRadius, sphericalPos, size, vegetationColor, rng, index);
-    this.createTreeLayer(planetRadius, sphericalPos, size, vegetationColor, rng, index);
+    this.createVegetationBase(planetRadius, sphericalPos, size, vegetationColor, rng);
+    this.createTreeLayer(planetRadius, sphericalPos, size, vegetationColor, rng);
   }
 
-  private createVegetationBase(planetRadius: number, normal: THREE.Vector3, size: number, color: THREE.Color, rng: SeededRandom, index: number): void {
-    // Base de vegetación usando PlaneGeometry curvada
-    const segments = Math.max(16, Math.floor(size * planetRadius * 200));
-    const geometry = new THREE.PlaneGeometry(size * 2, size * 2, segments, segments);
+  private createVegetationBase(planetRadius: number, normal: THREE.Vector3, size: number, color: THREE.Color, rng: SeededRandom): void {
+    // Base de vegetación usando geometría procedural orgánica que se extiende sobre la superficie
+    // Crear geometría base como "parche orgánico" en lugar de plano rígido
+    const geometry = this.createOrganicVegetationGeometry(planetRadius, normal, size, rng);
     
-    // Curvar la geometría para seguir la superficie esférica
-    this.curvePlaneToSphere(geometry, normal, planetRadius * 1.001);
-    
-    // Material con shader personalizado
+    // Material con shader personalizado para vegetación orgánica
     const material = new THREE.ShaderMaterial({
       vertexShader: VegetationEffect.vegetationVertexShader,
       fragmentShader: VegetationEffect.vegetationFragmentShader,
@@ -323,63 +353,95 @@ export class VegetationEffect {
     this.vegetationGroup.add(vegetationMesh);
   }
 
-  private createTreeLayer(planetRadius: number, normal: THREE.Vector3, size: number, color: THREE.Color, rng: SeededRandom, index: number): void {
-    // Capa de árboles más alta con geometría extruida
-    const segments = Math.max(12, Math.floor(size * planetRadius * 150));
-    const geometry = new THREE.PlaneGeometry(size * 1.5, size * 1.5, segments, segments);
+  private createTreeLayer(planetRadius: number, normal: THREE.Vector3, size: number, color: THREE.Color, rng: SeededRandom): void {
+    // Crear múltiples elementos de árboles distribuidos de forma orgánica sobre el parche base
+    const numTrees = Math.floor(rng.uniform(8, 20)); // Varios árboles por parche
     
-    // Aplicar relieve vertical para simular árboles
-    const positions = geometry.attributes.position;
-    const vertex = new THREE.Vector3();
-    
-    for (let i = 0; i < positions.count; i++) {
-      vertex.fromBufferAttribute(positions, i);
+    for (let i = 0; i < numTrees; i++) {
+      // Posición aleatoria dentro del área del parche
+      const angle = rng.uniform(0, Math.PI * 2);
+      const radius = rng.uniform(0, size * 0.8); // Dentro del 80% del radio del parche
       
-      // Ruido para crear altura irregular (árboles)
-      const noiseValue = this.noise2D(vertex.x * 10, vertex.y * 10, rng);
-      const treeHeight = noiseValue * this.params.treeHeight! * planetRadius;
+      // Calcular posición local en el plano tangente
+      const localX = Math.cos(angle) * radius;
+      const localY = Math.sin(angle) * radius;
       
-      // Aplicar altura solo en dirección normal
-      vertex.z += treeHeight;
-      positions.setXYZ(i, vertex.x, vertex.y, vertex.z);
+      // Crear sistema de coordenadas tangente en la superficie
+      const tangent1 = new THREE.Vector3();
+      const tangent2 = new THREE.Vector3();
+      
+      if (Math.abs(normal.y) < 0.99) {
+        tangent1.crossVectors(normal, new THREE.Vector3(0, 1, 0)).normalize();
+      } else {
+        tangent1.crossVectors(normal, new THREE.Vector3(1, 0, 0)).normalize();
+      }
+      tangent2.crossVectors(normal, tangent1).normalize();
+      
+      // Posición del árbol en el mundo
+      const treePosition = normal.clone().multiplyScalar(planetRadius * 1.002); // Ligeramente elevado sobre la superficie
+      treePosition.addScaledVector(tangent1, localX);
+      treePosition.addScaledVector(tangent2, localY);
+      
+      // Crear geometría de árbol individual (small billboard que se orienta hacia arriba desde la superficie)
+      const treeSize = rng.uniform(0.008, 0.020) * planetRadius; // Tamaño individual de árbol
+      const treeGeometry = this.createSingleTreeGeometry(treeSize, rng);
+      
+      // Orientar el árbol para que "crezca" desde la superficie hacia afuera
+      const treeNormal = treePosition.clone().normalize();
+      const rotationMatrix = new THREE.Matrix4();
+      
+      // Crear base tangente para orientar el árbol
+      const treeTangent1 = new THREE.Vector3();
+      const treeTangent2 = new THREE.Vector3();
+      
+      if (Math.abs(treeNormal.y) < 0.99) {
+        treeTangent1.crossVectors(treeNormal, new THREE.Vector3(0, 1, 0)).normalize();
+      } else {
+        treeTangent1.crossVectors(treeNormal, new THREE.Vector3(1, 0, 0)).normalize();
+      }
+      treeTangent2.crossVectors(treeNormal, treeTangent1).normalize();
+      
+      // El árbol "crece" en dirección normal (hacia afuera del planeta)
+      rotationMatrix.makeBasis(treeTangent1, treeTangent2, treeNormal);
+      treeGeometry.applyMatrix4(rotationMatrix);
+      treeGeometry.translate(treePosition.x, treePosition.y, treePosition.z);
+      
+      // Material para árbol individual con variación
+      const treeColor = color.clone().multiplyScalar(rng.uniform(0.6, 0.9)); // Variación de color
+      const treeMaterial = new THREE.ShaderMaterial({
+        vertexShader: VegetationEffect.vegetationVertexShader,
+        fragmentShader: VegetationEffect.vegetationFragmentShader,
+        uniforms: {
+          time: { value: 0 },
+          timeSpeed: { value: this.params.timeSpeed },
+          opacity: { value: this.params.opacity! * rng.uniform(0.7, 0.9) },
+          vegetationColor: { value: treeColor },
+          density: { value: this.params.density! * rng.uniform(0.8, 1.2) },
+          treeHeight: { value: this.params.treeHeight },
+          lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
+          lightPosition: { value: new THREE.Vector3(0, 0, 0) },
+        },
+        transparent: true,
+        blending: THREE.NormalBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide
+      });
+      
+      const treeMesh = new THREE.Mesh(treeGeometry, treeMaterial);
+      treeMesh.renderOrder = 4; // Encima de la vegetación base
+      
+      this.treeLayers.push(treeMesh);
+      this.vegetationGroup.add(treeMesh);
     }
-    
-    positions.needsUpdate = true;
-    geometry.computeVertexNormals();
-    
-    // Curvar la geometría
-    this.curvePlaneToSphere(geometry, normal, planetRadius * 1.003);
-    
-    // Material más oscuro para árboles
-    const treeColor = color.clone().multiplyScalar(0.7);
-    const material = new THREE.ShaderMaterial({
-      vertexShader: VegetationEffect.vegetationVertexShader,
-      fragmentShader: VegetationEffect.vegetationFragmentShader,
-      uniforms: {
-        time: { value: 0 },
-        timeSpeed: { value: this.params.timeSpeed },
-        opacity: { value: this.params.opacity! * 0.8 },
-        vegetationColor: { value: treeColor },
-        density: { value: this.params.density! * 1.2 },
-        treeHeight: { value: this.params.treeHeight },
-        lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
-        lightPosition: { value: new THREE.Vector3(0, 0, 0) },
-      },
-      transparent: true,
-      blending: THREE.NormalBlending,
-      depthWrite: false,
-      side: THREE.DoubleSide
-    });
-    
-    const treeMesh = new THREE.Mesh(geometry, material);
-    treeMesh.renderOrder = 4; // Encima de la vegetación base
-    
-    this.treeLayers.push(treeMesh);
-    this.vegetationGroup.add(treeMesh);
   }
 
-  private curvePlaneToSphere(geometry: THREE.PlaneGeometry, normal: THREE.Vector3, radius: number): void {
-    // Orientar el plano tangente a la esfera
+  private createOrganicVegetationGeometry(planetRadius: number, normal: THREE.Vector3, size: number, rng: SeededRandom): THREE.BufferGeometry {
+    // Crear geometría orgánica que se extiende sobre la superficie como vegetación real
+    const vertices: number[] = [];
+    const indices: number[] = [];
+    const uvs: number[] = [];
+    
+    // Crear sistema de coordenadas tangente
     const tangent1 = new THREE.Vector3();
     const tangent2 = new THREE.Vector3();
     
@@ -390,36 +452,119 @@ export class VegetationEffect {
     }
     tangent2.crossVectors(normal, tangent1).normalize();
     
-    const rotationMatrix = new THREE.Matrix4();
-    rotationMatrix.makeBasis(tangent1, tangent2, normal);
+    // Posición base en la superficie del planeta
+    const centerPosition = normal.clone().multiplyScalar(planetRadius * 1.0005); // Muy ligeramente elevado
     
-    geometry.applyMatrix4(rotationMatrix);
+    // Crear parche orgánico irregular usando ruido
+    let vertexIndex = 0;
     
-    // Curvar cada vértice hacia la superficie esférica
-    const positions = geometry.attributes.position;
-    const vertex = new THREE.Vector3();
-    const surfacePosition = normal.clone().multiplyScalar(radius);
+    // Generar forma orgánica irregular (no cuadrada)
+    const numPoints = Math.floor(rng.uniform(20, 40)); // Forma poligonal irregular
+    const outerPoints: { x: number, y: number, u: number, v: number }[] = [];
     
-    for (let i = 0; i < positions.count; i++) {
-      vertex.fromBufferAttribute(positions, i);
+    // Crear borde exterior orgánico
+    for (let i = 0; i < numPoints; i++) {
+      const angle = (i / numPoints) * Math.PI * 2;
       
-      const worldVertex = vertex.clone().add(surfacePosition);
-      const direction = worldVertex.clone().normalize();
-      const projectedVertex = direction.multiplyScalar(radius + vertex.z); // Mantener altura Z
+      // Usar ruido para hacer el borde irregular
+      const noiseAngle = angle * 3; // Frecuencia del ruido para variación
+      const noiseValue = Math.sin(noiseAngle + rng.uniform(0, Math.PI * 2)) * 0.3 + 1.0; // Variación 0.7 - 1.3
+      const radiusVariation = rng.uniform(0.6, 1.0) * noiseValue;
       
-      const localVertex = projectedVertex.sub(surfacePosition);
-      positions.setXYZ(i, localVertex.x, localVertex.y, localVertex.z);
+      const localRadius = size * radiusVariation;
+      const localX = Math.cos(angle) * localRadius;
+      const localY = Math.sin(angle) * localRadius;
+      
+      outerPoints.push({
+        x: localX,
+        y: localY,
+        u: (localX / size + 1) * 0.5, // Normalizar UV
+        v: (localY / size + 1) * 0.5
+      });
     }
     
-    positions.needsUpdate = true;
+    // Añadir punto central
+    vertices.push(centerPosition.x, centerPosition.y, centerPosition.z);
+    uvs.push(0.5, 0.5);
+    const centerIndex = vertexIndex++;
+    
+    // Añadir puntos del borde
+    for (const point of outerPoints) {
+      // Convertir coordenadas locales a posición 3D
+      const worldPos = centerPosition.clone()
+        .addScaledVector(tangent1, point.x)
+        .addScaledVector(tangent2, point.y);
+      
+      // Proyectar sobre la superficie esférica con elevación muy sutil
+      const direction = worldPos.clone().normalize();
+      const elevationNoise = this.noise2D(point.x * 5, point.y * 5, rng) * 0.0002; // Variación mínima de altura
+      const finalPos = direction.multiplyScalar(planetRadius * (1.0005 + elevationNoise));
+      
+      vertices.push(finalPos.x, finalPos.y, finalPos.z);
+      uvs.push(point.u, point.v);
+      vertexIndex++;
+    }
+    
+    // Crear triangulación en abanico desde el centro
+    for (let i = 0; i < outerPoints.length; i++) {
+      const nextI = (i + 1) % outerPoints.length;
+      const outerIndex1 = i + 1; // +1 porque el centro es índice 0
+      const outerIndex2 = nextI + 1;
+      
+      // Triángulo desde centro hacia borde
+      indices.push(centerIndex, outerIndex1, outerIndex2);
+    }
+    
+    // Crear la geometría
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+    geometry.setIndex(indices);
     geometry.computeVertexNormals();
     
-    // Trasladar a la posición final
-    geometry.translate(surfacePosition.x, surfacePosition.y, surfacePosition.z);
+    return geometry;
+  }
+
+  private createSingleTreeGeometry(treeSize: number, rng: SeededRandom): THREE.BufferGeometry {
+    // Crear geometría simple de árbol individual (billboard vertical orientado radialmente)
+    const height = treeSize * rng.uniform(0.8, 1.5); // Altura variable
+    const width = treeSize * rng.uniform(0.4, 0.8);   // Ancho variable
+    
+    // Crear billboard vertical simple (rectangular)
+    const vertices = [
+      // Triángulo inferior
+      -width/2, 0, 0,        // Esquina inferior izquierda
+       width/2, 0, 0,        // Esquina inferior derecha
+      -width/2, height, 0,   // Esquina superior izquierda
+      
+      // Triángulo superior  
+       width/2, 0, 0,        // Esquina inferior derecha
+       width/2, height, 0,   // Esquina superior derecha
+      -width/2, height, 0,   // Esquina superior izquierda
+    ];
+    
+    const uvs = [
+      // Triángulo inferior
+      0, 0,    // UV inferior izquierda
+      1, 0,    // UV inferior derecha
+      0, 1,    // UV superior izquierda
+      
+      // Triángulo superior
+      1, 0,    // UV inferior derecha
+      1, 1,    // UV superior derecha
+      0, 1,    // UV superior izquierda
+    ];
+    
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+    geometry.computeVertexNormals();
+    
+    return geometry;
   }
 
   private noise2D(x: number, y: number, rng: SeededRandom): number {
-    // Función de ruido simple para variación de altura
+    // Función de ruido simple para variación de elevación en vegetación
     const seed = this.params.seed || 0;
     const hash = (px: number, py: number) => {
       const dot = px * 12.9898 + py * 78.233 + seed;
@@ -449,7 +594,7 @@ export class VegetationEffect {
     scene.add(this.vegetationGroup);
   }
 
-  update(deltaTime: number): void {
+  update(): void {
     // Calcular tiempo para animación sutil
     const currentTimeSeconds = Date.now() / 1000;
     const timeSinceCosmicOrigin = currentTimeSeconds - this.cosmicOriginTime;

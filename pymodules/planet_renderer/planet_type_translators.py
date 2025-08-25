@@ -760,8 +760,8 @@ class PlanetTypeTranslators:
                 math.cos(phi)
             ]
             
-            # Vegetation patch sizes - varied for natural forest distribution
-            vegetation_size = rng.uniform(0.05, 0.12)  # Medium sizes for vegetation patches
+            # Vegetation patch sizes - varied for natural forest distribution  
+            vegetation_size = rng.uniform(0.08, 0.25)  # Larger sizes for better vegetation visibility
             
             # Vegetation colors - various forest greens for diversity
             vegetation_colors = [
