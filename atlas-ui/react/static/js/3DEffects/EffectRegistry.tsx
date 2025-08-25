@@ -59,6 +59,7 @@ import { LavaFlowsEffect, createLavaFlowsFromPythonData } from "./LavaFlowsEffec
 import { MoltenLavaEffect, createMoltenLavaFromPythonData } from "./MoltenLavaEffect";
 import { FireEruptionEffect, createFireEruptionFromPythonData } from "./FireEruptionEffect";
 import { CarbonTrailsEffect, createCarbonTrailsFromPythonData } from "./CarbonTrails";
+import { RadiationPulseEffect, createRadiationPulseFromPythonData } from "./RadiationPulse";
 // Efectos de superficie legacy eliminados - usar solo versiones Layer
 
 // Importar efectos de debug
@@ -116,6 +117,7 @@ export enum EffectType {
   MOLTEN_LAVA = "molten_lava",
   FIRE_ERUPTION = "fire_eruption",
   CARBON_TRAILS = "carbon_trails",
+  RADIATION_PULSE = "radiation_pulse",
   CRYSTAL_FORMATIONS = "crystal_formations",
   CLOUD_LAYERS = "cloud_layers",
   STORM_SYSTEMS = "storm_systems",
@@ -284,6 +286,11 @@ export class EffectRegistry {
     this.registerEffect(EffectType.CARBON_TRAILS, {
       create: (params, planetRadius) => new CarbonTrailsEffect(planetRadius, params),
       fromPythonData: (data, planetRadius, layerSystem) => createCarbonTrailsFromPythonData(data, planetRadius, layerSystem),
+    });
+
+    this.registerEffect(EffectType.RADIATION_PULSE, {
+      create: (params, planetRadius) => new RadiationPulseEffect(planetRadius, params),
+      fromPythonData: (data, planetRadius) => createRadiationPulseFromPythonData(data, planetRadius),
     });
 
     // Efectos futuros (placeholders)
@@ -2065,6 +2072,80 @@ export class EffectRegistry {
                 effects.push(magmaLandMassesInstance);
                 magmaLandMassesEffect.addToScene(scene, mesh.position);
               }
+            }
+            break;
+
+          case "radioactive":
+            // Planetas Radioactive: nubes tóxicas, masas terrestres verdes radioactivas y pulsos de radiación
+            
+            // 1. Añadir nubes atmosféricas tóxicas
+            if (surface.clouds && surface.clouds.length > 0) {
+              const radioactiveCloudsEffect = createAtmosphereCloudsFromPythonData(
+                planetRadius,
+                surface,
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 5000,
+                pythonData.timing?.cosmic_origin_time
+              );
+
+              const radioactiveCloudsInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "atmosphere_clouds",
+                effect: radioactiveCloudsEffect,
+                priority: 15,
+                enabled: true,
+                name: "Radioactive Toxic Clouds",
+              };
+
+              this.effects.set(radioactiveCloudsInstance.id, radioactiveCloudsInstance);
+              effects.push(radioactiveCloudsInstance);
+              radioactiveCloudsEffect.addToScene(scene, mesh.position);
+            }
+
+            // 2. Añadir masas terrestres radioactivas verdes
+            if (surface.green_patches && surface.green_patches.length > 0) {
+              const radioactiveLandMassesEffect = createLandMassesFromPythonData(
+                planetRadius, 
+                surface, 
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 6000
+              );
+
+              if (radioactiveLandMassesEffect) {
+                const radioactiveLandMassesInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "land_masses",
+                  effect: radioactiveLandMassesEffect,
+                  priority: 10,
+                  enabled: true,
+                  name: "Radioactive Contaminated Areas",
+                };
+
+                this.effects.set(radioactiveLandMassesInstance.id, radioactiveLandMassesInstance);
+                effects.push(radioactiveLandMassesInstance);
+                radioactiveLandMassesEffect.addToScene(scene, mesh.position);
+              }
+            }
+
+            // 3. Añadir efecto espectacular de pulsos de radiación
+            const radiationPulseEffect = this.createEffectFromPythonData(
+              EffectType.RADIATION_PULSE,
+              pythonData,
+              planetRadius,
+              mesh
+            );
+            
+            if (radiationPulseEffect) {
+              const radiationPulseInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "radiation_pulse",
+                effect: radiationPulseEffect.effect,
+                priority: 20,
+                enabled: true,
+                name: "Radioactive Energy Pulses",
+              };
+
+              this.effects.set(radiationPulseInstance.id, radiationPulseInstance);
+              effects.push(radiationPulseInstance);
+              radiationPulseEffect.effect.addToScene(scene, mesh.position);
             }
             break;
 

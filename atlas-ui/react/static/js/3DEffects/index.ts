@@ -80,6 +80,9 @@ export type { FireEruptionParams } from "./FireEruptionEffect";
 export { CarbonTrailsEffect, createCarbonTrailsFromPythonData } from "./CarbonTrails";
 export type { CarbonTrailsParams } from "./CarbonTrails";
 
+export { RadiationPulseEffect, createRadiationPulseFromPythonData } from "./RadiationPulse";
+export type { RadiationPulseParams } from "./RadiationPulse";
+
 // export {
 //   AnomalyGeometricMorphEffect,
 //   createAnomalyGeometricMorphFromPythonData
@@ -125,6 +128,7 @@ export const AVAILABLE_EFFECTS = [
   "tundra_snowflakes",
   "river_lines",
   "cave_surface_holes",
+  "radiation_pulse",
   // Efectos anómalos (algunos desactivados)
   // 'anomaly_glitch_field', // Movido a Unused3DEffects
   // 'anomaly_void_sphere', // Movido a Unused3DEffects

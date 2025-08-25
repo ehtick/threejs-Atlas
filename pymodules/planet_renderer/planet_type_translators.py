@@ -930,7 +930,95 @@ class PlanetTypeTranslators:
     
     def translate_radioactive(self, planet_radius: int, rng: random.Random, 
                              seed: int, planet_name: str) -> Dict[str, Any]:
-        return {"type": "radioactive"}
+        """Translate Radioactive planet elements - toxic worlds with green patches and atmospheric clouds"""
+        center_x, center_y = 200, 200  # Pillow center coordinates
+        
+        # Generate atmospheric clouds for radioactive planets (toxic atmospheres with radiation)
+        num_clouds = rng.randint(12, 18)  # Rich toxic atmospheric activity
+        clouds = []
+        for i in range(num_clouds):
+            cloud_radius = rng.randint(25, 45)  # Large toxic clouds
+            max_offset = planet_radius - cloud_radius
+            cloud_x = center_x + rng.randint(-max_offset, max_offset)
+            cloud_y = center_y + rng.randint(-max_offset, max_offset)
+            
+            # Convert to normalized coordinates
+            normalized_coords = self.common_utils.normalize_coordinates(
+                cloud_x, cloud_y, center_x, center_y, planet_radius
+            )
+            
+            # Radioactive clouds - green-yellow toxic colors representing radiation
+            cloud_colors = [
+                [0.4, 0.8, 0.2, 0.8],      # Bright toxic green
+                [0.5, 0.9, 0.1, 0.9],      # Yellow-green radiation
+                [0.3, 0.7, 0.15, 0.85],    # Dark toxic green
+                [0.6, 1.0, 0.3, 0.7],      # Light radioactive green
+            ]
+            
+            clouds.append({
+                "position": normalized_coords,
+                "radius": cloud_radius / planet_radius,
+                "color": rng.choice(cloud_colors),
+                "type": "cloud",
+                "seed": f"{planet_name}_radioactive_cloud_{i}"
+            })
+        
+        # Generate green patches for radioactive planets (similar to oceanic green_patches but radioactive green)
+        num_green_patches = rng.randint(15, 25)  # Many radioactive patches
+        green_patches = []
+        
+        for i in range(num_green_patches):
+            # Generate uniform position on sphere (same as oceanic)
+            theta = rng.uniform(0, 2 * math.pi)
+            phi = math.acos(rng.uniform(-1, 1))
+            
+            patch_3d_x = math.sin(phi) * math.cos(theta)
+            patch_3d_y = math.sin(phi) * math.sin(theta)
+            patch_3d_z = math.cos(phi)
+            
+            # Also maintain 2D coordinates for compatibility
+            patch_angle = rng.uniform(0, 2 * math.pi)
+            patch_distance = rng.uniform(0.3 * planet_radius, planet_radius)
+            
+            patch_x = center_x + patch_distance * math.cos(patch_angle)
+            patch_y = center_y + patch_distance * math.sin(patch_angle)
+            
+            # Convert to normalized coordinates
+            normalized_coords = self.common_utils.normalize_coordinates(
+                patch_x, patch_y, center_x, center_y, planet_radius
+            )
+            
+            # Radioactive patch colors - various shades of toxic green representing contaminated areas
+            radioactive_greens = [
+                [0.2, 0.8, 0.1],   # Bright radioactive green
+                [0.15, 0.7, 0.05], # Dark toxic green
+                [0.25, 0.9, 0.15], # Light radioactive green
+                [0.3, 0.85, 0.2],  # Medium toxic green
+                [0.18, 0.75, 0.08] # Deep radioactive green
+            ]
+            
+            green_patches.append({
+                "position": normalized_coords,  # Maintain for 2D compatibility
+                "position_3d": [patch_3d_x, patch_3d_y, patch_3d_z],  # 3D position
+                "size": rng.uniform(0.06, 0.15),  # Varied patch sizes
+                "color": rng.choice(radioactive_greens) + [rng.uniform(0.8, 0.95)],  # High opacity for visibility
+                "sides": rng.randint(18, 30),  # Irregular contaminated shapes
+                "radiation_level": rng.uniform(0.7, 1.0),  # High radiation intensity
+                "glow_intensity": rng.uniform(0.6, 0.9)    # Radioactive glow effect
+            })
+        
+        return {
+            "type": "radioactive",
+            "clouds": clouds,  # AtmosphereClouds will use this
+            "green_patches": green_patches,  # LandMasses will use this (radioactive-colored patches)
+            "debug": {
+                "original_planet_radius": planet_radius,
+                "center_x": center_x, "center_y": center_y,
+                "cloud_count": num_clouds,
+                "green_patch_count": num_green_patches,
+                "radiation_coverage": "high_contamination_coverage"
+            }
+        }
     
     def translate_magma(self, planet_radius: int, rng: random.Random, 
                        seed: int, planet_name: str) -> Dict[str, Any]:
