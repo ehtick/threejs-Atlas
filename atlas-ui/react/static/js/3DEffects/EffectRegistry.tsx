@@ -39,6 +39,7 @@ import { ExoticDoodlesEffect, createExoticDoodlesFromPythonData } from "./Exotic
 import { CaveSurfaceHolesEffect, createCaveSurfaceHolesFromPythonData } from "./CaveSurfaceHoles";
 import { VegetationEffect, createVegetationFromPythonData } from "./VegetationEffect";
 import { MagmaFlowsEffect, createMagmaFlowsFromPythonData } from "./MagmaFlowsEffect";
+import { MagmaEruptionsEffect, createMagmaEruptionsFromPythonData } from "./MagmaEruptionsEffect";
 
 // Los planetas Carbon usan efectos existentes (TundraSnowflakes, AtmosphereClouds, LandMasses)
 
@@ -157,6 +158,7 @@ export enum EffectType {
   
   // Efectos para planetas Magma
   MAGMA_FLOWS = "magma_flows",
+  MAGMA_ERUPTIONS = "magma_eruptions",
 }
 
 // Interfaz para creadores de efectos
@@ -417,6 +419,16 @@ export class EffectRegistry {
     this.registerEffect(EffectType.MAGMA_FLOWS, {
       create: (params, planetRadius, layerSystem) => new MagmaFlowsEffect(planetRadius, params),
       fromPythonData: (data, planetRadius, layerSystem) => createMagmaFlowsFromPythonData(
+        planetRadius,
+        data.surface_elements || {},
+        data.seeds?.planet_seed,
+        data.timing?.cosmic_origin_time
+      ),
+    });
+
+    this.registerEffect(EffectType.MAGMA_ERUPTIONS, {
+      create: (params, planetRadius, layerSystem) => new MagmaEruptionsEffect(planetRadius, params),
+      fromPythonData: (data, planetRadius, layerSystem) => createMagmaEruptionsFromPythonData(
         planetRadius,
         data.surface_elements || {},
         data.seeds?.planet_seed,
@@ -1982,6 +1994,29 @@ export class EffectRegistry {
               this.effects.set(magmaFlowsInstance.id, magmaFlowsInstance);
               effects.push(magmaFlowsInstance);
               magmaFlowsEffect.effect.addToScene(scene, mesh.position);
+            }
+
+            // 1.5. Añadir efecto de erupciones de magma
+            const magmaEruptionsEffect = this.createEffectFromPythonData(
+              EffectType.MAGMA_ERUPTIONS,
+              pythonData,
+              planetRadius,
+              mesh
+            );
+            
+            if (magmaEruptionsEffect) {
+              const magmaEruptionsInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "magma_eruptions",
+                effect: magmaEruptionsEffect.effect,
+                priority: 13,
+                enabled: true,
+                name: "Magma Eruptions & Arcs",
+              };
+              
+              this.effects.set(magmaEruptionsInstance.id, magmaEruptionsInstance);
+              effects.push(magmaEruptionsInstance);
+              magmaEruptionsEffect.effect.addToScene(scene, mesh.position);
             }
             
             // 2. Añadir nubes atmosféricas SOLO si están disponibles en los datos de Python

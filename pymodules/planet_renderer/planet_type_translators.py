@@ -968,7 +968,7 @@ class PlanetTypeTranslators:
             })
         
         # Generate magmatic land masses (large molten areas with magma colors)
-        num_landmasses = rng.randint(8, 14)  # Many magmatic formations
+        num_landmasses = rng.randint(10, 18)  # Many magmatic formations
         green_patches = []
         
         for i in range(num_landmasses):
@@ -1006,14 +1006,14 @@ class PlanetTypeTranslators:
                 "position_3d": position_3d,
                 "size": size,
                 "color": rng.choice(magma_color_choices) + [rng.uniform(0.85, 0.95)],  # High opacity for glowing magma
-                "sides": rng.randint(12, 20),  # Irregular magma flow shapes
+                "sides": rng.randint(18, 28),  # Irregular magma flow shapes
                 "heat_intensity": rng.uniform(0.8, 1.0),     # High heat for glow effects
                 "flow_speed": rng.uniform(0.002, 0.008),     # Slow magma flow animation
                 "temperature": rng.uniform(1200, 1800)       # Magma temperature in Celsius
             })
         
         # Generate magma lakes (using the orangered color from Pillow)
-        num_magma_lakes = rng.randint(8, 12)  # Same as in Pillow draw_magma_elements
+        num_magma_lakes = rng.randint(10, 16)  # Same as in Pillow draw_magma_elements
         magma_lakes = []
         
         for i in range(num_magma_lakes):
@@ -1028,7 +1028,7 @@ class PlanetTypeTranslators:
             ]
             
             # Lake sizes - MUCH larger for maximum visibility
-            lake_size = rng.uniform(0.35, 0.60)  # Even larger magma lake sizes
+            lake_size = rng.uniform(0.45, 0.60)  # Even larger magma lake sizes
             
             magma_lakes.append({
                 "position_3d": position_3d,
