@@ -7,7 +7,6 @@
 
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom";
-import { getAnimatedUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime";
 
 export interface LavaFlowsParams {
   // Configuración de flujos principales
@@ -401,9 +400,9 @@ export class LavaFlowsEffect {
   }
 
   update(deltaTime: number): void {
-    // Calcular tiempo absoluto determinista
-    const cosmicOriginTime = DEFAULT_COSMIC_ORIGIN_TIME; // No params.cosmicOriginTime available here
-    const currentTime = getAnimatedUniverseTime(cosmicOriginTime, this.params.timeSpeed!, this.startTime);
+    // Calcular tiempo absoluto determinista SIMPLIFICADO
+    const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!;
+    const currentTime = rawTime % 1000;
     
     // Actualizar tiempo en todos los materiales de flujos
     this.lavaFlows.forEach(flow => {
