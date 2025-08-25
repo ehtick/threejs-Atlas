@@ -29,12 +29,15 @@ export interface MagmaFlowsParams {
 // Rangos para generación procedural
 const PROCEDURAL_RANGES = {
   LAKE_COUNT: { min: 8, max: 12 }, // Varios lagos de magma
-  LAKE_SIZE: { min: 0.25, max: 0.45 }, // Lagos MUCHO más grandes
+  LAKE_SIZE: { min: 0.15, max: 0.55 }, // Rango más amplio de tamaños
+  LAKE_SIZE_VARIATION: { min: 0.6, max: 1.4 }, // Multiplicador de variación de tamaño
   HEAT_INTENSITY: { min: 0.8, max: 1.5 }, // Calor intenso
   FLOW_SPEED: { min: 0.002, max: 0.008 }, // Flujo lento y viscoso
   BUBBLE_ACTIVITY: { min: 0.6, max: 1.0 }, // Actividad alta de burbujas
   GLOW_INTENSITY: { min: 0.8, max: 1.0 }, // Brillo intenso
-  TIME_SPEED: { min: 0.1, max: 0.3 } // Animación moderada
+  TIME_SPEED: { min: 0.1, max: 0.3 }, // Animación moderada
+  SHAPE_COMPLEXITY: { min: 3, max: 8 }, // Número de lóbulos/deformaciones
+  SHAPE_IRREGULARITY: { min: 0.2, max: 0.6 } // Qué tan irregular es la forma
 };
 
 /**
@@ -327,10 +330,27 @@ export class MagmaFlowsEffect {
 
   private generateProceduralMagma(planetRadius: number, lakeCount: number, rng: SeededRandom): void {
     for (let i = 0; i < lakeCount; i++) {
-      // Crear lago sintético
+      // Crear lago sintético con posición aleatoria en la esfera
       const phi = rng.uniform(0, 2 * Math.PI);
       const cosTheta = rng.uniform(-1, 1);
       const theta = Math.acos(cosTheta);
+      
+      // Variar colores de magma para más diversidad visual
+      const colorVariation = rng.uniform(0, 1);
+      let color: number[];
+      if (colorVariation < 0.3) {
+        // Magma muy caliente (amarillo-blanco)
+        color = [1.0, 0.8, 0.3, 1.0];
+      } else if (colorVariation < 0.6) {
+        // Magma estándar (naranja-rojo)
+        color = [0.85, 0.27, 0.0, 1.0];
+      } else if (colorVariation < 0.85) {
+        // Magma más frío (rojo oscuro)
+        color = [0.7, 0.15, 0.0, 1.0];
+      } else {
+        // Magma con tonos especiales (púrpura volcánico)
+        color = [0.6, 0.1, 0.2, 1.0];
+      }
       
       const lake = {
         position_3d: [
@@ -339,7 +359,7 @@ export class MagmaFlowsEffect {
           Math.cos(theta)
         ],
         radius: rng.uniform(PROCEDURAL_RANGES.LAKE_SIZE.min, PROCEDURAL_RANGES.LAKE_SIZE.max),
-        color: [0.85, 0.27, 0.0, 1.0], // OrangeRed
+        color: color,
         temperature: rng.uniform(1500, 2000),
         bubble_activity: rng.uniform(0.6, 1.0),
         glow_intensity: rng.uniform(0.8, 1.0)
@@ -353,15 +373,25 @@ export class MagmaFlowsEffect {
     const position = lake.position_3d || [0, 0, 1];
     const baseRadius = lake.radius || rng.uniform(PROCEDURAL_RANGES.LAKE_SIZE.min, PROCEDURAL_RANGES.LAKE_SIZE.max);
     
-    // Ajustar el tamaño para mantener apariencia similar al original
-    const sizeMultiplier = lake.radius ? 0.8 : 1.2; // Tamaño ajustado para apariencia familiar
+    // Variación única de tamaño para cada lago
+    const sizeVariation = rng.uniform(PROCEDURAL_RANGES.LAKE_SIZE_VARIATION.min, PROCEDURAL_RANGES.LAKE_SIZE_VARIATION.max);
+    const sizeMultiplier = lake.radius ? 0.8 * sizeVariation : 1.2 * sizeVariation;
     const radius = baseRadius * planetRadius * sizeMultiplier;
+    
+    // Parámetros únicos de forma para cada lago
+    const shapeParams = {
+      complexity: Math.floor(rng.uniform(PROCEDURAL_RANGES.SHAPE_COMPLEXITY.min, PROCEDURAL_RANGES.SHAPE_COMPLEXITY.max)),
+      irregularity: rng.uniform(PROCEDURAL_RANGES.SHAPE_IRREGULARITY.min, PROCEDURAL_RANGES.SHAPE_IRREGULARITY.max),
+      elongation: rng.uniform(0.6, 1.5), // Qué tan alargado es (1.0 = circular)
+      rotation: rng.uniform(0, Math.PI * 2), // Rotación de la forma
+      seed: rng.uniform(0, 1000000) // Seed único para este lago
+    };
     
     // Posición en la superficie del planeta
     const sphericalPos = new THREE.Vector3(position[0], position[1], position[2]).normalize();
     
     // Crear geometría orgánica del lago de magma que se ajusta a la curvatura del planeta
-    const geometry = this.createMagmaLakeGeometry(radius, rng, planetRadius, sphericalPos);
+    const geometry = this.createMagmaLakeGeometry(radius, rng, planetRadius, sphericalPos, shapeParams);
     
     // Color del magma
     let magmaColor = new THREE.Color(0.85, 0.27, 0.0); // OrangeRed por defecto
@@ -402,9 +432,21 @@ export class MagmaFlowsEffect {
     this.magmaGroup.add(magmaMesh);
   }
 
-  private createMagmaLakeGeometry(radius: number, rng: SeededRandom, planetRadius: number, centerPosition: THREE.Vector3): THREE.BufferGeometry {
+  private createMagmaLakeGeometry(radius: number, rng: SeededRandom, planetRadius: number, centerPosition: THREE.Vector3, shapeParams?: any): THREE.BufferGeometry {
     // Crear geometría que sigue la curvatura real de la esfera
     const segments = Math.max(24, Math.floor(radius * 60)); // Densidad optimizada para balance performance/calidad
+    
+    // Parámetros de forma con valores por defecto
+    const shape = shapeParams || {
+      complexity: 5,
+      irregularity: 0.4,
+      elongation: 1.0,
+      rotation: 0,
+      seed: 0
+    };
+    
+    // RNG local para esta forma específica
+    const shapeRng = new SeededRandom(shape.seed);
     
     // Crear arrays para vértices, normales y UVs
     const positions = [];
@@ -418,6 +460,44 @@ export class MagmaFlowsEffect {
     let vertexIndex = 0;
     const vertexGrid: (number | null)[][] = [];
     
+    // Función para calcular la forma orgánica en coordenadas polares
+    const getOrganicRadius = (angle: number): number => {
+      let r = 1.0;
+      
+      // Aplicar elongación (forma ovalada)
+      const adjustedAngle = angle - shape.rotation;
+      const ellipseX = Math.cos(adjustedAngle);
+      const ellipseY = Math.sin(adjustedAngle);
+      r *= Math.sqrt(1.0 / (
+        (ellipseX * ellipseX) / (shape.elongation * shape.elongation) +
+        (ellipseY * ellipseY)
+      ));
+      
+      // Añadir lóbulos/deformaciones principales
+      for (let k = 0; k < shape.complexity; k++) {
+        const lobuleAngle = (k / shape.complexity) * Math.PI * 2 + shapeRng.uniform(-0.3, 0.3);
+        const lobuleAmplitude = shapeRng.uniform(0.1, 0.3) * shape.irregularity;
+        const lobuleWidth = shapeRng.uniform(0.3, 0.6);
+        
+        // Calcular influencia del lóbulo basada en distancia angular
+        let angleDiff = angle - lobuleAngle;
+        // Normalizar ángulo a [-PI, PI]
+        while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+        while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+        
+        const influence = Math.exp(-(angleDiff * angleDiff) / (2 * lobuleWidth * lobuleWidth));
+        r += lobuleAmplitude * influence;
+      }
+      
+      // Añadir ruido de alta frecuencia para más organicidad
+      const noiseFreq = 8;
+      const noiseAmp = 0.05 * shape.irregularity;
+      r += Math.sin(angle * noiseFreq + shapeRng.uniform(0, Math.PI * 2)) * noiseAmp;
+      r += Math.sin(angle * noiseFreq * 1.7 + shapeRng.uniform(0, Math.PI * 2)) * noiseAmp * 0.5;
+      
+      return Math.max(0.3, Math.min(1.5, r)); // Limitar el radio para evitar formas extremas
+    };
+    
     // Crear grid de vértices siguiendo la curvatura esférica
     for (let i = 0; i <= segments; i++) {
       vertexGrid[i] = [];
@@ -426,9 +506,13 @@ export class MagmaFlowsEffect {
         const u = (i / segments) * 2 - 1;
         const v = (j / segments) * 2 - 1;
         const distance = Math.sqrt(u * u + v * v);
+        const angle = Math.atan2(v, u);
         
-        // Solo incluir vértices dentro del radio circular
-        if (distance <= 1.0) {
+        // Calcular el radio máximo para este ángulo
+        const maxRadius = getOrganicRadius(angle);
+        
+        // Solo incluir vértices dentro de la forma orgánica
+        if (distance <= maxRadius) {
           // Convertir coordenadas locales a ángulos esféricos
           const localTheta = distance * angularRadius;
           const localPhi = Math.atan2(v, u);
@@ -507,23 +591,25 @@ export class MagmaFlowsEffect {
           vertexIndex++;
           
           // Añadir bordes irregulares muy orgánicos para simular flujo real de magma
-          if (distance > 0.6) {  // Comenzar irregularidad más temprano
-            const angle = Math.atan2(v, u);
+          // Ajustar el threshold basado en la forma orgánica
+          const edgeThreshold = maxRadius * 0.65;  // Comenzar irregularidad más temprano para formas orgánicas
+          if (distance > edgeThreshold) {
+            const currentAngle = Math.atan2(v, u);
             
             // Múltiples capas de ruido para bordes muy orgánicos
-            const baseNoise = Math.sin(angle * 6) * 0.04 + Math.sin(angle * 3) * 0.06;
-            const detailNoise = Math.sin(angle * 15) * 0.02 + Math.sin(angle * 22) * 0.015;
-            const flowNoise = Math.sin(angle * 4 + localTheta * 8) * 0.03; // Basado en flujo direccional
+            const baseNoise = Math.sin(currentAngle * 6) * 0.04 + Math.sin(currentAngle * 3) * 0.06;
+            const detailNoise = Math.sin(currentAngle * 15) * 0.02 + Math.sin(currentAngle * 22) * 0.015;
+            const flowNoise = Math.sin(currentAngle * 4 + localTheta * 8) * 0.03; // Basado en flujo direccional
             
             // Crear "dedos" de flujo realistas (como flujos de lava reales)
-            const fingerPattern = Math.sin(angle * 12) * 0.5 + 0.5; // 0 a 1
-            const fingerNoise = fingerPattern > 0.7 ? rng.uniform(0.15, 0.25) : 0;
+            const fingerPattern = Math.sin(currentAngle * 12) * 0.5 + 0.5; // 0 a 1
+            const fingerNoise = fingerPattern > 0.7 ? shapeRng.uniform(0.15, 0.25) : 0;
             
             // Factor de distancia para suavizar hacia el interior
-            const distanceFactor = Math.pow((distance - 0.6) / 0.4, 2); // Suave hacia el centro
+            const distanceFactor = Math.pow((distance - edgeThreshold) / (maxRadius - edgeThreshold), 2);
             
             const totalIrregularity = (baseNoise + detailNoise + flowNoise) * distanceFactor + fingerNoise * distanceFactor;
-            const irregularityFactor = totalIrregularity * rng.uniform(0.12, 0.2);
+            const irregularityFactor = totalIrregularity * shapeRng.uniform(0.12, 0.2) * shape.irregularity;
             
             // Crear vectores tangentes para aplicar irregularidad en el plano de la superficie
             const tangent1 = new THREE.Vector3();
@@ -537,11 +623,11 @@ export class MagmaFlowsEffect {
             tangent2.crossVectors(surfacePoint, tangent1).normalize();
             
             // Aplicar irregularidad compleja en direcciones tangentes
-            const radialOffset = Math.cos(angle) * irregularityFactor * planetRadius;
-            const tangentialOffset = Math.sin(angle) * irregularityFactor * planetRadius;
+            const radialOffset = Math.cos(currentAngle) * irregularityFactor * planetRadius;
+            const tangentialOffset = Math.sin(currentAngle) * irregularityFactor * planetRadius;
             
             // Añadir variación perpendicular para más organicidad
-            const perpVariation = Math.sin(angle * 7 + localTheta * 12) * irregularityFactor * 0.3;
+            const perpVariation = Math.sin(currentAngle * 7 + localTheta * 12) * irregularityFactor * 0.3;
             
             const tangentOffset = tangent1.clone().multiplyScalar(radialOffset + perpVariation)
               .add(tangent2.clone().multiplyScalar(tangentialOffset));
