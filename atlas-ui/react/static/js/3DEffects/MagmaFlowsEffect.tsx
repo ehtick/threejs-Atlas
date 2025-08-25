@@ -54,7 +54,7 @@ export class MagmaFlowsEffect {
   private cosmicOriginTime: number;
   private cosmicOffset: number;
 
-  // Shader para magma con efectos de emisión y distorsión
+  // Shader para magma con efectos de emisión y distorsión adaptado para geometría esférica
   private static readonly magmaVertexShader = `
     varying vec3 vPosition;
     varying vec3 vNormal;
@@ -76,20 +76,32 @@ export class MagmaFlowsEffect {
       vWorldPosition = worldPosition.xyz;
       vWorldNormal = normalize(mat3(modelMatrix) * normal);
       
-      // Movimiento de flujo del magma (más lento y viscoso que lava)
+      // Movimiento de flujo del magma adaptado para superficie curva
       vec3 pos = position;
       float slowTime = time * timeSpeed;
       
-      // Flujo viscoso del magma
-      float flowWave1 = sin(slowTime * 0.8 + worldPosition.x * 0.02) * flowSpeed * 0.5;
-      float flowWave2 = cos(slowTime * 0.6 + worldPosition.z * 0.015) * flowSpeed * 0.3;
+      // Para geometría esférica, aplicar deformaciones que respeten la curvatura
+      // Usar coordenadas polares locales para flujo radial
+      float localRadius = length(pos.xy);
+      float localAngle = atan(pos.y, pos.x);
       
-      // Aplicar deformación de flujo principalmente horizontal
-      pos.x += flowWave1;
-      pos.z += flowWave2;
+      // Flujo viscoso del magma en coordenadas polares
+      float radialFlow = sin(slowTime * 0.8 + localAngle * 4.0) * flowSpeed * 0.3;
+      float angularFlow = cos(slowTime * 0.6 + localRadius * 20.0) * flowSpeed * 0.2;
       
-      // Ligero movimiento vertical para simular burbujeo
-      pos.y += sin(slowTime * 1.5 + worldPosition.x * 0.1 + worldPosition.z * 0.1) * flowSpeed * 0.1;
+      // Aplicar flujo radial (hacia adentro/afuera del centro del parche)
+      if (localRadius > 0.0) {
+        vec2 radialDir = normalize(pos.xy);
+        pos.xy += radialDir * radialFlow;
+      }
+      
+      // Aplicar flujo angular (rotación alrededor del centro)
+      vec2 tangentialDir = vec2(-sin(localAngle), cos(localAngle));
+      pos.xy += tangentialDir * angularFlow;
+      
+      // Ligero movimiento vertical para simular burbujeo, respetando la curvatura
+      float bubbleHeight = sin(slowTime * 1.5 + localRadius * 15.0 + localAngle * 3.0) * flowSpeed * 0.05;
+      pos.z += bubbleHeight;
       
       gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
     }
@@ -306,14 +318,16 @@ export class MagmaFlowsEffect {
   private createMagmaLake(planetRadius: number, lake: any, rng: SeededRandom): void {
     const position = lake.position_3d || [0, 0, 1];
     const baseRadius = lake.radius || rng.uniform(PROCEDURAL_RANGES.LAKE_SIZE.min, PROCEDURAL_RANGES.LAKE_SIZE.max);
-    const radius = baseRadius * planetRadius;
+    
+    // Ajustar el tamaño para mantener apariencia similar al original
+    const sizeMultiplier = lake.radius ? 0.8 : 1.2; // Tamaño ajustado para apariencia familiar
+    const radius = baseRadius * planetRadius * sizeMultiplier;
     
     // Posición en la superficie del planeta
     const sphericalPos = new THREE.Vector3(position[0], position[1], position[2]).normalize();
-    const surfacePosition = sphericalPos.clone().multiplyScalar(planetRadius * 1.002); // Ligeramente elevado para prevenir z-fighting
     
-    // Crear geometría orgánica del lago de magma
-    const geometry = this.createMagmaLakeGeometry(radius, rng);
+    // Crear geometría orgánica del lago de magma que se ajusta a la curvatura del planeta
+    const geometry = this.createMagmaLakeGeometry(radius, rng, planetRadius, sphericalPos);
     
     // Color del magma
     let magmaColor = new THREE.Color(0.85, 0.27, 0.0); // OrangeRed por defecto
@@ -344,10 +358,9 @@ export class MagmaFlowsEffect {
     
     // Crear mesh de efecto como capa separada (siguiendo patrón del README)
     const magmaMesh = new THREE.Mesh(geometry, material);
-    magmaMesh.position.copy(surfacePosition);
     
-    // Orientar hacia la superficie del planeta usando lookAt
-    magmaMesh.lookAt(sphericalPos.clone().multiplyScalar(planetRadius * 2));
+    // La geometría ya está en las coordenadas correctas del mundo, solo necesitamos posicionar en el origen
+    magmaMesh.position.set(0, 0, 0);
     
     magmaMesh.renderOrder = 8; // Alto para renderizar sobre otros efectos
     
@@ -355,30 +368,143 @@ export class MagmaFlowsEffect {
     this.magmaGroup.add(magmaMesh);
   }
 
-  private createMagmaLakeGeometry(radius: number, rng: SeededRandom): THREE.BufferGeometry {
-    // Crear geometría circular orgánica para lago de magma
-    const segments = Math.max(16, Math.floor(radius * 50));
-    const geometry = new THREE.CircleGeometry(radius, segments);
+  private createMagmaLakeGeometry(radius: number, rng: SeededRandom, planetRadius: number, centerPosition: THREE.Vector3): THREE.BufferGeometry {
+    // Crear geometría que sigue la curvatura real de la esfera
+    const segments = Math.max(24, Math.floor(radius * 60)); // Densidad optimizada para balance performance/calidad
     
-    // Añadir irregularidad al borde del lago
-    const positions = geometry.attributes.position;
-    const vertex = new THREE.Vector3();
+    // Crear arrays para vértices, normales y UVs
+    const positions = [];
+    const normals = [];
+    const uvs = [];
+    const indices = [];
     
-    for (let i = 0; i < positions.count; i++) {
-      vertex.fromBufferAttribute(positions, i);
-      
-      if (vertex.length() > 0.1) { // Solo afectar vértices del borde
-        const angle = Math.atan2(vertex.y, vertex.x);
-        const noise = Math.sin(angle * 8) * 0.1 + Math.sin(angle * 5) * 0.05;
-        const irregularity = 1.0 + noise * rng.uniform(0.8, 1.2);
+    // Calcular el ángulo que cubre el parche en la superficie esférica
+    const angularRadius = radius / planetRadius;
+    
+    let vertexIndex = 0;
+    const vertexGrid: (number | null)[][] = [];
+    
+    // Crear grid de vértices siguiendo la curvatura esférica
+    for (let i = 0; i <= segments; i++) {
+      vertexGrid[i] = [];
+      for (let j = 0; j <= segments; j++) {
+        // Coordenadas normalizadas (-1 a 1)
+        const u = (i / segments) * 2 - 1;
+        const v = (j / segments) * 2 - 1;
+        const distance = Math.sqrt(u * u + v * v);
         
-        vertex.multiplyScalar(irregularity);
-        positions.setXYZ(i, vertex.x, vertex.y, vertex.z);
+        // Solo incluir vértices dentro del radio circular
+        if (distance <= 1.0) {
+          // Convertir coordenadas locales a ángulos esféricos
+          const localTheta = distance * angularRadius;
+          const localPhi = Math.atan2(v, u);
+          
+          // Convertir a coordenadas cartesianas en la superficie de la esfera
+          // Primero crear el punto en un sistema local donde el centro está en el "polo norte"
+          const localX = Math.sin(localTheta) * Math.cos(localPhi);
+          const localY = Math.sin(localTheta) * Math.sin(localPhi);
+          const localZ = Math.cos(localTheta);
+          
+          // Crear vector en sistema de coordenadas local
+          const localPoint = new THREE.Vector3(localX, localY, localZ);
+          
+          // Transformar al sistema de coordenadas global usando la posición del centro
+          const centerDir = centerPosition.clone().normalize();
+          
+          // Crear base ortonormal con el centro como "up"
+          const up = centerDir;
+          const right = new THREE.Vector3();
+          const forward = new THREE.Vector3();
+          
+          // Elegir un vector que no sea paralelo a up
+          if (Math.abs(up.z) < 0.9) {
+            right.crossVectors(up, new THREE.Vector3(0, 0, 1)).normalize();
+          } else {
+            right.crossVectors(up, new THREE.Vector3(1, 0, 0)).normalize();
+          }
+          forward.crossVectors(right, up).normalize();
+          
+          // Transformar el punto local al espacio global
+          const globalPoint = new THREE.Vector3();
+          globalPoint.addScaledVector(right, localPoint.x);
+          globalPoint.addScaledVector(forward, localPoint.y);
+          globalPoint.addScaledVector(up, localPoint.z);
+          
+          // Proyectar de vuelta a la superficie de la esfera con elevación consistente
+          const surfacePoint = globalPoint.normalize();
+          const elevatedPoint = surfacePoint.multiplyScalar(planetRadius + planetRadius * 0.002); // Elevación consistente
+          
+          positions.push(elevatedPoint.x, elevatedPoint.y, elevatedPoint.z);
+          
+          // La normal es simplemente la dirección desde el centro de la esfera
+          normals.push(surfacePoint.x, surfacePoint.y, surfacePoint.z);
+          
+          // UVs basadas en la distancia y ángulo locales
+          const texU = 0.5 + u * 0.5;
+          const texV = 0.5 + v * 0.5;
+          uvs.push(texU, texV);
+          
+          vertexGrid[i][j] = vertexIndex;
+          vertexIndex++;
+          
+          // Añadir irregularidad orgánica SOLO en el plano tangente (no en elevación)
+          if (distance > 0.7) {
+            const angle = Math.atan2(v, u);
+            const noise = Math.sin(angle * 8) * 0.06 + Math.sin(angle * 5) * 0.04 + Math.sin(angle * 12) * 0.02;
+            const irregularityFactor = noise * rng.uniform(0.08, 0.15);
+            
+            // Crear vectores tangentes para aplicar irregularidad en el plano de la superficie
+            const tangent1 = new THREE.Vector3();
+            const tangent2 = new THREE.Vector3();
+            
+            if (Math.abs(surfacePoint.z) < 0.9) {
+              tangent1.crossVectors(surfacePoint, new THREE.Vector3(0, 0, 1)).normalize();
+            } else {
+              tangent1.crossVectors(surfacePoint, new THREE.Vector3(1, 0, 0)).normalize();
+            }
+            tangent2.crossVectors(surfacePoint, tangent1).normalize();
+            
+            // Aplicar irregularidad solo en direcciones tangentes
+            const tangentOffset = tangent1.clone().multiplyScalar(Math.cos(angle) * irregularityFactor * planetRadius)
+              .add(tangent2.clone().multiplyScalar(Math.sin(angle) * irregularityFactor * planetRadius));
+            
+            elevatedPoint.add(tangentOffset);
+            
+            const idx = (vertexIndex - 1) * 3;
+            positions[idx] = elevatedPoint.x;
+            positions[idx + 1] = elevatedPoint.y;
+            positions[idx + 2] = elevatedPoint.z;
+          }
+        } else {
+          vertexGrid[i][j] = null;
+        }
       }
     }
     
-    positions.needsUpdate = true;
-    geometry.computeVertexNormals();
+    // Generar índices para triangulación
+    for (let i = 0; i < segments; i++) {
+      for (let j = 0; j < segments; j++) {
+        const v1 = vertexGrid[i][j];
+        const v2 = vertexGrid[i + 1][j];
+        const v3 = vertexGrid[i][j + 1];
+        const v4 = vertexGrid[i + 1][j + 1];
+        
+        // Solo crear triángulos si todos los vértices existen
+        if (v1 !== null && v2 !== null && v3 !== null) {
+          indices.push(v1, v2, v3);
+        }
+        if (v2 !== null && v3 !== null && v4 !== null) {
+          indices.push(v2, v4, v3);
+        }
+      }
+    }
+    
+    // Crear geometría
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+    geometry.setIndex(indices);
     
     return geometry;
   }
