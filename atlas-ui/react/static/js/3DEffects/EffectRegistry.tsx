@@ -38,6 +38,7 @@ import { ExoticGeometricShapesEffect, createExoticGeometricShapesFromPythonData 
 import { ExoticDoodlesEffect, createExoticDoodlesFromPythonData } from "./ExoticDoodles";
 import { CaveSurfaceHolesEffect, createCaveSurfaceHolesFromPythonData } from "./CaveSurfaceHoles";
 import { VegetationEffect, createVegetationFromPythonData } from "./VegetationEffect";
+import { MagmaFlowsEffect, createMagmaFlowsFromPythonData } from "./MagmaFlowsEffect";
 
 // Los planetas Carbon usan efectos existentes (TundraSnowflakes, AtmosphereClouds, LandMasses)
 
@@ -153,6 +154,9 @@ export enum EffectType {
   
   // Efectos para planetas Forest
   VEGETATION = "vegetation",
+  
+  // Efectos para planetas Magma
+  MAGMA_FLOWS = "magma_flows",
 }
 
 // Interfaz para creadores de efectos
@@ -402,6 +406,17 @@ export class EffectRegistry {
     this.registerEffect(EffectType.VEGETATION, {
       create: (params, planetRadius, layerSystem) => new VegetationEffect(planetRadius, params),
       fromPythonData: (data, planetRadius, layerSystem) => createVegetationFromPythonData(
+        planetRadius,
+        data.surface_elements || {},
+        data.seeds?.planet_seed,
+        data.timing?.cosmic_origin_time
+      ),
+    });
+
+    // Efectos para planetas Magma
+    this.registerEffect(EffectType.MAGMA_FLOWS, {
+      create: (params, planetRadius, layerSystem) => new MagmaFlowsEffect(planetRadius, params),
+      fromPythonData: (data, planetRadius, layerSystem) => createMagmaFlowsFromPythonData(
         planetRadius,
         data.surface_elements || {},
         data.seeds?.planet_seed,
@@ -1939,6 +1954,81 @@ export class EffectRegistry {
                 this.effects.set(forestLandMassesInstance.id, forestLandMassesInstance);
                 effects.push(forestLandMassesInstance);
                 forestLandMassesEffect.addToScene(scene, mesh.position);
+              }
+            }
+            break;
+
+          case "magma":
+            // Planetas Magma: flujos de magma, nubes rojizas y masas de tierra magmáticas
+            
+            // 1. Añadir efecto de flujos de magma
+            const magmaFlowsEffect = this.createEffectFromPythonData(
+              EffectType.MAGMA_FLOWS,
+              pythonData,
+              planetRadius,
+              mesh
+            );
+            
+            if (magmaFlowsEffect) {
+              const magmaFlowsInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "magma_flows",
+                effect: magmaFlowsEffect.effect,
+                priority: 12,
+                enabled: true,
+                name: "Magma Flows & Lakes",
+              };
+              
+              this.effects.set(magmaFlowsInstance.id, magmaFlowsInstance);
+              effects.push(magmaFlowsInstance);
+              magmaFlowsEffect.effect.addToScene(scene, mesh.position);
+            }
+            
+            // 2. Añadir nubes atmosféricas SOLO si están disponibles en los datos de Python
+            if (surface.clouds && surface.clouds.length > 0) {
+              const magmaCloudsEffect = createAtmosphereCloudsFromPythonData(
+                planetRadius,
+                surface,
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000,
+                pythonData.timing?.cosmic_origin_time
+              );
+
+              if (magmaCloudsEffect) {
+                const magmaCloudsInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "atmosphere_clouds",
+                  effect: magmaCloudsEffect,
+                  priority: 15,
+                  enabled: true,
+                  name: "Magma Atmospheric Clouds",
+                };
+                this.effects.set(magmaCloudsInstance.id, magmaCloudsInstance);
+                effects.push(magmaCloudsInstance);
+                magmaCloudsEffect.addToScene(scene, mesh.position);
+              }
+            }
+
+            // 3. Añadir masas de tierra magmáticas SOLO si están disponibles en los datos de Python
+            if (surface.green_patches && surface.green_patches.length > 0) {
+              const magmaLandMassesEffect = createLandMassesFromPythonData(
+                planetRadius, 
+                surface, 
+                (pythonData.seeds?.planet_seed || pythonData.seeds?.shape_seed) + 6000
+              );
+
+              if (magmaLandMassesEffect) {
+                const magmaLandMassesInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "land_masses",
+                  effect: magmaLandMassesEffect,
+                  priority: 5,
+                  enabled: true,
+                  name: "Magmatic Land Masses",
+                };
+
+                this.effects.set(magmaLandMassesInstance.id, magmaLandMassesInstance);
+                effects.push(magmaLandMassesInstance);
+                magmaLandMassesEffect.addToScene(scene, mesh.position);
               }
             }
             break;

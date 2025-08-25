@@ -934,7 +934,133 @@ class PlanetTypeTranslators:
     
     def translate_magma(self, planet_radius: int, rng: random.Random, 
                        seed: int, planet_name: str) -> Dict[str, Any]:
-        return {"type": "magma"}
+        """Translate Magma planet elements - flowing magma worlds with atmospheric clouds and magmatic land masses"""
+        center_x, center_y = 200, 200  # Pillow center coordinates
+        
+        # Generate atmospheric clouds for magma planets (volcanic gases and heat distortion)
+        num_clouds = rng.randint(10, 16)  # Rich atmospheric activity from magma outgassing
+        clouds = []
+        for i in range(num_clouds):
+            cloud_radius = rng.randint(20, 40)  # Medium to large clouds from volcanic activity
+            max_offset = planet_radius - cloud_radius
+            cloud_x = center_x + rng.randint(-max_offset, max_offset)
+            cloud_y = center_y + rng.randint(-max_offset, max_offset)
+            
+            # Convert to normalized coordinates
+            normalized_coords = self.common_utils.normalize_coordinates(
+                cloud_x, cloud_y, center_x, center_y, planet_radius
+            )
+            
+            # Magma clouds - red-orange to dark red, representing volcanic gases and heat
+            cloud_colors = [
+                [0.85, 0.35, 0.05, 0.8],     # Bright orange-red (hot magma vapor)
+                [0.75, 0.25, 0.02, 0.9],     # Dark red-orange (dense volcanic gases)
+                [0.90, 0.45, 0.10, 0.7],     # Light orange (heated atmosphere)
+                [0.65, 0.20, 0.01, 0.85],    # Very dark red (dense magma smoke)
+            ]
+            
+            clouds.append({
+                "position": normalized_coords,
+                "radius": cloud_radius / planet_radius,
+                "color": rng.choice(cloud_colors),
+                "type": "cloud",
+                "seed": f"{planet_name}_magma_cloud_{i}"
+            })
+        
+        # Generate magmatic land masses (large molten areas with magma colors)
+        num_landmasses = rng.randint(8, 14)  # Many magmatic formations
+        green_patches = []
+        
+        for i in range(num_landmasses):
+            # Generate uniform position on sphere
+            theta = rng.uniform(0, 2 * math.pi)
+            phi = math.acos(rng.uniform(-1, 1))
+            
+            position_3d = [
+                math.sin(phi) * math.cos(theta),
+                math.sin(phi) * math.sin(theta),
+                math.cos(phi)
+            ]
+            
+            # Size distribution - varied magma flow sizes (large for visibility)
+            if i < 5:
+                # Large magma flows (major molten rivers)
+                size = rng.uniform(0.15, 0.30)  # Large flowing magma areas
+            elif i < 10:
+                # Medium magma pools (lava lakes and flows)
+                size = rng.uniform(0.10, 0.20)  # Medium magma formations
+            else:
+                # Small magma patches (scattered molten spots)
+                size = rng.uniform(0.06, 0.12)  # Smaller magma patches
+            
+            # Magma colors - based on the Pillow colors (135, 36, 0) and (201, 55, 2)
+            magma_color_choices = [
+                [0.53, 0.14, 0.0],   # Dark magma red (135, 36, 0)
+                [0.79, 0.22, 0.01],  # Bright magma orange (201, 55, 2) 
+                [0.85, 0.27, 0.0],   # OrangeRed equivalent for magma lakes
+                [0.60, 0.18, 0.0],   # Medium magma red
+                [0.70, 0.25, 0.05],  # Lighter magma orange
+            ]
+            
+            green_patches.append({
+                "position_3d": position_3d,
+                "size": size,
+                "color": rng.choice(magma_color_choices) + [rng.uniform(0.85, 0.95)],  # High opacity for glowing magma
+                "sides": rng.randint(12, 20),  # Irregular magma flow shapes
+                "heat_intensity": rng.uniform(0.8, 1.0),     # High heat for glow effects
+                "flow_speed": rng.uniform(0.002, 0.008),     # Slow magma flow animation
+                "temperature": rng.uniform(1200, 1800)       # Magma temperature in Celsius
+            })
+        
+        # Generate magma lakes (using the orangered color from Pillow)
+        num_magma_lakes = rng.randint(8, 12)  # Same as in Pillow draw_magma_elements
+        magma_lakes = []
+        
+        for i in range(num_magma_lakes):
+            # Generate uniform position on sphere
+            theta = rng.uniform(0, 2 * math.pi)
+            phi = math.acos(rng.uniform(-1, 1))
+            
+            position_3d = [
+                math.sin(phi) * math.cos(theta),
+                math.sin(phi) * math.sin(theta),
+                math.cos(phi)
+            ]
+            
+            # Lake sizes - MUCH larger for maximum visibility
+            lake_size = rng.uniform(0.25, 0.45)  # Much larger magma lake sizes
+            
+            magma_lakes.append({
+                "position_3d": position_3d,
+                "radius": lake_size,
+                "color": [0.85, 0.27, 0.0, 1.0],  # OrangeRed color from Pillow
+                "temperature": rng.uniform(1500, 2000),       # Very hot magma lakes
+                "bubble_activity": rng.uniform(0.6, 1.0),     # Bubbling activity
+                "glow_intensity": rng.uniform(0.8, 1.0)       # Strong glow effect
+            })
+        
+        return {
+            "type": "magma",
+            "clouds": clouds,  # AtmosphereClouds will use this
+            "green_patches": green_patches,  # LandMasses will use this (magma-colored landmasses)
+            "magma_lakes": magma_lakes,  # MagmaFlows effect will use this
+            "surface_properties": {
+                "heat_distortion": rng.uniform(0.3, 0.7),    # Heat shimmer effects
+                "lava_glow": rng.uniform(0.8, 1.0),          # Strong glow from molten surface
+                "flow_animation": True,                       # Enable magma flow animation
+                "emission_intensity": rng.uniform(0.6, 0.9), # Light emission from magma
+                "viscosity": rng.uniform(0.4, 0.8)           # Magma viscosity for flow speed
+            },
+            "debug": {
+                "original_planet_radius": planet_radius,
+                "center_x": center_x, "center_y": center_y,
+                "cloud_count": num_clouds,
+                "landmass_count": num_landmasses,
+                "magma_lake_count": num_magma_lakes,
+                "avg_landmass_size": sum([lm["size"] for lm in green_patches]) / len(green_patches) if green_patches else 0,
+                "magma_coverage": "high_density_molten_coverage"
+            }
+        }
     
     def translate_molten_core(self, planet_radius: int, rng: random.Random, 
                              seed: int, planet_name: str) -> Dict[str, Any]:
