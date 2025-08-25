@@ -155,18 +155,24 @@ export class MagmaFlowsEffect {
     }
     
     void main() {
-      // Coordenadas de textura animadas para flujo de magma
-      vec2 magmaUv1 = vUv * 3.0 + time * flowSpeed * vec2(0.5, 0.2);
-      vec2 magmaUv2 = vUv * 5.0 + time * flowSpeed * vec2(-0.3, 0.4);
-      vec2 magmaUv3 = vUv * 8.0 + time * flowSpeed * vec2(0.2, -0.6);
+      // Coordenadas de textura animadas para flujo de magma con más complejidad
+      vec2 magmaUv1 = vUv * 4.0 + time * flowSpeed * vec2(0.5, 0.2);
+      vec2 magmaUv2 = vUv * 7.0 + time * flowSpeed * vec2(-0.3, 0.4);
+      vec2 magmaUv3 = vUv * 12.0 + time * flowSpeed * vec2(0.2, -0.6);
+      vec2 magmaUv4 = vUv * 20.0 + time * flowSpeed * vec2(-0.1, 0.3); // Detalles finos
       
-      // Múltiples capas de ruido para textura de magma compleja
+      // Múltiples capas de ruido para textura de magma muy compleja
       float magmaNoise1 = fbm(magmaUv1);
       float magmaNoise2 = fbm(magmaUv2);
       float magmaNoise3 = fbm(magmaUv3) * 0.5;
+      float detailNoise = fbm(magmaUv4) * 0.3; // Detalles finos de superficie
       
-      // Combinar ruidos para textura de magma viscoso
-      float combinedNoise = magmaNoise1 * 0.5 + magmaNoise2 * 0.3 + magmaNoise3 * 0.2;
+      // Crear patrones de flujo direccional
+      vec2 flowDir = normalize(vUv - vec2(0.5));
+      float flowPattern = fbm(vUv * 8.0 + flowDir * time * flowSpeed * 2.0) * 0.4;
+      
+      // Combinar ruidos para textura de magma viscoso muy detallada
+      float combinedNoise = magmaNoise1 * 0.4 + magmaNoise2 * 0.25 + magmaNoise3 * 0.15 + detailNoise * 0.1 + flowPattern * 0.1;
       
       // Color base del magma con variaciones de temperatura
       vec3 baseColor = magmaColor;
@@ -174,29 +180,57 @@ export class MagmaFlowsEffect {
       // Crear zonas más calientes (amarillo-blanco) y más frías (rojo oscuro)
       float heatVariation = combinedNoise * heatIntensity;
       
-      // Colores de temperatura del magma
-      vec3 hotMagma = vec3(1.2, 0.8, 0.3);  // Amarillo-blanco caliente
-      vec3 warmMagma = vec3(1.0, 0.4, 0.1); // Naranja cálido  
-      vec3 coolMagma = vec3(0.8, 0.2, 0.0); // Rojo más frío
+      // Colores de temperatura del magma más realistas y variados
+      vec3 veryHotMagma = vec3(1.4, 1.0, 0.6);  // Blanco-amarillo súper caliente
+      vec3 hotMagma = vec3(1.2, 0.8, 0.3);      // Amarillo-blanco caliente
+      vec3 warmMagma = vec3(1.0, 0.5, 0.1);     // Naranja cálido  
+      vec3 mediumMagma = vec3(0.9, 0.3, 0.05);  // Rojo-naranja medio
+      vec3 coolMagma = vec3(0.7, 0.15, 0.0);    // Rojo más frío
+      vec3 coldMagma = vec3(0.4, 0.08, 0.0);    // Rojo muy oscuro (casi solidificado)
       
       vec3 finalColor = baseColor;
       
-      // Aplicar gradiente de temperatura
-      if (heatVariation > 0.7) {
-        finalColor = mix(finalColor, hotMagma, (heatVariation - 0.7) * 3.0);
-      } else if (heatVariation > 0.4) {
-        finalColor = mix(finalColor, warmMagma, (heatVariation - 0.4) * 2.0);
-      } else if (heatVariation < 0.2) {
-        finalColor = mix(finalColor, coolMagma, (0.2 - heatVariation) * 2.0);
+      // Aplicar gradiente de temperatura más suave y realista
+      if (heatVariation > 0.85) {
+        finalColor = mix(finalColor, veryHotMagma, (heatVariation - 0.85) * 6.0);
+      } else if (heatVariation > 0.65) {
+        finalColor = mix(finalColor, hotMagma, (heatVariation - 0.65) * 4.0);
+      } else if (heatVariation > 0.45) {
+        finalColor = mix(finalColor, warmMagma, (heatVariation - 0.45) * 3.0);
+      } else if (heatVariation > 0.25) {
+        finalColor = mix(finalColor, mediumMagma, (heatVariation - 0.25) * 2.5);
+      } else if (heatVariation > 0.1) {
+        finalColor = mix(finalColor, coolMagma, (heatVariation - 0.1) * 2.0);
+      } else {
+        finalColor = mix(finalColor, coldMagma, (0.1 - heatVariation) * 3.0);
       }
       
-      // Efectos de burbujeo
-      float bubblePattern = sin(vUv.x * 20.0 + time * 3.0) * sin(vUv.y * 15.0 + time * 2.5);
-      float bubbleNoise = noise(vUv * 25.0 + time * 0.8) * bubbleActivity;
+      // Añadir variaciones de temperatura basadas en el patrón de flujo
+      float flowTemperature = flowPattern * 0.3;
+      if (flowTemperature > 0.15) {
+        finalColor = mix(finalColor, hotMagma, flowTemperature);
+      }
       
-      if (bubblePattern * bubbleNoise > 0.3) {
-        // Burbujas más calientes
-        finalColor = mix(finalColor, hotMagma, 0.4);
+      // Efectos de burbujeo más realistas y variados
+      float bubblePattern1 = sin(vUv.x * 18.0 + time * 3.2) * sin(vUv.y * 22.0 + time * 2.8);
+      float bubblePattern2 = sin(vUv.x * 35.0 + time * 4.1) * sin(vUv.y * 28.0 + time * 3.5);
+      float bubbleNoise1 = noise(vUv * 30.0 + time * 1.2) * bubbleActivity;
+      float bubbleNoise2 = noise(vUv * 45.0 + time * 0.6) * bubbleActivity * 0.7;
+      
+      // Burbujas grandes (gases principales)
+      if (bubblePattern1 * bubbleNoise1 > 0.35) {
+        finalColor = mix(finalColor, veryHotMagma, 0.5);
+      }
+      
+      // Burbujas pequeñas (desgasificación detallada)
+      if (bubblePattern2 * bubbleNoise2 > 0.4) {
+        finalColor = mix(finalColor, hotMagma, 0.3);
+      }
+      
+      // Efectos de convección (remolinos de calor)
+      float convectionPattern = fbm(vUv * 6.0 + time * flowSpeed * 0.5);
+      if (convectionPattern > 0.6) {
+        finalColor = mix(finalColor, warmMagma, 0.2);
       }
       
       // Iluminación planetaria siguiendo el patrón del README.md
@@ -430,9 +464,34 @@ export class MagmaFlowsEffect {
           globalPoint.addScaledVector(forward, localPoint.y);
           globalPoint.addScaledVector(up, localPoint.z);
           
-          // Proyectar de vuelta a la superficie de la esfera con elevación consistente
+          // Proyectar de vuelta a la superficie de la esfera con variaciones de altura realistas
           const surfacePoint = globalPoint.normalize();
-          const elevatedPoint = surfacePoint.multiplyScalar(planetRadius + planetRadius * 0.002); // Elevación consistente
+          
+          // Crear variaciones de altura para simular flujo real de magma
+          let heightVariation = 0;
+          
+          // Altura base mayor en el centro, decrece hacia los bordes (como flujo real)
+          const centerDistance = distance;
+          const flowHeight = (1.0 - centerDistance) * 0.003; // Más alto en el centro
+          
+          // Añadir ruido para textura de superficie irregular
+          const noiseScale = 10.0;
+          const noise1 = Math.sin(localTheta * noiseScale + localPhi * 3.0) * 0.0008;
+          const noise2 = Math.cos(localTheta * 7.0 + localPhi * noiseScale) * 0.0005;
+          const noise3 = Math.sin(localTheta * 15.0) * Math.cos(localPhi * 12.0) * 0.0003;
+          
+          // Variaciones de flujo basadas en dirección
+          const flowDirectionNoise = Math.sin(localPhi * 4.0) * 0.0004;
+          
+          heightVariation = flowHeight + noise1 + noise2 + noise3 + flowDirectionNoise;
+          
+          // Crear canales de flujo más profundos (simulando donde fluye más magma)
+          const channelPattern = Math.sin(localTheta * 6.0) * Math.sin(localPhi * 8.0);
+          if (channelPattern > 0.3 && distance > 0.3) {
+            heightVariation += 0.0012; // Canales ligeramente elevados
+          }
+          
+          const elevatedPoint = surfacePoint.multiplyScalar(planetRadius + planetRadius * (0.002 + heightVariation));
           
           positions.push(elevatedPoint.x, elevatedPoint.y, elevatedPoint.z);
           
@@ -447,11 +506,24 @@ export class MagmaFlowsEffect {
           vertexGrid[i][j] = vertexIndex;
           vertexIndex++;
           
-          // Añadir irregularidad orgánica SOLO en el plano tangente (no en elevación)
-          if (distance > 0.7) {
+          // Añadir bordes irregulares muy orgánicos para simular flujo real de magma
+          if (distance > 0.6) {  // Comenzar irregularidad más temprano
             const angle = Math.atan2(v, u);
-            const noise = Math.sin(angle * 8) * 0.06 + Math.sin(angle * 5) * 0.04 + Math.sin(angle * 12) * 0.02;
-            const irregularityFactor = noise * rng.uniform(0.08, 0.15);
+            
+            // Múltiples capas de ruido para bordes muy orgánicos
+            const baseNoise = Math.sin(angle * 6) * 0.04 + Math.sin(angle * 3) * 0.06;
+            const detailNoise = Math.sin(angle * 15) * 0.02 + Math.sin(angle * 22) * 0.015;
+            const flowNoise = Math.sin(angle * 4 + localTheta * 8) * 0.03; // Basado en flujo direccional
+            
+            // Crear "dedos" de flujo realistas (como flujos de lava reales)
+            const fingerPattern = Math.sin(angle * 12) * 0.5 + 0.5; // 0 a 1
+            const fingerNoise = fingerPattern > 0.7 ? rng.uniform(0.15, 0.25) : 0;
+            
+            // Factor de distancia para suavizar hacia el interior
+            const distanceFactor = Math.pow((distance - 0.6) / 0.4, 2); // Suave hacia el centro
+            
+            const totalIrregularity = (baseNoise + detailNoise + flowNoise) * distanceFactor + fingerNoise * distanceFactor;
+            const irregularityFactor = totalIrregularity * rng.uniform(0.12, 0.2);
             
             // Crear vectores tangentes para aplicar irregularidad en el plano de la superficie
             const tangent1 = new THREE.Vector3();
@@ -464,9 +536,15 @@ export class MagmaFlowsEffect {
             }
             tangent2.crossVectors(surfacePoint, tangent1).normalize();
             
-            // Aplicar irregularidad solo en direcciones tangentes
-            const tangentOffset = tangent1.clone().multiplyScalar(Math.cos(angle) * irregularityFactor * planetRadius)
-              .add(tangent2.clone().multiplyScalar(Math.sin(angle) * irregularityFactor * planetRadius));
+            // Aplicar irregularidad compleja en direcciones tangentes
+            const radialOffset = Math.cos(angle) * irregularityFactor * planetRadius;
+            const tangentialOffset = Math.sin(angle) * irregularityFactor * planetRadius;
+            
+            // Añadir variación perpendicular para más organicidad
+            const perpVariation = Math.sin(angle * 7 + localTheta * 12) * irregularityFactor * 0.3;
+            
+            const tangentOffset = tangent1.clone().multiplyScalar(radialOffset + perpVariation)
+              .add(tangent2.clone().multiplyScalar(tangentialOffset));
             
             elevatedPoint.add(tangentOffset);
             
