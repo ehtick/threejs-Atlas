@@ -1,18 +1,17 @@
 /**
- * Radiation Pulse Effect - Efecto de Pulsos de Radiación
+ * Radiation Pulse Effect - Professional Radioactive Hazard Visualization
  * 
- * Crea pulsos de energía radioactiva verde que emanan desde el planeta
- * hacia el exterior, evocando contaminación nuclear y radioactividad.
- * 
- * Características:
- * - Pulsos concéntricos verdes que se expanden desde la superficie
- * - Partículas radiactivas flotantes con brillo tóxico
- * - Ondas de energía que simulan radiación electromagnética
- * - Efecto visual que grita "¡RADIOACTIVO!" al verlo
+ * Creates a dangerous, professional radiation field around the planet:
+ * - Hazmat-style radioactive energy distortion fields
+ * - Ionizing radiation shimmer effects
+ * - Gamma burst flashes and Geiger counter-like pulses
+ * - Toxic contamination field with nuclear warning intensity
+ * - Realistic radiation danger visualization
  */
 
 import * as THREE from 'three';
 import { SeededRandom } from '../Utils/SeededRandom';
+import { getAnimatedUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from '../Utils/UniverseTime';
 
 export interface RadiationPulseParams {
   color?: number[] | THREE.Color;
@@ -22,85 +21,238 @@ export interface RadiationPulseParams {
   radiationRadius?: number;
   pulseInterval?: number;
   glowIntensity?: number;
+  waveThickness?: number;
+  rotationSpeed?: number;
   seed?: number;
+  cosmicOriginTime?: number;
 }
 
+// Procedural ranges for radiation field generation
+const PROCEDURAL_RANGES = {
+  PULSE_SPEED: { min: 2.0, max: 4.5 },          // Faster, more urgent pulsing
+  PULSE_INTENSITY: { min: 0.8, max: 1.8 },      // Higher intensity for danger
+  CONTAMINATION_LAYERS: { min: 4, max: 8 },     // Multiple contamination layers
+  RADIATION_RADIUS: { min: 2.0, max: 4.0 },     // Larger dangerous area
+  IONIZATION_FREQUENCY: { min: 8.0, max: 15.0 }, // Ionization shimmer frequency
+  GAMMA_BURST_RATE: { min: 0.8, max: 2.2 },     // Gamma radiation bursts
+  CONTAMINATION_THICKNESS: { min: 0.15, max: 0.35 }, // Thick contamination fields
+  HAZARD_ROTATION: { min: 0.01, max: 0.08 },    // Hazardous field rotation
+  TOXIC_SPREAD: { min: 1.2, max: 2.8 }          // Toxic contamination spread
+};
+
 /**
- * Efecto de Pulsos de Radiación
+ * Professional Radiation Hazard Effect
  * 
- * Crea un efecto espectacular de radioactividad con pulsos de energía verde
- * que se expanden desde el planeta y partículas flotantes tóxicas
+ * Creates an intensive, dangerous-looking radiation contamination field
+ * that screams "CAUTION: RADIOACTIVE HAZARD" at first sight
  */
 export class RadiationPulseEffect {
   private group: THREE.Group;
-  private pulseMaterial: THREE.ShaderMaterial;
-  private particleSystem: THREE.Points;
-  private pulseRings: THREE.Mesh[] = [];
+  private contaminationCore: THREE.Mesh;
+  private radiationLayers: THREE.Mesh[];
+  private ionizationField: THREE.Mesh;
   private params: RadiationPulseParams;
-  private time: number = 0;
+  private cosmicTime: number = 0;
   private rng: SeededRandom;
   private planetRadius: number;
+  private startTime: number = 0;
 
   constructor(planetRadius: number, params: RadiationPulseParams = {}) {
     this.planetRadius = planetRadius;
     
-    // Usar seed para generación determinística
+    // Use seed for deterministic generation
     const seed = params.seed || Math.floor(Math.random() * 1000000);
     this.rng = new SeededRandom(seed);
     
+    // Always use procedural generation based on PROCEDURAL_RANGES
     this.params = {
-      color: params.color || [0.3, 1.0, 0.2],  // Verde radioactivo brillante
-      pulseSpeed: params.pulseSpeed || 2.0,    // Velocidad de pulsos
-      pulseIntensity: params.pulseIntensity || 0.8,  // Intensidad de los pulsos
-      particleCount: params.particleCount || 200,    // Partículas radioactivas
-      radiationRadius: params.radiationRadius || planetRadius * 2.5,  // Radio de radiación
-      pulseInterval: params.pulseInterval || 1.5,    // Intervalo entre pulsos
-      glowIntensity: params.glowIntensity || 1.2,    // Intensidad del brillo
+      color: params.color || [0.0, 1.0, 0.2],  // Toxic nuclear green
+      pulseSpeed: this.rng.uniform(PROCEDURAL_RANGES.PULSE_SPEED.min, PROCEDURAL_RANGES.PULSE_SPEED.max),
+      pulseIntensity: this.rng.uniform(PROCEDURAL_RANGES.PULSE_INTENSITY.min, PROCEDURAL_RANGES.PULSE_INTENSITY.max),
+      particleCount: Math.floor(this.rng.uniform(PROCEDURAL_RANGES.CONTAMINATION_LAYERS.min, PROCEDURAL_RANGES.CONTAMINATION_LAYERS.max)),
+      radiationRadius: planetRadius * this.rng.uniform(PROCEDURAL_RANGES.RADIATION_RADIUS.min, PROCEDURAL_RANGES.RADIATION_RADIUS.max),
+      pulseInterval: this.rng.uniform(PROCEDURAL_RANGES.IONIZATION_FREQUENCY.min, PROCEDURAL_RANGES.IONIZATION_FREQUENCY.max),
+      glowIntensity: this.rng.uniform(PROCEDURAL_RANGES.GAMMA_BURST_RATE.min, PROCEDURAL_RANGES.GAMMA_BURST_RATE.max),
+      waveThickness: this.rng.uniform(PROCEDURAL_RANGES.CONTAMINATION_THICKNESS.min, PROCEDURAL_RANGES.CONTAMINATION_THICKNESS.max),
+      rotationSpeed: this.rng.uniform(PROCEDURAL_RANGES.HAZARD_ROTATION.min, PROCEDURAL_RANGES.HAZARD_ROTATION.max),
+      cosmicOriginTime: params.cosmicOriginTime,
       seed
     };
-
-    this.group = new THREE.Group();
-    this.createRadiationEffect();
-  }
-
-  private createRadiationEffect(): void {
-    this.createPulseRings();
-    this.createRadioactiveParticles();
-  }
-
-  private createPulseRings(): void {
-    // Crear múltiples anillos de pulso que se expanden
-    const ringCount = 3;
     
-    for (let i = 0; i < ringCount; i++) {
-      const geometry = new THREE.RingGeometry(
-        this.planetRadius * 1.1, 
-        this.planetRadius * 1.3, 
-        64, 
-        1
-      );
+    this.startTime = this.rng.uniform(0, 1000); // Random start offset for variation
+
+    this.cosmicTime = 0;
+    this.group = new THREE.Group();
+    this.radiationLayers = [];
+    this.createContaminationCore();
+    this.createRadiationLayers();
+    this.createIonizationField();
+  }
+
+  private createContaminationCore(): void {
+    // Create a dangerous contamination core around the planet
+    const geometry = new THREE.SphereGeometry(this.params.radiationRadius! * 0.7, 32, 32);
+    
+    const material = new THREE.ShaderMaterial({
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+      
+      uniforms: {
+        time: { value: 0 },
+        color: { value: new THREE.Color(this.params.color![0], this.params.color![1], this.params.color![2]) },
+        pulseSpeed: { value: this.params.pulseSpeed },
+        intensity: { value: this.params.pulseIntensity },
+        gammaRate: { value: this.params.glowIntensity },
+        planetRadius: { value: this.planetRadius },
+        radiationRadius: { value: this.params.radiationRadius },
+        seed: { value: this.params.seed || 0 }
+      },
+      
+      vertexShader: `
+        varying vec3 vPosition;
+        varying vec3 vWorldPosition;
+        varying vec3 vNormal;
+        varying float vDistanceFromCore;
+        
+        uniform float planetRadius;
+        
+        void main() {
+          vPosition = position;
+          vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
+          vNormal = normalize(normalMatrix * normal);
+          vDistanceFromCore = length(position) - planetRadius;
+          
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      
+      fragmentShader: `
+        uniform float time;
+        uniform vec3 color;
+        uniform float pulseSpeed;
+        uniform float intensity;
+        uniform float gammaRate;
+        uniform float planetRadius;
+        uniform float radiationRadius;
+        uniform float seed;
+        
+        varying vec3 vPosition;
+        varying vec3 vWorldPosition;
+        varying vec3 vNormal;
+        varying float vDistanceFromCore;
+        
+        
+        void main() {
+          // Distance from planet surface
+          float distanceFromSurface = vDistanceFromCore;
+          float normalizedDistance = distanceFromSurface / (radiationRadius - planetRadius);
+          
+          // DANGEROUS PULSING - rapid, urgent, hazardous
+          float urgentPulse = sin(time * pulseSpeed * 2.0) * 0.5 + 0.5;
+          urgentPulse = pow(urgentPulse, 0.3); // Sharp, urgent pulses
+          
+          float secondaryPulse = sin(time * pulseSpeed * 3.7 + seed) * 0.3 + 0.7;
+          float tertiaryPulse = sin(time * pulseSpeed * 1.3 + seed * 2.0) * 0.2 + 0.8;
+          
+          // GAMMA RADIATION BURSTS
+          float gammaBurst = sin(time * pulseSpeed * 15.0 + length(vWorldPosition)) * 0.5 + 0.5;
+          gammaBurst = pow(gammaBurst, 3.0);
+          
+          // IONIZATION DISTORTION FIELD
+          float ionizationField = sin(length(vWorldPosition) * 0.8 + time * pulseSpeed * 0.3) * 0.5 + 0.5;
+          ionizationField = pow(ionizationField, 0.7) * 1.2;
+          
+          // TOXIC CONTAMINATION WAVES
+          float contaminationWave = sin(length(vWorldPosition) * 0.8 - time * pulseSpeed * 1.5);
+          contaminationWave = pow(max(0.0, contaminationWave), 2.0);
+          
+          // RADIATION SHIMMER - like heat distortion but more aggressive
+          float shimmer = sin(time * pulseSpeed * 8.0 + length(vWorldPosition)) * 0.3 + 0.7;
+          
+          // HAZMAT WARNING EFFECT - rim lighting
+          vec3 viewDir = normalize(cameraPosition - vWorldPosition);
+          float rimEffect = 1.0 - max(0.0, dot(vNormal, viewDir));
+          rimEffect = pow(rimEffect, 1.2) * 2.0;
+          
+          // Distance falloff - keep it dangerous even at distance
+          float falloff = 1.0 - smoothstep(0.0, 1.0, normalizedDistance * 0.8);
+          falloff = max(falloff, 0.3); // Always maintain minimum danger level
+          
+          // Combine all radiation effects
+          float radiationIntensity = urgentPulse * secondaryPulse * tertiaryPulse * 
+                                    ionizationField * contaminationWave * shimmer * 
+                                    rimEffect * falloff * intensity;
+          
+          // Add gamma bursts
+          radiationIntensity += gammaBurst * gammaRate * 2.0;
+          
+          // GEIGER COUNTER SIMULATION - random crackling
+          float geigerCrackle = step(0.96, hash(vWorldPosition * 10.0 + time * pulseSpeed * 5.0));
+          radiationIntensity += geigerCrackle * 1.8;
+          
+          // TOXIC COLOR MIXING - nuclear warning colors
+          vec3 nuclearGreen = color;
+          vec3 hazmatYellow = vec3(1.0, 0.8, 0.0);
+          vec3 radioactiveOrange = vec3(1.0, 0.4, 0.0);
+          
+          // Mix colors based on radiation intensity
+          vec3 warningColor = mix(nuclearGreen, hazmatYellow, ionizationField * 0.4);
+          warningColor = mix(warningColor, radioactiveOrange, gammaBurst * 0.6);
+          
+          vec3 finalColor = warningColor * radiationIntensity;
+          
+          // High visibility alpha for clear danger indication
+          float alpha = clamp(radiationIntensity * 0.9, 0.2, 1.0);
+          
+          gl_FragColor = vec4(finalColor, alpha);
+        }
+      `
+    });
+    
+    this.contaminationCore = new THREE.Mesh(geometry, material);
+    this.group.add(this.contaminationCore);
+  }
+
+  private createRadiationLayers(): void {
+    // Create multiple contamination layers for a dangerous layered effect
+    const numLayers = this.params.particleCount! || 6;
+    
+    for (let i = 0; i < numLayers; i++) {
+      const layerRadius = this.params.radiationRadius! * (0.8 + i * 0.15);
+      const geometry = new THREE.SphereGeometry(layerRadius, 24, 24);
       
       const material = new THREE.ShaderMaterial({
         transparent: true,
-        side: THREE.DoubleSide,
         depthWrite: false,
         blending: THREE.AdditiveBlending,
+        side: THREE.BackSide,
         
         uniforms: {
           time: { value: 0 },
           color: { value: new THREE.Color(this.params.color![0], this.params.color![1], this.params.color![2]) },
-          pulsePhase: { value: i * (Math.PI * 2 / ringCount) },
-          intensity: { value: this.params.pulseIntensity },
-          glowIntensity: { value: this.params.glowIntensity }
+          layerIndex: { value: i },
+          pulseSpeed: { value: this.params.pulseSpeed },
+          intensity: { value: this.params.pulseIntensity * 0.6 },
+          planetRadius: { value: this.planetRadius },
+          layerRadius: { value: layerRadius },
+          totalLayers: { value: numLayers },
+          seed: { value: this.params.seed || 0 }
         },
         
         vertexShader: `
-          varying vec2 vUv;
           varying vec3 vPosition;
+          varying vec3 vWorldPosition;
+          varying vec3 vNormal;
+          varying float vDistanceFromCenter;
           
           void main() {
-            vUv = uv;
             vPosition = position;
+            vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
+            vNormal = normalize(normalMatrix * normal);
+            vDistanceFromCenter = length(position);
+            
             gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
           }
         `,
@@ -108,173 +260,205 @@ export class RadiationPulseEffect {
         fragmentShader: `
           uniform float time;
           uniform vec3 color;
-          uniform float pulsePhase;
+          uniform float layerIndex;
+          uniform float pulseSpeed;
           uniform float intensity;
-          uniform float glowIntensity;
+          uniform float planetRadius;
+          uniform float layerRadius;
+          uniform float totalLayers;
+          uniform float seed;
           
-          varying vec2 vUv;
           varying vec3 vPosition;
+          varying vec3 vWorldPosition;
+          varying vec3 vNormal;
+          varying float vDistanceFromCenter;
+          
+          float hash(vec3 p) {
+            p = fract(p * vec3(443.897, 441.423, 437.195));
+            p += dot(p, p.yxz + 19.19);
+            return fract((p.x + p.y) * p.z);
+          }
           
           void main() {
-            float radius = length(vPosition.xy);
-            float normalizedRadius = (radius - ${this.planetRadius * 1.1}) / ${this.planetRadius * 0.2};
+            // Layer-specific contamination effect
+            float layerPhase = layerIndex * 2.4 + seed;
+            float contaminationPulse = sin(time * pulseSpeed + layerPhase) * 0.5 + 0.5;
+            contaminationPulse = pow(contaminationPulse, 0.4);
             
-            // Pulso principal que se expande
-            float pulse = sin(time * ${this.params.pulseSpeed} + pulsePhase) * 0.5 + 0.5;
-            pulse = pow(pulse, 2.0);
+            // Toxic spreading pattern
+            float spreadPattern = sin(vWorldPosition.x * 0.8 + time * pulseSpeed * 0.6 + layerPhase);
+            spreadPattern *= sin(vWorldPosition.y * 0.9 + time * pulseSpeed * 0.4 + layerPhase * 1.3);
+            spreadPattern *= sin(vWorldPosition.z * 0.7 + time * pulseSpeed * 0.8 + layerPhase * 0.7);
+            spreadPattern = spreadPattern * 0.4 + 0.6;
             
-            // Ondas concéntricas de radiación
-            float waves = sin(normalizedRadius * 20.0 - time * 4.0) * 0.5 + 0.5;
-            waves *= sin(normalizedRadius * 8.0 - time * 2.5) * 0.3 + 0.7;
+            // Random contamination hotspots
+            float hotspot = hash(floor(vWorldPosition * 3.0) + layerIndex * 100.0);
+            hotspot = step(0.85, hotspot) * (sin(time * pulseSpeed * 4.0 + layerIndex) * 0.5 + 0.5);
             
-            // Efecto de brillo en los bordes
-            float edgeGlow = 1.0 - smoothstep(0.0, 0.3, normalizedRadius);
-            edgeGlow += 1.0 - smoothstep(0.7, 1.0, normalizedRadius);
+            // Distance-based intensity (outer layers dimmer)
+            float layerIntensity = 1.0 - (layerIndex / totalLayers) * 0.7;
             
-            // Combinar todos los efectos
-            float alpha = pulse * waves * edgeGlow * intensity;
-            alpha *= (1.0 - normalizedRadius * 0.5); // Fade hacia afuera
+            // Fresnel effect for rim lighting
+            vec3 viewDir = normalize(cameraPosition - vWorldPosition);
+            float fresnel = 1.0 - max(0.0, dot(vNormal, viewDir));
+            fresnel = pow(fresnel, 2.0);
             
-            // Intensificar el brillo
-            vec3 finalColor = color * glowIntensity;
+            // Combine all effects
+            float finalIntensity = contaminationPulse * spreadPattern * layerIntensity * 
+                                 fresnel * intensity;
             
-            gl_FragColor = vec4(finalColor, alpha * 0.6);
+            // Add hotspots
+            finalIntensity += hotspot * 0.8;
+            
+            // Color variation per layer
+            vec3 layerColor = mix(color, vec3(1.0, 0.6, 0.0), layerIndex / totalLayers * 0.5);
+            
+            vec3 finalColor = layerColor * finalIntensity;
+            float alpha = finalIntensity * 0.4;
+            
+            gl_FragColor = vec4(finalColor, alpha);
           }
         `
       });
       
-      const ring = new THREE.Mesh(geometry, material);
+      const layerMesh = new THREE.Mesh(geometry, material);
       
-      // Posicionar los anillos ligeramente diferentes para crear profundidad
-      ring.rotation.x = Math.PI / 2;
-      ring.position.y = this.rng.random() * 0.1 - 0.05;
-      ring.scale.set(1 + i * 0.1, 1 + i * 0.1, 1);
+      // Random orientation for each contamination layer
+      layerMesh.rotation.x = this.rng.random() * Math.PI * 2;
+      layerMesh.rotation.y = this.rng.random() * Math.PI * 2;
+      layerMesh.rotation.z = this.rng.random() * Math.PI * 2;
       
-      this.pulseRings.push(ring);
-      this.group.add(ring);
+      this.radiationLayers.push(layerMesh);
+      this.group.add(layerMesh);
     }
   }
-
-  private createRadioactiveParticles(): void {
-    const geometry = new THREE.BufferGeometry();
-    const positions = new Float32Array(this.params.particleCount! * 3);
-    const sizes = new Float32Array(this.params.particleCount!);
-    const phases = new Float32Array(this.params.particleCount!);
-    const speeds = new Float32Array(this.params.particleCount!);
-
-    // Crear partículas radioactivas flotantes
-    for (let i = 0; i < this.params.particleCount!; i++) {
-      // Posiciones aleatorias alrededor del planeta
-      const phi = this.rng.random() * Math.PI * 2;
-      const costheta = this.rng.random() * 2 - 1;
-      const u = this.rng.random();
-      
-      const theta = Math.acos(costheta);
-      const r = this.planetRadius * (1.2 + this.rng.random() * 1.5);
-      
-      positions[i * 3] = r * Math.sin(theta) * Math.cos(phi);
-      positions[i * 3 + 1] = r * Math.sin(theta) * Math.sin(phi);
-      positions[i * 3 + 2] = r * Math.cos(theta);
-
-      sizes[i] = 0.5 + this.rng.random() * 1.5;
-      phases[i] = this.rng.random() * Math.PI * 2;
-      speeds[i] = 0.5 + this.rng.random() * 1.0;
-    }
-
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
-    geometry.setAttribute('phase', new THREE.BufferAttribute(phases, 1));
-    geometry.setAttribute('speed', new THREE.BufferAttribute(speeds, 1));
-
-    const particleMaterial = new THREE.ShaderMaterial({
+  
+  private createIonizationField(): void {
+    // Create the outermost ionization distortion field
+    const geometry = new THREE.SphereGeometry(this.params.radiationRadius! * 1.2, 32, 32);
+    
+    const material = new THREE.ShaderMaterial({
       transparent: true,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
+      side: THREE.BackSide,
       
       uniforms: {
         time: { value: 0 },
         color: { value: new THREE.Color(this.params.color![0], this.params.color![1], this.params.color![2]) },
-        glowIntensity: { value: this.params.glowIntensity }
+        pulseSpeed: { value: this.params.pulseSpeed },
+        intensity: { value: this.params.pulseIntensity * 0.3 },
+        ionizationRate: { value: this.params.pulseInterval },
+        seed: { value: this.params.seed || 0 }
       },
       
       vertexShader: `
-        attribute float size;
-        attribute float phase;
-        attribute float speed;
-        
-        uniform float time;
-        
-        varying float vPhase;
-        varying float vSpeed;
+        varying vec3 vPosition;
+        varying vec3 vWorldPosition;
+        varying vec3 vNormal;
         
         void main() {
-          vPhase = phase;
-          vSpeed = speed;
+          vPosition = position;
+          vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
+          vNormal = normalize(normalMatrix * normal);
           
-          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-          
-          // Animación de flotación
-          float floatOffset = sin(time * speed + phase) * 2.0;
-          mvPosition.y += floatOffset;
-          
-          gl_PointSize = size * (300.0 / -mvPosition.z);
-          gl_Position = projectionMatrix * mvPosition;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }
       `,
       
       fragmentShader: `
-        uniform vec3 color;
         uniform float time;
-        uniform float glowIntensity;
+        uniform vec3 color;
+        uniform float pulseSpeed;
+        uniform float intensity;
+        uniform float ionizationRate;
+        uniform float seed;
         
-        varying float vPhase;
-        varying float vSpeed;
+        varying vec3 vPosition;
+        varying vec3 vWorldPosition;
+        varying vec3 vNormal;
+        
+        float hash(vec3 p) {
+          p = fract(p * vec3(443.897, 441.423, 437.195));
+          p += dot(p, p.yxz + 19.19);
+          return fract((p.x + p.y) * p.z);
+        }
         
         void main() {
-          vec2 center = gl_PointCoord - 0.5;
-          float dist = length(center);
+          // Ionization shimmer effect
+          float ionizationShimmer = sin(time * ionizationRate + length(vWorldPosition) * 0.5);
+          ionizationShimmer *= sin(time * ionizationRate * 1.3 + vWorldPosition.x * 0.8);
+          ionizationShimmer *= sin(time * ionizationRate * 0.7 + vWorldPosition.y * 0.9);
+          ionizationShimmer = ionizationShimmer * 0.5 + 0.5;
           
-          if (dist > 0.5) discard;
+          // Random electrical discharge pattern
+          float discharge = hash(floor(vWorldPosition * 4.0) + floor(time * pulseSpeed * 2.0));
+          discharge = step(0.95, discharge) * (sin(time * pulseSpeed * 10.0) * 0.5 + 0.5);
           
-          // Pulso de partícula individual
-          float pulse = sin(time * 3.0 + vPhase) * 0.3 + 0.7;
+          // Fresnel for atmospheric effect
+          vec3 viewDir = normalize(cameraPosition - vWorldPosition);
+          float fresnel = 1.0 - max(0.0, dot(vNormal, viewDir));
+          fresnel = pow(fresnel, 3.0);
           
-          // Núcleo brillante
-          float core = 1.0 - smoothstep(0.0, 0.2, dist);
-          // Halo exterior
-          float halo = 1.0 - smoothstep(0.1, 0.5, dist);
+          float finalIntensity = ionizationShimmer * fresnel * intensity;
+          finalIntensity += discharge * 0.6;
           
-          float intensity = (core * 2.0 + halo * 0.5) * pulse;
-          vec3 finalColor = color * glowIntensity * intensity;
+          vec3 finalColor = mix(color, vec3(0.8, 0.9, 1.0), 0.3) * finalIntensity;
+          float alpha = finalIntensity * 0.3;
           
-          gl_FragColor = vec4(finalColor, intensity * 0.8);
+          gl_FragColor = vec4(finalColor, alpha);
         }
       `
     });
-
-    this.particleSystem = new THREE.Points(geometry, particleMaterial);
-    this.group.add(this.particleSystem);
+    
+    this.ionizationField = new THREE.Mesh(geometry, material);
+    this.group.add(this.ionizationField);
   }
 
   public update(deltaTime: number): void {
-    this.time += deltaTime;
-    
-    // Actualizar anillos de pulso
-    this.pulseRings.forEach((ring, index) => {
-      const material = ring.material as THREE.ShaderMaterial;
-      material.uniforms.time.value = this.time;
-      
-      // Rotar ligeramente cada anillo
-      ring.rotation.z += deltaTime * 0.1 * (index + 1);
-    });
-    
-    // Actualizar partículas
-    if (this.particleSystem.material instanceof THREE.ShaderMaterial) {
-      this.particleSystem.material.uniforms.time.value = this.time;
+    // Calculate cosmic time synchronized globally
+    if (this.params.cosmicOriginTime) {
+      this.cosmicTime = getAnimatedUniverseTime(
+        this.params.cosmicOriginTime, 
+        1.0, 
+        this.startTime
+      );
+    } else {
+      this.cosmicTime += deltaTime;
     }
     
-    // Rotar todo el grupo lentamente
-    this.group.rotation.y += deltaTime * 0.2;
+    // Update contamination core
+    if (this.contaminationCore.material instanceof THREE.ShaderMaterial) {
+      this.contaminationCore.material.uniforms.time.value = this.cosmicTime;
+    }
+    
+    // Update radiation layers
+    this.radiationLayers.forEach((layer, index) => {
+      if (layer.material instanceof THREE.ShaderMaterial) {
+        layer.material.uniforms.time.value = this.cosmicTime;
+      }
+      
+      // Individual rotation for each layer based on procedural hazard rotation
+      const hazardRotation = this.params.rotationSpeed! * (index * 0.3 + 1);
+      layer.rotation.x += hazardRotation * 0.7;
+      layer.rotation.y += hazardRotation;
+      layer.rotation.z += hazardRotation * 0.4;
+    });
+    
+    // Update ionization field
+    if (this.ionizationField && this.ionizationField.material instanceof THREE.ShaderMaterial) {
+      this.ionizationField.material.uniforms.time.value = this.cosmicTime;
+    }
+    
+    // Contamination core rotation
+    const coreRotation = this.params.rotationSpeed! * 0.8;
+    this.contaminationCore.rotation.y = this.cosmicTime * coreRotation;
+    this.contaminationCore.rotation.x = Math.sin(this.cosmicTime * coreRotation * 0.3) * 0.2;
+    
+    // Ionization field gentle rotation
+    if (this.ionizationField) {
+      this.ionizationField.rotation.y = this.cosmicTime * this.params.rotationSpeed! * 0.2;
+    }
   }
 
   public getObject3D(): THREE.Object3D {
@@ -293,18 +477,22 @@ export class RadiationPulseEffect {
   }
 
   public dispose(): void {
-    // Limpiar geometrías
-    this.pulseRings.forEach(ring => {
-      ring.geometry.dispose();
-      (ring.material as THREE.Material).dispose();
+    // Clean up contamination core
+    this.contaminationCore.geometry.dispose();
+    (this.contaminationCore.material as THREE.Material).dispose();
+    
+    // Clean up radiation layers
+    this.radiationLayers.forEach(layer => {
+      layer.geometry.dispose();
+      (layer.material as THREE.Material).dispose();
     });
     
-    if (this.particleSystem) {
-      this.particleSystem.geometry.dispose();
-      (this.particleSystem.material as THREE.Material).dispose();
+    // Clean up ionization field
+    if (this.ionizationField) {
+      this.ionizationField.geometry.dispose();
+      (this.ionizationField.material as THREE.Material).dispose();
     }
     
-    // Remover del grupo
     this.group.clear();
   }
 
@@ -315,23 +503,30 @@ export class RadiationPulseEffect {
   public updateParams(newParams: Partial<RadiationPulseParams>): void {
     Object.assign(this.params, newParams);
     
-    // Actualizar uniformes si es necesario
     if (newParams.color) {
       const color = new THREE.Color(newParams.color[0], newParams.color[1], newParams.color[2]);
-      this.pulseRings.forEach(ring => {
-        const material = ring.material as THREE.ShaderMaterial;
-        material.uniforms.color.value = color;
+      
+      if (this.contaminationCore.material instanceof THREE.ShaderMaterial) {
+        this.contaminationCore.material.uniforms.color.value = color;
+      }
+      
+      // Update radiation layer colors
+      this.radiationLayers.forEach(layer => {
+        if (layer.material instanceof THREE.ShaderMaterial) {
+          layer.material.uniforms.color.value = color;
+        }
       });
       
-      if (this.particleSystem.material instanceof THREE.ShaderMaterial) {
-        this.particleSystem.material.uniforms.color.value = color;
+      // Update ionization field color
+      if (this.ionizationField && this.ionizationField.material instanceof THREE.ShaderMaterial) {
+        this.ionizationField.material.uniforms.color.value = color;
       }
     }
   }
 }
 
 /**
- * Crea un efecto de radiación desde datos de Python
+ * Creates a professional radiation hazard effect from Python data
  */
 export function createRadiationPulseFromPythonData(
   pythonData: any,
@@ -339,13 +534,9 @@ export function createRadiationPulseFromPythonData(
 ): RadiationPulseEffect {
   const params: RadiationPulseParams = {
     seed: pythonData.seed || Math.floor(Math.random() * 1000000),
-    color: pythonData.color || [0.3, 1.0, 0.2],
-    pulseSpeed: pythonData.pulse_speed || 2.0,
-    pulseIntensity: pythonData.pulse_intensity || 0.8,
-    particleCount: pythonData.particle_count || 200,
-    radiationRadius: pythonData.radiation_radius || planetRadius * 2.5,
-    pulseInterval: pythonData.pulse_interval || 1.5,
-    glowIntensity: pythonData.glow_intensity || 1.2
+    color: pythonData.color || [0.0, 1.0, 0.2],        // Nuclear hazard green
+    // Do NOT specify other parameters to use PROCEDURAL_RANGES
+    cosmicOriginTime: pythonData.cosmic_origin_time     // Cosmic time
   };
 
   return new RadiationPulseEffect(planetRadius, params);

@@ -83,6 +83,9 @@ export type { CarbonTrailsParams } from "./CarbonTrails";
 export { RadiationPulseEffect, createRadiationPulseFromPythonData } from "./RadiationPulse";
 export type { RadiationPulseParams } from "./RadiationPulse";
 
+export { RadiationRingsEffect, createRadiationRingsFromPythonData } from "./RadiationRings";
+export type { RadiationRingsParams } from "./RadiationRings";
+
 // export {
 //   AnomalyGeometricMorphEffect,
 //   createAnomalyGeometricMorphFromPythonData
@@ -129,6 +132,7 @@ export const AVAILABLE_EFFECTS = [
   "river_lines",
   "cave_surface_holes",
   "radiation_pulse",
+  "radiation_rings",
   // Efectos anómalos (algunos desactivados)
   // 'anomaly_glitch_field', // Movido a Unused3DEffects
   // 'anomaly_void_sphere', // Movido a Unused3DEffects
