@@ -1028,7 +1028,7 @@ class PlanetTypeTranslators:
             ]
             
             # Lake sizes - MUCH larger for maximum visibility
-            lake_size = rng.uniform(0.25, 0.45)  # Much larger magma lake sizes
+            lake_size = rng.uniform(0.35, 0.60)  # Even larger magma lake sizes
             
             magma_lakes.append({
                 "position_3d": position_3d,
