@@ -37,6 +37,7 @@ import { DiamondCracksEffect, createDiamondCracksFromPythonData } from "./Diamon
 import { ExoticGeometricShapesEffect, createExoticGeometricShapesFromPythonData } from "./ExoticGeometricShapes";
 import { ExoticDoodlesEffect, createExoticDoodlesFromPythonData } from "./ExoticDoodles";
 import { CaveSurfaceHolesEffect, createCaveSurfaceHolesFromPythonData } from "./CaveSurfaceHoles";
+import { VegetationEffect, createVegetationFromPythonData } from "./VegetationEffect";
 
 // Los planetas Carbon usan efectos existentes (TundraSnowflakes, AtmosphereClouds, LandMasses)
 
@@ -149,6 +150,9 @@ export enum EffectType {
   
   // Efectos para planetas Cave
   CAVE_SURFACE_HOLES = "cave_surface_holes",
+  
+  // Efectos para planetas Forest
+  VEGETATION = "vegetation",
 }
 
 // Interfaz para creadores de efectos
@@ -391,6 +395,17 @@ export class EffectRegistry {
         planetRadius,
         data,
         data.seeds?.planet_seed
+      ),
+    });
+
+    // Efectos para planetas Forest
+    this.registerEffect(EffectType.VEGETATION, {
+      create: (params, planetRadius, layerSystem) => new VegetationEffect(planetRadius, params),
+      fromPythonData: (data, planetRadius, layerSystem) => createVegetationFromPythonData(
+        planetRadius,
+        data.surface_elements || {},
+        data.seeds?.planet_seed,
+        data.timing?.cosmic_origin_time
       ),
     });
 
@@ -1839,6 +1854,92 @@ export class EffectRegistry {
               this.effects.set(carbonTrailsInstance.id, carbonTrailsInstance);
               effects.push(carbonTrailsInstance);
               carbonTrailsEffect.effect.addToScene(scene, mesh.position);
+            }
+            break;
+
+          case "forest":
+            // Planetas Forest: vegetación densa y efectos basados en datos de Python
+            
+            // 1. Añadir efecto de vegetación
+            const vegetationEffect = this.createEffectFromPythonData(
+              EffectType.VEGETATION,
+              pythonData,
+              planetRadius,
+              mesh
+            );
+            
+            if (vegetationEffect) {
+              const vegetationInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "vegetation",
+                effect: vegetationEffect.effect,
+                priority: 10,
+                enabled: true,
+                name: "Forest Vegetation",
+              };
+              
+              this.effects.set(vegetationInstance.id, vegetationInstance);
+              effects.push(vegetationInstance);
+              vegetationEffect.effect.addToScene(scene, mesh.position);
+            }
+            
+            // 2. Añadir nubes atmosféricas SOLO si están disponibles en los datos de Python
+            if (surface.clouds && surface.clouds.length > 0) {
+              const forestCloudsEffect = createAtmosphereCloudsFromPythonData(
+                planetRadius,
+                surface,
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000,
+                pythonData.timing?.cosmic_origin_time
+              );
+
+              if (forestCloudsEffect) {
+                const forestCloudsInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "atmosphere_clouds",
+                  effect: forestCloudsEffect,
+                  priority: 15,
+                  enabled: true,
+                  name: "Forest Atmospheric Clouds",
+                };
+                this.effects.set(forestCloudsInstance.id, forestCloudsInstance);
+                effects.push(forestCloudsInstance);
+                forestCloudsEffect.addToScene(scene, mesh.position);
+              }
+            }
+
+            // 3. Añadir masas de tierra SOLO si están disponibles en los datos de Python
+            if (surface.green_patches && surface.green_patches.length > 0) {
+              // Usar green_patches existentes con colores forestales
+              const forestLandMassesData = {
+                ...surface,
+                green_patches: surface.green_patches.map((patch: any) => ({
+                  ...patch,
+                  // Hacer las masas de tierra más grandes y de color forestal
+                  size: (patch.size || 0.1) * 1.5, // 50% más grandes que normales
+                  color: patch.color || [0.2, 0.4, 0.1, 1.0] // Verde forestal oscuro
+                }))
+              };
+              
+              const forestLandMassesEffect = createLandMassesFromPythonData(
+                planetRadius, 
+                forestLandMassesData, 
+                (pythonData.seeds?.planet_seed || pythonData.seeds?.shape_seed) + 6000
+              );
+
+              if (forestLandMassesEffect) {
+                const forestLandMassesInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "land_masses",
+                  effect: forestLandMassesEffect,
+                  priority: 5,
+                  enabled: true,
+                  name: "Forest Land Masses",
+                };
+
+                this.effects.set(forestLandMassesInstance.id, forestLandMassesInstance);
+                effects.push(forestLandMassesInstance);
+                forestLandMassesEffect.addToScene(scene, mesh.position);
+              }
             }
             break;
 

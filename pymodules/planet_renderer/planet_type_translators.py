@@ -666,7 +666,136 @@ class PlanetTypeTranslators:
     
     def translate_forest(self, planet_radius: int, rng: random.Random, 
                         seed: int, planet_name: str) -> Dict[str, Any]:
-        return {"type": "forest"}
+        """Translate Forest planet elements - lush worlds with atmospheric clouds and large land masses"""
+        center_x, center_y = 200, 200  # Pillow center coordinates
+        
+        # Generate atmospheric clouds for forest planets (moisture from vegetation creates rich atmospheres)
+        num_clouds = rng.randint(10, 18)  # Rich atmospheric activity from forest transpiration
+        clouds = []
+        for i in range(num_clouds):
+            cloud_radius = rng.randint(25, 45)  # Larger clouds from forest moisture
+            max_offset = planet_radius - cloud_radius
+            cloud_x = center_x + rng.randint(-max_offset, max_offset)
+            cloud_y = center_y + rng.randint(-max_offset, max_offset)
+            
+            # Convert to normalized coordinates
+            normalized_coords = self.common_utils.normalize_coordinates(
+                cloud_x, cloud_y, center_x, center_y, planet_radius
+            )
+            
+            # Forest clouds - white to light green, representing forest moisture and transpiration
+            cloud_colors = [
+                [1.0, 1.0, 1.0, 0.8],      # Pure white water vapor from forests
+                [0.95, 1.0, 0.95, 0.7],    # Very light green tint from vegetation
+                [0.98, 1.0, 0.98, 0.9],    # Light green-white from forest transpiration
+                [0.90, 0.98, 0.92, 0.6],   # Subtle green forest atmosphere
+            ]
+            
+            clouds.append({
+                "position": normalized_coords,
+                "radius": cloud_radius / planet_radius,
+                "color": rng.choice(cloud_colors),
+                "type": "cloud",
+                "seed": f"{planet_name}_forest_cloud_{i}"
+            })
+        
+        # Generate large land masses for forest planets (continents and islands with dense vegetation)
+        # Use "green_patches" format that LandMasses effect expects, but make them LARGE like Arid planets
+        num_landmasses = rng.randint(8, 15)  # Many forest landmasses for diverse ecosystems
+        green_patches = []
+        
+        for i in range(num_landmasses):
+            # Generate uniform position on sphere (better distribution than 2D projection)
+            theta = rng.uniform(0, 2 * math.pi)
+            phi = math.acos(rng.uniform(-1, 1))
+            
+            position_3d = [
+                math.sin(phi) * math.cos(theta),
+                math.sin(phi) * math.sin(theta),
+                math.cos(phi)
+            ]
+            
+            # Size distribution similar to Arid planets - LARGE landmasses for prominent forests
+            if i < 4:
+                # Large forest continents (major landmasses covered in dense forest)
+                size = rng.uniform(0.18, 0.35)  # Very large forest continents
+            elif i < 8:
+                # Medium forest regions (forest islands and smaller continents)
+                size = rng.uniform(0.12, 0.22)  # Large forest regions
+            else:
+                # Small forest patches (forest groves and woodland areas)
+                size = rng.uniform(0.08, 0.15)  # Medium forest patches
+            
+            # Forest landmass colors - various shades of green representing dense vegetation
+            # Convert to RGB [0-1] format that LandMasses expects
+            forest_color_choices = [
+                [0.13, 0.35, 0.13],  # Dark forest green #22592f
+                [0.18, 0.42, 0.16],  # Medium forest green #2e6b29
+                [0.10, 0.30, 0.10],  # Very dark forest green #1a4d1a
+                [0.20, 0.45, 0.18],  # Bright forest green #33732e
+                [0.15, 0.38, 0.14]   # Standard forest green #266124
+            ]
+            
+            green_patches.append({
+                "position_3d": position_3d,
+                "size": size,  # Large sizes like Arid planets for visibility
+                "color": rng.choice(forest_color_choices) + [rng.uniform(0.85, 0.95)],  # Add high opacity for solid forest coverage
+                "sides": rng.randint(16, 24),  # More complex shapes for organic forest borders
+                "height": rng.uniform(0.015, 0.04),  # Forest canopy elevation
+                "vegetation_density": rng.uniform(0.8, 1.0)  # Very high vegetation density
+            })
+        
+        # Generate vegetation patches (separate from land masses - these are the areas where VegetationEffect will render)
+        num_vegetation_patches = rng.randint(15, 30)  # Many vegetation patches for dense coverage
+        vegetation_patches = []
+        
+        for i in range(num_vegetation_patches):
+            # Generate uniform position on sphere
+            theta = rng.uniform(0, 2 * math.pi)
+            phi = math.acos(rng.uniform(-1, 1))
+            
+            position_3d = [
+                math.sin(phi) * math.cos(theta),
+                math.sin(phi) * math.sin(theta),
+                math.cos(phi)
+            ]
+            
+            # Vegetation patch sizes - varied for natural forest distribution
+            vegetation_size = rng.uniform(0.05, 0.12)  # Medium sizes for vegetation patches
+            
+            # Vegetation colors - various forest greens for diversity
+            vegetation_colors = [
+                [0.20, 0.45, 0.15],  # Bright leafy green
+                [0.15, 0.40, 0.12],  # Dark leafy green
+                [0.25, 0.50, 0.18],  # Light forest green
+                [0.12, 0.35, 0.10],  # Deep forest green
+                [0.18, 0.42, 0.14]   # Standard vegetation green
+            ]
+            
+            vegetation_patches.append({
+                "position_3d": position_3d,
+                "size": vegetation_size,
+                "color": rng.choice(vegetation_colors),
+                "vegetation_type": rng.choice(["dense_forest", "mixed_forest", "woodland", "grove"]),
+                "canopy_height": rng.uniform(0.02, 0.05),  # Tree canopy height variation
+                "tree_density": rng.uniform(0.7, 0.95)    # High tree density for forests
+            })
+        
+        return {
+            "type": "forest",
+            "clouds": clouds,  # AtmosphereClouds will use this
+            "green_patches": green_patches,  # LandMasses will use this (forest-colored landmasses)
+            "vegetation": vegetation_patches,  # VegetationEffect will use this
+            "debug": {
+                "original_planet_radius": planet_radius,
+                "center_x": center_x, "center_y": center_y,
+                "cloud_count": num_clouds,
+                "landmass_count": num_landmasses,
+                "vegetation_patch_count": num_vegetation_patches,
+                "largest_landmass_size": max([lm["size"] for lm in green_patches]) if green_patches else 0,
+                "forest_coverage": "high_density_coverage"
+            }
+        }
     
     def translate_savannah(self, planet_radius: int, rng: random.Random, 
                           seed: int, planet_name: str) -> Dict[str, Any]:
