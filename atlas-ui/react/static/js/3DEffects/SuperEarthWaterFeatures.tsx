@@ -52,12 +52,20 @@ export class SuperEarthWaterFeaturesEffect {
   private static geometryCache = new Map<string, THREE.BufferGeometry>();
   private static sharedMaterials = new Map<string, THREE.MeshPhysicalMaterial>();
   
-  // Color definitions for different water body types - similar aquatic tones
+  // Color definitions for different water body types - aquifer water tones
   private static readonly MASS_COLORS = {
-    lake: new THREE.Color(0.2, 0.6, 0.8),     // Light blue - large bodies
-    pond: new THREE.Color(0.15, 0.55, 0.75),  // Medium blue - smaller bodies  
-    elongated: new THREE.Color(0.1, 0.5, 0.7), // Deeper blue - rivers/streams
-    complex: new THREE.Color(0.05, 0.45, 0.65) // Darkest blue - complex shapes
+    lake: new THREE.Color(0.15, 0.65, 0.85),     // Crystal aquifer blue - large bodies
+    pond: new THREE.Color(0.12, 0.58, 0.78),     // Clear aquifer blue - smaller bodies  
+    elongated: new THREE.Color(0.08, 0.52, 0.72), // Deep aquifer blue - rivers/streams
+    complex: new THREE.Color(0.05, 0.48, 0.68)   // Deepest aquifer blue - complex shapes
+  };
+  
+  // Aquifer-specific shimmer colors for enhanced visual effects
+  private static readonly AQUIFER_SHIMMER_COLORS = {
+    lake: new THREE.Color(0.3, 0.8, 1.0),       // Bright aquifer shimmer
+    pond: new THREE.Color(0.25, 0.75, 0.95),    // Medium aquifer shimmer
+    elongated: new THREE.Color(0.2, 0.7, 0.9),  // Flowing aquifer shimmer
+    complex: new THREE.Color(0.15, 0.65, 0.85)  // Deep aquifer shimmer
   };
 
   constructor(planetRadius: number, params: SuperEarthWaterFeaturesParams = {}) {
@@ -135,36 +143,41 @@ export class SuperEarthWaterFeaturesEffect {
       return null;
     }
 
-    // Get or create material for this shape type
-    const materialKey = shapeType;
+    // Use the same material for all water bodies
+    const materialKey = "standardWater"; // Same material key for all
     
     let material = SuperEarthWaterFeaturesEffect.sharedMaterials.get(materialKey);
     
     if (!material) {
-      const waterColor = SuperEarthWaterFeaturesEffect.MASS_COLORS[shapeType as keyof typeof SuperEarthWaterFeaturesEffect.MASS_COLORS] || SuperEarthWaterFeaturesEffect.MASS_COLORS.lake;
+      // Use the same color and shimmer for all water bodies
+      const waterColor = SuperEarthWaterFeaturesEffect.MASS_COLORS.lake; // Same color for all
+      const shimmerColor = SuperEarthWaterFeaturesEffect.AQUIFER_SHIMMER_COLORS.lake; // Same shimmer for all
       
       // Create aquifer water-like material with enhanced properties
       material = new THREE.MeshPhysicalMaterial({
         color: waterColor,
-        opacity: bodyData.opacity || 0.7,
+        opacity: 0.7, // Fixed opacity for all bodies
         transparent: true,
-        emissive: waterColor.clone().multiplyScalar(0.1),
+        emissive: waterColor.clone().multiplyScalar(0.2),
         side: THREE.DoubleSide,
         depthWrite: true,
         depthTest: true,
-        // Aquifer water-like properties
-        roughness: 0.05,
-        metalness: 0.1,
-        transmission: 0.3,
-        thickness: 0.5,
+        // Enhanced aquifer_water effect properties
+        roughness: 0.02, // Smoother surface for clearer water
+        metalness: 0.05, // Less metallic for natural water
+        transmission: 0.6, // Higher transmission for aquifer clarity
+        thickness: 0.8, // Increased thickness for depth
         ior: 1.33, // Water refraction index
-        reflectivity: 0.3,
-        iridescence: 0.1,
-        iridescenceIOR: 1.3,
-        sheen: 0.2,
-        sheenColor: waterColor.clone().multiplyScalar(0.8),
-        clearcoat: 0.3,
-        clearcoatRoughness: 0.1
+        reflectivity: 0.5, // Higher reflectivity for aquifer surface
+        iridescence: 0.3, // Enhanced iridescence for aquifer shimmer
+        iridescenceIOR: 1.4, // Stronger iridescence effect
+        sheen: 0.5, // Enhanced sheen for aquifer glow
+        sheenColor: shimmerColor.clone(),
+        clearcoat: 0.7, // Stronger clearcoat for aquifer surface
+        clearcoatRoughness: 0.03, // Smoother clearcoat for aquifer effect
+        // Additional aquifer water properties
+        attenuationDistance: 1.5, // Enhanced light attenuation through aquifer water
+        attenuationColor: waterColor.clone().multiplyScalar(0.8),
       });
       
       SuperEarthWaterFeaturesEffect.sharedMaterials.set(materialKey, material);
@@ -174,8 +187,21 @@ export class SuperEarthWaterFeaturesEffect {
     waterMesh.renderOrder = 1002; // Above land masses
     waterMesh.castShadow = false; // Water doesn't cast shadows
     waterMesh.receiveShadow = true; // But receives shadows
+    
+    // Store base opacity for animation - same for all bodies
+    waterMesh.userData.baseOpacity = 0.7;
+    waterMesh.userData.shapeType = shapeType; // Store shape type for aquifer effects
+    
+    // Store original vertex positions for wave animation
+    const positions = geometry.attributes.position;
+    const originalPositions = new Float32Array(positions.array.length);
+    originalPositions.set(positions.array);
+    waterMesh.userData.originalPositions = originalPositions;
+    waterMesh.userData.waveAmplitude = 0.001; // Fixed wave amplitude for all bodies
+    waterMesh.userData.waveSpeed = 1.0; // Fixed wave speed for all bodies
+    waterMesh.userData.baseSize = baseSize; // Store for debugging
 
-    console.log(`Organic water body ${bodyIndex} created successfully`);
+    console.log(`Organic water body ${bodyIndex} created successfully with wave data`);
     return waterMesh;
   }
 
@@ -466,22 +492,100 @@ export class SuperEarthWaterFeaturesEffect {
   }
 
   update(_deltaTime: number): void {
-    // Animate water bodies with time-based effects like aquifer water
+    // Animate aquifer water bodies with enhanced time-based effects including wave movement
     const currentTime = Date.now() / 1000;
     
+    // Debug log every 2 seconds with wave parameters
+    if (Math.floor(currentTime) % 2 === 0 && Math.floor(currentTime * 10) % 10 === 0) {
+      const bodiesWithWaves = this.waterBodyMeshes.filter(mesh => 
+        mesh.geometry && mesh.userData.originalPositions).length;
+      console.log(`🌊 Aquifer water animation update - Time: ${currentTime.toFixed(2)}, Bodies: ${this.waterBodyMeshes.length}, With waves: ${bodiesWithWaves}`);
+      if (this.waterBodyMeshes.length > 0) {
+        const firstMesh = this.waterBodyMeshes[0];
+        console.log(`   Wave params - Amplitude: ${firstMesh.userData.waveAmplitude}, Speed: ${firstMesh.userData.waveSpeed}, BaseSize: ${firstMesh.userData.baseSize}`);
+        console.log(`   Vertex count: ${firstMesh.geometry?.attributes.position.count || 0}`);
+      }
+    }
+    
     this.waterBodyMeshes.forEach((mesh, index) => {
+      // Initialize wave data if missing
+      if (mesh.geometry && !mesh.userData.originalPositions) {
+        const positions = mesh.geometry.attributes.position;
+        const originalPositions = new Float32Array(positions.array.length);
+        originalPositions.set(positions.array);
+        mesh.userData.originalPositions = originalPositions;
+        mesh.userData.waveAmplitude = 0.01; // Fixed amplitude for all
+        mesh.userData.waveSpeed = 1.0; // Fixed speed for all
+        console.log(`🔧 Initialized missing wave data for water body ${index}`);
+      }
+      
+      // Animate vertex positions for wave movement
+      if (mesh.geometry && mesh.userData.originalPositions) {
+        const positions = mesh.geometry.attributes.position;
+        const originalPositions = mesh.userData.originalPositions;
+        const waveAmplitude = mesh.userData.waveAmplitude || 0.01; // Fixed amplitude
+        const waveSpeed = mesh.userData.waveSpeed || 1.0; // Fixed speed
+        
+        // Create multiple wave patterns for realistic water movement
+        for (let i = 0; i < positions.count; i++) {
+          const i3 = i * 3;
+          const originalX = originalPositions[i3];
+          const originalY = originalPositions[i3 + 1];
+          const originalZ = originalPositions[i3 + 2];
+          
+          // Calculate wave displacement using multiple sine waves - adjusted for small water bodies
+          const scaleFactor = 1.0 / (mesh.userData.baseSize || 1.0); // Inverse scale for smaller bodies
+          const wave1 = Math.sin(currentTime * waveSpeed * 3.0 + originalX * scaleFactor * 50.0 + originalZ * scaleFactor * 40.0) * waveAmplitude;
+          const wave2 = Math.sin(currentTime * waveSpeed * 2.0 + originalZ * scaleFactor * 60.0 + originalY * scaleFactor * 30.0) * waveAmplitude * 0.7;
+          const wave3 = Math.sin(currentTime * waveSpeed * 4.0 + (originalX + originalZ) * scaleFactor * 45.0) * waveAmplitude * 0.5;
+          
+          // Apply wave displacement primarily in the normal direction
+          const displacement = wave1 + wave2 + wave3;
+          
+          // Simplified normal calculation - assume radial direction from center
+          const normal = new THREE.Vector3(originalX, originalY, originalZ).normalize();
+          
+          // Apply displacement along the surface normal
+          positions.setXYZ(i, 
+            originalX + normal.x * displacement,
+            originalY + normal.y * displacement, 
+            originalZ + normal.z * displacement
+          );
+        }
+        
+        positions.needsUpdate = true;
+        mesh.geometry.computeVertexNormals(); // Recompute normals for proper lighting
+      }
+      
+      // Material animations (same for all bodies)
       if (mesh.material instanceof THREE.MeshPhysicalMaterial) {
-        // Subtle color animation based on time and body index
+        // Enhanced aquifer shimmer animation - identical for all bodies
         const baseColor = mesh.material.color.clone();
-        const oscillation = Math.sin(currentTime * 0.5 + index) * 0.05;
+        const shimmerOscillation = Math.sin(currentTime * 1.5) * 0.1; // No index variation
+        const depthPulse = Math.sin(currentTime * 0.8) * 0.05; // No index variation
+        
+        // Animate emissive color for aquifer glow
         mesh.material.emissive.setRGB(
-          baseColor.r * (0.1 + oscillation),
-          baseColor.g * (0.1 + oscillation), 
-          baseColor.b * (0.1 + oscillation)
+          baseColor.r * (0.2 + shimmerOscillation),
+          baseColor.g * (0.2 + shimmerOscillation), 
+          baseColor.b * (0.2 + shimmerOscillation + depthPulse)
         );
         
-        // Animate transmission for subtle depth effect
-        mesh.material.transmission = 0.3 + Math.sin(currentTime * 0.3 + index * 0.5) * 0.1;
+        // Animate transmission for aquifer depth variation
+        mesh.material.transmission = 0.6 + Math.sin(currentTime * 0.6) * 0.2;
+        
+        // Animate iridescence for aquifer shimmer effect
+        mesh.material.iridescence = 0.3 + Math.sin(currentTime * 1.0) * 0.15;
+        
+        // Animate sheen for surface reflection variation
+        mesh.material.sheen = 0.5 + Math.sin(currentTime * 1.2) * 0.3;
+        
+        // Animate clearcoat for aquifer surface dynamics
+        mesh.material.clearcoat = 0.7 + Math.sin(currentTime * 0.5) * 0.15;
+        
+        // Subtle opacity animation for breathing effect
+        const baseOpacity = 0.7; // Same for all
+        mesh.material.opacity = baseOpacity + Math.sin(currentTime * 0.3) * 0.1;
       }
     });
   }
@@ -494,10 +598,9 @@ export class SuperEarthWaterFeaturesEffect {
       const waterColor = newParams.waterColor instanceof THREE.Color ? newParams.waterColor : new THREE.Color().fromArray(newParams.waterColor as number[]);
 
       this.materials.forEach((material) => {
-        if (material instanceof THREE.MeshPhysicalMaterial) {
+        if (material instanceof THREE.MeshLambertMaterial) {
           material.color.copy(waterColor);
           material.emissive.copy(waterColor.clone().multiplyScalar(0.1));
-          material.sheenColor.copy(waterColor.clone().multiplyScalar(0.8));
         }
       });
     }
