@@ -12,6 +12,19 @@
 
 import * as THREE from 'three';
 import { SeededRandom } from '../Utils/SeededRandom';
+import { DEFAULT_COSMIC_ORIGIN_TIME } from '../Utils/UniverseTime';
+
+/**
+ * Rangos procedurales para generación determinística
+ */
+const PROCEDURAL_RANGES = {
+  RING_COUNT: { min: 8, max: 150 },
+  EXPANSION_SPEED: { min: 1.5, max: 2.5 },
+  WAVE_INTENSITY: { min: 0.6, max: 1.0 },
+  MAX_RADIUS_MULTIPLIER: { min: 2.2, max: 3.2 },
+  GLOW_INTENSITY: { min: 1.0, max: 1.6 },
+  TIME_SPEED: { min: 0.8, max: 1.3 }
+};
 
 export interface RadiationRingsParams {
   color?: number[] | THREE.Color;
@@ -21,6 +34,8 @@ export interface RadiationRingsParams {
   maxRadius?: number;
   glowIntensity?: number;
   seed?: number;
+  cosmicOriginTime?: number;
+  timeSpeed?: number;
 }
 
 /**
@@ -33,9 +48,9 @@ export class RadiationRingsEffect {
   private group: THREE.Group;
   private concentricRings: THREE.Line[] = [];
   private params: RadiationRingsParams;
-  private time: number = 0;
   private rng: SeededRandom;
   private planetRadius: number;
+  private cosmicOffset: number;
 
   constructor(planetRadius: number, params: RadiationRingsParams = {}) {
     this.planetRadius = planetRadius;
@@ -44,15 +59,21 @@ export class RadiationRingsEffect {
     const seed = params.seed || Math.floor(Math.random() * 1000000);
     this.rng = new SeededRandom(seed);
     
+    // Generar parámetros procedurales basados en seed
     this.params = {
       color: params.color || [0.3, 1.0, 0.2],  // Verde radioactivo brillante
-      ringCount: params.ringCount || 10,       // Número de anillos concéntricos
-      expansionSpeed: params.expansionSpeed || 2.5,  // Velocidad de expansión
-      waveIntensity: params.waveIntensity || 0.85,   // Intensidad de las ondas
-      maxRadius: params.maxRadius || planetRadius * 2.8,  // Radio máximo
-      glowIntensity: params.glowIntensity || 1.3,    // Intensidad del brillo
+      ringCount: params.ringCount || Math.floor(this.rng.random() * (PROCEDURAL_RANGES.RING_COUNT.max - PROCEDURAL_RANGES.RING_COUNT.min) + PROCEDURAL_RANGES.RING_COUNT.min),
+      expansionSpeed: params.expansionSpeed || this.rng.random() * (PROCEDURAL_RANGES.EXPANSION_SPEED.max - PROCEDURAL_RANGES.EXPANSION_SPEED.min) + PROCEDURAL_RANGES.EXPANSION_SPEED.min,
+      waveIntensity: params.waveIntensity || this.rng.random() * (PROCEDURAL_RANGES.WAVE_INTENSITY.max - PROCEDURAL_RANGES.WAVE_INTENSITY.min) + PROCEDURAL_RANGES.WAVE_INTENSITY.min,
+      maxRadius: params.maxRadius || planetRadius * (this.rng.random() * (PROCEDURAL_RANGES.MAX_RADIUS_MULTIPLIER.max - PROCEDURAL_RANGES.MAX_RADIUS_MULTIPLIER.min) + PROCEDURAL_RANGES.MAX_RADIUS_MULTIPLIER.min),
+      glowIntensity: params.glowIntensity || this.rng.random() * (PROCEDURAL_RANGES.GLOW_INTENSITY.max - PROCEDURAL_RANGES.GLOW_INTENSITY.min) + PROCEDURAL_RANGES.GLOW_INTENSITY.min,
+      cosmicOriginTime: params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME,
+      timeSpeed: params.timeSpeed || this.rng.random() * (PROCEDURAL_RANGES.TIME_SPEED.max - PROCEDURAL_RANGES.TIME_SPEED.min) + PROCEDURAL_RANGES.TIME_SPEED.min,
       seed
     };
+    
+    // Initialize cosmic offset with seeded random for deterministic variation
+    this.cosmicOffset = (seed % 3600) * 10;
 
     this.group = new THREE.Group();
     this.createConcentricRings();
@@ -199,17 +220,25 @@ export class RadiationRingsEffect {
     }
   }
 
-  public update(deltaTime: number): void {
-    this.time += deltaTime;
+  public update(_deltaTime?: number): void {
+    // Use cosmic origin time for global synchronization
+    const currentTimeSeconds = Date.now() / 1000;
+    const timeSinceCosmicOrigin = currentTimeSeconds - (this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME);
     
-    // Actualizar círculos concéntricos
+    // Apply cosmic offset and time speed for deterministic animation
+    const animTime = (timeSinceCosmicOrigin + this.cosmicOffset) * (this.params.timeSpeed || 1.0);
+    
+    // Modulo the time to keep values reasonable for shaders
+    const shaderTime = animTime % 10000;
+    
+    // Update concentric rings with universal time
     this.concentricRings.forEach((ring) => {
       const material = ring.material as THREE.ShaderMaterial;
-      material.uniforms.time.value = this.time;
+      material.uniforms.time.value = shaderTime;
     });
     
-    // Rotar ligeramente el grupo para añadir dinamismo
-    this.group.rotation.y += deltaTime * 0.05;
+    // Rotate using universal time for global synchronization
+    this.group.rotation.y = shaderTime * 0.05;
   }
 
   public getObject3D(): THREE.Object3D {
@@ -284,14 +313,14 @@ export function createRadiationRingsFromPythonData(
   pythonData: any,
   planetRadius: number
 ): RadiationRingsEffect {
+  const seed = pythonData.seed || Math.floor(Math.random() * 1000000);
+  
+  // Solo pasar parámetros esenciales, el resto se genera proceduralmente con PROCEDURAL_RANGES
   const params: RadiationRingsParams = {
-    seed: pythonData.seed || Math.floor(Math.random() * 1000000),
-    color: pythonData.color || [0.3, 1.0, 0.2],
-    ringCount: pythonData.ring_count || 10,
-    expansionSpeed: pythonData.expansion_speed || 2.5,
-    waveIntensity: pythonData.wave_intensity || 0.85,
-    maxRadius: pythonData.max_radius || planetRadius * 2.8,
-    glowIntensity: pythonData.glow_intensity || 1.3
+    seed: seed + 8000,
+    color: pythonData.color || [0.3, 1.0, 0.2], // Color puede venir de Python (tipo de planeta)
+    cosmicOriginTime: pythonData?.timing?.cosmic_origin_time || pythonData?.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME,
+    // Los demás parámetros se generarán proceduralmente en el constructor
   };
 
   return new RadiationRingsEffect(planetRadius, params);

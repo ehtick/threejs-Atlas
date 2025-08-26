@@ -14,62 +14,11 @@
       "_atlas_BjkcO1_mNssSqp05cLhjd.js"
     ]
   },
-  "_atlas_6zPxATRFASOQexYiNEKfJ.js": {
-    "file": "atlas_6zPxATRFASOQexYiNEKfJ.js",
-    "name": "3d-index",
-    "imports": [
-      "_atlas_B6bPjZqv5fx9Bkspwf-t-.js"
-    ]
-  },
   "_atlas_B6VjQWFe36Kw2GUkUtCRd.js": {
     "file": "atlas_B6VjQWFe36Kw2GUkUtCRd.js",
     "name": "3d-metallicsu",
     "imports": [
       "_atlas_CZFakru7GGKiPV4DHwGyu.js",
-      "_atlas_BjkcO1_mNssSqp05cLhjd.js"
-    ]
-  },
-  "_atlas_B6bPjZqv5fx9Bkspwf-t-.js": {
-    "file": "atlas_B6bPjZqv5fx9Bkspwf-t-.js",
-    "name": "3d-effectregi",
-    "imports": [
-      "_atlas_CZFakru7GGKiPV4DHwGyu.js",
-      "_atlas_CO7GL9L1BdUO9FMG9rAYj.js",
-      "_atlas_DHlxcuW9oTqb9iQRWH8MC.js",
-      "_atlas_C6MvpD36_iWBKuepziD9a.js",
-      "_atlas_B9ZomfCeZvXjubR7jBMqy.js",
-      "_atlas_CI4sz4I41tZOsqcxZeVLQ.js",
-      "_atlas_CpPidl7l6pxIr1gqdukr9.js",
-      "_atlas_BFxUl9OIZNyB7ta-Azhbq.js",
-      "_atlas_vPv-P3BRdxjV8HUw8-zQ6.js",
-      "_atlas_CCgaNvzDedGXVBYdRmqSZ.js",
-      "_atlas_LV4pImkU2zabc7Dd9It68.js",
-      "_atlas_ChkAFtAQETcJF-gwwi861.js",
-      "_atlas_DLbbdfu2gpbVb7jLKs3xA.js",
-      "_atlas_BtQ3XoPy6oy1QoHEaQ8P-.js",
-      "_atlas_B6VjQWFe36Kw2GUkUtCRd.js",
-      "_atlas_D6-02UHzESXTOaguJbpG9.js",
-      "_atlas_nEILm883G5wFSLqtI1Duj.js",
-      "_atlas_-XZnfC7JAvfTXIroV7-Dm.js",
-      "_atlas_M5PmVJf92TVW_dlIsT7m0.js",
-      "_atlas_BCD5tZf2BhPTDfPAiRwWD.js",
-      "_atlas_mVpCstx1j8Qfol1JAZOFU.js",
-      "_atlas_Jc3S80Hg60gz2MRcaHugq.js",
-      "_atlas_DdvqyL7jy9Ef255IoLfN-.js",
-      "_atlas_DzdKHGYoSrQ9zE5ls5TcD.js",
-      "_atlas_PJY2boNLG7UIJINqKn7M3.js",
-      "_atlas_DwJEZv9Gy3eu0kBU21znO.js",
-      "_atlas_DEfQyiR0pQu1_7DfvRZBQ.js",
-      "_atlas_BT1uL7pPKyKhUU5DDaO6Q.js",
-      "_atlas_DEm_ap4LMj3s2zyjslU4U.js",
-      "_atlas_Cfe6sAHX1LRfLgww7JdlL.js",
-      "_atlas_5SWj9XcL7PeKNyrJq4TPs.js",
-      "_atlas_KfeLv0qXQoEgRb2bdvL_H.js",
-      "_atlas_ulo4w_4wo8YRzAENXM03l.js",
-      "_atlas_CLONruwrAXN0gamPY0xgW.js",
-      "_atlas_CPwjayQQ39fnye21lcJhm.js",
-      "_atlas_CI5_woipT16fGTsQhE8TP.js",
-      "_atlas_xVmazClZCaTx6Q71daoNz.js",
       "_atlas_BjkcO1_mNssSqp05cLhjd.js"
     ]
   },
@@ -114,9 +63,60 @@
       "_atlas_BjkcO1_mNssSqp05cLhjd.js"
     ]
   },
+  "_atlas_BhH-kGFMPuIkcaqu3t5vM.js": {
+    "file": "atlas_BhH-kGFMPuIkcaqu3t5vM.js",
+    "name": "3d-index",
+    "imports": [
+      "_atlas_BmRfulAJwQgBEIj_N6F1c.js"
+    ]
+  },
   "_atlas_BjkcO1_mNssSqp05cLhjd.js": {
     "file": "atlas_BjkcO1_mNssSqp05cLhjd.js",
     "name": "three-misc"
+  },
+  "_atlas_BmRfulAJwQgBEIj_N6F1c.js": {
+    "file": "atlas_BmRfulAJwQgBEIj_N6F1c.js",
+    "name": "3d-effectregi",
+    "imports": [
+      "_atlas_CZFakru7GGKiPV4DHwGyu.js",
+      "_atlas_CO7GL9L1BdUO9FMG9rAYj.js",
+      "_atlas_DHlxcuW9oTqb9iQRWH8MC.js",
+      "_atlas_C6MvpD36_iWBKuepziD9a.js",
+      "_atlas_B9ZomfCeZvXjubR7jBMqy.js",
+      "_atlas_CI4sz4I41tZOsqcxZeVLQ.js",
+      "_atlas_CpPidl7l6pxIr1gqdukr9.js",
+      "_atlas_BFxUl9OIZNyB7ta-Azhbq.js",
+      "_atlas_vPv-P3BRdxjV8HUw8-zQ6.js",
+      "_atlas_CCgaNvzDedGXVBYdRmqSZ.js",
+      "_atlas_LV4pImkU2zabc7Dd9It68.js",
+      "_atlas_ChkAFtAQETcJF-gwwi861.js",
+      "_atlas_DLbbdfu2gpbVb7jLKs3xA.js",
+      "_atlas_BtQ3XoPy6oy1QoHEaQ8P-.js",
+      "_atlas_B6VjQWFe36Kw2GUkUtCRd.js",
+      "_atlas_D6-02UHzESXTOaguJbpG9.js",
+      "_atlas_nEILm883G5wFSLqtI1Duj.js",
+      "_atlas_-XZnfC7JAvfTXIroV7-Dm.js",
+      "_atlas_M5PmVJf92TVW_dlIsT7m0.js",
+      "_atlas_BCD5tZf2BhPTDfPAiRwWD.js",
+      "_atlas_mVpCstx1j8Qfol1JAZOFU.js",
+      "_atlas_Jc3S80Hg60gz2MRcaHugq.js",
+      "_atlas_DdvqyL7jy9Ef255IoLfN-.js",
+      "_atlas_DzdKHGYoSrQ9zE5ls5TcD.js",
+      "_atlas_PJY2boNLG7UIJINqKn7M3.js",
+      "_atlas_DwJEZv9Gy3eu0kBU21znO.js",
+      "_atlas_DEfQyiR0pQu1_7DfvRZBQ.js",
+      "_atlas_BT1uL7pPKyKhUU5DDaO6Q.js",
+      "_atlas_DEm_ap4LMj3s2zyjslU4U.js",
+      "_atlas_Cfe6sAHX1LRfLgww7JdlL.js",
+      "_atlas_5SWj9XcL7PeKNyrJq4TPs.js",
+      "_atlas_KfeLv0qXQoEgRb2bdvL_H.js",
+      "_atlas_ulo4w_4wo8YRzAENXM03l.js",
+      "_atlas_CLONruwrAXN0gamPY0xgW.js",
+      "_atlas_CPwjayQQ39fnye21lcJhm.js",
+      "_atlas_kbExM4reCfaodbYSu74L2.js",
+      "_atlas_xVmazClZCaTx6Q71daoNz.js",
+      "_atlas_BjkcO1_mNssSqp05cLhjd.js"
+    ]
   },
   "_atlas_BtQ3XoPy6oy1QoHEaQ8P-.js": {
     "file": "atlas_BtQ3XoPy6oy1QoHEaQ8P-.js",
@@ -161,14 +161,6 @@
   "_atlas_CI4sz4I41tZOsqcxZeVLQ.js": {
     "file": "atlas_CI4sz4I41tZOsqcxZeVLQ.js",
     "name": "3d-tundrasnow",
-    "imports": [
-      "_atlas_CZFakru7GGKiPV4DHwGyu.js",
-      "_atlas_BjkcO1_mNssSqp05cLhjd.js"
-    ]
-  },
-  "_atlas_CI5_woipT16fGTsQhE8TP.js": {
-    "file": "atlas_CI5_woipT16fGTsQhE8TP.js",
-    "name": "3d-radiationr",
     "imports": [
       "_atlas_CZFakru7GGKiPV4DHwGyu.js",
       "_atlas_BjkcO1_mNssSqp05cLhjd.js"
@@ -276,20 +268,6 @@
       "_atlas_CZFakru7GGKiPV4DHwGyu.js"
     ]
   },
-  "_atlas_DJt584WD9sdb47BNzKzNH.js": {
-    "file": "atlas_DJt584WD9sdb47BNzKzNH.js",
-    "name": "comp-modularpla",
-    "imports": [
-      "_atlas_Bv5zr7cG9joXJ1l7Eo-6s.js",
-      "_atlas_CCPhKrgd40h-8U080h1w-.js",
-      "_atlas_eNp6ISnLi0u4njGno8cRo.js",
-      "_atlas_B6bPjZqv5fx9Bkspwf-t-.js",
-      "_atlas_6zPxATRFASOQexYiNEKfJ.js",
-      "_atlas_vPv-P3BRdxjV8HUw8-zQ6.js",
-      "_atlas_CCgaNvzDedGXVBYdRmqSZ.js",
-      "_atlas_BjkcO1_mNssSqp05cLhjd.js"
-    ]
-  },
   "_atlas_DLbbdfu2gpbVb7jLKs3xA.js": {
     "file": "atlas_DLbbdfu2gpbVb7jLKs3xA.js",
     "name": "3d-rockyterra",
@@ -371,6 +349,28 @@
     "name": "three-controls",
     "imports": [
       "_atlas_CCPhKrgd40h-8U080h1w-.js",
+      "_atlas_BjkcO1_mNssSqp05cLhjd.js"
+    ]
+  },
+  "_atlas_g5KgLC0idXQWHMfecTjj_.js": {
+    "file": "atlas_g5KgLC0idXQWHMfecTjj_.js",
+    "name": "comp-modularpla",
+    "imports": [
+      "_atlas_Bv5zr7cG9joXJ1l7Eo-6s.js",
+      "_atlas_CCPhKrgd40h-8U080h1w-.js",
+      "_atlas_eNp6ISnLi0u4njGno8cRo.js",
+      "_atlas_BmRfulAJwQgBEIj_N6F1c.js",
+      "_atlas_BhH-kGFMPuIkcaqu3t5vM.js",
+      "_atlas_vPv-P3BRdxjV8HUw8-zQ6.js",
+      "_atlas_CCgaNvzDedGXVBYdRmqSZ.js",
+      "_atlas_BjkcO1_mNssSqp05cLhjd.js"
+    ]
+  },
+  "_atlas_kbExM4reCfaodbYSu74L2.js": {
+    "file": "atlas_kbExM4reCfaodbYSu74L2.js",
+    "name": "3d-radiationr",
+    "imports": [
+      "_atlas_CZFakru7GGKiPV4DHwGyu.js",
       "_atlas_BjkcO1_mNssSqp05cLhjd.js"
     ]
   },
@@ -480,7 +480,7 @@
     ]
   },
   "atlas-ui/react/static/js/MountPoints/__planet__.ts": {
-    "file": "atlas_COrfY_PvB1bW_urWt9kOq.js",
+    "file": "atlas_CaArwbp5RzHjnfhjXzKZZ.js",
     "name": "__planet__",
     "src": "atlas-ui/react/static/js/MountPoints/__planet__.ts",
     "isEntry": true,
@@ -488,14 +488,14 @@
       "_atlas_Bv5zr7cG9joXJ1l7Eo-6s.js",
       "_atlas_CP-spIulyQCgjjHtspiDt.js",
       "_atlas_ldaqmHLmWzDanhwTmugSb.js",
-      "_atlas_DJt584WD9sdb47BNzKzNH.js",
-      "_atlas_B6bPjZqv5fx9Bkspwf-t-.js",
+      "_atlas_g5KgLC0idXQWHMfecTjj_.js",
+      "_atlas_BmRfulAJwQgBEIj_N6F1c.js",
       "_atlas_D1RtXGjFSAWW01vFUnxaN.js",
       "_atlas_SPyfQU6Spv1u19LNdvRDW.js",
       "_atlas_CCPhKrgd40h-8U080h1w-.js",
       "_atlas_BjkcO1_mNssSqp05cLhjd.js",
       "_atlas_eNp6ISnLi0u4njGno8cRo.js",
-      "_atlas_6zPxATRFASOQexYiNEKfJ.js",
+      "_atlas_BhH-kGFMPuIkcaqu3t5vM.js",
       "_atlas_vPv-P3BRdxjV8HUw8-zQ6.js",
       "_atlas_CZFakru7GGKiPV4DHwGyu.js",
       "_atlas_CCgaNvzDedGXVBYdRmqSZ.js",
@@ -532,7 +532,7 @@
       "_atlas_ulo4w_4wo8YRzAENXM03l.js",
       "_atlas_CLONruwrAXN0gamPY0xgW.js",
       "_atlas_CPwjayQQ39fnye21lcJhm.js",
-      "_atlas_CI5_woipT16fGTsQhE8TP.js",
+      "_atlas_kbExM4reCfaodbYSu74L2.js",
       "_atlas_xVmazClZCaTx6Q71daoNz.js"
     ]
   },
