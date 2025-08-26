@@ -617,11 +617,10 @@ export class SuperEarthWaterFeaturesEffect {
           const originalY = originalPositions[i3 + 1];
           const originalZ = originalPositions[i3 + 2];
           
-          // Calculate wave displacement using multiple sine waves - adjusted for small water bodies
-          const scaleFactor = 1.0 / (mesh.userData.baseSize || 1.0); // Inverse scale for smaller bodies
-          const wave1 = Math.sin(currentTime * waveSpeed * 3.0 + originalX * scaleFactor * 50.0 + originalZ * scaleFactor * 40.0) * waveAmplitude;
-          const wave2 = Math.sin(currentTime * waveSpeed * 2.0 + originalZ * scaleFactor * 60.0 + originalY * scaleFactor * 30.0) * waveAmplitude * 0.7;
-          const wave3 = Math.sin(currentTime * waveSpeed * 4.0 + (originalX + originalZ) * scaleFactor * 45.0) * waveAmplitude * 0.5;
+          // Calculate wave displacement using multiple sine waves - same frequency for all water bodies
+          const wave1 = Math.sin(currentTime * waveSpeed * 3.0 + originalX * 50.0 + originalZ * 40.0) * waveAmplitude;
+          const wave2 = Math.sin(currentTime * waveSpeed * 2.0 + originalZ * 60.0 + originalY * 30.0) * waveAmplitude * 0.7;
+          const wave3 = Math.sin(currentTime * waveSpeed * 4.0 + (originalX + originalZ) * 45.0) * waveAmplitude * 0.5;
           
           // Apply wave displacement primarily in the normal direction
           const displacement = wave1 + wave2 + wave3;
