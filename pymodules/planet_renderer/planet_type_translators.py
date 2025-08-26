@@ -1000,7 +1000,7 @@ class PlanetTypeTranslators:
             green_patches.append({
                 "position": normalized_coords,  # Maintain for 2D compatibility
                 "position_3d": [patch_3d_x, patch_3d_y, patch_3d_z],  # 3D position
-                "size": rng.uniform(0.06, 0.15),  # Varied patch sizes
+                "size": rng.uniform(0.15, 0.35),  # Larger radioactive contamination areas
                 "color": rng.choice(radioactive_greens) + [rng.uniform(0.8, 0.95)],  # High opacity for visibility
                 "sides": rng.randint(18, 30),  # Irregular contaminated shapes
                 "radiation_level": rng.uniform(0.7, 1.0),  # High radiation intensity
