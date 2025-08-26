@@ -72,8 +72,8 @@ export class RadiationRingsEffect {
       seed
     };
     
-    // Initialize cosmic offset with seeded random for deterministic variation
-    this.cosmicOffset = (seed % 3600) * 10;
+    // Use deterministic offset based on seed (no random variation)
+    this.cosmicOffset = (seed % 100) * 0.1; // Pequeño offset determinístico
 
     this.group = new THREE.Group();
     this.createConcentricRings();
@@ -96,7 +96,7 @@ export class RadiationRingsEffect {
         const angle = (j / segments) * Math.PI * 2;
         const x = Math.cos(angle) * ringRadius;
         const z = Math.sin(angle) * ringRadius;
-        const y = (this.rng.random() - 0.5) * 0.02 * this.planetRadius; // Ligera variación vertical
+        const y = (Math.sin(angle * 7 + i * 2) * 0.5) * 0.02 * this.planetRadius; // Variación vertical determinística
         points.push(new THREE.Vector3(x, y, z));
       }
       
@@ -110,7 +110,7 @@ export class RadiationRingsEffect {
       for (let j = 0; j <= segments; j++) {
         phases[j] = i * 0.6 + (j / segments) * Math.PI * 4; // Fase diferente por anillo y posición
         distances[j] = (ringRadius - this.planetRadius * 1.05) / (maxRingRadius - this.planetRadius * 1.05);
-        randomOffsets[j] = this.rng.random(); // Offset aleatorio para variación
+        randomOffsets[j] = ((i * 7 + j * 3) % 100) / 100.0; // Offset determinístico basado en posición
       }
       
       geometry.setAttribute('phase', new THREE.BufferAttribute(phases, 1));
@@ -168,7 +168,7 @@ export class RadiationRingsEffect {
             float distanceFalloff = 1.0 - pow(distance, 1.2);
             vIntensity *= distanceFalloff;
             
-            // Añadir variación aleatoria sutil
+            // Variación determinística sutil
             vIntensity *= (0.8 + randomOffset * 0.4);
             
             // Desplazamiento vertical sutil para dar volumen
@@ -310,14 +310,15 @@ export class RadiationRingsEffect {
  * Crea un efecto de anillos de radiación desde datos de Python
  */
 export function createRadiationRingsFromPythonData(
+  planetRadius: number,
   pythonData: any,
-  planetRadius: number
+  globalSeed?: number
 ): RadiationRingsEffect {
-  const seed = pythonData.seed || Math.floor(Math.random() * 1000000);
+  const seed = globalSeed || Math.floor(Math.random() * 1000000);
   
   // Solo pasar parámetros esenciales, el resto se genera proceduralmente con PROCEDURAL_RANGES
   const params: RadiationRingsParams = {
-    seed: seed + 8000,
+    seed: seed + 42424,
     color: pythonData.color || [0.3, 1.0, 0.2], // Color puede venir de Python (tipo de planeta)
     cosmicOriginTime: pythonData?.timing?.cosmic_origin_time || pythonData?.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME,
     // Los demás parámetros se generarán proceduralmente en el constructor

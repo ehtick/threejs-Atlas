@@ -290,7 +290,7 @@ export class EffectRegistry {
 
     this.registerEffect(EffectType.RADIATION_RINGS, {
       create: (params, planetRadius) => new RadiationRingsEffect(planetRadius, params),
-      fromPythonData: (data, planetRadius) => createRadiationRingsFromPythonData(data, planetRadius),
+      fromPythonData: (data, planetRadius) => createRadiationRingsFromPythonData(planetRadius, data, data.seeds?.planet_seed),
     });
 
     // Efectos futuros (placeholders)
