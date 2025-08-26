@@ -1685,6 +1685,26 @@ export class EffectRegistry {
               caveLandMassesEffect.addToScene(scene, mesh.position);
             }
 
+            // 2.5. Add rocky terrain layer for cave planets
+            if (this.layerSystem) {
+              const caveRockyLayer = createRockyTerrainLayerFromPythonData(
+                this.layerSystem, 
+                pythonData, 
+                pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed
+              );
+
+              const caveRockyInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "rocky_terrain_layer",
+                effect: caveRockyLayer,
+                priority: 1,
+                enabled: true,
+                name: "Cave Rocky Terrain",
+              };
+              this.effects.set(caveRockyInstance.id, caveRockyInstance);
+              effects.push(caveRockyInstance);
+            }
+
             // 3. Add cave surface holes (cave openings with depth)
             const caveSurfaceHolesEffect = createCaveSurfaceHolesFromPythonData(
               planetRadius,
