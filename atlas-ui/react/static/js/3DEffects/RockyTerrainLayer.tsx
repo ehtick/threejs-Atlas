@@ -19,9 +19,9 @@ export interface RockyTerrainLayerParams {
 
 // Rangos para generación procedural
 const PROCEDURAL_RANGES = {
-  ROUGHNESS: { min: 0.6, max: 0.9 },
+  ROUGHNESS: { min: 3, max: 3 },
   ROCK_DENSITY: { min: 0.4, max: 0.8 },
-  CRATER_COUNT: { min: 0.2, max: 0.6 },
+  CRATER_COUNT: { min: 0.6, max: 0.6 },
   OPACITY: { min: 0.7, max: 0.95 }
 };
 
@@ -106,15 +106,17 @@ export class RockyTerrainLayer {
       float rockTexture = fbm(pos * rockDensity);
       rockTexture = pow(rockTexture, roughness);
       
-      // Calcular iluminación
+      // Calcular iluminación para el color (pero no para la visibilidad)
       float dotNL = dot(normal, lightDir);
-      float visibility = smoothstep(-0.2, 0.2, dotNL);
+      float lightInfluence = smoothstep(-0.2, 0.2, dotNL);
       
-      // Color final con variación rocosa
-      vec3 color = rockColor * (0.7 + 0.3 * rockTexture);
+      // Color final con variación rocosa y sutil influencia de luz
+      vec3 color = rockColor * (0.6 + 0.4 * rockTexture);
+      // Aplicar un poco de variación de luz pero mantener visibilidad en toda la superficie
+      color *= (0.7 + 0.3 * lightInfluence);
       
-      // Solo mostrar en la parte iluminada
-      float alpha = rockTexture * visibility * opacity;
+      // Mostrar en toda la superficie del planeta
+      float alpha = rockTexture * opacity;
       
       gl_FragColor = vec4(color, alpha);
     }

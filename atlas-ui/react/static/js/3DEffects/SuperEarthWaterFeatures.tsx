@@ -1,15 +1,15 @@
 /**
- * Super Earth Water Features Effect - ORGANIC VERSION
+ * Super Earth Water Features Effect - TEXTURE-BASED VERSION
  *
- * Creates realistic, organic water body shapes that resemble natural lakes, ponds,
- * and water formations using procedural noise and vertex displacement.
- * Features irregular coastlines and natural water body appearance.
+ * Creates water bodies using texture-based rendering with UV animation,
+ * displacement maps, and normal maps for wave effects instead of vertex displacement.
+ * Uses THREE.PlaneGeometry as base with unified water material.
  */
 
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom";
 
-// Procedural ranges for water body generation
+// Procedural ranges for water body generation - KEPT EXACTLY AS ORIGINAL
 const PROCEDURAL_RANGES = {
   WATER_BODY_COUNT: { min: 4, max: 8 }, // Number of water bodies
   WATER_BODY_RADIUS: { min: 0.07, max: 0.35 }, // Size of each water body
@@ -45,31 +45,21 @@ export class SuperEarthWaterFeaturesEffect {
   private waterBodyMeshes: THREE.Mesh[] = [];
   private params: SuperEarthWaterFeaturesParams;
   private rng: SeededRandom;
-  private materials: THREE.Material[] = [];
   private planetRadius: number;
   
-  // Performance optimizations - geometry and material caching
-  private static geometryCache = new Map<string, THREE.BufferGeometry>();
-  private static sharedMaterials = new Map<string, THREE.ShaderMaterial>();
+  // Unified water material for all bodies
+  private waterMaterial: THREE.ShaderMaterial;
   
-  // Color definitions for different water body types - aquifer water tones
-  private static readonly MASS_COLORS = {
-    lake: new THREE.Color(0.15, 0.65, 0.85),     // Crystal aquifer blue - large bodies
-    pond: new THREE.Color(0.12, 0.58, 0.78),     // Clear aquifer blue - smaller bodies  
-    elongated: new THREE.Color(0.08, 0.52, 0.72), // Deep aquifer blue - rivers/streams
-    complex: new THREE.Color(0.05, 0.48, 0.68)   // Deepest aquifer blue - complex shapes
-  };
+  // Texture maps for water effects
+  private normalMap: THREE.DataTexture;
+  private displacementMap: THREE.DataTexture;
+  private foamMap: THREE.DataTexture;
   
-  // Aquifer-specific shimmer colors for enhanced visual effects
-  private static readonly AQUIFER_SHIMMER_COLORS = {
-    lake: new THREE.Color(0.3, 0.8, 1.0),       // Bright aquifer shimmer
-    pond: new THREE.Color(0.25, 0.75, 0.95),    // Medium aquifer shimmer
-    elongated: new THREE.Color(0.2, 0.7, 0.9),  // Flowing aquifer shimmer
-    complex: new THREE.Color(0.15, 0.65, 0.85)  // Deep aquifer shimmer
-  };
-
+  // Animation parameters
+  private animationTime: number = 0;
+  
   constructor(planetRadius: number, params: SuperEarthWaterFeaturesParams = {}) {
-    console.log("🌊 CREATING SuperEarthWaterFeaturesEffect - ORGANIC VERSION");
+    console.log("💧 CREATING SuperEarthWaterFeaturesEffect - TEXTURE-BASED VERSION");
     console.log("Planet radius:", planetRadius);
     console.log("Params:", params);
 
@@ -79,16 +69,232 @@ export class SuperEarthWaterFeaturesEffect {
 
     this.params = {
       water_bodies: params.water_bodies || [],
-      waterColor: params.waterColor || new THREE.Color(0.1, 0.4, 0.7), // Natural water blue
-      globalIrregularity: params.globalIrregularity || 0.6, // Default irregularity
+      waterColor: params.waterColor || new THREE.Color(0.2, 0.5, 0.9),
+      globalIrregularity: params.globalIrregularity || 0.7,
       seed,
       ...params,
     };
 
     this.waterGroup = new THREE.Group();
-    console.log("Creating organic water bodies...");
+    
+    // Generate texture maps for water effects
+    this.generateWaterTextures();
+    
+    // Create unified water material
+    this.createUnifiedWaterMaterial();
+    
+    console.log("Creating texture-based water bodies...");
     this.generateWaterBodies();
-    console.log(`✅ Created ${this.waterBodyMeshes.length} organic water bodies`);
+    console.log(`✅ Created ${this.waterBodyMeshes.length} texture-based water bodies`);
+  }
+
+  private generateWaterTextures(): void {
+    // Generate normal map for wave patterns
+    const normalSize = 256;
+    const normalData = new Uint8Array(normalSize * normalSize * 3);
+    
+    for (let i = 0; i < normalSize; i++) {
+      for (let j = 0; j < normalSize; j++) {
+        const idx = (i * normalSize + j) * 3;
+        
+        // Create smooth wave patterns for normals
+        const u = i / normalSize * Math.PI * 4;
+        const v = j / normalSize * Math.PI * 4;
+        
+        const wave1 = Math.sin(u) * Math.cos(v) * 0.3;
+        const wave2 = Math.sin(u * 1.5 + v * 0.5) * 0.2;
+        
+        const nx = wave1 * 0.5 + 0.5;
+        const ny = wave2 * 0.5 + 0.5;
+        const nz = 1.0;
+        
+        normalData[idx] = nx * 255;
+        normalData[idx + 1] = ny * 255;
+        normalData[idx + 2] = nz * 255;
+      }
+    }
+    
+    this.normalMap = new THREE.DataTexture(
+      normalData,
+      normalSize,
+      normalSize,
+      THREE.RGBFormat
+    );
+    this.normalMap.wrapS = THREE.RepeatWrapping;
+    this.normalMap.wrapT = THREE.RepeatWrapping;
+    this.normalMap.needsUpdate = true;
+    
+    // Generate displacement map for height variation
+    const dispSize = 128;
+    const dispData = new Uint8Array(dispSize * dispSize);
+    
+    for (let i = 0; i < dispSize; i++) {
+      for (let j = 0; j < dispSize; j++) {
+        const idx = i * dispSize + j;
+        
+        // Create smooth displacement without noise
+        const u = i / dispSize * Math.PI * 2;
+        const v = j / dispSize * Math.PI * 2;
+        
+        const disp1 = Math.sin(u * 2 + v) * 0.3;
+        const disp2 = Math.cos(u - v * 2) * 0.3;
+        const height = (disp1 + disp2) * 0.25 + 0.5;
+        
+        dispData[idx] = Math.max(0, Math.min(255, height * 255));
+      }
+    }
+    
+    this.displacementMap = new THREE.DataTexture(
+      dispData,
+      dispSize,
+      dispSize,
+      THREE.RedFormat
+    );
+    this.displacementMap.wrapS = THREE.RepeatWrapping;
+    this.displacementMap.wrapT = THREE.RepeatWrapping;
+    this.displacementMap.needsUpdate = true;
+    
+    // Generate foam map for shoreline effects
+    const foamSize = 128;
+    const foamData = new Uint8Array(foamSize * foamSize);
+    
+    for (let i = 0; i < foamSize; i++) {
+      for (let j = 0; j < foamSize; j++) {
+        const idx = i * foamSize + j;
+        
+        // Create smooth foam pattern
+        const u = i / foamSize * Math.PI * 6;
+        const v = j / foamSize * Math.PI * 6;
+        const foamValue = (Math.sin(u) * Math.cos(v) + 1) * 0.5;
+        const foam = foamValue > 0.6 ? foamValue * 0.8 : 0;
+        
+        foamData[idx] = foam * 255;
+      }
+    }
+    
+    this.foamMap = new THREE.DataTexture(
+      foamData,
+      foamSize,
+      foamSize,
+      THREE.RedFormat
+    );
+    this.foamMap.wrapS = THREE.RepeatWrapping;
+    this.foamMap.wrapT = THREE.RepeatWrapping;
+    this.foamMap.needsUpdate = true;
+  }
+
+  private createUnifiedWaterMaterial(): void {
+    const vertexShader = `
+      uniform float time;
+      uniform sampler2D displacementMap;
+      uniform float displacementScale;
+      
+      varying vec2 vUv;
+      varying vec3 vWorldPosition;
+      varying vec3 vWorldNormal;
+      varying vec2 vAnimatedUv;
+      
+      void main() {
+        vUv = uv;
+        
+        // Animate UV for flowing water effect
+        vAnimatedUv = uv + vec2(time * 0.02, time * 0.015);
+        
+        // Sample displacement for vertex height
+        float displacement = texture2D(displacementMap, vAnimatedUv).r;
+        
+        // Apply displacement along normal
+        vec3 displacedPosition = position + normal * displacement * displacementScale;
+        
+        vec4 worldPos = modelMatrix * vec4(displacedPosition, 1.0);
+        vWorldPosition = worldPos.xyz;
+        vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);
+        
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(displacedPosition, 1.0);
+      }
+    `;
+
+    const fragmentShader = `
+      uniform vec3 waterColor;
+      uniform vec3 foamColor;
+      uniform float opacity;
+      uniform float time;
+      uniform sampler2D normalMap;
+      uniform sampler2D foamMap;
+      uniform vec3 lightPosition;
+      uniform vec3 lightDirection;
+      uniform float ambientStrength;
+      uniform float lightIntensity;
+      
+      varying vec2 vUv;
+      varying vec3 vWorldPosition;
+      varying vec3 vWorldNormal;
+      varying vec2 vAnimatedUv;
+      
+      void main() {
+        // Sample animated normal map
+        vec3 normalMapSample = texture2D(normalMap, vAnimatedUv * 3.0).rgb;
+        vec3 perturbedNormal = normalize(vWorldNormal + (normalMapSample - 0.5) * 0.2);
+        
+        // Calculate lighting
+        vec3 lightDir;
+        if (length(lightPosition) > 0.0) {
+          lightDir = normalize(lightPosition - vWorldPosition);
+        } else {
+          lightDir = normalize(-lightDirection);
+        }
+        
+        float dotNL = dot(perturbedNormal, lightDir);
+        float lighting = smoothstep(-0.2, 0.5, dotNL);
+        
+        // Fresnel effect for water reflectivity
+        vec3 viewDir = normalize(cameraPosition - vWorldPosition);
+        float fresnel = pow(1.0 - max(dot(viewDir, perturbedNormal), 0.0), 2.0);
+        
+        // Sample foam map
+        float foam = texture2D(foamMap, vAnimatedUv * 5.0).r;
+        
+        // Animated color variation
+        vec3 colorVariation = waterColor * (1.0 + sin(time * 1.5 + vUv.x * 10.0) * 0.1);
+        
+        // Combine water color with foam
+        vec3 finalColor = mix(colorVariation, foamColor, foam * 0.3);
+        
+        // Apply lighting and fresnel
+        finalColor *= (ambientStrength + lightIntensity * lighting);
+        finalColor += vec3(0.2, 0.3, 0.4) * fresnel * 0.5;
+        
+        // Add shimmer effect
+        float shimmer = sin(time * 3.0 + vWorldPosition.x * 20.0 + vWorldPosition.z * 15.0) * 0.1 + 0.9;
+        finalColor *= shimmer;
+        
+        gl_FragColor = vec4(finalColor, opacity * (1.0 - foam * 0.2));
+      }
+    `;
+
+    this.waterMaterial = new THREE.ShaderMaterial({
+      vertexShader,
+      fragmentShader,
+      uniforms: {
+        waterColor: { value: new THREE.Color(0.15, 0.55, 0.85) },
+        foamColor: { value: new THREE.Color(0.9, 0.95, 1.0) },
+        opacity: { value: 0.8 },
+        time: { value: 0 },
+        normalMap: { value: this.normalMap },
+        displacementMap: { value: this.displacementMap },
+        foamMap: { value: this.foamMap },
+        displacementScale: { value: 0.0 }, // No displacement - completely flat
+        lightPosition: { value: new THREE.Vector3(100, 100, 100) },
+        lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
+        ambientStrength: { value: 0.3 },
+        lightIntensity: { value: 0.7 }
+      },
+      transparent: true,
+      side: THREE.DoubleSide, // Both sides to ensure visibility
+      depthWrite: false, // Don't write to depth buffer to avoid z-fighting
+      depthTest: true,
+      blending: THREE.NormalBlending
+    });
   }
 
   private generateWaterBodies(): void {
@@ -96,11 +302,10 @@ export class SuperEarthWaterFeaturesEffect {
     if (this.params.water_bodies && this.params.water_bodies.length > 0) {
       console.log(`Using ${this.params.water_bodies.length} water bodies from data`);
       this.params.water_bodies.forEach((bodyData, index) => {
-        const waterMesh = this.createOrganicWaterBody(bodyData, index);
+        const waterMesh = this.createTextureBasedWaterBody(bodyData, index);
         if (waterMesh) {
           this.waterBodyMeshes.push(waterMesh);
           this.waterGroup.add(waterMesh);
-          console.log(`Added organic water body ${index} at position:`, bodyData.position_3d);
         }
       });
     } else {
@@ -109,545 +314,265 @@ export class SuperEarthWaterFeaturesEffect {
     }
   }
 
-  private createOrganicWaterBody(bodyData: any, bodyIndex: number): THREE.Mesh | null {
+  private createTextureBasedWaterBody(bodyData: any, bodyIndex: number): THREE.Mesh | null {
     if (!bodyData.position_3d || bodyData.position_3d.length !== 3) {
-      console.warn(`Water body ${bodyIndex} missing valid position_3d:`, bodyData.position_3d);
+      console.warn(`Water body ${bodyIndex} missing valid position_3d`);
       return null;
     }
 
     const position = new THREE.Vector3().fromArray(bodyData.position_3d);
     const sphericalPos = position.normalize();
 
-    // Water body parameters
-    const baseSize = Math.max(0.02, bodyData.radius || 0.08) * this.planetRadius;
-    const shapeType = bodyData.shape_type || this.getRandomShapeType();
-    const irregularity = bodyData.irregularity ?? this.params.globalIrregularity ?? 0.6;
+    // Calculate size with randomization
+    const baseRadius = bodyData.radius || this.rng.uniform(
+      PROCEDURAL_RANGES.WATER_BODY_RADIUS.min,
+      PROCEDURAL_RANGES.WATER_BODY_RADIUS.max
+    );
+    const size = baseRadius * this.planetRadius;
 
-    console.log(`Creating organic water body ${bodyIndex} (${shapeType}) with base size:`, baseSize);
-
-    // Check cache first for similar geometries
-    const cacheKey = `${shapeType}_${Math.round(baseSize * 100)}_${Math.round(irregularity * 10)}`;
-    let geometry = SuperEarthWaterFeaturesEffect.geometryCache.get(cacheKey);
+    // Create flat plane geometry - completely 2D with no depth
+    const segments = 24; // Enough resolution for curving to sphere
+    const geometry = new THREE.PlaneGeometry(size * 2, size * 2, segments, segments);
     
-    if (!geometry) {
-      geometry = this.generateOrganicWaterGeometry(sphericalPos, baseSize, shapeType, irregularity, bodyIndex);
-      if (geometry && SuperEarthWaterFeaturesEffect.geometryCache.size < 20) { // Limit cache size
-        SuperEarthWaterFeaturesEffect.geometryCache.set(cacheKey, geometry.clone());
+    // Add UV variation by rotating UVs randomly
+    const uvRotation = this.rng.uniform(0, Math.PI * 2);
+    const uvs = geometry.attributes.uv;
+    const cosR = Math.cos(uvRotation);
+    const sinR = Math.sin(uvRotation);
+    
+    for (let i = 0; i < uvs.count; i++) {
+      const u = uvs.getX(i) - 0.5;
+      const v = uvs.getY(i) - 0.5;
+      uvs.setXY(i, 
+        (u * cosR - v * sinR) + 0.5,
+        (u * sinR + v * cosR) + 0.5
+      );
+    }
+    uvs.needsUpdate = true;
+    
+    // Create organic water shapes using noise-based boundary
+    const positionsAttr = geometry.attributes.position;
+    const uvsAttr = geometry.attributes.uv;
+    const validVertices = [];
+    const validUVs = [];
+    const validIndices = [];
+    
+    // Generate organic boundary using noise
+    const vertexMap = new Map();
+    let newVertexIndex = 0;
+    
+    for (let i = 0; i < positionsAttr.count; i++) {
+      const x = positionsAttr.getX(i);
+      const y = positionsAttr.getY(i);
+      const z = positionsAttr.getZ(i);
+      
+      // Base circular distance
+      const distFromCenter = Math.sqrt(x * x + y * y);
+      const angle = Math.atan2(y, x);
+      
+      // Create organic boundary using multiple noise functions
+      const noise1 = Math.sin(angle * 3 + bodyIndex) * 0.3;
+      const noise2 = Math.cos(angle * 5 + bodyIndex * 2) * 0.2;
+      const noise3 = Math.sin(angle * 7 + bodyIndex * 3) * 0.15;
+      
+      // Vary the effective radius based on angle for organic shape
+      const organicRadius = size * (0.7 + noise1 + noise2 + noise3);
+      
+      // Keep vertex if it's within the organic boundary
+      if (distFromCenter <= organicRadius) {
+        validVertices.push(x, y, z);
+        validUVs.push(uvsAttr.getX(i), uvsAttr.getY(i));
+        vertexMap.set(i, newVertexIndex);
+        newVertexIndex++;
       }
+    }
+    
+    // Rebuild indices for valid vertices only
+    const originalIndices = geometry.getIndex();
+    if (originalIndices) {
+      for (let i = 0; i < originalIndices.count; i += 3) {
+        const a = originalIndices.getX(i);
+        const b = originalIndices.getX(i + 1);
+        const c = originalIndices.getX(i + 2);
+        
+        if (vertexMap.has(a) && vertexMap.has(b) && vertexMap.has(c)) {
+          validIndices.push(
+            vertexMap.get(a),
+            vertexMap.get(b),
+            vertexMap.get(c)
+          );
+        }
+      }
+    }
+    
+    // Create new geometry with organic shape
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(validVertices, 3));
+    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(validUVs, 2));
+    geometry.setIndex(validIndices);
+    geometry.computeVertexNormals();
+
+    // Create mesh with unified water material
+    const waterMesh = new THREE.Mesh(geometry, this.waterMaterial);
+    
+    // Create tangent space for spherical surface following
+    const up = sphericalPos.clone();
+    const right = new THREE.Vector3();
+    if (Math.abs(up.y) < 0.99) {
+      right.crossVectors(up, new THREE.Vector3(0, 1, 0)).normalize();
     } else {
-      geometry = geometry.clone(); // Clone cached geometry for this instance
+      right.crossVectors(up, new THREE.Vector3(1, 0, 0)).normalize();
     }
-
-    if (!geometry) {
-      console.warn(`Failed to generate geometry for water body ${bodyIndex}`);
-      return null;
-    }
-
-    // Use the same material for all water bodies
-    const materialKey = "standardWater"; // Same material key for all
+    const forward = new THREE.Vector3().crossVectors(right, up).normalize();
     
-    let material = SuperEarthWaterFeaturesEffect.sharedMaterials.get(materialKey);
-    
-    if (!material) {
-      // Use the same color and shimmer for all water bodies
-      const waterColor = SuperEarthWaterFeaturesEffect.MASS_COLORS.lake; // Same color for all
-      const shimmerColor = SuperEarthWaterFeaturesEffect.AQUIFER_SHIMMER_COLORS.lake; // Same shimmer for all
-      
-      // Create lighting-aware water shader material that follows planet illumination
-      const vertexShader = `
-        varying vec3 vPosition;
-        varying vec3 vNormal;
-        varying vec3 vWorldPosition;
-        varying vec3 vWorldNormal;
-        varying vec2 vUv;
-        
-        void main() {
-          vPosition = position;
-          vNormal = normalMatrix * normal;
-          vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);
-          vUv = uv;
-          vec4 worldPos = modelMatrix * vec4(position, 1.0);
-          vWorldPosition = worldPos.xyz;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `;
-
-      const fragmentShader = `
-        uniform vec3 waterColor;
-        uniform vec3 shimmerColor;
-        uniform float opacity;
-        uniform float time;
-        uniform vec3 lightPosition;
-        uniform vec3 lightDirection;
-        uniform float ambientStrength;
-        uniform float lightIntensity;
-        
-        varying vec3 vPosition;
-        varying vec3 vNormal;
-        varying vec3 vWorldPosition;
-        varying vec3 vWorldNormal;
-        varying vec2 vUv;
-        
-        void main() {
-          vec3 normal = normalize(vWorldNormal);
-          
-          // Calculate lighting direction (same as PlanetLayerSystem)
-          vec3 lightDir;
-          if (length(lightPosition) > 0.0) {
-            lightDir = normalize(lightPosition - vWorldPosition);
-          } else {
-            lightDir = normalize(-lightDirection);
-          }
-          
-          // Lambertian lighting calculation with smooth day/night transition
-          float dotNL = dot(normal, lightDir);
-          float dayNight = smoothstep(-0.3, 0.1, dotNL);
-          
-          // Rim lighting for enhanced visibility
-          float rimLight = 1.0 - abs(dotNL);
-          rimLight = pow(rimLight, 3.0) * 0.1;
-          
-          // Water surface shimmer
-          float wave = sin(time * 2.0 + vWorldPosition.x * 10.0 + vWorldPosition.z * 8.0) * 0.1 + 0.9;
-          vec3 baseWaterColor = mix(waterColor, shimmerColor, wave * 0.3);
-          
-          // Apply lighting (same calculation as PlanetLayerSystem)
-          float totalLight = ambientStrength + (lightIntensity * dayNight) + rimLight;
-          vec3 finalColor = baseWaterColor * totalLight;
-          
-          // Add subtle emissive glow
-          finalColor += waterColor * 0.05;
-          
-          gl_FragColor = vec4(finalColor, opacity);
-        }
-      `;
-
-      material = new THREE.ShaderMaterial({
-        vertexShader,
-        fragmentShader,
-        uniforms: {
-          waterColor: { value: waterColor.clone() },
-          shimmerColor: { value: shimmerColor.clone() },
-          opacity: { value: 0.7 },
-          time: { value: 0 },
-          lightPosition: { value: new THREE.Vector3(0, 0, 0) },
-          lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
-          ambientStrength: { value: 0.15 },
-          lightIntensity: { value: 0.85 }
-        },
-        transparent: true,
-        side: THREE.DoubleSide,
-        depthWrite: true,
-        depthTest: true
-      });
-      
-      SuperEarthWaterFeaturesEffect.sharedMaterials.set(materialKey, material);
-    }
-    this.materials.push(material);
-    const waterMesh = new THREE.Mesh(geometry, material);
-    waterMesh.renderOrder = 1002; // Above land masses
-    waterMesh.castShadow = false; // Water doesn't cast shadows
-    waterMesh.receiveShadow = true; // But receives shadows
-    
-    // Store base opacity for animation - same for all bodies
-    waterMesh.userData.baseOpacity = 0.7;
-    waterMesh.userData.shapeType = shapeType; // Store shape type for aquifer effects
-    
-    // Store original vertex positions for wave animation
+    // Curve each vertex to follow planet surface - NO THICKNESS/VOLUME
     const positions = geometry.attributes.position;
-    const originalPositions = new Float32Array(positions.array.length);
-    originalPositions.set(positions.array);
-    waterMesh.userData.originalPositions = originalPositions;
-    waterMesh.userData.waveAmplitude = 0.001; // Fixed wave amplitude for all bodies
-    waterMesh.userData.waveSpeed = 1.0; // Fixed wave speed for all bodies
-    waterMesh.userData.baseSize = baseSize; // Store for debugging
-
-    console.log(`Organic water body ${bodyIndex} created successfully with wave data`);
+    const centerPos = sphericalPos.clone().multiplyScalar(this.planetRadius * 1.01); // More visible elevation
+    
+    for (let i = 0; i < positions.count; i++) {
+      const localVertex = new THREE.Vector3();
+      localVertex.fromBufferAttribute(positions, i);
+      
+      // Convert local flat coordinates to world space
+      const worldVertex = centerPos.clone()
+        .add(right.clone().multiplyScalar(localVertex.x))
+        .add(forward.clone().multiplyScalar(localVertex.y));
+      
+      // Project onto sphere surface - this curves it to follow planet surface
+      const projectedVertex = worldVertex.normalize().multiplyScalar(this.planetRadius * 1.015); // Higher elevation to be visible
+      
+      // Store as world coordinates (no mesh positioning needed)
+      positions.setXYZ(i, projectedVertex.x, projectedVertex.y, projectedVertex.z);
+    }
+    
+    positions.needsUpdate = true;
+    geometry.computeVertexNormals();
+    
+    // No mesh positioning - vertices are already in world space
+    waterMesh.position.set(0, 0, 0);
+    
+    // Store metadata for animation
+    waterMesh.userData = {
+      baseSize: size,
+      uvOffset: new THREE.Vector2(
+        this.rng.uniform(0, 1),
+        this.rng.uniform(0, 1)
+      ),
+      animationSpeed: this.rng.uniform(0.8, 1.2),
+      index: bodyIndex
+    };
+    
+    waterMesh.renderOrder = 1005; // Render after surface but before other effects
+    waterMesh.castShadow = false;
+    waterMesh.receiveShadow = true;
+    
+    console.log(`Created texture-based water body ${bodyIndex}`);
     return waterMesh;
   }
 
   private generateProceduralWaterBodies(): void {
-    // Generate procedural water bodies using PROCEDURAL_RANGES
-    const bodyCount = this.rng.randint(PROCEDURAL_RANGES.WATER_BODY_COUNT.min, PROCEDURAL_RANGES.WATER_BODY_COUNT.max);
-    console.log(`Generating ${bodyCount} procedural water bodies using PROCEDURAL_RANGES`);
+    const bodyCount = this.rng.randint(
+      PROCEDURAL_RANGES.WATER_BODY_COUNT.min,
+      PROCEDURAL_RANGES.WATER_BODY_COUNT.max
+    );
+    
+    console.log(`Generating ${bodyCount} procedural texture-based water bodies`);
 
     for (let i = 0; i < bodyCount; i++) {
-      const shapeType = this.getRandomShapeType();
-
-      // Use appropriate irregularity and complexity based on shape type
-      let irregularity = this.rng.uniform(PROCEDURAL_RANGES.SHAPE_IRREGULARITY.min, PROCEDURAL_RANGES.SHAPE_IRREGULARITY.max);
-
-      // Adjust parameters based on shape type
-      if (shapeType === "complex") {
-        // Complex shapes need higher irregularity
-        irregularity = Math.max(irregularity, 0.6);
-      } else if (shapeType === "pond") {
-        // Ponds are more regular
-        irregularity = Math.min(irregularity, 0.4);
-      }
-
-      // Generate radius first to determine opacity based on size
-      const radius = this.rng.uniform(PROCEDURAL_RANGES.WATER_BODY_RADIUS.min, PROCEDURAL_RANGES.WATER_BODY_RADIUS.max);
-
-      // Determine opacity based on water body size
-      let opacity: number;
-      if (radius > PROCEDURAL_RANGES.LARGE_BODY_THRESHOLD) {
-        // Large bodies - deeper water, more opaque
-        opacity = this.rng.uniform(PROCEDURAL_RANGES.LARGE_BODY_OPACITY.min, PROCEDURAL_RANGES.LARGE_BODY_OPACITY.max);
-      } else if (radius < PROCEDURAL_RANGES.SMALL_BODY_THRESHOLD) {
-        // Small bodies - shallower water, more transparent
-        opacity = this.rng.uniform(PROCEDURAL_RANGES.SMALL_BODY_OPACITY.min, PROCEDURAL_RANGES.SMALL_BODY_OPACITY.max);
-      } else {
-        // Medium bodies - moderate opacity
-        opacity = this.rng.uniform(PROCEDURAL_RANGES.MEDIUM_BODY_OPACITY.min, PROCEDURAL_RANGES.MEDIUM_BODY_OPACITY.max);
-      }
-
+      const radius = this.rng.uniform(
+        PROCEDURAL_RANGES.WATER_BODY_RADIUS.min,
+        PROCEDURAL_RANGES.WATER_BODY_RADIUS.max
+      );
+      
       const bodyData = {
         position_3d: this.generateRandomSurfacePoint(),
         radius: radius,
-        depth: this.rng.uniform(PROCEDURAL_RANGES.WATER_BODY_DEPTH.min, PROCEDURAL_RANGES.WATER_BODY_DEPTH.max),
-        opacity: opacity,
-        shape_type: shapeType,
-        irregularity: irregularity,
-        coastline_complexity: this.rng.uniform(PROCEDURAL_RANGES.COASTLINE_COMPLEXITY.min, PROCEDURAL_RANGES.COASTLINE_COMPLEXITY.max),
+        depth: this.rng.uniform(
+          PROCEDURAL_RANGES.WATER_BODY_DEPTH.min,
+          PROCEDURAL_RANGES.WATER_BODY_DEPTH.max
+        ),
+        opacity: this.rng.uniform(
+          PROCEDURAL_RANGES.WATER_BODY_OPACITY.min,
+          PROCEDURAL_RANGES.WATER_BODY_OPACITY.max
+        )
       };
 
-      const waterMesh = this.createOrganicWaterBody(bodyData, i);
+      const waterMesh = this.createTextureBasedWaterBody(bodyData, i);
       if (waterMesh) {
         this.waterBodyMeshes.push(waterMesh);
         this.waterGroup.add(waterMesh);
-        console.log(`Generated procedural water body ${i} with shape ${shapeType}`);
       }
     }
-  }
-
-  /**
-   * Get a random shape type for water bodies with natural distribution
-   */
-  private getRandomShapeType(): "lake" | "pond" | "elongated" | "complex" {
-    const rand = this.rng.uniform(0, 1);
-    if (rand < 0.4) return "lake"; // 40% - irregular round lakes
-    if (rand < 0.7) return "pond"; // 30% - smaller, more circular ponds
-    if (rand < 0.9) return "elongated"; // 20% - river-like elongated bodies
-    return "complex"; // 10% - complex shapes with inlets
-  }
-
-  /**
-   * Generate organic water body geometry using FBM noise for natural coastlines
-   */
-  private generateOrganicWaterGeometry(sphericalPos: THREE.Vector3, baseSize: number, shapeType: string, irregularity: number, seedOffset: number): THREE.BufferGeometry | null {
-    // Create tangent space for the water body surface
-    const tangent1 = new THREE.Vector3();
-    const tangent2 = new THREE.Vector3();
-
-    if (Math.abs(sphericalPos.y) < 0.99) {
-      tangent1.crossVectors(sphericalPos, new THREE.Vector3(0, 1, 0)).normalize();
-    } else {
-      tangent1.crossVectors(sphericalPos, new THREE.Vector3(1, 0, 0)).normalize();
-    }
-    tangent2.crossVectors(sphericalPos, tangent1).normalize();
-
-    // Shape-specific parameters
-    let aspectRatio = 1.0;
-    let complexityBonus = 0.0;
-    let noiseAmplitude = irregularity * 0.4;
-
-    switch (shapeType) {
-      case "elongated":
-        aspectRatio = this.rng.uniform(PROCEDURAL_RANGES.ELONGATION_RATIO.min, PROCEDURAL_RANGES.ELONGATION_RATIO.max); // Stretch in one direction using PROCEDURAL_RANGES
-        noiseAmplitude *= 1.2; // More coastal variation
-        break;
-      case "complex":
-        complexityBonus = 0.3; // Extra noise detail for inlets
-        noiseAmplitude *= 1.5;
-        break;
-      case "pond":
-        noiseAmplitude *= 0.7; // Smoother, more regular
-        break;
-      case "lake":
-      default:
-        // Standard parameters
-        break;
-    }
-
-    // Adaptive resolution based on size - optimized for performance
-    const resolution = Math.max(16, Math.min(64, Math.floor(baseSize * 200)));
-
-    // FBM Noise function for organic coastlines (adapted from LandMasses.tsx)
-    const fbmNoise = (x: number, y: number) => {
-      let value = 0;
-      let amplitude = 1;
-      let frequency = 3.0 / Math.max(baseSize * 0.1, 1.0); // Adaptive frequency
-      let maxValue = 0;
-
-      // Reduced octaves for performance - still maintains good quality
-      const octaves = shapeType === "complex" ? 3 : 2;
-
-      for (let i = 0; i < octaves; i++) {
-        const sx = x * frequency;
-        const sy = y * frequency;
-
-        // Hash function for coherent noise
-        const hash = (px: number, py: number) => {
-          const dot = px * 12.9898 + py * 78.233;
-          return (Math.sin(dot + seedOffset * 1000) * 43758.5453) % 1;
-        };
-
-        // Smooth interpolation
-        const ix = Math.floor(sx);
-        const iy = Math.floor(sy);
-        const fx = sx - ix;
-        const fy = sy - iy;
-
-        const smooth = (t: number) => t * t * t * (t * (t * 6 - 15) + 10);
-        const sx_smooth = smooth(fx);
-        const sy_smooth = smooth(fy);
-
-        // Corner values
-        const n00 = hash(ix, iy);
-        const n10 = hash(ix + 1, iy);
-        const n01 = hash(ix, iy + 1);
-        const n11 = hash(ix + 1, iy + 1);
-
-        // Bilinear interpolation
-        const nx0 = n00 * (1 - sx_smooth) + n10 * sx_smooth;
-        const nx1 = n01 * (1 - sx_smooth) + n11 * sx_smooth;
-        const nxy = nx0 * (1 - sy_smooth) + nx1 * sy_smooth;
-
-        value += nxy * amplitude;
-        maxValue += amplitude;
-
-        amplitude *= 0.5;
-        frequency *= 2.0; // Simplified frequency progression
-      }
-
-      return value / maxValue;
-    };
-
-    // Generate organic coastline vertices
-    const vertices: number[] = [];
-    const indices: number[] = [];
-    const uvs: number[] = [];
-
-    // Water threshold - areas below this become water
-    const waterThreshold = 0.2; // Higher threshold = smaller water bodies
-
-    const vertexMap = new Map<string, number>();
-    let vertexIndex = 0;
-
-    // Create vertex grid with organic boundaries
-    for (let i = 0; i <= resolution; i++) {
-      for (let j = 0; j <= resolution; j++) {
-        // UV coordinates (-1 to 1)
-        const u = (i / resolution - 0.5) * 2;
-        const v = (j / resolution - 0.5) * 2;
-
-        // Apply aspect ratio for elongated shapes
-        const scaledU = u * aspectRatio;
-        const scaledV = v;
-
-        // Distance from center
-        const distFromCenter = Math.sqrt(scaledU * scaledU + scaledV * scaledV);
-
-        // Base circular/elliptical shape
-        let baseShape = 1.0 - distFromCenter;
-
-        // Add noise for organic coastline
-        const noiseValue = fbmNoise(scaledU * 2, scaledV * 2);
-        const organicBoundary = baseShape + noiseValue * noiseAmplitude + complexityBonus * Math.abs(noiseValue);
-
-        // Only create vertices for water areas (below threshold means water)
-        if (organicBoundary > waterThreshold && distFromCenter < 1.3) {
-          // Convert UV to local 3D coordinates
-          const localX = u * baseSize;
-          const localY = v * baseSize;
-
-          // Project to world space using tangent basis
-          const worldPos = new THREE.Vector3().addScaledVector(tangent1, localX).addScaledVector(tangent2, localY);
-
-          vertices.push(worldPos.x, worldPos.y, worldPos.z);
-          uvs.push((u + 1) * 0.5, (v + 1) * 0.5);
-
-          vertexMap.set(`${i},${j}`, vertexIndex);
-          vertexIndex++;
-        }
-      }
-    }
-
-    // Create triangulation for water surface
-    for (let i = 0; i < resolution; i++) {
-      for (let j = 0; j < resolution; j++) {
-        const v00 = vertexMap.get(`${i},${j}`);
-        const v10 = vertexMap.get(`${i + 1},${j}`);
-        const v01 = vertexMap.get(`${i},${j + 1}`);
-        const v11 = vertexMap.get(`${i + 1},${j + 1}`);
-
-        // Create triangles only where all vertices exist
-        if (v00 !== undefined && v10 !== undefined && v01 !== undefined) {
-          indices.push(v00, v10, v01);
-        }
-        if (v10 !== undefined && v11 !== undefined && v01 !== undefined) {
-          indices.push(v10, v11, v01);
-        }
-      }
-    }
-
-    if (vertices.length === 0 || indices.length === 0) {
-      console.warn("No vertices generated for organic water body");
-      return null;
-    }
-
-    // Create and configure geometry
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
-    geometry.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
-    geometry.setIndex(indices);
-    geometry.computeVertexNormals();
-
-    // Project vertices onto planet surface with slight elevation for water
-    const positions = geometry.attributes.position;
-    const waterPosition = sphericalPos.clone().multiplyScalar(this.planetRadius);
-    const vertex = new THREE.Vector3();
-
-    for (let i = 0; i < positions.count; i++) {
-      vertex.fromBufferAttribute(positions, i);
-
-      // Move to world coordinates
-      const worldVertex = vertex.clone().add(waterPosition);
-
-      // Project onto sphere surface with slight elevation above land
-      const direction = worldVertex.clone().normalize();
-      const projectedVertex = direction.multiplyScalar(this.planetRadius * 1.003); // Slightly above surface
-
-      // Convert back to local coordinates
-      const localVertex = projectedVertex.sub(waterPosition);
-      positions.setXYZ(i, localVertex.x, localVertex.y, localVertex.z);
-    }
-
-    positions.needsUpdate = true;
-    geometry.computeVertexNormals();
-
-    // Position the geometry on planet surface
-    geometry.translate(waterPosition.x, waterPosition.y, waterPosition.z);
-
-    return geometry;
   }
 
   private generateRandomSurfacePoint(): number[] {
-    const lat = this.rng.uniform(-0.7, 0.7); // Avoid poles
-    const lon = this.rng.uniform(0, Math.PI * 2);
+    // Avoid poles for better distribution
+    const theta = this.rng.uniform(0.3, Math.PI - 0.3);
+    const phi = this.rng.uniform(0, Math.PI * 2);
 
-    const point = new THREE.Vector3(Math.cos(lon) * Math.cos(lat), Math.sin(lat), Math.sin(lon) * Math.cos(lat)).normalize();
+    const x = Math.sin(theta) * Math.cos(phi);
+    const y = Math.cos(theta);
+    const z = Math.sin(theta) * Math.sin(phi);
 
-    return [point.x, point.y, point.z];
+    return [x, y, z];
   }
 
   addToScene(scene: THREE.Scene, planetPosition?: THREE.Vector3): void {
-    console.log("🌊 Adding water features to scene");
+    console.log("💧 Adding texture-based water features to scene");
     if (planetPosition) {
       this.waterGroup.position.copy(planetPosition);
-      console.log("Water group positioned at:", planetPosition);
     }
     scene.add(this.waterGroup);
     console.log(`✅ Added ${this.waterBodyMeshes.length} water bodies to scene`);
   }
 
-  /**
-   * Update lighting from Three.js DirectionalLight (called by the lighting system)
-   */
   updateFromThreeLight(light: THREE.DirectionalLight): void {
-    // Update all water shader materials with correct lighting
-    this.materials.forEach((material) => {
-      if (material instanceof THREE.ShaderMaterial && material.uniforms) {
-        // Update light position
-        if (material.uniforms.lightPosition) {
-          material.uniforms.lightPosition.value.copy(light.position);
-        }
-        
-        // Calculate and update light direction
-        if (material.uniforms.lightDirection) {
-          const direction = light.target.position.clone().sub(light.position).normalize();
-          material.uniforms.lightDirection.value.copy(direction);
-        }
-      }
-    });
-    
-    console.log("🌊 Updated water lighting from DirectionalLight at:", light.position);
+    // Update unified material lighting
+    if (this.waterMaterial && this.waterMaterial.uniforms) {
+      this.waterMaterial.uniforms.lightPosition.value.copy(light.position);
+      const direction = light.target.position.clone().sub(light.position).normalize();
+      this.waterMaterial.uniforms.lightDirection.value.copy(direction);
+    }
   }
 
-  update(_deltaTime: number): void {
-    // Animate aquifer water bodies with enhanced time-based effects including wave movement
-    const currentTime = Date.now() / 1000;
+  update(deltaTime: number): void {
+    this.animationTime += deltaTime;
     
-    // Debug log every 2 seconds with wave parameters
-    if (Math.floor(currentTime) % 2 === 0 && Math.floor(currentTime * 10) % 10 === 0) {
-      const bodiesWithWaves = this.waterBodyMeshes.filter(mesh => 
-        mesh.geometry && mesh.userData.originalPositions).length;
-      console.log(`🌊 Aquifer water animation update - Time: ${currentTime.toFixed(2)}, Bodies: ${this.waterBodyMeshes.length}, With waves: ${bodiesWithWaves}`);
-      if (this.waterBodyMeshes.length > 0) {
-        const firstMesh = this.waterBodyMeshes[0];
-        console.log(`   Wave params - Amplitude: ${firstMesh.userData.waveAmplitude}, Speed: ${firstMesh.userData.waveSpeed}, BaseSize: ${firstMesh.userData.baseSize}`);
-        console.log(`   Vertex count: ${firstMesh.geometry?.attributes.position.count || 0}`);
-      }
+    // Update shader time uniform for UV animation
+    if (this.waterMaterial && this.waterMaterial.uniforms) {
+      this.waterMaterial.uniforms.time.value = this.animationTime;
+      
+      // NO wave height animation - keep static depth
+      this.waterMaterial.uniforms.displacementScale.value = 0.0; // Completely flat
+      
+      // Static opacity - no tidal effects
+      this.waterMaterial.uniforms.opacity.value = 0.75;
     }
     
-    this.waterBodyMeshes.forEach((mesh, index) => {
-      // Initialize wave data if missing
-      if (mesh.geometry && !mesh.userData.originalPositions) {
-        const positions = mesh.geometry.attributes.position;
-        const originalPositions = new Float32Array(positions.array.length);
-        originalPositions.set(positions.array);
-        mesh.userData.originalPositions = originalPositions;
-        mesh.userData.waveAmplitude = 0.01; // Fixed amplitude for all
-        mesh.userData.waveSpeed = 1.0; // Fixed speed for all
-        console.log(`🔧 Initialized missing wave data for water body ${index}`);
-      }
-      
-      // Animate vertex positions for wave movement
-      if (mesh.geometry && mesh.userData.originalPositions) {
-        const positions = mesh.geometry.attributes.position;
-        const originalPositions = mesh.userData.originalPositions;
-        const waveAmplitude = mesh.userData.waveAmplitude || 0.01; // Fixed amplitude
-        const waveSpeed = mesh.userData.waveSpeed || 1.0; // Fixed speed
-        
-        // Create multiple wave patterns for realistic water movement
-        for (let i = 0; i < positions.count; i++) {
-          const i3 = i * 3;
-          const originalX = originalPositions[i3];
-          const originalY = originalPositions[i3 + 1];
-          const originalZ = originalPositions[i3 + 2];
-          
-          // Calculate wave displacement using multiple sine waves - same frequency for all water bodies
-          const wave1 = Math.sin(currentTime * waveSpeed * 3.0 + originalX * 50.0 + originalZ * 40.0) * waveAmplitude;
-          const wave2 = Math.sin(currentTime * waveSpeed * 2.0 + originalZ * 60.0 + originalY * 30.0) * waveAmplitude * 0.7;
-          const wave3 = Math.sin(currentTime * waveSpeed * 4.0 + (originalX + originalZ) * 45.0) * waveAmplitude * 0.5;
-          
-          // Apply wave displacement primarily in the normal direction
-          const displacement = wave1 + wave2 + wave3;
-          
-          // Simplified normal calculation - assume radial direction from center
-          const normal = new THREE.Vector3(originalX, originalY, originalZ).normalize();
-          
-          // Apply displacement along the surface normal
-          positions.setXYZ(i, 
-            originalX + normal.x * displacement,
-            originalY + normal.y * displacement, 
-            originalZ + normal.z * displacement
-          );
-        }
-        
-        positions.needsUpdate = true;
-        mesh.geometry.computeVertexNormals(); // Recompute normals for proper lighting
-      }
-      
-      // Shader material animations
-      if (mesh.material instanceof THREE.ShaderMaterial && mesh.material.uniforms) {
-        // Update time uniform for shader animations
-        mesh.material.uniforms.time.value = currentTime;
-        
-        // Update opacity with breathing effect
-        const baseOpacity = 0.7;
-        mesh.material.uniforms.opacity.value = baseOpacity + Math.sin(currentTime * 0.3) * 0.1;
+    // Rotate normal and displacement maps for flowing effect
+    if (this.normalMap) {
+      this.normalMap.offset.x += deltaTime * 0.008;
+      this.normalMap.offset.y += deltaTime * 0.006;
+      this.normalMap.needsUpdate = true;
+    }
+    
+    // NO displacement map animation - keep static surface
+    // if (this.displacementMap) {
+    //   this.displacementMap.offset.x += deltaTime * 0.005;
+    //   this.displacementMap.offset.y += deltaTime * 0.004;
+    //   this.displacementMap.needsUpdate = true;
+    // }
+    
+    if (this.foamMap) {
+      this.foamMap.offset.x += deltaTime * 0.012;
+      this.foamMap.offset.y += deltaTime * 0.009;
+      this.foamMap.needsUpdate = true;
+    }
+    
+    // Animate individual water bodies with subtle movements
+    this.waterBodyMeshes.forEach((mesh) => {
+      if (mesh.userData.animationSpeed) {
+        // NO scaling animation - completely static
+        mesh.scale.setScalar(1.0);
       }
     });
   }
@@ -655,16 +580,12 @@ export class SuperEarthWaterFeaturesEffect {
   updateParams(newParams: Partial<SuperEarthWaterFeaturesParams>): void {
     this.params = { ...this.params, ...newParams };
 
-    // Simple parameter updates for basic materials
-    if (newParams.waterColor) {
-      const waterColor = newParams.waterColor instanceof THREE.Color ? newParams.waterColor : new THREE.Color().fromArray(newParams.waterColor as number[]);
-
-      this.materials.forEach((material) => {
-        if (material instanceof THREE.MeshLambertMaterial) {
-          material.color.copy(waterColor);
-          material.emissive.copy(waterColor.clone().multiplyScalar(0.1));
-        }
-      });
+    if (newParams.waterColor && this.waterMaterial) {
+      const waterColor = newParams.waterColor instanceof THREE.Color 
+        ? newParams.waterColor 
+        : new THREE.Color().fromArray(newParams.waterColor as number[]);
+      
+      this.waterMaterial.uniforms.waterColor.value.copy(waterColor);
     }
   }
 
@@ -673,36 +594,36 @@ export class SuperEarthWaterFeaturesEffect {
   }
 
   dispose(): void {
-    // Dispose individual geometries but preserve shared resources
+    // Dispose textures
+    if (this.normalMap) this.normalMap.dispose();
+    if (this.displacementMap) this.displacementMap.dispose();
+    if (this.foamMap) this.foamMap.dispose();
+    
+    // Dispose material
+    if (this.waterMaterial) this.waterMaterial.dispose();
+    
+    // Dispose geometries
     this.waterBodyMeshes.forEach((mesh) => {
-      if (mesh.geometry && !SuperEarthWaterFeaturesEffect.geometryCache.has('shared')) {
-        mesh.geometry.dispose();
-      }
+      if (mesh.geometry) mesh.geometry.dispose();
     });
-
-    // Don't dispose shared materials as they may be used by other instances
+    
     this.waterBodyMeshes = [];
-    this.materials = [];
     this.waterGroup.clear();
-  }
-  
-  // Static method to clear all caches when no longer needed
-  static clearCaches(): void {
-    SuperEarthWaterFeaturesEffect.geometryCache.forEach(geometry => geometry.dispose());
-    SuperEarthWaterFeaturesEffect.geometryCache.clear();
-    SuperEarthWaterFeaturesEffect.sharedMaterials.forEach(material => material.dispose());
-    SuperEarthWaterFeaturesEffect.sharedMaterials.clear();
   }
 }
 
 /**
- * Create Super Earth water features from Python data - ORGANIC VERSION
+ * Create Super Earth water features from Python data - TEXTURE-BASED VERSION
  *
- * Creates realistic water bodies with organic, irregular coastlines that resemble
- * natural lakes, ponds, and water formations using procedural noise generation.
+ * Creates water bodies using texture-based rendering with UV animation
+ * and normal maps for wave effects instead of vertex displacement.
  */
-export function createSuperEarthWaterFeaturesFromPythonData(planetRadius: number, surfaceData: any, globalSeed?: number): SuperEarthWaterFeaturesEffect | null {
-  console.log("🌊 Creating Organic SuperEarthWaterFeatures from Python data");
+export function createSuperEarthWaterFeaturesFromPythonData(
+  planetRadius: number, 
+  surfaceData: any, 
+  globalSeed?: number
+): SuperEarthWaterFeaturesEffect | null {
+  console.log("💧 Creating Texture-Based SuperEarthWaterFeatures from Python data");
   console.log("Surface data:", surfaceData);
 
   const seed = globalSeed || Math.floor(Math.random() * 1000000);
@@ -710,28 +631,21 @@ export function createSuperEarthWaterFeaturesFromPythonData(planetRadius: number
 
   // Extract water features data from Python
   const waterFeaturesData = surfaceData.water_features || {};
-  let waterBodies = waterFeaturesData.water_bodies || [];
+  const waterBodies = waterFeaturesData.water_bodies || [];
 
   console.log("Water bodies from Python:", waterBodies);
 
-  // Generate procedural water bodies if none provided
-  if (waterBodies.length === 0) {
-    console.log("No water bodies from Python, will generate procedural ones");
-    // Don't generate here - let the effect handle it
-    waterBodies = [];
-  }
-
   const params: SuperEarthWaterFeaturesParams = {
     water_bodies: waterBodies,
-    waterColor: new THREE.Color(0.1, 0.4, 0.7), // Natural water blue
-    globalIrregularity: 0.6, // Natural irregularity for procedural bodies
+    waterColor: new THREE.Color(0.2, 0.5, 0.9),
+    globalIrregularity: 0.7,
     seed: waterSeed,
   };
 
-  console.log("Creating SuperEarthWaterFeaturesEffect with params:", params);
+  console.log("Creating texture-based SuperEarthWaterFeaturesEffect with params:", params);
 
   const effect = new SuperEarthWaterFeaturesEffect(planetRadius, params);
 
-  console.log("✅ Organic SuperEarthWaterFeaturesEffect created successfully");
+  console.log("✅ Texture-based SuperEarthWaterFeaturesEffect created successfully");
   return effect;
 }
