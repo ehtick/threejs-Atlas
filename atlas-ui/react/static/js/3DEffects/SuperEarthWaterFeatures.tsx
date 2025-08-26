@@ -50,7 +50,7 @@ export class SuperEarthWaterFeaturesEffect {
   
   // Performance optimizations - geometry and material caching
   private static geometryCache = new Map<string, THREE.BufferGeometry>();
-  private static sharedMaterials = new Map<string, THREE.MeshPhysicalMaterial>();
+  private static sharedMaterials = new Map<string, THREE.ShaderMaterial>();
   
   // Color definitions for different water body types - aquifer water tones
   private static readonly MASS_COLORS = {
@@ -153,31 +153,92 @@ export class SuperEarthWaterFeaturesEffect {
       const waterColor = SuperEarthWaterFeaturesEffect.MASS_COLORS.lake; // Same color for all
       const shimmerColor = SuperEarthWaterFeaturesEffect.AQUIFER_SHIMMER_COLORS.lake; // Same shimmer for all
       
-      // Create aquifer water-like material with enhanced properties
-      material = new THREE.MeshPhysicalMaterial({
-        color: waterColor,
-        opacity: 0.7, // Fixed opacity for all bodies
+      // Create lighting-aware water shader material that follows planet illumination
+      const vertexShader = `
+        varying vec3 vPosition;
+        varying vec3 vNormal;
+        varying vec3 vWorldPosition;
+        varying vec3 vWorldNormal;
+        varying vec2 vUv;
+        
+        void main() {
+          vPosition = position;
+          vNormal = normalMatrix * normal;
+          vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);
+          vUv = uv;
+          vec4 worldPos = modelMatrix * vec4(position, 1.0);
+          vWorldPosition = worldPos.xyz;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `;
+
+      const fragmentShader = `
+        uniform vec3 waterColor;
+        uniform vec3 shimmerColor;
+        uniform float opacity;
+        uniform float time;
+        uniform vec3 lightPosition;
+        uniform vec3 lightDirection;
+        uniform float ambientStrength;
+        uniform float lightIntensity;
+        
+        varying vec3 vPosition;
+        varying vec3 vNormal;
+        varying vec3 vWorldPosition;
+        varying vec3 vWorldNormal;
+        varying vec2 vUv;
+        
+        void main() {
+          vec3 normal = normalize(vWorldNormal);
+          
+          // Calculate lighting direction (same as PlanetLayerSystem)
+          vec3 lightDir;
+          if (length(lightPosition) > 0.0) {
+            lightDir = normalize(lightPosition - vWorldPosition);
+          } else {
+            lightDir = normalize(-lightDirection);
+          }
+          
+          // Lambertian lighting calculation with smooth day/night transition
+          float dotNL = dot(normal, lightDir);
+          float dayNight = smoothstep(-0.3, 0.1, dotNL);
+          
+          // Rim lighting for enhanced visibility
+          float rimLight = 1.0 - abs(dotNL);
+          rimLight = pow(rimLight, 3.0) * 0.1;
+          
+          // Water surface shimmer
+          float wave = sin(time * 2.0 + vWorldPosition.x * 10.0 + vWorldPosition.z * 8.0) * 0.1 + 0.9;
+          vec3 baseWaterColor = mix(waterColor, shimmerColor, wave * 0.3);
+          
+          // Apply lighting (same calculation as PlanetLayerSystem)
+          float totalLight = ambientStrength + (lightIntensity * dayNight) + rimLight;
+          vec3 finalColor = baseWaterColor * totalLight;
+          
+          // Add subtle emissive glow
+          finalColor += waterColor * 0.05;
+          
+          gl_FragColor = vec4(finalColor, opacity);
+        }
+      `;
+
+      material = new THREE.ShaderMaterial({
+        vertexShader,
+        fragmentShader,
+        uniforms: {
+          waterColor: { value: waterColor.clone() },
+          shimmerColor: { value: shimmerColor.clone() },
+          opacity: { value: 0.7 },
+          time: { value: 0 },
+          lightPosition: { value: new THREE.Vector3(0, 0, 0) },
+          lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
+          ambientStrength: { value: 0.15 },
+          lightIntensity: { value: 0.85 }
+        },
         transparent: true,
-        emissive: waterColor.clone().multiplyScalar(0.2),
         side: THREE.DoubleSide,
         depthWrite: true,
-        depthTest: true,
-        // Enhanced aquifer_water effect properties
-        roughness: 0.02, // Smoother surface for clearer water
-        metalness: 0.05, // Less metallic for natural water
-        transmission: 0.6, // Higher transmission for aquifer clarity
-        thickness: 0.8, // Increased thickness for depth
-        ior: 1.33, // Water refraction index
-        reflectivity: 0.5, // Higher reflectivity for aquifer surface
-        iridescence: 0.3, // Enhanced iridescence for aquifer shimmer
-        iridescenceIOR: 1.4, // Stronger iridescence effect
-        sheen: 0.5, // Enhanced sheen for aquifer glow
-        sheenColor: shimmerColor.clone(),
-        clearcoat: 0.7, // Stronger clearcoat for aquifer surface
-        clearcoatRoughness: 0.03, // Smoother clearcoat for aquifer effect
-        // Additional aquifer water properties
-        attenuationDistance: 1.5, // Enhanced light attenuation through aquifer water
-        attenuationColor: waterColor.clone().multiplyScalar(0.8),
+        depthTest: true
       });
       
       SuperEarthWaterFeaturesEffect.sharedMaterials.set(materialKey, material);
@@ -491,6 +552,29 @@ export class SuperEarthWaterFeaturesEffect {
     console.log(`✅ Added ${this.waterBodyMeshes.length} water bodies to scene`);
   }
 
+  /**
+   * Update lighting from Three.js DirectionalLight (called by the lighting system)
+   */
+  updateFromThreeLight(light: THREE.DirectionalLight): void {
+    // Update all water shader materials with correct lighting
+    this.materials.forEach((material) => {
+      if (material instanceof THREE.ShaderMaterial && material.uniforms) {
+        // Update light position
+        if (material.uniforms.lightPosition) {
+          material.uniforms.lightPosition.value.copy(light.position);
+        }
+        
+        // Calculate and update light direction
+        if (material.uniforms.lightDirection) {
+          const direction = light.target.position.clone().sub(light.position).normalize();
+          material.uniforms.lightDirection.value.copy(direction);
+        }
+      }
+    });
+    
+    console.log("🌊 Updated water lighting from DirectionalLight at:", light.position);
+  }
+
   update(_deltaTime: number): void {
     // Animate aquifer water bodies with enhanced time-based effects including wave movement
     const currentTime = Date.now() / 1000;
@@ -557,35 +641,14 @@ export class SuperEarthWaterFeaturesEffect {
         mesh.geometry.computeVertexNormals(); // Recompute normals for proper lighting
       }
       
-      // Material animations (same for all bodies)
-      if (mesh.material instanceof THREE.MeshPhysicalMaterial) {
-        // Enhanced aquifer shimmer animation - identical for all bodies
-        const baseColor = mesh.material.color.clone();
-        const shimmerOscillation = Math.sin(currentTime * 1.5) * 0.1; // No index variation
-        const depthPulse = Math.sin(currentTime * 0.8) * 0.05; // No index variation
+      // Shader material animations
+      if (mesh.material instanceof THREE.ShaderMaterial && mesh.material.uniforms) {
+        // Update time uniform for shader animations
+        mesh.material.uniforms.time.value = currentTime;
         
-        // Animate emissive color for aquifer glow
-        mesh.material.emissive.setRGB(
-          baseColor.r * (0.2 + shimmerOscillation),
-          baseColor.g * (0.2 + shimmerOscillation), 
-          baseColor.b * (0.2 + shimmerOscillation + depthPulse)
-        );
-        
-        // Animate transmission for aquifer depth variation
-        mesh.material.transmission = 0.6 + Math.sin(currentTime * 0.6) * 0.2;
-        
-        // Animate iridescence for aquifer shimmer effect
-        mesh.material.iridescence = 0.3 + Math.sin(currentTime * 1.0) * 0.15;
-        
-        // Animate sheen for surface reflection variation
-        mesh.material.sheen = 0.5 + Math.sin(currentTime * 1.2) * 0.3;
-        
-        // Animate clearcoat for aquifer surface dynamics
-        mesh.material.clearcoat = 0.7 + Math.sin(currentTime * 0.5) * 0.15;
-        
-        // Subtle opacity animation for breathing effect
-        const baseOpacity = 0.7; // Same for all
-        mesh.material.opacity = baseOpacity + Math.sin(currentTime * 0.3) * 0.1;
+        // Update opacity with breathing effect
+        const baseOpacity = 0.7;
+        mesh.material.uniforms.opacity.value = baseOpacity + Math.sin(currentTime * 0.3) * 0.1;
       }
     });
   }
