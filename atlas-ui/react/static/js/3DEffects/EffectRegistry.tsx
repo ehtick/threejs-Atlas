@@ -60,6 +60,7 @@ import { MoltenLavaEffect, createMoltenLavaFromPythonData } from "./MoltenLavaEf
 import { FireEruptionEffect, createFireEruptionFromPythonData } from "./FireEruptionEffect";
 import { CarbonTrailsEffect, createCarbonTrailsFromPythonData } from "./CarbonTrails";
 import { RadiationRingsEffect, createRadiationRingsFromPythonData } from "./RadiationRings";
+import { SuperEarthWaterFeaturesEffect, createSuperEarthWaterFeaturesFromPythonData } from "./SuperEarthWaterFeatures";
 // Efectos de superficie legacy eliminados - usar solo versiones Layer
 
 // Importar efectos de debug
@@ -118,6 +119,7 @@ export enum EffectType {
   FIRE_ERUPTION = "fire_eruption",
   CARBON_TRAILS = "carbon_trails",
   RADIATION_RINGS = "radiation_rings",
+  SUPER_EARTH_WATER_FEATURES = "super_earth_water_features",
   CRYSTAL_FORMATIONS = "crystal_formations",
   CLOUD_LAYERS = "cloud_layers",
   STORM_SYSTEMS = "storm_systems",
@@ -2199,6 +2201,26 @@ export class EffectRegistry {
                 effects.push(superEarthLandMassesInstance);
                 superEarthLandMassesEffect.addToScene(scene, mesh.position);
               }
+            }
+            
+            // 3. Add small water features on top of the surface
+            const superEarthWaterFeaturesEffect = createSuperEarthWaterFeaturesFromPythonData(
+              planetRadius,
+              surface,
+              (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 11000
+            );
+            if (superEarthWaterFeaturesEffect) {
+              const superEarthWaterFeaturesInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "super_earth_water_features",
+                effect: superEarthWaterFeaturesEffect,
+                priority: 6,
+                enabled: true,
+                name: "Super Earth Water Features",
+              };
+              this.effects.set(superEarthWaterFeaturesInstance.id, superEarthWaterFeaturesInstance);
+              effects.push(superEarthWaterFeaturesInstance);
+              superEarthWaterFeaturesEffect.addToScene(scene, mesh.position);
             }
             break;
 

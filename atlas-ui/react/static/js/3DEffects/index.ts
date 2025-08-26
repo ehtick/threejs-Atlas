@@ -84,6 +84,9 @@ export type { CarbonTrailsParams } from "./CarbonTrails";
 export { RadiationRingsEffect, createRadiationRingsFromPythonData } from "./RadiationRings";
 export type { RadiationRingsParams } from "./RadiationRings";
 
+export { SuperEarthWaterFeaturesEffect, createSuperEarthWaterFeaturesFromPythonData } from "./SuperEarthWaterFeatures";
+export type { SuperEarthWaterFeaturesParams } from "./SuperEarthWaterFeatures";
+
 // export {
 //   AnomalyGeometricMorphEffect,
 //   createAnomalyGeometricMorphFromPythonData
@@ -131,6 +134,7 @@ export const AVAILABLE_EFFECTS = [
   "cave_surface_holes",
   "radiation_pulse",
   "radiation_rings",
+  "super_earth_water_features",
   // Efectos anómalos (algunos desactivados)
   // 'anomaly_glitch_field', // Movido a Unused3DEffects
   // 'anomaly_void_sphere', // Movido a Unused3DEffects
