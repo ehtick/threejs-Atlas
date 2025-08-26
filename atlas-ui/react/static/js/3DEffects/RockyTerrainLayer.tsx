@@ -1,12 +1,12 @@
 /**
  * Rocky Terrain Layer - Versión que funciona como capa
- * 
+ *
  * Crea terreno rocoso como capa transparente que respeta la iluminación base
  */
 
-import * as THREE from 'three';
-import { PlanetLayerSystem } from '../3DComponents/PlanetLayerSystem';
-import { SeededRandom } from '../Utils/SeededRandom';
+import * as THREE from "three";
+import { PlanetLayerSystem } from "../3DComponents/PlanetLayerSystem";
+import { SeededRandom } from "../Utils/SeededRandom";
 
 export interface RockyTerrainLayerParams {
   color?: THREE.Color | number[];
@@ -15,7 +15,7 @@ export interface RockyTerrainLayerParams {
   craterCount?: number;
   opacity?: number;
   seed?: number;
-  planetType?: 'ROCKY' | 'CAVE' | 'DEFAULT';
+  planetType?: "ROCKY" | "CAVE" | "DEFAULT";
 }
 
 // Rangos para generación procedural - diferentes para cada tipo de planeta
@@ -24,20 +24,20 @@ const PROCEDURAL_RANGES = {
     ROUGHNESS: { min: 0.6, max: 0.9 },
     ROCK_DENSITY: { min: 0.4, max: 0.8 },
     CRATER_COUNT: { min: 0.2, max: 0.6 },
-    OPACITY: { min: 0.7, max: 0.95 }
+    OPACITY: { min: 0.7, max: 0.95 },
   },
   ROCKY: {
-    ROUGHNESS: { min: 0.8, max: 1.2 },
-    ROCK_DENSITY: { min: 0.6, max: 1.0 },
+    ROUGHNESS: { min: 1, max: 2 },
+    ROCK_DENSITY: { min: 1.0, max: 3.0 },
     CRATER_COUNT: { min: 0.4, max: 0.8 },
-    OPACITY: { min: 0.8, max: 1.0 }
+    OPACITY: { min: 0.8, max: 1.0 },
   },
   CAVE: {
     ROUGHNESS: { min: 0.5, max: 0.7 },
-    ROCK_DENSITY: { min: 0.3, max: 0.6 },
+    ROCK_DENSITY: { min: 0.5, max: 1 },
     CRATER_COUNT: { min: 0.1, max: 0.4 }, // Menos cráteres para cuevas
-    OPACITY: { min: 0.6, max: 0.85 }
-  }
+    OPACITY: { min: 0.02, max: 0.05 },
+  },
 };
 
 export class RockyTerrainLayer {
@@ -51,9 +51,7 @@ export class RockyTerrainLayer {
     varying vec3 vNormal;
     varying vec2 vUv;
     
-    uniform float time;
-    
-    // Función de ruido para deformar la superficie
+    // Función de ruido para deformar la superficie (estática)
     float noise(vec3 p) {
       return sin(p.x * 4.0) * sin(p.y * 4.0) * sin(p.z * 4.0);
     }
@@ -63,9 +61,9 @@ export class RockyTerrainLayer {
       vNormal = normal;
       vUv = uv;
       
-      // Deformación sutil de la superficie para crear relieve rocoso
+      // Deformación estática de la superficie para crear relieve rocoso
       vec3 deformed = position;
-      float noiseValue = noise(position * 3.0 + time * 0.01);
+      float noiseValue = noise(position * 3.0); // SIN time - completamente estático
       deformed += normal * noiseValue * 0.02;
       
       gl_Position = projectionMatrix * modelViewMatrix * vec4(deformed, 1.0);
@@ -79,7 +77,6 @@ export class RockyTerrainLayer {
     uniform float craterCount;
     uniform float opacity;
     uniform vec3 lightDirection;
-    uniform float time;
     
     varying vec3 vPosition;
     varying vec3 vNormal;
@@ -183,18 +180,17 @@ export class RockyTerrainLayer {
 
   constructor(layerSystem: PlanetLayerSystem, params: RockyTerrainLayerParams = {}) {
     this.layerSystem = layerSystem;
-    
+
     // Generar valores procedurales usando seed
     const seed = params.seed || Math.floor(Math.random() * 1000000);
     const rng = new SeededRandom(seed);
-    
-    const baseColor = params.color instanceof THREE.Color ? 
-      params.color : (params.color ? new THREE.Color(params.color as any) : new THREE.Color(0x8B4513));
-    
+
+    const baseColor = params.color instanceof THREE.Color ? params.color : params.color ? new THREE.Color(params.color as any) : new THREE.Color(0x8b4513);
+
     // Seleccionar rangos según tipo de planeta
-    const planetType = params.planetType || 'DEFAULT';
+    const planetType = params.planetType || "DEFAULT";
     const ranges = PROCEDURAL_RANGES[planetType];
-    
+
     this.params = {
       color: baseColor,
       roughness: params.roughness || rng.uniform(ranges.ROUGHNESS.min, ranges.ROUGHNESS.max),
@@ -202,7 +198,7 @@ export class RockyTerrainLayer {
       craterCount: params.craterCount || rng.uniform(ranges.CRATER_COUNT.min, ranges.CRATER_COUNT.max),
       opacity: params.opacity || rng.uniform(ranges.OPACITY.min, ranges.OPACITY.max),
       seed,
-      planetType
+      planetType,
     };
 
     // Crear material
@@ -210,31 +206,24 @@ export class RockyTerrainLayer {
       vertexShader: RockyTerrainLayer.vertexShader,
       fragmentShader: RockyTerrainLayer.fragmentShader,
       uniforms: {
-        time: { value: 0 },
         rockColor: { value: baseColor },
         roughness: { value: this.params.roughness },
         rockDensity: { value: this.params.rockDensity },
         craterCount: { value: this.params.craterCount },
         opacity: { value: this.params.opacity },
-        lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() }
+        lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
       },
       transparent: true,
       side: THREE.FrontSide,
-      depthWrite: false
+      depthWrite: false,
     });
-    
+
     // Añadir capa al sistema
-    this.layerMesh = this.layerSystem.addEffectLayer(
-      'rockyTerrain', 
-      this.material, 
-      this.layerSystem.getNextScaleFactor()
-    );
+    this.layerMesh = this.layerSystem.addEffectLayer("rockyTerrain", this.material, this.layerSystem.getNextScaleFactor());
   }
 
   update(deltaTime: number): void {
-    if (this.material.uniforms.time) {
-      this.material.uniforms.time.value += deltaTime;
-    }
+    // Terreno rocoso completamente estático - no necesita updates
   }
 
   dispose(): void {
@@ -242,40 +231,35 @@ export class RockyTerrainLayer {
   }
 }
 
-export function createRockyTerrainLayerFromPythonData(
-  layerSystem: PlanetLayerSystem,
-  data: any,
-  globalSeed?: number,
-  planetType: 'ROCKY' | 'CAVE' | 'DEFAULT' = 'DEFAULT'
-): RockyTerrainLayer {
+export function createRockyTerrainLayerFromPythonData(layerSystem: PlanetLayerSystem, data: any, globalSeed?: number, planetType: "ROCKY" | "CAVE" | "DEFAULT" = "DEFAULT"): RockyTerrainLayer {
   const surface = data.surface || {};
   const baseColor = data.planet_info?.base_color || surface.base_color;
-  
+
   // Generar valores proceduralmente basados en seed
   const seed = globalSeed || Math.floor(Math.random() * 1000000);
   const rng = new SeededRandom(seed + 8000); // +8000 para RockyTerrainLayer
-  
+
   // Detectar tipo de planeta si no se especifica
   let detectedPlanetType = planetType;
-  if (planetType === 'DEFAULT' && data.surface_elements?.type) {
+  if (planetType === "DEFAULT" && data.surface_elements?.type) {
     const surfaceType = data.surface_elements.type.toLowerCase();
-    if (surfaceType === 'rocky') {
-      detectedPlanetType = 'ROCKY';
-    } else if (surfaceType === 'cave') {
-      detectedPlanetType = 'CAVE';
+    if (surfaceType === "rocky") {
+      detectedPlanetType = "ROCKY";
+    } else if (surfaceType === "cave") {
+      detectedPlanetType = "CAVE";
     }
   }
-  
+
   // Seleccionar rangos apropiados
   const ranges = PROCEDURAL_RANGES[detectedPlanetType];
-  
+
   return new RockyTerrainLayer(layerSystem, {
-    color: baseColor ? new THREE.Color(baseColor) : new THREE.Color(0x8B4513),
+    color: baseColor ? new THREE.Color(baseColor) : new THREE.Color(0x8b4513),
     roughness: surface.roughness || rng.uniform(ranges.ROUGHNESS.min, ranges.ROUGHNESS.max),
     rockDensity: surface.rock_density || rng.uniform(ranges.ROCK_DENSITY.min, ranges.ROCK_DENSITY.max) * 10,
     craterCount: surface.crater_count || rng.uniform(ranges.CRATER_COUNT.min, ranges.CRATER_COUNT.max),
     opacity: rng.uniform(ranges.OPACITY.min, ranges.OPACITY.max),
     seed,
-    planetType: detectedPlanetType
+    planetType: detectedPlanetType,
   });
 }
