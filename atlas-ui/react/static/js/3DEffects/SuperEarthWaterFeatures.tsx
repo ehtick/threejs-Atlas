@@ -231,14 +231,12 @@ export class SuperEarthWaterFeaturesEffect {
         // EXACT SAME lighting calculation as PlanetLayerSystem
         vec3 normal = normalize(perturbedNormal);
         
-        // Calculate lighting direction - FIX for correct illumination
+        // Calculate lighting direction - EXACT COPY from PlanetLayerSystem
         vec3 lightDir;
         if (length(lightPosition) > 0.0) {
-          // Point light - direction from surface to light
           lightDir = normalize(lightPosition - vWorldPosition);
         } else {
-          // Directional light - use light direction directly (not negated)
-          lightDir = normalize(lightDirection);
+          lightDir = normalize(-lightDirection); // Negativo porque lightDirection apunta hacia la luz
         }
         
         // Lambertian lighting calculation with smooth day/night transition
@@ -591,6 +589,23 @@ export class SuperEarthWaterFeaturesEffect {
    * Update lighting from Three.js DirectionalLight - EXACT same as PlanetLayerSystem
    */
   updateFromThreeLight(light: THREE.DirectionalLight): void {
+    // Update all individual water body materials
+    this.materials.forEach(material => {
+      if (material instanceof THREE.ShaderMaterial && material.uniforms) {
+        // Update light position (for point light calculations)
+        if (material.uniforms.lightPosition) {
+          material.uniforms.lightPosition.value.copy(light.position);
+        }
+        
+        // Calculate and update light direction (for directional light calculations)
+        if (material.uniforms.lightDirection) {
+          const direction = light.target.position.clone().sub(light.position).normalize();
+          material.uniforms.lightDirection.value.copy(direction);
+        }
+      }
+    });
+    
+    // Also update the base water material
     if (this.waterMaterial && this.waterMaterial.uniforms) {
       // Update light position (for point light calculations)
       if (this.waterMaterial.uniforms.lightPosition) {
@@ -599,7 +614,6 @@ export class SuperEarthWaterFeaturesEffect {
       
       // Calculate and update light direction (for directional light calculations)
       if (this.waterMaterial.uniforms.lightDirection) {
-        // Direction FROM light TO target (this is the light ray direction)
         const direction = light.target.position.clone().sub(light.position).normalize();
         this.waterMaterial.uniforms.lightDirection.value.copy(direction);
       }
