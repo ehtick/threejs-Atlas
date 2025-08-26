@@ -262,7 +262,23 @@ export class SuperEarthWaterFeaturesEffect {
         float shimmer = sin(time * 2.5 + vWorldPosition.x * 30.0 + vWorldPosition.z * 25.0) * 0.08 + 0.92;
         finalColor *= shimmer;
         
-        gl_FragColor = vec4(finalColor, opacity);
+        // Calculate edge softness based on UV distance from center
+        vec2 centerDist = vUv - vec2(0.5, 0.5);
+        float distFromCenter = length(centerDist) * 2.0; // Normalize to 0-1 range
+        
+        // Add noise to the edge for more organic appearance
+        float edgeNoise = sin(vUv.x * 20.0 + time * 0.5) * cos(vUv.y * 20.0 - time * 0.3) * 0.1;
+        distFromCenter += edgeNoise;
+        
+        // Create very smooth edge falloff for organic appearance
+        float edgeSoftness = 1.0 - smoothstep(0.5, 0.95, distFromCenter);
+        
+        // Apply additional smoothing at the very edge
+        edgeSoftness = pow(edgeSoftness, 1.5);
+        
+        float finalOpacity = opacity * edgeSoftness;
+        
+        gl_FragColor = vec4(finalColor, finalOpacity);
       }
     `;
 
@@ -283,7 +299,10 @@ export class SuperEarthWaterFeaturesEffect {
       side: THREE.DoubleSide, // Both sides to ensure visibility
       depthWrite: false, // Don't write to depth buffer to avoid z-fighting
       depthTest: true,
-      blending: THREE.NormalBlending
+      blending: THREE.CustomBlending,
+      blendSrc: THREE.SrcAlphaFactor,
+      blendDst: THREE.OneMinusSrcAlphaFactor,
+      blendEquation: THREE.AddEquation
     });
   }
 
@@ -346,6 +365,7 @@ export class SuperEarthWaterFeaturesEffect {
     const validVertices = [];
     const validUVs = [];
     const validIndices = [];
+    const originalUVs = []; // Store original UVs for edge calculation
     
     // Generate organic boundary using noise
     const vertexMap = new Map();
@@ -355,6 +375,10 @@ export class SuperEarthWaterFeaturesEffect {
       const x = positionsAttr.getX(i);
       const y = positionsAttr.getY(i);
       const z = positionsAttr.getZ(i);
+      
+      // Store original UV for edge calculation
+      const origU = uvsAttr.getX(i);
+      const origV = uvsAttr.getY(i);
       
       // Base circular distance
       const distFromCenter = Math.sqrt(x * x + y * y);
@@ -414,6 +438,7 @@ export class SuperEarthWaterFeaturesEffect {
       if (withinBoundary) {
         validVertices.push(x, y, z);
         validUVs.push(uvsAttr.getX(i), uvsAttr.getY(i));
+        originalUVs.push(origU, origV); // Store original UV for edge softness
         vertexMap.set(i, newVertexIndex);
         newVertexIndex++;
       }
