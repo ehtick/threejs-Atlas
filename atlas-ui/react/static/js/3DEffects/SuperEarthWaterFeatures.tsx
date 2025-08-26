@@ -19,11 +19,9 @@ const PROCEDURAL_RANGES = {
   COASTLINE_COMPLEXITY: { min: 0.3, max: 0.7 }, // Coastline detail level
   ELONGATION_RATIO: { min: 2.0, max: 4.0 }, // For elongated water bodies
   COMPLEX_INLETS: { min: 3, max: 6 }, // Number of inlets for complex shapes
-  // Opacity adjustment based on water body size
   LARGE_BODY_OPACITY: { min: 0.7, max: 0.85 }, // Larger bodies are more opaque (deeper)
   MEDIUM_BODY_OPACITY: { min: 0.65, max: 0.75 }, // Medium bodies have moderate opacity
   SMALL_BODY_OPACITY: { min: 0.5, max: 0.65 }, // Smaller bodies are more transparent (shallower)
-  // Size thresholds for opacity adjustment
   LARGE_BODY_THRESHOLD: 0.2, // Bodies larger than 20% of max size are "large"
   SMALL_BODY_THRESHOLD: 0.1, // Bodies smaller than 10% of max size are "small"
 };
@@ -52,7 +50,15 @@ export class SuperEarthWaterFeaturesEffect {
   
   // Performance optimizations - geometry and material caching
   private static geometryCache = new Map<string, THREE.BufferGeometry>();
-  private static sharedMaterial: THREE.MeshLambertMaterial | null = null;
+  private static sharedMaterials = new Map<string, THREE.MeshPhysicalMaterial>();
+  
+  // Color definitions for different water body types - similar aquatic tones
+  private static readonly MASS_COLORS = {
+    lake: new THREE.Color(0.2, 0.6, 0.8),     // Light blue - large bodies
+    pond: new THREE.Color(0.15, 0.55, 0.75),  // Medium blue - smaller bodies  
+    elongated: new THREE.Color(0.1, 0.5, 0.7), // Deeper blue - rivers/streams
+    complex: new THREE.Color(0.05, 0.45, 0.65) // Darkest blue - complex shapes
+  };
 
   constructor(planetRadius: number, params: SuperEarthWaterFeaturesParams = {}) {
     console.log("🌊 CREATING SuperEarthWaterFeaturesEffect - ORGANIC VERSION");
@@ -129,23 +135,40 @@ export class SuperEarthWaterFeaturesEffect {
       return null;
     }
 
-    // Reuse shared material for performance
-    let material: THREE.MeshLambertMaterial;
+    // Get or create material for this shape type
+    const materialKey = shapeType;
     
-    if (!SuperEarthWaterFeaturesEffect.sharedMaterial) {
-      const waterColor = this.params.waterColor instanceof THREE.Color ? this.params.waterColor : new THREE.Color().fromArray(this.params.waterColor as number[]);
-      SuperEarthWaterFeaturesEffect.sharedMaterial = new THREE.MeshLambertMaterial({
+    let material = SuperEarthWaterFeaturesEffect.sharedMaterials.get(materialKey);
+    
+    if (!material) {
+      const waterColor = SuperEarthWaterFeaturesEffect.MASS_COLORS[shapeType as keyof typeof SuperEarthWaterFeaturesEffect.MASS_COLORS] || SuperEarthWaterFeaturesEffect.MASS_COLORS.lake;
+      
+      // Create aquifer water-like material with enhanced properties
+      material = new THREE.MeshPhysicalMaterial({
         color: waterColor,
-        opacity: 0.7,
+        opacity: bodyData.opacity || 0.7,
         transparent: true,
-        emissive: waterColor.clone().multiplyScalar(0.05),
+        emissive: waterColor.clone().multiplyScalar(0.1),
         side: THREE.DoubleSide,
         depthWrite: true,
         depthTest: true,
+        // Aquifer water-like properties
+        roughness: 0.05,
+        metalness: 0.1,
+        transmission: 0.3,
+        thickness: 0.5,
+        ior: 1.33, // Water refraction index
+        reflectivity: 0.3,
+        iridescence: 0.1,
+        iridescenceIOR: 1.3,
+        sheen: 0.2,
+        sheenColor: waterColor.clone().multiplyScalar(0.8),
+        clearcoat: 0.3,
+        clearcoatRoughness: 0.1
       });
+      
+      SuperEarthWaterFeaturesEffect.sharedMaterials.set(materialKey, material);
     }
-    
-    material = SuperEarthWaterFeaturesEffect.sharedMaterial;
     this.materials.push(material);
     const waterMesh = new THREE.Mesh(geometry, material);
     waterMesh.renderOrder = 1002; // Above land masses
@@ -443,7 +466,24 @@ export class SuperEarthWaterFeaturesEffect {
   }
 
   update(_deltaTime: number): void {
-    // No animations in simplified version - just static water bodies
+    // Animate water bodies with time-based effects like aquifer water
+    const currentTime = Date.now() / 1000;
+    
+    this.waterBodyMeshes.forEach((mesh, index) => {
+      if (mesh.material instanceof THREE.MeshPhysicalMaterial) {
+        // Subtle color animation based on time and body index
+        const baseColor = mesh.material.color.clone();
+        const oscillation = Math.sin(currentTime * 0.5 + index) * 0.05;
+        mesh.material.emissive.setRGB(
+          baseColor.r * (0.1 + oscillation),
+          baseColor.g * (0.1 + oscillation), 
+          baseColor.b * (0.1 + oscillation)
+        );
+        
+        // Animate transmission for subtle depth effect
+        mesh.material.transmission = 0.3 + Math.sin(currentTime * 0.3 + index * 0.5) * 0.1;
+      }
+    });
   }
 
   updateParams(newParams: Partial<SuperEarthWaterFeaturesParams>): void {
@@ -454,9 +494,10 @@ export class SuperEarthWaterFeaturesEffect {
       const waterColor = newParams.waterColor instanceof THREE.Color ? newParams.waterColor : new THREE.Color().fromArray(newParams.waterColor as number[]);
 
       this.materials.forEach((material) => {
-        if (material instanceof THREE.MeshLambertMaterial) {
+        if (material instanceof THREE.MeshPhysicalMaterial) {
           material.color.copy(waterColor);
           material.emissive.copy(waterColor.clone().multiplyScalar(0.1));
+          material.sheenColor.copy(waterColor.clone().multiplyScalar(0.8));
         }
       });
     }
@@ -474,7 +515,7 @@ export class SuperEarthWaterFeaturesEffect {
       }
     });
 
-    // Don't dispose shared material as it may be used by other instances
+    // Don't dispose shared materials as they may be used by other instances
     this.waterBodyMeshes = [];
     this.materials = [];
     this.waterGroup.clear();
@@ -484,10 +525,8 @@ export class SuperEarthWaterFeaturesEffect {
   static clearCaches(): void {
     SuperEarthWaterFeaturesEffect.geometryCache.forEach(geometry => geometry.dispose());
     SuperEarthWaterFeaturesEffect.geometryCache.clear();
-    if (SuperEarthWaterFeaturesEffect.sharedMaterial) {
-      SuperEarthWaterFeaturesEffect.sharedMaterial.dispose();
-      SuperEarthWaterFeaturesEffect.sharedMaterial = null;
-    }
+    SuperEarthWaterFeaturesEffect.sharedMaterials.forEach(material => material.dispose());
+    SuperEarthWaterFeaturesEffect.sharedMaterials.clear();
   }
 }
 
