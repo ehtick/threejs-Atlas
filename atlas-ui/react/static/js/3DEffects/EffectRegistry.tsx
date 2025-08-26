@@ -978,7 +978,12 @@ export class EffectRegistry {
 
           case "rocky":
             if (this.layerSystem) {
-              const rockyLayer = createRockyTerrainLayerFromPythonData(this.layerSystem, pythonData, pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed);
+              const rockyLayer = createRockyTerrainLayerFromPythonData(
+                this.layerSystem, 
+                pythonData, 
+                pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed,
+                'ROCKY'
+              );
 
               const rockyInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -1690,7 +1695,8 @@ export class EffectRegistry {
               const caveRockyLayer = createRockyTerrainLayerFromPythonData(
                 this.layerSystem, 
                 pythonData, 
-                pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed
+                pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed,
+                'CAVE'
               );
 
               const caveRockyInstance: EffectInstance = {

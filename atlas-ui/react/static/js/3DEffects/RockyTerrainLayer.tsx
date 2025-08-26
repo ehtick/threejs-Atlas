@@ -15,14 +15,29 @@ export interface RockyTerrainLayerParams {
   craterCount?: number;
   opacity?: number;
   seed?: number;
+  planetType?: 'ROCKY' | 'CAVE' | 'DEFAULT';
 }
 
-// Rangos para generación procedural
+// Rangos para generación procedural - diferentes para cada tipo de planeta
 const PROCEDURAL_RANGES = {
-  ROUGHNESS: { min: 3, max: 3 },
-  ROCK_DENSITY: { min: 0.4, max: 0.8 },
-  CRATER_COUNT: { min: 0.6, max: 0.6 },
-  OPACITY: { min: 0.7, max: 0.95 }
+  DEFAULT: {
+    ROUGHNESS: { min: 0.6, max: 0.9 },
+    ROCK_DENSITY: { min: 0.4, max: 0.8 },
+    CRATER_COUNT: { min: 0.2, max: 0.6 },
+    OPACITY: { min: 0.7, max: 0.95 }
+  },
+  ROCKY: {
+    ROUGHNESS: { min: 0.8, max: 1.2 },
+    ROCK_DENSITY: { min: 0.6, max: 1.0 },
+    CRATER_COUNT: { min: 0.4, max: 0.8 },
+    OPACITY: { min: 0.8, max: 1.0 }
+  },
+  CAVE: {
+    ROUGHNESS: { min: 0.5, max: 0.7 },
+    ROCK_DENSITY: { min: 0.3, max: 0.6 },
+    CRATER_COUNT: { min: 0.1, max: 0.4 }, // Menos cráteres para cuevas
+    OPACITY: { min: 0.6, max: 0.85 }
+  }
 };
 
 export class RockyTerrainLayer {
@@ -61,6 +76,7 @@ export class RockyTerrainLayer {
     uniform vec3 rockColor;
     uniform float roughness;
     uniform float rockDensity;
+    uniform float craterCount;
     uniform float opacity;
     uniform vec3 lightDirection;
     uniform float time;
@@ -69,7 +85,7 @@ export class RockyTerrainLayer {
     varying vec3 vNormal;
     varying vec2 vUv;
     
-    // Función de ruido
+    // Función de ruido mejorada
     float noise(vec3 p) {
       vec3 i = floor(p);
       vec3 f = fract(p);
@@ -83,7 +99,7 @@ export class RockyTerrainLayer {
             mix(fract(sin(n + 170.0) * 43758.5453), fract(sin(n + 171.0) * 43758.5453), f.x), f.y), f.z);
     }
     
-    // FBM para más detalle
+    // FBM para textura rocosa base
     float fbm(vec3 p) {
       float value = 0.0;
       float amplitude = 0.5;
@@ -97,26 +113,69 @@ export class RockyTerrainLayer {
       return value;
     }
     
+    // Función para crear cráteres
+    float craterPattern(vec3 p, float count) {
+      float craters = 0.0;
+      float scale = count * 8.0; // Escalar según craterCount
+      
+      // Múltiples capas de cráteres con diferentes tamaños
+      for(int i = 0; i < 3; i++) {
+        float layerScale = scale * pow(2.0, float(i));
+        vec3 cellPos = p * layerScale;
+        vec3 cellId = floor(cellPos);
+        vec3 cellLocal = fract(cellPos);
+        
+        // Hash para posición random de crater en celda
+        float hash = fract(sin(dot(cellId, vec3(12.9898, 78.233, 54.53))) * 43758.5453);
+        
+        if(hash > 0.7) { // Solo algunas celdas tienen cráteres
+          vec2 craterCenter = vec2(0.5) + 0.3 * (vec2(hash, fract(hash * 73.0)) - 0.5);
+          float dist = distance(cellLocal.xy, craterCenter);
+          float craterSize = 0.2 + 0.3 * fract(hash * 127.0);
+          
+          if(dist < craterSize) {
+            float craterDepth = smoothstep(craterSize, craterSize * 0.3, dist);
+            craters += craterDepth * (0.8 - float(i) * 0.2); // Cráteres más pequeños son menos profundos
+          }
+        }
+      }
+      
+      return clamp(craters, 0.0, 1.0);
+    }
+    
     void main() {
       vec3 pos = normalize(vPosition);
       vec3 normal = normalize(vNormal);
       vec3 lightDir = normalize(lightDirection);
       
-      // Textura rocosa
+      // Textura rocosa base usando rockDensity
       float rockTexture = fbm(pos * rockDensity);
       rockTexture = pow(rockTexture, roughness);
+      
+      // Crear cráteres usando craterCount
+      float craters = craterPattern(pos, craterCount);
+      
+      // Combinar texturas
+      float combinedTexture = rockTexture * (1.0 - craters * 0.5) + craters * 0.3;
       
       // Calcular iluminación para el color (pero no para la visibilidad)
       float dotNL = dot(normal, lightDir);
       float lightInfluence = smoothstep(-0.2, 0.2, dotNL);
       
-      // Color final con variación rocosa y sutil influencia de luz
-      vec3 color = rockColor * (0.6 + 0.4 * rockTexture);
+      // Color base con variación según texturas
+      vec3 baseColor = rockColor;
+      
+      // Oscurecer cráteres
+      baseColor = mix(baseColor, baseColor * 0.6, craters);
+      
+      // Aplicar variación rocosa
+      vec3 color = baseColor * (0.6 + 0.4 * combinedTexture);
+      
       // Aplicar un poco de variación de luz pero mantener visibilidad en toda la superficie
       color *= (0.7 + 0.3 * lightInfluence);
       
-      // Mostrar en toda la superficie del planeta
-      float alpha = rockTexture * opacity;
+      // Mostrar en toda la superficie del planeta con opacity variable
+      float alpha = combinedTexture * opacity;
       
       gl_FragColor = vec4(color, alpha);
     }
@@ -132,13 +191,18 @@ export class RockyTerrainLayer {
     const baseColor = params.color instanceof THREE.Color ? 
       params.color : (params.color ? new THREE.Color(params.color as any) : new THREE.Color(0x8B4513));
     
+    // Seleccionar rangos según tipo de planeta
+    const planetType = params.planetType || 'DEFAULT';
+    const ranges = PROCEDURAL_RANGES[planetType];
+    
     this.params = {
       color: baseColor,
-      roughness: params.roughness || rng.uniform(PROCEDURAL_RANGES.ROUGHNESS.min, PROCEDURAL_RANGES.ROUGHNESS.max),
-      rockDensity: params.rockDensity || rng.uniform(PROCEDURAL_RANGES.ROCK_DENSITY.min, PROCEDURAL_RANGES.ROCK_DENSITY.max) * 10, // Escalar para uso en shader
-      craterCount: params.craterCount || rng.uniform(PROCEDURAL_RANGES.CRATER_COUNT.min, PROCEDURAL_RANGES.CRATER_COUNT.max),
-      opacity: params.opacity || rng.uniform(PROCEDURAL_RANGES.OPACITY.min, PROCEDURAL_RANGES.OPACITY.max),
-      seed
+      roughness: params.roughness || rng.uniform(ranges.ROUGHNESS.min, ranges.ROUGHNESS.max),
+      rockDensity: params.rockDensity || rng.uniform(ranges.ROCK_DENSITY.min, ranges.ROCK_DENSITY.max) * 10, // Escalar para uso en shader
+      craterCount: params.craterCount || rng.uniform(ranges.CRATER_COUNT.min, ranges.CRATER_COUNT.max),
+      opacity: params.opacity || rng.uniform(ranges.OPACITY.min, ranges.OPACITY.max),
+      seed,
+      planetType
     };
 
     // Crear material
@@ -150,6 +214,7 @@ export class RockyTerrainLayer {
         rockColor: { value: baseColor },
         roughness: { value: this.params.roughness },
         rockDensity: { value: this.params.rockDensity },
+        craterCount: { value: this.params.craterCount },
         opacity: { value: this.params.opacity },
         lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() }
       },
@@ -180,7 +245,8 @@ export class RockyTerrainLayer {
 export function createRockyTerrainLayerFromPythonData(
   layerSystem: PlanetLayerSystem,
   data: any,
-  globalSeed?: number
+  globalSeed?: number,
+  planetType: 'ROCKY' | 'CAVE' | 'DEFAULT' = 'DEFAULT'
 ): RockyTerrainLayer {
   const surface = data.surface || {};
   const baseColor = data.planet_info?.base_color || surface.base_color;
@@ -189,12 +255,27 @@ export function createRockyTerrainLayerFromPythonData(
   const seed = globalSeed || Math.floor(Math.random() * 1000000);
   const rng = new SeededRandom(seed + 8000); // +8000 para RockyTerrainLayer
   
+  // Detectar tipo de planeta si no se especifica
+  let detectedPlanetType = planetType;
+  if (planetType === 'DEFAULT' && data.surface_elements?.type) {
+    const surfaceType = data.surface_elements.type.toLowerCase();
+    if (surfaceType === 'rocky') {
+      detectedPlanetType = 'ROCKY';
+    } else if (surfaceType === 'cave') {
+      detectedPlanetType = 'CAVE';
+    }
+  }
+  
+  // Seleccionar rangos apropiados
+  const ranges = PROCEDURAL_RANGES[detectedPlanetType];
+  
   return new RockyTerrainLayer(layerSystem, {
     color: baseColor ? new THREE.Color(baseColor) : new THREE.Color(0x8B4513),
-    roughness: surface.roughness || rng.uniform(PROCEDURAL_RANGES.ROUGHNESS.min, PROCEDURAL_RANGES.ROUGHNESS.max),
-    rockDensity: surface.rock_density || rng.uniform(PROCEDURAL_RANGES.ROCK_DENSITY.min, PROCEDURAL_RANGES.ROCK_DENSITY.max) * 10,
-    craterCount: surface.crater_count || rng.uniform(PROCEDURAL_RANGES.CRATER_COUNT.min, PROCEDURAL_RANGES.CRATER_COUNT.max),
-    opacity: rng.uniform(PROCEDURAL_RANGES.OPACITY.min, PROCEDURAL_RANGES.OPACITY.max),
-    seed
+    roughness: surface.roughness || rng.uniform(ranges.ROUGHNESS.min, ranges.ROUGHNESS.max),
+    rockDensity: surface.rock_density || rng.uniform(ranges.ROCK_DENSITY.min, ranges.ROCK_DENSITY.max) * 10,
+    craterCount: surface.crater_count || rng.uniform(ranges.CRATER_COUNT.min, ranges.CRATER_COUNT.max),
+    opacity: rng.uniform(ranges.OPACITY.min, ranges.OPACITY.max),
+    seed,
+    planetType: detectedPlanetType
   });
 }

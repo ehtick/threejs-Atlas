@@ -208,7 +208,10 @@ export class SuperEarthWaterFeaturesEffect {
         
         vec4 worldPos = modelMatrix * vec4(displacedPosition, 1.0);
         vWorldPosition = worldPos.xyz;
-        vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);
+        
+        // For curved water on planet surface, normal should point radially outward from planet center
+        // Assume planet center is at origin (0,0,0)
+        vWorldNormal = normalize(vWorldPosition);
         
         gl_Position = projectionMatrix * modelViewMatrix * vec4(displacedPosition, 1.0);
       }
@@ -236,39 +239,54 @@ export class SuperEarthWaterFeaturesEffect {
         vec3 normalMapSample = texture2D(normalMap, vAnimatedUv * 3.0).rgb;
         vec3 perturbedNormal = normalize(vWorldNormal + (normalMapSample - 0.5) * 0.2);
         
-        // Calculate lighting
+        // EXACT SAME lighting calculation as PlanetLayerSystem
+        vec3 normal = normalize(perturbedNormal);
+        
+        // Calculate lighting direction - FIX for correct illumination
         vec3 lightDir;
         if (length(lightPosition) > 0.0) {
+          // Point light - direction from surface to light
           lightDir = normalize(lightPosition - vWorldPosition);
         } else {
-          lightDir = normalize(-lightDirection);
+          // Directional light - use light direction directly (not negated)
+          lightDir = normalize(lightDirection);
         }
         
-        float dotNL = dot(perturbedNormal, lightDir);
-        float lighting = smoothstep(-0.2, 0.5, dotNL);
+        // Lambertian lighting calculation with smooth day/night transition
+        float dotNL = dot(normal, lightDir);
+        float dayNight = smoothstep(-0.3, 0.1, dotNL);
         
-        // Fresnel effect for water reflectivity
+        // Rim lighting for enhanced visibility
+        float rimLight = 1.0 - abs(dotNL);
+        rimLight = pow(rimLight, 3.0) * 0.1;
+        
+        // Final lighting calculation (EXACT same as PlanetLayerSystem)
+        float totalLight = ambientStrength + (lightIntensity * dayNight) + rimLight;
+        
+        // Water-specific effects on top of base lighting
         vec3 viewDir = normalize(cameraPosition - vWorldPosition);
-        float fresnel = pow(1.0 - max(dot(viewDir, perturbedNormal), 0.0), 2.0);
+        float fresnel = pow(1.0 - max(dot(viewDir, normal), 0.0), 2.0);
         
         // Sample foam map
         float foam = texture2D(foamMap, vAnimatedUv * 5.0).r;
         
-        // Animated color variation
-        vec3 colorVariation = waterColor * (1.0 + sin(time * 1.5 + vUv.x * 10.0) * 0.1);
+        // Base water color (no animated variations that break lighting)
+        vec3 baseColor = waterColor;
         
         // Combine water color with foam
-        vec3 finalColor = mix(colorVariation, foamColor, foam * 0.3);
+        vec3 finalColor = mix(baseColor, foamColor, foam * 0.3);
         
-        // Apply lighting and fresnel
-        finalColor *= (ambientStrength + lightIntensity * lighting);
-        finalColor += vec3(0.2, 0.3, 0.4) * fresnel * 0.5;
+        // Apply EXACT same lighting as planet surface
+        finalColor *= totalLight;
         
-        // Add shimmer effect
-        float shimmer = sin(time * 3.0 + vWorldPosition.x * 20.0 + vWorldPosition.z * 15.0) * 0.1 + 0.9;
+        // Add water-specific fresnel highlight
+        finalColor += vec3(0.2, 0.3, 0.4) * fresnel * 0.3;
+        
+        // Subtle shimmer effect (reduced to not interfere with lighting)
+        float shimmer = sin(time * 2.0 + vWorldPosition.x * 15.0 + vWorldPosition.z * 12.0) * 0.05 + 0.95;
         finalColor *= shimmer;
         
-        gl_FragColor = vec4(finalColor, opacity * (1.0 - foam * 0.2));
+        gl_FragColor = vec4(finalColor, opacity * (1.0 - foam * 0.1));
       }
     `;
 
@@ -284,10 +302,10 @@ export class SuperEarthWaterFeaturesEffect {
         displacementMap: { value: this.displacementMap },
         foamMap: { value: this.foamMap },
         displacementScale: { value: 0.0 }, // No displacement - completely flat
-        lightPosition: { value: new THREE.Vector3(100, 100, 100) },
-        lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
-        ambientStrength: { value: 0.3 },
-        lightIntensity: { value: 0.7 }
+        lightPosition: { value: new THREE.Vector3(0, 0, 0) }, // Will be updated by updateFromThreeLight
+        lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() }, // Will be updated by updateFromThreeLight
+        ambientStrength: { value: 0.15 }, // Same as PlanetLayerSystem
+        lightIntensity: { value: 0.85 } // Same as PlanetLayerSystem
       },
       transparent: true,
       side: THREE.DoubleSide, // Both sides to ensure visibility
@@ -525,13 +543,25 @@ export class SuperEarthWaterFeaturesEffect {
     console.log(`✅ Added ${this.waterBodyMeshes.length} water bodies to scene`);
   }
 
+  /**
+   * Update lighting from Three.js DirectionalLight - EXACT same as PlanetLayerSystem
+   */
   updateFromThreeLight(light: THREE.DirectionalLight): void {
-    // Update unified material lighting
     if (this.waterMaterial && this.waterMaterial.uniforms) {
-      this.waterMaterial.uniforms.lightPosition.value.copy(light.position);
-      const direction = light.target.position.clone().sub(light.position).normalize();
-      this.waterMaterial.uniforms.lightDirection.value.copy(direction);
+      // Update light position (for point light calculations)
+      if (this.waterMaterial.uniforms.lightPosition) {
+        this.waterMaterial.uniforms.lightPosition.value.copy(light.position);
+      }
+      
+      // Calculate and update light direction (for directional light calculations)
+      if (this.waterMaterial.uniforms.lightDirection) {
+        // Direction FROM light TO target (this is the light ray direction)
+        const direction = light.target.position.clone().sub(light.position).normalize();
+        this.waterMaterial.uniforms.lightDirection.value.copy(direction);
+      }
     }
+    
+    console.log("🌊 Updated water lighting from DirectionalLight - position:", light.position);
   }
 
   update(deltaTime: number): void {
