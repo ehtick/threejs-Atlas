@@ -197,8 +197,8 @@ export class SuperEarthWaterFeaturesEffect {
       void main() {
         vUv = uv;
         
-        // Animate UV for flowing water effect
-        vAnimatedUv = uv + vec2(time * 0.02, time * 0.015);
+        // Animate UV for MUCH MORE VISIBLE flowing water effect
+        vAnimatedUv = uv + vec2(time * 0.25, time * 0.18);
         
         // Sample displacement for vertex height
         float displacement = texture2D(displacementMap, vAnimatedUv).r;
@@ -235,9 +235,9 @@ export class SuperEarthWaterFeaturesEffect {
       varying vec2 vAnimatedUv;
       
       void main() {
-        // Sample animated normal map
-        vec3 normalMapSample = texture2D(normalMap, vAnimatedUv * 3.0).rgb;
-        vec3 perturbedNormal = normalize(vWorldNormal + (normalMapSample - 0.5) * 0.2);
+        // Sample animated normal map with MUCH LARGER patterns
+        vec3 normalMapSample = texture2D(normalMap, vAnimatedUv * 0.8).rgb;
+        vec3 perturbedNormal = normalize(vWorldNormal + (normalMapSample - 0.5) * 0.8);
         
         // EXACT SAME lighting calculation as PlanetLayerSystem
         vec3 normal = normalize(perturbedNormal);
@@ -282,8 +282,11 @@ export class SuperEarthWaterFeaturesEffect {
         // Add water-specific fresnel highlight
         finalColor += vec3(0.2, 0.3, 0.4) * fresnel * 0.3;
         
-        // Subtle shimmer effect (reduced to not interfere with lighting)
-        float shimmer = sin(time * 2.0 + vWorldPosition.x * 15.0 + vWorldPosition.z * 12.0) * 0.05 + 0.95;
+        // MUCH MORE DRAMATIC wave patterns and shimmer
+        float shimmer1 = sin(time * 4.0 + vWorldPosition.x * 4.0 + vWorldPosition.z * 3.0) * 0.3;
+        float shimmer2 = cos(time * 3.5 + vWorldPosition.x * 6.0 - vWorldPosition.z * 4.5) * 0.25;
+        float shimmer3 = sin(time * 5.0 + vWorldPosition.y * 5.0) * 0.2;
+        float shimmer = shimmer1 + shimmer2 + shimmer3 + 0.7;
         finalColor *= shimmer;
         
         gl_FragColor = vec4(finalColor, opacity * (1.0 - foam * 0.1));
@@ -388,13 +391,50 @@ export class SuperEarthWaterFeaturesEffect {
       const distFromCenter = Math.sqrt(x * x + y * y);
       const angle = Math.atan2(y, x);
       
-      // Create organic boundary using multiple noise functions
-      const noise1 = Math.sin(angle * 3 + bodyIndex) * 0.3;
-      const noise2 = Math.cos(angle * 5 + bodyIndex * 2) * 0.2;
-      const noise3 = Math.sin(angle * 7 + bodyIndex * 3) * 0.15;
+      // Create DIFFERENT geometric shapes using varied algorithms
+      const shapeType = bodyIndex % 5; // 5 different shape types
+      let organicRadius = size;
       
-      // Vary the effective radius based on angle for organic shape
-      const organicRadius = size * (0.7 + noise1 + noise2 + noise3);
+      switch (shapeType) {
+        case 0: // Oval/Elliptical
+          const ellipseA = 1.0 + Math.sin(bodyIndex) * 0.4;
+          const ellipseB = 1.0 + Math.cos(bodyIndex * 1.3) * 0.4;
+          const ellipseAngle = bodyIndex * 0.7;
+          const rotatedX = x * Math.cos(ellipseAngle) - y * Math.sin(ellipseAngle);
+          const rotatedY = x * Math.sin(ellipseAngle) + y * Math.cos(ellipseAngle);
+          organicRadius = size * Math.sqrt((rotatedX/ellipseA) * (rotatedX/ellipseA) + (rotatedY/ellipseB) * (rotatedY/ellipseB));
+          break;
+          
+        case 1: // Kidney/Bean shape
+          const beanCurve = Math.sin(angle * 2 + bodyIndex) * 0.3;
+          const beanIndent = Math.cos(angle + Math.PI + bodyIndex) * 0.4;
+          organicRadius = size * (0.8 + beanCurve + Math.max(0, beanIndent));
+          break;
+          
+        case 2: // Irregular blob with low frequency
+          const blob1 = Math.sin(angle * 1.5 + bodyIndex) * 0.35;
+          const blob2 = Math.cos(angle * 2.3 + bodyIndex * 1.7) * 0.25;
+          organicRadius = size * (0.7 + blob1 + blob2);
+          break;
+          
+        case 3: // Teardrop shape
+          const tearAngle = angle - bodyIndex;
+          const tearRadius = (1 + Math.cos(tearAngle)) * 0.5;
+          const tearDistortion = Math.sin(tearAngle * 3) * 0.15;
+          organicRadius = size * (tearRadius * 0.8 + 0.4 + tearDistortion);
+          break;
+          
+        case 4: // Crescent/C-shape
+          const crescentAngle = angle - bodyIndex * 0.5;
+          const crescentBase = Math.max(0.3, 1.0 - Math.cos(crescentAngle * 1.5) * 0.6);
+          const crescentDetail = Math.sin(crescentAngle * 4) * 0.1;
+          organicRadius = size * (crescentBase + crescentDetail);
+          break;
+      }
+      
+      // Add subtle coastline irregularity to all shapes
+      const coastlineNoise = Math.sin(angle * 8 + bodyIndex * 3) * 0.08;
+      organicRadius *= (1.0 + coastlineNoise);
       
       // Keep vertex if it's within the organic boundary
       if (distFromCenter <= organicRadius) {
@@ -444,7 +484,7 @@ export class SuperEarthWaterFeaturesEffect {
     
     // Curve each vertex to follow planet surface - NO THICKNESS/VOLUME
     const positions = geometry.attributes.position;
-    const centerPos = sphericalPos.clone().multiplyScalar(this.planetRadius * 1.01); // More visible elevation
+    const centerPos = sphericalPos.clone().multiplyScalar(this.planetRadius * 1.02); // Same elevation as final projection
     
     for (let i = 0; i < positions.count; i++) {
       const localVertex = new THREE.Vector3();
@@ -456,7 +496,7 @@ export class SuperEarthWaterFeaturesEffect {
         .add(forward.clone().multiplyScalar(localVertex.y));
       
       // Project onto sphere surface - this curves it to follow planet surface
-      const projectedVertex = worldVertex.normalize().multiplyScalar(this.planetRadius * 1.015); // Higher elevation to be visible
+      const projectedVertex = worldVertex.normalize().multiplyScalar(this.planetRadius * 1.02); // Even higher elevation to avoid z-fighting
       
       // Store as world coordinates (no mesh positioning needed)
       positions.setXYZ(i, projectedVertex.x, projectedVertex.y, projectedVertex.z);
@@ -479,7 +519,7 @@ export class SuperEarthWaterFeaturesEffect {
       index: bodyIndex
     };
     
-    waterMesh.renderOrder = 1005; // Render after surface but before other effects
+    waterMesh.renderOrder = 1020; // Higher render order to ensure proper layering above surface
     waterMesh.castShadow = false;
     waterMesh.receiveShadow = true;
     
