@@ -18,11 +18,11 @@ import { DEFAULT_COSMIC_ORIGIN_TIME } from '../Utils/UniverseTime';
  * Rangos procedurales para generación determinística
  */
 const PROCEDURAL_RANGES = {
-  RING_COUNT: { min: 8, max: 150 },
-  EXPANSION_SPEED: { min: 1.5, max: 2.5 },
-  WAVE_INTENSITY: { min: 0.6, max: 1.0 },
-  MAX_RADIUS_MULTIPLIER: { min: 2.2, max: 3.2 },
-  GLOW_INTENSITY: { min: 1.0, max: 1.6 },
+  RING_COUNT: { min: 16, max: 256 },
+  EXPANSION_SPEED: { min: 1.5, max: 5},
+  WAVE_INTENSITY: { min: 0.6, max: 2.0 },
+  MAX_RADIUS_MULTIPLIER: { min: 2.2, max: 10 },
+  GLOW_INTENSITY: { min: 0.5, max: 2.0 },
   TIME_SPEED: { min: 0.8, max: 1.3 }
 };
 
@@ -86,7 +86,7 @@ export class RadiationRingsEffect {
     for (let i = 0; i < ringCount; i++) {
       // Distribución exponencial de los anillos para mayor densidad cerca del planeta
       const t = i / (ringCount - 1);
-      const ringRadius = this.planetRadius * 1.05 + (maxRingRadius - this.planetRadius * 1.05) * Math.pow(t, 0.8);
+      const ringRadius = this.planetRadius * 1.02 + (maxRingRadius - this.planetRadius * 1.02) * Math.pow(t, 0.8);
       
       // Crear geometría circular con alta resolución
       const segments = 128; // Alta resolución para suavidad
@@ -96,7 +96,10 @@ export class RadiationRingsEffect {
         const angle = (j / segments) * Math.PI * 2;
         const x = Math.cos(angle) * ringRadius;
         const z = Math.sin(angle) * ringRadius;
-        const y = (Math.sin(angle * 7 + i * 2) * 0.5) * 0.02 * this.planetRadius; // Variación vertical determinística
+        // Elevar los anillos por encima de la superficie para evitar z-fighting
+        const baseHeight = this.planetRadius * 0.005; // Altura base pequeña
+        const variation = (Math.sin(angle * 7 + i * 2) * 0.5) * 0.01 * this.planetRadius; // Variación más sutil
+        const y = baseHeight + variation;
         points.push(new THREE.Vector3(x, y, z));
       }
       
@@ -109,7 +112,7 @@ export class RadiationRingsEffect {
       
       for (let j = 0; j <= segments; j++) {
         phases[j] = i * 0.6 + (j / segments) * Math.PI * 4; // Fase diferente por anillo y posición
-        distances[j] = (ringRadius - this.planetRadius * 1.05) / (maxRingRadius - this.planetRadius * 1.05);
+        distances[j] = (ringRadius - this.planetRadius * 1.02) / (maxRingRadius - this.planetRadius * 1.02);
         randomOffsets[j] = ((i * 7 + j * 3) % 100) / 100.0; // Offset determinístico basado en posición
       }
       
@@ -120,8 +123,10 @@ export class RadiationRingsEffect {
       const material = new THREE.ShaderMaterial({
         transparent: true,
         depthWrite: false,
+        depthTest: true,
         blending: THREE.AdditiveBlending,
         side: THREE.DoubleSide,
+        renderOrder: 1000 + i, // Orden de renderizado más alto para que se renderice después
         
         uniforms: {
           time: { value: 0 },
@@ -215,6 +220,7 @@ export class RadiationRingsEffect {
       });
       
       const ring = new THREE.Line(geometry, material);
+      ring.renderOrder = 1000 + i; // Orden de renderizado para controlar la secuencia
       this.concentricRings.push(ring);
       this.group.add(ring);
     }
