@@ -9,21 +9,11 @@
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom";
 
-// Procedural ranges for water body generation - KEPT EXACTLY AS ORIGINAL
+// Procedural ranges for water body generation (only actively used values)
 const PROCEDURAL_RANGES = {
   WATER_BODY_COUNT: { min: 4, max: 8 }, // Number of water bodies
   WATER_BODY_RADIUS: { min: 0.07, max: 0.35 }, // Size of each water body
-  WATER_BODY_DEPTH: { min: 0.01, max: 0.04 }, // Depth variation
-  WATER_BODY_OPACITY: { min: 0.6, max: 0.8 }, // Base transparency
-  SHAPE_IRREGULARITY: { min: 0.5, max: 1.5 }, // How organic the shape is
-  COASTLINE_COMPLEXITY: { min: 0.3, max: 0.7 }, // Coastline detail level
-  ELONGATION_RATIO: { min: 2.0, max: 4.0 }, // For elongated water bodies
-  COMPLEX_INLETS: { min: 3, max: 6 }, // Number of inlets for complex shapes
-  LARGE_BODY_OPACITY: { min: 0.7, max: 0.85 }, // Larger bodies are more opaque (deeper)
-  MEDIUM_BODY_OPACITY: { min: 0.65, max: 0.75 }, // Medium bodies have moderate opacity
-  SMALL_BODY_OPACITY: { min: 0.5, max: 0.65 }, // Smaller bodies are more transparent (shallower)
-  LARGE_BODY_THRESHOLD: 0.2, // Bodies larger than 20% of max size are "large"
-  SMALL_BODY_THRESHOLD: 0.1, // Bodies smaller than 10% of max size are "small"
+  WATER_BODY_OPACITY: { min: 0.6, max: 0.85 }, // Opacity variation for water bodies
 };
 
 export interface SuperEarthWaterFeaturesParams {
@@ -45,6 +35,7 @@ export class SuperEarthWaterFeaturesEffect {
   private waterBodyMeshes: THREE.Mesh[] = [];
   private params: SuperEarthWaterFeaturesParams;
   private rng: SeededRandom;
+  private materials: THREE.Material[] = [];
   private planetRadius: number;
   
   // Unified water material for all bodies
@@ -197,8 +188,8 @@ export class SuperEarthWaterFeaturesEffect {
       void main() {
         vUv = uv;
         
-        // Animate UV for subtle flowing water effect
-        vAnimatedUv = uv + vec2(time * 0.08, time * 0.06);
+        // Animate UV for very subtle flowing water effect
+        vAnimatedUv = uv + vec2(time * 0.03, time * 0.02);
         
         // Sample displacement for vertex height
         float displacement = texture2D(displacementMap, vAnimatedUv).r;
@@ -233,9 +224,9 @@ export class SuperEarthWaterFeaturesEffect {
       varying vec2 vAnimatedUv;
       
       void main() {
-        // Sample animated normal map with subtle patterns
-        vec3 normalMapSample = texture2D(normalMap, vAnimatedUv * 3.0).rgb;
-        vec3 perturbedNormal = normalize(vWorldNormal + (normalMapSample - 0.5) * 0.3);
+        // Sample animated normal map with very subtle patterns
+        vec3 normalMapSample = texture2D(normalMap, vAnimatedUv * 4.0).rgb;
+        vec3 perturbedNormal = normalize(vWorldNormal + (normalMapSample - 0.5) * 0.2);
         
         // EXACT SAME lighting calculation as PlanetLayerSystem
         vec3 normal = normalize(perturbedNormal);
@@ -274,8 +265,8 @@ export class SuperEarthWaterFeaturesEffect {
         // Add water-specific fresnel highlight
         finalColor += vec3(0.2, 0.3, 0.4) * fresnel * 0.3;
         
-        // Subtle shimmer effect
-        float shimmer = sin(time * 2.0 + vWorldPosition.x * 15.0 + vWorldPosition.z * 12.0) * 0.05 + 0.95;
+        // Very subtle shimmer effect
+        float shimmer = sin(time * 1.0 + vWorldPosition.x * 20.0 + vWorldPosition.z * 16.0) * 0.02 + 0.98;
         finalColor *= shimmer;
         
         gl_FragColor = vec4(finalColor, opacity);
@@ -460,8 +451,13 @@ export class SuperEarthWaterFeaturesEffect {
     geometry.setIndex(validIndices);
     geometry.computeVertexNormals();
 
-    // Create mesh with unified water material
-    const waterMesh = new THREE.Mesh(geometry, this.waterMaterial);
+    // Create mesh with individual material for this water body's opacity
+    const individualMaterial = this.waterMaterial.clone();
+    individualMaterial.uniforms.opacity.value = bodyData.opacity || 0.8;
+    const waterMesh = new THREE.Mesh(geometry, individualMaterial);
+    
+    // Store individual material for cleanup
+    this.materials.push(individualMaterial);
     
     // Create tangent space for spherical surface following
     const up = sphericalPos.clone();
@@ -535,10 +531,7 @@ export class SuperEarthWaterFeaturesEffect {
       const bodyData = {
         position_3d: this.generateRandomSurfacePoint(),
         radius: radius,
-        depth: this.rng.uniform(
-          PROCEDURAL_RANGES.WATER_BODY_DEPTH.min,
-          PROCEDURAL_RANGES.WATER_BODY_DEPTH.max
-        ),
+        depth: 0.025, // Fixed depth since depth variation is not used
         opacity: this.rng.uniform(
           PROCEDURAL_RANGES.WATER_BODY_OPACITY.min,
           PROCEDURAL_RANGES.WATER_BODY_OPACITY.max
