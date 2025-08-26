@@ -8,7 +8,6 @@
  * - Múltiples anillos concéntricos que se expanden desde el planeta
  * - Ondas que viajan hacia afuera con diferentes fases
  * - Patrón de interferencia que crea efectos de radiación
- * - Complementa el efecto RadiationPulse para crear el "techno mandala" completo
  */
 
 import * as THREE from 'three';

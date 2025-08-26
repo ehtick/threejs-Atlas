@@ -59,7 +59,6 @@ import { LavaFlowsEffect, createLavaFlowsFromPythonData } from "./LavaFlowsEffec
 import { MoltenLavaEffect, createMoltenLavaFromPythonData } from "./MoltenLavaEffect";
 import { FireEruptionEffect, createFireEruptionFromPythonData } from "./FireEruptionEffect";
 import { CarbonTrailsEffect, createCarbonTrailsFromPythonData } from "./CarbonTrails";
-import { RadiationPulseEffect, createRadiationPulseFromPythonData } from "./RadiationPulse";
 import { RadiationRingsEffect, createRadiationRingsFromPythonData } from "./RadiationRings";
 // Efectos de superficie legacy eliminados - usar solo versiones Layer
 
@@ -118,7 +117,6 @@ export enum EffectType {
   MOLTEN_LAVA = "molten_lava",
   FIRE_ERUPTION = "fire_eruption",
   CARBON_TRAILS = "carbon_trails",
-  RADIATION_PULSE = "radiation_pulse",
   RADIATION_RINGS = "radiation_rings",
   CRYSTAL_FORMATIONS = "crystal_formations",
   CLOUD_LAYERS = "cloud_layers",
@@ -288,11 +286,6 @@ export class EffectRegistry {
     this.registerEffect(EffectType.CARBON_TRAILS, {
       create: (params, planetRadius) => new CarbonTrailsEffect(planetRadius, params),
       fromPythonData: (data, planetRadius, layerSystem) => createCarbonTrailsFromPythonData(data, planetRadius, layerSystem),
-    });
-
-    this.registerEffect(EffectType.RADIATION_PULSE, {
-      create: (params, planetRadius) => new RadiationPulseEffect(planetRadius, params),
-      fromPythonData: (data, planetRadius) => createRadiationPulseFromPythonData(data, planetRadius),
     });
 
     this.registerEffect(EffectType.RADIATION_RINGS, {
@@ -2132,28 +2125,6 @@ export class EffectRegistry {
               }
             }
 
-            // 3. Añadir efecto espectacular de pulsos de radiación (líneas radiantes)
-            const radiationPulseEffect = this.createEffectFromPythonData(
-              EffectType.RADIATION_PULSE,
-              pythonData,
-              planetRadius,
-              mesh
-            );
-            
-            if (radiationPulseEffect) {
-              const radiationPulseInstance: EffectInstance = {
-                id: `effect_${this.nextId++}`,
-                type: "radiation_pulse",
-                effect: radiationPulseEffect.effect,
-                priority: 20,
-                enabled: true,
-                name: "Radioactive Energy Pulses",
-              };
-
-              this.effects.set(radiationPulseInstance.id, radiationPulseInstance);
-              effects.push(radiationPulseInstance);
-              radiationPulseEffect.effect.addToScene(scene, mesh.position);
-            }
 
             // 4. Añadir círculos concéntricos de radiación (anillos en superficie)
             const radiationRingsEffect = this.createEffectFromPythonData(

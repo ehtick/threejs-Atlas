@@ -80,8 +80,6 @@ export type { FireEruptionParams } from "./FireEruptionEffect";
 export { CarbonTrailsEffect, createCarbonTrailsFromPythonData } from "./CarbonTrails";
 export type { CarbonTrailsParams } from "./CarbonTrails";
 
-export { RadiationPulseEffect, createRadiationPulseFromPythonData } from "./RadiationPulse";
-export type { RadiationPulseParams } from "./RadiationPulse";
 
 export { RadiationRingsEffect, createRadiationRingsFromPythonData } from "./RadiationRings";
 export type { RadiationRingsParams } from "./RadiationRings";
