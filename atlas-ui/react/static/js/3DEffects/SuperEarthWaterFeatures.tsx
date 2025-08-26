@@ -49,6 +49,10 @@ export class SuperEarthWaterFeaturesEffect {
   private rng: SeededRandom;
   private materials: THREE.Material[] = [];
   private planetRadius: number;
+  
+  // Performance optimizations - geometry and material caching
+  private static geometryCache = new Map<string, THREE.BufferGeometry>();
+  private static sharedMaterial: THREE.MeshLambertMaterial | null = null;
 
   constructor(planetRadius: number, params: SuperEarthWaterFeaturesParams = {}) {
     console.log("🌊 CREATING SuperEarthWaterFeaturesEffect - ORGANIC VERSION");
@@ -107,27 +111,41 @@ export class SuperEarthWaterFeaturesEffect {
 
     console.log(`Creating organic water body ${bodyIndex} (${shapeType}) with base size:`, baseSize);
 
-    // Generate organic geometry using noise-based coastline
-    const geometry = this.generateOrganicWaterGeometry(sphericalPos, baseSize, shapeType, irregularity, bodyIndex);
+    // Check cache first for similar geometries
+    const cacheKey = `${shapeType}_${Math.round(baseSize * 100)}_${Math.round(irregularity * 10)}`;
+    let geometry = SuperEarthWaterFeaturesEffect.geometryCache.get(cacheKey);
+    
+    if (!geometry) {
+      geometry = this.generateOrganicWaterGeometry(sphericalPos, baseSize, shapeType, irregularity, bodyIndex);
+      if (geometry && SuperEarthWaterFeaturesEffect.geometryCache.size < 20) { // Limit cache size
+        SuperEarthWaterFeaturesEffect.geometryCache.set(cacheKey, geometry.clone());
+      }
+    } else {
+      geometry = geometry.clone(); // Clone cached geometry for this instance
+    }
 
     if (!geometry) {
       console.warn(`Failed to generate geometry for water body ${bodyIndex}`);
       return null;
     }
 
-    // Natural water material
-    const waterColor = this.params.waterColor instanceof THREE.Color ? this.params.waterColor : new THREE.Color().fromArray(this.params.waterColor as number[]);
-
-    const material = new THREE.MeshLambertMaterial({
-      color: waterColor,
-      opacity: Math.max(0.6, bodyData.opacity || 0.75), // Semi-transparent for natural look
-      transparent: true,
-      emissive: waterColor.clone().multiplyScalar(0.05), // Subtle glow
-      side: THREE.DoubleSide,
-      depthWrite: true,
-      depthTest: true,
-    });
-
+    // Reuse shared material for performance
+    let material: THREE.MeshLambertMaterial;
+    
+    if (!SuperEarthWaterFeaturesEffect.sharedMaterial) {
+      const waterColor = this.params.waterColor instanceof THREE.Color ? this.params.waterColor : new THREE.Color().fromArray(this.params.waterColor as number[]);
+      SuperEarthWaterFeaturesEffect.sharedMaterial = new THREE.MeshLambertMaterial({
+        color: waterColor,
+        opacity: 0.7,
+        transparent: true,
+        emissive: waterColor.clone().multiplyScalar(0.05),
+        side: THREE.DoubleSide,
+        depthWrite: true,
+        depthTest: true,
+      });
+    }
+    
+    material = SuperEarthWaterFeaturesEffect.sharedMaterial;
     this.materials.push(material);
     const waterMesh = new THREE.Mesh(geometry, material);
     waterMesh.renderOrder = 1002; // Above land masses
@@ -162,7 +180,7 @@ export class SuperEarthWaterFeaturesEffect {
       const radius = this.rng.uniform(PROCEDURAL_RANGES.WATER_BODY_RADIUS.min, PROCEDURAL_RANGES.WATER_BODY_RADIUS.max);
 
       // Determine opacity based on water body size
-      let opacity;
+      let opacity: number;
       if (radius > PROCEDURAL_RANGES.LARGE_BODY_THRESHOLD) {
         // Large bodies - deeper water, more opaque
         opacity = this.rng.uniform(PROCEDURAL_RANGES.LARGE_BODY_OPACITY.min, PROCEDURAL_RANGES.LARGE_BODY_OPACITY.max);
@@ -242,8 +260,8 @@ export class SuperEarthWaterFeaturesEffect {
         break;
     }
 
-    // Adaptive resolution based on size
-    const resolution = Math.max(32, Math.min(128, Math.floor(baseSize * 500)));
+    // Adaptive resolution based on size - optimized for performance
+    const resolution = Math.max(16, Math.min(64, Math.floor(baseSize * 200)));
 
     // FBM Noise function for organic coastlines (adapted from LandMasses.tsx)
     const fbmNoise = (x: number, y: number) => {
@@ -252,8 +270,8 @@ export class SuperEarthWaterFeaturesEffect {
       let frequency = 3.0 / Math.max(baseSize * 0.1, 1.0); // Adaptive frequency
       let maxValue = 0;
 
-      // More octaves for complex shapes
-      const octaves = shapeType === "complex" ? 5 : 4;
+      // Reduced octaves for performance - still maintains good quality
+      const octaves = shapeType === "complex" ? 3 : 2;
 
       for (let i = 0; i < octaves; i++) {
         const sx = x * frequency;
@@ -290,7 +308,7 @@ export class SuperEarthWaterFeaturesEffect {
         maxValue += amplitude;
 
         amplitude *= 0.5;
-        frequency *= 2.1;
+        frequency *= 2.0; // Simplified frequency progression
       }
 
       return value / maxValue;
@@ -449,18 +467,27 @@ export class SuperEarthWaterFeaturesEffect {
   }
 
   dispose(): void {
-    console.log("🌊 Disposing water features");
+    // Dispose individual geometries but preserve shared resources
     this.waterBodyMeshes.forEach((mesh) => {
-      mesh.geometry.dispose();
+      if (mesh.geometry && !SuperEarthWaterFeaturesEffect.geometryCache.has('shared')) {
+        mesh.geometry.dispose();
+      }
     });
 
-    this.materials.forEach((material) => {
-      material.dispose();
-    });
-
+    // Don't dispose shared material as it may be used by other instances
     this.waterBodyMeshes = [];
     this.materials = [];
     this.waterGroup.clear();
+  }
+  
+  // Static method to clear all caches when no longer needed
+  static clearCaches(): void {
+    SuperEarthWaterFeaturesEffect.geometryCache.forEach(geometry => geometry.dispose());
+    SuperEarthWaterFeaturesEffect.geometryCache.clear();
+    if (SuperEarthWaterFeaturesEffect.sharedMaterial) {
+      SuperEarthWaterFeaturesEffect.sharedMaterial.dispose();
+      SuperEarthWaterFeaturesEffect.sharedMaterial = null;
+    }
   }
 }
 
