@@ -24,6 +24,11 @@ export interface RadiationPulseParams {
   rotationSpeed?: number;
   seed?: number;
   cosmicOriginTime?: number;
+  // Lighting parameters for PlanetLayerSystem integration
+  lightPosition?: THREE.Vector3;
+  lightDirection?: THREE.Vector3;
+  lightIntensity?: number;
+  ambientStrength?: number;
 }
 
 // Procedural ranges for radiation wave generation
@@ -55,6 +60,7 @@ export class RadiationPulseEffect {
   private rng: SeededRandom;
   private planetRadius: number;
   private startTime: number = 0;
+  private effectLayerMeshes: THREE.Mesh[] = [];
 
   constructor(planetRadius: number, params: RadiationPulseParams = {}) {
     this.planetRadius = planetRadius;
@@ -75,6 +81,11 @@ export class RadiationPulseEffect {
       waveThickness: this.rng.uniform(PROCEDURAL_RANGES.WAVE_THICKNESS.min, PROCEDURAL_RANGES.WAVE_THICKNESS.max),
       rotationSpeed: this.rng.uniform(PROCEDURAL_RANGES.BASE_ROTATION.min, PROCEDURAL_RANGES.BASE_ROTATION.max),
       cosmicOriginTime: params.cosmicOriginTime,
+      // Lighting defaults
+      lightPosition: params.lightPosition || new THREE.Vector3(10, 0, 10),
+      lightDirection: params.lightDirection || new THREE.Vector3(1, 0, 1).normalize(),
+      lightIntensity: params.lightIntensity || 1.0,
+      ambientStrength: params.ambientStrength || 0.1,
       seed,
     };
 
@@ -102,14 +113,20 @@ export class RadiationPulseEffect {
         color: { value: new THREE.Color(this.params.color![0], this.params.color![1], this.params.color![2]) },
         intensity: { value: this.params.glowIntensity },
         planetRadius: { value: this.planetRadius },
+        lightPosition: { value: this.params.lightPosition },
+        lightDirection: { value: this.params.lightDirection },
+        lightIntensity: { value: this.params.lightIntensity },
+        ambientStrength: { value: this.params.ambientStrength },
       },
 
       vertexShader: `
         varying vec3 vWorldPosition;
+        varying vec3 vWorldNormal;
         varying vec3 vNormal;
         
         void main() {
           vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
+          vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);
           vNormal = normalize(normalMatrix * normal);
           
           gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
@@ -119,17 +136,37 @@ export class RadiationPulseEffect {
       fragmentShader: `
         uniform vec3 color;
         uniform float intensity;
+        uniform vec3 lightPosition;
+        uniform vec3 lightDirection;
+        uniform float lightIntensity;
+        uniform float ambientStrength;
         
         varying vec3 vWorldPosition;
+        varying vec3 vWorldNormal;
         varying vec3 vNormal;
         
         void main() {
-          // Soft rim glow
+          // PlanetLayerSystem compatible lighting
+          vec3 normal = normalize(vWorldNormal);
+          vec3 lightDir = normalize(lightPosition - vWorldPosition);
+          float dotNL = dot(normal, lightDir);
+          
+          // Smooth day/night transition
+          float dayNight = smoothstep(-0.3, 0.1, dotNL);
+          
+          // Rim lighting for enhanced visibility
+          float rimLight = 1.0 - abs(dotNL);
+          rimLight = pow(rimLight, 3.0) * 0.1;
+          
+          // Final lighting calculation
+          float totalLight = ambientStrength + (lightIntensity * dayNight) + rimLight;
+          
+          // Soft rim glow for atmosphere effect
           vec3 viewDir = normalize(cameraPosition - vWorldPosition);
           float rimEffect = 1.0 - max(0.0, dot(vNormal, viewDir));
           rimEffect = pow(rimEffect, 3.0);
           
-          float finalIntensity = rimEffect * intensity;
+          float finalIntensity = rimEffect * intensity * totalLight;
           vec3 finalColor = color * finalIntensity;
           float alpha = finalIntensity * 0.4;
           
@@ -166,15 +203,21 @@ export class RadiationPulseEffect {
           maxRadius: { value: this.params.radiationRadius },
           waveThickness: { value: this.params.waveThickness },
           totalWaves: { value: numWaves },
+          lightPosition: { value: this.params.lightPosition },
+          lightDirection: { value: this.params.lightDirection },
+          lightIntensity: { value: this.params.lightIntensity },
+          ambientStrength: { value: this.params.ambientStrength },
         },
 
         vertexShader: `
           varying vec3 vWorldPosition;
+          varying vec3 vWorldNormal;
           varying vec3 vNormal;
           varying float vDistanceFromCenter;
           
           void main() {
             vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
+            vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);
             vNormal = normalize(normalMatrix * normal);
             vDistanceFromCenter = length(position);
             
@@ -192,8 +235,13 @@ export class RadiationPulseEffect {
           uniform float maxRadius;
           uniform float waveThickness;
           uniform float totalWaves;
+          uniform vec3 lightPosition;
+          uniform vec3 lightDirection;
+          uniform float lightIntensity;
+          uniform float ambientStrength;
           
           varying vec3 vWorldPosition;
+          varying vec3 vWorldNormal;
           varying vec3 vNormal;
           varying float vDistanceFromCenter;
           
@@ -213,12 +261,27 @@ export class RadiationPulseEffect {
             // Distance falloff for realism
             float falloff = 1.0 - smoothstep(planetRadius * 1.1, maxRadius, vDistanceFromCenter);
             
+            // PlanetLayerSystem compatible lighting
+            vec3 normal = normalize(vWorldNormal);
+            vec3 lightDir = normalize(lightPosition - vWorldPosition);
+            float dotNL = dot(normal, lightDir);
+            
+            // Smooth day/night transition
+            float dayNight = smoothstep(-0.3, 0.1, dotNL);
+            
+            // Rim lighting for enhanced visibility
+            float rimLight = 1.0 - abs(dotNL);
+            rimLight = pow(rimLight, 3.0) * 0.1;
+            
+            // Final lighting calculation
+            float totalLight = ambientStrength + (lightIntensity * dayNight) + rimLight;
+            
             // Fresnel effect for atmospheric appearance
             vec3 viewDir = normalize(cameraPosition - vWorldPosition);
             float fresnel = 1.0 - max(0.0, dot(vNormal, viewDir));
             fresnel = pow(fresnel, 1.5);
             
-            float finalIntensity = waveIntensity * falloff * fresnel * intensity;
+            float finalIntensity = waveIntensity * falloff * fresnel * intensity * totalLight;
             vec3 finalColor = color * finalIntensity;
             float alpha = finalIntensity * 0.8;
             
@@ -229,11 +292,49 @@ export class RadiationPulseEffect {
 
       const waveMesh = new THREE.Mesh(geometry, material);
       this.radiationWaves.push(waveMesh);
+      this.effectLayerMeshes.push(waveMesh);
       this.group.add(waveMesh);
     }
   }
 
-  public update(deltaTime: number): void {
+
+  // Required: Apply effect (integrate with PlanetLayerSystem)
+  public apply(mesh: THREE.Mesh): void {
+    // Don't replace base material - create separate layers
+    this.createEffectLayers(mesh);
+  }
+
+  private createEffectLayers(baseMesh: THREE.Mesh): void {
+    // Scale effect meshes to prevent z-fighting
+    this.effectLayerMeshes.forEach((effectMesh, index) => {
+      const scaleFactor = 1.001 + (index * 0.001);
+      effectMesh.geometry.scale(scaleFactor, scaleFactor, scaleFactor);
+      effectMesh.position.copy(baseMesh.position);
+      effectMesh.rotation.copy(baseMesh.rotation);
+    });
+  }
+
+  public getObject3D(): THREE.Object3D {
+    return this.group;
+  }
+
+  public addToScene(scene: THREE.Scene, planetPosition?: THREE.Vector3): void {
+    if (planetPosition) {
+      this.group.position.copy(planetPosition);
+    }
+    scene.add(this.group);
+  }
+
+  public removeFromScene(scene: THREE.Scene): void {
+    scene.remove(this.group);
+  }
+
+  // Required: Animation updates with planet rotation synchronization
+  public update(deltaTime: number, planetRotation?: number): void {
+    this.updateAnimation(deltaTime, planetRotation);
+  }
+
+  private updateAnimation(deltaTime: number, planetRotation?: number): void {
     // Calculate cosmic time synchronized globally
     if (this.params.cosmicOriginTime) {
       this.cosmicTime = getAnimatedUniverseTime(this.params.cosmicOriginTime, 1.0, this.startTime);
@@ -253,24 +354,42 @@ export class RadiationPulseEffect {
       }
     });
 
+    // Synchronize rotation with planet if provided
+    if (planetRotation !== undefined) {
+      this.group.rotation.y = planetRotation;
+    }
+
     // Gentle base glow pulsing
     const glowPulse = this.params.rotationSpeed! * 0.5;
     this.baseGlow.rotation.y = this.cosmicTime * glowPulse;
   }
 
-  public getObject3D(): THREE.Object3D {
-    return this.group;
+  // PlanetLayerSystem integration: Update lighting from Three.js DirectionalLight
+  public updateFromThreeLight(light: THREE.DirectionalLight): void {
+    this.updateLightDirection(light.position, light.getWorldDirection(new THREE.Vector3()), light.intensity);
   }
 
-  public addToScene(scene: THREE.Scene, position?: THREE.Vector3): void {
-    if (position) {
-      this.group.position.copy(position);
+  // Update lighting parameters for all materials
+  public updateLightDirection(lightPosition: THREE.Vector3, lightDirection: THREE.Vector3, lightIntensity: number = 1.0): void {
+    this.params.lightPosition = lightPosition;
+    this.params.lightDirection = lightDirection;
+    this.params.lightIntensity = lightIntensity;
+
+    // Update base glow lighting
+    if (this.baseGlow.material instanceof THREE.ShaderMaterial) {
+      this.baseGlow.material.uniforms.lightPosition.value = lightPosition;
+      this.baseGlow.material.uniforms.lightDirection.value = lightDirection;
+      this.baseGlow.material.uniforms.lightIntensity.value = lightIntensity;
     }
-    scene.add(this.group);
-  }
 
-  public removeFromScene(scene: THREE.Scene): void {
-    scene.remove(this.group);
+    // Update radiation waves lighting
+    this.radiationWaves.forEach((wave: THREE.Mesh) => {
+      if (wave.material instanceof THREE.ShaderMaterial) {
+        wave.material.uniforms.lightPosition.value = lightPosition;
+        wave.material.uniforms.lightDirection.value = lightDirection;
+        wave.material.uniforms.lightIntensity.value = lightIntensity;
+      }
+    });
   }
 
   public dispose(): void {
@@ -291,6 +410,7 @@ export class RadiationPulseEffect {
     this.group.visible = enabled;
   }
 
+  // Optional: Parameter updates
   public updateParams(newParams: Partial<RadiationPulseParams>): void {
     Object.assign(this.params, newParams);
 
@@ -307,6 +427,15 @@ export class RadiationPulseEffect {
           wave.material.uniforms.color.value = color;
         }
       });
+    }
+
+    // Update lighting parameters if provided
+    if (newParams.lightPosition || newParams.lightDirection || newParams.lightIntensity !== undefined) {
+      this.updateLightDirection(
+        newParams.lightPosition || this.params.lightPosition!,
+        newParams.lightDirection || this.params.lightDirection!,
+        newParams.lightIntensity !== undefined ? newParams.lightIntensity : this.params.lightIntensity!
+      );
     }
   }
 }
