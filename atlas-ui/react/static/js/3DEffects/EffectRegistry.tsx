@@ -2150,6 +2150,58 @@ export class EffectRegistry {
             }
             break;
 
+          case "super_earth":
+            // Super Earth planets: rich atmospheric clouds and massive continental land masses
+            
+            // 1. Add atmospheric clouds ALWAYS for Super Earth planets (dense Earth-like atmospheres)
+            if (surface.clouds && surface.clouds.length > 0) {
+              const superEarthCloudsEffect = createAtmosphereCloudsFromPythonData(
+                planetRadius,
+                surface,
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 8000,
+                pythonData.timing?.cosmic_origin_time
+              );
+
+              if (superEarthCloudsEffect) {
+                const superEarthCloudsInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "atmosphere_clouds",
+                  effect: superEarthCloudsEffect,
+                  priority: 15,
+                  enabled: true,
+                  name: "Super Earth Dense Atmosphere",
+                };
+                this.effects.set(superEarthCloudsInstance.id, superEarthCloudsInstance);
+                effects.push(superEarthCloudsInstance);
+                superEarthCloudsEffect.addToScene(scene, mesh.position);
+              }
+            }
+
+            // 2. Add massive continental land masses 
+            if (surface.green_patches && surface.green_patches.length > 0) {
+              const superEarthLandMassesEffect = createLandMassesFromPythonData(
+                planetRadius, 
+                surface, 
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 9000
+              );
+
+              if (superEarthLandMassesEffect) {
+                const superEarthLandMassesInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "land_masses",
+                  effect: superEarthLandMassesEffect,
+                  priority: 5,
+                  enabled: true,
+                  name: "Super Earth Massive Continents",
+                };
+
+                this.effects.set(superEarthLandMassesInstance.id, superEarthLandMassesInstance);
+                effects.push(superEarthLandMassesInstance);
+                superEarthLandMassesEffect.addToScene(scene, mesh.position);
+              }
+            }
+            break;
+
           default:
             // Verificar si es un planeta anómalo por planet_info.type
             if (pythonData.planet_info?.type?.toLowerCase() === "anomaly") {

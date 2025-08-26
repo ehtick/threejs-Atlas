@@ -1417,7 +1417,102 @@ class PlanetTypeTranslators:
     
     def translate_super_earth(self, planet_radius: int, rng: random.Random, 
                              seed: int, planet_name: str) -> Dict[str, Any]:
-        return {"type": "super_earth"}
+        """Translate Super Earth planet elements - Earth-like worlds with rich atmospheres and massive continents"""
+        center_x, center_y = 200, 200  # Pillow center coordinates
+        
+        # Generate rich atmospheric clouds for Super Earth planets (dense Earth-like atmospheres)
+        num_clouds = rng.randint(12, 20)  # Rich atmospheric activity like Earth but denser
+        clouds = []
+        for i in range(num_clouds):
+            cloud_radius = rng.randint(30, 50)  # Large clouds from rich atmosphere
+            max_offset = planet_radius - cloud_radius
+            cloud_x = center_x + rng.randint(-max_offset, max_offset)
+            cloud_y = center_y + rng.randint(-max_offset, max_offset)
+            
+            # Convert to normalized coordinates
+            normalized_coords = self.common_utils.normalize_coordinates(
+                cloud_x, cloud_y, center_x, center_y, planet_radius
+            )
+            
+            # Super Earth clouds - white to light blue, representing thick Earth-like atmosphere
+            cloud_colors = [
+                [1.0, 1.0, 1.0, 0.9],      # Pure white dense clouds
+                [0.95, 0.98, 1.0, 0.8],    # Light blue-white atmospheric density
+                [0.98, 1.0, 0.98, 0.85],   # Very light green-white from vegetation moisture
+                [0.90, 0.95, 1.0, 0.7],    # Light blue atmospheric haze
+            ]
+            
+            clouds.append({
+                "position": normalized_coords,
+                "radius": cloud_radius / planet_radius,
+                "color": rng.choice(cloud_colors),
+                "type": "cloud",
+                "seed": f"{planet_name}_super_earth_cloud_{i}"
+            })
+        
+        # Generate LARGE land masses for Super Earth planets (massive continents due to larger size)
+        # Use "green_patches" format that LandMasses effect expects, but make them ESPECIALLY LARGE
+        num_landmasses = rng.randint(6, 12)  # Fewer but much larger landmasses for continent effect
+        green_patches = []
+        
+        for i in range(num_landmasses):
+            # Generate uniform position on sphere (better distribution than 2D projection)
+            theta = rng.uniform(0, 2 * math.pi)
+            phi = math.acos(rng.uniform(-1, 1))
+            
+            position_3d = [
+                math.sin(phi) * math.cos(theta),
+                math.sin(phi) * math.sin(theta),
+                math.cos(phi)
+            ]
+            
+            # Size distribution - ESPECIALLY LARGE for Super Earth massive continents
+            if i < 3:
+                # Massive super continents (continental-scale landmasses)
+                size = rng.uniform(0.35, 0.55)  # VERY large super continents
+            elif i < 6:
+                # Large continental masses (major continent equivalents)
+                size = rng.uniform(0.25, 0.40)  # Large continental landmasses
+            else:
+                # Medium continental regions (large islands and smaller continents)
+                size = rng.uniform(0.15, 0.28)  # Still large for Super Earth scale
+            
+            # Super Earth landmass colors - Earth-like but with variations for larger world diversity
+            # Convert to RGB [0-1] format that LandMasses expects
+            landmass_color_choices = [
+                # Temperate landmass colors (Earth-like greens and browns)
+                [0.20, 0.40, 0.15],  # Forest green for temperate regions
+                [0.35, 0.28, 0.18],  # Brown for arid/mountainous regions
+                [0.25, 0.45, 0.20],  # Bright green for fertile plains
+                [0.18, 0.35, 0.12],  # Dark green for dense forests
+                [0.40, 0.32, 0.22],  # Light brown for grasslands/savannas
+                [0.22, 0.42, 0.18],  # Medium green for mixed vegetation
+                [0.30, 0.25, 0.15],  # Tan for desert/semi-arid regions
+            ]
+            
+            green_patches.append({
+                "position_3d": position_3d,
+                "size": size,  # ESPECIALLY large sizes for Super Earth massive continents
+                "color": rng.choice(landmass_color_choices) + [rng.uniform(0.80, 0.95)],  # High opacity for solid landmasses
+                "sides": rng.randint(20, 35),  # More complex shapes for realistic continental coastlines
+                "height": rng.uniform(0.025, 0.055),  # Significant elevation for mountain ranges
+                "biome_diversity": rng.uniform(0.7, 0.95),  # High biome diversity on large continents
+                "continental_scale": True  # Flag for massive continental features
+            })
+        
+        return {
+            "type": "super_earth",
+            "clouds": clouds,  # AtmosphereClouds will use this
+            "green_patches": green_patches,  # LandMasses will use this (Earth-like colored massive landmasses)
+            "debug": {
+                "original_planet_radius": planet_radius,
+                "center_x": center_x, "center_y": center_y,
+                "cloud_count": num_clouds,
+                "landmass_count": num_landmasses,
+                "largest_landmass_size": max([lm["size"] for lm in green_patches]) if green_patches else 0,
+                "continental_coverage": "massive_super_continental_scale"
+            }
+        }
     
     def translate_sub_earth(self, planet_radius: int, rng: random.Random, 
                            seed: int, planet_name: str) -> Dict[str, Any]:
