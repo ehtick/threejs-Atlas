@@ -21,7 +21,7 @@ const PROCEDURAL_RANGES = {
   RING_COUNT: { min: 16, max: 256 },
   EXPANSION_SPEED: { min: 1.5, max: 5},
   WAVE_INTENSITY: { min: 0.6, max: 2.0 },
-  MAX_RADIUS_MULTIPLIER: { min: 2.2, max: 10 },
+  MAX_RADIUS_MULTIPLIER: { min: 1.5, max: 10 },
   GLOW_INTENSITY: { min: 0.5, max: 2.0 },
   TIME_SPEED: { min: 0.8, max: 1.3 }
 };
@@ -126,7 +126,6 @@ export class RadiationRingsEffect {
         depthTest: true,
         blending: THREE.AdditiveBlending,
         side: THREE.DoubleSide,
-        renderOrder: 1000 + i, // Orden de renderizado más alto para que se renderice después
         
         uniforms: {
           time: { value: 0 },
