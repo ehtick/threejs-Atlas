@@ -463,9 +463,9 @@ export class SuperEarthWaterFeaturesEffect {
     }
     const forward = new THREE.Vector3().crossVectors(right, up).normalize();
     
-    // Curve each vertex to follow planet surface - NO THICKNESS/VOLUME
+    // Curve each vertex to follow planet surface at uniform height
     const positions = geometry.attributes.position;
-    const centerPos = sphericalPos.clone().multiplyScalar(this.planetRadius * 1.01); // Much closer to surface
+    const centerPos = sphericalPos.clone().multiplyScalar(this.planetRadius * 1.001); // Just barely above surface
     
     for (let i = 0; i < positions.count; i++) {
       const localVertex = new THREE.Vector3();
@@ -476,8 +476,8 @@ export class SuperEarthWaterFeaturesEffect {
         .add(right.clone().multiplyScalar(localVertex.x))
         .add(forward.clone().multiplyScalar(localVertex.y));
       
-      // Project onto sphere surface - this curves it to follow planet surface
-      const projectedVertex = worldVertex.normalize().multiplyScalar(this.planetRadius * 1.01); // Just barely above surface
+      // Project onto sphere surface at uniform height
+      const projectedVertex = worldVertex.normalize().multiplyScalar(this.planetRadius * 1.001); // Just barely above surface
       
       // Store as world coordinates (no mesh positioning needed)
       positions.setXYZ(i, projectedVertex.x, projectedVertex.y, projectedVertex.z);
