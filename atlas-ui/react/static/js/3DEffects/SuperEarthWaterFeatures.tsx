@@ -197,8 +197,8 @@ export class SuperEarthWaterFeaturesEffect {
       void main() {
         vUv = uv;
         
-        // Animate UV for MUCH MORE VISIBLE flowing water effect
-        vAnimatedUv = uv + vec2(time * 0.25, time * 0.18);
+        // Animate UV for subtle flowing water effect
+        vAnimatedUv = uv + vec2(time * 0.08, time * 0.06);
         
         // Sample displacement for vertex height
         float displacement = texture2D(displacementMap, vAnimatedUv).r;
@@ -219,11 +219,9 @@ export class SuperEarthWaterFeaturesEffect {
 
     const fragmentShader = `
       uniform vec3 waterColor;
-      uniform vec3 foamColor;
       uniform float opacity;
       uniform float time;
       uniform sampler2D normalMap;
-      uniform sampler2D foamMap;
       uniform vec3 lightPosition;
       uniform vec3 lightDirection;
       uniform float ambientStrength;
@@ -235,9 +233,9 @@ export class SuperEarthWaterFeaturesEffect {
       varying vec2 vAnimatedUv;
       
       void main() {
-        // Sample animated normal map with MUCH LARGER patterns
-        vec3 normalMapSample = texture2D(normalMap, vAnimatedUv * 0.8).rgb;
-        vec3 perturbedNormal = normalize(vWorldNormal + (normalMapSample - 0.5) * 0.8);
+        // Sample animated normal map with subtle patterns
+        vec3 normalMapSample = texture2D(normalMap, vAnimatedUv * 3.0).rgb;
+        vec3 perturbedNormal = normalize(vWorldNormal + (normalMapSample - 0.5) * 0.3);
         
         // EXACT SAME lighting calculation as PlanetLayerSystem
         vec3 normal = normalize(perturbedNormal);
@@ -267,14 +265,8 @@ export class SuperEarthWaterFeaturesEffect {
         vec3 viewDir = normalize(cameraPosition - vWorldPosition);
         float fresnel = pow(1.0 - max(dot(viewDir, normal), 0.0), 2.0);
         
-        // Sample foam map
-        float foam = texture2D(foamMap, vAnimatedUv * 5.0).r;
-        
-        // Base water color (no animated variations that break lighting)
-        vec3 baseColor = waterColor;
-        
-        // Combine water color with foam
-        vec3 finalColor = mix(baseColor, foamColor, foam * 0.3);
+        // Base water color (no foam textures inside - only clean water)
+        vec3 finalColor = waterColor;
         
         // Apply EXACT same lighting as planet surface
         finalColor *= totalLight;
@@ -282,14 +274,11 @@ export class SuperEarthWaterFeaturesEffect {
         // Add water-specific fresnel highlight
         finalColor += vec3(0.2, 0.3, 0.4) * fresnel * 0.3;
         
-        // MUCH MORE DRAMATIC wave patterns and shimmer
-        float shimmer1 = sin(time * 4.0 + vWorldPosition.x * 4.0 + vWorldPosition.z * 3.0) * 0.3;
-        float shimmer2 = cos(time * 3.5 + vWorldPosition.x * 6.0 - vWorldPosition.z * 4.5) * 0.25;
-        float shimmer3 = sin(time * 5.0 + vWorldPosition.y * 5.0) * 0.2;
-        float shimmer = shimmer1 + shimmer2 + shimmer3 + 0.7;
+        // Subtle shimmer effect
+        float shimmer = sin(time * 2.0 + vWorldPosition.x * 15.0 + vWorldPosition.z * 12.0) * 0.05 + 0.95;
         finalColor *= shimmer;
         
-        gl_FragColor = vec4(finalColor, opacity * (1.0 - foam * 0.1));
+        gl_FragColor = vec4(finalColor, opacity);
       }
     `;
 
@@ -298,12 +287,9 @@ export class SuperEarthWaterFeaturesEffect {
       fragmentShader,
       uniforms: {
         waterColor: { value: new THREE.Color(0.15, 0.55, 0.85) },
-        foamColor: { value: new THREE.Color(0.9, 0.95, 1.0) },
         opacity: { value: 0.8 },
         time: { value: 0 },
         normalMap: { value: this.normalMap },
-        displacementMap: { value: this.displacementMap },
-        foamMap: { value: this.foamMap },
         displacementScale: { value: 0.0 }, // No displacement - completely flat
         lightPosition: { value: new THREE.Vector3(0, 0, 0) }, // Will be updated by updateFromThreeLight
         lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() }, // Will be updated by updateFromThreeLight
@@ -391,53 +377,58 @@ export class SuperEarthWaterFeaturesEffect {
       const distFromCenter = Math.sqrt(x * x + y * y);
       const angle = Math.atan2(y, x);
       
-      // Create DIFFERENT geometric shapes using varied algorithms
+      // Create DIFFERENT geometric shapes with correct boundary calculations
       const shapeType = bodyIndex % 5; // 5 different shape types
-      let organicRadius = size;
+      let withinBoundary = false;
       
       switch (shapeType) {
         case 0: // Oval/Elliptical
-          const ellipseA = 1.0 + Math.sin(bodyIndex) * 0.4;
-          const ellipseB = 1.0 + Math.cos(bodyIndex * 1.3) * 0.4;
+          const ellipseA = 1.0 + Math.sin(bodyIndex) * 0.3; // Reduced variation
+          const ellipseB = 1.0 + Math.cos(bodyIndex * 1.3) * 0.3;
           const ellipseAngle = bodyIndex * 0.7;
           const rotatedX = x * Math.cos(ellipseAngle) - y * Math.sin(ellipseAngle);
           const rotatedY = x * Math.sin(ellipseAngle) + y * Math.cos(ellipseAngle);
-          organicRadius = size * Math.sqrt((rotatedX/ellipseA) * (rotatedX/ellipseA) + (rotatedY/ellipseB) * (rotatedY/ellipseB));
+          withinBoundary = ((rotatedX * rotatedX) / (size * ellipseA * size * ellipseA) + 
+                           (rotatedY * rotatedY) / (size * ellipseB * size * ellipseB)) <= 1.0;
           break;
           
         case 1: // Kidney/Bean shape
-          const beanCurve = Math.sin(angle * 2 + bodyIndex) * 0.3;
-          const beanIndent = Math.cos(angle + Math.PI + bodyIndex) * 0.4;
-          organicRadius = size * (0.8 + beanCurve + Math.max(0, beanIndent));
+          const beanRadius = size * (0.8 + Math.sin(angle * 2 + bodyIndex) * 0.2);
+          const beanIndent = Math.cos(angle + Math.PI + bodyIndex) * size * 0.3;
+          const effectiveRadius = Math.max(beanRadius + beanIndent, size * 0.5);
+          withinBoundary = distFromCenter <= effectiveRadius;
           break;
           
-        case 2: // Irregular blob with low frequency
-          const blob1 = Math.sin(angle * 1.5 + bodyIndex) * 0.35;
-          const blob2 = Math.cos(angle * 2.3 + bodyIndex * 1.7) * 0.25;
-          organicRadius = size * (0.7 + blob1 + blob2);
+        case 2: // Irregular blob
+          const blobRadius = size * (0.8 + Math.sin(angle * 1.5 + bodyIndex) * 0.2 + 
+                                          Math.cos(angle * 2.3 + bodyIndex * 1.7) * 0.15);
+          withinBoundary = distFromCenter <= blobRadius;
           break;
           
         case 3: // Teardrop shape
           const tearAngle = angle - bodyIndex;
-          const tearRadius = (1 + Math.cos(tearAngle)) * 0.5;
-          const tearDistortion = Math.sin(tearAngle * 3) * 0.15;
-          organicRadius = size * (tearRadius * 0.8 + 0.4 + tearDistortion);
+          const tearRadius = size * ((1 + Math.cos(tearAngle)) * 0.4 + 0.4);
+          const tearDistortion = Math.sin(tearAngle * 3) * size * 0.1;
+          withinBoundary = distFromCenter <= (tearRadius + tearDistortion);
           break;
           
         case 4: // Crescent/C-shape
           const crescentAngle = angle - bodyIndex * 0.5;
-          const crescentBase = Math.max(0.3, 1.0 - Math.cos(crescentAngle * 1.5) * 0.6);
-          const crescentDetail = Math.sin(crescentAngle * 4) * 0.1;
-          organicRadius = size * (crescentBase + crescentDetail);
+          const crescentRadius = size * Math.max(0.4, 1.0 - Math.cos(crescentAngle * 1.5) * 0.4);
+          const crescentDetail = Math.sin(crescentAngle * 6) * size * 0.05;
+          withinBoundary = distFromCenter <= (crescentRadius + crescentDetail);
           break;
       }
       
-      // Add subtle coastline irregularity to all shapes
-      const coastlineNoise = Math.sin(angle * 8 + bodyIndex * 3) * 0.08;
-      organicRadius *= (1.0 + coastlineNoise);
+      // Add subtle coastline irregularity if within base shape
+      if (withinBoundary) {
+        const coastlineNoise = Math.sin(angle * 12 + bodyIndex * 3) * 0.05;
+        const finalRadius = distFromCenter * (1.0 + coastlineNoise);
+        withinBoundary = finalRadius <= size * 1.1; // Allow slight expansion
+      }
       
-      // Keep vertex if it's within the organic boundary
-      if (distFromCenter <= organicRadius) {
+      // Keep vertex if it's within the shape boundary
+      if (withinBoundary) {
         validVertices.push(x, y, z);
         validUVs.push(uvsAttr.getX(i), uvsAttr.getY(i));
         vertexMap.set(i, newVertexIndex);
