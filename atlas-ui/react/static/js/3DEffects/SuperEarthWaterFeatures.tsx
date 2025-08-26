@@ -88,15 +88,17 @@ export class SuperEarthWaterFeaturesEffect {
       for (let j = 0; j < normalSize; j++) {
         const idx = (i * normalSize + j) * 3;
         
-        // Create smooth wave patterns for normals
-        const u = i / normalSize * Math.PI * 4;
-        const v = j / normalSize * Math.PI * 4;
+        // Create more pronounced wave patterns for normals
+        const u = i / normalSize * Math.PI * 6;
+        const v = j / normalSize * Math.PI * 6;
         
-        const wave1 = Math.sin(u) * Math.cos(v) * 0.3;
-        const wave2 = Math.sin(u * 1.5 + v * 0.5) * 0.2;
+        // Multiple wave frequencies for realistic ocean waves
+        const wave1 = Math.sin(u * 1.0 + v * 0.5) * 0.5;
+        const wave2 = Math.sin(u * 2.3 - v * 1.1) * 0.3;
+        const wave3 = Math.sin(u * 0.7 + v * 1.9) * 0.2;
         
-        const nx = wave1 * 0.5 + 0.5;
-        const ny = wave2 * 0.5 + 0.5;
+        const nx = (wave1 + wave2) * 0.5 + 0.5;
+        const ny = (wave2 + wave3) * 0.5 + 0.5;
         const nz = 1.0;
         
         normalData[idx] = nx * 255;
@@ -177,8 +179,6 @@ export class SuperEarthWaterFeaturesEffect {
   private createUnifiedWaterMaterial(): void {
     const vertexShader = `
       uniform float time;
-      uniform sampler2D displacementMap;
-      uniform float displacementScale;
       
       varying vec2 vUv;
       varying vec3 vWorldPosition;
@@ -188,23 +188,18 @@ export class SuperEarthWaterFeaturesEffect {
       void main() {
         vUv = uv;
         
-        // Animate UV for very subtle flowing water effect
-        vAnimatedUv = uv + vec2(time * 0.03, time * 0.02);
+        // Animate UV for more visible flowing water effect
+        vAnimatedUv = uv + vec2(time * 0.08, time * 0.06);
         
-        // Sample displacement for vertex height
-        float displacement = texture2D(displacementMap, vAnimatedUv).r;
-        
-        // Apply displacement along normal
-        vec3 displacedPosition = position + normal * displacement * displacementScale;
-        
-        vec4 worldPos = modelMatrix * vec4(displacedPosition, 1.0);
+        // No vertex displacement - keep water surface flat
+        vec4 worldPos = modelMatrix * vec4(position, 1.0);
         vWorldPosition = worldPos.xyz;
         
         // For curved water on planet surface, normal should point radially outward from planet center
         // Assume planet center is at origin (0,0,0)
         vWorldNormal = normalize(vWorldPosition);
         
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(displacedPosition, 1.0);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
       }
     `;
 
@@ -224,9 +219,9 @@ export class SuperEarthWaterFeaturesEffect {
       varying vec2 vAnimatedUv;
       
       void main() {
-        // Sample animated normal map with very subtle patterns
-        vec3 normalMapSample = texture2D(normalMap, vAnimatedUv * 4.0).rgb;
-        vec3 perturbedNormal = normalize(vWorldNormal + (normalMapSample - 0.5) * 0.2);
+        // Sample animated normal map with more visible wave patterns
+        vec3 normalMapSample = texture2D(normalMap, vAnimatedUv * 2.0).rgb;
+        vec3 perturbedNormal = normalize(vWorldNormal + (normalMapSample - 0.5) * 0.4);
         
         // EXACT SAME lighting calculation as PlanetLayerSystem
         vec3 normal = normalize(perturbedNormal);
@@ -263,8 +258,8 @@ export class SuperEarthWaterFeaturesEffect {
         // Add water-specific fresnel highlight
         finalColor += vec3(0.2, 0.3, 0.4) * fresnel * 0.3;
         
-        // Very subtle shimmer effect
-        float shimmer = sin(time * 1.0 + vWorldPosition.x * 20.0 + vWorldPosition.z * 16.0) * 0.02 + 0.98;
+        // More visible shimmer effect for wave animation
+        float shimmer = sin(time * 2.5 + vWorldPosition.x * 30.0 + vWorldPosition.z * 25.0) * 0.08 + 0.92;
         finalColor *= shimmer;
         
         gl_FragColor = vec4(finalColor, opacity);
@@ -279,7 +274,6 @@ export class SuperEarthWaterFeaturesEffect {
         opacity: { value: 0.8 },
         time: { value: 0 },
         normalMap: { value: this.normalMap },
-        displacementScale: { value: 0.0 }, // No displacement - completely flat
         lightPosition: { value: new THREE.Vector3(0, 0, 0) }, // Will be updated by updateFromThreeLight
         lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() }, // Will be updated by updateFromThreeLight
         ambientStrength: { value: 0.15 }, // Same as PlanetLayerSystem
@@ -452,6 +446,8 @@ export class SuperEarthWaterFeaturesEffect {
     // Create mesh with individual material for this water body's opacity
     const individualMaterial = this.waterMaterial.clone();
     individualMaterial.uniforms.opacity.value = bodyData.opacity || 0.8;
+    // Ensure the cloned material has the texture references
+    individualMaterial.uniforms.normalMap.value = this.normalMap;
     const waterMesh = new THREE.Mesh(geometry, individualMaterial);
     
     // Store individual material for cleanup
@@ -625,44 +621,31 @@ export class SuperEarthWaterFeaturesEffect {
   update(deltaTime: number): void {
     this.animationTime += deltaTime;
     
-    // Update shader time uniform for UV animation
+    // Update shader time uniform for UV animation (2D wave simulation)
     if (this.waterMaterial && this.waterMaterial.uniforms) {
       this.waterMaterial.uniforms.time.value = this.animationTime;
-      
-      // NO wave height animation - keep static depth
-      this.waterMaterial.uniforms.displacementScale.value = 0.0; // Completely flat
-      
-      // Static opacity - no tidal effects
-      this.waterMaterial.uniforms.opacity.value = 0.75;
     }
     
-    // Rotate normal and displacement maps for flowing effect
+    // Update all individual water body materials  
+    this.materials.forEach(material => {
+      if (material instanceof THREE.ShaderMaterial && material.uniforms) {
+        material.uniforms.time.value = this.animationTime;
+      }
+    });
+    
+    // Animate normal map for more visible 2D wave simulation
     if (this.normalMap) {
-      this.normalMap.offset.x += deltaTime * 0.008;
-      this.normalMap.offset.y += deltaTime * 0.006;
+      this.normalMap.offset.x += deltaTime * 0.02;
+      this.normalMap.offset.y += deltaTime * 0.015;
       this.normalMap.needsUpdate = true;
     }
     
-    // NO displacement map animation - keep static surface
-    // if (this.displacementMap) {
-    //   this.displacementMap.offset.x += deltaTime * 0.005;
-    //   this.displacementMap.offset.y += deltaTime * 0.004;
-    //   this.displacementMap.needsUpdate = true;
-    // }
-    
+    // Foam map animation for shoreline effects
     if (this.foamMap) {
-      this.foamMap.offset.x += deltaTime * 0.012;
-      this.foamMap.offset.y += deltaTime * 0.009;
+      this.foamMap.offset.x += deltaTime * 0.025;
+      this.foamMap.offset.y += deltaTime * 0.018;
       this.foamMap.needsUpdate = true;
     }
-    
-    // Animate individual water bodies with subtle movements
-    this.waterBodyMeshes.forEach((mesh) => {
-      if (mesh.userData.animationSpeed) {
-        // NO scaling animation - completely static
-        mesh.scale.setScalar(1.0);
-      }
-    });
   }
 
   updateParams(newParams: Partial<SuperEarthWaterFeaturesParams>): void {
