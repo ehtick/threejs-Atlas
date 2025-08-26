@@ -77,6 +77,9 @@ export type { PlanetRaysParams } from "./PlanetRays";
 export { FireEruptionEffect, createFireEruptionFromPythonData } from "./FireEruptionEffect";
 export type { FireEruptionParams } from "./FireEruptionEffect";
 
+export { LavaRiversEffect, createLavaRiversFromPythonData } from "./LavaRiversEffect";
+export type { LavaRiverParams } from "./LavaRiversEffect";
+
 export { CarbonTrailsEffect, createCarbonTrailsFromPythonData } from "./CarbonTrails";
 export type { CarbonTrailsParams } from "./CarbonTrails";
 
@@ -120,6 +123,7 @@ export const AVAILABLE_EFFECTS = [
   "icy_terrain",
   // 'ocean_waves', // Eliminado - no respeta datos de Python
   "lava_flows",
+  "lava_rivers",
   "crystal_formations",
   "cloud_layers",
   "storm_systems",

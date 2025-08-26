@@ -483,7 +483,145 @@ class PlanetTypeTranslators:
     
     def translate_lava(self, planet_radius: int, rng: random.Random, 
                       seed: int, planet_name: str) -> Dict[str, Any]:
-        return {"type": "lava"}
+        """Translate Lava planet elements - volcanic world with atmospheric clouds and large land masses"""
+        center_x, center_y = 200, 200  # Pillow center coordinates
+        
+        # Generate atmospheric clouds for lava planets (volcanic activity creates thick atmospheres)
+        num_clouds = rng.randint(10, 18)  # Rich atmospheric activity from volcanic emissions
+        clouds = []
+        for i in range(num_clouds):
+            cloud_radius = rng.randint(30, 50)  # Large clouds from volcanic activity
+            max_offset = planet_radius - cloud_radius
+            cloud_x = center_x + rng.randint(-max_offset, max_offset)
+            cloud_y = center_y + rng.randint(-max_offset, max_offset)
+            
+            # Convert to normalized coordinates
+            normalized_coords = self.common_utils.normalize_coordinates(
+                cloud_x, cloud_y, center_x, center_y, planet_radius
+            )
+            
+            # Lava clouds - dark grey/black with red/orange tints from volcanic ash
+            cloud_colors = [
+                [0.3, 0.25, 0.2, 0.9],     # Dark ash cloud
+                [0.4, 0.3, 0.25, 0.85],    # Brown-grey volcanic ash
+                [0.35, 0.28, 0.22, 0.8],   # Dark brown-red ash
+                [0.5, 0.35, 0.3, 0.75],    # Lighter volcanic smoke
+                [0.45, 0.32, 0.28, 0.8],   # Red-tinted ash cloud
+            ]
+            
+            cloud_color = rng.choice(cloud_colors)
+            
+            clouds.append({
+                "position": normalized_coords,
+                "radius": cloud_radius / planet_radius,
+                "color": cloud_color,
+                "type": "cloud",
+                "seed": f"{planet_name}_lava_cloud_{i}"
+            })
+        
+        # Generate large land masses for lava planets (volcanic rock formations and lava fields)
+        num_landmasses = rng.randint(8, 15)  # Multiple large volcanic formations
+        green_patches = []
+        
+        for i in range(num_landmasses):
+            # Generate uniform position on sphere
+            theta = rng.uniform(0, 2 * math.pi)
+            phi = math.acos(rng.uniform(-1, 1))
+            
+            position_3d = [
+                math.sin(phi) * math.cos(theta),
+                math.sin(phi) * math.sin(theta),
+                math.cos(phi)
+            ]
+            
+            # Size distribution - LARGE land masses for prominent volcanic features
+            if i < 4:
+                # Massive volcanic plateaus
+                size = rng.uniform(0.25, 0.40)  # Very large volcanic formations
+            elif i < 8:
+                # Large lava fields
+                size = rng.uniform(0.15, 0.25)  # Large lava-covered regions
+            else:
+                # Smaller volcanic islands
+                size = rng.uniform(0.08, 0.15)  # Medium volcanic patches
+            
+            # Lava land mass colors - dark volcanic rock with lava veins
+            lava_colors = [
+                [0.15, 0.12, 0.10],  # Very dark volcanic rock
+                [0.25, 0.15, 0.12],  # Dark brown-red volcanic stone
+                [0.3, 0.18, 0.15],   # Reddish volcanic rock
+                [0.35, 0.2, 0.15],   # Lighter volcanic basalt
+                [0.28, 0.16, 0.13],  # Dark red-brown lava rock
+            ]
+            
+            land_color = rng.choice(lava_colors)
+            
+            # Also maintain 2D coordinates for compatibility
+            patch_angle = rng.uniform(0, 2 * math.pi)
+            patch_distance = rng.uniform(0.3 * planet_radius, planet_radius)
+            
+            patch_x = center_x + patch_distance * math.cos(patch_angle)
+            patch_y = center_y + patch_distance * math.sin(patch_angle)
+            
+            normalized_coords = self.common_utils.normalize_coordinates(
+                patch_x, patch_y, center_x, center_y, planet_radius
+            )
+            
+            green_patches.append({
+                "position": normalized_coords,
+                "position_3d": position_3d,
+                "size": size,
+                "color": land_color,
+                "type": "land_mass",
+                "seed": f"{planet_name}_lava_landmass_{i}"
+            })
+        
+        # Generate lava lakes/pools for additional visual effect
+        num_lava_pools = rng.randint(6, 12)
+        lava_pools = []
+        
+        for i in range(num_lava_pools):
+            # Generate uniform position on sphere
+            theta = rng.uniform(0, 2 * math.pi)
+            phi = math.acos(rng.uniform(-1, 1))
+            
+            position_3d = [
+                math.sin(phi) * math.cos(theta),
+                math.sin(phi) * math.sin(theta),
+                math.cos(phi)
+            ]
+            
+            # Lava pool sizes - smaller than land masses
+            pool_size = rng.uniform(0.05, 0.15)
+            
+            lava_pools.append({
+                "position_3d": position_3d,
+                "radius": pool_size,
+                "color": [0.9, 0.3, 0.1, 1.0],  # Bright orange-red lava
+                "temperature": rng.uniform(1000, 1500),
+                "glow_intensity": rng.uniform(0.7, 1.0)
+            })
+        
+        return {
+            "type": "lava",
+            "clouds": clouds,  # AtmosphereClouds will use this
+            "green_patches": green_patches,  # LandMasses will use this (lava-colored landmasses)
+            "lava_pools": lava_pools,  # Additional lava pool features
+            "surface_properties": {
+                "heat_distortion": rng.uniform(0.4, 0.8),    # Heat shimmer effects
+                "volcanic_activity": rng.uniform(0.6, 1.0),  # Volcanic eruption frequency
+                "ash_density": rng.uniform(0.5, 0.9),        # Atmospheric ash density
+                "lava_glow": rng.uniform(0.7, 0.95),         # Lava glow intensity
+            },
+            "debug": {
+                "original_planet_radius": planet_radius,
+                "center_x": center_x, "center_y": center_y,
+                "cloud_count": num_clouds,
+                "landmass_count": num_landmasses,
+                "lava_pool_count": num_lava_pools,
+                "avg_landmass_size": sum([lm["size"] for lm in green_patches]) / len(green_patches) if green_patches else 0,
+            }
+        }
     
     def translate_arid(self, planet_radius: int, rng: random.Random, 
                       seed: int, planet_name: str) -> Dict[str, Any]:

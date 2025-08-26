@@ -56,6 +56,7 @@ import { FluidLayersEffect, createFluidLayersFromPythonData } from "./FluidLayer
 import { AquiferWaterEffect, createAquiferWaterFromPythonData } from "./AquiferWaterEffect";
 import { OceanCurrentsEffect, createOceanCurrentsFromPythonData } from "./OceanCurrentsEffect";
 import { LavaFlowsEffect, createLavaFlowsFromPythonData } from "./LavaFlowsEffect";
+import { LavaRiversEffect, createLavaRiversFromPythonData } from "./LavaRiversEffect";
 import { MoltenLavaEffect, createMoltenLavaFromPythonData } from "./MoltenLavaEffect";
 import { FireEruptionEffect, createFireEruptionFromPythonData } from "./FireEruptionEffect";
 import { CarbonTrailsEffect, createCarbonTrailsFromPythonData } from "./CarbonTrails";
@@ -115,6 +116,7 @@ export enum EffectType {
   AQUIFER_WATER = "aquifer_water",
   OCEAN_CURRENTS = "ocean_currents",
   LAVA_FLOWS = "lava_flows",
+  LAVA_RIVERS = "lava_rivers",
   MOLTEN_LAVA = "molten_lava",
   FIRE_ERUPTION = "fire_eruption",
   CARBON_TRAILS = "carbon_trails",
@@ -273,6 +275,11 @@ export class EffectRegistry {
     this.registerEffect(EffectType.LAVA_FLOWS, {
       create: (params, planetRadius) => new LavaFlowsEffect(planetRadius, params),
       fromPythonData: (data, planetRadius) => createLavaFlowsFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed),
+    });
+
+    this.registerEffect(EffectType.LAVA_RIVERS, {
+      create: (params, planetRadius, layerSystem) => new LavaRiversEffect(planetRadius, params),
+      fromPythonData: (data, planetRadius, layerSystem) => createLavaRiversFromPythonData(data, planetRadius, layerSystem),
     });
 
     this.registerEffect(EffectType.MOLTEN_LAVA, {
@@ -1510,6 +1517,114 @@ export class EffectRegistry {
             }
             break;
 
+          case "lava":
+            // Planetas Lava: múltiples ríos de lava fluyendo con erupciones de fuego
+            
+            // 1. Añadir ríos de lava como efecto principal
+            const lavaRiversEffect = this.createEffectFromPythonData(
+              EffectType.LAVA_RIVERS,
+              pythonData,
+              planetRadius,
+              mesh
+            )?.effect;
+
+            if (lavaRiversEffect) {
+              const lavaRiversInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "lava_rivers",
+                effect: lavaRiversEffect,
+                priority: 8, // Alta prioridad para ríos visibles
+                enabled: true,
+                name: "Lava Rivers",
+              };
+
+              this.effects.set(lavaRiversInstance.id, lavaRiversInstance);
+              effects.push(lavaRiversInstance);
+              lavaRiversEffect.addToScene(scene, mesh.position);
+            }
+
+            // 2. Añadir erupciones de fuego para complementar los ríos
+            const lavaFireEruptionEffect = this.createEffectFromPythonData(
+              EffectType.FIRE_ERUPTION,
+              pythonData,
+              planetRadius,
+              mesh
+            )?.effect;
+
+            if (lavaFireEruptionEffect) {
+              const lavaFireEruptionInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "fire_eruption",
+                effect: lavaFireEruptionEffect,
+                priority: 12, // Muy alta prioridad para erupciones visibles
+                enabled: true,
+                name: "Lava Planet Fire Eruptions",
+              };
+
+              this.effects.set(lavaFireEruptionInstance.id, lavaFireEruptionInstance);
+              effects.push(lavaFireEruptionInstance);
+              lavaFireEruptionEffect.addToScene(scene, mesh.position);
+            }
+
+            // 3. Añadir superficie base de lava menos intensa que Molten Core
+            if (surface.green_patches && surface.green_patches.length > 0) {
+              const lavaLandMassesData = {
+                ...surface,
+                green_patches: surface.green_patches.map((patch: any) => ({
+                  ...patch,
+                  // Color de lava más oscuro que Molten Core
+                  color: [0.8, 0.3, 0.0, patch.color?.[3] || 0.7]
+                }))
+              };
+
+              const lavaLandMasses = createLandMassesFromPythonData(
+                planetRadius, 
+                lavaLandMassesData, 
+                (pythonData.seeds?.planet_seed || pythonData.seeds?.shape_seed) + 11000
+              );
+
+              if (lavaLandMasses) {
+                const lavaLandMassesInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "land_masses",
+                  effect: lavaLandMasses,
+                  priority: 3,
+                  enabled: true,
+                  name: "Lava Land Masses",
+                };
+
+                this.effects.set(lavaLandMassesInstance.id, lavaLandMassesInstance);
+                effects.push(lavaLandMassesInstance);
+                lavaLandMasses.addToScene(scene, mesh.position);
+              }
+            }
+
+            // 4. Añadir nubes volcánicas si están disponibles (ceniza y humo)
+            if (surface.clouds && surface.clouds.length > 0) {
+              const lavaCloudsEffect = createAtmosphereCloudsFromPythonData(
+                planetRadius,
+                surface,
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 7000,
+                pythonData.timing?.cosmic_origin_time
+              );
+              
+              if (lavaCloudsEffect) {
+                const lavaCloudsInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "atmosphere_clouds",
+                  effect: lavaCloudsEffect,
+                  priority: 16,
+                  enabled: true,
+                  name: "Volcanic Ash Clouds",
+                };
+                
+                this.effects.set(lavaCloudsInstance.id, lavaCloudsInstance);
+                effects.push(lavaCloudsInstance);
+                lavaCloudsEffect.addToScene(scene, mesh.position);
+              }
+            }
+            break;
+
           case "exotic":
             // Planetas Exotic: nubes alienígenas, figuras geométricas y doodles
             
@@ -2177,6 +2292,7 @@ export class EffectRegistry {
               radiationRingsEffect.effect.addToScene(scene, mesh.position);
             }
             break;
+
 
           case "super_earth":
             // Super Earth planets: rich atmospheric clouds and massive continental land masses

@@ -35,6 +35,7 @@ export class DailyChallengesManager {
     return stored;
   }
 
+
   private static getStoredChallenges(): DailyChallenges | null {
     try {
       const data = localStorage.getItem(this.STORAGE_KEY);
@@ -49,8 +50,8 @@ export class DailyChallengesManager {
     // Calculate day number (days since first launch)
     const dayNumber = previous ? previous.dayNumber + 1 : 1;
     
-    // Calculate multiplier (2^(dayNumber-1))
-    const multiplier = Math.pow(2, dayNumber - 1);
+    // Calculate progressive multiplier (1.0, 1.1, 1.2, 1.3, etc - caps at 2.0)
+    const multiplier = Math.min(1 + (dayNumber - 1) * 0.1, 2.0);
     
     // Get current stats
     const stats = this.getCurrentStats();
@@ -59,21 +60,21 @@ export class DailyChallengesManager {
       {
         type: 'galaxies',
         current: stats.galaxies,
-        target: this.BASE_GOALS.galaxies * multiplier,
+        target: Math.ceil(this.BASE_GOALS.galaxies * multiplier),
         dayNumber,
         completed: false
       },
       {
         type: 'systems', 
         current: stats.systems,
-        target: this.BASE_GOALS.systems * multiplier,
+        target: Math.ceil(this.BASE_GOALS.systems * multiplier),
         dayNumber,
         completed: false
       },
       {
         type: 'planets',
         current: stats.planets,
-        target: this.BASE_GOALS.planets * multiplier,
+        target: Math.ceil(this.BASE_GOALS.planets * multiplier),
         dayNumber,
         completed: false
       }
@@ -161,7 +162,7 @@ export class DailyChallengesManager {
     const challenges = this.getTodaysChallenges();
     return {
       dayNumber: challenges.dayNumber,
-      multiplier: Math.pow(2, challenges.dayNumber - 1)
+      multiplier: Math.min(1 + (challenges.dayNumber - 1) * 0.1, 2.0)
     };
   }
 }
