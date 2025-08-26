@@ -471,7 +471,7 @@ export class SuperEarthWaterFeaturesEffect {
     
     // Curve each vertex to follow planet surface - NO THICKNESS/VOLUME
     const positions = geometry.attributes.position;
-    const centerPos = sphericalPos.clone().multiplyScalar(this.planetRadius * 1.02); // Same elevation as final projection
+    const centerPos = sphericalPos.clone().multiplyScalar(this.planetRadius * 1.01); // Much closer to surface
     
     for (let i = 0; i < positions.count; i++) {
       const localVertex = new THREE.Vector3();
@@ -483,7 +483,7 @@ export class SuperEarthWaterFeaturesEffect {
         .add(forward.clone().multiplyScalar(localVertex.y));
       
       // Project onto sphere surface - this curves it to follow planet surface
-      const projectedVertex = worldVertex.normalize().multiplyScalar(this.planetRadius * 1.02); // Even higher elevation to avoid z-fighting
+      const projectedVertex = worldVertex.normalize().multiplyScalar(this.planetRadius * 1.01); // Just barely above surface
       
       // Store as world coordinates (no mesh positioning needed)
       positions.setXYZ(i, projectedVertex.x, projectedVertex.y, projectedVertex.z);
@@ -506,7 +506,7 @@ export class SuperEarthWaterFeaturesEffect {
       index: bodyIndex
     };
     
-    waterMesh.renderOrder = 1020; // Higher render order to ensure proper layering above surface
+    waterMesh.renderOrder = 1002; // Just above surface, same level as land masses
     waterMesh.castShadow = false;
     waterMesh.receiveShadow = true;
     
@@ -547,9 +547,29 @@ export class SuperEarthWaterFeaturesEffect {
   }
 
   private generateRandomSurfacePoint(): number[] {
-    // Avoid poles for better distribution
-    const theta = this.rng.uniform(0.3, Math.PI - 0.3);
-    const phi = this.rng.uniform(0, Math.PI * 2);
+    // MANUAL ADJUSTMENT - Modify these ranges to control where water appears:
+    
+    // Current: Random distribution avoiding poles
+    // const theta = this.rng.uniform(0.3, Math.PI - 0.3);  // Latitude: 0=north pole, π=south pole
+    // const phi = this.rng.uniform(0, Math.PI * 2);        // Longitude: 0=east, π=west, 2π=east
+    
+    // EXAMPLE OPTIONS - uncomment one:
+    
+    // 1. Northern hemisphere only:
+    // const theta = this.rng.uniform(0.2, Math.PI * 0.6);
+    // const phi = this.rng.uniform(0, Math.PI * 2);
+    
+    // 2. Equatorial band:
+    // const theta = this.rng.uniform(Math.PI * 0.3, Math.PI * 0.7);
+    // const phi = this.rng.uniform(0, Math.PI * 2);
+    
+    // 3. Western hemisphere:
+    // const theta = this.rng.uniform(0.3, Math.PI - 0.3);
+    // const phi = this.rng.uniform(Math.PI * 0.5, Math.PI * 1.5);
+    
+    // CURRENT SETTING (change these values):
+    const theta = this.rng.uniform(0.3, Math.PI - 0.3);  // Full latitude range
+    const phi = this.rng.uniform(0, Math.PI * 2);        // Full longitude range
 
     const x = Math.sin(theta) * Math.cos(phi);
     const y = Math.cos(theta);
