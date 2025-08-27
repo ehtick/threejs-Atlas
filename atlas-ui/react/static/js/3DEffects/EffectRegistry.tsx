@@ -16,7 +16,7 @@ import { AtmosphereGlowEffect, createAtmosphereGlowFromPythonData, AtmosphereGlo
 import { AtmosphereCloudsEffect, createAtmosphereCloudsFromPythonData, AtmosphereCloudsParams } from "./AtmosphereClouds";
 import { LandMassesEffect, createLandMassesFromPythonData, createTransparentLandMassesForIcyPlanet, LandMassesParams } from "./LandMasses";
 import { IcyFeaturesEffect, createIcyFeaturesFromPythonData } from "./IcyFeatures";
-import { TundraSnowflakesEffect, createTundraSnowflakesFromPythonData, createCarbonDustParticlesFromPythonData } from "./TundraSnowflakes";
+import { TundraSnowflakesEffect, createTundraSnowflakesFromPythonData, createCarbonDustParticlesFromPythonData, createDesertSandstormsFromPythonData } from "./TundraSnowflakes";
 import { RiverLinesEffect, createRiverLinesFromPythonData } from "./RiverLines";
 
 // Efectos anómalos
@@ -1466,6 +1466,22 @@ export class EffectRegistry {
               this.effects.set(desertWaterFeaturesInstance.id, desertWaterFeaturesInstance);
               effects.push(desertWaterFeaturesInstance);
               desertWaterFeaturesEffect.addToScene(scene, mesh.position);
+            }
+            
+            // 4. Add tundra_snowflakes effect (desert sandstorms)
+            const desertSnowflakesEffect = createDesertSandstormsFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 15000);
+            if (desertSnowflakesEffect) {
+              const desertSnowflakesInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "tundra_snowflakes",
+                effect: desertSnowflakesEffect,
+                priority: 20,
+                enabled: true,
+                name: "Desert Sandstorms",
+              };
+              this.effects.set(desertSnowflakesInstance.id, desertSnowflakesInstance);
+              effects.push(desertSnowflakesInstance);
+              desertSnowflakesEffect.addToScene(scene, mesh.position);
             }
             break;
 

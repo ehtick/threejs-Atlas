@@ -414,3 +414,31 @@ export function createCarbonDustParticlesFromPythonData(planetRadius: number, su
     seed: seed + 15000,
   });
 }
+
+/**
+ * Función específica para crear tormentas de arena para planetas Desert
+ */
+export function createDesertSandstormsFromPythonData(planetRadius: number, surfaceData: any, globalSeed?: number): TundraSnowflakesEffect | null {
+  const seed = globalSeed || Math.floor(Math.random() * 1000000);
+
+  // Colores de arena para tormentas del desierto
+  const sandColors = [
+    new THREE.Color(0.9, 0.8, 0.6), // Arena clara
+    new THREE.Color(0.8, 0.7, 0.5), // Arena dorada
+    new THREE.Color(0.7, 0.6, 0.4), // Arena oscura
+    new THREE.Color(1.0, 0.9, 0.7), // Arena muy clara
+    new THREE.Color(0.6, 0.5, 0.3), // Arena marrón
+  ];
+
+  const particleCount = 12; // Partículas moderadas para tormentas de arena
+  const windSpeed = 3.5; // Velocidad alta para simular vientos del desierto
+
+  return new TundraSnowflakesEffect(planetRadius, {
+    particleCount,
+    windSpeed,
+    size: 1.3, // Tamaño adecuado para partículas de arena
+    opacity: 0.8, // Opacidad alta pero no completamente opaca
+    colors: sandColors,
+    seed: seed + 15000,
+  });
+}
