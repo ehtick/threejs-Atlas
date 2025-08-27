@@ -45,7 +45,7 @@ export class UnifiedSpaceshipStorage {
     system: 45 * 60 * 1000,    // 45 minutes - reduced for better flow
     galaxy: 90 * 60 * 1000     // 90 minutes - accessible but meaningful
   };
-  private static readonly PASSIVE_INTERVAL = 1 * 60 * 1000; // 1 minute for frequent rewards
+  private static readonly PASSIVE_INTERVAL = 5 * 60 * 1000; // 5 minutes for better pacing
   
   // Default initial state - generous starting resources
   private static readonly DEFAULT_DATA: SpaceshipData = {

@@ -59,9 +59,9 @@ export class SpaceshipResourceManager {
 
   static calculateTravelCost(locationType: "galaxy" | "system" | "planet", distance: number = 0): TravelCost {
     const baseCosts = {
-      galaxy: { antimatter: 8, element115: 6, deuterium: 5 }, // Accessible but significant for long-range exploration
-      system: { antimatter: 3, element115: 2, deuterium: 4 }, // Very cheap to encourage discovery
-      planet: { antimatter: 0, element115: 0, deuterium: 1 }, // Almost free to promote exploration
+      galaxy: { antimatter: 25, element115: 20, deuterium: 15 }, // High cost - significant investment for galaxy exploration
+      system: { antimatter: 8, element115: 6, deuterium: 10 }, // Medium cost - meaningful for system travel
+      planet: { antimatter: 2, element115: 1, deuterium: 3 }, // Low but not free - encourages resource management
     };
 
     const base = baseCosts[locationType];
@@ -94,13 +94,13 @@ export class SpaceshipResourceManager {
   }
 
   static getUpgradeCost(currentLevel: number): TravelCost {
-    const baseCost = 30; // Very accessible base cost for smooth progression
-    const multiplier = Math.pow(1.25, currentLevel - 1); // Gentle exponential curve (25% instead of 50%)
+    const baseCost = 80; // Higher base cost to require more exploration
+    const multiplier = Math.pow(1.4, currentLevel - 1); // Steeper curve to encourage exploration
     
     return {
       antimatter: Math.floor(baseCost * multiplier),
-      element115: Math.floor(baseCost * multiplier * 1.2),
-      deuterium: Math.floor(baseCost * multiplier * 0.8),
+      element115: Math.floor(baseCost * multiplier * 1.3), // Element115 becomes more expensive
+      deuterium: Math.floor(baseCost * multiplier * 0.9), // Deuterium slightly cheaper
     };
   }
 
@@ -144,14 +144,14 @@ export class SpaceshipResourceManager {
     savedLocations.forEach((location: any) => {
       if (location.type === "planet") {
         sources.planets++;
-        totalGeneration.antimatter += 8; // Generous passive generation per minute
-        totalGeneration.element115 += 6; // Generous passive generation per minute
-        totalGeneration.deuterium += 10; // Generous passive generation per minute
+        totalGeneration.antimatter += 12; // Higher per interval since intervals are longer
+        totalGeneration.element115 += 9; // Balanced passive generation per interval
+        totalGeneration.deuterium += 15; // Deuterium most common in passive generation
       } else if (location.type === "system") {
         sources.systems++;
-        totalGeneration.antimatter += 3; // Meaningful passive generation per minute
-        totalGeneration.element115 += 2; // Meaningful passive generation per minute
-        totalGeneration.deuterium += 4; // Meaningful passive generation per minute
+        totalGeneration.antimatter += 5; // Systems generate ~50% of planet rate as specified
+        totalGeneration.element115 += 4; // Balanced passive generation per interval  
+        totalGeneration.deuterium += 6; // Meaningful but less than planets
       }
       // Galaxies don't generate passive resources as per requirements
     });
@@ -213,7 +213,7 @@ export class SpaceshipResourceManager {
       return baseGeneration;
     }
     
-    const intervalsPassed = Math.floor((now - lastPassive) / (1 * 60 * 1000)); // 1 minute intervals for frequent engagement
+    const intervalsPassed = Math.floor((now - lastPassive) / (5 * 60 * 1000)); // 5 minute intervals for better pacing
     
     if (intervalsPassed < 1) {
       // Less than one interval passed - no resources available yet
@@ -248,9 +248,9 @@ export class SpaceshipResourceManager {
     
     // Calculate generation rate per hour
     const perHour = {
-      antimatter: generation.antimatter * 60, // Per minute * 60 = per hour
-      element115: generation.element115 * 60,
-      deuterium: generation.deuterium * 60
+      antimatter: generation.antimatter * 12, // Per 5-minute interval * 12 = per hour
+      element115: generation.element115 * 12,
+      deuterium: generation.deuterium * 12
     };
     
     toast.innerHTML = `
@@ -334,14 +334,14 @@ export class SpaceshipResourceManager {
     const generation = this.calculatePassiveGeneration();
     const nextGeneration = UnifiedSpaceshipStorage.shouldProcessPassive() 
       ? 0 
-      : (1 * 60 * 1000 - (Date.now() - (UnifiedSpaceshipStorage.getData().t.lp || 0))) / 1000; // 1 minute intervals
+      : (5 * 60 * 1000 - (Date.now() - (UnifiedSpaceshipStorage.getData().t.lp || 0))) / 1000; // 5 minute intervals
     
     return {
       generation,
       perHour: {
-        antimatter: generation.antimatter * 60, // Per minute * 60 = per hour
-        element115: generation.element115 * 60,
-        deuterium: generation.deuterium * 60,
+        antimatter: generation.antimatter * 12, // Per 5-minute interval * 12 = per hour
+        element115: generation.element115 * 12,
+        deuterium: generation.deuterium * 12,
       },
       nextGenerationIn: Math.max(0, nextGeneration)
     };

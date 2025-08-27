@@ -223,7 +223,17 @@ export class OptimizedAtlasStorage {
   
   public static getStorageStats(): { size: number; galaxies: number; visitedGalaxies: number; systems: number; planets: number } {
     const data = this.getData();
-    const serialized = JSON.stringify(data);
+    
+    // Calculate size of all Atlas-related localStorage keys
+    let totalSize = 0;
+    const atlasKeys = ['__atlasArchive', '_atlasDailyChallenges', '_atlasLocations', '_atlasSpaceShip'];
+    
+    atlasKeys.forEach(key => {
+      const value = localStorage.getItem(key);
+      if (value) {
+        totalSize += value.length;
+      }
+    });
     
     let totalSystems = 0;
     let totalPlanets = 0;
@@ -244,7 +254,7 @@ export class OptimizedAtlasStorage {
     const allVisitedGalaxies = new Set([...galaxiesWithSystems, ...visitedGalaxies]);
     
     return {
-      size: serialized.length,
+      size: totalSize,
       galaxies: allVisitedGalaxies.size,
       visitedGalaxies: Object.keys(data.gv).length,
       systems: totalSystems,

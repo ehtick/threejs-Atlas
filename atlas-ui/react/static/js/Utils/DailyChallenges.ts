@@ -20,9 +20,9 @@ export interface DailyChallenges {
 export class DailyChallengesManager {
   private static readonly STORAGE_KEY = '_atlasDailyChallenges';
   private static readonly BASE_GOALS = {
-    galaxies: 2,
-    systems: 5,
-    planets: 10
+    galaxies: 1,    // Start with just 1 galaxy per day - more achievable
+    systems: 5,     // Keep systems at 5 - reasonable daily goal 
+    planets: 10     // Keep planets at 10 - encourages exploration
   };
 
   public static getTodaysChallenges(): DailyChallenges {

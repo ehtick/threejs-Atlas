@@ -51,22 +51,31 @@ const SaveLocationButton: React.FC<SaveLocationButtonProps> = ({ type, name, coo
   }, [coordinates, systemIndex, planetName, type]);
 
   const handleSaveLocation = async () => {
-    setIsLoading(true);
-
+    // DON'T set loading state before dialog - user hasn't decided yet!
+    
     try {
       const stargateUrl = generateStargateUrl();
 
-      LocationBookmarks.saveLocation({
+      // Wait for user decision from dialog
+      const saved = await LocationBookmarks.saveLocation({
         name,
         type,
         stargateUrl,
       });
 
-      setIsSaved(true);
-
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 300);
+      if (saved) {
+        // User confirmed - NOW show loading/saving state
+        setIsLoading(true);
+        
+        // Brief delay for visual feedback
+        setTimeout(() => {
+          setIsSaved(true);
+          setIsLoading(false);
+        }, 300);
+      } else {
+        // User cancelled - don't change any state
+        console.log("User cancelled save operation");
+      }
     } catch (error) {
       console.error("Error saving location:", error);
       setIsLoading(false);
