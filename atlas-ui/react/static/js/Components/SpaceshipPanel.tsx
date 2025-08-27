@@ -172,7 +172,7 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
                     <h4 className="text-white font-semibold text-xs">🌟 Daily Challenges</h4>
                     {dailyChallenges && (
                       <div className="text-[10px] text-indigo-400 font-medium">
-                        Day {dailyChallenges.dayNumber} • x{Math.min(1 + (dailyChallenges.dayNumber - 1) * 0.1, 2.0).toFixed(1)}
+                        Day {dailyChallenges.dayNumber} • x{DailyChallengesManager.getDayInfo().multiplier}
                       </div>
                     )}
                   </div>

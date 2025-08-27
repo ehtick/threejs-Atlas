@@ -13,16 +13,16 @@ export interface DailyChallenges {
   dayNumber: number;
   challenges: DailyChallenge[];
   lastReset: number; // timestamp
-  totalCompletedDays?: number; // Total days where all challenges were completed
-  completedDates?: string[]; // Array of completed dates (for tracking)
+  totalCompletedDays: number; // Total days where all challenges were completed
+  dayCompleted?: boolean; // Flag to track if current day was already counted
 }
 
 export class DailyChallengesManager {
   private static readonly STORAGE_KEY = '_atlasDailyChallenges';
   private static readonly BASE_GOALS = {
-    galaxies: 1,    // Start with just 1 galaxy per day - more achievable
-    systems: 5,     // Keep systems at 5 - reasonable daily goal 
-    planets: 10     // Keep planets at 10 - encourages exploration
+    galaxies: 1,    // Base cumulative growth per day
+    systems: 3,     // Base cumulative growth per day 
+    planets: 10     // Base cumulative growth per day
   };
 
   public static getTodaysChallenges(): DailyChallenges {
@@ -52,8 +52,9 @@ export class DailyChallengesManager {
     // Calculate day number (days since first launch)
     const dayNumber = previous ? previous.dayNumber + 1 : 1;
     
-    // Calculate progressive multiplier (1.0, 1.1, 1.2, 1.3, etc - caps at 2.0)
-    const multiplier = Math.min(1 + (dayNumber - 1) * 0.1, 2.0);
+    // Calculate cumulative targets with exponential growth
+    // Each day requires total exploration to date: dayNumber * base * (1.10^(day-1))
+    const dailyMultiplier = Math.pow(1.10, dayNumber - 1);
     
     // Get current stats
     const stats = this.getCurrentStats();
@@ -62,32 +63,36 @@ export class DailyChallengesManager {
       {
         type: 'galaxies',
         current: stats.galaxies,
-        target: Math.ceil(this.BASE_GOALS.galaxies * multiplier),
+        target: Math.ceil(dayNumber * this.BASE_GOALS.galaxies * dailyMultiplier),
         dayNumber,
         completed: false
       },
       {
         type: 'systems', 
         current: stats.systems,
-        target: Math.ceil(this.BASE_GOALS.systems * multiplier),
+        target: Math.ceil(dayNumber * this.BASE_GOALS.systems * dailyMultiplier),
         dayNumber,
         completed: false
       },
       {
         type: 'planets',
         current: stats.planets,
-        target: Math.ceil(this.BASE_GOALS.planets * multiplier),
+        target: Math.ceil(dayNumber * this.BASE_GOALS.planets * dailyMultiplier),
         dayNumber,
         completed: false
       }
     ];
+
+    // If we're creating a new day and the previous day was completed, increment totalCompletedDays
+    const previousCompletedCount = (previous?.totalCompletedDays || 0) + (previous?.dayCompleted ? 1 : 0);
 
     const newChallenges: DailyChallenges = {
       date: today,
       dayNumber,
       challenges,
       lastReset: Date.now(),
-      totalCompletedDays: this.migrateCompletionHistory()
+      totalCompletedDays: previousCompletedCount,
+      dayCompleted: false
     };
 
     this.saveChallenges(newChallenges);
@@ -145,56 +150,17 @@ export class DailyChallengesManager {
 
     const isNowAllCompleted = challenges.challenges.every(c => c.completed);
     
-    // If all challenges are completed and we haven't recorded this day yet, record it
-    if (isNowAllCompleted && !this.isDayAlreadyRecorded(challenges)) {
-      this.recordCompletedDay(challenges.date);
+    // If all challenges are completed and we haven't recorded this day yet, mark it as completed
+    // But don't increment totalCompletedDays until tomorrow (it's for previous days only)
+    if (isNowAllCompleted && !challenges.dayCompleted) {
+      challenges.dayCompleted = true;
     }
 
     this.saveChallenges(challenges);
     return challenges;
   }
 
-  private static recordCompletedDay(date: string): void {
-    try {
-      const challenges = this.getTodaysChallenges();
-      
-      // Initialize arrays if they don't exist
-      if (!challenges.completedDates) {
-        challenges.completedDates = [];
-      }
-      
-      // Add the date to completed dates if not already there
-      if (!challenges.completedDates.includes(date)) {
-        challenges.completedDates.push(date);
-        challenges.totalCompletedDays = (challenges.totalCompletedDays || 0) + 1;
-        this.saveChallenges(challenges);
-      }
-    } catch (error) {
-      console.error('Error recording completed day:', error);
-    }
-  }
 
-  private static migrateCompletionHistory(): number {
-    try {
-      const historyKey = '_atlasCompletionHistory';
-      const history = localStorage.getItem(historyKey);
-      
-      if (history) {
-        const completedDays = JSON.parse(history);
-        const count = Array.isArray(completedDays) ? completedDays.length : 0;
-        
-        // Clean up old storage after migration
-        localStorage.removeItem(historyKey);
-        
-        return count;
-      }
-      
-      return 0;
-    } catch (error) {
-      console.error('Error migrating completion history:', error);
-      return 0;
-    }
-  }
 
   public static getCompletedDaysCount(): number {
     try {
@@ -206,12 +172,6 @@ export class DailyChallengesManager {
     }
   }
 
-  private static isDayAlreadyRecorded(challenges: DailyChallenges): boolean {
-    // Check if today's date is already in the completed dates array
-    const today = challenges.date;
-    const completedDates = challenges.completedDates || [];
-    return completedDates.includes(today);
-  }
 
   private static saveChallenges(challenges: DailyChallenges): void {
     try {
@@ -235,9 +195,10 @@ export class DailyChallengesManager {
 
   public static getDayInfo(): { dayNumber: number; multiplier: number } {
     const challenges = this.getTodaysChallenges();
+    const baseMultiplier = Math.pow(1.10, challenges.dayNumber - 1);
     return {
       dayNumber: challenges.dayNumber,
-      multiplier: Math.min(1 + (challenges.dayNumber - 1) * 0.1, 2.0)
+      multiplier: Math.round(baseMultiplier * 100) / 100 // Round to 2 decimals for display
     };
   }
 }
