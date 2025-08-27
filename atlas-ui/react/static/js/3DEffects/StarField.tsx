@@ -14,6 +14,7 @@
 
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom";
+import { getAnimatedUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime";
 
 export interface StarFieldParams {
   color?: THREE.Color | number;
@@ -27,6 +28,8 @@ export interface StarFieldParams {
   twinkleSpeed?: number; // Velocidad del parpadeo
   parallaxStrength?: number; // Intensidad del efecto parallax
   variableChance?: number; // Probabilidad de que una estrella sea variable (0-1)
+  cosmicOriginTime?: number; // Tiempo origen cósmico para sincronización
+  timeSpeed?: number; // Velocidad de animación temporal
 }
 
 // Rangos para generación procedural
@@ -55,6 +58,7 @@ export class StarFieldEffect {
   private starCount: number;
   private cameraPosition: THREE.Vector3 = new THREE.Vector3();
   private lastCameraPosition: THREE.Vector3 = new THREE.Vector3();
+  private startTime: number;
 
   private static readonly vertexShader = `
     attribute float size;
@@ -162,7 +166,13 @@ export class StarFieldEffect {
       twinkleSpeed: params.twinkleSpeed !== undefined ? params.twinkleSpeed : rng.uniform(PROCEDURAL_RANGES.TWINKLE_SPEED.min, PROCEDURAL_RANGES.TWINKLE_SPEED.max),
       parallaxStrength: params.parallaxStrength !== undefined ? params.parallaxStrength : rng.uniform(PROCEDURAL_RANGES.PARALLAX_STRENGTH.min, PROCEDURAL_RANGES.PARALLAX_STRENGTH.max),
       variableChance: params.variableChance !== undefined ? params.variableChance : rng.uniform(PROCEDURAL_RANGES.VARIABLE_CHANCE.min, PROCEDURAL_RANGES.VARIABLE_CHANCE.max),
+      cosmicOriginTime: params.cosmicOriginTime,
+      timeSpeed: params.timeSpeed !== undefined ? params.timeSpeed : 1.0,
     };
+
+    // Inicializar tiempo de inicio para sincronización cósmica
+    const cosmicOriginTime = this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME;
+    this.startTime = Date.now() / 1000 - cosmicOriginTime;
 
     this.starCount = this.params.starCount!;
     this.geometry = new THREE.BufferGeometry();
@@ -265,9 +275,13 @@ export class StarFieldEffect {
     scene.add(this.starSystem);
   }
 
-  update(deltaTime: number, _planetRotation?: number, camera?: THREE.Camera): void {
-    // Actualizar tiempo para el parpadeo
-    this.material.uniforms.time.value += deltaTime;
+  update(_deltaTime: number, _planetRotation?: number, camera?: THREE.Camera): void {
+    // Calcular tiempo absoluto determinista usando el sistema cósmico
+    const cosmicOriginTime = this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME;
+    const currentTime = getAnimatedUniverseTime(cosmicOriginTime, this.params.timeSpeed!, this.startTime);
+    
+    // Actualizar tiempo absoluto para el parpadeo (reemplaza el deltaTime acumulativo)
+    this.material.uniforms.time.value = currentTime;
 
     // Sistema de parallax basado en movimiento de cámara
     if (camera) {
@@ -320,7 +334,7 @@ export class StarFieldEffect {
 /**
  * Función de utilidad para crear campo de estrellas desde datos de Python
  */
-export function createStarFieldFromPythonData(planetRadius: number, planetSeed?: number): StarFieldEffect {
+export function createStarFieldFromPythonData(planetRadius: number, planetSeed?: number, cosmicOriginTime?: number, timeSpeed?: number): StarFieldEffect {
   // Usar planet seed para generar campo de estrellas consistente
   const seed = planetSeed !== undefined ? planetSeed : Math.floor(Math.random() * 1000000);
   const rng = new SeededRandom(seed + 10000);
@@ -337,6 +351,8 @@ export function createStarFieldFromPythonData(planetRadius: number, planetSeed?:
     twinkleSpeed: rng.uniform(PROCEDURAL_RANGES.TWINKLE_SPEED.min, PROCEDURAL_RANGES.TWINKLE_SPEED.max),
     parallaxStrength: rng.uniform(PROCEDURAL_RANGES.PARALLAX_STRENGTH.min, PROCEDURAL_RANGES.PARALLAX_STRENGTH.max),
     variableChance: rng.uniform(PROCEDURAL_RANGES.VARIABLE_CHANCE.min, PROCEDURAL_RANGES.VARIABLE_CHANCE.max),
+    cosmicOriginTime,
+    timeSpeed: timeSpeed !== undefined ? timeSpeed : 1.0,
   };
 
   return new StarFieldEffect(planetRadius, params);
