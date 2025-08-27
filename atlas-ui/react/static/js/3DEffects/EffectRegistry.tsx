@@ -33,7 +33,7 @@ import { RockyTerrainLayer, createRockyTerrainLayerFromPythonData } from "./Rock
 import { IcyTerrainLayer, createIcyTerrainLayerFromPythonData } from "./IcyTerrainLayer";
 import { MetallicSurfaceLayer, createMetallicSurfaceLayerFromPythonData } from "./MetallicSurfaceLayer";
 import { DiamondSurfaceLayer, createDiamondSurfaceLayerFromPythonData } from "./DiamondSurfaceLayer";
-import { DiamondCracksEffect, createDiamondCracksFromPythonData } from "./DiamondCracksEffect";
+import { TerrainCracksEffect, createTerrainCracksFromPythonData } from "./TerrainCracksEffect";
 import { ExoticGeometricShapesEffect, createExoticGeometricShapesFromPythonData } from "./ExoticGeometricShapes";
 import { ExoticDoodlesEffect, createExoticDoodlesFromPythonData } from "./ExoticDoodles";
 import { CaveSurfaceHolesEffect, createCaveSurfaceHolesFromPythonData } from "./CaveSurfaceHoles";
@@ -381,10 +381,10 @@ export class EffectRegistry {
       fromPythonData: (data, planetRadius) => createVisualDebug3DFromPythonData(data, planetRadius),
     });
 
-    // Efectos de diamante
-    this.registerEffect("diamond_cracks", {
-      create: (params, planetRadius) => new DiamondCracksEffect({ ...params, radius: planetRadius }),
-      fromPythonData: (data, planetRadius) => createDiamondCracksFromPythonData(data, planetRadius, data.seeds?.shape_seed || data.seeds?.planet_seed),
+    // Efectos de terreno con grietas
+    this.registerEffect("terrain_cracks", {
+      create: (params, planetRadius) => new TerrainCracksEffect({ ...params, radius: planetRadius }),
+      fromPythonData: (data, planetRadius) => createTerrainCracksFromPythonData(data, planetRadius, data.seeds?.shape_seed || data.seeds?.planet_seed),
     });
 
     // Efectos para planetas Exotic
@@ -939,7 +939,7 @@ export class EffectRegistry {
               effects.push(diamondInstance);
 
               // Añadir grietas internas al diamante como efecto independiente
-              const cracksEffect = createDiamondCracksFromPythonData(
+              const cracksEffect = createTerrainCracksFromPythonData(
                 pythonData, 
                 planetRadius,
                 pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed
@@ -947,7 +947,7 @@ export class EffectRegistry {
               
               const cracksInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
-                type: "diamond_cracks",
+                type: "terrain_cracks",
                 effect: cracksEffect,
                 priority: 1, // Mayor prioridad para renderizar sobre el diamante
                 enabled: true,
@@ -1520,7 +1520,28 @@ export class EffectRegistry {
           case "lava":
             // Planetas Lava: múltiples ríos de lava fluyendo con erupciones de fuego
             
-            // 1. Añadir ríos de lava como efecto principal
+            // 1. Añadir grietas del terreno como efecto visual
+            const terrainCracksEffect = createTerrainCracksFromPythonData(
+              pythonData, 
+              planetRadius,
+              pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed
+            );
+            
+            if (terrainCracksEffect) {
+              const cracksInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "terrain_cracks",
+                effect: terrainCracksEffect,
+                priority: 1, // Baja prioridad para renderizar sobre la superficie
+                enabled: true,
+                name: "Lava Terrain Cracks",
+              };
+              this.effects.set(cracksInstance.id, cracksInstance);
+              effects.push(cracksInstance);
+              terrainCracksEffect.addToScene(scene, mesh.position);
+            }
+            
+            // 2. Añadir ríos de lava como efecto principal
             const lavaRiversEffect = this.createEffectFromPythonData(
               EffectType.LAVA_RIVERS,
               pythonData,
@@ -1543,7 +1564,7 @@ export class EffectRegistry {
               lavaRiversEffect.addToScene(scene, mesh.position);
             }
 
-            // 2. Añadir erupciones de fuego para complementar los ríos
+            // 3. Añadir erupciones de fuego para complementar los ríos
             const lavaFireEruptionEffect = this.createEffectFromPythonData(
               EffectType.FIRE_ERUPTION,
               pythonData,
@@ -1566,7 +1587,7 @@ export class EffectRegistry {
               lavaFireEruptionEffect.addToScene(scene, mesh.position);
             }
 
-            // 3. Añadir superficie base de lava menos intensa que Molten Core
+            // 4. Añadir superficie base de lava menos intensa que Molten Core
             if (surface.green_patches && surface.green_patches.length > 0) {
               const lavaLandMassesData = {
                 ...surface,
@@ -1599,7 +1620,7 @@ export class EffectRegistry {
               }
             }
 
-            // 4. Añadir nubes volcánicas si están disponibles (ceniza y humo)
+            // 5. Añadir nubes volcánicas si están disponibles (ceniza y humo)
             if (surface.clouds && surface.clouds.length > 0) {
               const lavaCloudsEffect = createAtmosphereCloudsFromPythonData(
                 planetRadius,

@@ -1,15 +1,15 @@
 /**
- * Diamond Cracks Effect - Efecto de grietas internas del diamante
+ * Terrain Cracks Effect - Efecto de grietas del terreno
  *
- * Crea grietas internas procedurales que simulan inclusiones, fracturas y defectos
- * característicos de diamantes reales con patrones cristalinos.
- * Se aplica como una capa transparente sobre la superficie del diamante.
+ * Crea grietas procedurales que simulan fracturas y defectos en la superficie.
+ * Se puede aplicar a diferentes tipos de planetas (Diamond, Lava, etc.).
+ * Se aplica como una capa transparente sobre la superficie del planeta.
  */
 
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom";
 
-export interface DiamondCracksParams {
+export interface TerrainCracksParams {
   crackDensity?: number;
   crackDepth?: number;
   crackComplexity?: number;
@@ -36,12 +36,12 @@ const PROCEDURAL_RANGES = {
   ANIMATION_SPEED: { min: 0.05, max: 0.15 }, // Animación sutil
 };
 
-export class DiamondCracksEffect {
+export class TerrainCracksEffect {
   private crackMesh: THREE.Mesh;
   private material: THREE.ShaderMaterial;
-  private params: DiamondCracksParams;
+  private params: TerrainCracksParams;
 
-  constructor(params: DiamondCracksParams = {}) {
+  constructor(params: TerrainCracksParams = {}) {
     // Usar seed proporcionada o una seed fija por defecto para determinismo
     const seed = params.seed !== undefined ? params.seed : 123456;
 
@@ -252,12 +252,12 @@ export class DiamondCracksEffect {
 /**
  * Función para crear grietas desde datos de Python
  */
-export function createDiamondCracksFromPythonData(_data: any, radius: number, globalSeed?: number): DiamondCracksEffect {
+export function createTerrainCracksFromPythonData(_data: any, radius: number, globalSeed?: number): TerrainCracksEffect {
   // Usar seedOffset como otros efectos para evitar números enormes
-  const seedOffset = 5000; // Offset único para DiamondCracks
+  const seedOffset = 5000; // Offset único para TerrainCracks
   const seed = globalSeed ? (globalSeed + seedOffset) % 1000000 : Math.floor(Math.random() * 1000000);
 
-  return new DiamondCracksEffect({
+  return new TerrainCracksEffect({
     radius,
     seed,
     lineDrawPercentage: 0.66,
