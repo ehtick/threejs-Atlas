@@ -314,14 +314,10 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
                 <div>
                   <h4 className="text-white font-semibold mb-2 text-xs">🔧 Ship Upgrade</h4>
                   
-                  <div className="grid grid-cols-4 gap-1 text-[10px] mb-2">
+                  <div className="grid grid-cols-3 gap-1 text-[10px] mb-2">
                     <div className="bg-white/5 rounded p-1 border border-blue-500/20">
                       <div className="text-gray-400 text-[9px]">Efficiency</div>
                       <div className="text-blue-400 font-bold">{spaceshipUpgrade.efficiency.toFixed(1)}x</div>
-                    </div>
-                    <div className="bg-white/5 rounded p-1 border border-green-500/20">
-                      <div className="text-gray-400 text-[9px]">Range</div>
-                      <div className="text-green-400 font-bold">{spaceshipUpgrade.range}</div>
                     </div>
                     <div className="bg-white/5 rounded p-1 border border-yellow-500/20">
                       <div className="text-gray-400 text-[9px]">Storage</div>
