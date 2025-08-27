@@ -334,7 +334,7 @@ export class StarFieldEffect {
 /**
  * Función de utilidad para crear campo de estrellas desde datos de Python
  */
-export function createStarFieldFromPythonData(planetRadius: number, planetSeed?: number, cosmicOriginTime?: number, timeSpeed?: number): StarFieldEffect {
+export function createStarFieldFromPythonData(planetRadius: number, planetSeed?: number): StarFieldEffect {
   // Usar planet seed para generar campo de estrellas consistente
   const seed = planetSeed !== undefined ? planetSeed : Math.floor(Math.random() * 1000000);
   const rng = new SeededRandom(seed + 10000);
@@ -351,8 +351,6 @@ export function createStarFieldFromPythonData(planetRadius: number, planetSeed?:
     twinkleSpeed: rng.uniform(PROCEDURAL_RANGES.TWINKLE_SPEED.min, PROCEDURAL_RANGES.TWINKLE_SPEED.max),
     parallaxStrength: rng.uniform(PROCEDURAL_RANGES.PARALLAX_STRENGTH.min, PROCEDURAL_RANGES.PARALLAX_STRENGTH.max),
     variableChance: rng.uniform(PROCEDURAL_RANGES.VARIABLE_CHANCE.min, PROCEDURAL_RANGES.VARIABLE_CHANCE.max),
-    cosmicOriginTime,
-    timeSpeed: timeSpeed !== undefined ? timeSpeed : 1.0,
   };
 
   return new StarFieldEffect(planetRadius, params);
