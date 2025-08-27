@@ -4,7 +4,7 @@ interface ProgressBarProps {
   value: number;
   max: number;
   label?: string;
-  color?: "indigo" | "blue" | "purple" | "cyan" | "green";
+  color?: "indigo" | "blue" | "purple" | "cyan" | "green" | "orange" | "yellow";
   size?: "sm" | "xs";
   showPercentage?: boolean;
 }
@@ -38,6 +38,16 @@ const ProgressBar: React.FC<ProgressBarProps> = ({ value, max, label, color = "i
       fill: "bg-gradient-to-r from-green-500 to-green-400",
       text: "text-green-400",
     },
+    orange: {
+      bg: "bg-orange-500/20",
+      fill: "bg-gradient-to-r from-orange-500 to-orange-400",
+      text: "text-orange-400",
+    },
+    yellow: {
+      bg: "bg-yellow-500/20",
+      fill: "bg-gradient-to-r from-yellow-500 to-yellow-400",
+      text: "text-yellow-400",
+    },
   };
 
   const sizeClasses = {
@@ -45,7 +55,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({ value, max, label, color = "i
     sm: "h-2",
   };
 
-  const colors = colorClasses[color];
+  const colors = colorClasses[color] || colorClasses.indigo; // Fallback to indigo if color not found
   const height = sizeClasses[size];
 
   return (

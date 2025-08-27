@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { SpaceshipTravelManager } from "../Utils/SpaceshipTravelCosts";
 
 interface Galaxy {
   name: string;
@@ -58,6 +59,18 @@ const GalaxyNavigation: React.FC<GalaxyNavigationProps> = ({ currentGalaxy }) =>
 
   const handlePrevious = () => {
     if (hasPrev) {
+      // Check if can afford travel
+      const distance = 1; // Adjacent galaxy
+      if (!SpaceshipTravelManager.canAffordTravel("galaxy", distance)) {
+        SpaceshipTravelManager.executeTravel("galaxy", distance); // Will show insufficient resources message
+        return;
+      }
+      
+      // Consume resources for travel
+      if (!SpaceshipTravelManager.executeTravel("galaxy", distance)) {
+        return; // Travel failed
+      }
+      
       const [x, y, z] = getPreviousCoordinates();
       const form = document.createElement("form");
       form.method = "POST";
@@ -88,6 +101,18 @@ const GalaxyNavigation: React.FC<GalaxyNavigationProps> = ({ currentGalaxy }) =>
 
   const handleNext = () => {
     if (hasNext) {
+      // Check if can afford travel
+      const distance = 1; // Adjacent galaxy
+      if (!SpaceshipTravelManager.canAffordTravel("galaxy", distance)) {
+        SpaceshipTravelManager.executeTravel("galaxy", distance); // Will show insufficient resources message
+        return;
+      }
+      
+      // Consume resources for travel
+      if (!SpaceshipTravelManager.executeTravel("galaxy", distance)) {
+        return; // Travel failed
+      }
+      
       const [x, y, z] = getNextCoordinates();
       const form = document.createElement("form");
       form.method = "POST";

@@ -7,6 +7,10 @@ export interface VisitedData {
   };
 }
 
+export const markGalaxyAsVisited = (coordinates: string): void => {
+  OptimizedAtlasStorage.markGalaxyVisited(coordinates);
+};
+
 export const markPlanetAsVisited = (coordinates: string, systemIndex: number, planetName: string, systemPlanets: any[]): void => {
   OptimizedAtlasStorage.markPlanetVisited(coordinates, systemIndex, planetName, systemPlanets);
 };
@@ -27,6 +31,10 @@ export const isSystemFullyVisited = (coordinates: string, systemIndex: number, t
 export const isSystemPartiallyVisited = (coordinates: string, systemIndex: number, systemPlanets: any[]): boolean => {
   const visitedPlanets = getVisitedPlanets(coordinates, systemIndex, systemPlanets);
   return visitedPlanets.length > 0;
+};
+
+export const isGalaxyVisited = (coordinates: string): boolean => {
+  return OptimizedAtlasStorage.isGalaxyVisited(coordinates);
 };
 
 export const isSystemVisited = (coordinates: string, systemIndex: number): boolean => {

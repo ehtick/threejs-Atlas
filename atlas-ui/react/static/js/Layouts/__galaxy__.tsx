@@ -7,6 +7,7 @@ import GalaxyNavigation from '../Components/GalaxyNavigation.tsx';
 import Pagination from '../Components/Pagination.tsx';
 import VersionFooter from '../Components/VersionFooter.tsx';
 import SpaceshipPanel from '../Components/SpaceshipPanel.tsx';
+import { markGalaxyAsVisited } from '../Utils/VisitHistory.ts';
 
 interface Galaxy {
   name: string;
@@ -52,6 +53,9 @@ const GalaxyLayout: React.FC<GalaxyLayoutProps> = ({
   useEffect(() => {
     // Set coordinates in document body for historical data system
     document.body.setAttribute('data-coordinates', coordinates);
+    
+    // Mark galaxy as visited when layout loads
+    markGalaxyAsVisited(coordinates);
   }, [coordinates]);
 
   const formatGalaxyName = (name: string) => {

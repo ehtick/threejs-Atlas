@@ -1,4 +1,4 @@
-import { ShipResourceManager } from "./ShipResources";
+import { UnifiedSpaceshipStorage } from "./UnifiedSpaceshipStorage";
 import { NavigationHelper } from "./NavigationHelper";
 
 export class NavigationManager {
@@ -19,17 +19,15 @@ export class NavigationManager {
     // Intercept all navigation clicks
     document.addEventListener("click", this.handleClick.bind(this), true);
     
-    // Generate daily resources on page load
-    ShipResourceManager.generateDailyResources();
-    ShipResourceManager.generatePassiveResourcesFromSavedLocations();
+    // Daily resources are now handled by the unified storage system automatically
   }
 
   checkAndConsume(destination: any, currentCoords: number[], type: "galaxy" | "system" | "planet"): boolean {
     const destCoords = [destination.x, destination.y, destination.z];
     const distance = NavigationHelper.calculateDistance(currentCoords, destCoords);
-    const cost = ShipResourceManager.calculateTravelCost(distance, type);
-    const resources = ShipResourceManager.getResources();
-    const upgrade = ShipResourceManager.getUpgrade();
+    const cost = NavigationHelper.calculateTravelCost(distance, type);
+    const resources = UnifiedSpaceshipStorage.getResources();
+    const upgrade = UnifiedSpaceshipStorage.getUpgrade();
     
     // Calculate actual cost with efficiency
     const actualCost = {
@@ -48,7 +46,7 @@ export class NavigationManager {
     
     if (canAfford && withinRange) {
       // Consume resources
-      const consumed = ShipResourceManager.consumeResources(cost);
+      const consumed = UnifiedSpaceshipStorage.consumeResources(cost);
       if (consumed) {
         this.showNavigationSuccess(actualCost, type);
         return true;
@@ -159,9 +157,9 @@ export class NavigationManager {
   private checkAndConsumeResources(navigation: any): boolean {
     const currentCoords = this.getCurrentCoordinates();
     const distance = NavigationHelper.calculateDistance(currentCoords, navigation.destination);
-    const cost = ShipResourceManager.calculateTravelCost(distance, navigation.type);
-    const resources = ShipResourceManager.getResources();
-    const upgrade = ShipResourceManager.getUpgrade();
+    const cost = NavigationHelper.calculateTravelCost(distance, navigation.type);
+    const resources = UnifiedSpaceshipStorage.getResources();
+    const upgrade = UnifiedSpaceshipStorage.getUpgrade();
     
     // Calculate actual cost with efficiency
     const actualCost = {
@@ -180,7 +178,7 @@ export class NavigationManager {
     
     if (canAfford && withinRange) {
       // Consume resources
-      const consumed = ShipResourceManager.consumeResources(cost);
+      const consumed = UnifiedSpaceshipStorage.consumeResources(cost);
       if (consumed) {
         this.showNavigationSuccess(actualCost, navigation.type);
         return true;

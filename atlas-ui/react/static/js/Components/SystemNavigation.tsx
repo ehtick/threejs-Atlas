@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { markSystemAsVisited } from "../Utils/VisitHistory.ts";
+import { SpaceshipTravelManager } from "../Utils/SpaceshipTravelCosts.ts";
 
 interface System {
   name: string;
@@ -28,6 +29,18 @@ const SystemNavigation: React.FC<SystemNavigationProps> = ({ currentSystem, gala
 
   const handlePrevious = async () => {
     if (currentSystem.index > 0) {
+      // Check if can afford travel
+      const distance = 1; // Adjacent system
+      if (!SpaceshipTravelManager.canAffordTravel("system", distance)) {
+        SpaceshipTravelManager.executeTravel("system", distance); // Will show insufficient resources message
+        return;
+      }
+      
+      // Consume resources for travel
+      if (!SpaceshipTravelManager.executeTravel("system", distance)) {
+        return; // Travel failed
+      }
+      
       const coordinates = galaxy.coordinates.join(",");
       markSystemAsVisited(coordinates, currentSystem.index - 1);
       window.location.href = `/system/${currentSystem.index - 1}`;
@@ -35,6 +48,18 @@ const SystemNavigation: React.FC<SystemNavigationProps> = ({ currentSystem, gala
   };
 
   const handleNext = async () => {
+    // Check if can afford travel
+    const distance = 1; // Adjacent system
+    if (!SpaceshipTravelManager.canAffordTravel("system", distance)) {
+      SpaceshipTravelManager.executeTravel("system", distance); // Will show insufficient resources message
+      return;
+    }
+    
+    // Consume resources for travel
+    if (!SpaceshipTravelManager.executeTravel("system", distance)) {
+      return; // Travel failed
+    }
+    
     const coordinates = galaxy.coordinates.join(",");
     markSystemAsVisited(coordinates, currentSystem.index + 1);
     window.location.href = `/system/${currentSystem.index + 1}`;

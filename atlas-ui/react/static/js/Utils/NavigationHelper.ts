@@ -1,4 +1,5 @@
-import { ShipResourceManager, TravelCost } from "./ShipResources";
+import { UnifiedSpaceshipStorage } from "./UnifiedSpaceshipStorage";
+import { TravelCost } from "./SpaceshipTypes";
 
 export interface NavigationCheckResult {
   canTravel: boolean;
@@ -27,15 +28,32 @@ export class NavigationHelper {
     return Math.floor(rawDistance / 100000);
   }
 
+  static calculateTravelCost(distance: number, locationType: "galaxy" | "system" | "planet"): TravelCost {
+    const baseMultipliers = {
+      galaxy: { antimatter: 0.5, element115: 0.3, deuterium: 0.2 },
+      system: { antimatter: 0.2, element115: 0.4, deuterium: 0.4 },
+      planet: { antimatter: 0.1, element115: 0.2, deuterium: 0.7 },
+    };
+
+    const multiplier = baseMultipliers[locationType];
+    const baseCost = Math.min(distance, 1000);
+
+    return {
+      antimatter: Math.floor(baseCost * multiplier.antimatter),
+      element115: Math.floor(baseCost * multiplier.element115),
+      deuterium: Math.floor(baseCost * multiplier.deuterium),
+    };
+  }
+
   static checkNavigationResources(
     from: number[],
     to: number[],
     locationType: "galaxy" | "system" | "planet"
   ): NavigationCheckResult {
     const distance = this.calculateDistance(from, to);
-    const cost = ShipResourceManager.calculateTravelCost(distance, locationType);
-    const resources = ShipResourceManager.getResources();
-    const upgrade = ShipResourceManager.getUpgrade();
+    const cost = this.calculateTravelCost(distance, locationType);
+    const resources = UnifiedSpaceshipStorage.getResources();
+    const upgrade = UnifiedSpaceshipStorage.getUpgrade();
     
     const actualCost = {
       antimatter: Math.floor(cost.antimatter / upgrade.efficiency),
@@ -81,7 +99,7 @@ export class NavigationHelper {
     
     if (check.canTravel) {
       // Consume resources
-      const consumed = ShipResourceManager.consumeResources(check.cost);
+      const consumed = UnifiedSpaceshipStorage.consumeResources(check.cost);
       
       if (consumed) {
         // Create and submit form

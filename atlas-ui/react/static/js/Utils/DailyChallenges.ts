@@ -13,14 +13,16 @@ export interface DailyChallenges {
   dayNumber: number;
   challenges: DailyChallenge[];
   lastReset: number; // timestamp
+  totalCompletedDays?: number; // Total days where all challenges were completed
+  completedDates?: string[]; // Array of completed dates (for tracking)
 }
 
 export class DailyChallengesManager {
   private static readonly STORAGE_KEY = '_atlasDailyChallenges';
   private static readonly BASE_GOALS = {
-    galaxies: 4,
-    systems: 10,
-    planets: 30
+    galaxies: 2,
+    systems: 5,
+    planets: 10
   };
 
   public static getTodaysChallenges(): DailyChallenges {
@@ -84,7 +86,8 @@ export class DailyChallengesManager {
       date: today,
       dayNumber,
       challenges,
-      lastReset: Date.now()
+      lastReset: Date.now(),
+      totalCompletedDays: this.migrateCompletionHistory()
     };
 
     this.saveChallenges(newChallenges);
@@ -112,8 +115,13 @@ export class DailyChallengesManager {
         });
       });
 
+      // Count visited galaxies from both data.g (galaxies with systems) and data.gv (explicitly visited galaxies)
+      const galaxiesWithSystems = new Set(Object.keys(data.g || {}));
+      const visitedGalaxies = new Set(Object.keys(data.gv || {}));
+      const allVisitedGalaxies = new Set([...galaxiesWithSystems, ...visitedGalaxies]);
+
       return {
-        galaxies: Object.keys(data.g || {}).length,
+        galaxies: allVisitedGalaxies.size,
         systems: totalSystems,
         planets: totalPlanets
       };
@@ -137,8 +145,8 @@ export class DailyChallengesManager {
 
     const isNowAllCompleted = challenges.challenges.every(c => c.completed);
     
-    // If all challenges just got completed, record this day
-    if (!wasAllCompleted && isNowAllCompleted) {
+    // If all challenges are completed and we haven't recorded this day yet, record it
+    if (isNowAllCompleted && !this.isDayAlreadyRecorded(challenges)) {
       this.recordCompletedDay(challenges.date);
     }
 
@@ -148,17 +156,61 @@ export class DailyChallengesManager {
 
   private static recordCompletedDay(date: string): void {
     try {
-      const historyKey = '_atlasCompletionHistory';
-      const history = localStorage.getItem(historyKey);
-      const completedDays = history ? JSON.parse(history) : [];
+      const challenges = this.getTodaysChallenges();
       
-      if (!completedDays.includes(date)) {
-        completedDays.push(date);
-        localStorage.setItem(historyKey, JSON.stringify(completedDays));
+      // Initialize arrays if they don't exist
+      if (!challenges.completedDates) {
+        challenges.completedDates = [];
+      }
+      
+      // Add the date to completed dates if not already there
+      if (!challenges.completedDates.includes(date)) {
+        challenges.completedDates.push(date);
+        challenges.totalCompletedDays = (challenges.totalCompletedDays || 0) + 1;
+        this.saveChallenges(challenges);
       }
     } catch (error) {
       console.error('Error recording completed day:', error);
     }
+  }
+
+  private static migrateCompletionHistory(): number {
+    try {
+      const historyKey = '_atlasCompletionHistory';
+      const history = localStorage.getItem(historyKey);
+      
+      if (history) {
+        const completedDays = JSON.parse(history);
+        const count = Array.isArray(completedDays) ? completedDays.length : 0;
+        
+        // Clean up old storage after migration
+        localStorage.removeItem(historyKey);
+        
+        return count;
+      }
+      
+      return 0;
+    } catch (error) {
+      console.error('Error migrating completion history:', error);
+      return 0;
+    }
+  }
+
+  public static getCompletedDaysCount(): number {
+    try {
+      const challenges = this.getTodaysChallenges();
+      return challenges.totalCompletedDays || 0;
+    } catch (error) {
+      console.error('Error getting completed days count:', error);
+      return 0;
+    }
+  }
+
+  private static isDayAlreadyRecorded(challenges: DailyChallenges): boolean {
+    // Check if today's date is already in the completed dates array
+    const today = challenges.date;
+    const completedDates = challenges.completedDates || [];
+    return completedDates.includes(today);
   }
 
   private static saveChallenges(challenges: DailyChallenges): void {

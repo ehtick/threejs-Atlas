@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '../Components/Header.tsx';
 import CoordinateSelector from '../Components/CoordinateSelector.tsx';
 import VersionFooter from '../Components/VersionFooter.tsx';
 import SpaceshipPanel from '../Components/SpaceshipPanel.tsx';
+import { UnifiedSpaceshipStorage } from '../Utils/UnifiedSpaceshipStorage.ts';
+import { SpaceshipTravelManager } from '../Utils/SpaceshipTravelCosts.ts';
 
 interface MainLayoutProps {
   error: string | null;
@@ -21,12 +23,40 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
     y: 1000000,
     z: 1000000
   });
+  
+  // Initialize spaceship system on mount
+  useEffect(() => {
+    // Initialize and migrate from old storage only
+    UnifiedSpaceshipStorage.migrateFromOldStorage();
+    
+    // NO MORE AUTOMATIC PASSIVE GENERATION - now manual only via SpaceshipPanel
+  }, []);
 
   const handleCoordinateChange = (coordinates: Coordinates) => {
     setCurrentCoordinates(coordinates);
   };
 
   const handleSubmit = () => {
+    // Calculate distance for travel cost (simplified - could be more complex)
+    const distance = Math.floor(
+      Math.sqrt(
+        Math.pow(currentCoordinates.x - 1000000, 2) + 
+        Math.pow(currentCoordinates.y - 1000000, 2) + 
+        Math.pow(currentCoordinates.z - 1000000, 2)
+      ) / 10000
+    );
+    
+    // Check if can afford travel to new galaxy
+    if (!SpaceshipTravelManager.canAffordTravel("galaxy", distance)) {
+      SpaceshipTravelManager.executeTravel("galaxy", distance); // Will show insufficient resources message
+      return;
+    }
+    
+    // Consume resources for travel
+    if (!SpaceshipTravelManager.executeTravel("galaxy", distance)) {
+      return; // Travel failed
+    }
+    
     // Create a form and submit to Flask
     const form = document.createElement('form');
     form.method = 'POST';

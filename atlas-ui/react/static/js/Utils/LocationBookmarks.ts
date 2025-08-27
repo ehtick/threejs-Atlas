@@ -11,9 +11,9 @@ export interface SavedLocation {
 
 export class LocationBookmarks {
   private static readonly STORAGE_KEY = '_atlasLocations';
-  private static readonly BASE_MAX_LOCATIONS = 50;
-  private static readonly BONUS_PER_COMPLETION = 10;
-  private static readonly ABSOLUTE_MAX_LOCATIONS = 1000;
+  private static readonly BASE_MAX_LOCATIONS = 10;
+  private static readonly BONUS_PER_COMPLETION = 5;
+  private static readonly ABSOLUTE_MAX_LOCATIONS = 999;
 
   public static getLocations(): SavedLocation[] {
     try {
@@ -105,13 +105,11 @@ export class LocationBookmarks {
 
   private static getCompletedDaysCount(): number {
     try {
-      // Check localStorage for historical completion data
-      const historyKey = '_atlasCompletionHistory';
-      const history = localStorage.getItem(historyKey);
-      
-      if (history) {
-        const completedDays = JSON.parse(history);
-        return Array.isArray(completedDays) ? completedDays.length : 0;
+      // Read from the more efficient _atlasDailyChallenges storage
+      const challengesData = localStorage.getItem('_atlasDailyChallenges');
+      if (challengesData) {
+        const challenges = JSON.parse(challengesData);
+        return challenges.totalCompletedDays || 0;
       }
       
       return 0;

@@ -79,7 +79,7 @@ const SaveLocationButton: React.FC<SaveLocationButtonProps> = ({ type, name, coo
 
   return (
     <>
-      <button onClick={handleSaveLocation} disabled={isSaved || isLoading} className={`inline-flex items-center self-start space-x-1 px-1.5 py-0.5 rounded transition-all duration-200 text-[10px] font-medium h-[21px] box-border ${isSaved ? "bg-green-500/20 border border-green-500/50 text-green-400 cursor-default" : isLoading ? "bg-blue-500/20 border border-blue-500/50 text-blue-400 cursor-wait" : "bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-white hover:text-blue-300"} ${className}`} title={isSaved ? "Location saved" : `Save ${formatName(name)} to bookmarks`}>
+      <button onClick={handleSaveLocation} disabled={isSaved || isLoading} className={`inline-flex items-center space-x-1 px-1.5 py-0.5 rounded transition-all duration-200 text-[10px] font-medium h-[21px] box-border ${isSaved ? "bg-green-500/20 border border-green-500/50 text-green-400 cursor-default" : isLoading ? "bg-blue-500/20 border border-blue-500/50 text-blue-400 cursor-wait" : "bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-white hover:text-blue-300"} ${className}`} title={isSaved ? "Location saved" : `Save ${formatName(name)} to bookmarks`}>
         {isLoading ? (
           <>
             <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">

@@ -4,6 +4,7 @@
 // Optimized data structure
 interface OptimizedVisitData {
   g: { [galaxyHash: string]: { [systemIndex: string]: string } }; // galaxies -> systems -> planet bitmap
+  gv: { [galaxyHash: string]: boolean }; // visited galaxies
 }
 
 // Galaxy coordinate hashing
@@ -30,12 +31,16 @@ export class OptimizedAtlasStorage {
       this.cleanupLegacyStorage();
       
       const data = localStorage.getItem(this.STORAGE_KEY);
-      if (!data) return { g: {} };
+      if (!data) return { g: {}, gv: {} };
       
-      return JSON.parse(data);
+      const parsed = JSON.parse(data);
+      // Ensure gv exists for backward compatibility
+      if (!parsed.gv) parsed.gv = {};
+      
+      return parsed;
     } catch (error) {
       console.error('Error reading Atlas archive:', error);
-      return { g: {} };
+      return { g: {}, gv: {} };
     }
   }
   
@@ -128,10 +133,24 @@ export class OptimizedAtlasStorage {
     }
   }
   
+  public static markGalaxyVisited(coordinates: string): void {
+    const data = this.getData();
+    const galaxyHash = hashGalaxyCoords(coordinates);
+    
+    if (!data.gv[galaxyHash]) {
+      data.gv[galaxyHash] = true;
+      console.log(`🌌 Galaxy marked as visited: ${coordinates} (hash: ${galaxyHash})`);
+      this.saveData(data);
+    }
+  }
+  
   public static markSystemVisited(coordinates: string, systemIndex: number): void {
     const data = this.getData();
     const galaxyHash = hashGalaxyCoords(coordinates);
     const systemKey = systemIndex.toString(16); // Hexadecimal for smaller keys
+    
+    // Also mark galaxy as visited when visiting a system
+    this.markGalaxyVisited(coordinates);
     
     if (!data.g[galaxyHash]) {
       data.g[galaxyHash] = {};
@@ -158,6 +177,13 @@ export class OptimizedAtlasStorage {
       if (index >= 0) bitmap[index] = '1';
     });
     return bitmap.join('');
+  }
+  
+  public static isGalaxyVisited(coordinates: string): boolean {
+    const data = this.getData();
+    const galaxyHash = hashGalaxyCoords(coordinates);
+    
+    return !!data.gv[galaxyHash];
   }
   
   public static isSystemVisited(coordinates: string, systemIndex: number): boolean {
@@ -195,7 +221,7 @@ export class OptimizedAtlasStorage {
   
   
   
-  public static getStorageStats(): { size: number; galaxies: number; systems: number; planets: number } {
+  public static getStorageStats(): { size: number; galaxies: number; visitedGalaxies: number; systems: number; planets: number } {
     const data = this.getData();
     const serialized = JSON.stringify(data);
     
@@ -204,14 +230,23 @@ export class OptimizedAtlasStorage {
     
     Object.values(data.g).forEach(galaxy => {
       totalSystems += Object.keys(galaxy).length;
-      Object.values(galaxy).forEach(planetArray => {
-        totalPlanets += planetArray.length;
+      Object.values(galaxy).forEach(planetBitmap => {
+        if (typeof planetBitmap === 'string') {
+          // Count 1s in bitmap
+          totalPlanets += (planetBitmap.match(/1/g) || []).length;
+        }
       });
     });
+
+    // Count total visited galaxies (combining both data.g and data.gv)
+    const galaxiesWithSystems = new Set(Object.keys(data.g || {}));
+    const visitedGalaxies = new Set(Object.keys(data.gv || {}));
+    const allVisitedGalaxies = new Set([...galaxiesWithSystems, ...visitedGalaxies]);
     
     return {
       size: serialized.length,
-      galaxies: Object.keys(data.g).length,
+      galaxies: allVisitedGalaxies.size,
+      visitedGalaxies: Object.keys(data.gv).length,
       systems: totalSystems,
       planets: totalPlanets
     };

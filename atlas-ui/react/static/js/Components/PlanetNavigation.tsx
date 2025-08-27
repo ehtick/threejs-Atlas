@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { markPlanetAsVisited, markSystemAsVisited } from "../Utils/VisitHistory.ts";
+import { SpaceshipTravelManager } from "../Utils/SpaceshipTravelCosts.ts";
 
 interface Planet {
   name: string;
@@ -73,6 +74,16 @@ const PlanetNavigation: React.FC<PlanetNavigationProps> = ({ currentPlanet, syst
     const coordinates = galaxy.coordinates.join(",");
 
     if (prevPlanet === "__prev_system__") {
+      // Going to previous system
+      const distance = 1;
+      if (!SpaceshipTravelManager.canAffordTravel("system", distance)) {
+        SpaceshipTravelManager.executeTravel("system", distance); // Will show insufficient resources message
+        return;
+      }
+      
+      if (!SpaceshipTravelManager.executeTravel("system", distance)) {
+        return; // Travel failed
+      }
       try {
         const response = await fetch(`/system/${system.index - 1}`, {
           headers: { Accept: "application/json" },
@@ -97,6 +108,16 @@ const PlanetNavigation: React.FC<PlanetNavigationProps> = ({ currentPlanet, syst
         window.location.href = `/system/${system.index - 1}`;
       }
     } else if (prevPlanet) {
+      // Going to previous planet in same system
+      const distance = 1;
+      if (!SpaceshipTravelManager.canAffordTravel("planet", distance)) {
+        SpaceshipTravelManager.executeTravel("planet", distance); // Will show insufficient resources message
+        return;
+      }
+      
+      if (!SpaceshipTravelManager.executeTravel("planet", distance)) {
+        return; // Travel failed
+      }
       markPlanetAsVisited(coordinates, system.index, prevPlanet, systemPlanets);
       window.location.href = `/planet/${prevPlanet}`;
     }
@@ -106,6 +127,16 @@ const PlanetNavigation: React.FC<PlanetNavigationProps> = ({ currentPlanet, syst
     const coordinates = galaxy.coordinates.join(",");
 
     if (nextPlanet === "__next_system__") {
+      // Going to next system
+      const distance = 1;
+      if (!SpaceshipTravelManager.canAffordTravel("system", distance)) {
+        SpaceshipTravelManager.executeTravel("system", distance); // Will show insufficient resources message
+        return;
+      }
+      
+      if (!SpaceshipTravelManager.executeTravel("system", distance)) {
+        return; // Travel failed
+      }
       try {
         const response = await fetch(`/system/${system.index + 1}`, {
           headers: { Accept: "application/json" },
@@ -129,6 +160,16 @@ const PlanetNavigation: React.FC<PlanetNavigationProps> = ({ currentPlanet, syst
         window.location.href = `/system/${system.index + 1}`;
       }
     } else if (nextPlanet) {
+      // Going to next planet in same system
+      const distance = 1;
+      if (!SpaceshipTravelManager.canAffordTravel("planet", distance)) {
+        SpaceshipTravelManager.executeTravel("planet", distance); // Will show insufficient resources message
+        return;
+      }
+      
+      if (!SpaceshipTravelManager.executeTravel("planet", distance)) {
+        return; // Travel failed
+      }
       markPlanetAsVisited(coordinates, system.index, nextPlanet, systemPlanets);
       window.location.href = `/planet/${nextPlanet}`;
     }
