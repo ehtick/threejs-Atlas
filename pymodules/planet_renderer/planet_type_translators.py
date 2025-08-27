@@ -479,7 +479,94 @@ class PlanetTypeTranslators:
     # Placeholder methods for other planet types
     def translate_desert(self, planet_radius: int, rng: random.Random, 
                         seed: int, planet_name: str) -> Dict[str, Any]:
-        return {"type": "desert"}
+        """Translate Desert planet elements - arid worlds with atmospheric clouds and oasis-like land masses"""
+        center_x, center_y = 200, 200  # Pillow center coordinates
+        
+        # Generate atmospheric clouds for desert planets (dust storms and sparse moisture)
+        num_clouds = rng.randint(6, 12)  # Moderate atmospheric activity from desert winds
+        clouds = []
+        for i in range(num_clouds):
+            cloud_radius = rng.randint(20, 40)  # Medium clouds from dust and sparse moisture
+            max_offset = planet_radius - cloud_radius
+            cloud_x = center_x + rng.randint(-max_offset, max_offset)
+            cloud_y = center_y + rng.randint(-max_offset, max_offset)
+            
+            # Convert to normalized coordinates
+            normalized_coords = self.common_utils.normalize_coordinates(
+                cloud_x, cloud_y, center_x, center_y, planet_radius
+            )
+            
+            # Desert clouds - sandy/dusty colors with yellowish tints
+            cloud_colors = [
+                [0.9, 0.85, 0.7, 0.6],      # Light sandy beige
+                [0.85, 0.8, 0.65, 0.7],     # Medium sandy brown
+                [0.95, 0.9, 0.75, 0.5],     # Very light desert dust
+                [0.8, 0.75, 0.6, 0.8],      # Darker sandy brown
+                [0.88, 0.82, 0.68, 0.65],   # Standard desert dust color
+            ]
+            
+            cloud_color = rng.choice(cloud_colors)
+            
+            clouds.append({
+                "position": normalized_coords,
+                "radius": cloud_radius / planet_radius,
+                "color": cloud_color,
+                "type": "cloud",
+                "seed": f"{planet_name}_desert_cloud_{i}"
+            })
+        
+        # Generate desert land masses (oasis areas and rocky formations)
+        num_landmasses = rng.randint(6, 12)  # Moderate number of oasis-like areas
+        green_patches = []
+        
+        for i in range(num_landmasses):
+            # Generate uniform position on sphere
+            theta = rng.uniform(0, 2 * math.pi)
+            phi = math.acos(rng.uniform(-1, 1))
+            
+            position_3d = [
+                math.sin(phi) * math.cos(theta),
+                math.sin(phi) * math.sin(theta),
+                math.cos(phi)
+            ]
+            
+            # Size distribution - varied desert features (made larger for better visibility)
+            if i < 3:
+                # Large desert landmasses (major oasis regions)
+                size = rng.uniform(0.2, 0.32)
+            elif i < 6:
+                # Medium desert features (smaller oases)
+                size = rng.uniform(0.15, 0.25)
+            else:
+                # Small rocky outcrops and mini oases
+                size = rng.uniform(0.1, 0.18)
+            
+            # Desert landmass colors - yellowish/sandy colors, slightly darker than the planet
+            # Using desert/sandy tones with slight greenish tints for oasis areas
+            desert_color_choices = [
+                [0.7, 0.6, 0.35],   # Dark sandy brown
+                [0.65, 0.55, 0.3],  # Medium desert brown
+                [0.6, 0.5, 0.28],   # Darker sandy color
+                [0.75, 0.62, 0.4],  # Light desert brown
+                [0.68, 0.58, 0.32], # Standard desert color
+                [0.6, 0.65, 0.35],  # Slightly greenish oasis color
+                [0.55, 0.6, 0.3],   # More greenish oasis tone
+            ]
+            
+            green_patches.append({
+                "position_3d": position_3d,
+                "size": size,
+                "color": rng.choice(desert_color_choices) + [rng.uniform(0.8, 0.9)],  # High opacity for solid coverage
+                "sides": rng.randint(12, 20),  # Organic shapes for natural desert formations
+                "height": rng.uniform(0.01, 0.025),  # Low elevation for desert terrain
+                "vegetation_density": rng.uniform(0.2, 0.5)  # Low to moderate vegetation density
+            })
+        
+        return {
+            "type": "desert",
+            "clouds": clouds,
+            "green_patches": green_patches
+        }
     
     def translate_lava(self, planet_radius: int, rng: random.Random, 
                       seed: int, planet_name: str) -> Dict[str, Any]:

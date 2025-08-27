@@ -1393,6 +1393,59 @@ export class EffectRegistry {
             }
             break;
 
+          case "desert":
+            // Desert planets: sandy atmospheric clouds and oasis-like land masses
+            
+            // 1. Add atmospheric clouds for desert planets (dust storms and sparse moisture)
+            if (surface.clouds && surface.clouds.length > 0) {
+              const desertCloudsEffect = createAtmosphereCloudsFromPythonData(
+                planetRadius,
+                surface,
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000,
+                pythonData.timing?.cosmic_origin_time
+              );
+              
+              if (desertCloudsEffect) {
+                const desertCloudsInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "atmosphere_clouds",
+                  effect: desertCloudsEffect,
+                  priority: 15,
+                  enabled: true,
+                  name: "Desert Dust Clouds",
+                };
+                
+                this.effects.set(desertCloudsInstance.id, desertCloudsInstance);
+                effects.push(desertCloudsInstance);
+                desertCloudsEffect.addToScene(scene, mesh.position);
+              }
+            }
+            
+            // 2. Add desert land masses (oasis areas and rocky formations)
+            if (surface.green_patches && surface.green_patches.length > 0) {
+              const desertLandMassesEffect = createLandMassesFromPythonData(
+                planetRadius, 
+                surface, 
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 6000
+              );
+              
+              if (desertLandMassesEffect) {
+                const desertLandMassesInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "land_masses",
+                  effect: desertLandMassesEffect,
+                  priority: 5,
+                  enabled: true,
+                  name: "Desert Oases",
+                };
+                
+                this.effects.set(desertLandMassesInstance.id, desertLandMassesInstance);
+                effects.push(desertLandMassesInstance);
+                desertLandMassesEffect.addToScene(scene, mesh.position);
+              }
+            }
+            break;
+
           case "molten_core":
           case "molten core":
             // Planetas Molten Core: superficie de lava incandescente con efectos de fuego
