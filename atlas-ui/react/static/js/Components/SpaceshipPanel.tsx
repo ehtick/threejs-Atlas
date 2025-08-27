@@ -3,6 +3,7 @@ import { getStorageStats } from "../Utils/VisitHistory.ts";
 import { LocationBookmarks, SavedLocation } from "../Utils/LocationBookmarks.ts";
 import { DailyChallengesManager, DailyChallenges } from "../Utils/DailyChallenges.ts";
 import { SpaceshipResourceManager, SpaceshipResource, SpaceshipUpgrade, TravelCost } from "../Utils/SpaceshipResources.ts";
+import { ResourceEventManager } from "../Utils/ResourceEventManager.ts";
 import ProgressBar from "./ProgressBar.tsx";
 
 interface SpaceshipPanelProps {
@@ -61,10 +62,20 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
       setPassiveGeneration(passiveInfo);
     };
     
+    const updateSpaceshipResources = () => {
+      setSpaceshipResources(SpaceshipResourceManager.getResources());
+    };
+    
     // Update every 15 seconds to show accumulating resources (now that intervals are 1 minute)
     const interval = setInterval(updatePassiveDisplay, 15000);
     
-    return () => clearInterval(interval);
+    // Subscribe to resource update events for immediate updates
+    const unsubscribeResources = ResourceEventManager.subscribe('resources_updated', updateSpaceshipResources);
+    
+    return () => {
+      clearInterval(interval);
+      unsubscribeResources();
+    };
   }, [isOpen]);
 
   const handleClose = () => {
@@ -248,6 +259,7 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
 
             {activeTab === "ship" && (
               <div className="space-y-2">
+                {/* Resources */}
                 <div>
                   <h4 className="text-white font-semibold mb-2 text-xs flex items-center gap-1">
                     ⚡ Resources
@@ -349,6 +361,9 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
                         // Update passive generation info after upgrade
                         const passiveInfo = SpaceshipResourceManager.calculatePassiveGeneration();
                         setPassiveGeneration(passiveInfo);
+                        
+                        // Emit resource update event to notify other components about storage changes
+                        ResourceEventManager.emit('resources_updated');
                       }
                     }}
                     disabled={!SpaceshipResourceManager.canAffordUpgrade()}
@@ -554,6 +569,9 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
                       setSpaceshipResources(SpaceshipResourceManager.getResources());
                       const passiveInfo = SpaceshipResourceManager.getAccumulatedResourcesWithLimit();
                       setPassiveGeneration(passiveInfo);
+                      
+                      // Emit resource update event to notify other components
+                      ResourceEventManager.emit('resources_updated');
                       
                       setShowCollectionPopup(false);
                     }}

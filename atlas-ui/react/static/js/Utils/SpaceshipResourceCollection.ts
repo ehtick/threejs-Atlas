@@ -116,6 +116,7 @@ export class SpaceshipResourceCollectionManager {
     }
 
     const collectionCount = UnifiedSpaceshipStorage.getCollectionCount(locationId);
+    const isFirstTime = collectionCount === 0;
     let reward = this.calculateReward(type, coordinates, collectionCount, planetData);
     
     // Apply streak multiplier
@@ -148,7 +149,7 @@ export class SpaceshipResourceCollectionManager {
     return count > 0 ? { totalCollections: count } : null;
   }
 
-  static showCollectionSuccess(reward: ResourceReward, locationType: string, bonusInfo?: { streakBonus: boolean; discoveryBonus: number }): void {
+  static showCollectionSuccess(reward: ResourceReward, locationType: string, bonusInfo?: { streakBonus: boolean; discoveryBonus: number }, isFirstTime?: boolean): void {
     const toast = document.createElement("div");
     toast.className = "fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-gradient-to-r from-green-900/90 to-blue-900/90 text-white px-4 py-3 rounded-lg shadow-lg border border-green-500/50";
     toast.style.animation = "slideInDown 0.3s ease-out";
@@ -173,7 +174,13 @@ export class SpaceshipResourceCollectionManager {
 
     const titleDiv = document.createElement("div");
     titleDiv.className = "text-sm font-bold text-green-300";
-    titleDiv.textContent = "Resources Collected!";
+    
+    // Show different message for first time mining
+    if (isFirstTime) {
+      titleDiv.textContent = "🎉 First Time Mining - Bonus Applied!";
+    } else {
+      titleDiv.textContent = "Resources Collected!";
+    }
 
     const resourceDiv = document.createElement("div");
     resourceDiv.className = "text-xs text-green-200 mt-1 flex gap-3";
@@ -197,15 +204,25 @@ export class SpaceshipResourceCollectionManager {
     contentDiv.appendChild(titleDiv);
     contentDiv.appendChild(resourceDiv);
 
-    // Add bonus information using DOM manipulation
+    // Add first time bonus information
+    if (isFirstTime) {
+      const firstTimeDiv = document.createElement("div");
+      firstTimeDiv.className = "text-xs text-yellow-300 mt-1 font-bold";
+      firstTimeDiv.textContent = "⭐ First time on this planet!";
+      contentDiv.appendChild(firstTimeDiv);
+    }
+
+    // Add bonus information using DOM manipulation  
     if (bonusInfo?.discoveryBonus > 1.0) {
       const discoveryBonusDiv = document.createElement("div");
       discoveryBonusDiv.className = "text-xs text-yellow-300 mt-1";
       
-      if (bonusInfo.discoveryBonus === 2.0) {
-        discoveryBonusDiv.textContent = "🎉 Discovery Bonus: 2x Rewards!";
-      } else if (bonusInfo.discoveryBonus === 1.5) {
-        discoveryBonusDiv.textContent = "✨ Discovery Bonus: 1.5x Rewards!";
+      if (bonusInfo.discoveryBonus >= 2.5) {
+        discoveryBonusDiv.textContent = "🎉 Daily Bonus: 2.5x (First 15 discoveries today)";
+      } else if (bonusInfo.discoveryBonus >= 1.8) {
+        discoveryBonusDiv.textContent = "✨ Daily Bonus: 1.8x (Discoveries 16-35 today)";
+      } else if (bonusInfo.discoveryBonus >= 1.3) {
+        discoveryBonusDiv.textContent = "🌟 Daily Bonus: 1.3x (Discoveries 36-50 today)";
       }
       
       contentDiv.appendChild(discoveryBonusDiv);

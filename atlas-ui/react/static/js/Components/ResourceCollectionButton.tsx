@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { SpaceshipResourceCollectionManager } from "../Utils/SpaceshipResourceCollection";
+import { ResourceEventManager } from "../Utils/ResourceEventManager";
 
 interface ResourceCollectionButtonProps {
   locationType: "galaxy" | "system" | "planet";
@@ -56,13 +57,34 @@ const ResourceCollectionButton: React.FC<ResourceCollectionButtonProps> = ({
       planetName
     );
     
+    // Check if this is first time collection
+    const isFirstTime = collectionCount === 0;
+    
     const reward = SpaceshipResourceCollectionManager.collectResources(fullLocationId, locationType, coordinates);
     
     if (reward) {
-      SpaceshipResourceCollectionManager.showCollectionSuccess(reward, locationType);
+      // Get streak info for proper bonus display
+      const { UnifiedSpaceshipStorage } = await import("../Utils/UnifiedSpaceshipStorage");
+      const streakInfo = UnifiedSpaceshipStorage.getCollectionStreakInfo();
+      
+      // Calculate discovery bonus
+      const discoveryBonus = collectionCount <= 15 ? 2.5 : 
+                            collectionCount <= 35 ? 1.8 : 
+                            collectionCount <= 50 ? 1.3 : 1.0;
+      
+      // Show consolidated notification with all bonus info
+      SpaceshipResourceCollectionManager.showCollectionSuccess(reward, locationType, {
+        streakBonus: streakInfo.streakMultiplier > 1.0,
+        discoveryBonus: discoveryBonus
+      }, isFirstTime);
+      
       setCanCollect(false);
       setTimeUntilNext(1); // 1 hour cooldown
       setCollectionCount(prev => prev + 1);
+      
+      // Emit resource update event
+      ResourceEventManager.emit('resources_updated');
+      ResourceEventManager.emit('mining_completed', reward);
     }
     
     setTimeout(() => setIsCollecting(false), 1000);
