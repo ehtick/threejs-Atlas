@@ -187,27 +187,27 @@ const PlanetInfo: React.FC<PlanetInfoProps> = ({ planet, system, galaxy, cosmicO
       <div className="mt-4 pt-3 border-t border-white/10">
         <div className="text-xs text-gray-400 mb-2">Technical Data</div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-xs">
-          <div className="bg-white/5 rounded p-2">
+          <div className="bg-white/5 rounded px-1.5 py-0.5">
             <span className="text-gray-400">Status:</span>
             <div className="text-green-400 font-medium">Visited</div>
           </div>
-          <div className="bg-white/5 rounded p-2">
+          <div className="bg-white/5 rounded px-1.5 py-0.5">
             <span className="text-gray-400">Planet:</span>
             <div className="text-white truncate font-medium">{formatName(planet.name)}</div>
           </div>
-          <div className="bg-white/5 rounded p-2">
+          <div className="bg-white/5 rounded px-1.5 py-0.5">
             <span className="text-gray-400">System:</span>
             <div className="text-white truncate font-medium">{formatName(system.name)}</div>
           </div>
-          <div className="bg-white/5 rounded p-2">
+          <div className="bg-white/5 rounded px-1.5 py-0.5">
             <span className="text-gray-400">System ID:</span>
             <div className="text-white font-medium">#{system.index + 1}</div>
           </div>
-          <div className="bg-white/5 rounded p-2">
+          <div className="bg-white/5 rounded px-1.5 py-0.5">
             <span className="text-gray-400">Galaxy:</span>
             <div className="text-white truncate font-medium">{formatName(galaxy.name)}</div>
           </div>
-          <div className="bg-white/5 rounded p-2">
+          <div className="bg-white/5 rounded px-1.5 py-0.5">
             <span className="text-gray-400">Coordinates:</span>
             <div className="text-white font-medium">{galaxy.coordinates.join(", ")}</div>
           </div>

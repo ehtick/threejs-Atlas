@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Header from '../Components/Header.tsx';
 import CoordinateSelector from '../Components/CoordinateSelector.tsx';
 import VersionFooter from '../Components/VersionFooter.tsx';
+import SpaceshipPanel from '../Components/SpaceshipPanel.tsx';
 
 interface MainLayoutProps {
   error: string | null;
@@ -106,6 +107,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
         
         <VersionFooter version={version} />
       </div>
+      
+      {/* Spaceship Control Panel */}
+      <SpaceshipPanel />
     </div>
   );
 };
