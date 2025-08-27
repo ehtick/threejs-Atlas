@@ -206,17 +206,30 @@ export class NavigationManager {
       planet: "🪐"
     }[type] || "🚀";
     
-    toast.innerHTML = `
-      <div class="flex items-center space-x-2">
-        <span class="text-green-300">${typeEmoji}</span>
-        <div>
-          <div class="text-sm font-semibold">Navigation Engaged!</div>
-          <div class="text-xs text-green-200">
-            Consumed: ${cost.antimatter} AM | ${cost.element115} E115 | ${cost.deuterium} D
-          </div>
-        </div>
-      </div>
-    `;
+    // Create toast content using DOM manipulation instead of innerHTML
+    const container = document.createElement("div");
+    container.className = "flex items-center space-x-2";
+
+    const emojiSpan = document.createElement("span");
+    emojiSpan.className = "text-green-300";
+    emojiSpan.textContent = typeEmoji;
+
+    const contentDiv = document.createElement("div");
+
+    const titleDiv = document.createElement("div");
+    titleDiv.className = "text-sm font-semibold";
+    titleDiv.textContent = "Navigation Engaged!";
+
+    const costDiv = document.createElement("div");
+    costDiv.className = "text-xs text-green-200";
+    costDiv.textContent = `Consumed: ${cost.antimatter} AM | ${cost.element115} E115 | ${cost.deuterium} D`;
+
+    contentDiv.appendChild(titleDiv);
+    contentDiv.appendChild(costDiv);
+
+    container.appendChild(emojiSpan);
+    container.appendChild(contentDiv);
+    toast.appendChild(container);
     
     // Add CSS animation if not already present
     if (!document.getElementById("navigation-success-styles")) {

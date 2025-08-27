@@ -253,25 +253,58 @@ export class SpaceshipResourceManager {
       deuterium: generation.deuterium * 12
     };
     
-    toast.innerHTML = `
-      <div class="flex items-center space-x-3">
-        <span class="text-2xl">⛏️</span>
-        <div>
-          <div class="text-sm font-bold text-purple-300">Passive Mining</div>
-          <div class="text-xs text-purple-200 mt-1">
-            ${generation.sources.planets}🪐 ${generation.sources.systems}⭐ generating
-          </div>
-          <div class="text-xs text-purple-200 flex gap-3 mt-1">
-            ${generation.antimatter > 0 ? `<span class="text-purple-300">+${generation.antimatter} AM</span>` : ''}
-            ${generation.element115 > 0 ? `<span class="text-cyan-300">+${generation.element115} E115</span>` : ''}
-            ${generation.deuterium > 0 ? `<span class="text-orange-300">+${generation.deuterium} D</span>` : ''}
-          </div>
-          <div class="text-xs text-purple-100 mt-1 opacity-75">
-            Rate: ${perHour.antimatter}/${perHour.element115}/${perHour.deuterium} per hour
-          </div>
-        </div>
-      </div>
-    `;
+    // Create toast content using DOM manipulation instead of innerHTML
+    const container = document.createElement("div");
+    container.className = "flex items-center space-x-3";
+
+    const emojiSpan = document.createElement("span");
+    emojiSpan.className = "text-2xl";
+    emojiSpan.textContent = "⛏️";
+
+    const contentDiv = document.createElement("div");
+
+    const titleDiv = document.createElement("div");
+    titleDiv.className = "text-sm font-bold text-purple-300";
+    titleDiv.textContent = "Passive Mining";
+
+    const sourceDiv = document.createElement("div");
+    sourceDiv.className = "text-xs text-purple-200 mt-1";
+    sourceDiv.textContent = `${generation.sources.planets}🪐 ${generation.sources.systems}⭐ generating`;
+
+    const resourceDiv = document.createElement("div");
+    resourceDiv.className = "text-xs text-purple-200 flex gap-3 mt-1";
+
+    if (generation.antimatter > 0) {
+      const amSpan = document.createElement("span");
+      amSpan.className = "text-purple-300";
+      amSpan.textContent = `+${generation.antimatter} AM`;
+      resourceDiv.appendChild(amSpan);
+    }
+    if (generation.element115 > 0) {
+      const e115Span = document.createElement("span");
+      e115Span.className = "text-cyan-300";
+      e115Span.textContent = `+${generation.element115} E115`;
+      resourceDiv.appendChild(e115Span);
+    }
+    if (generation.deuterium > 0) {
+      const deuteriumSpan = document.createElement("span");
+      deuteriumSpan.className = "text-orange-300";
+      deuteriumSpan.textContent = `+${generation.deuterium} D`;
+      resourceDiv.appendChild(deuteriumSpan);
+    }
+
+    const rateDiv = document.createElement("div");
+    rateDiv.className = "text-xs text-purple-100 mt-1 opacity-75";
+    rateDiv.textContent = `Rate: ${perHour.antimatter}/${perHour.element115}/${perHour.deuterium} per hour`;
+
+    contentDiv.appendChild(titleDiv);
+    contentDiv.appendChild(sourceDiv);
+    contentDiv.appendChild(resourceDiv);
+    contentDiv.appendChild(rateDiv);
+
+    container.appendChild(emojiSpan);
+    container.appendChild(contentDiv);
+    toast.appendChild(container);
     
     if (!document.getElementById("passive-toast-styles")) {
       const style = document.createElement("style");
@@ -418,19 +451,45 @@ export class SpaceshipResourceManager {
     const fromLabel = resourceLabels[fromResource];
     const toLabel = resourceLabels[toResource];
     
-    toast.innerHTML = `
-      <div class="flex items-center space-x-3">
-        <span class="text-2xl">🔄</span>
-        <div>
-          <div class="text-sm font-bold text-amber-300">Resource Exchange</div>
-          <div class="text-xs text-amber-200 mt-1">
-            <span class="${fromLabel.color}">-${sentAmount} ${fromLabel.name}</span>
-            <span class="text-amber-300 mx-2">→</span>
-            <span class="${toLabel.color}">+${receivedAmount} ${toLabel.name}</span>
-          </div>
-        </div>
-      </div>
-    `;
+    // Create toast content using DOM manipulation instead of innerHTML
+    const container = document.createElement("div");
+    container.className = "flex items-center space-x-3";
+
+    const emojiSpan = document.createElement("span");
+    emojiSpan.className = "text-2xl";
+    emojiSpan.textContent = "🔄";
+
+    const contentDiv = document.createElement("div");
+
+    const titleDiv = document.createElement("div");
+    titleDiv.className = "text-sm font-bold text-amber-300";
+    titleDiv.textContent = "Resource Exchange";
+
+    const exchangeDiv = document.createElement("div");
+    exchangeDiv.className = "text-xs text-amber-200 mt-1";
+
+    const fromSpan = document.createElement("span");
+    fromSpan.className = fromLabel.color;
+    fromSpan.textContent = `-${sentAmount} ${fromLabel.name}`;
+
+    const arrowSpan = document.createElement("span");
+    arrowSpan.className = "text-amber-300 mx-2";
+    arrowSpan.textContent = "→";
+
+    const toSpan = document.createElement("span");
+    toSpan.className = toLabel.color;
+    toSpan.textContent = `+${receivedAmount} ${toLabel.name}`;
+
+    exchangeDiv.appendChild(fromSpan);
+    exchangeDiv.appendChild(arrowSpan);
+    exchangeDiv.appendChild(toSpan);
+
+    contentDiv.appendChild(titleDiv);
+    contentDiv.appendChild(exchangeDiv);
+
+    container.appendChild(emojiSpan);
+    container.appendChild(contentDiv);
+    toast.appendChild(container);
     
     document.body.appendChild(toast);
     

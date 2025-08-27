@@ -161,32 +161,66 @@ export class SpaceshipResourceCollectionManager {
     
     const emoji = typeEmojis[locationType as keyof typeof typeEmojis] || "📦";
     
-    let bonusText = "";
+    // Create toast content using DOM manipulation instead of innerHTML
+    const container = document.createElement("div");
+    container.className = "flex items-center space-x-3";
+
+    const emojiSpan = document.createElement("span");
+    emojiSpan.className = "text-2xl";
+    emojiSpan.textContent = emoji;
+
+    const contentDiv = document.createElement("div");
+
+    const titleDiv = document.createElement("div");
+    titleDiv.className = "text-sm font-bold text-green-300";
+    titleDiv.textContent = "Resources Collected!";
+
+    const resourceDiv = document.createElement("div");
+    resourceDiv.className = "text-xs text-green-200 mt-1 flex gap-3";
+
+    const amSpan = document.createElement("span");
+    amSpan.className = "text-purple-300";
+    amSpan.textContent = `+${reward.antimatter} AM`;
+
+    const e115Span = document.createElement("span");
+    e115Span.className = "text-cyan-300";
+    e115Span.textContent = `+${reward.element115} E115`;
+
+    const deuteriumSpan = document.createElement("span");
+    deuteriumSpan.className = "text-orange-300";
+    deuteriumSpan.textContent = `+${reward.deuterium} D`;
+
+    resourceDiv.appendChild(amSpan);
+    resourceDiv.appendChild(e115Span);
+    resourceDiv.appendChild(deuteriumSpan);
+
+    contentDiv.appendChild(titleDiv);
+    contentDiv.appendChild(resourceDiv);
+
+    // Add bonus information using DOM manipulation
     if (bonusInfo?.discoveryBonus > 1.0) {
+      const discoveryBonusDiv = document.createElement("div");
+      discoveryBonusDiv.className = "text-xs text-yellow-300 mt-1";
+      
       if (bonusInfo.discoveryBonus === 2.0) {
-        bonusText += '<div class="text-xs text-yellow-300 mt-1">🎉 Discovery Bonus: 2x Rewards!</div>';
+        discoveryBonusDiv.textContent = "🎉 Discovery Bonus: 2x Rewards!";
       } else if (bonusInfo.discoveryBonus === 1.5) {
-        bonusText += '<div class="text-xs text-yellow-300 mt-1">✨ Discovery Bonus: 1.5x Rewards!</div>';
+        discoveryBonusDiv.textContent = "✨ Discovery Bonus: 1.5x Rewards!";
       }
-    }
-    if (bonusInfo?.streakBonus) {
-      bonusText += '<div class="text-xs text-purple-300 mt-1">🔥 Streak Bonus: +25%</div>';
+      
+      contentDiv.appendChild(discoveryBonusDiv);
     }
     
-    toast.innerHTML = `
-      <div class="flex items-center space-x-3">
-        <span class="text-2xl">${emoji}</span>
-        <div>
-          <div class="text-sm font-bold text-green-300">Resources Collected!</div>
-          <div class="text-xs text-green-200 mt-1 flex gap-3">
-            <span class="text-purple-300">+${reward.antimatter} AM</span>
-            <span class="text-cyan-300">+${reward.element115} E115</span>
-            <span class="text-orange-300">+${reward.deuterium} D</span>
-          </div>
-          ${bonusText}
-        </div>
-      </div>
-    `;
+    if (bonusInfo?.streakBonus) {
+      const streakBonusDiv = document.createElement("div");
+      streakBonusDiv.className = "text-xs text-purple-300 mt-1";
+      streakBonusDiv.textContent = "🔥 Streak Bonus: +25%";
+      contentDiv.appendChild(streakBonusDiv);
+    }
+
+    container.appendChild(emojiSpan);
+    container.appendChild(contentDiv);
+    toast.appendChild(container);
     
     if (!document.getElementById("collection-toast-styles")) {
       const style = document.createElement("style");

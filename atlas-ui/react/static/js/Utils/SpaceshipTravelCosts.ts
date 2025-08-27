@@ -68,19 +68,45 @@ export class SpaceshipTravelManager {
       planet: "Planet"
     };
     
-    toast.innerHTML = `
-      <div class="flex items-center space-x-3">
-        <span class="text-2xl">${typeEmojis[locationType]}</span>
-        <div>
-          <div class="text-sm font-bold text-blue-300">${typeNames[locationType]} Travel</div>
-          <div class="text-xs text-blue-200 mt-1 flex gap-3">
-            <span class="text-purple-300">-${cost.antimatter} AM</span>
-            <span class="text-cyan-300">-${cost.element115} E115</span>
-            <span class="text-orange-300">-${cost.deuterium} D</span>
-          </div>
-        </div>
-      </div>
-    `;
+    // Create toast content using DOM manipulation instead of innerHTML
+    const container = document.createElement("div");
+    container.className = "flex items-center space-x-3";
+
+    const emojiSpan = document.createElement("span");
+    emojiSpan.className = "text-2xl";
+    emojiSpan.textContent = typeEmojis[locationType];
+
+    const contentDiv = document.createElement("div");
+
+    const titleDiv = document.createElement("div");
+    titleDiv.className = "text-sm font-bold text-blue-300";
+    titleDiv.textContent = `${typeNames[locationType]} Travel`;
+
+    const costDiv = document.createElement("div");
+    costDiv.className = "text-xs text-blue-200 mt-1 flex gap-3";
+
+    const amSpan = document.createElement("span");
+    amSpan.className = "text-purple-300";
+    amSpan.textContent = `-${cost.antimatter} AM`;
+
+    const e115Span = document.createElement("span");
+    e115Span.className = "text-cyan-300";
+    e115Span.textContent = `-${cost.element115} E115`;
+
+    const deuteriumSpan = document.createElement("span");
+    deuteriumSpan.className = "text-orange-300";
+    deuteriumSpan.textContent = `-${cost.deuterium} D`;
+
+    costDiv.appendChild(amSpan);
+    costDiv.appendChild(e115Span);
+    costDiv.appendChild(deuteriumSpan);
+
+    contentDiv.appendChild(titleDiv);
+    contentDiv.appendChild(costDiv);
+
+    container.appendChild(emojiSpan);
+    container.appendChild(contentDiv);
+    toast.appendChild(container);
     
     document.body.appendChild(toast);
     
@@ -109,20 +135,50 @@ export class SpaceshipTravelManager {
       planet: "Planet"
     };
     
-    toast.innerHTML = `
-      <div class="flex items-center space-x-3">
-        <span class="text-2xl">${typeEmojis[locationType]}</span>
-        <div>
-          <div class="text-sm font-bold text-orange-300">${typeNames[locationType]} Travel - Low Fuel</div>
-          <div class="text-xs text-orange-200 mt-1">${Math.floor(percentage * 100)}% fuel efficiency - slower travel</div>
-          <div class="text-xs text-orange-200 mt-1 flex gap-3">
-            <span class="text-purple-300">Need ${cost.antimatter} AM</span>
-            <span class="text-cyan-300">Need ${cost.element115} E115</span>
-            <span class="text-orange-300">Need ${cost.deuterium} D</span>
-          </div>
-        </div>
-      </div>
-    `;
+    // Create toast content using DOM manipulation instead of innerHTML
+    const container = document.createElement("div");
+    container.className = "flex items-center space-x-3";
+
+    const emojiSpan = document.createElement("span");
+    emojiSpan.className = "text-2xl";
+    emojiSpan.textContent = typeEmojis[locationType];
+
+    const contentDiv = document.createElement("div");
+
+    const titleDiv = document.createElement("div");
+    titleDiv.className = "text-sm font-bold text-orange-300";
+    titleDiv.textContent = `${typeNames[locationType]} Travel - Low Fuel`;
+
+    const efficiencyDiv = document.createElement("div");
+    efficiencyDiv.className = "text-xs text-orange-200 mt-1";
+    efficiencyDiv.textContent = `${Math.floor(percentage * 100)}% fuel efficiency - slower travel`;
+
+    const costDiv = document.createElement("div");
+    costDiv.className = "text-xs text-orange-200 mt-1 flex gap-3";
+
+    const amSpan = document.createElement("span");
+    amSpan.className = "text-purple-300";
+    amSpan.textContent = `Need ${cost.antimatter} AM`;
+
+    const e115Span = document.createElement("span");
+    e115Span.className = "text-cyan-300";
+    e115Span.textContent = `Need ${cost.element115} E115`;
+
+    const deuteriumSpan = document.createElement("span");
+    deuteriumSpan.className = "text-orange-300";
+    deuteriumSpan.textContent = `Need ${cost.deuterium} D`;
+
+    costDiv.appendChild(amSpan);
+    costDiv.appendChild(e115Span);
+    costDiv.appendChild(deuteriumSpan);
+
+    contentDiv.appendChild(titleDiv);
+    contentDiv.appendChild(efficiencyDiv);
+    contentDiv.appendChild(costDiv);
+
+    container.appendChild(emojiSpan);
+    container.appendChild(contentDiv);
+    toast.appendChild(container);
     
     document.body.appendChild(toast);
     
@@ -151,21 +207,55 @@ export class SpaceshipTravelManager {
       planet: "Planet"
     };
     
-    toast.innerHTML = `
-      <div class="flex items-center space-x-3">
-        <span class="text-2xl">${typeEmojis[locationType]}</span>
-        <div>
-          <div class="text-sm font-bold text-red-300">${typeNames[locationType]} Emergency Travel</div>
-          <div class="text-xs text-red-200 mt-1">⚠️ Running on fumes - very slow travel</div>
-          <div class="text-xs text-red-200 mt-1 flex gap-3">
-            <span class="text-purple-300">Need ${cost.antimatter} AM</span>
-            <span class="text-cyan-300">Need ${cost.element115} E115</span>
-            <span class="text-orange-300">Need ${cost.deuterium} D</span>
-          </div>
-          <div class="text-xs text-red-200 mt-1">🔧 Collect resources or upgrade ship</div>
-        </div>
-      </div>
-    `;
+    // Create toast content using DOM manipulation instead of innerHTML
+    const container = document.createElement("div");
+    container.className = "flex items-center space-x-3";
+
+    const emojiSpan = document.createElement("span");
+    emojiSpan.className = "text-2xl";
+    emojiSpan.textContent = typeEmojis[locationType];
+
+    const contentDiv = document.createElement("div");
+
+    const titleDiv = document.createElement("div");
+    titleDiv.className = "text-sm font-bold text-red-300";
+    titleDiv.textContent = `${typeNames[locationType]} Emergency Travel`;
+
+    const warningDiv = document.createElement("div");
+    warningDiv.className = "text-xs text-red-200 mt-1";
+    warningDiv.textContent = "⚠️ Running on fumes - very slow travel";
+
+    const costDiv = document.createElement("div");
+    costDiv.className = "text-xs text-red-200 mt-1 flex gap-3";
+
+    const amSpan = document.createElement("span");
+    amSpan.className = "text-purple-300";
+    amSpan.textContent = `Need ${cost.antimatter} AM`;
+
+    const e115Span = document.createElement("span");
+    e115Span.className = "text-cyan-300";
+    e115Span.textContent = `Need ${cost.element115} E115`;
+
+    const deuteriumSpan = document.createElement("span");
+    deuteriumSpan.className = "text-orange-300";
+    deuteriumSpan.textContent = `Need ${cost.deuterium} D`;
+
+    costDiv.appendChild(amSpan);
+    costDiv.appendChild(e115Span);
+    costDiv.appendChild(deuteriumSpan);
+
+    const adviceDiv = document.createElement("div");
+    adviceDiv.className = "text-xs text-red-200 mt-1";
+    adviceDiv.textContent = "🔧 Collect resources or upgrade ship";
+
+    contentDiv.appendChild(titleDiv);
+    contentDiv.appendChild(warningDiv);
+    contentDiv.appendChild(costDiv);
+    contentDiv.appendChild(adviceDiv);
+
+    container.appendChild(emojiSpan);
+    container.appendChild(contentDiv);
+    toast.appendChild(container);
     
     document.body.appendChild(toast);
     
@@ -194,21 +284,55 @@ export class SpaceshipTravelManager {
       planet: "Planet"
     };
     
-    toast.innerHTML = `
-      <div class="flex items-center space-x-3">
-        <span class="text-2xl">${typeEmojis[locationType]}</span>
-        <div>
-          <div class="text-sm font-bold text-yellow-300">${typeNames[locationType]} Travel - No Fuel</div>
-          <div class="text-xs text-yellow-200 mt-1">Traveling on emergency reserves</div>
-          <div class="text-xs text-yellow-200 mt-1 flex gap-3">
-            <span class="text-purple-300">Need ${cost.antimatter} AM</span>
-            <span class="text-cyan-300">Need ${cost.element115} E115</span>
-            <span class="text-orange-300">Need ${cost.deuterium} D</span>
-          </div>
-          <div class="text-xs text-yellow-200 mt-1">⚡ Improve your ship for efficiency</div>
-        </div>
-      </div>
-    `;
+    // Create toast content using DOM manipulation instead of innerHTML
+    const container = document.createElement("div");
+    container.className = "flex items-center space-x-3";
+
+    const emojiSpan = document.createElement("span");
+    emojiSpan.className = "text-2xl";
+    emojiSpan.textContent = typeEmojis[locationType];
+
+    const contentDiv = document.createElement("div");
+
+    const titleDiv = document.createElement("div");
+    titleDiv.className = "text-sm font-bold text-yellow-300";
+    titleDiv.textContent = `${typeNames[locationType]} Travel - No Fuel`;
+
+    const statusDiv = document.createElement("div");
+    statusDiv.className = "text-xs text-yellow-200 mt-1";
+    statusDiv.textContent = "Traveling on emergency reserves";
+
+    const costDiv = document.createElement("div");
+    costDiv.className = "text-xs text-yellow-200 mt-1 flex gap-3";
+
+    const amSpan = document.createElement("span");
+    amSpan.className = "text-purple-300";
+    amSpan.textContent = `Need ${cost.antimatter} AM`;
+
+    const e115Span = document.createElement("span");
+    e115Span.className = "text-cyan-300";
+    e115Span.textContent = `Need ${cost.element115} E115`;
+
+    const deuteriumSpan = document.createElement("span");
+    deuteriumSpan.className = "text-orange-300";
+    deuteriumSpan.textContent = `Need ${cost.deuterium} D`;
+
+    costDiv.appendChild(amSpan);
+    costDiv.appendChild(e115Span);
+    costDiv.appendChild(deuteriumSpan);
+
+    const adviceDiv = document.createElement("div");
+    adviceDiv.className = "text-xs text-yellow-200 mt-1";
+    adviceDiv.textContent = "⚡ Improve your ship for efficiency";
+
+    contentDiv.appendChild(titleDiv);
+    contentDiv.appendChild(statusDiv);
+    contentDiv.appendChild(costDiv);
+    contentDiv.appendChild(adviceDiv);
+
+    container.appendChild(emojiSpan);
+    container.appendChild(contentDiv);
+    toast.appendChild(container);
     
     document.body.appendChild(toast);
     

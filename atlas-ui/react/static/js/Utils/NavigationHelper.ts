@@ -147,12 +147,21 @@ export class NavigationHelper {
     const toast = document.createElement("div");
     toast.className = "fixed top-4 right-4 z-50 bg-red-900/90 text-white px-4 py-3 rounded-lg shadow-lg border border-red-500/50";
     toast.style.animation = "slideInRight 0.3s ease-out";
-    toast.innerHTML = `
-      <div class="flex items-center space-x-2">
-        <span class="text-red-300">⚠️</span>
-        <span class="text-sm">${message}</span>
-      </div>
-    `;
+    // Create toast content using DOM manipulation instead of innerHTML
+    const container = document.createElement("div");
+    container.className = "flex items-center space-x-2";
+
+    const warningSpan = document.createElement("span");
+    warningSpan.className = "text-red-300";
+    warningSpan.textContent = "⚠️";
+
+    const messageSpan = document.createElement("span");
+    messageSpan.className = "text-sm";
+    messageSpan.textContent = message;
+
+    container.appendChild(warningSpan);
+    container.appendChild(messageSpan);
+    toast.appendChild(container);
     
     // Add CSS animation if not already present
     if (!document.getElementById("navigation-toast-styles")) {
