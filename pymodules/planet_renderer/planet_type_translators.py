@@ -541,16 +541,16 @@ class PlanetTypeTranslators:
                 # Small rocky outcrops and mini oases
                 size = rng.uniform(0.1, 0.18)
             
-            # Desert landmass colors - yellowish/sandy colors, slightly darker than the planet
-            # Using desert/sandy tones with slight greenish tints for oasis areas
+            # Desert landmass colors - more yellowish/golden sandy colors, slightly darker than the planet
+            # Using warm desert/sandy tones with slight greenish tints for oasis areas
             desert_color_choices = [
-                [0.7, 0.6, 0.35],   # Dark sandy brown
-                [0.65, 0.55, 0.3],  # Medium desert brown
-                [0.6, 0.5, 0.28],   # Darker sandy color
-                [0.75, 0.62, 0.4],  # Light desert brown
-                [0.68, 0.58, 0.32], # Standard desert color
-                [0.6, 0.65, 0.35],  # Slightly greenish oasis color
-                [0.55, 0.6, 0.3],   # More greenish oasis tone
+                [0.8, 0.7, 0.35],   # Golden sandy brown
+                [0.85, 0.75, 0.4],  # Light golden desert
+                [0.75, 0.65, 0.3],  # Medium golden sandy
+                [0.9, 0.8, 0.45],   # Bright golden desert
+                [0.78, 0.68, 0.35], # Standard golden desert color
+                [0.7, 0.75, 0.4],   # Slightly greenish golden oasis
+                [0.65, 0.7, 0.35],  # More greenish oasis tone
             ]
             
             green_patches.append({
