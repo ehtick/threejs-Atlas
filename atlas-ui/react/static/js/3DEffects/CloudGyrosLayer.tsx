@@ -211,7 +211,6 @@ export class CloudGyrosLayer {
     const animationSpeedsArray = new Array(30).fill(1.0); // Velocidades animación individuales
     
     if (this.params.stormCenters) {
-      console.log(`🔧 Processing ${this.params.stormCenters.length} storms for shader`);
       this.params.stormCenters.forEach((storm: StormData, i: number) => {
         if (i < 30) {
           // Las coordenadas 3D YA están completamente generadas y normalizadas
@@ -224,10 +223,7 @@ export class CloudGyrosLayer {
           intensitiesArray[i] = storm.intensity;
           spiralSpeedsArray[i] = storm.spiralSpeed;
           animationSpeedsArray[i] = storm.animationSpeed;
-          
-          if (i < 5) { // Solo log primeras 5 para no saturar
-            console.log(`  Storm ${i}: center=(${storm.x.toFixed(2)}, ${storm.y.toFixed(2)}, ${storm.z.toFixed(2)}), size=${storm.size.toFixed(3)}`);
-          }
+        
         }
       });
     }
@@ -260,7 +256,6 @@ export class CloudGyrosLayer {
   private generateStormCenters(seed: number): Array<StormData> {
     // Normalizar seed para evitar overflow
     const normalizedSeed = Math.abs(seed % 1000000);
-    console.log(`🌪️ Generating storms with normalized seed ${normalizedSeed}`);
     
     const storms: Array<StormData> = [];
     // Usar PROCEDURAL_RANGES para determinar cantidad de tormentas
@@ -287,10 +282,6 @@ export class CloudGyrosLayer {
       const spiralSpeed = stormRng.uniform(PROCEDURAL_RANGES.SPIRAL_SPEED.min, PROCEDURAL_RANGES.SPIRAL_SPEED.max);
       const animationSpeed = stormRng.uniform(PROCEDURAL_RANGES.ANIMATION_SPEED.min, PROCEDURAL_RANGES.ANIMATION_SPEED.max);
       
-      if (i < 5) { // Solo log primeras 5 para no saturar
-        console.log(`Storm ${i}: seed=${stormSeed}, pos=(${x.toFixed(2)}, ${y.toFixed(2)}, ${z.toFixed(2)}), size=${size.toFixed(3)}, intensity=${intensity.toFixed(3)}`);
-      }
-      
       storms.push({
         x, // Coordenada X normalizada de la esfera
         y, // Coordenada Y normalizada de la esfera
@@ -302,7 +293,6 @@ export class CloudGyrosLayer {
       });
     }
     
-    console.log(`✅ Generated ${storms.length} storms total`);
     return storms;
   }
 

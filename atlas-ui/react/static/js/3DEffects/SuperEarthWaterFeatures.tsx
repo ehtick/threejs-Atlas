@@ -50,9 +50,6 @@ export class SuperEarthWaterFeaturesEffect {
   private animationTime: number = 0;
 
   constructor(planetRadius: number, params: SuperEarthWaterFeaturesParams = {}) {
-    console.log("💧 CREATING SuperEarthWaterFeaturesEffect - TEXTURE-BASED VERSION");
-    console.log("Planet radius:", planetRadius);
-    console.log("Params:", params);
 
     const seed = params.seed || Math.floor(Math.random() * 1000000);
     this.rng = new SeededRandom(seed);
@@ -74,9 +71,7 @@ export class SuperEarthWaterFeaturesEffect {
     // Create unified water material
     this.createUnifiedWaterMaterial();
 
-    console.log("Creating texture-based water bodies...");
     this.generateWaterBodies();
-    console.log(`✅ Created ${this.waterBodyMeshes.length} texture-based water bodies`);
   }
 
   private generateWaterTextures(): void {
@@ -294,7 +289,6 @@ export class SuperEarthWaterFeaturesEffect {
   private generateWaterBodies(): void {
     // Use provided water bodies or generate procedural ones
     if (this.params.water_bodies && this.params.water_bodies.length > 0) {
-      console.log(`Using ${this.params.water_bodies.length} water bodies from data`);
       this.params.water_bodies.forEach((bodyData, index) => {
         const waterMesh = this.createTextureBasedWaterBody(bodyData, index);
         if (waterMesh) {
@@ -303,7 +297,6 @@ export class SuperEarthWaterFeaturesEffect {
         }
       });
     } else {
-      console.log("No water body data provided, generating procedural water bodies");
       this.generateProceduralWaterBodies();
     }
   }
@@ -497,14 +490,12 @@ export class SuperEarthWaterFeaturesEffect {
     waterMesh.castShadow = false;
     waterMesh.receiveShadow = true;
 
-    console.log(`Created texture-based water body ${bodyIndex}`);
     return waterMesh;
   }
 
   private generateProceduralWaterBodies(): void {
     const bodyCount = this.rng.randint(PROCEDURAL_RANGES.WATER_BODY_COUNT.min, PROCEDURAL_RANGES.WATER_BODY_COUNT.max);
 
-    console.log(`Generating ${bodyCount} procedural texture-based water bodies`);
 
     for (let i = 0; i < bodyCount; i++) {
       const radius = this.rng.uniform(PROCEDURAL_RANGES.WATER_BODY_RADIUS.min, PROCEDURAL_RANGES.WATER_BODY_RADIUS.max);
@@ -557,12 +548,10 @@ export class SuperEarthWaterFeaturesEffect {
   }
 
   addToScene(scene: THREE.Scene, planetPosition?: THREE.Vector3): void {
-    console.log("💧 Adding texture-based water features to scene");
     if (planetPosition) {
       this.waterGroup.position.copy(planetPosition);
     }
     scene.add(this.waterGroup);
-    console.log(`✅ Added ${this.waterBodyMeshes.length} water bodies to scene`);
   }
 
   /**
@@ -599,7 +588,6 @@ export class SuperEarthWaterFeaturesEffect {
       }
     }
 
-    console.log("🌊 Updated water lighting from DirectionalLight - position:", light.position);
   }
 
   update(deltaTime: number): void {
@@ -672,10 +660,6 @@ export class SuperEarthWaterFeaturesEffect {
  * and normal maps for wave effects instead of vertex displacement.
  */
 export function createSuperEarthWaterFeaturesFromPythonData(planetRadius: number, surfaceData: any, globalSeed?: number, planetType?: string): SuperEarthWaterFeaturesEffect | null {
-  console.log("💧 Creating Texture-Based SuperEarthWaterFeatures from Python data");
-  console.log("Surface data:", surfaceData);
-  console.log("Planet type:", planetType);
-
   const seed = globalSeed || Math.floor(Math.random() * 1000000);
   const waterSeed = seed + 10000;
   const rng = new SeededRandom(waterSeed);
@@ -688,10 +672,8 @@ export function createSuperEarthWaterFeaturesFromPythonData(planetRadius: number
   if (planetType === "desert") {
     const probability = rng.uniform(3, 5); // 3-5% probability
     const roll = rng.uniform(0, 100);
-    console.log(`💧 Desert water probability: ${probability.toFixed(2)}%, rolled: ${roll.toFixed(2)}%`);
 
     if (roll <= probability) {
-      console.log("💧 Desert planet gets rare water mass!");
       // Generate a single rare water mass for desert
       const theta = rng.uniform(0, 2 * Math.PI);
       const phi = Math.acos(rng.uniform(-1, 1));
@@ -706,14 +688,12 @@ export function createSuperEarthWaterFeaturesFromPythonData(planetRadius: number
         },
       ];
     } else {
-      console.log("💧 Desert planet has no water masses (too dry)");
       return null; // No water for this desert planet
     }
   }
 
   // Also check for blue_patches (legacy support)
   if (waterBodies.length === 0 && surfaceData.blue_patches && surfaceData.blue_patches.length > 0) {
-    console.log("💧 Converting blue_patches to water_bodies");
     waterBodies = surfaceData.blue_patches.map((patch: any) => ({
       position_3d: patch.position_3d,
       radius: patch.size || 0.1,
@@ -723,8 +703,6 @@ export function createSuperEarthWaterFeaturesFromPythonData(planetRadius: number
     }));
   }
 
-  console.log("Water bodies from Python:", waterBodies);
-
   const params: SuperEarthWaterFeaturesParams = {
     water_bodies: waterBodies,
     waterColor: new THREE.Color(0.2, 0.5, 0.9),
@@ -732,10 +710,8 @@ export function createSuperEarthWaterFeaturesFromPythonData(planetRadius: number
     seed: waterSeed,
   };
 
-  console.log("Creating texture-based SuperEarthWaterFeaturesEffect with params:", params);
 
   const effect = new SuperEarthWaterFeaturesEffect(planetRadius, params);
 
-  console.log("✅ Texture-based SuperEarthWaterFeaturesEffect created successfully");
   return effect;
 }

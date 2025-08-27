@@ -287,7 +287,6 @@ export class MagmaEruptionsEffect {
       intensity: this.rng.uniform(0.7, 1.3) // Intensidad más moderada
     }));
     
-    console.log("🌋 Generated", this.eruptionPatterns.length, "eruption patterns");
   }
 
   private initializeObjectPools(): void {
