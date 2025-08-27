@@ -77,11 +77,11 @@ export class SuperEarthWaterFeaturesEffect {
   private generateWaterTextures(): void {
     // Generate normal map for wave patterns
     const normalSize = 256;
-    const normalData = new Uint8Array(normalSize * normalSize * 3);
+    const normalData = new Uint8Array(normalSize * normalSize * 4); // RGBA needs 4 components
 
     for (let i = 0; i < normalSize; i++) {
       for (let j = 0; j < normalSize; j++) {
-        const idx = (i * normalSize + j) * 3;
+        const idx = (i * normalSize + j) * 4; // 4 components per pixel
 
         // Create more pronounced wave patterns for normals
         const u = (i / normalSize) * Math.PI * 6;
@@ -96,24 +96,25 @@ export class SuperEarthWaterFeaturesEffect {
         const ny = (wave2 + wave3) * 0.5 + 0.5;
         const nz = 1.0;
 
-        normalData[idx] = nx * 255;
-        normalData[idx + 1] = ny * 255;
-        normalData[idx + 2] = nz * 255;
+        normalData[idx] = nx * 255;       // R
+        normalData[idx + 1] = ny * 255;   // G
+        normalData[idx + 2] = nz * 255;   // B
+        normalData[idx + 3] = 255;        // A (full opacity)
       }
     }
 
-    this.normalMap = new THREE.DataTexture(normalData, normalSize, normalSize, THREE.RGBFormat);
+    this.normalMap = new THREE.DataTexture(normalData, normalSize, normalSize, THREE.RGBAFormat);
     this.normalMap.wrapS = THREE.RepeatWrapping;
     this.normalMap.wrapT = THREE.RepeatWrapping;
     this.normalMap.needsUpdate = true;
 
     // Generate displacement map for height variation
     const dispSize = 128;
-    const dispData = new Uint8Array(dispSize * dispSize);
+    const dispData = new Uint8Array(dispSize * dispSize * 4); // RGBA needs 4 components
 
     for (let i = 0; i < dispSize; i++) {
       for (let j = 0; j < dispSize; j++) {
-        const idx = i * dispSize + j;
+        const idx = (i * dispSize + j) * 4; // 4 components per pixel
 
         // Create smooth displacement without noise
         const u = (i / dispSize) * Math.PI * 2;
@@ -123,22 +124,26 @@ export class SuperEarthWaterFeaturesEffect {
         const disp2 = Math.cos(u - v * 2) * 0.3;
         const height = (disp1 + disp2) * 0.25 + 0.5;
 
-        dispData[idx] = Math.max(0, Math.min(255, height * 255));
+        const heightValue = Math.max(0, Math.min(255, height * 255));
+        dispData[idx] = heightValue;     // R
+        dispData[idx + 1] = heightValue; // G
+        dispData[idx + 2] = heightValue; // B
+        dispData[idx + 3] = 255;         // A (full opacity)
       }
     }
 
-    this.displacementMap = new THREE.DataTexture(dispData, dispSize, dispSize, THREE.RedFormat);
+    this.displacementMap = new THREE.DataTexture(dispData, dispSize, dispSize, THREE.RGBAFormat);
     this.displacementMap.wrapS = THREE.RepeatWrapping;
     this.displacementMap.wrapT = THREE.RepeatWrapping;
     this.displacementMap.needsUpdate = true;
 
     // Generate foam map for shoreline effects
     const foamSize = 128;
-    const foamData = new Uint8Array(foamSize * foamSize);
+    const foamData = new Uint8Array(foamSize * foamSize * 4); // RGBA needs 4 components
 
     for (let i = 0; i < foamSize; i++) {
       for (let j = 0; j < foamSize; j++) {
-        const idx = i * foamSize + j;
+        const idx = (i * foamSize + j) * 4; // 4 components per pixel
 
         // Create smooth foam pattern
         const u = (i / foamSize) * Math.PI * 6;
@@ -146,11 +151,15 @@ export class SuperEarthWaterFeaturesEffect {
         const foamValue = (Math.sin(u) * Math.cos(v) + 1) * 0.5;
         const foam = foamValue > 0.6 ? foamValue * 0.8 : 0;
 
-        foamData[idx] = foam * 255;
+        const foamIntensity = foam * 255;
+        foamData[idx] = foamIntensity;     // R
+        foamData[idx + 1] = foamIntensity; // G
+        foamData[idx + 2] = foamIntensity; // B
+        foamData[idx + 3] = 255;           // A (full opacity)
       }
     }
 
-    this.foamMap = new THREE.DataTexture(foamData, foamSize, foamSize, THREE.RedFormat);
+    this.foamMap = new THREE.DataTexture(foamData, foamSize, foamSize, THREE.RGBAFormat);
     this.foamMap.wrapS = THREE.RepeatWrapping;
     this.foamMap.wrapT = THREE.RepeatWrapping;
     this.foamMap.needsUpdate = true;
