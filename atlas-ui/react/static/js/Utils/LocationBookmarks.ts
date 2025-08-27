@@ -13,6 +13,7 @@ export class LocationBookmarks {
   private static readonly STORAGE_KEY = '_atlasLocations';
   private static readonly BASE_MAX_LOCATIONS = 50;
   private static readonly BONUS_PER_COMPLETION = 10;
+  private static readonly ABSOLUTE_MAX_LOCATIONS = 1000;
 
   public static getLocations(): SavedLocation[] {
     try {
@@ -92,7 +93,10 @@ export class LocationBookmarks {
       // Also check if today is completed
       const todayCompleted = DailyChallengesManager.getCompletionStatus().allCompleted ? 1 : 0;
       
-      return this.BASE_MAX_LOCATIONS + ((completedDays + todayCompleted) * this.BONUS_PER_COMPLETION);
+      const calculatedMax = this.BASE_MAX_LOCATIONS + ((completedDays + todayCompleted) * this.BONUS_PER_COMPLETION);
+      
+      // Cap at absolute maximum
+      return Math.min(calculatedMax, this.ABSOLUTE_MAX_LOCATIONS);
     } catch (error) {
       console.error('Error calculating max locations:', error);
       return this.BASE_MAX_LOCATIONS;
