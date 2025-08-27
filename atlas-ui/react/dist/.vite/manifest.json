@@ -43,6 +43,14 @@
       "_atlas_CqUMNY_RyRklhCsbOI68T.js"
     ]
   },
+  "_atlas_BNttTq4Iw8zF0fCEEJ3BU.js": {
+    "file": "atlas_BNttTq4Iw8zF0fCEEJ3BU.js",
+    "name": "SpaceshipTravelCosts",
+    "isDynamicEntry": true,
+    "imports": [
+      "_atlas_Bv5zr7cG9joXJ1l7Eo-6s.js"
+    ]
+  },
   "_atlas_BPj-MsIDwzwqXqKWRYHZn.js": {
     "file": "atlas_BPj-MsIDwzwqXqKWRYHZn.js",
     "name": "3d-effectregi",
@@ -113,14 +121,6 @@
       "_atlas_CqUMNY_RyRklhCsbOI68T.js"
     ]
   },
-  "_atlas_BaXi1fL9krZc5NIhr0Ma9.js": {
-    "file": "atlas_BaXi1fL9krZc5NIhr0Ma9.js",
-    "name": "SpaceshipTravelCosts",
-    "isDynamicEntry": true,
-    "imports": [
-      "_atlas_Bv5zr7cG9joXJ1l7Eo-6s.js"
-    ]
-  },
   "_atlas_BkU-BZFNU0Kk3GbuSxcOt.js": {
     "file": "atlas_BkU-BZFNU0Kk3GbuSxcOt.js",
     "name": "3d-cloudgyros",
@@ -150,6 +150,17 @@
     "imports": [
       "_atlas_BJ-3dIBoTMvLRTvbW4jvB.js",
       "_atlas_CqUMNY_RyRklhCsbOI68T.js"
+    ]
+  },
+  "_atlas_BtUCRl7dV-8bvemyy40c8.js": {
+    "file": "atlas_BtUCRl7dV-8bvemyy40c8.js",
+    "name": "ResourceCollectionButton",
+    "imports": [
+      "_atlas_Bv5zr7cG9joXJ1l7Eo-6s.js",
+      "_atlas_BNttTq4Iw8zF0fCEEJ3BU.js"
+    ],
+    "dynamicImports": [
+      "_atlas_BNttTq4Iw8zF0fCEEJ3BU.js"
     ]
   },
   "_atlas_Bu5UDKz6Fxm2j5znUfuqR.js": {
@@ -410,17 +421,6 @@
     "file": "atlas_SPyfQU6Spv1u19LNdvRDW.js",
     "name": "vendor-misc"
   },
-  "_atlas_XIVztJR3QrwXhTniM5vOF.js": {
-    "file": "atlas_XIVztJR3QrwXhTniM5vOF.js",
-    "name": "ResourceCollectionButton",
-    "imports": [
-      "_atlas_Bv5zr7cG9joXJ1l7Eo-6s.js",
-      "_atlas_BaXi1fL9krZc5NIhr0Ma9.js"
-    ],
-    "dynamicImports": [
-      "_atlas_BaXi1fL9krZc5NIhr0Ma9.js"
-    ]
-  },
   "_atlas_ZjaJ_43RPC4E1k8nfj4yf.js": {
     "file": "atlas_ZjaJ_43RPC4E1k8nfj4yf.js",
     "name": "3d-visualdebu",
@@ -444,7 +444,7 @@
     ]
   },
   "atlas-ui/react/static/css/global.css": {
-    "file": "atlas_DD56ZObITgFDGXnGIDnxY.css",
+    "file": "atlas_BJ2DBjX0Efr3m1oxYaGNz.css",
     "src": "atlas-ui/react/static/css/global.css",
     "isEntry": true,
     "names": [
@@ -463,28 +463,28 @@
     ]
   },
   "atlas-ui/react/static/js/MountPoints/__galaxy__.ts": {
-    "file": "atlas_CRknRO9tiIM5aaynxK23_.js",
+    "file": "atlas_c-bQidkkJtgrenf_g0yP0.js",
     "name": "__galaxy__",
     "src": "atlas-ui/react/static/js/MountPoints/__galaxy__.ts",
     "isEntry": true,
     "imports": [
       "_atlas_Bv5zr7cG9joXJ1l7Eo-6s.js",
-      "_atlas_BaXi1fL9krZc5NIhr0Ma9.js",
+      "_atlas_BNttTq4Iw8zF0fCEEJ3BU.js",
       "_atlas_CNuRMyx4gH271S-qfMS5_.js",
       "_atlas_CqUMNY_RyRklhCsbOI68T.js",
-      "_atlas_XIVztJR3QrwXhTniM5vOF.js",
+      "_atlas_BtUCRl7dV-8bvemyy40c8.js",
       "_atlas_D1RtXGjFSAWW01vFUnxaN.js",
       "_atlas_SPyfQU6Spv1u19LNdvRDW.js"
     ]
   },
   "atlas-ui/react/static/js/MountPoints/__main__.ts": {
-    "file": "atlas_lQM1muWsJKdrqNF4hqXkr.js",
+    "file": "atlas_CeknQwuuHPMlayk-7uzqR.js",
     "name": "__main__",
     "src": "atlas-ui/react/static/js/MountPoints/__main__.ts",
     "isEntry": true,
     "imports": [
       "_atlas_Bv5zr7cG9joXJ1l7Eo-6s.js",
-      "_atlas_BaXi1fL9krZc5NIhr0Ma9.js",
+      "_atlas_BNttTq4Iw8zF0fCEEJ3BU.js",
       "_atlas_D1RtXGjFSAWW01vFUnxaN.js",
       "_atlas_SPyfQU6Spv1u19LNdvRDW.js"
     ]
@@ -503,14 +503,14 @@
     ]
   },
   "atlas-ui/react/static/js/MountPoints/__planet__.ts": {
-    "file": "atlas_8AStyockMxmas-UKF8lvg.js",
+    "file": "atlas_B4BWSdCzE_eVXK6ppiXfX.js",
     "name": "__planet__",
     "src": "atlas-ui/react/static/js/MountPoints/__planet__.ts",
     "isEntry": true,
     "imports": [
       "_atlas_Bv5zr7cG9joXJ1l7Eo-6s.js",
-      "_atlas_BaXi1fL9krZc5NIhr0Ma9.js",
-      "_atlas_XIVztJR3QrwXhTniM5vOF.js",
+      "_atlas_BNttTq4Iw8zF0fCEEJ3BU.js",
+      "_atlas_BtUCRl7dV-8bvemyy40c8.js",
       "_atlas_BBEdd16PxNjpYNrFTyoqJ.js",
       "_atlas_BPj-MsIDwzwqXqKWRYHZn.js",
       "_atlas_D1RtXGjFSAWW01vFUnxaN.js",
@@ -562,16 +562,16 @@
     ]
   },
   "atlas-ui/react/static/js/MountPoints/__system__.ts": {
-    "file": "atlas_FvpQaJ3VbqgiSy4XN9cYf.js",
+    "file": "atlas_ChW7pBa54uE8CCcx0ZtMm.js",
     "name": "__system__",
     "src": "atlas-ui/react/static/js/MountPoints/__system__.ts",
     "isEntry": true,
     "imports": [
       "_atlas_Bv5zr7cG9joXJ1l7Eo-6s.js",
-      "_atlas_BaXi1fL9krZc5NIhr0Ma9.js",
+      "_atlas_BNttTq4Iw8zF0fCEEJ3BU.js",
       "_atlas_CNuRMyx4gH271S-qfMS5_.js",
       "_atlas_CqUMNY_RyRklhCsbOI68T.js",
-      "_atlas_XIVztJR3QrwXhTniM5vOF.js",
+      "_atlas_BtUCRl7dV-8bvemyy40c8.js",
       "_atlas_D1RtXGjFSAWW01vFUnxaN.js",
       "_atlas_SPyfQU6Spv1u19LNdvRDW.js"
     ]

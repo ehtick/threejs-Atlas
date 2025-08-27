@@ -8,6 +8,7 @@ interface ResourceCollectionButtonProps {
   coordinates: string;
   systemIndex?: number;
   planetName?: string;
+  planetElements?: string[];
   className?: string;
 }
 
@@ -17,6 +18,7 @@ const ResourceCollectionButton: React.FC<ResourceCollectionButtonProps> = ({
   coordinates,
   systemIndex,
   planetName,
+  planetElements,
   className = ""
 }) => {
   const [canCollect, setCanCollect] = useState(false);
@@ -60,7 +62,8 @@ const ResourceCollectionButton: React.FC<ResourceCollectionButtonProps> = ({
     // Check if this is first time collection
     const isFirstTime = collectionCount === 0;
     
-    const reward = SpaceshipResourceCollectionManager.collectResources(fullLocationId, locationType, coordinates);
+    const planetData = planetElements ? { elements: planetElements } : undefined;
+    const reward = SpaceshipResourceCollectionManager.collectResources(fullLocationId, locationType, coordinates, planetData);
     
     if (reward) {
       // Get streak info for proper bonus display
@@ -125,7 +128,8 @@ const ResourceCollectionButton: React.FC<ResourceCollectionButtonProps> = ({
   };
 
   const getRewardPreview = () => {
-    const reward = SpaceshipResourceCollectionManager.calculateReward(locationType, collectionCount);
+    const planetData = planetElements ? { elements: planetElements } : undefined;
+    const reward = SpaceshipResourceCollectionManager.calculateReward(locationType, coordinates, collectionCount, planetData, true);
     return `${reward.antimatter}AM | ${reward.element115}E115 | ${reward.deuterium}D`;
   };
 

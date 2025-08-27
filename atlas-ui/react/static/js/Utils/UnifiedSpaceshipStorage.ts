@@ -15,7 +15,7 @@ export interface SpaceshipData {
     ef: number; // efficiency
     rn: number; // range  
     st: number; // storage
-    pg: number; // passive generation
+    m: number; // multiplier
   };
   
   // Collections (locationId -> timestamp)
@@ -50,7 +50,7 @@ export class UnifiedSpaceshipStorage {
   // Default initial state - generous starting resources
   private static readonly DEFAULT_DATA: SpaceshipData = {
     r: { a: 300, e: 200, d: 250 }, // Abundant starting resources for immediate engagement
-    u: { l: 1, ef: 1.0, rn: 500, st: 1000, pg: 1.0 }, // Better starting stats
+    u: { l: 1, ef: 1.0, rn: 500, st: 1000, m: 1.0 }, // Better starting stats
     c: {},
     t: {},
     s: { tc: 0, tr: { a: 0, e: 0, d: 0 }, tt: 0, cs: 0, dc: 0 }
@@ -203,7 +203,7 @@ export class UnifiedSpaceshipStorage {
     efficiency: number;
     range: number;
     storage: number;
-    passiveGeneration: number;
+    multiplier: number;
   } {
     const data = this.getData();
     return {
@@ -211,7 +211,7 @@ export class UnifiedSpaceshipStorage {
       efficiency: data.u.ef,
       range: data.u.rn,
       storage: data.u.st,
-      passiveGeneration: data.u.pg
+      multiplier: data.u.m
     };
   }
   
@@ -252,20 +252,20 @@ export class UnifiedSpaceshipStorage {
         : 1000 + 20 * 400 + Math.floor(Math.log(data.u.l - 20 + 1) * 1200);
       storage = Math.min(storage, 50000); // Double the cap
       
-      let passiveGeneration = Math.min(6.0, 1 + (data.u.l - 1) * 0.3); // Higher cap and faster growth
+      let multiplier = Math.min(6.0, 1 + (data.u.l - 1) * 0.3); // Higher cap and faster growth
       
       // Milestone rewards every 5 levels - more generous
       if (data.u.l % 5 === 0) {
         efficiency *= 1.3; // 30% bonus efficiency
         range = Math.min(range * 1.2, 25000); // 20% bonus range but respect cap
         storage = Math.min(storage * 1.15, 50000); // 15% bonus storage but respect cap
-        passiveGeneration *= 1.4; // 40% bonus passive generation
+        multiplier *= 1.4; // 40% bonus multiplier
       }
       
       data.u.ef = Math.min(6.0, efficiency); // Higher efficiency cap
       data.u.rn = Math.floor(range);
       data.u.st = Math.floor(storage);
-      data.u.pg = Math.min(10.0, passiveGeneration); // Higher passive generation cap
+      data.u.m = Math.min(10.0, multiplier); // Higher multiplier cap
       
       this.saveData(data);
       return true;
@@ -465,7 +465,7 @@ export class UnifiedSpaceshipStorage {
           newData.u.ef = upgrade.efficiency || 1.0;
           newData.u.rn = upgrade.range || 300;
           newData.u.st = upgrade.storage || 500;
-          newData.u.pg = upgrade.passiveGeneration || 1.0;
+          newData.u.m = upgrade.multiplier || upgrade.passiveGeneration || 1.0;
         } catch (e) {}
       }
       
@@ -558,7 +558,7 @@ export class UnifiedSpaceshipStorage {
 
     const expandedData: SpaceshipData = {
       r: compactData.r || { a: 300, e: 200, d: 250 }, // Match new defaults
-      u: compactData.u || { l: 1, ef: 1.0, rn: 500, st: 1000, pg: 1.0 }, // Match new defaults
+      u: compactData.u || { l: 1, ef: 1.0, rn: 500, st: 1000, m: 1.0 }, // Match new defaults
       c: expandedCollections,
       t: {},
       s: compactData.s || { tc: 0, tr: { a: 0, e: 0, d: 0 }, tt: 0, cs: 0, dc: 0 }

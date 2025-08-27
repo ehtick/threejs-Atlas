@@ -11,7 +11,7 @@ export interface SpaceshipUpgrade {
   efficiency: number;
   range: number;
   storage: number;
-  passiveGeneration: number;
+  multiplier: number;
 }
 
 export interface TravelCost {
@@ -94,13 +94,26 @@ export class SpaceshipResourceManager {
   }
 
   static getUpgradeCost(currentLevel: number): TravelCost {
-    const baseCost = 80; // Higher base cost to require more exploration
-    const multiplier = Math.pow(1.4, currentLevel - 1); // Steeper curve to encourage exploration
+    // Calculate current storage capacity to ensure costs remain feasible
+    let currentStorage: number;
+    if (currentLevel <= 20) {
+      currentStorage = 1000 + (currentLevel - 1) * 400;
+    } else {
+      currentStorage = 1000 + 20 * 400 + Math.floor(Math.log(currentLevel - 20 + 1) * 1200);
+    }
+    
+    // Base cost that scales with storage capacity to maintain ~40-50% ratio for feasibility
+    const baseCostRatio = 0.4; // 40% of storage capacity for most expensive resource (safer)
+    const baseResourceCost = Math.floor(currentStorage * baseCostRatio / 1.3); // Divide by 1.3 since E115 has 1.3x multiplier
+    
+    // Add minimal level-based scaling for progression feel
+    const levelScaling = 1 + (currentLevel - 1) * 0.01; // Only 1% increase per level
+    const scaledCost = Math.floor(baseResourceCost * levelScaling);
     
     return {
-      antimatter: Math.floor(baseCost * multiplier),
-      element115: Math.floor(baseCost * multiplier * 1.3), // Element115 becomes more expensive
-      deuterium: Math.floor(baseCost * multiplier * 0.9), // Deuterium slightly cheaper
+      antimatter: scaledCost,
+      element115: Math.floor(scaledCost * 1.3), // Element115 becomes more expensive
+      deuterium: Math.floor(scaledCost * 0.9), // Deuterium slightly cheaper
     };
   }
 
@@ -156,10 +169,10 @@ export class SpaceshipResourceManager {
       // Galaxies don't generate passive resources as per requirements
     });
     
-    // Apply ship passive generation multiplier
-    totalGeneration.antimatter = Math.floor(totalGeneration.antimatter * upgrade.passiveGeneration);
-    totalGeneration.element115 = Math.floor(totalGeneration.element115 * upgrade.passiveGeneration);
-    totalGeneration.deuterium = Math.floor(totalGeneration.deuterium * upgrade.passiveGeneration);
+    // Apply ship multiplier
+    totalGeneration.antimatter = Math.floor(totalGeneration.antimatter * upgrade.multiplier);
+    totalGeneration.element115 = Math.floor(totalGeneration.element115 * upgrade.multiplier);
+    totalGeneration.deuterium = Math.floor(totalGeneration.deuterium * upgrade.multiplier);
     
     return {
       ...totalGeneration,

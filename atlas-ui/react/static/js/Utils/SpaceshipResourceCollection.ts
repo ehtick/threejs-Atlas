@@ -31,7 +31,7 @@ export class SpaceshipResourceCollectionManager {
     return UnifiedSpaceshipStorage.getTimeUntilNextCollection(locationId);
   }
 
-  static calculateReward(type: "galaxy" | "system" | "planet", coordinates: string, collectionCount: number = 0, planetData?: PlanetData): ResourceReward {
+  static calculateReward(type: "galaxy" | "system" | "planet", coordinates: string, collectionCount: number = 0, planetData?: PlanetData, includeMultiplier: boolean = false): ResourceReward {
     // For planets with element data, use exact element values
     if (type === "planet" && planetData?.elements && planetData.elements.length > 0) {
       const baseResources = calculatePlanetResources(planetData.elements);
@@ -48,11 +48,25 @@ export class SpaceshipResourceCollectionManager {
       const finalDeuterium = Math.floor(baseResources.deuterium * diminishingFactor * randomFactor);
       
       // If base resources exist but floor resulted in 0, ensure at least the base value
-      return {
+      let planetReward = {
         antimatter: baseResources.antimatter > 0 && finalAntimatter === 0 ? baseResources.antimatter : finalAntimatter,
         element115: baseResources.element115 > 0 && finalElement115 === 0 ? baseResources.element115 : finalElement115,
         deuterium: baseResources.deuterium > 0 && finalDeuterium === 0 ? baseResources.deuterium : finalDeuterium,
       };
+      
+      // Apply ship multiplier if requested (for preview calculations)
+      if (includeMultiplier) {
+        const upgrade = UnifiedSpaceshipStorage.getUpgrade();
+        const shipMultiplier = upgrade.multiplier;
+        
+        planetReward = {
+          antimatter: Math.floor(planetReward.antimatter * shipMultiplier),
+          element115: Math.floor(planetReward.element115 * shipMultiplier),
+          deuterium: Math.floor(planetReward.deuterium * shipMultiplier),
+        };
+      }
+      
+      return planetReward;
     }
     
     // Generous rewards for engagement - optimized for addictive progression
@@ -77,11 +91,25 @@ export class SpaceshipResourceCollectionManager {
     // Small randomness
     const randomFactor = 0.9 + Math.random() * 0.2;
     
-    return {
+    let finalReward = {
       antimatter: Math.floor(base.antimatter * variationFactor * diminishingFactor * randomFactor),
       element115: Math.floor(base.element115 * variationFactor * diminishingFactor * randomFactor),
       deuterium: Math.floor(base.deuterium * variationFactor * diminishingFactor * randomFactor),
     };
+    
+    // Apply ship multiplier if requested (for preview calculations)
+    if (includeMultiplier) {
+      const upgrade = UnifiedSpaceshipStorage.getUpgrade();
+      const shipMultiplier = upgrade.multiplier;
+      
+      finalReward = {
+        antimatter: Math.floor(finalReward.antimatter * shipMultiplier),
+        element115: Math.floor(finalReward.element115 * shipMultiplier),
+        deuterium: Math.floor(finalReward.deuterium * shipMultiplier),
+      };
+    }
+    
+    return finalReward;
   }
 
   private static hashCoordinates(coordinates: string): number {
@@ -119,6 +147,10 @@ export class SpaceshipResourceCollectionManager {
     const isFirstTime = collectionCount === 0;
     let reward = this.calculateReward(type, coordinates, collectionCount, planetData);
     
+    // Apply ship multiplier
+    const upgrade = UnifiedSpaceshipStorage.getUpgrade();
+    const shipMultiplier = upgrade.multiplier;
+    
     // Apply streak multiplier
     const streakInfo = UnifiedSpaceshipStorage.getCollectionStreakInfo();
     let finalMultiplier = streakInfo.streakMultiplier;
@@ -126,6 +158,9 @@ export class SpaceshipResourceCollectionManager {
     // Apply Discovery Bonus (2x rewards for first 10 unique locations per day)
     const discoveryBonus = this.getDiscoveryBonus(streakInfo.dailyCollections);
     finalMultiplier *= discoveryBonus;
+    
+    // Combine ship multiplier with other bonuses
+    finalMultiplier *= shipMultiplier;
     
     if (finalMultiplier > 1.0) {
       reward = {

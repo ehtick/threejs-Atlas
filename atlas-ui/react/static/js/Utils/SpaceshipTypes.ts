@@ -10,7 +10,7 @@ export interface ShipUpgrade {
   efficiency: number; // Reduces travel costs
   range: number; // Maximum travel distance
   storage: number; // Maximum resource capacity
-  passiveGeneration: number; // Passive resource generation rate
+  multiplier: number; // Resource multiplier for passive income and mining
 }
 
 export interface TravelCost {

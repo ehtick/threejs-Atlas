@@ -25,7 +25,7 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
   const [locationStats, setLocationStats] = useState<any>(null);
   const [dailyChallenges, setDailyChallenges] = useState<DailyChallenges | null>(null);
   const [spaceshipResources, setSpaceshipResources] = useState<SpaceshipResource>({ antimatter: 0, element115: 0, deuterium: 0 });
-  const [spaceshipUpgrade, setSpaceshipUpgrade] = useState<SpaceshipUpgrade>({ level: 1, efficiency: 1.0, range: 300, storage: 500, passiveGeneration: 1.0 });
+  const [spaceshipUpgrade, setSpaceshipUpgrade] = useState<SpaceshipUpgrade>({ level: 1, efficiency: 1.0, range: 300, storage: 500, multiplier: 1.0 });
   const [upgradeCost, setUpgradeCost] = useState<TravelCost>({ antimatter: 0, element115: 0, deuterium: 0 });
   const [passiveGeneration, setPassiveGeneration] = useState<any>({ antimatter: 0, element115: 0, deuterium: 0, sources: { planets: 0, systems: 0, galaxies: 0 } });
   const [showCollectionPopup, setShowCollectionPopup] = useState<boolean>(false);
@@ -328,8 +328,8 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
                       <div className="text-yellow-400 font-bold">{spaceshipUpgrade.storage}</div>
                     </div>
                     <div className="bg-white/5 rounded p-1 border border-indigo-500/20">
-                      <div className="text-gray-400 text-[9px]">Passive</div>
-                      <div className="text-indigo-400 font-bold">{spaceshipUpgrade.passiveGeneration.toFixed(1)}x</div>
+                      <div className="text-gray-400 text-[9px]">Multiplier</div>
+                      <div className="text-indigo-400 font-bold">{spaceshipUpgrade.multiplier.toFixed(1)}x</div>
                     </div>
                   </div>
                   
@@ -407,9 +407,9 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
                       <div className="flex items-center justify-between text-[10px] mb-1">
                         <span className="text-purple-300">Generating/min:</span>
                         <div className="flex gap-2">
-                          <span className="text-purple-300">+{Math.round(spaceshipUpgrade.passiveGeneration * passiveGeneration.sources.planets + spaceshipUpgrade.passiveGeneration * passiveGeneration.sources.systems * 0.5)} AM</span>
-                          <span className="text-cyan-300">+{Math.round(spaceshipUpgrade.passiveGeneration * passiveGeneration.sources.planets * 0.8 + spaceshipUpgrade.passiveGeneration * passiveGeneration.sources.systems * 0.6)} E115</span>
-                          <span className="text-orange-300">+{Math.round(spaceshipUpgrade.passiveGeneration * passiveGeneration.sources.planets * 0.6 + spaceshipUpgrade.passiveGeneration * passiveGeneration.sources.systems * 0.4)} D</span>
+                          <span className="text-purple-300">+{Math.round(spaceshipUpgrade.multiplier * passiveGeneration.sources.planets + spaceshipUpgrade.multiplier * passiveGeneration.sources.systems * 0.5)} AM</span>
+                          <span className="text-cyan-300">+{Math.round(spaceshipUpgrade.multiplier * passiveGeneration.sources.planets * 0.8 + spaceshipUpgrade.multiplier * passiveGeneration.sources.systems * 0.6)} E115</span>
+                          <span className="text-orange-300">+{Math.round(spaceshipUpgrade.multiplier * passiveGeneration.sources.planets * 0.6 + spaceshipUpgrade.multiplier * passiveGeneration.sources.systems * 0.4)} D</span>
                         </div>
                       </div>
                       
