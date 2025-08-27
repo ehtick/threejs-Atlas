@@ -37,18 +37,18 @@ export class SuperEarthWaterFeaturesEffect {
   private rng: SeededRandom;
   private materials: THREE.Material[] = [];
   private planetRadius: number;
-  
+
   // Unified water material for all bodies
   private waterMaterial: THREE.ShaderMaterial;
-  
+
   // Texture maps for water effects
   private normalMap: THREE.DataTexture;
   private displacementMap: THREE.DataTexture;
   private foamMap: THREE.DataTexture;
-  
+
   // Animation parameters
   private animationTime: number = 0;
-  
+
   constructor(planetRadius: number, params: SuperEarthWaterFeaturesParams = {}) {
     console.log("💧 CREATING SuperEarthWaterFeaturesEffect - TEXTURE-BASED VERSION");
     console.log("Planet radius:", planetRadius);
@@ -67,13 +67,13 @@ export class SuperEarthWaterFeaturesEffect {
     };
 
     this.waterGroup = new THREE.Group();
-    
+
     // Generate texture maps for water effects
     this.generateWaterTextures();
-    
+
     // Create unified water material
     this.createUnifiedWaterMaterial();
-    
+
     console.log("Creating texture-based water bodies...");
     this.generateWaterBodies();
     console.log(`✅ Created ${this.waterBodyMeshes.length} texture-based water bodies`);
@@ -83,94 +83,79 @@ export class SuperEarthWaterFeaturesEffect {
     // Generate normal map for wave patterns
     const normalSize = 256;
     const normalData = new Uint8Array(normalSize * normalSize * 3);
-    
+
     for (let i = 0; i < normalSize; i++) {
       for (let j = 0; j < normalSize; j++) {
         const idx = (i * normalSize + j) * 3;
-        
+
         // Create more pronounced wave patterns for normals
-        const u = i / normalSize * Math.PI * 6;
-        const v = j / normalSize * Math.PI * 6;
-        
+        const u = (i / normalSize) * Math.PI * 6;
+        const v = (j / normalSize) * Math.PI * 6;
+
         // Multiple wave frequencies for realistic ocean waves
         const wave1 = Math.sin(u * 1.0 + v * 0.5) * 0.5;
         const wave2 = Math.sin(u * 2.3 - v * 1.1) * 0.3;
         const wave3 = Math.sin(u * 0.7 + v * 1.9) * 0.2;
-        
+
         const nx = (wave1 + wave2) * 0.5 + 0.5;
         const ny = (wave2 + wave3) * 0.5 + 0.5;
         const nz = 1.0;
-        
+
         normalData[idx] = nx * 255;
         normalData[idx + 1] = ny * 255;
         normalData[idx + 2] = nz * 255;
       }
     }
-    
-    this.normalMap = new THREE.DataTexture(
-      normalData,
-      normalSize,
-      normalSize,
-      THREE.RGBFormat
-    );
+
+    this.normalMap = new THREE.DataTexture(normalData, normalSize, normalSize, THREE.RGBFormat);
     this.normalMap.wrapS = THREE.RepeatWrapping;
     this.normalMap.wrapT = THREE.RepeatWrapping;
     this.normalMap.needsUpdate = true;
-    
+
     // Generate displacement map for height variation
     const dispSize = 128;
     const dispData = new Uint8Array(dispSize * dispSize);
-    
+
     for (let i = 0; i < dispSize; i++) {
       for (let j = 0; j < dispSize; j++) {
         const idx = i * dispSize + j;
-        
+
         // Create smooth displacement without noise
-        const u = i / dispSize * Math.PI * 2;
-        const v = j / dispSize * Math.PI * 2;
-        
+        const u = (i / dispSize) * Math.PI * 2;
+        const v = (j / dispSize) * Math.PI * 2;
+
         const disp1 = Math.sin(u * 2 + v) * 0.3;
         const disp2 = Math.cos(u - v * 2) * 0.3;
         const height = (disp1 + disp2) * 0.25 + 0.5;
-        
+
         dispData[idx] = Math.max(0, Math.min(255, height * 255));
       }
     }
-    
-    this.displacementMap = new THREE.DataTexture(
-      dispData,
-      dispSize,
-      dispSize,
-      THREE.RedFormat
-    );
+
+    this.displacementMap = new THREE.DataTexture(dispData, dispSize, dispSize, THREE.RedFormat);
     this.displacementMap.wrapS = THREE.RepeatWrapping;
     this.displacementMap.wrapT = THREE.RepeatWrapping;
     this.displacementMap.needsUpdate = true;
-    
+
     // Generate foam map for shoreline effects
     const foamSize = 128;
     const foamData = new Uint8Array(foamSize * foamSize);
-    
+
     for (let i = 0; i < foamSize; i++) {
       for (let j = 0; j < foamSize; j++) {
         const idx = i * foamSize + j;
-        
+
         // Create smooth foam pattern
-        const u = i / foamSize * Math.PI * 6;
-        const v = j / foamSize * Math.PI * 6;
+        const u = (i / foamSize) * Math.PI * 6;
+        const v = (j / foamSize) * Math.PI * 6;
         const foamValue = (Math.sin(u) * Math.cos(v) + 1) * 0.5;
         const foam = foamValue > 0.6 ? foamValue * 0.8 : 0;
-        
+
         foamData[idx] = foam * 255;
       }
     }
-    
-    this.foamMap = new THREE.DataTexture(
-      foamData,
-      foamSize,
-      foamSize,
-      THREE.RedFormat
-    );
+
+    this.foamMap = new THREE.DataTexture(foamData, foamSize, foamSize, THREE.RedFormat);
     this.foamMap.wrapS = THREE.RepeatWrapping;
     this.foamMap.wrapT = THREE.RepeatWrapping;
     this.foamMap.needsUpdate = true;
@@ -293,7 +278,7 @@ export class SuperEarthWaterFeaturesEffect {
         lightPosition: { value: new THREE.Vector3(0, 0, 0) }, // Will be updated by updateFromThreeLight
         lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() }, // Will be updated by updateFromThreeLight
         ambientStrength: { value: 0.15 }, // Same as PlanetLayerSystem
-        lightIntensity: { value: 0.85 } // Same as PlanetLayerSystem
+        lightIntensity: { value: 0.85 }, // Same as PlanetLayerSystem
       },
       transparent: true,
       side: THREE.DoubleSide, // Both sides to ensure visibility
@@ -302,7 +287,7 @@ export class SuperEarthWaterFeaturesEffect {
       blending: THREE.CustomBlending,
       blendSrc: THREE.SrcAlphaFactor,
       blendDst: THREE.OneMinusSrcAlphaFactor,
-      blendEquation: THREE.AddEquation
+      blendEquation: THREE.AddEquation,
     });
   }
 
@@ -333,32 +318,26 @@ export class SuperEarthWaterFeaturesEffect {
     const sphericalPos = position.normalize();
 
     // Calculate size with randomization
-    const baseRadius = bodyData.radius || this.rng.uniform(
-      PROCEDURAL_RANGES.WATER_BODY_RADIUS.min,
-      PROCEDURAL_RANGES.WATER_BODY_RADIUS.max
-    );
+    const baseRadius = bodyData.radius || this.rng.uniform(PROCEDURAL_RANGES.WATER_BODY_RADIUS.min, PROCEDURAL_RANGES.WATER_BODY_RADIUS.max);
     const size = baseRadius * this.planetRadius;
 
     // Create flat plane geometry - completely 2D with no depth
     const segments = 24; // Enough resolution for curving to sphere
     const geometry = new THREE.PlaneGeometry(size * 2, size * 2, segments, segments);
-    
+
     // Add UV variation by rotating UVs randomly
     const uvRotation = this.rng.uniform(0, Math.PI * 2);
     const uvs = geometry.attributes.uv;
     const cosR = Math.cos(uvRotation);
     const sinR = Math.sin(uvRotation);
-    
+
     for (let i = 0; i < uvs.count; i++) {
       const u = uvs.getX(i) - 0.5;
       const v = uvs.getY(i) - 0.5;
-      uvs.setXY(i, 
-        (u * cosR - v * sinR) + 0.5,
-        (u * sinR + v * cosR) + 0.5
-      );
+      uvs.setXY(i, u * cosR - v * sinR + 0.5, u * sinR + v * cosR + 0.5);
     }
     uvs.needsUpdate = true;
-    
+
     // Create organic water shapes using noise-based boundary
     const positionsAttr = geometry.attributes.position;
     const uvsAttr = geometry.attributes.uv;
@@ -366,28 +345,28 @@ export class SuperEarthWaterFeaturesEffect {
     const validUVs = [];
     const validIndices = [];
     const originalUVs = []; // Store original UVs for edge calculation
-    
+
     // Generate organic boundary using noise
     const vertexMap = new Map();
     let newVertexIndex = 0;
-    
+
     for (let i = 0; i < positionsAttr.count; i++) {
       const x = positionsAttr.getX(i);
       const y = positionsAttr.getY(i);
       const z = positionsAttr.getZ(i);
-      
+
       // Store original UV for edge calculation
       const origU = uvsAttr.getX(i);
       const origV = uvsAttr.getY(i);
-      
+
       // Base circular distance
       const distFromCenter = Math.sqrt(x * x + y * y);
       const angle = Math.atan2(y, x);
-      
+
       // Create DIFFERENT geometric shapes with correct boundary calculations
       const shapeType = bodyIndex % 5; // 5 different shape types
       let withinBoundary = false;
-      
+
       switch (shapeType) {
         case 0: // Oval/Elliptical
           const ellipseA = 1.0 + Math.sin(bodyIndex) * 0.3; // Reduced variation
@@ -395,45 +374,43 @@ export class SuperEarthWaterFeaturesEffect {
           const ellipseAngle = bodyIndex * 0.7;
           const rotatedX = x * Math.cos(ellipseAngle) - y * Math.sin(ellipseAngle);
           const rotatedY = x * Math.sin(ellipseAngle) + y * Math.cos(ellipseAngle);
-          withinBoundary = ((rotatedX * rotatedX) / (size * ellipseA * size * ellipseA) + 
-                           (rotatedY * rotatedY) / (size * ellipseB * size * ellipseB)) <= 1.0;
+          withinBoundary = (rotatedX * rotatedX) / (size * ellipseA * size * ellipseA) + (rotatedY * rotatedY) / (size * ellipseB * size * ellipseB) <= 1.0;
           break;
-          
+
         case 1: // Kidney/Bean shape
           const beanRadius = size * (0.8 + Math.sin(angle * 2 + bodyIndex) * 0.2);
           const beanIndent = Math.cos(angle + Math.PI + bodyIndex) * size * 0.3;
           const effectiveRadius = Math.max(beanRadius + beanIndent, size * 0.5);
           withinBoundary = distFromCenter <= effectiveRadius;
           break;
-          
+
         case 2: // Irregular blob
-          const blobRadius = size * (0.8 + Math.sin(angle * 1.5 + bodyIndex) * 0.2 + 
-                                          Math.cos(angle * 2.3 + bodyIndex * 1.7) * 0.15);
+          const blobRadius = size * (0.8 + Math.sin(angle * 1.5 + bodyIndex) * 0.2 + Math.cos(angle * 2.3 + bodyIndex * 1.7) * 0.15);
           withinBoundary = distFromCenter <= blobRadius;
           break;
-          
+
         case 3: // Teardrop shape
           const tearAngle = angle - bodyIndex;
           const tearRadius = size * ((1 + Math.cos(tearAngle)) * 0.4 + 0.4);
           const tearDistortion = Math.sin(tearAngle * 3) * size * 0.1;
-          withinBoundary = distFromCenter <= (tearRadius + tearDistortion);
+          withinBoundary = distFromCenter <= tearRadius + tearDistortion;
           break;
-          
+
         case 4: // Crescent/C-shape
           const crescentAngle = angle - bodyIndex * 0.5;
           const crescentRadius = size * Math.max(0.4, 1.0 - Math.cos(crescentAngle * 1.5) * 0.4);
           const crescentDetail = Math.sin(crescentAngle * 6) * size * 0.05;
-          withinBoundary = distFromCenter <= (crescentRadius + crescentDetail);
+          withinBoundary = distFromCenter <= crescentRadius + crescentDetail;
           break;
       }
-      
+
       // Add subtle coastline irregularity if within base shape
       if (withinBoundary) {
         const coastlineNoise = Math.sin(angle * 12 + bodyIndex * 3) * 0.05;
         const finalRadius = distFromCenter * (1.0 + coastlineNoise);
         withinBoundary = finalRadius <= size * 1.1; // Allow slight expansion
       }
-      
+
       // Keep vertex if it's within the shape boundary
       if (withinBoundary) {
         validVertices.push(x, y, z);
@@ -443,7 +420,7 @@ export class SuperEarthWaterFeaturesEffect {
         newVertexIndex++;
       }
     }
-    
+
     // Rebuild indices for valid vertices only
     const originalIndices = geometry.getIndex();
     if (originalIndices) {
@@ -451,20 +428,16 @@ export class SuperEarthWaterFeaturesEffect {
         const a = originalIndices.getX(i);
         const b = originalIndices.getX(i + 1);
         const c = originalIndices.getX(i + 2);
-        
+
         if (vertexMap.has(a) && vertexMap.has(b) && vertexMap.has(c)) {
-          validIndices.push(
-            vertexMap.get(a),
-            vertexMap.get(b),
-            vertexMap.get(c)
-          );
+          validIndices.push(vertexMap.get(a), vertexMap.get(b), vertexMap.get(c));
         }
       }
     }
-    
+
     // Create new geometry with organic shape
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(validVertices, 3));
-    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(validUVs, 2));
+    geometry.setAttribute("position", new THREE.Float32BufferAttribute(validVertices, 3));
+    geometry.setAttribute("uv", new THREE.Float32BufferAttribute(validUVs, 2));
     geometry.setIndex(validIndices);
     geometry.computeVertexNormals();
 
@@ -474,10 +447,10 @@ export class SuperEarthWaterFeaturesEffect {
     // Ensure the cloned material has the texture references
     individualMaterial.uniforms.normalMap.value = this.normalMap;
     const waterMesh = new THREE.Mesh(geometry, individualMaterial);
-    
+
     // Store individual material for cleanup
     this.materials.push(individualMaterial);
-    
+
     // Create tangent space for spherical surface following
     const up = sphericalPos.clone();
     const right = new THREE.Vector3();
@@ -487,74 +460,60 @@ export class SuperEarthWaterFeaturesEffect {
       right.crossVectors(up, new THREE.Vector3(1, 0, 0)).normalize();
     }
     const forward = new THREE.Vector3().crossVectors(right, up).normalize();
-    
+
     // Curve each vertex to follow planet surface at uniform height
     const positions = geometry.attributes.position;
     const centerPos = sphericalPos.clone().multiplyScalar(this.planetRadius * 1.001); // Just barely above surface
-    
+
     for (let i = 0; i < positions.count; i++) {
       const localVertex = new THREE.Vector3();
       localVertex.fromBufferAttribute(positions, i);
-      
+
       // Convert local flat coordinates to world space
-      const worldVertex = centerPos.clone()
-        .add(right.clone().multiplyScalar(localVertex.x))
-        .add(forward.clone().multiplyScalar(localVertex.y));
-      
+      const worldVertex = centerPos.clone().add(right.clone().multiplyScalar(localVertex.x)).add(forward.clone().multiplyScalar(localVertex.y));
+
       // Project onto sphere surface at uniform height
       const projectedVertex = worldVertex.normalize().multiplyScalar(this.planetRadius * 1.001); // Just barely above surface
-      
+
       // Store as world coordinates (no mesh positioning needed)
       positions.setXYZ(i, projectedVertex.x, projectedVertex.y, projectedVertex.z);
     }
-    
+
     positions.needsUpdate = true;
     geometry.computeVertexNormals();
-    
+
     // No mesh positioning - vertices are already in world space
     waterMesh.position.set(0, 0, 0);
-    
+
     // Store metadata for animation
     waterMesh.userData = {
       baseSize: size,
-      uvOffset: new THREE.Vector2(
-        this.rng.uniform(0, 1),
-        this.rng.uniform(0, 1)
-      ),
+      uvOffset: new THREE.Vector2(this.rng.uniform(0, 1), this.rng.uniform(0, 1)),
       animationSpeed: this.rng.uniform(0.8, 1.2),
-      index: bodyIndex
+      index: bodyIndex,
     };
-    
+
     waterMesh.renderOrder = 1002; // Just above surface, same level as land masses
     waterMesh.castShadow = false;
     waterMesh.receiveShadow = true;
-    
+
     console.log(`Created texture-based water body ${bodyIndex}`);
     return waterMesh;
   }
 
   private generateProceduralWaterBodies(): void {
-    const bodyCount = this.rng.randint(
-      PROCEDURAL_RANGES.WATER_BODY_COUNT.min,
-      PROCEDURAL_RANGES.WATER_BODY_COUNT.max
-    );
-    
+    const bodyCount = this.rng.randint(PROCEDURAL_RANGES.WATER_BODY_COUNT.min, PROCEDURAL_RANGES.WATER_BODY_COUNT.max);
+
     console.log(`Generating ${bodyCount} procedural texture-based water bodies`);
 
     for (let i = 0; i < bodyCount; i++) {
-      const radius = this.rng.uniform(
-        PROCEDURAL_RANGES.WATER_BODY_RADIUS.min,
-        PROCEDURAL_RANGES.WATER_BODY_RADIUS.max
-      );
-      
+      const radius = this.rng.uniform(PROCEDURAL_RANGES.WATER_BODY_RADIUS.min, PROCEDURAL_RANGES.WATER_BODY_RADIUS.max);
+
       const bodyData = {
         position_3d: this.generateRandomSurfacePoint(),
         radius: radius,
         depth: 0.025, // Fixed depth since depth variation is not used
-        opacity: this.rng.uniform(
-          PROCEDURAL_RANGES.WATER_BODY_OPACITY.min,
-          PROCEDURAL_RANGES.WATER_BODY_OPACITY.max
-        )
+        opacity: this.rng.uniform(PROCEDURAL_RANGES.WATER_BODY_OPACITY.min, PROCEDURAL_RANGES.WATER_BODY_OPACITY.max),
       };
 
       const waterMesh = this.createTextureBasedWaterBody(bodyData, i);
@@ -567,28 +526,28 @@ export class SuperEarthWaterFeaturesEffect {
 
   private generateRandomSurfacePoint(): number[] {
     // MANUAL ADJUSTMENT - Modify these ranges to control where water appears:
-    
+
     // Current: Random distribution avoiding poles
     // const theta = this.rng.uniform(0.3, Math.PI - 0.3);  // Latitude: 0=north pole, π=south pole
     // const phi = this.rng.uniform(0, Math.PI * 2);        // Longitude: 0=east, π=west, 2π=east
-    
+
     // EXAMPLE OPTIONS - uncomment one:
-    
+
     // 1. Northern hemisphere only:
     // const theta = this.rng.uniform(0.2, Math.PI * 0.6);
     // const phi = this.rng.uniform(0, Math.PI * 2);
-    
+
     // 2. Equatorial band:
     // const theta = this.rng.uniform(Math.PI * 0.3, Math.PI * 0.7);
     // const phi = this.rng.uniform(0, Math.PI * 2);
-    
+
     // 3. Western hemisphere:
     // const theta = this.rng.uniform(0.3, Math.PI - 0.3);
     // const phi = this.rng.uniform(Math.PI * 0.5, Math.PI * 1.5);
-    
+
     // CURRENT SETTING (change these values):
-    const theta = this.rng.uniform(0.3, Math.PI - 0.3);  // Full latitude range
-    const phi = this.rng.uniform(0, Math.PI * 2);        // Full longitude range
+    const theta = this.rng.uniform(0.3, Math.PI - 0.3); // Full latitude range
+    const phi = this.rng.uniform(0, Math.PI * 2); // Full longitude range
 
     const x = Math.sin(theta) * Math.cos(phi);
     const y = Math.cos(theta);
@@ -611,13 +570,13 @@ export class SuperEarthWaterFeaturesEffect {
    */
   updateFromThreeLight(light: THREE.DirectionalLight): void {
     // Update all individual water body materials
-    this.materials.forEach(material => {
+    this.materials.forEach((material) => {
       if (material instanceof THREE.ShaderMaterial && material.uniforms) {
         // Update light position (for point light calculations)
         if (material.uniforms.lightPosition) {
           material.uniforms.lightPosition.value.copy(light.position);
         }
-        
+
         // Calculate and update light direction (for directional light calculations)
         if (material.uniforms.lightDirection) {
           const direction = light.target.position.clone().sub(light.position).normalize();
@@ -625,46 +584,46 @@ export class SuperEarthWaterFeaturesEffect {
         }
       }
     });
-    
+
     // Also update the base water material
     if (this.waterMaterial && this.waterMaterial.uniforms) {
       // Update light position (for point light calculations)
       if (this.waterMaterial.uniforms.lightPosition) {
         this.waterMaterial.uniforms.lightPosition.value.copy(light.position);
       }
-      
+
       // Calculate and update light direction (for directional light calculations)
       if (this.waterMaterial.uniforms.lightDirection) {
         const direction = light.target.position.clone().sub(light.position).normalize();
         this.waterMaterial.uniforms.lightDirection.value.copy(direction);
       }
     }
-    
+
     console.log("🌊 Updated water lighting from DirectionalLight - position:", light.position);
   }
 
   update(deltaTime: number): void {
     this.animationTime += deltaTime;
-    
+
     // Update shader time uniform for UV animation (2D wave simulation)
     if (this.waterMaterial && this.waterMaterial.uniforms) {
       this.waterMaterial.uniforms.time.value = this.animationTime;
     }
-    
-    // Update all individual water body materials  
-    this.materials.forEach(material => {
+
+    // Update all individual water body materials
+    this.materials.forEach((material) => {
       if (material instanceof THREE.ShaderMaterial && material.uniforms) {
         material.uniforms.time.value = this.animationTime;
       }
     });
-    
+
     // Animate normal map for more visible 2D wave simulation
     if (this.normalMap) {
       this.normalMap.offset.x += deltaTime * 0.02;
       this.normalMap.offset.y += deltaTime * 0.015;
       this.normalMap.needsUpdate = true;
     }
-    
+
     // Foam map animation for shoreline effects
     if (this.foamMap) {
       this.foamMap.offset.x += deltaTime * 0.025;
@@ -677,10 +636,8 @@ export class SuperEarthWaterFeaturesEffect {
     this.params = { ...this.params, ...newParams };
 
     if (newParams.waterColor && this.waterMaterial) {
-      const waterColor = newParams.waterColor instanceof THREE.Color 
-        ? newParams.waterColor 
-        : new THREE.Color().fromArray(newParams.waterColor as number[]);
-      
+      const waterColor = newParams.waterColor instanceof THREE.Color ? newParams.waterColor : new THREE.Color().fromArray(newParams.waterColor as number[]);
+
       this.waterMaterial.uniforms.waterColor.value.copy(waterColor);
     }
   }
@@ -694,15 +651,15 @@ export class SuperEarthWaterFeaturesEffect {
     if (this.normalMap) this.normalMap.dispose();
     if (this.displacementMap) this.displacementMap.dispose();
     if (this.foamMap) this.foamMap.dispose();
-    
+
     // Dispose material
     if (this.waterMaterial) this.waterMaterial.dispose();
-    
+
     // Dispose geometries
     this.waterBodyMeshes.forEach((mesh) => {
       if (mesh.geometry) mesh.geometry.dispose();
     });
-    
+
     this.waterBodyMeshes = [];
     this.waterGroup.clear();
   }
@@ -714,20 +671,57 @@ export class SuperEarthWaterFeaturesEffect {
  * Creates water bodies using texture-based rendering with UV animation
  * and normal maps for wave effects instead of vertex displacement.
  */
-export function createSuperEarthWaterFeaturesFromPythonData(
-  planetRadius: number, 
-  surfaceData: any, 
-  globalSeed?: number
-): SuperEarthWaterFeaturesEffect | null {
+export function createSuperEarthWaterFeaturesFromPythonData(planetRadius: number, surfaceData: any, globalSeed?: number, planetType?: string): SuperEarthWaterFeaturesEffect | null {
   console.log("💧 Creating Texture-Based SuperEarthWaterFeatures from Python data");
   console.log("Surface data:", surfaceData);
+  console.log("Planet type:", planetType);
 
   const seed = globalSeed || Math.floor(Math.random() * 1000000);
   const waterSeed = seed + 10000;
+  const rng = new SeededRandom(waterSeed);
 
   // Extract water features data from Python
   const waterFeaturesData = surfaceData.water_features || {};
-  const waterBodies = waterFeaturesData.water_bodies || [];
+  let waterBodies = waterFeaturesData.water_bodies || [];
+
+  // Handle desert planets with 3-5% probability for rare water masses
+  if (planetType === "desert") {
+    const probability = rng.uniform(3, 5); // 3-5% probability
+    const roll = rng.uniform(0, 100);
+    console.log(`💧 Desert water probability: ${probability.toFixed(2)}%, rolled: ${roll.toFixed(2)}%`);
+
+    if (roll <= probability) {
+      console.log("💧 Desert planet gets rare water mass!");
+      // Generate a single rare water mass for desert
+      const theta = rng.uniform(0, 2 * Math.PI);
+      const phi = Math.acos(rng.uniform(-1, 1));
+
+      waterBodies = [
+        {
+          position_3d: [Math.sin(phi) * Math.cos(theta), Math.sin(phi) * Math.sin(theta), Math.cos(phi)],
+          radius: rng.uniform(0.08, 0.15), // Medium-sized for desert
+          depth: rng.uniform(0.005, 0.015),
+          opacity: rng.uniform(0.75, 0.85),
+          shape_type: "lake",
+        },
+      ];
+    } else {
+      console.log("💧 Desert planet has no water masses (too dry)");
+      return null; // No water for this desert planet
+    }
+  }
+
+  // Also check for blue_patches (legacy support)
+  if (waterBodies.length === 0 && surfaceData.blue_patches && surfaceData.blue_patches.length > 0) {
+    console.log("💧 Converting blue_patches to water_bodies");
+    waterBodies = surfaceData.blue_patches.map((patch: any) => ({
+      position_3d: patch.position_3d,
+      radius: patch.size || 0.1,
+      depth: patch.height || 0.02,
+      opacity: patch.color?.[3] || 0.8,
+      shape_type: "lake",
+    }));
+  }
 
   console.log("Water bodies from Python:", waterBodies);
 

@@ -1444,6 +1444,29 @@ export class EffectRegistry {
                 desertLandMassesEffect.addToScene(scene, mesh.position);
               }
             }
+            
+            // 3. Add rare water masses for desert planets (3-5% probability determined in frontend)
+            const desertWaterFeaturesEffect = createSuperEarthWaterFeaturesFromPythonData(
+              planetRadius,
+              surface,
+              (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 7000,
+              "desert" // Pass planet type for desert-specific behavior
+            );
+            
+            if (desertWaterFeaturesEffect) {
+              const desertWaterFeaturesInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "super_earth_water_features",
+                effect: desertWaterFeaturesEffect,
+                priority: 6,
+                enabled: true,
+                name: "Desert Rare Water Mass",
+              };
+              
+              this.effects.set(desertWaterFeaturesInstance.id, desertWaterFeaturesInstance);
+              effects.push(desertWaterFeaturesInstance);
+              desertWaterFeaturesEffect.addToScene(scene, mesh.position);
+            }
             break;
 
           case "molten_core":
