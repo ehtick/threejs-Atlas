@@ -20,8 +20,6 @@ const SystemNavigation: React.FC<SystemNavigationProps> = ({ currentSystem, gala
   const [hasPrev, setHasPrev] = useState<boolean>(false);
   const [hasNext, setHasNext] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
-  const [showCostPreview, setShowCostPreview] = useState<boolean>(false);
-  const [previewType, setPreviewType] = useState<"prev" | "next" | null>(null);
 
   useEffect(() => {
     setHasPrev(currentSystem.index > 0);
@@ -29,19 +27,7 @@ const SystemNavigation: React.FC<SystemNavigationProps> = ({ currentSystem, gala
     setLoading(false);
   }, [currentSystem.index]);
 
-  const getTravelCostInfo = () => {
-    return SpaceshipTravelManager.previewTravelCost("system", 1);
-  };
 
-  const handleMouseEnter = (direction: "prev" | "next") => {
-    setPreviewType(direction);
-    setShowCostPreview(true);
-  };
-
-  const handleMouseLeave = () => {
-    setShowCostPreview(false);
-    setPreviewType(null);
-  };
 
   const handlePrevious = async () => {
     if (currentSystem.index > 0) {
@@ -90,8 +76,6 @@ const SystemNavigation: React.FC<SystemNavigationProps> = ({ currentSystem, gala
       <div className="flex items-center justify-between mb-4">
         <button 
           onClick={handlePrevious} 
-          onMouseEnter={() => handleMouseEnter("prev")}
-          onMouseLeave={handleMouseLeave}
           disabled={!hasPrev} 
           className={`flex items-center justify-center px-3 py-1.5 rounded-lg transition-all duration-200 ${hasPrev ? "bg-white/10 hover:bg-white/20 border border-white/20 text-white hover:text-blue-300" : "bg-white/5 border border-white/10 text-gray-600 cursor-not-allowed"}`}
         >
@@ -102,8 +86,6 @@ const SystemNavigation: React.FC<SystemNavigationProps> = ({ currentSystem, gala
 
         <button 
           onClick={handleNext} 
-          onMouseEnter={() => handleMouseEnter("next")}
-          onMouseLeave={handleMouseLeave}
           disabled={!hasNext} 
           className={`flex items-center justify-center px-3 py-1.5 rounded-lg transition-all duration-200 ${hasNext ? "bg-white/10 hover:bg-white/20 border border-white/20 text-white hover:text-blue-300" : "bg-white/5 border border-white/10 text-gray-600 cursor-not-allowed"}`}
         >
@@ -113,21 +95,6 @@ const SystemNavigation: React.FC<SystemNavigationProps> = ({ currentSystem, gala
         </button>
       </div>
 
-      {/* Travel Cost Preview */}
-      {showCostPreview && previewType && (
-        <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 z-50 bg-black/90 backdrop-blur-xl rounded-lg border border-blue-400/30 p-3 shadow-2xl min-w-max">
-          <div className="text-xs text-blue-300 font-semibold mb-1">
-            🚀 System Travel Cost
-          </div>
-          <div className="text-xs text-white">
-            {getTravelCostInfo()}
-          </div>
-          <div className="text-xs text-gray-400 mt-1">
-            {previewType === "prev" && `← System ${currentSystem.index - 1}`}
-            {previewType === "next" && `System ${currentSystem.index + 1} →`}
-          </div>
-        </div>
-      )}
     </div>
   );
 };
