@@ -74,10 +74,7 @@ const PlanetInfo: React.FC<PlanetInfoProps> = ({ planet, system, galaxy, cosmicO
   };
 
   const formatDistance = (distance: number) => {
-    if (distance >= 1000) {
-      return `${(distance / 1000).toFixed(2)} km`;
-    }
-    return `${distance.toFixed(2)} m`;
+    return `${distance.toFixed(2)} km`;
   };
 
   return (

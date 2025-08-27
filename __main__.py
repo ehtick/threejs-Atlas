@@ -324,7 +324,7 @@ def view_planet(planet_name):
                 "Type": planet.planet_type,
                 "Atmosphere": planet.atmosphere,
                 "Mass": f"{planet.mass:.2e} kg",
-                "Diameter": f"{planet.diameter / 1000:.2f} km",
+                "Diameter": f"{planet.diameter:.2f} km",
                 "Gravity": f"{planet.gravity:.2f} m/s²",
                 "Orbital Radius": f"{planet.orbital_radius:.2f} AU",
                 "Orbital Period": f"{planet.orbital_period_seconds / (365.25 * 24 * 3600):.2f} years",
