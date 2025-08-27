@@ -25,17 +25,21 @@ export interface StarFieldParams {
   distance?: number; // Distancia del planeta
   seed?: number;
   twinkleSpeed?: number; // Velocidad del parpadeo
+  parallaxStrength?: number; // Intensidad del efecto parallax
+  variableChance?: number; // Probabilidad de que una estrella sea variable (0-1)
 }
 
 // Rangos para generación procedural
 const PROCEDURAL_RANGES = {
-  STAR_COUNT: { min: 150, max: 450 }, // Cantidad perfecta
-  MIN_BRIGHTNESS: { min: 0.4, max: 0.7 }, // Brillo bueno
-  MAX_BRIGHTNESS: { min: 0.8, max: 1.0 }, // Máximo brillo
-  MIN_SIZE: { min: 1.2, max: 1.8 }, // Tamaño más grande
-  MAX_SIZE: { min: 3.5, max: 5.0 }, // Tamaño más grande
-  DISTANCE: { min: 300, max: 600 }, // Distancia buena
-  TWINKLE_SPEED: { min: 0.002, max: 0.008 }, // Parpadeo visible
+  STAR_COUNT: { min: 650, max: 1500 }, // Denso pero manejable
+  MIN_BRIGHTNESS: { min: 0.6, max: 0.8 }, // Más brillantes
+  MAX_BRIGHTNESS: { min: 0.9, max: 1.0 }, // Máximo brillo
+  MIN_SIZE: { min: 1, max: 1.2 }, // Tamaño original
+  MAX_SIZE: { min: 2.5, max: 4.0 }, // Tamaño original
+  DISTANCE: { min: 250, max: 450 }, // Más cerca
+  TWINKLE_SPEED: { min: 1.0, max: 2.0 }, // Velocidad base para animaciones
+  PARALLAX_STRENGTH: { min: 1.0, max: 3.0 }, // Parallax visible pero suave
+  VARIABLE_CHANCE: { min: 0.002, max: 0.005 }, // 0.2-0.5% variables (astronómicamente realista)
 };
 
 /**
@@ -49,29 +53,53 @@ export class StarFieldEffect {
   private geometry: THREE.BufferGeometry;
   private params: StarFieldParams;
   private starCount: number;
+  private cameraPosition: THREE.Vector3 = new THREE.Vector3();
+  private lastCameraPosition: THREE.Vector3 = new THREE.Vector3();
 
   private static readonly vertexShader = `
     attribute float size;
     attribute float brightness;
     attribute float twinklePhase;
+    attribute float starType; // 0=normal, 1=pulsar
+    attribute float distanceLayer; // Para parallax
+    attribute vec3 originalPosition; // Posición original para parallax
     
     uniform float time;
     uniform float twinkleSpeed;
+    uniform vec3 cameraOffset; // Offset de cámara para parallax
+    uniform float parallaxStrength;
     
     varying float vBrightness;
     varying float vTwinkle;
+    varying float vStarType;
     
     void main() {
       vBrightness = brightness;
+      vStarType = starType;
       
-      // Parpadeo sutil de las estrellas
-      vTwinkle = 0.8 + 0.2 * sin(time * twinkleSpeed + twinklePhase);
+      // Sistema de parpadeo mejorado basado en tipo de estrella
+      float baseTwinkle;
+      if (starType > 0.5) {
+        // Variables: pulso MUY visible y evidente
+        float pulse = sin(time * twinkleSpeed * 1.0 + twinklePhase); // Velocidad normal
+        baseTwinkle = 0.2 + 0.8 * (pulse * 0.5 + 0.5); // Variación dramática (20%-100%)
+      } else {
+        // Estrellas normales: MUY estables, apenas parpadean
+        float intensity = 0.05 + 0.05 * brightness; // Parpadeo mínimo
+        baseTwinkle = (1.0 - intensity) + intensity * sin(time * twinkleSpeed + twinklePhase);
+      }
+      vTwinkle = baseTwinkle;
       
-      vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+      // Efecto parallax suave pero visible
+      vec3 parallaxOffset = cameraOffset * parallaxStrength * (0.5 / distanceLayer);
+      vec3 adjustedPosition = originalPosition + parallaxOffset;
+      
+      vec4 mvPosition = modelViewMatrix * vec4(adjustedPosition, 1.0);
       gl_Position = projectionMatrix * mvPosition;
       
-      // Tamaño basado en atributo y distancia - PUNTO MEDIO
-      gl_PointSize = size * (300.0 / -mvPosition.z);
+      // Tamaño con variación por tipo
+      float sizeMultiplier = starType > 0.5 ? 1.2 : 1.0; // Pulsares ligeramente más grandes
+      gl_PointSize = size * sizeMultiplier * (300.0 / -mvPosition.z);
     }
   `;
 
@@ -80,19 +108,38 @@ export class StarFieldEffect {
     
     varying float vBrightness;
     varying float vTwinkle;
+    varying float vStarType;
     
     void main() {
       // Crear forma circular de estrella
       float dist = distance(gl_PointCoord, vec2(0.5));
       if (dist > 0.5) discard;
       
-      // Gradiente circular para efecto de estrella - EQUILIBRADO
+      // Gradiente circular con variación por tipo de estrella
       float alpha = (1.0 - dist * 2.0) * vBrightness * vTwinkle;
-      alpha = pow(alpha, 1.5); // Balance entre concentración y visibilidad
-      alpha *= 1.3; // Intensidad moderada
       
-      // Color de estrella con brillo variable - EQUILIBRADO
-      vec3 finalColor = starColor * (0.9 + 0.2 * vTwinkle);
+      // Ajustar intensidad según tipo
+      if (vStarType > 0.5) {
+        // Variables: cambio notable de brillo para que se vean
+        alpha = pow(alpha, 1.0);
+        alpha *= 1.5 + 1.5 * vTwinkle; // Va de 1.5x a 3.0x brillo (visible)
+      } else {
+        // Estrellas normales
+        alpha = pow(alpha, 1.5);
+        alpha *= 1.5;
+      }
+      
+      // Color realista por tipo de estrella
+      vec3 finalColor;
+      if (vStarType > 0.5) {
+        // Variables: tinte rojizo como gigantes rojas variables (Betelgeuse, Mira)
+        vec3 variableTint = vec3(1.0, 0.6, 0.4);
+        finalColor = starColor * variableTint * (0.8 + 0.4 * vTwinkle); // Color rojizo estable
+      } else {
+        // Estrellas normales: amarillentas estables
+        vec3 normalTint = vec3(1.0, 0.9, 0.7);
+        finalColor = starColor * normalTint * (0.8 + 0.4 * vTwinkle);
+      }
       
       gl_FragColor = vec4(finalColor, alpha);
     }
@@ -113,6 +160,8 @@ export class StarFieldEffect {
       distance: params.distance !== undefined ? params.distance : rng.uniform(PROCEDURAL_RANGES.DISTANCE.min, PROCEDURAL_RANGES.DISTANCE.max),
       seed: seed,
       twinkleSpeed: params.twinkleSpeed !== undefined ? params.twinkleSpeed : rng.uniform(PROCEDURAL_RANGES.TWINKLE_SPEED.min, PROCEDURAL_RANGES.TWINKLE_SPEED.max),
+      parallaxStrength: params.parallaxStrength !== undefined ? params.parallaxStrength : rng.uniform(PROCEDURAL_RANGES.PARALLAX_STRENGTH.min, PROCEDURAL_RANGES.PARALLAX_STRENGTH.max),
+      variableChance: params.variableChance !== undefined ? params.variableChance : rng.uniform(PROCEDURAL_RANGES.VARIABLE_CHANCE.min, PROCEDURAL_RANGES.VARIABLE_CHANCE.max),
     };
 
     this.starCount = this.params.starCount!;
@@ -123,11 +172,14 @@ export class StarFieldEffect {
     this.starSystem = new THREE.Points(this.geometry, this.material);
   }
 
-  private generateStars(planetRadius: number): void {
+  private generateStars(_planetRadius: number): void {
     const positions = new Float32Array(this.starCount * 3);
+    const originalPositions = new Float32Array(this.starCount * 3);
     const sizes = new Float32Array(this.starCount);
     const brightnesses = new Float32Array(this.starCount);
     const twinklePhases = new Float32Array(this.starCount);
+    const starTypes = new Float32Array(this.starCount);
+    const distanceLayers = new Float32Array(this.starCount);
 
     const seed = this.params.seed!;
     const rng = new SeededRandom(seed + 10000);
@@ -138,8 +190,10 @@ export class StarFieldEffect {
       const cosTheta = rng.uniform(-1, 1);
       const theta = Math.acos(cosTheta);
 
-      // Distancia variable para profundidad
-      const distance = this.params.distance! * rng.uniform(0.8, 1.2);
+      // Distancia variable para profundidad y capas de parallax
+      const baseDistance = this.params.distance!;
+      const distanceVariation = rng.uniform(0.7, 1.3);
+      const distance = baseDistance * distanceVariation;
 
       // Posición esférica
       const x = distance * Math.sin(theta) * Math.cos(phi);
@@ -150,17 +204,38 @@ export class StarFieldEffect {
       positions[i * 3 + 1] = y;
       positions[i * 3 + 2] = z;
 
+      // Posición original para parallax
+      originalPositions[i * 3] = x;
+      originalPositions[i * 3 + 1] = y;
+      originalPositions[i * 3 + 2] = z;
+
+      // Determinar tipo de estrella (normal o variable)
+      const isVariable = rng.uniform(0, 1) < this.params.variableChance!;
+      starTypes[i] = isVariable ? 1.0 : 0.0;
+
+      // Capas de distancia para parallax (estrellas más lejanas se mueven menos)
+      distanceLayers[i] = distanceVariation;
+
       // Atributos únicos para cada estrella
       sizes[i] = rng.uniform(this.params.minSize!, this.params.maxSize!);
       brightnesses[i] = rng.uniform(this.params.minBrightness!, this.params.maxBrightness!);
-      twinklePhases[i] = rng.uniform(0, Math.PI * 2); // Fase de parpadeo única
+      twinklePhases[i] = rng.uniform(0, Math.PI * 2);
+
+      // Variables: ligeramente más brillantes (gigantes)
+      if (isVariable) {
+        brightnesses[i] = Math.min(1.0, brightnesses[i] + 0.2); // Más brillantes
+        twinklePhases[i] = rng.uniform(0, Math.PI * 2); // Fases normales
+      }
     }
 
     // Configurar geometría
     this.geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    this.geometry.setAttribute("originalPosition", new THREE.BufferAttribute(originalPositions, 3));
     this.geometry.setAttribute("size", new THREE.BufferAttribute(sizes, 1));
     this.geometry.setAttribute("brightness", new THREE.BufferAttribute(brightnesses, 1));
     this.geometry.setAttribute("twinklePhase", new THREE.BufferAttribute(twinklePhases, 1));
+    this.geometry.setAttribute("starType", new THREE.BufferAttribute(starTypes, 1));
+    this.geometry.setAttribute("distanceLayer", new THREE.BufferAttribute(distanceLayers, 1));
   }
 
   private createMaterial(): THREE.ShaderMaterial {
@@ -173,6 +248,8 @@ export class StarFieldEffect {
         time: { value: 0 },
         starColor: { value: starColor },
         twinkleSpeed: { value: this.params.twinkleSpeed },
+        cameraOffset: { value: new THREE.Vector3(0, 0, 0) },
+        parallaxStrength: { value: this.params.parallaxStrength },
       },
       transparent: true,
       blending: THREE.AdditiveBlending,
@@ -188,9 +265,28 @@ export class StarFieldEffect {
     scene.add(this.starSystem);
   }
 
-  update(deltaTime: number): void {
+  update(deltaTime: number, _planetRotation?: number, camera?: THREE.Camera): void {
     // Actualizar tiempo para el parpadeo
     this.material.uniforms.time.value += deltaTime;
+
+    // Sistema de parallax basado en movimiento de cámara
+    if (camera) {
+      this.cameraPosition.copy(camera.position);
+      
+      // Calcular offset de cámara para parallax - suave pero visible
+      const cameraOffset = new THREE.Vector3()
+        .subVectors(this.cameraPosition, this.lastCameraPosition)
+        .multiplyScalar(0.3); // Movimiento suave
+      
+      // Suavizar el parallax acumulativo
+      this.material.uniforms.cameraOffset.value.lerp(cameraOffset, 0.1);
+      this.lastCameraPosition.copy(this.cameraPosition);
+    }
+  }
+
+  // Método adicional para actualizar con cámara explícitamente
+  updateWithCamera(deltaTime: number, camera: THREE.Camera): void {
+    this.update(deltaTime, undefined, camera);
   }
 
   updateParams(newParams: Partial<StarFieldParams>): void {
@@ -204,6 +300,10 @@ export class StarFieldEffect {
 
     if (newParams.twinkleSpeed !== undefined) {
       this.material.uniforms.twinkleSpeed.value = newParams.twinkleSpeed;
+    }
+
+    if (newParams.parallaxStrength !== undefined) {
+      this.material.uniforms.parallaxStrength.value = newParams.parallaxStrength;
     }
   }
 
@@ -235,6 +335,8 @@ export function createStarFieldFromPythonData(planetRadius: number, planetSeed?:
     distance: rng.uniform(PROCEDURAL_RANGES.DISTANCE.min, PROCEDURAL_RANGES.DISTANCE.max),
     seed,
     twinkleSpeed: rng.uniform(PROCEDURAL_RANGES.TWINKLE_SPEED.min, PROCEDURAL_RANGES.TWINKLE_SPEED.max),
+    parallaxStrength: rng.uniform(PROCEDURAL_RANGES.PARALLAX_STRENGTH.min, PROCEDURAL_RANGES.PARALLAX_STRENGTH.max),
+    variableChance: rng.uniform(PROCEDURAL_RANGES.VARIABLE_CHANCE.min, PROCEDURAL_RANGES.VARIABLE_CHANCE.max),
   };
 
   return new StarFieldEffect(planetRadius, params);

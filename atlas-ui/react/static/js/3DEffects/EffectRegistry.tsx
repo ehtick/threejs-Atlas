@@ -2722,7 +2722,7 @@ export class EffectRegistry {
   /**
    * Actualiza todos los efectos activos
    */
-  updateAllEffects(deltaTime: number, planetRotation?: number): void {
+  updateAllEffects(deltaTime: number, planetRotation?: number, camera?: THREE.Camera): void {
     // Actualizar sistema de capas si existe
     if (this.layerSystem) {
       this.layerSystem.update(deltaTime, planetRotation);
@@ -2731,7 +2731,12 @@ export class EffectRegistry {
     for (const instance of this.effects.values()) {
       if (instance.enabled && instance.effect.update) {
         try {
-          instance.effect.update(deltaTime, planetRotation);
+          // Verificar si es StarField y pasar cámara si está disponible
+          if (instance.type === 'star_field' && camera && 'updateWithCamera' in instance.effect) {
+            (instance.effect as any).updateWithCamera(deltaTime, camera);
+          } else {
+            instance.effect.update(deltaTime, planetRotation);
+          }
         } catch (error) {
           console.error(`Error updating effect ${instance.type}:`, error);
         }

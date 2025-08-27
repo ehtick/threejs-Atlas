@@ -860,7 +860,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
     }
 
     try {
-      effectRegistry.updateAllEffects(deltaTime, planetMeshRef.current?.rotation.y);
+      effectRegistry.updateAllEffects(deltaTime, planetMeshRef.current?.rotation.y, cameraRef.current || undefined);
     } catch (error) {}
 
     if (planetMeshRef.current && renderingDataRef.current) {
