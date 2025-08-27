@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { getStorageStats } from "../Utils/VisitHistory.ts";
 import { LocationBookmarks, SavedLocation } from "../Utils/LocationBookmarks.ts";
 import { DailyChallengesManager, DailyChallenges } from "../Utils/DailyChallenges.ts";
@@ -21,6 +21,7 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
   const [savedLocations, setSavedLocations] = useState<SavedLocation[]>([]);
   const [locationStats, setLocationStats] = useState<any>(null);
   const [dailyChallenges, setDailyChallenges] = useState<DailyChallenges | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -31,6 +32,19 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
       const challenges = DailyChallengesManager.updateProgress();
       setDailyChallenges(challenges);
     }
+  }, [isOpen]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isOpen && panelRef.current && !panelRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, [isOpen]);
 
   const formatBytes = (bytes: number): string => {
@@ -54,7 +68,7 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
 
   return (
     <>
-      <div className="fixed bottom-4 sm:bottom-6 right-4 sm:right-6 z-50">
+      <div ref={panelRef} className="fixed bottom-4 sm:bottom-6 right-4 sm:right-6 z-50">
         <button onClick={() => setIsOpen(!isOpen)} className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-blue-600 via-purple-600 to-blue-800 hover:from-blue-500 hover:via-purple-500 hover:to-blue-700 text-white rounded-full shadow-2xl border-2 border-blue-400/30 transition-all duration-300 transform hover:scale-105 backdrop-blur-sm" title="Spaceship Control Panel">
           <div className="flex items-center justify-center">
             <svg className="flex items-center justify-center" xmlns="http://www.w3.org/2000/svg" width={24} height={24} viewBox="0 0 24 24">
@@ -67,10 +81,9 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
 
           <div className="absolute inset-0 rounded-full bg-blue-400/20 animate-ping"></div>
         </button>
-      </div>
 
-      {isOpen && (
-        <div className="fixed bottom-20 sm:bottom-24 right-2 sm:right-6 w-[calc(100vw-1rem)] sm:w-96 max-w-md max-h-[70vh] sm:max-h-96 bg-black/90 backdrop-blur-xl rounded-2xl border border-blue-400/30 shadow-2xl z-40 overflow-hidden">
+        {isOpen && (
+          <div className="fixed bottom-20 sm:bottom-24 right-2 sm:right-6 w-[calc(100vw-1rem)] sm:w-96 max-w-md max-h-[70vh] sm:max-h-96 bg-black/90 backdrop-blur-xl rounded-2xl border border-blue-400/30 shadow-2xl z-40 overflow-hidden">
           <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 p-4 border-b border-white/10">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
@@ -94,7 +107,7 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
             </div>
           </div>
 
-          <div className="p-4 max-h-64 overflow-y-auto">
+          <div className="p-4 max-h-64 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {activeTab === "stats" && (
               <div className="space-y-4">
                 <div>
@@ -183,22 +196,22 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
                   </div>
                 ) : (
                   savedLocations.map((location) => (
-                    <div key={location.id} className="bg-white/5 hover:bg-white/10 rounded-lg p-3 border border-white/10 hover:border-white/20 transition-all duration-200 group">
-                      <div className="flex items-start justify-between">
+                    <div key={location.id} className="bg-white/5 hover:bg-white/10 rounded-lg p-2 border border-white/10 hover:border-white/20 transition-all duration-200 group">
+                      <div className="flex items-center justify-between">
                         <a href={location.stargateUrl} className="flex-1 min-w-0 hover:text-blue-300 transition-colors duration-200" title={`Navigate to ${formatLocationName(location.name)}`}>
-                          <div className="flex items-center space-x-2 mb-1">
-                            <div className="text-xs">
+                          <div className="flex items-center space-x-1.5">
+                            <div className="text-[10px]">
                               {location.type === "galaxy" && "🌌"}
                               {location.type === "system" && "⭐"}
                               {location.type === "planet" && "🪐"}
                             </div>
-                            <div className="text-white text-sm font-medium truncate">{formatLocationName(location.name)}</div>
+                            <div className="text-white text-xs font-medium truncate">{formatLocationName(location.name)}</div>
+                            <div className="text-gray-500 text-[10px] shrink-0">{new Date(location.timestamp).toLocaleDateString()}</div>
                           </div>
-                          <div className="text-gray-400 text-xs truncate">Saved {new Date(location.timestamp).toLocaleDateString()}</div>
                         </a>
 
-                        <button onClick={(e) => handleRemoveLocation(e, location.id)} className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-400 transition-all duration-200 ml-2" title="Remove location">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <button onClick={(e) => handleRemoveLocation(e, location.id)} className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-400 transition-all duration-200 ml-1" title="Remove location">
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                           </svg>
                         </button>
@@ -208,9 +221,10 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
                 )}
               </div>
             )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </>
   );
 };
