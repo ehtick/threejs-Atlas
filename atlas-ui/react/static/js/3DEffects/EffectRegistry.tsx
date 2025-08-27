@@ -54,6 +54,7 @@ import { FragmentationEffect } from "./FragmentationEffect";
 import { OceanWavesEffect, createOceanWavesFromPythonData } from "./OceanWaves";
 import { FluidLayersEffect, createFluidLayersFromPythonData } from "./FluidLayers";
 import { AquiferWaterEffect, createAquiferWaterFromPythonData } from "./AquiferWaterEffect";
+import { LavaFluidEffect, createLavaFluidFromPythonData } from "./LavaFluidEffect";
 import { OceanCurrentsEffect, createOceanCurrentsFromPythonData } from "./OceanCurrentsEffect";
 import { LavaFlowsEffect, createLavaFlowsFromPythonData } from "./LavaFlowsEffect";
 import { LavaRiversEffect, createLavaRiversFromPythonData } from "./LavaRiversEffect";
@@ -114,6 +115,7 @@ export enum EffectType {
   OCEAN_WAVES = "ocean_waves",
   FLUID_LAYERS = "fluid_layers",
   AQUIFER_WATER = "aquifer_water",
+  LAVA_FLUID = "lava_fluid",
   OCEAN_CURRENTS = "ocean_currents",
   LAVA_FLOWS = "lava_flows",
   LAVA_RIVERS = "lava_rivers",
@@ -257,6 +259,11 @@ export class EffectRegistry {
     this.registerEffect(EffectType.AQUIFER_WATER, {
       create: (params, planetRadius, layerSystem) => new AquiferWaterEffect(layerSystem!, params),
       fromPythonData: (data, planetRadius, layerSystem) => createAquiferWaterFromPythonData(layerSystem!, data),
+    });
+
+    this.registerEffect(EffectType.LAVA_FLUID, {
+      create: (params, planetRadius, layerSystem) => new LavaFluidEffect(layerSystem!, params),
+      fromPythonData: (data, planetRadius, layerSystem) => createLavaFluidFromPythonData(layerSystem!, data),
     });
 
     this.registerEffect(EffectType.OCEAN_CURRENTS, {
@@ -1518,9 +1525,26 @@ export class EffectRegistry {
             break;
 
           case "lava":
-            // Planetas Lava: múltiples ríos de lava fluyendo con erupciones de fuego
+            // Planetas Lava: fluido de lava lento, múltiples ríos de lava fluyendo con erupciones de fuego
             
-            // 1. Añadir ríos de lava como efecto principal
+            // 1. Añadir fluido de lava como efecto de superficie (nuevo - más lento que agua)
+            const lavaFluidEffect = createLavaFluidFromPythonData(this.layerSystem!, pythonData);
+
+            if (lavaFluidEffect) {
+              const lavaFluidInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "lava_fluid",
+                effect: lavaFluidEffect,
+                priority: 2,
+                enabled: true,
+                name: "Lava Fluid Surface",
+              };
+
+              this.effects.set(lavaFluidInstance.id, lavaFluidInstance);
+              effects.push(lavaFluidInstance);
+            }
+            
+            // 2. Añadir ríos de lava como efecto principal
             const lavaRiversEffect = this.createEffectFromPythonData(
               EffectType.LAVA_RIVERS,
               pythonData,
@@ -2607,6 +2631,7 @@ export class EffectRegistry {
           rocky_terrain_layer: "rockyTerrain",
           icy_terrain_layer: "icyTerrain",
           aquifer_water: "aquiferWater",
+          lava_fluid: "lavaFluid",
           ocean_currents: "oceanCurrents",
           molten_lava: "moltenLava",
         };
