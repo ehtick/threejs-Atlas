@@ -78,7 +78,8 @@ const ResourceCollectionButton: React.FC<ResourceCollectionButtonProps> = ({
       // Show consolidated notification with all bonus info
       SpaceshipResourceCollectionManager.showCollectionSuccess(reward, locationType, {
         streakBonus: streakInfo.streakMultiplier > 1.0,
-        discoveryBonus: discoveryBonus
+        discoveryBonus: discoveryBonus,
+        shipMultiplier: UnifiedSpaceshipStorage.getUpgrade().multiplier
       }, isFirstTime);
       
       setCanCollect(false);

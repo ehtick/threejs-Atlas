@@ -7,6 +7,12 @@ export interface PlanetData {
   planet_type?: string;
 }
 
+export interface BonusInfo {
+  streakBonus: boolean;
+  discoveryBonus: number;
+  shipMultiplier?: number;
+}
+
 const COOLDOWN_HOURS = 1;
 
 export class SpaceshipResourceCollectionManager {
@@ -184,7 +190,7 @@ export class SpaceshipResourceCollectionManager {
     return count > 0 ? { totalCollections: count } : null;
   }
 
-  static showCollectionSuccess(reward: ResourceReward, locationType: string, bonusInfo?: { streakBonus: boolean; discoveryBonus: number }, isFirstTime?: boolean): void {
+  static showCollectionSuccess(reward: ResourceReward, locationType: string, bonusInfo?: BonusInfo, isFirstTime?: boolean): void {
     const toast = document.createElement("div");
     toast.className = "fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-gradient-to-r from-green-900/90 to-blue-900/90 text-white px-4 py-3 rounded-lg shadow-lg border border-green-500/50";
     toast.style.animation = "slideInDown 0.3s ease-out";
@@ -268,6 +274,16 @@ export class SpaceshipResourceCollectionManager {
       streakBonusDiv.className = "text-xs text-purple-300 mt-1";
       streakBonusDiv.textContent = "🔥 Streak Bonus: +25%";
       contentDiv.appendChild(streakBonusDiv);
+    }
+    
+    if (bonusInfo?.shipMultiplier && bonusInfo.shipMultiplier > 1.0) {
+      const shipMultiplierDiv = document.createElement("div");
+      shipMultiplierDiv.className = "text-xs text-blue-300 mt-1";
+      const multiplierText = bonusInfo.shipMultiplier === Math.floor(bonusInfo.shipMultiplier) 
+        ? bonusInfo.shipMultiplier.toFixed(0) 
+        : bonusInfo.shipMultiplier.toFixed(1);
+      shipMultiplierDiv.textContent = `🚀 Ship Bonus: ${multiplierText}x`;
+      contentDiv.appendChild(shipMultiplierDiv);
     }
 
     container.appendChild(emojiSpan);
