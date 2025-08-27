@@ -49,12 +49,11 @@ export interface LavaRiverParams {
 
 const PROCEDURAL_RANGES = {
   NETWORK_DENSITY: { min: 50, max: 100 }, // Reducir para mejor performance y visibilidad
-  BRANCHING_FACTOR: { min: 2, max: 5 }, // Cada punto se conecta a varios otros
+  BRANCHING_FACTOR: { min: 12, max: 15 }, // Cada punto se conecta a varios otros
   CHANNEL_WIDTH: { min: 0.01, max: 0.03 }, // CANALES MÁS GRUESOS para ser visibles
   HEARTBEAT_RATE: { min: 30, max: 90 }, // Latidos por minuto más rápidos
   PULSE_WAVE_SPEED: { min: 1.0, max: 3.0 }, // Velocidad más rápida
   PULSE_INTENSITY: { min: 1.0, max: 2.5 }, // MAYOR intensidad
-  CONNECTION_GLOW: { min: 2.0, max: 5.0 }, // MÁS brillo
   NETWORK_EMISSION: { min: 4.0, max: 8.0 }, // MUCHA MÁS emisión para ser visible
 };
 
@@ -187,7 +186,6 @@ export class LavaRiversEffect {
       veinColor,
       capillaryColor,
       pulseColor,
-      connectionGlow: params.connectionGlow || rng.uniform(PROCEDURAL_RANGES.CONNECTION_GLOW.min, PROCEDURAL_RANGES.CONNECTION_GLOW.max),
       networkEmission: params.networkEmission || rng.uniform(PROCEDURAL_RANGES.NETWORK_EMISSION.min, PROCEDURAL_RANGES.NETWORK_EMISSION.max),
       seed,
       startTime: this.startTime,

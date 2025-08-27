@@ -126,6 +126,7 @@ export class DailyChallengesManager {
   public static updateProgress(): DailyChallenges {
     const challenges = this.getTodaysChallenges();
     const currentStats = this.getCurrentStats();
+    const wasAllCompleted = challenges.challenges.every(c => c.completed);
     
     // Update current progress
     challenges.challenges.forEach(challenge => {
@@ -134,8 +135,30 @@ export class DailyChallengesManager {
       challenge.completed = newCurrent >= challenge.target;
     });
 
+    const isNowAllCompleted = challenges.challenges.every(c => c.completed);
+    
+    // If all challenges just got completed, record this day
+    if (!wasAllCompleted && isNowAllCompleted) {
+      this.recordCompletedDay(challenges.date);
+    }
+
     this.saveChallenges(challenges);
     return challenges;
+  }
+
+  private static recordCompletedDay(date: string): void {
+    try {
+      const historyKey = '_atlasCompletionHistory';
+      const history = localStorage.getItem(historyKey);
+      const completedDays = history ? JSON.parse(history) : [];
+      
+      if (!completedDays.includes(date)) {
+        completedDays.push(date);
+        localStorage.setItem(historyKey, JSON.stringify(completedDays));
+      }
+    } catch (error) {
+      console.error('Error recording completed day:', error);
+    }
   }
 
   private static saveChallenges(challenges: DailyChallenges): void {

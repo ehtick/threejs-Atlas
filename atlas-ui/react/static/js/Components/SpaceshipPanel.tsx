@@ -102,7 +102,7 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
                     <h4 className="text-white font-semibold text-sm">🌟 Daily Challenges</h4>
                     {dailyChallenges && (
                       <div className="text-xs text-indigo-400 font-medium">
-                        Day {dailyChallenges.dayNumber} • x{Math.pow(2, dailyChallenges.dayNumber - 1)}
+                        Day {dailyChallenges.dayNumber} • x{Math.min(1 + (dailyChallenges.dayNumber - 1) * 0.1, 2.0).toFixed(1)}
                       </div>
                     )}
                   </div>
@@ -152,7 +152,7 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
                   <h4 className="text-white font-semibold mb-3 text-sm">📍 Saved Locations</h4>
 
                   <div className="mb-3">
-                    <ProgressBar value={locationStats?.total || 0} max={50} label={`Saved Locations: ${locationStats?.total || 0}/50`} color="cyan" showPercentage={true} />
+                    <ProgressBar value={locationStats?.total || 0} max={locationStats?.maxAllowed || 50} label={`Saved Locations: ${locationStats?.total || 0}/${locationStats?.maxAllowed || 50}`} color="cyan" showPercentage={true} />
                   </div>
 
                   <div className="grid grid-cols-3 gap-1 text-xs">
@@ -169,6 +169,7 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
                       <div className="text-purple-400 font-bold text-xs">{locationStats?.planets || 0}</div>
                     </div>
                   </div>
+                  <div className="text-[10px] text-gray-500 mt-2">*Complete your daily tasks to be able to save more Atlas locations</div>
                 </div>
               </div>
             )}
