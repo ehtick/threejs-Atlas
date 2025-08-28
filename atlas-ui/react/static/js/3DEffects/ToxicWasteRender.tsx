@@ -13,6 +13,7 @@ export interface ToxicWasteRenderParams {
   spotCount?: number;
   spotSize?: number;
   moveSpeed?: number;
+  innerRotationSpeed?: number;
   toxicColor?: THREE.Color;
   debrisColor?: THREE.Color;
   seed?: number;
@@ -22,11 +23,11 @@ export interface ToxicWasteRenderParams {
 
 // Rangos para generación procedural
 const PROCEDURAL_RANGES = {
-  TOTAL_SPOTS: { min: 8, max: 20 }, // Cantidad total de figuras individuales
-  SPOT_SIZE: { min: 0.4, max: 1.8 }, // Tamaño de cada figura individual
-  MOVE_SPEED: { min: 0.05, max: 0.25 }, // Velocidad de movimiento orbital
-  ROTATION_SPEED: { min: -0.8, max: 0.8 }, // Velocidad de rotación sobre sí misma
-  PULSE_AMPLITUDE: { min: 0.1, max: 0.3 }, // Intensidad de pulsación
+  OBJECT_COUNT: { min: 31, max: 33 }, // Cantidad de objetos/figuras tóxicas
+  SPOT_SIZE: { min: 0.4, max: 1.2 }, // Tamaño de cada figura individual
+  MOVE_SPEED: { min: 0.1, max: 0.3 }, // Velocidad de movimiento orbital
+  INNER_ROTATION_SPEED: { min: -150.0, max: 150.0 }, // Velocidad de rotación sobre sí misma
+  PULSE_AMPLITUDE: { min: 0.1, max: 1.3 }, // Intensidad de pulsación
   TIME_SPEED: { min: 0.1, max: 3.0 } // Rango de velocidades del tiempo para sincronización
 };
 
@@ -130,8 +131,11 @@ class ToxicSpot {
   private rotationSpeed: number;
   private size: number;
   private pulseAmplitude: number;
+  private planetRadius: number;
 
-  constructor(planetRadius: number, toxicColor: THREE.Color, seed: number) {
+  constructor(planetRadius: number, toxicColor: THREE.Color, seed: number, globalMoveSpeed?: number, globalInnerRotationSpeed?: number) {
+    this.planetRadius = planetRadius;
+    
     // Cada spot tiene sus propios parámetros procedurales
     const rng = new SeededRandom(seed);
     
@@ -139,26 +143,18 @@ class ToxicSpot {
     this.size = rng.uniform(PROCEDURAL_RANGES.SPOT_SIZE.min, PROCEDURAL_RANGES.SPOT_SIZE.max);
     this.pulseAmplitude = rng.uniform(PROCEDURAL_RANGES.PULSE_AMPLITUDE.min, PROCEDURAL_RANGES.PULSE_AMPLITUDE.max);
     
-    // Generar velocidades individuales
-    const moveSpeed = rng.uniform(PROCEDURAL_RANGES.MOVE_SPEED.min, PROCEDURAL_RANGES.MOVE_SPEED.max);
-    this.angleSpeed = rng.uniform(-1, 1) * moveSpeed;
-    this.phiSpeed = rng.uniform(-0.4, 0.4) * moveSpeed;
-    this.rotationSpeed = rng.uniform(PROCEDURAL_RANGES.ROTATION_SPEED.min, PROCEDURAL_RANGES.ROTATION_SPEED.max);
-
-    // Crear un parche esférico que se curve con el planeta
-    // Usamos una pequeña sección de esfera que se ajusta a la superficie
-    const angularSize = this.size / planetRadius; // Convertir tamaño lineal a angular
+    // Generar velocidades individuales respetando parámetros globales
+    const baseMoveSpeed = globalMoveSpeed !== undefined ? globalMoveSpeed : rng.uniform(PROCEDURAL_RANGES.MOVE_SPEED.min, PROCEDURAL_RANGES.MOVE_SPEED.max);
+    const baseInnerRotationSpeed = globalInnerRotationSpeed !== undefined ? globalInnerRotationSpeed : rng.uniform(PROCEDURAL_RANGES.INNER_ROTATION_SPEED.min, PROCEDURAL_RANGES.INNER_ROTATION_SPEED.max);
     
-    // Crear geometría esférica parcial centrada en el ecuador (será reposicionada)
-    const geometry = new THREE.SphereGeometry(
-      planetRadius * 1.005, // Radio ligeramente mayor que el planeta
-      16, // Segmentos phi (horizontal)
-      16, // Segmentos theta (vertical)
-      -angularSize/2, // phiStart
-      angularSize, // phiLength - solo una pequeña sección
-      Math.PI/2 - angularSize/2, // thetaStart 
-      angularSize // thetaLength - solo una pequeña sección
-    );
+    // Aplicar variaciones individuales respetando los rangos base
+    this.angleSpeed = rng.uniform(0.5, 1.5) * baseMoveSpeed;
+    this.phiSpeed = rng.uniform(-0.3, 0.3) * baseMoveSpeed;
+    this.rotationSpeed = baseInnerRotationSpeed * rng.uniform(0.8, 1.2); // Pequeña variación individual
+
+    // Crear geometría plana centrada en el origen local del objeto
+    // Esto permite que la rotación sea sobre el centro del objeto individual
+    const geometry = new THREE.PlaneGeometry(this.size * 2, this.size * 2, 1, 1);
     
     this.material = createToxicSpotMaterial(toxicColor, this.size, seed);
     this.material.uniforms.uPulseAmplitude.value = this.pulseAmplitude;
@@ -170,23 +166,31 @@ class ToxicSpot {
   }
 
   private updatePosition(time: number): void {
-    // Calcular rotación basada en tiempo absoluto (determinista)
+    // Calcular posición orbital basada en tiempo absoluto (move_speed)
     const currentAngle = this.initialAngle + (this.angleSpeed * time);
     let currentPhi = this.initialPhi + (this.phiSpeed * time);
     
-    // Mantener phi en rango válido con rebote
-    const phiRange = Math.PI - 0.4; // 0.2 to PI-0.2
-    currentPhi = currentPhi % (phiRange * 2);
-    if (currentPhi > phiRange) {
-      currentPhi = phiRange * 2 - currentPhi;
+    // Mantener phi en rango válido permitiendo movimiento por toda la superficie
+    currentPhi = Math.abs(currentPhi % (Math.PI * 2));
+    if (currentPhi > Math.PI) {
+      currentPhi = Math.PI * 2 - currentPhi;
     }
-    currentPhi = Math.max(0.2, Math.min(Math.PI - 0.2, currentPhi + 0.2));
 
-    // Rotar la geometría esférica completa para posicionar la mancha
-    // Aplicar rotación para mover la mancha a la posición deseada
-    this.mesh.rotation.y = currentAngle; // Rotación horizontal (longitude)
-    this.mesh.rotation.x = currentPhi - Math.PI/2; // Rotación vertical (latitude)
-    this.mesh.rotation.z = time * this.rotationSpeed; // Rotación sobre sí misma (determinista)
+    // Convertir coordenadas esféricas a cartesianas para posición real en la superficie
+    const radius = this.planetRadius * 1.005; // Radio del planeta con pequeño offset
+    const x = radius * Math.sin(currentPhi) * Math.cos(currentAngle);
+    const y = radius * Math.cos(currentPhi);
+    const z = radius * Math.sin(currentPhi) * Math.sin(currentAngle);
+    
+    // Posicionar directamente el mesh en la superficie del planeta
+    this.mesh.position.set(x, y, z);
+    
+    // Orientar el mesh para que mire hacia afuera desde la superficie
+    this.mesh.lookAt(x * 2, y * 2, z * 2);
+    
+    // Rotación sobre sí mismo controlado por inner_rotation_speed
+    const selfRotationAngle = time * this.rotationSpeed;
+    this.mesh.rotateZ(selfRotationAngle * 0.01); // Aplicar incrementalmente para evitar acumulación
   }
 
   update(_deltaTime: number, time: number): void {
@@ -216,8 +220,10 @@ export class ToxicWasteRenderEffect {
   private rng: SeededRandom;
   private startTime: number;
   private proceduralParams: {
-    totalSpots: number;
+    objectCount: number;
     timeSpeed: number;
+    moveSpeed?: number;
+    innerRotationSpeed?: number;
   };
   private toxicColor: THREE.Color;
   private cosmicOriginTime: number;
@@ -235,8 +241,10 @@ export class ToxicWasteRenderEffect {
 
     // Generar parámetros procedurales globales
     this.proceduralParams = {
-      totalSpots: Math.floor(this.rng.uniform(PROCEDURAL_RANGES.TOTAL_SPOTS.min, PROCEDURAL_RANGES.TOTAL_SPOTS.max)),
+      objectCount: Math.floor(this.rng.uniform(PROCEDURAL_RANGES.OBJECT_COUNT.min, PROCEDURAL_RANGES.OBJECT_COUNT.max)),
       timeSpeed: params.timeSpeed || this.rng.uniform(PROCEDURAL_RANGES.TIME_SPEED.min, PROCEDURAL_RANGES.TIME_SPEED.max),
+      moveSpeed: params.moveSpeed,
+      innerRotationSpeed: params.innerRotationSpeed,
     };
 
     // Color tóxico procedural
@@ -249,7 +257,7 @@ export class ToxicWasteRenderEffect {
   }
 
   private createSpots(): void {
-    for (let i = 0; i < this.proceduralParams.totalSpots; i++) {
+    for (let i = 0; i < this.proceduralParams.objectCount; i++) {
       const spotSeed = this.rng.random() * 1000000;
       
       // Color con ligera variación para cada spot
@@ -259,7 +267,7 @@ export class ToxicWasteRenderEffect {
       spotColor.getHSL(hsl);
       spotColor.setHSL((hsl.h + hueVariation) % 1.0, hsl.s, hsl.l);
 
-      const spot = new ToxicSpot(this.planetRadius, spotColor, spotSeed);
+      const spot = new ToxicSpot(this.planetRadius, spotColor, spotSeed, this.proceduralParams.moveSpeed, this.proceduralParams.innerRotationSpeed);
       this.spots.push(spot);
     }
   }
@@ -289,7 +297,7 @@ export class ToxicWasteRenderEffect {
 /**
  * Función de utilidad para crear el efecto desde datos de Python
  */
-export function createToxicWasteFromPythonData(planetRadius: number, surfaceData: any, globalSeed?: number): ToxicWasteRenderEffect | null {
+export function createToxicWasteFromPythonData(planetRadius: number, surfaceData: any, globalSeed?: number, params?: Partial<ToxicWasteRenderParams>): ToxicWasteRenderEffect | null {
   // Solo aplicar a planetas tóxicos
   if (!surfaceData || !surfaceData.type || surfaceData.type.toLowerCase() !== "toxic") {
     return null;
@@ -297,9 +305,14 @@ export function createToxicWasteFromPythonData(planetRadius: number, surfaceData
 
   const seed = globalSeed || Math.floor(Math.random() * 1000000);
 
-  // No necesitamos pasar parámetros específicos porque cada spot se genera proceduralmente
-  // Cada spot generará sus propios parámetros basados en PROCEDURAL_RANGES
+  // Ahora sí pasamos parámetros específicos para controlar velocidades globalmente
+  // Si no se proporcionan, cada spot generará sus propios parámetros basados en PROCEDURAL_RANGES
   return new ToxicWasteRenderEffect(planetRadius, {
     seed: seed + 30000,
+    moveSpeed: params?.moveSpeed,
+    innerRotationSpeed: params?.innerRotationSpeed,
+    timeSpeed: params?.timeSpeed,
+    toxicColor: params?.toxicColor,
+    ...params
   });
 }
