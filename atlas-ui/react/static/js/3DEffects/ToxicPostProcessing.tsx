@@ -217,10 +217,10 @@ export class ToxicPostProcessingEffect {
     this.renderPass = new RenderPass(scene, camera);
     this.composer.addPass(this.renderPass);
 
-    // Pass de bloom con parámetros tóxicos
-    const bloomStrength = (params.bloomStrength || 1.2) * this.bloomVariation;
-    const bloomRadius = params.bloomRadius || 0.8;
-    const bloomThreshold = params.bloomThreshold || 0.1;
+    // Pass de bloom con parámetros tóxicos más sutiles
+    const bloomStrength = (params.bloomStrength || 0.4) * this.bloomVariation; // Reducido de 1.2 a 0.4
+    const bloomRadius = params.bloomRadius || 0.6; // Reducido de 0.8 a 0.6
+    const bloomThreshold = params.bloomThreshold || 0.3; // Aumentado de 0.1 a 0.3 para ser más selectivo
     
     this.bloomPass = new UnrealBloomPass(
       new THREE.Vector2(window.innerWidth, window.innerHeight),
@@ -230,15 +230,15 @@ export class ToxicPostProcessingEffect {
     );
     this.composer.addPass(this.bloomPass);
 
-    // Pass de godrays
+    // Pass de godrays con intensidad muy reducida
     this.godrayPass = new ShaderPass(ToxicGodrayShader);
-    this.godrayPass.uniforms.uIntensity.value = (params.godrayIntensity || 0.3) * this.godrayVariation;
+    this.godrayPass.uniforms.uIntensity.value = (params.godrayIntensity || 0.08) * this.godrayVariation; // Reducido de 0.3 a 0.08
     this.godrayPass.uniforms.uToxicColor.value = this.toxicTint;
     this.composer.addPass(this.godrayPass);
 
-    // Pass de chromatic aberration
+    // Pass de chromatic aberration más sutil
     this.chromaticAberrationPass = new ShaderPass(ToxicChromaticAberrationShader);
-    this.chromaticAberrationPass.uniforms.uIntensity.value = (params.chromaticAberrationIntensity || 0.005) * this.chromaticVariation;
+    this.chromaticAberrationPass.uniforms.uIntensity.value = (params.chromaticAberrationIntensity || 0.002) * this.chromaticVariation; // Reducido de 0.005 a 0.002
     this.chromaticAberrationPass.uniforms.uToxicTint.value = this.toxicTint;
     this.composer.addPass(this.chromaticAberrationPass);
 
@@ -255,15 +255,15 @@ export class ToxicPostProcessingEffect {
     this.chromaticAberrationPass.uniforms.uTime.value = currentTime;
     this.godrayPass.uniforms.uTime.value = currentTime;
 
-    // Modular efectos con el tiempo para mayor dinamismo
-    const breathingCycle = Math.sin(currentTime * 0.3) * 0.2 + 1.0;
-    const pulseCycle = Math.sin(currentTime * 0.7) * 0.1 + 1.0;
+    // Modular efectos con el tiempo para mayor dinamismo (más sutil)
+    const breathingCycle = Math.sin(currentTime * 0.3) * 0.1 + 1.0; // Reducido de 0.2 a 0.1
+    const pulseCycle = Math.sin(currentTime * 0.7) * 0.05 + 1.0; // Reducido de 0.1 a 0.05
 
-    // Modular bloom dinámicamente
-    this.bloomPass.strength = (1.2 * this.bloomVariation) * breathingCycle;
+    // Modular bloom dinámicamente con valores más bajos
+    this.bloomPass.strength = (0.4 * this.bloomVariation) * breathingCycle; // Cambiado de 1.2 a 0.4
     
-    // Modular aberración cromática
-    this.chromaticAberrationPass.uniforms.uIntensity.value = (0.005 * this.chromaticVariation) * pulseCycle;
+    // Modular aberración cromática con intensidad reducida
+    this.chromaticAberrationPass.uniforms.uIntensity.value = (0.002 * this.chromaticVariation) * pulseCycle; // Cambiado de 0.005 a 0.002
   }
 
   updateLightPosition(lightPosition: THREE.Vector3, camera: THREE.Camera): void {
@@ -317,14 +317,14 @@ export function createToxicPostProcessingFromPythonData(
   const toxicIntensity = surfaceData.toxic_intensity || 0.7;
   const atmosphereThickness = surfaceData.atmosphere_thickness || 0.5;
 
-  const bloomStrength = 0.8 + (toxicIntensity * 0.8);
-  const chromaticIntensity = 0.003 + (toxicIntensity * 0.007);
-  const godrayIntensity = 0.2 + (atmosphereThickness * 0.4);
+  const bloomStrength = 0.3 + (toxicIntensity * 0.2); // Reducido significativamente
+  const chromaticIntensity = 0.001 + (toxicIntensity * 0.002); // Muy sutil
+  const godrayIntensity = 0.05 + (atmosphereThickness * 0.08); // Mucho más sutil
 
   return new ToxicPostProcessingEffect(scene, camera, renderer, planetRadius, {
     bloomStrength,
-    bloomRadius: 0.9,
-    bloomThreshold: 0.05,
+    bloomRadius: 0.6, // Reducido de 0.9 a 0.6
+    bloomThreshold: 0.4, // Aumentado de 0.05 a 0.4 para ser muy selectivo
     chromaticAberrationIntensity: chromaticIntensity,
     godrayIntensity: godrayIntensity,
     seed: seed + 20000,
