@@ -1,5 +1,6 @@
 // Base64 encoder/decoder for localStorage keys and values
-// Simple: encode key + encode value, decode key + decode value
+// With pako compression: JSON → gzip → base64 → localStorage
+import * as pako from 'pako';
 
 // MASTER SWITCH - Set to false to disable encoding (bypass mode)
 const ENCODING_ENABLED = true;
@@ -12,7 +13,7 @@ export const ATLAS_KEYS = {
   LOCATIONS: "_atlasLocations",
 } as const;
 
-// Set item with encoded key and value
+// Set item with compressed and encoded key and value
 export const setItem = (key: string, value: string): void => {
   if (!ENCODING_ENABLED) {
     localStorage.setItem(key, value);
@@ -21,15 +22,21 @@ export const setItem = (key: string, value: string): void => {
 
   try {
     const encodedKey = btoa(key);
-    const encodedValue = btoa(value);
+    
+    // Convert string to Uint8Array, compress with gzip, then encode to base64
+    const textEncoder = new TextEncoder();
+    const uint8Array = textEncoder.encode(value);
+    const compressed = pako.gzip(uint8Array);
+    const encodedValue = btoa(String.fromCharCode(...compressed));
+    
     localStorage.setItem(encodedKey, encodedValue);
   } catch (error) {
-    console.error("Error encoding:", error);
+    console.error("Error encoding/compressing:", error);
     localStorage.setItem(key, value); // Fallback
   }
 };
 
-// Get item with encoded key and decode value
+// Get item with encoded key and decompress value
 export const getItem = (key: string): string | null => {
   if (!ENCODING_ENABLED) {
     return localStorage.getItem(key);
@@ -39,9 +46,16 @@ export const getItem = (key: string): string | null => {
     const encodedKey = btoa(key);
     const encodedValue = localStorage.getItem(encodedKey);
     if (encodedValue === null) return null;
-    return atob(encodedValue);
+    
+    // Decode from base64, convert to Uint8Array, then decompress with gzip
+    const compressedString = atob(encodedValue);
+    const compressed = new Uint8Array(compressedString.split('').map(char => char.charCodeAt(0)));
+    const decompressed = pako.ungzip(compressed);
+    const textDecoder = new TextDecoder();
+    
+    return textDecoder.decode(decompressed);
   } catch (error) {
-    console.error("Error decoding:", error);
+    console.error("Error decoding/decompressing:", error);
     return localStorage.getItem(key); // Fallback
   }
 };
