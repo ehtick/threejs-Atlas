@@ -62,7 +62,7 @@ const SystemInfo: React.FC<SystemInfoProps> = ({ system, galaxy, systemIndex, co
       </div>
 
       <div className="mb-3">
-        <h3 className="text-lg sm:text-xl font-bold text-white">System Information</h3>
+        <h3 className="text-lg sm:text-xl font-bold text-white">Details</h3>
       </div>
 
       <div className="grid grid-cols-3 gap-2 mb-3">
