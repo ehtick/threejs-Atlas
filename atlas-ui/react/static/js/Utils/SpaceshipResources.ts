@@ -256,15 +256,8 @@ export class SpaceshipResourceManager {
     if (generation.antimatter + generation.element115 + generation.deuterium === 0) return;
     
     const toast = document.createElement("div");
-    toast.className = "fixed top-4 right-4 z-50 bg-gradient-to-r from-purple-900/90 to-blue-900/90 text-white px-4 py-3 rounded-lg shadow-lg border border-purple-500/50";
-    toast.style.animation = "slideInRight 0.3s ease-out";
-    
-    // Calculate generation rate per hour
-    const perHour = {
-      antimatter: generation.antimatter * 60, // Per minute * 60 = per hour
-      element115: generation.element115 * 60,
-      deuterium: generation.deuterium * 60
-    };
+    toast.className = "fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-gradient-to-r from-purple-900/90 to-blue-900/90 text-white px-4 py-3 rounded-lg shadow-lg border border-purple-500/50 w-[90vw] max-w-lg";
+    toast.style.animation = "slideInDown 0.3s ease-out";
     
     // Create toast content using DOM manipulation instead of innerHTML
     const container = document.createElement("div");
@@ -278,68 +271,60 @@ export class SpaceshipResourceManager {
 
     const titleDiv = document.createElement("div");
     titleDiv.className = "text-sm font-bold text-purple-300";
-    titleDiv.textContent = "Passive Mining";
-
-    const sourceDiv = document.createElement("div");
-    sourceDiv.className = "text-xs text-purple-200 mt-1";
-    sourceDiv.textContent = `${generation.sources.planets}🪐 ${generation.sources.systems}⭐ generating`;
+    titleDiv.textContent = "Mining Operations Complete!";
 
     const resourceDiv = document.createElement("div");
-    resourceDiv.className = "text-xs text-purple-200 flex gap-3 mt-1";
+    resourceDiv.className = "text-xs text-purple-200 mt-1 flex gap-3";
 
-    if (generation.antimatter > 0) {
-      const amSpan = document.createElement("span");
-      amSpan.className = "text-purple-300";
-      amSpan.textContent = `+${generation.antimatter} AM`;
-      resourceDiv.appendChild(amSpan);
-    }
-    if (generation.element115 > 0) {
-      const e115Span = document.createElement("span");
-      e115Span.className = "text-cyan-300";
-      e115Span.textContent = `+${generation.element115} E115`;
-      resourceDiv.appendChild(e115Span);
-    }
-    if (generation.deuterium > 0) {
-      const deuteriumSpan = document.createElement("span");
-      deuteriumSpan.className = "text-orange-300";
-      deuteriumSpan.textContent = `+${generation.deuterium} D`;
-      resourceDiv.appendChild(deuteriumSpan);
-    }
+    const amSpan = document.createElement("span");
+    amSpan.className = "text-purple-300";
+    amSpan.textContent = `+${generation.antimatter} AM`;
 
-    const rateDiv = document.createElement("div");
-    rateDiv.className = "text-xs text-purple-100 mt-1 opacity-75";
-    rateDiv.textContent = `Rate: ${perHour.antimatter}/${perHour.element115}/${perHour.deuterium} per hour`;
+    const e115Span = document.createElement("span");
+    e115Span.className = "text-cyan-300";
+    e115Span.textContent = `+${generation.element115} E115`;
+
+    const deuteriumSpan = document.createElement("span");
+    deuteriumSpan.className = "text-orange-300";
+    deuteriumSpan.textContent = `+${generation.deuterium} D`;
+
+    resourceDiv.appendChild(amSpan);
+    resourceDiv.appendChild(e115Span);
+    resourceDiv.appendChild(deuteriumSpan);
+
+    const sourceDiv = document.createElement("div");
+    sourceDiv.className = "text-xs text-purple-300 mt-1";
+    sourceDiv.textContent = `Collected from ${generation.sources.planets}🪐 ${generation.sources.systems}⭐`;
 
     contentDiv.appendChild(titleDiv);
-    contentDiv.appendChild(sourceDiv);
     contentDiv.appendChild(resourceDiv);
-    contentDiv.appendChild(rateDiv);
+    contentDiv.appendChild(sourceDiv);
 
     container.appendChild(emojiSpan);
     container.appendChild(contentDiv);
     toast.appendChild(container);
     
-    if (!document.getElementById("passive-toast-styles")) {
+    if (!document.getElementById("collection-toast-styles")) {
       const style = document.createElement("style");
-      style.id = "passive-toast-styles";
+      style.id = "collection-toast-styles";
       style.textContent = `
-        @keyframes slideInRight {
+        @keyframes slideInDown {
           from {
-            transform: translateX(100%);
+            transform: translate(-50%, -100%);
             opacity: 0;
           }
           to {
-            transform: translateX(0);
+            transform: translate(-50%, 0);
             opacity: 1;
           }
         }
-        @keyframes slideOutRight {
+        @keyframes slideOutUp {
           from {
-            transform: translateX(0);
+            transform: translate(-50%, 0);
             opacity: 1;
           }
           to {
-            transform: translateX(100%);
+            transform: translate(-50%, -100%);
             opacity: 0;
           }
         }
@@ -350,11 +335,11 @@ export class SpaceshipResourceManager {
     document.body.appendChild(toast);
     
     setTimeout(() => {
-      toast.style.animation = "slideOutRight 0.3s ease-in forwards";
+      toast.style.animation = "slideOutUp 0.3s ease-in forwards";
       setTimeout(() => {
         toast.remove();
       }, 300);
-    }, 5000); // Show longer for more information
+    }, 3000);
   }
 
   static reset(): void {
