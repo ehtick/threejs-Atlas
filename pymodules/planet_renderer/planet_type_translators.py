@@ -1241,7 +1241,96 @@ class PlanetTypeTranslators:
     
     def translate_toxic(self, planet_radius: int, rng: random.Random, 
                        seed: int, planet_name: str) -> Dict[str, Any]:
-        return {"type": "toxic"}
+        """Translate Toxic planet elements - toxic worlds with purple clouds and toxic patches"""
+        center_x, center_y = 200, 200  # Pillow center coordinates
+        
+        # Generate atmospheric clouds for toxic planets (toxic purple atmospheres)
+        num_clouds = rng.randint(10, 16)  # Rich toxic atmospheric activity
+        clouds = []
+        for i in range(num_clouds):
+            cloud_radius = rng.randint(20, 40)  # Medium toxic clouds
+            max_offset = planet_radius - cloud_radius
+            cloud_x = center_x + rng.randint(-max_offset, max_offset)
+            cloud_y = center_y + rng.randint(-max_offset, max_offset)
+            
+            # Convert to normalized coordinates
+            normalized_coords = self.common_utils.normalize_coordinates(
+                cloud_x, cloud_y, center_x, center_y, planet_radius
+            )
+            
+            # Toxic clouds - purple-magenta colors representing toxic atmosphere (#800080)
+            cloud_colors = [
+                [0.5, 0.0, 0.5, 0.85],      # Pure purple (matching #800080)
+                [0.6, 0.1, 0.6, 0.8],       # Light purple
+                [0.4, 0.0, 0.4, 0.9],       # Dark purple
+                [0.7, 0.2, 0.7, 0.75],      # Magenta-purple
+                [0.45, 0.05, 0.45, 0.88],   # Deep toxic purple
+            ]
+            
+            clouds.append({
+                "position": normalized_coords,
+                "radius": cloud_radius / planet_radius,
+                "color": rng.choice(cloud_colors),
+                "type": "cloud",
+                "seed": f"{planet_name}_toxic_cloud_{i}"
+            })
+        
+        # Generate toxic patches (purple-tinted patches representing toxic contamination)
+        num_toxic_patches = rng.randint(12, 20)  # Many toxic contaminated patches
+        green_patches = []
+        
+        for i in range(num_toxic_patches):
+            # Generate uniform position on sphere (same as oceanic)
+            theta = rng.uniform(0, 2 * math.pi)
+            phi = math.acos(rng.uniform(-1, 1))
+            
+            patch_3d_x = math.sin(phi) * math.cos(theta)
+            patch_3d_y = math.sin(phi) * math.sin(theta)
+            patch_3d_z = math.cos(phi)
+            
+            # Also maintain 2D coordinates for compatibility
+            patch_angle = rng.uniform(0, 2 * math.pi)
+            patch_distance = rng.uniform(0.2 * planet_radius, planet_radius)
+            
+            patch_x = center_x + patch_distance * math.cos(patch_angle)
+            patch_y = center_y + patch_distance * math.sin(patch_angle)
+            
+            # Convert to normalized coordinates
+            normalized_coords = self.common_utils.normalize_coordinates(
+                patch_x, patch_y, center_x, center_y, planet_radius
+            )
+            
+            # Toxic patch colors - various shades of purple representing toxic contaminated areas
+            toxic_purples = [
+                [0.5, 0.0, 0.5],     # Pure purple (matching #800080)
+                [0.4, 0.0, 0.4],     # Dark purple
+                [0.6, 0.1, 0.6],     # Light purple
+                [0.45, 0.05, 0.45],  # Deep toxic purple
+                [0.55, 0.15, 0.55],  # Medium toxic purple
+            ]
+            
+            green_patches.append({
+                "position": normalized_coords,  # Maintain for 2D compatibility
+                "position_3d": [patch_3d_x, patch_3d_y, patch_3d_z],  # 3D position
+                "size": rng.uniform(0.1, 0.3),  # Toxic contamination areas
+                "color": rng.choice(toxic_purples) + [rng.uniform(0.7, 0.9)],  # High opacity for visibility
+                "sides": rng.randint(15, 25),  # Irregular toxic shapes
+                "toxicity_level": rng.uniform(0.6, 1.0),  # High toxicity intensity
+                "glow_intensity": rng.uniform(0.4, 0.7)    # Toxic glow effect
+            })
+        
+        return {
+            "type": "toxic",
+            "clouds": clouds,  # AtmosphereClouds will use this
+            "green_patches": green_patches,  # LandMasses will use this (toxic-colored patches)
+            "debug": {
+                "original_planet_radius": planet_radius,
+                "center_x": center_x, "center_y": center_y,
+                "cloud_count": num_clouds,
+                "toxic_patch_count": num_toxic_patches,
+                "toxicity_coverage": "high_contamination_coverage"
+            }
+        }
     
     def translate_radioactive(self, planet_radius: int, rng: random.Random, 
                              seed: int, planet_name: str) -> Dict[str, Any]:

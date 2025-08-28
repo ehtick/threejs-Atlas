@@ -2408,6 +2408,57 @@ export class EffectRegistry {
             }
             break;
 
+          case "toxic":
+            // Planetas Toxic: nubes púrpuras tóxicas y masas terrestres contaminadas
+            
+            // 1. Añadir nubes atmosféricas tóxicas púrpuras
+            if (surface.clouds && surface.clouds.length > 0) {
+              const toxicCloudsEffect = createAtmosphereCloudsFromPythonData(
+                planetRadius,
+                surface,
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000,
+                pythonData.timing?.cosmic_origin_time
+              );
+
+              const toxicCloudsInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "atmosphere_clouds",
+                effect: toxicCloudsEffect,
+                priority: 15,
+                enabled: true,
+                name: "Toxic Purple Clouds",
+              };
+
+              this.effects.set(toxicCloudsInstance.id, toxicCloudsInstance);
+              effects.push(toxicCloudsInstance);
+              toxicCloudsEffect.addToScene(scene, mesh.position);
+            }
+
+            // 2. Añadir masas terrestres tóxicas púrpuras (usando green_patches)
+            if (surface.green_patches && surface.green_patches.length > 0) {
+              const toxicLandMassesEffect = createLandMassesFromPythonData(
+                planetRadius, 
+                surface, 
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4500
+              );
+
+              if (toxicLandMassesEffect) {
+                const toxicLandMassesInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "land_masses",
+                  effect: toxicLandMassesEffect,
+                  priority: 10,
+                  enabled: true,
+                  name: "Toxic Contaminated Areas",
+                };
+
+                this.effects.set(toxicLandMassesInstance.id, toxicLandMassesInstance);
+                effects.push(toxicLandMassesInstance);
+                toxicLandMassesEffect.addToScene(scene, mesh.position);
+              }
+            }
+            break;
+
           case "radioactive":
             // Planetas Radioactive: nubes tóxicas, masas terrestres verdes radioactivas y pulsos de radiación
             
