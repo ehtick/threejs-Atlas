@@ -122,17 +122,28 @@ function createToxicSpotMaterial(toxicColor: THREE.Color, size: number, seed: nu
 class ToxicSpot {
   private mesh: THREE.Mesh;
   private material: THREE.ShaderMaterial;
-  private planetRadius: number;
   private initialAngle: number;
   private initialPhi: number;
   private angleSpeed: number;
   private phiSpeed: number;
 
   constructor(planetRadius: number, size: number, toxicColor: THREE.Color, seed: number, moveSpeed: number) {
-    this.planetRadius = planetRadius;
 
-    // Crear geometría plana pequeña para la mancha
-    const geometry = new THREE.PlaneGeometry(size, size, 1, 1);
+    // Crear un parche esférico que se curve con el planeta
+    // Usamos una pequeña sección de esfera que se ajusta a la superficie
+    const angularSize = size / planetRadius; // Convertir tamaño lineal a angular
+    
+    // Crear geometría esférica parcial centrada en el ecuador (será reposicionada)
+    const geometry = new THREE.SphereGeometry(
+      planetRadius * 1.005, // Radio ligeramente mayor que el planeta
+      16, // Segmentos phi (horizontal)
+      16, // Segmentos theta (vertical)
+      -angularSize/2, // phiStart
+      angularSize, // phiLength - solo una pequeña sección
+      Math.PI/2 - angularSize/2, // thetaStart 
+      angularSize // thetaLength - solo una pequeña sección
+    );
+    
     this.material = createToxicSpotMaterial(toxicColor, size, seed);
     this.mesh = new THREE.Mesh(geometry, this.material);
 
@@ -147,7 +158,7 @@ class ToxicSpot {
   }
 
   private updatePosition(time: number): void {
-    // Calcular posición basada en tiempo absoluto (determinista)
+    // Calcular rotación basada en tiempo absoluto (determinista)
     const currentAngle = this.initialAngle + (this.angleSpeed * time);
     let currentPhi = this.initialPhi + (this.phiSpeed * time);
     
@@ -159,15 +170,13 @@ class ToxicSpot {
     }
     currentPhi = Math.max(0.2, Math.min(Math.PI - 0.2, currentPhi + 0.2));
 
-    // Convertir coordenadas esféricas a cartesianas
-    const x = this.planetRadius * 1.01 * Math.sin(currentPhi) * Math.cos(currentAngle);
-    const y = this.planetRadius * 1.01 * Math.cos(currentPhi);
-    const z = this.planetRadius * 1.01 * Math.sin(currentPhi) * Math.sin(currentAngle);
-
-    this.mesh.position.set(x, y, z);
-
-    // Orientar la mancha hacia el centro del planeta
-    this.mesh.lookAt(0, 0, 0);
+    // Rotar la geometría esférica completa para posicionar la mancha
+    // Primero resetear la rotación
+    this.mesh.rotation.set(0, 0, 0);
+    
+    // Aplicar rotación para mover la mancha a la posición deseada
+    this.mesh.rotation.y = currentAngle; // Rotación horizontal (longitude)
+    this.mesh.rotation.x = currentPhi - Math.PI/2; // Rotación vertical (latitude)
   }
 
   update(_deltaTime: number, time: number): void {
