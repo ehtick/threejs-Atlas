@@ -18,6 +18,7 @@ import { LandMassesEffect, createLandMassesFromPythonData, createTransparentLand
 import { IcyFeaturesEffect, createIcyFeaturesFromPythonData } from "./IcyFeatures";
 import { TundraSnowflakesEffect, createTundraSnowflakesFromPythonData, createCarbonDustParticlesFromPythonData, createDesertSandstormsFromPythonData, createToxicParticlesFromPythonData } from "./TundraSnowflakes";
 import { ToxicPostProcessingEffect, createToxicPostProcessingFromPythonData } from "./ToxicPostProcessing";
+import { ToxicWasteRenderEffect, createToxicWasteFromPythonData } from "./ToxicWasteRender";
 import { RiverLinesEffect, createRiverLinesFromPythonData } from "./RiverLines";
 
 // Efectos anómalos
@@ -142,6 +143,8 @@ export enum EffectType {
 
   // Efectos de post-procesamiento
   TOXIC_POST_PROCESSING = "toxic_post_processing",
+  // Efectos de superficie tóxica
+  TOXIC_WASTE_RENDER = "toxic_waste_render",
 
   // Efectos geológicos
   RIVER_LINES = "river_lines",
@@ -334,6 +337,12 @@ export class EffectRegistry {
     this.registerEffect(EffectType.TOXIC_POST_PROCESSING, {
       create: (params, planetRadius) => null, // Se crea en ModularPlanetRenderer
       fromPythonData: (data, planetRadius) => null, // Se crea en ModularPlanetRenderer
+    });
+    
+    // Efectos de superficie tóxica
+    this.registerEffect(EffectType.TOXIC_WASTE_RENDER, {
+      create: (params, planetRadius) => new ToxicWasteRenderEffect(planetRadius, params),
+      fromPythonData: (data, planetRadius) => createToxicWasteFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed),
     });
 
     this.registerEffect(EffectType.RIVER_LINES, {
@@ -2489,6 +2498,26 @@ export class EffectRegistry {
               this.effects.set(toxicParticlesInstance.id, toxicParticlesInstance);
               effects.push(toxicParticlesInstance);
               toxicParticlesEffect.addToScene(scene, mesh.position);
+            }
+            
+            // 4. Añadir manchas poligonales de desechos tóxicos
+            const toxicWasteEffect = createToxicWasteFromPythonData(
+              planetRadius,
+              surface,
+              pythonData.seeds?.planet_seed
+            );
+            if (toxicWasteEffect) {
+              const toxicWasteInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "toxic_waste_render",
+                effect: toxicWasteEffect,
+                priority: 25,
+                enabled: true,
+                name: "Toxic Waste Polygonal Spots",
+              };
+              this.effects.set(toxicWasteInstance.id, toxicWasteInstance);
+              effects.push(toxicWasteInstance);
+              toxicWasteEffect.addToScene(scene, mesh.position);
             }
             break;
 
