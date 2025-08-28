@@ -196,6 +196,9 @@ export function getElementRarityTier(elementName: string): string {
   const value = ELEMENT_RESOURCE_VALUES[elementName];
   if (!value) return "Unknown";
 
+  // Special case for Z-Divinium - the exception element
+  if (elementName === "Z-Divinium") return "Exception";
+
   const totalValue = value.antimatter + value.element115 + value.deuterium;
 
   if (totalValue >= 200) return "Ultra Rare";

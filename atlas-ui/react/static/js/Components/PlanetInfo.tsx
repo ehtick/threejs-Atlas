@@ -3,6 +3,7 @@ import SaveLocationButton from "./SaveLocationButton.tsx";
 import ResourceCollectionButton from "./ResourceCollectionButton.tsx";
 import EffectsControl from "./EffectsControl.tsx";
 import MiningIndicator from "./MiningIndicator.tsx";
+import PeriodicElement from "./PeriodicElement.tsx";
 import { SpaceshipResourceCollectionManager } from "../Utils/SpaceshipResourceCollection";
 import { LocationBookmarks } from "../Utils/LocationBookmarks.ts";
 import { StargateGenerator } from "../Utils/StargateGenerator.ts";
@@ -245,20 +246,40 @@ const PlanetInfo: React.FC<PlanetInfoProps> = ({ planet, system, galaxy, cosmicO
         <div className="bg-white/10 rounded-lg p-2 border border-yellow-500/30">
           <div className="flex items-center justify-between mb-2">
             <div className="text-xs text-gray-200">Elements ({planet.elements.length})</div>
-            {planet.elements.length > 4 && (
-              <button onClick={() => setShowAllElements(!showAllElements)} className="text-xs text-yellow-400 hover:text-yellow-300 transition-colors duration-300">
-                {showAllElements ? "▲ Less" : "▼ All"}
-              </button>
-            )}
+            <button onClick={() => setShowAllElements(!showAllElements)} className="text-xs text-yellow-400 hover:text-yellow-300 transition-colors duration-300">
+              {showAllElements ? "▲ Collapse" : "▼ Expand"}
+            </button>
           </div>
 
-          <div className="flex flex-wrap gap-1">
-            {(showAllElements ? planet.elements : planet.elements.slice(0, 4)).map((element, index) => (
-              <span key={index} className="text-xs bg-yellow-500/20 text-yellow-300 px-1.5 py-0.5 rounded border border-yellow-500/30">
-                {element}
-              </span>
-            ))}
-          </div>
+          {showAllElements ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+              {planet.elements.map((element, index) => (
+                <PeriodicElement
+                  key={index}
+                  elementName={element}
+                  expanded={true}
+                  showResources={true}
+                  className="min-w-0"
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-1 justify-center">
+              {planet.elements.slice(0, 6).map((element, index) => (
+                <PeriodicElement
+                  key={index}
+                  elementName={element}
+                  expanded={false}
+                  className=""
+                />
+              ))}
+              {planet.elements.length > 6 && (
+                <div className="inline-flex items-center justify-center h-10 w-10 rounded border border-dashed border-yellow-500/50 text-yellow-400 text-xs">
+                  +{planet.elements.length - 6}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
