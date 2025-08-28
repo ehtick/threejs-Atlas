@@ -42,7 +42,7 @@ export type { IcyTerrainLayerParams } from "./IcyTerrainLayer";
 export { LandMassesEffect, createLandMassesFromPythonData } from "./LandMasses";
 export type { LandMassesParams } from "./LandMasses";
 
-export { TundraSnowflakesEffect, createTundraSnowflakesFromPythonData, createDesertSandstormsFromPythonData } from "./TundraSnowflakes";
+export { TundraSnowflakesEffect, createTundraSnowflakesFromPythonData, createDesertSandstormsFromPythonData, createToxicParticlesFromPythonData } from "./TundraSnowflakes";
 export type { TundraSnowflakesParams } from "./TundraSnowflakes";
 
 export { RiverLinesEffect, createRiverLinesFromPythonData, createRiverLinesWithPreset } from "./RiverLines";

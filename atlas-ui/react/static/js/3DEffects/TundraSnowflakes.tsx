@@ -442,3 +442,31 @@ export function createDesertSandstormsFromPythonData(planetRadius: number, surfa
     seed: seed + 15000,
   });
 }
+
+/**
+ * Función específica para crear partículas tóxicas para planetas Toxic
+ */
+export function createToxicParticlesFromPythonData(planetRadius: number, surfaceData: any, globalSeed?: number): TundraSnowflakesEffect | null {
+  const seed = globalSeed || Math.floor(Math.random() * 1000000);
+
+  // Colores tóxicos púrpuras y verdes
+  const toxicColors = [
+    new THREE.Color(0.5, 0.0, 0.8), // Púrpura intenso
+    new THREE.Color(0.7, 0.2, 0.7), // Magenta tóxico
+    new THREE.Color(0.4, 0.0, 0.6), // Púrpura oscuro
+    new THREE.Color(0.8, 0.0, 0.8), // Magenta brillante
+    new THREE.Color(0.3, 0.6, 0.3), // Verde tóxico
+  ];
+
+  const particleCount = 18; // Más partículas para ambiente tóxico denso
+  const windSpeed = 2.8; // Velocidad media-alta para movimiento orgánico
+
+  return new TundraSnowflakesEffect(planetRadius, {
+    particleCount,
+    windSpeed,
+    size: 1.1, // Tamaño moderado para partículas tóxicas
+    opacity: 0.7, // Opacidad media para efecto brumoso
+    colors: toxicColors,
+    seed: seed + 15000,
+  });
+}

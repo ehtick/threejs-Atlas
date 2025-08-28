@@ -16,7 +16,7 @@ import { AtmosphereGlowEffect, createAtmosphereGlowFromPythonData, AtmosphereGlo
 import { AtmosphereCloudsEffect, createAtmosphereCloudsFromPythonData, AtmosphereCloudsParams } from "./AtmosphereClouds";
 import { LandMassesEffect, createLandMassesFromPythonData, createTransparentLandMassesForIcyPlanet, LandMassesParams } from "./LandMasses";
 import { IcyFeaturesEffect, createIcyFeaturesFromPythonData } from "./IcyFeatures";
-import { TundraSnowflakesEffect, createTundraSnowflakesFromPythonData, createCarbonDustParticlesFromPythonData, createDesertSandstormsFromPythonData } from "./TundraSnowflakes";
+import { TundraSnowflakesEffect, createTundraSnowflakesFromPythonData, createCarbonDustParticlesFromPythonData, createDesertSandstormsFromPythonData, createToxicParticlesFromPythonData } from "./TundraSnowflakes";
 import { RiverLinesEffect, createRiverLinesFromPythonData } from "./RiverLines";
 
 // Efectos anómalos
@@ -2456,6 +2456,28 @@ export class EffectRegistry {
                 effects.push(toxicLandMassesInstance);
                 toxicLandMassesEffect.addToScene(scene, mesh.position);
               }
+            }
+
+            // 3. Añadir tundra_snowflakes (partículas tóxicas flotando)
+            const toxicParticlesEffect = createToxicParticlesFromPythonData(
+              planetRadius,
+              surface,
+              (pythonData.seeds?.planet_seed || pythonData.seeds?.shape_seed) + 15000
+            );
+
+            if (toxicParticlesEffect) {
+              const toxicParticlesInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "tundra_snowflakes",
+                effect: toxicParticlesEffect,
+                priority: 20,
+                enabled: true,
+                name: "Toxic Particles",
+              };
+
+              this.effects.set(toxicParticlesInstance.id, toxicParticlesInstance);
+              effects.push(toxicParticlesInstance);
+              toxicParticlesEffect.addToScene(scene, mesh.position);
             }
             break;
 
