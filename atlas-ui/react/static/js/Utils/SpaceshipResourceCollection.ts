@@ -134,14 +134,16 @@ export class SpaceshipResourceCollectionManager {
   
   // Calculate Discovery Bonus for early collections of the day
   private static getDiscoveryBonus(dailyCollections: number): number {
-    if (dailyCollections <= 15) {
-      return 2.5; // 2.5x bonus for first 15 collections of the day
-    } else if (dailyCollections <= 35) {
-      return 1.8; // 1.8x bonus for collections 16-35
-    } else if (dailyCollections <= 50) {
-      return 1.3; // 1.3x bonus for collections 36-50
+    if (dailyCollections <= 3) {
+      return 5.0; // 5x bonus for first 3 collections of the day
+    } else if (dailyCollections <= 5) {
+      return 3.0; // 3x bonus for collections 4-5
+    } else if (dailyCollections <= 7) {
+      return 2.0; // 2x bonus for collections 6-7
+    } else if (dailyCollections <= 10) {
+      return 1.5; // 1.5x bonus for collections 8-10
     }
-    return 1.0; // Normal rewards after 50 collections
+    return 1.0; // Normal rewards after 10 collections
   }
 
   static collectResources(locationId: string, type: "galaxy" | "system" | "planet", coordinates: string, planetData?: PlanetData): ResourceReward | null {
@@ -157,11 +159,14 @@ export class SpaceshipResourceCollectionManager {
     const upgrade = UnifiedSpaceshipStorage.getUpgrade();
     const shipMultiplier = upgrade.multiplier;
     
-    // Apply streak multiplier
+    // Mark location as collected (this updates streak and daily collections)
+    UnifiedSpaceshipStorage.markLocationCollected(locationId);
+    
+    // Apply streak multiplier (get updated info after marking collection)
     const streakInfo = UnifiedSpaceshipStorage.getCollectionStreakInfo();
     let finalMultiplier = streakInfo.streakMultiplier;
     
-    // Apply Discovery Bonus (2x rewards for first 10 unique locations per day)
+    // Apply Discovery Bonus using updated daily collections count
     const discoveryBonus = this.getDiscoveryBonus(streakInfo.dailyCollections);
     finalMultiplier *= discoveryBonus;
     
@@ -175,9 +180,6 @@ export class SpaceshipResourceCollectionManager {
         deuterium: Math.floor(reward.deuterium * finalMultiplier),
       };
     }
-    
-    // Mark location as collected (this updates streak)
-    UnifiedSpaceshipStorage.markLocationCollected(locationId);
     
     // Add resources to spaceship
     UnifiedSpaceshipStorage.addResources(reward);
@@ -258,12 +260,14 @@ export class SpaceshipResourceCollectionManager {
       const discoveryBonusDiv = document.createElement("div");
       discoveryBonusDiv.className = "text-xs text-yellow-300 mt-1";
       
-      if (bonusInfo.discoveryBonus >= 2.5) {
-        discoveryBonusDiv.textContent = "🎉 Daily Bonus: 2.5x (First 15 discoveries today)";
-      } else if (bonusInfo.discoveryBonus >= 1.8) {
-        discoveryBonusDiv.textContent = "✨ Daily Bonus: 1.8x (Discoveries 16-35 today)";
-      } else if (bonusInfo.discoveryBonus >= 1.3) {
-        discoveryBonusDiv.textContent = "🌟 Daily Bonus: 1.3x (Discoveries 36-50 today)";
+      if (bonusInfo.discoveryBonus >= 5.0) {
+        discoveryBonusDiv.textContent = "🎉 Daily Bonus: 5x (First 3 discoveries today)";
+      } else if (bonusInfo.discoveryBonus >= 3.0) {
+        discoveryBonusDiv.textContent = "✨ Daily Bonus: 3x (Discoveries 4-5 today)";
+      } else if (bonusInfo.discoveryBonus >= 2.0) {
+        discoveryBonusDiv.textContent = "🌟 Daily Bonus: 2x (Discoveries 6-7 today)";
+      } else if (bonusInfo.discoveryBonus >= 1.5) {
+        discoveryBonusDiv.textContent = "⭐ Daily Bonus: 1.5x (Discoveries 8-10 today)";
       }
       
       contentDiv.appendChild(discoveryBonusDiv);

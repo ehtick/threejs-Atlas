@@ -66,14 +66,15 @@ const ResourceCollectionButton: React.FC<ResourceCollectionButtonProps> = ({
     const reward = SpaceshipResourceCollectionManager.collectResources(fullLocationId, locationType, coordinates, planetData);
     
     if (reward) {
-      // Get streak info for proper bonus display
+      // Get streak info for proper bonus display (after collection has been processed)
       const { UnifiedSpaceshipStorage } = await import("../Utils/UnifiedSpaceshipStorage");
       const streakInfo = UnifiedSpaceshipStorage.getCollectionStreakInfo();
       
-      // Calculate discovery bonus
-      const discoveryBonus = collectionCount <= 15 ? 2.5 : 
-                            collectionCount <= 35 ? 1.8 : 
-                            collectionCount <= 50 ? 1.3 : 1.0;
+      // Calculate discovery bonus based on current daily collections (which now includes this collection)
+      const discoveryBonus = streakInfo.dailyCollections <= 3 ? 5.0 : 
+                            streakInfo.dailyCollections <= 5 ? 3.0 : 
+                            streakInfo.dailyCollections <= 7 ? 2.0 : 
+                            streakInfo.dailyCollections <= 10 ? 1.5 : 1.0;
       
       // Show consolidated notification with all bonus info
       SpaceshipResourceCollectionManager.showCollectionSuccess(reward, locationType, {

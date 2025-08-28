@@ -338,10 +338,11 @@ export class UnifiedSpaceshipStorage {
     // Check if this is the first collection today
     if (today !== lastCollectionDay) {
       // New day collection
+      const oldLastCollectionTime = data.t.lc; // Save the old timestamp before updating
       data.t.lc = now;
       
-      if (lastCollectionDay) {
-        const lastDate = new Date(data.t.lc!);
+      if (lastCollectionDay && oldLastCollectionTime) {
+        const lastDate = new Date(oldLastCollectionTime);
         const todayDate = new Date(now);
         const daysDifference = Math.floor((todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
         
@@ -523,16 +524,9 @@ export class UnifiedSpaceshipStorage {
       r: data.r, // Resources stay the same
       u: data.u, // Upgrades stay the same  
       c: compactCollections, // Compacted collections
-      s: data.s // Stats stay the same
+      s: data.s, // Stats stay the same
+      t: data.t // Keep timestamps uncompressed for simplicity
     };
-
-    // Compact timestamps (keep second precision)
-    if (data.t) {
-      compactData.t = {};
-      if (data.t.lp) compactData.t.lp = Math.floor((now - data.t.lp) / 1000); // Seconds ago
-      if (data.t.ld) compactData.t.ld = Math.floor((now - data.t.ld) / 1000); // Seconds ago  
-      if (data.t.lc) compactData.t.lc = Math.floor((now - data.t.lc) / 1000); // Seconds ago
-    }
 
     return compactData;
   }
@@ -560,26 +554,9 @@ export class UnifiedSpaceshipStorage {
       r: compactData.r || { a: 300, e: 200, d: 250 }, // Match new defaults
       u: compactData.u || { l: 1, ef: 1.0, rn: 500, st: 1000, m: 1.0 }, // Match new defaults
       c: expandedCollections,
-      t: {},
+      t: compactData.t || {}, // Use timestamps directly (uncompressed)
       s: compactData.s || { tc: 0, tr: { a: 0, e: 0, d: 0 }, tt: 0, cs: 0, dc: 0 }
     };
-
-    // Expand timestamps with legacy support
-    if (compactData.t) {
-      if (compactData.t.lp) {
-        const value = compactData.t.lp;
-        // If value is very large, it's probably already absolute timestamp
-        expandedData.t.lp = value > 1000000000 ? value : now - (value * 1000);
-      }
-      if (compactData.t.ld) {
-        const value = compactData.t.ld;
-        expandedData.t.ld = value > 1000000000 ? value : now - (value * 1000);
-      }
-      if (compactData.t.lc) {
-        const value = compactData.t.lc;
-        expandedData.t.lc = value > 1000000000 ? value : now - (value * 1000);
-      }
-    }
 
     return expandedData;
   }
