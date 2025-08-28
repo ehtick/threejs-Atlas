@@ -247,13 +247,6 @@ export class SpaceshipResourceCollectionManager {
     contentDiv.appendChild(titleDiv);
     contentDiv.appendChild(resourceDiv);
 
-    // Add first time bonus information
-    if (isFirstTime) {
-      const firstTimeDiv = document.createElement("div");
-      firstTimeDiv.className = "text-xs text-yellow-300 mt-1 font-bold";
-      firstTimeDiv.textContent = "⭐ First time on this planet!";
-      contentDiv.appendChild(firstTimeDiv);
-    }
 
     // Add bonus information using DOM manipulation  
     if (bonusInfo?.discoveryBonus > 1.0) {
@@ -288,6 +281,18 @@ export class SpaceshipResourceCollectionManager {
         : bonusInfo.shipMultiplier.toFixed(1);
       shipMultiplierDiv.textContent = `🚀 Ship Bonus: ${multiplierText}x`;
       contentDiv.appendChild(shipMultiplierDiv);
+    }
+
+    // Add "No bonus active" message if no bonuses are present
+    const hasAnyBonus = (bonusInfo?.discoveryBonus > 1.0) || 
+                       bonusInfo?.streakBonus || 
+                       (bonusInfo?.shipMultiplier && bonusInfo.shipMultiplier > 1.0);
+    
+    if (!hasAnyBonus) {
+      const noBonusDiv = document.createElement("div");
+      noBonusDiv.className = "text-xs text-gray-400 mt-1";
+      noBonusDiv.textContent = "No bonus active, improve your ship";
+      contentDiv.appendChild(noBonusDiv);
     }
 
     container.appendChild(emojiSpan);
