@@ -9,6 +9,7 @@ import { createPlanetEffectConfig, EffectsLogger } from "../3DEffects";
 import { DebugPlanetData, useDebugPlanetData } from "../Utils/DebugPlanetData";
 import { getPlanetBaseColor } from "../3DEffects/PlanetColorBase";
 import { PlanetLayerSystem } from "./PlanetLayerSystem";
+import { ToxicPostProcessingEffect, createToxicPostProcessingFromPythonData } from "../3DEffects/ToxicPostProcessing";
 
 const NORMALIZED_PLANET_RADIUS = 2.5;
 
@@ -115,6 +116,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
   const lastFrameTimeRef = useRef<number>(0);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const planetLayerSystemRef = useRef<PlanetLayerSystem | null>(null);
+  const toxicPostProcessingRef = useRef<ToxicPostProcessingEffect | null>(null);
 
   const realCurrentTime = Math.floor(Date.now() / 1000);
   const [timeOffset, setTimeOffset] = useState(0);
@@ -131,6 +133,11 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
     const containerHeight = container.clientHeight || 400;
 
     rendererRef.current.setSize(containerWidth, containerHeight);
+
+    // Redimensionar post-procesamiento tóxico si está activo
+    if (toxicPostProcessingRef.current) {
+      toxicPostProcessingRef.current.setSize(containerWidth, containerHeight);
+    }
 
     cameraRef.current.aspect = containerWidth / containerHeight;
     cameraRef.current.updateProjectionMatrix();
@@ -152,10 +159,76 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
 
       const newEffects = effectRegistry.createEffectsFromPythonPlanetData(planetData, NORMALIZED_PLANET_RADIUS, planetMeshRef.current, sceneRef.current, planetLayerSystemRef.current);
 
+      // Crear post-procesamiento específico para planetas tóxicos
+      const planetType = planetData.planet_info?.type || planetData.surface_elements?.planet_type || planetData.planet_type;
+      console.log("DEBUG: Planet type detected:", planetType, "Full planet data:", planetData);
+      
+      // Detectar si debemos forzar modo toxic (para testing)
+      const urlParams = new URLSearchParams(window.location.search);
+      const forceToxic = urlParams.get('toxic') === 'true';
+      const shouldApplyToxicEffects = (planetType === "toxic" || planetType === "Toxic") || forceToxic;
+      
+      console.log("DEBUG: Should apply toxic effects:", shouldApplyToxicEffects, "Force toxic:", forceToxic);
+      
+      // Activar para planetas toxic o si se fuerza con parámetro URL
+      if (shouldApplyToxicEffects && sceneRef.current && cameraRef.current && rendererRef.current) {
+        try {
+          const toxicPostProcessing = createToxicPostProcessingFromPythonData(
+            sceneRef.current,
+            cameraRef.current,
+            rendererRef.current,
+            NORMALIZED_PLANET_RADIUS,
+            {
+              planet_type: "toxic",
+              toxic_intensity: 0.8, // Valor procedural basado en datos del planeta
+              atmosphere_thickness: 0.6
+            },
+            planetData.seeds?.planet_seed
+          );
+
+          if (toxicPostProcessing) {
+            toxicPostProcessingRef.current = toxicPostProcessing;
+            
+            // Crear EffectInstance y registrarlo correctamente en el effectRegistry
+            const toxicPostProcessingInstance: EffectInstance = {
+              id: `effect_toxic_postprocessing_${Date.now()}`,
+              type: "toxic_post_processing",
+              effect: {
+                dispose: () => toxicPostProcessing.dispose(),
+                update: (deltaTime: number) => toxicPostProcessing.update(deltaTime),
+                updateUniforms: (deltaTime: number) => toxicPostProcessing.update(deltaTime),
+                addToScene: () => {}, // Ya está integrado en el renderer
+                apply: () => {}, // Ya está aplicado
+              } as any,
+              priority: 100, // Prioridad alta para post-procesamiento
+              enabled: true,
+              name: "Toxic Post-Processing (Bloom + Godrays + Chromatic Aberration)",
+            };
+            
+            // Registrar el efecto en el registry para que el control funcione (acceso directo al Map privado)
+            (effectRegistry as any).effects.set(toxicPostProcessingInstance.id, toxicPostProcessingInstance);
+            
+            // Agregar al array de efectos activos para que aparezca en la interfaz
+            newEffects.push(toxicPostProcessingInstance);
+            
+            EffectsLogger.log("Created toxic post-processing effects");
+          }
+        } catch (error) {
+          EffectsLogger.error("Error creating toxic post-processing", error);
+        }
+      } else {
+        // Limpiar post-procesamiento si el planeta no es tóxico
+        if (toxicPostProcessingRef.current) {
+          toxicPostProcessingRef.current.dispose();
+          toxicPostProcessingRef.current = null;
+        }
+      }
+
       // Log de efectos activos
       console.log(
         `Planet: ${planetData.planet_info?.name}, Effects:`,
-        newEffects.map((e) => e.type)
+        newEffects.map((e) => e.type),
+        toxicPostProcessingRef.current ? "with toxic post-processing" : "no post-processing"
       );
 
       setEffects(newEffects);
@@ -842,6 +915,12 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
       } catch (error) {}
     });
 
+    // Limpiar post-procesamiento tóxico
+    if (toxicPostProcessingRef.current) {
+      toxicPostProcessingRef.current.dispose();
+      toxicPostProcessingRef.current = null;
+    }
+
     activeEffectsRef.current = [];
     setEffects([]);
   };
@@ -908,9 +987,32 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
       }
     });
 
+    // Verificar si el post-procesamiento tóxico está habilitado directamente desde el registry
+    const toxicPostProcessingEffect = Array.from((effectRegistry as any).effects.values()).find(
+      (effect: any) => effect.type === "toxic_post_processing"
+    );
+    const toxicPostProcessingEnabled = toxicPostProcessingEffect?.enabled || false;
+
+    // Actualizar post-procesamiento tóxico si está activo y habilitado
+    if (toxicPostProcessingRef.current && toxicPostProcessingEnabled) {
+      toxicPostProcessingRef.current.update(deltaTime);
+      
+      // Actualizar posición de luz para godrays
+      if (sunLightRef.current) {
+        toxicPostProcessingRef.current.updateLightPosition(sunLightRef.current.position, cameraRef.current!);
+      }
+    }
+
     if (rendererRef.current && sceneRef.current && cameraRef.current) {
       const renderStartTime = performance.now();
-      rendererRef.current.render(sceneRef.current, cameraRef.current);
+      
+      // Usar post-procesamiento tóxico si está disponible Y habilitado, sino renderizado normal
+      if (toxicPostProcessingRef.current && toxicPostProcessingEnabled) {
+        toxicPostProcessingRef.current.render();
+      } else {
+        rendererRef.current.render(sceneRef.current, cameraRef.current);
+      }
+      
       const renderTime = performance.now() - renderStartTime;
 
       if (currentTime - lastFrameTimeRef.current > 5000) {

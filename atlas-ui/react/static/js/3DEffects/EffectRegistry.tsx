@@ -17,6 +17,7 @@ import { AtmosphereCloudsEffect, createAtmosphereCloudsFromPythonData, Atmospher
 import { LandMassesEffect, createLandMassesFromPythonData, createTransparentLandMassesForIcyPlanet, LandMassesParams } from "./LandMasses";
 import { IcyFeaturesEffect, createIcyFeaturesFromPythonData } from "./IcyFeatures";
 import { TundraSnowflakesEffect, createTundraSnowflakesFromPythonData, createCarbonDustParticlesFromPythonData, createDesertSandstormsFromPythonData, createToxicParticlesFromPythonData } from "./TundraSnowflakes";
+import { ToxicPostProcessingEffect, createToxicPostProcessingFromPythonData } from "./ToxicPostProcessing";
 import { RiverLinesEffect, createRiverLinesFromPythonData } from "./RiverLines";
 
 // Efectos anómalos
@@ -138,6 +139,9 @@ export enum EffectType {
 
   // Efectos de clima
   TUNDRA_SNOWFLAKES = "tundra_snowflakes",
+
+  // Efectos de post-procesamiento
+  TOXIC_POST_PROCESSING = "toxic_post_processing",
 
   // Efectos geológicos
   RIVER_LINES = "river_lines",
@@ -323,6 +327,13 @@ export class EffectRegistry {
     this.registerEffect(EffectType.TUNDRA_SNOWFLAKES, {
       create: (params, planetRadius) => new TundraSnowflakesEffect(planetRadius, params),
       fromPythonData: (data, planetRadius) => createTundraSnowflakesFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed),
+    });
+
+    // Nota: TOXIC_POST_PROCESSING se maneja especialmente en ModularPlanetRenderer
+    // ya que requiere scene, camera y renderer que no están disponibles aquí
+    this.registerEffect(EffectType.TOXIC_POST_PROCESSING, {
+      create: (params, planetRadius) => null, // Se crea en ModularPlanetRenderer
+      fromPythonData: (data, planetRadius) => null, // Se crea en ModularPlanetRenderer
     });
 
     this.registerEffect(EffectType.RIVER_LINES, {

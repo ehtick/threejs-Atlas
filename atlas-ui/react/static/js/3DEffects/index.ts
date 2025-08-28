@@ -45,6 +45,9 @@ export type { LandMassesParams } from "./LandMasses";
 export { TundraSnowflakesEffect, createTundraSnowflakesFromPythonData, createDesertSandstormsFromPythonData, createToxicParticlesFromPythonData } from "./TundraSnowflakes";
 export type { TundraSnowflakesParams } from "./TundraSnowflakes";
 
+export { ToxicPostProcessingEffect, createToxicPostProcessingFromPythonData } from "./ToxicPostProcessing";
+export type { ToxicPostProcessingParams } from "./ToxicPostProcessing";
+
 export { RiverLinesEffect, createRiverLinesFromPythonData, createRiverLinesWithPreset } from "./RiverLines";
 export type { RiverLinesParams, RiverSegment } from "./RiverLines";
 
@@ -134,6 +137,7 @@ export const AVAILABLE_EFFECTS = [
   "bioluminescence",
   "thermal_emissions",
   "tundra_snowflakes",
+  "toxic_post_processing",
   "river_lines",
   "cave_surface_holes",
   "radiation_pulse",
