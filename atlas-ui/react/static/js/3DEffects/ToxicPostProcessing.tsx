@@ -30,7 +30,7 @@ export interface ToxicPostProcessingParams {
  * Rangos procedurales para efectos de post-procesamiento tóxico
  * Permite variación significativa entre planetas
  */
-const TOXIC_PROCEDURAL_RANGES = {
+const PROCEDURAL_RANGES = {
   bloomStrength: {
     min: 0.3,    // Bloom sutil
     max: 0.6,    // Bloom intenso (2x)
@@ -246,14 +246,14 @@ export class ToxicPostProcessingEffect {
 
     // Generar parámetros procedurales usando los rangos definidos
     this.proceduralParams = {
-      bloomStrength: this.rng.uniform(TOXIC_PROCEDURAL_RANGES.bloomStrength.min, TOXIC_PROCEDURAL_RANGES.bloomStrength.max),
-      bloomRadius: this.rng.uniform(TOXIC_PROCEDURAL_RANGES.bloomRadius.min, TOXIC_PROCEDURAL_RANGES.bloomRadius.max),
-      bloomThreshold: this.rng.uniform(TOXIC_PROCEDURAL_RANGES.bloomThreshold.min, TOXIC_PROCEDURAL_RANGES.bloomThreshold.max),
-      godrayIntensity: this.rng.uniform(TOXIC_PROCEDURAL_RANGES.godrayIntensity.min, TOXIC_PROCEDURAL_RANGES.godrayIntensity.max),
-      chromaticAberrationIntensity: this.rng.uniform(TOXIC_PROCEDURAL_RANGES.chromaticAberrationIntensity.min, TOXIC_PROCEDURAL_RANGES.chromaticAberrationIntensity.max),
-      timeSpeed: this.rng.uniform(TOXIC_PROCEDURAL_RANGES.timeSpeed.min, TOXIC_PROCEDURAL_RANGES.timeSpeed.max),
-      breathingAmplitude: this.rng.uniform(TOXIC_PROCEDURAL_RANGES.breathingAmplitude.min, TOXIC_PROCEDURAL_RANGES.breathingAmplitude.max),
-      pulseAmplitude: this.rng.uniform(TOXIC_PROCEDURAL_RANGES.pulseAmplitude.min, TOXIC_PROCEDURAL_RANGES.pulseAmplitude.max),
+      bloomStrength: this.rng.uniform(PROCEDURAL_RANGES.bloomStrength.min, PROCEDURAL_RANGES.bloomStrength.max),
+      bloomRadius: this.rng.uniform(PROCEDURAL_RANGES.bloomRadius.min, PROCEDURAL_RANGES.bloomRadius.max),
+      bloomThreshold: this.rng.uniform(PROCEDURAL_RANGES.bloomThreshold.min, PROCEDURAL_RANGES.bloomThreshold.max),
+      godrayIntensity: this.rng.uniform(PROCEDURAL_RANGES.godrayIntensity.min, PROCEDURAL_RANGES.godrayIntensity.max),
+      chromaticAberrationIntensity: this.rng.uniform(PROCEDURAL_RANGES.chromaticAberrationIntensity.min, PROCEDURAL_RANGES.chromaticAberrationIntensity.max),
+      timeSpeed: this.rng.uniform(PROCEDURAL_RANGES.timeSpeed.min, PROCEDURAL_RANGES.timeSpeed.max),
+      breathingAmplitude: this.rng.uniform(PROCEDURAL_RANGES.breathingAmplitude.min, PROCEDURAL_RANGES.breathingAmplitude.max),
+      pulseAmplitude: this.rng.uniform(PROCEDURAL_RANGES.pulseAmplitude.min, PROCEDURAL_RANGES.pulseAmplitude.max),
     };
 
     // Color tóxico procedural con mayor variación
@@ -376,28 +376,28 @@ export function createToxicPostProcessingFromPythonData(
 
   // Calcular parámetros dentro de los rangos, pero influenciados por datos del planeta
   const bloomStrength = rng.uniform(
-    TOXIC_PROCEDURAL_RANGES.bloomStrength.min * intensityMultiplier,
-    TOXIC_PROCEDURAL_RANGES.bloomStrength.max * intensityMultiplier
+    PROCEDURAL_RANGES.bloomStrength.min * intensityMultiplier,
+    PROCEDURAL_RANGES.bloomStrength.max * intensityMultiplier
   );
 
   const bloomRadius = rng.uniform(
-    TOXIC_PROCEDURAL_RANGES.bloomRadius.min,
-    TOXIC_PROCEDURAL_RANGES.bloomRadius.max
+    PROCEDURAL_RANGES.bloomRadius.min,
+    PROCEDURAL_RANGES.bloomRadius.max
   );
 
   const bloomThreshold = rng.uniform(
-    TOXIC_PROCEDURAL_RANGES.bloomThreshold.min,
-    TOXIC_PROCEDURAL_RANGES.bloomThreshold.max
+    PROCEDURAL_RANGES.bloomThreshold.min,
+    PROCEDURAL_RANGES.bloomThreshold.max
   );
 
   const chromaticIntensity = rng.uniform(
-    TOXIC_PROCEDURAL_RANGES.chromaticAberrationIntensity.min * intensityMultiplier,
-    TOXIC_PROCEDURAL_RANGES.chromaticAberrationIntensity.max * intensityMultiplier
+    PROCEDURAL_RANGES.chromaticAberrationIntensity.min * intensityMultiplier,
+    PROCEDURAL_RANGES.chromaticAberrationIntensity.max * intensityMultiplier
   );
 
   const godrayIntensity = rng.uniform(
-    TOXIC_PROCEDURAL_RANGES.godrayIntensity.min * atmosphereMultiplier,
-    TOXIC_PROCEDURAL_RANGES.godrayIntensity.max * atmosphereMultiplier
+    PROCEDURAL_RANGES.godrayIntensity.min * atmosphereMultiplier,
+    PROCEDURAL_RANGES.godrayIntensity.max * atmosphereMultiplier
   );
 
   return new ToxicPostProcessingEffect(scene, camera, renderer, planetRadius, {
