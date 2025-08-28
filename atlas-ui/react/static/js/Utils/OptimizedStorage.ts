@@ -1,4 +1,5 @@
 // Optimized localStorage system for Atlas universe exploration data
+import { DailyChallengesManager } from './DailyChallenges';
 
 
 // Optimized data structure
@@ -130,6 +131,9 @@ export class OptimizedAtlasStorage {
       visitedIndices.push(planetIndex);
       data.g[galaxyHash][systemKey] = this.indicesToBitmap(visitedIndices);
       this.saveData(data);
+      
+      // Update Daily Challenges progress when a new planet is visited
+      DailyChallengesManager.updateProgress();
     }
   }
   
@@ -141,6 +145,9 @@ export class OptimizedAtlasStorage {
       data.gv[galaxyHash] = true;
       console.log(`🌌 Galaxy marked as visited: ${coordinates} (hash: ${galaxyHash})`);
       this.saveData(data);
+      
+      // Update Daily Challenges progress when a new galaxy is visited
+      DailyChallengesManager.updateProgress();
     }
   }
   
@@ -159,6 +166,9 @@ export class OptimizedAtlasStorage {
     if (!data.g[galaxyHash][systemKey]) {
       data.g[galaxyHash][systemKey] = '';
       this.saveData(data);
+      
+      // Update Daily Challenges progress when a new system is visited
+      DailyChallengesManager.updateProgress();
     }
   }
   

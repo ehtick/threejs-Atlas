@@ -139,7 +139,6 @@ export class DailyChallengesManager {
   public static updateProgress(): DailyChallenges {
     const challenges = this.getTodaysChallenges();
     const currentStats = this.getCurrentStats();
-    const wasAllCompleted = challenges.challenges.every(c => c.completed);
     
     // Update current progress
     challenges.challenges.forEach(challenge => {
@@ -201,4 +200,5 @@ export class DailyChallengesManager {
       multiplier: Math.round(baseMultiplier * 100) / 100 // Round to 2 decimals for display
     };
   }
+
 }
