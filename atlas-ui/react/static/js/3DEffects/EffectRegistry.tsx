@@ -2795,6 +2795,7 @@ export class EffectRegistry {
           metallic_surface_layer: "metallicSurface",
           diamond_surface_layer: "diamondSurface",
           rocky_terrain_layer: "rockyTerrain",
+          savannah_terrain_layer: "savannahTerrain",
           icy_terrain_layer: "icyTerrain",
           aquifer_water: "aquiferWater",
           ocean_currents: "oceanCurrents",
