@@ -44,7 +44,7 @@ export class UnifiedSpaceshipStorage {
   private static readonly COLLECTION_COOLDOWNS = {
     planet: 15 * 60 * 1000,    // 15 minutes - faster for engagement
     system: 45 * 60 * 1000,    // 45 minutes - reduced for better flow
-    galaxy: 90 * 60 * 1000     // 90 minutes - accessible but meaningful
+    galaxy: 8 * 60 * 60 * 1000 // 8 hours - valuable rewards require patience
   };
   private static readonly PASSIVE_INTERVAL = 1 * 60 * 1000; // 1 minute for immediate feedback
   
