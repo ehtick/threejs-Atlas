@@ -1024,7 +1024,97 @@ class PlanetTypeTranslators:
     
     def translate_savannah(self, planet_radius: int, rng: random.Random, 
                           seed: int, planet_name: str) -> Dict[str, Any]:
-        return {"type": "savannah"}
+        """Translate Savannah planet elements - orangish terrain with large clouds and colored patches"""
+        center_x, center_y = 200, 200  # Pillow center coordinates
+        
+        # SAVANNAH GREEN PATCHES - using the orangish/brownish colors from Pillow implementation
+        # Base colors from the Pillow savannah implementation
+        savannah_colors = [
+            [244/255.0, 164/255.0, 96/255.0],   # Main savannah color (sandybrown) #F4A460
+            [199/255.0, 113/255.0, 40/255.0],   # From generate_abstract_land layer 3
+            [110/255.0, 59/255.0, 16/255.0],    # From generate_abstract_land layer 2
+            [139/255.0, 69/255.0, 19/255.0],    # From draw_cluster (saddle brown)
+            [222/255.0, 184/255.0, 135/255.0],  # Lighter burlywood variation
+            [205/255.0, 133/255.0, 63/255.0],   # Peru color variation
+        ]
+        
+        num_green_patches = rng.randint(12, 20)  # More patches for varied terrain
+        green_patches = []
+        
+        for _ in range(num_green_patches):
+            patch_size = rng.randint(8, 60)  # Varied patch sizes
+            
+            # Generate uniform 3D position on sphere
+            theta = rng.uniform(0, 2 * math.pi)
+            phi = math.acos(rng.uniform(-1, 1))
+            
+            patch_3d_x = math.sin(phi) * math.cos(theta)
+            patch_3d_y = math.sin(phi) * math.sin(theta)
+            patch_3d_z = math.cos(phi)
+            
+            # Also maintain 2D coordinates for compatibility
+            patch_angle = rng.uniform(0, 2 * math.pi)
+            patch_distance = rng.uniform(0.4 * planet_radius, planet_radius)
+            
+            patch_x = center_x + patch_distance * math.cos(patch_angle)
+            patch_y = center_y + patch_distance * math.sin(patch_angle)
+            
+            normalized_coords = self.common_utils.normalize_coordinates(
+                patch_x, patch_y, center_x, center_y, planet_radius
+            )
+            
+            # Choose random savannah color with moderate opacity
+            patch_color = rng.choice(savannah_colors) + [rng.uniform(0.6, 0.9)]  # 60-90% opacity
+            
+            green_patches.append({
+                "position": normalized_coords,
+                "position_3d": [patch_3d_x, patch_3d_y, patch_3d_z],
+                "size": patch_size / planet_radius,
+                "color": patch_color,
+                "sides": rng.randint(15, 25)  # Organic shapes
+            })
+        
+        # LARGE CLOUDS - similar to Arid planets but using savannah colors
+        num_clouds = rng.randint(6, 12)  # More clouds for atmosphere
+        clouds = []
+        
+        for i in range(num_clouds):
+            # Large clouds as requested
+            cloud_radius = rng.randint(30, int(planet_radius * 0.4))  # Larger clouds (30-80 pixels)
+            max_offset = planet_radius - cloud_radius
+            cloud_x = center_x + rng.randint(-max_offset, max_offset)
+            cloud_y = center_y + rng.randint(-max_offset, max_offset)
+            
+            normalized_coords = self.common_utils.normalize_coordinates(
+                cloud_x, cloud_y, center_x, center_y, planet_radius
+            )
+            
+            clouds.append({
+                "position": normalized_coords,
+                "radius": cloud_radius / planet_radius,
+                "color": [244/255.0, 164/255.0, 96/255.0, 0.8],  # Sandybrown with transparency
+                "seed": f"{planet_name}_cloud_{i}"
+            })
+        
+        return {
+            "type": "savannah",
+            "green_patches": green_patches,  # LandMasses will use this for terrain variation
+            "clouds": clouds,  # AtmosphereClouds will use this for large cloud formations
+            "surface_properties": {
+                "dryness": rng.uniform(0.6, 0.8),        # Semi-arid characteristics
+                "vegetation_density": rng.uniform(0.3, 0.6),  # Sparse to moderate vegetation
+                "soil_color_variation": rng.uniform(0.7, 0.9),  # High color variation
+                "wind_erosion": rng.uniform(0.4, 0.7),    # Wind patterns affecting terrain
+            },
+            "debug": {
+                "original_planet_radius": planet_radius,
+                "center_x": center_x, "center_y": center_y,
+                "cloud_count": num_clouds,
+                "terrain_patch_count": num_green_patches,
+                "largest_patch_size": max([lm["size"] for lm in green_patches]) if green_patches else 0,
+                "savannah_coverage": "mixed_terrain_coverage"
+            }
+        }
     
     def translate_cave(self, planet_radius: int, rng: random.Random, 
                       seed: int, planet_name: str) -> Dict[str, Any]:

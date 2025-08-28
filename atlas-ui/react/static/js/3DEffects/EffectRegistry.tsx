@@ -1393,6 +1393,59 @@ export class EffectRegistry {
             }
             break;
 
+          case "savannah":
+            // Savannah planets: orangish terrain with large atmospheric clouds and terrain patches
+            
+            // 1. Add large atmospheric clouds if available from Python data
+            if (surface.clouds && surface.clouds.length > 0) {
+              const savannahCloudsEffect = createAtmosphereCloudsFromPythonData(
+                planetRadius,
+                surface,
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000,
+                pythonData.timing?.cosmic_origin_time
+              );
+              
+              if (savannahCloudsEffect) {
+                const savannahCloudsInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "atmosphere_clouds",
+                  effect: savannahCloudsEffect,
+                  priority: 15,
+                  enabled: true,
+                  name: "Savannah Atmospheric Clouds",
+                };
+                
+                this.effects.set(savannahCloudsInstance.id, savannahCloudsInstance);
+                effects.push(savannahCloudsInstance);
+                savannahCloudsEffect.addToScene(scene, mesh.position);
+              }
+            }
+            
+            // 2. Add terrain patches (green_patches) with savannah colors
+            if (surface.green_patches && surface.green_patches.length > 0) {
+              const savannahLandMassesEffect = createLandMassesFromPythonData(
+                planetRadius,
+                surface,
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 6000
+              );
+              
+              if (savannahLandMassesEffect) {
+                const savannahLandMassesInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "land_masses",
+                  effect: savannahLandMassesEffect,
+                  priority: 5,
+                  enabled: true,
+                  name: "Savannah Terrain",
+                };
+                
+                this.effects.set(savannahLandMassesInstance.id, savannahLandMassesInstance);
+                effects.push(savannahLandMassesInstance);
+                savannahLandMassesEffect.addToScene(scene, mesh.position);
+              }
+            }
+            break;
+
           case "desert":
             // Desert planets: sandy atmospheric clouds and oasis-like land masses
             
