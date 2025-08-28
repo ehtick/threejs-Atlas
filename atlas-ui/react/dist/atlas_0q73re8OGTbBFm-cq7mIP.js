@@ -1,10 +1,11 @@
-import{S as h}from"./atlas_BJ-3dIBoTMvLRTvbW4jvB.js";import{C as s,S as p,F as g,V as d}from"./atlas_CqUMNY_RyRklhCsbOI68T.js";const v={DEFAULT:{TERRAIN_HEIGHT:{min:.02,max:.05},TERRAIN_COMPLEXITY:{min:2,max:4},EROSION_STRENGTH:{min:.4,max:.7},OPACITY:{min:.6,max:.8}},SAVANNAH:{TERRAIN_HEIGHT:{min:.03,max:.08},TERRAIN_COMPLEXITY:{min:3,max:6},EROSION_STRENGTH:{min:.6,max:.9},OPACITY:{min:.5,max:.7}}};class c{layerMesh;material;params;layerSystem;static vertexShader=`
+import{S as h}from"./atlas_BJ-3dIBoTMvLRTvbW4jvB.js";import{C as s,S as p,F as d,V as v}from"./atlas_CqUMNY_RyRklhCsbOI68T.js";const f={DEFAULT:{TERRAIN_HEIGHT:{min:.02,max:.05},TERRAIN_COMPLEXITY:{min:2,max:4},EROSION_STRENGTH:{min:.4,max:.7},OPACITY:{min:.6,max:.8}},SAVANNAH:{TERRAIN_HEIGHT:{min:.03,max:.08},TERRAIN_COMPLEXITY:{min:3,max:6},EROSION_STRENGTH:{min:.6,max:.9},OPACITY:{min:.5,max:.7}}};class c{layerMesh;material;params;layerSystem;static vertexShader=`
     uniform float terrainHeight;
     uniform float terrainComplexity;
     uniform float erosionStrength;
     
     varying vec3 vPosition;
     varying vec3 vNormal;
+    varying vec3 vWorldPosition;
     varying vec2 vUv;
     varying float vElevation;
     
@@ -50,6 +51,8 @@ import{S as h}from"./atlas_BJ-3dIBoTMvLRTvbW4jvB.js";import{C as s,S as p,F as g
     
     void main() {
       vPosition = position;
+      vec4 worldPos = modelMatrix * vec4(position, 1.0);
+      vWorldPosition = worldPos.xyz;
       vUv = uv;
       
       // Generate terrain height
@@ -78,9 +81,11 @@ import{S as h}from"./atlas_BJ-3dIBoTMvLRTvbW4jvB.js";import{C as s,S as p,F as g
     uniform vec3 terrainColor;
     uniform float opacity;
     uniform vec3 lightDirection;
+    uniform vec3 lightPosition;
     
     varying vec3 vPosition;
     varying vec3 vNormal;
+    varying vec3 vWorldPosition;
     varying vec2 vUv;
     varying float vElevation;
     
@@ -96,7 +101,6 @@ import{S as h}from"./atlas_BJ-3dIBoTMvLRTvbW4jvB.js";import{C as s,S as p,F as g
     
     void main() {
       vec3 normal = normalize(vNormal);
-      vec3 lightDir = normalize(lightDirection);
       
       // Height-based coloring (like the Three.js terrain example)
       vec3 lowColor = terrainColor * 0.6;  // Valley color (darker)
@@ -126,21 +130,29 @@ import{S as h}from"./atlas_BJ-3dIBoTMvLRTvbW4jvB.js";import{C as s,S as p,F as g
         color *= 0.8;
       }
       
-      // Calculate lighting with enhanced shadows
+      // Calculate light direction using position if available (like PlanetLayerSystem)
+      vec3 lightDir;
+      if (length(lightPosition) > 0.0) {
+        lightDir = normalize(lightPosition - vWorldPosition);
+      } else {
+        lightDir = normalize(-lightDirection);
+      }
+      
+      // Calculate lighting (simpler version, closer to original)
       float dotNL = dot(normal, lightDir);
       float lighting = max(0.0, dotNL);
       
-      // Ambient light + directional light
-      color *= 0.5 + 0.5 * lighting;
+      // Reduce ambient light to make dark areas darker but keep terrain visible
+      color *= 0.25 + 0.75 * lighting;
       
       // Add atmospheric perspective (distant areas slightly bluer/lighter)
       float viewDistance = length(vPosition);
       vec3 atmosphereColor = vec3(0.7, 0.75, 0.85);
       color = mix(color, atmosphereColor, min(0.3, viewDistance * 0.0001));
       
-      // Transparency based on terrain feature visibility
+      // Restore original opacity calculation
       float alpha = (0.5 + 0.5 * vElevation) * opacity;
       
       gl_FragColor = vec4(color, alpha);
     }
-  `;constructor(r,o={}){this.layerSystem=r;const a=o.seed||Math.floor(Math.random()*1e6),i=new h(a),n=o.color instanceof s?o.color:o.color?new s(o.color):new s(13935475),l=o.planetType||"SAVANNAH",e=v[l];this.params={color:n,terrainHeight:o.terrainHeight||i.uniform(e.TERRAIN_HEIGHT.min,e.TERRAIN_HEIGHT.max),terrainComplexity:o.terrainComplexity||i.uniform(e.TERRAIN_COMPLEXITY.min,e.TERRAIN_COMPLEXITY.max),erosionStrength:o.erosionStrength||i.uniform(e.EROSION_STRENGTH.min,e.EROSION_STRENGTH.max),opacity:o.opacity||i.uniform(e.OPACITY.min,e.OPACITY.max),seed:a,planetType:l},this.material=new p({vertexShader:c.vertexShader,fragmentShader:c.fragmentShader,uniforms:{terrainColor:{value:n},terrainHeight:{value:this.params.terrainHeight},terrainComplexity:{value:this.params.terrainComplexity},erosionStrength:{value:this.params.erosionStrength},opacity:{value:this.params.opacity},lightDirection:{value:new d(1,1,1).normalize()}},transparent:!0,side:g,depthWrite:!1}),this.layerMesh=this.layerSystem.addEffectLayer("savannahTerrain",this.material,this.layerSystem.getNextScaleFactor())}update(r){}dispose(){}}function T(f,r,o,a="DEFAULT"){const i=r.surface||{},n=r.planet_info?.base_color||i.base_color,l=o||Math.floor(Math.random()*1e6),e=new h(l+9e3);let m=a;a==="DEFAULT"&&r.surface_elements?.type&&r.surface_elements.type.toLowerCase()==="savannah"&&(m="SAVANNAH");const t=v[m];return new c(f,{color:n?new s(n):new s(13935475),terrainHeight:i.terrain_height||e.uniform(t.TERRAIN_HEIGHT.min,t.TERRAIN_HEIGHT.max),terrainComplexity:i.terrain_complexity||e.uniform(t.TERRAIN_COMPLEXITY.min,t.TERRAIN_COMPLEXITY.max),erosionStrength:i.erosion_strength||e.uniform(t.EROSION_STRENGTH.min,t.EROSION_STRENGTH.max),opacity:e.uniform(t.OPACITY.min,t.OPACITY.max),seed:l,planetType:m})}export{T as c};
+  `;constructor(o,i={}){this.layerSystem=o;const a=i.seed||Math.floor(Math.random()*1e6),t=new h(a),n=i.color instanceof s?i.color:i.color?new s(i.color):new s(13935475),l=i.planetType||"SAVANNAH",e=f[l];this.params={color:n,terrainHeight:i.terrainHeight||t.uniform(e.TERRAIN_HEIGHT.min,e.TERRAIN_HEIGHT.max),terrainComplexity:i.terrainComplexity||t.uniform(e.TERRAIN_COMPLEXITY.min,e.TERRAIN_COMPLEXITY.max),erosionStrength:i.erosionStrength||t.uniform(e.EROSION_STRENGTH.min,e.EROSION_STRENGTH.max),opacity:i.opacity||t.uniform(e.OPACITY.min,e.OPACITY.max),seed:a,planetType:l},this.material=new p({vertexShader:c.vertexShader,fragmentShader:c.fragmentShader,uniforms:{terrainColor:{value:n},terrainHeight:{value:this.params.terrainHeight},terrainComplexity:{value:this.params.terrainComplexity},erosionStrength:{value:this.params.erosionStrength},opacity:{value:this.params.opacity},lightDirection:{value:new v(1,1,1).normalize()},lightPosition:{value:new v(10,10,10)}},transparent:!0,side:d,depthWrite:!1}),this.layerMesh=this.layerSystem.addEffectLayer("savannahTerrain",this.material,this.layerSystem.getNextScaleFactor(),this)}update(o){}updateLightDirection(o){this.material.uniforms.lightDirection&&(this.material.uniforms.lightDirection.value=o.clone().normalize())}dispose(){}}function E(g,o,i,a="DEFAULT"){const t=o.surface||{},n=o.planet_info?.base_color||t.base_color,l=i||Math.floor(Math.random()*1e6),e=new h(l+9e3);let m=a;a==="DEFAULT"&&o.surface_elements?.type&&o.surface_elements.type.toLowerCase()==="savannah"&&(m="SAVANNAH");const r=f[m];return new c(g,{color:n?new s(n):new s(13935475),terrainHeight:t.terrain_height||e.uniform(r.TERRAIN_HEIGHT.min,r.TERRAIN_HEIGHT.max),terrainComplexity:t.terrain_complexity||e.uniform(r.TERRAIN_COMPLEXITY.min,r.TERRAIN_COMPLEXITY.max),erosionStrength:t.erosion_strength||e.uniform(r.EROSION_STRENGTH.min,r.EROSION_STRENGTH.max),opacity:e.uniform(r.OPACITY.min,r.OPACITY.max),seed:l,planetType:m})}export{E as c};
