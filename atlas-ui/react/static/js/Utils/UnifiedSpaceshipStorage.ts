@@ -1,5 +1,6 @@
 // Unified and optimized spaceship storage system
 // All spaceship-related data in a single, compressed localStorage key
+import { getItem, setItem, removeItem } from "./b64";
 
 export interface SpaceshipData {
   // Resources (compressed)
@@ -59,7 +60,7 @@ export class UnifiedSpaceshipStorage {
   // Get all spaceship data
   static getData(): SpaceshipData {
     try {
-      const stored = localStorage.getItem(this.STORAGE_KEY);
+      const stored = getItem(this.STORAGE_KEY);
       if (!stored) {
         this.saveData(this.DEFAULT_DATA);
         return { ...this.DEFAULT_DATA };
@@ -107,7 +108,7 @@ export class UnifiedSpaceshipStorage {
       
       // Compact the data before saving to reduce storage size
       const compactData = this.compactData(data);
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(compactData));
+      setItem(this.STORAGE_KEY, JSON.stringify(compactData));
     } catch (error) {
       console.error('Error saving spaceship data:', error);
       
@@ -434,7 +435,7 @@ export class UnifiedSpaceshipStorage {
       ];
       
       // Check if we need to migrate
-      const currentData = localStorage.getItem(this.STORAGE_KEY);
+      const currentData = getItem(this.STORAGE_KEY);
       if (currentData) return; // Already migrated
       
       // Try to migrate old data
@@ -482,7 +483,7 @@ export class UnifiedSpaceshipStorage {
       // Clean up old keys
       oldKeys.forEach(key => {
         try {
-          localStorage.removeItem(key);
+          localStorage.removeItem(key); // Keep legacy cleanup
         } catch (e) {}
       });
       
@@ -494,12 +495,12 @@ export class UnifiedSpaceshipStorage {
   
   // Reset (for debugging/testing)
   static reset(): void {
-    localStorage.removeItem(this.STORAGE_KEY);
+    removeItem(this.STORAGE_KEY);
   }
   
   // Get storage size
   static getStorageSize(): number {
-    const data = localStorage.getItem(this.STORAGE_KEY) || '{}';
+    const data = getItem(this.STORAGE_KEY) || '{}';
     return data.length;
   }
 

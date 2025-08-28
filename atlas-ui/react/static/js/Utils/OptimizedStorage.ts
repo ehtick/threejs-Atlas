@@ -1,5 +1,6 @@
 // Optimized localStorage system for Atlas universe exploration data
 import { DailyChallengesManager } from './DailyChallenges';
+import { ATLAS_KEYS, getItem, setItem, migrateToEncoded } from './b64';
 
 
 // Optimized data structure
@@ -23,15 +24,18 @@ const unhashGalaxyCoords = (hash: string): string => {
 
 // Main storage interface
 export class OptimizedAtlasStorage {
-  private static readonly STORAGE_KEY = '__atlasArchive';
+  private static readonly STORAGE_KEY = ATLAS_KEYS.ARCHIVE;
   private static readonly MAX_ENTRIES_PER_GALAXY = 1000; // Limit to prevent overflow
   
   private static getData(): OptimizedVisitData {
     try {
+      // Migrate to encoded storage on first access
+      this.migrateToEncodedStorage();
+      
       // Clean up legacy storage on first access
       this.cleanupLegacyStorage();
       
-      const data = localStorage.getItem(this.STORAGE_KEY);
+      const data = getItem(this.STORAGE_KEY);
       if (!data) return { g: {}, gv: {} };
       
       const parsed = JSON.parse(data);
@@ -57,9 +61,20 @@ export class OptimizedAtlasStorage {
     }
   }
   
+  private static migrateToEncodedStorage(): void {
+    try {
+      // Check if migration is needed (if old unencoded key exists)
+      if (localStorage.getItem(this.STORAGE_KEY)) {
+        migrateToEncoded();
+      }
+    } catch (error) {
+      console.error('Error migrating to encoded storage:', error);
+    }
+  }
+  
   private static saveData(data: OptimizedVisitData): void {
     try {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
+      setItem(this.STORAGE_KEY, JSON.stringify(data));
     } catch (error) {
       console.error('Error saving Atlas archive:', error);
     }
@@ -236,10 +251,10 @@ export class OptimizedAtlasStorage {
     
     // Calculate size of all Atlas-related localStorage keys
     let totalSize = 0;
-    const atlasKeys = ['__atlasArchive', '_atlasDailyChallenges', '_atlasLocations', '_atlasSpaceShip'];
+    const atlasKeys = Object.values(ATLAS_KEYS);
     
     atlasKeys.forEach(key => {
-      const value = localStorage.getItem(key);
+      const value = getItem(key);
       if (value) {
         totalSize += value.length;
       }

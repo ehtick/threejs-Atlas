@@ -1,4 +1,5 @@
 // Daily exploration challenges system
+import { getItem, setItem } from "./b64";
 
 export interface DailyChallenge {
   type: 'galaxies' | 'systems' | 'planets';
@@ -40,7 +41,7 @@ export class DailyChallengesManager {
 
   private static getStoredChallenges(): DailyChallenges | null {
     try {
-      const data = localStorage.getItem(this.STORAGE_KEY);
+      const data = getItem(this.STORAGE_KEY);
       return data ? JSON.parse(data) : null;
     } catch (error) {
       console.error('Error reading daily challenges:', error);
@@ -103,7 +104,7 @@ export class DailyChallengesManager {
   private static getCurrentStats(): { galaxies: number; systems: number; planets: number } {
     try {
       // Import the storage stats function
-      const atlasData = localStorage.getItem('__atlasArchive');
+      const atlasData = getItem('__atlasArchive');
       if (!atlasData) return { galaxies: 0, systems: 0, planets: 0 };
 
       const data = JSON.parse(atlasData);
@@ -174,7 +175,7 @@ export class DailyChallengesManager {
 
   private static saveChallenges(challenges: DailyChallenges): void {
     try {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(challenges));
+      setItem(this.STORAGE_KEY, JSON.stringify(challenges));
     } catch (error) {
       console.error('Error saving daily challenges:', error);
     }

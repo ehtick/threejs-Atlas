@@ -1,5 +1,6 @@
 // Location bookmarks system for saving favorite stargate locations
 import { DailyChallengesManager } from "./DailyChallenges";
+import { getItem, setItem, removeItem } from "./b64";
 
 export interface SavedLocation {
   id: string;
@@ -17,7 +18,7 @@ export class LocationBookmarks {
 
   public static getLocations(): SavedLocation[] {
     try {
-      const data = localStorage.getItem(this.STORAGE_KEY);
+      const data = getItem(this.STORAGE_KEY);
       if (!data) return [];
 
       const locations = JSON.parse(data);
@@ -45,7 +46,7 @@ export class LocationBookmarks {
       if (existingIndex !== -1) {
         // Update existing location - always allowed
         locations[existingIndex] = newLocation;
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(locations));
+        setItem(this.STORAGE_KEY, JSON.stringify(locations));
         return true;
       }
 
@@ -67,7 +68,7 @@ export class LocationBookmarks {
         locations.splice(currentMaxLocations);
       }
 
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(locations));
+      setItem(this.STORAGE_KEY, JSON.stringify(locations));
       return true;
     } catch (error) {
       console.error("Error saving location:", error);
@@ -103,7 +104,7 @@ export class LocationBookmarks {
       locations.splice(currentMaxLocations);
     }
 
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(locations));
+    setItem(this.STORAGE_KEY, JSON.stringify(locations));
   }
 
   public static removeLocation(id: string): void {
@@ -111,7 +112,7 @@ export class LocationBookmarks {
       const locations = this.getLocations();
       const filteredLocations = locations.filter((loc) => loc.id !== id);
 
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(filteredLocations));
+      setItem(this.STORAGE_KEY, JSON.stringify(filteredLocations));
     } catch (error) {
       console.error("Error removing location:", error);
     }
@@ -119,7 +120,7 @@ export class LocationBookmarks {
 
   public static clearAllLocations(): void {
     try {
-      localStorage.removeItem(this.STORAGE_KEY);
+      removeItem(this.STORAGE_KEY);
     } catch (error) {
       console.error("Error clearing locations:", error);
     }
@@ -313,7 +314,7 @@ export class LocationBookmarks {
   private static getCompletedDaysCount(): number {
     try {
       // Read from the more efficient _atlasDailyChallenges storage
-      const challengesData = localStorage.getItem("_atlasDailyChallenges");
+      const challengesData = getItem("_atlasDailyChallenges");
       if (challengesData) {
         const challenges = JSON.parse(challengesData);
         return challenges.totalCompletedDays || 0;

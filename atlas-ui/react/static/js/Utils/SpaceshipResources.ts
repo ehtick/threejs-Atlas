@@ -1,4 +1,5 @@
 import { UnifiedSpaceshipStorage } from "./UnifiedSpaceshipStorage";
+import { getItem } from "./b64";
 
 export interface SpaceshipResource {
   antimatter: number;
@@ -144,7 +145,7 @@ export class SpaceshipResourceManager {
 
   static calculatePassiveGeneration(): PassiveGeneration {
     const upgrade = this.getUpgrade();
-    const savedLocationsData = JSON.parse(localStorage.getItem("_atlasLocations") || "[]");
+    const savedLocationsData = JSON.parse(getItem("_atlasLocations") || "[]");
     
     // Handle both old array format and new object format
     const savedLocations = Array.isArray(savedLocationsData) 

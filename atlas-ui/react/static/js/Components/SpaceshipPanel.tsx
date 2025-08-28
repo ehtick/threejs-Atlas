@@ -4,6 +4,7 @@ import { LocationBookmarks, SavedLocation } from "../Utils/LocationBookmarks.ts"
 import { DailyChallengesManager, DailyChallenges } from "../Utils/DailyChallenges.ts";
 import { SpaceshipResourceManager, SpaceshipResource, SpaceshipUpgrade, TravelCost } from "../Utils/SpaceshipResources.ts";
 import { ResourceEventManager } from "../Utils/ResourceEventManager.ts";
+import { getItem, setItem } from "../Utils/b64.ts";
 import ProgressBar from "./ProgressBar.tsx";
 
 interface SpaceshipPanelProps {
@@ -556,10 +557,10 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
                       SpaceshipResourceManager.showPassiveGenerationNotification(passiveGeneration);
                       
                       // Reset the generation accumulation after collection
-                      const data = JSON.parse(localStorage.getItem('_atlasSpaceShip') || '{}');
+                      const data = JSON.parse(getItem('_atlasSpaceShip') || '{}');
                       if (!data.t) data.t = {};
                       data.t.lp = Date.now(); // Reset accumulation timer
-                      localStorage.setItem('_atlasSpaceShip', JSON.stringify(data));
+                      setItem('_atlasSpaceShip', JSON.stringify(data));
                       
                       // Refresh UI - should show 0 resources now since we just collected
                       setSpaceshipResources(SpaceshipResourceManager.getResources());
