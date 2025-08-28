@@ -1,7 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import SaveLocationButton from "./SaveLocationButton.tsx";
 import ResourceCollectionButton from "./ResourceCollectionButton.tsx";
 import EffectsControl from "./EffectsControl.tsx";
+import MiningIndicator from "./MiningIndicator.tsx";
+import { SpaceshipResourceCollectionManager } from "../Utils/SpaceshipResourceCollection";
+import { LocationBookmarks } from "../Utils/LocationBookmarks.ts";
+import { StargateGenerator } from "../Utils/StargateGenerator.ts";
+import { ResourceEventManager } from "../Utils/ResourceEventManager";
 
 interface Planet {
   name: string;
@@ -49,6 +54,65 @@ interface PlanetInfoProps {
 
 const PlanetInfo: React.FC<PlanetInfoProps> = ({ planet, system, galaxy, cosmicOriginTime, initialAngleRotation, effects, onToggleEffect }) => {
   const [showAllElements, setShowAllElements] = useState(false);
+  const [miningState, setMiningState] = useState({
+    isOnCooldown: false,
+    isSaved: false,
+    isCollecting: false,
+    timeUntilNext: 0
+  });
+
+  useEffect(() => {
+    let collectingTimeout: NodeJS.Timeout;
+    
+    const updateMiningState = () => {
+      const fullLocationId = SpaceshipResourceCollectionManager.generateLocationId(
+        "planet",
+        galaxy.coordinates.join(","),
+        system.index,
+        planet.name
+      );
+      
+      const canCollect = SpaceshipResourceCollectionManager.canCollectFromLocation(fullLocationId);
+      const timeRemaining = SpaceshipResourceCollectionManager.getTimeUntilNextCollection(fullLocationId);
+      
+      const galaxyCoords = galaxy.coordinates;
+      const stargateUrl = StargateGenerator.generatePlanetUrl(galaxyCoords, system.index, planet.name, StargateGenerator.getCurrentPage());
+      const savedLocations = LocationBookmarks.getLocations();
+      const isSaved = savedLocations.some((loc) => loc.stargateUrl === stargateUrl);
+      
+      setMiningState(prev => ({
+        isOnCooldown: !canCollect && timeRemaining > 0,
+        isSaved: isSaved,
+        isCollecting: prev.isCollecting,
+        timeUntilNext: timeRemaining
+      }));
+    };
+
+    const handleMiningCompleted = () => {
+      setMiningState(prev => ({
+        ...prev,
+        isCollecting: true
+      }));
+
+      collectingTimeout = setTimeout(() => {
+        setMiningState(prev => ({
+          ...prev,
+          isCollecting: false
+        }));
+      }, 1000);
+    };
+
+    updateMiningState();
+    const interval = setInterval(updateMiningState, 1000);
+    
+    const unsubscribe = ResourceEventManager.subscribe('mining_completed', handleMiningCompleted);
+    
+    return () => {
+      clearInterval(interval);
+      if (collectingTimeout) clearTimeout(collectingTimeout);
+      unsubscribe();
+    };
+  }, [planet.name, system.index, galaxy.coordinates]);
 
   const formatName = (name: string) => {
     return name.replace(/_/g, " ");
@@ -94,7 +158,12 @@ const PlanetInfo: React.FC<PlanetInfoProps> = ({ planet, system, galaxy, cosmicO
         <div className="inline-flex items-center bg-green-500/20 border border-green-500/50 text-green-400 text-[10px] font-medium px-1.5 py-0.5 rounded h-[21px] box-border">VISITED</div>
       </div>
 
-      <div className="mb-3">
+      <div className="flex items-center gap-3 mb-3">
+        <MiningIndicator
+          isOnCooldown={miningState.isOnCooldown}
+          isSaved={miningState.isSaved}
+          isCollecting={miningState.isCollecting}
+        />
         <h3 className="text-lg sm:text-xl font-bold text-white">Details</h3>
       </div>
 
