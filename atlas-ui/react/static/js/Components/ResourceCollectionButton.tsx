@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { SpaceshipResourceCollectionManager } from "../Utils/SpaceshipResourceCollection";
 import { ResourceEventManager } from "../Utils/ResourceEventManager";
+import { UnifiedSpaceshipStorage } from "../Utils/UnifiedSpaceshipStorage";
 
 interface ResourceCollectionButtonProps {
   locationType: "galaxy" | "system" | "planet";
@@ -25,6 +26,7 @@ const ResourceCollectionButton: React.FC<ResourceCollectionButtonProps> = ({
   const [timeUntilNext, setTimeUntilNext] = useState(0);
   const [isCollecting, setIsCollecting] = useState(false);
   const [collectionCount, setCollectionCount] = useState(0);
+  const [dailyLimitsInfo, setDailyLimitsInfo] = useState<any>(null);
 
   useEffect(() => {
     // Clean corrupted timestamps on mount (run once)
@@ -48,6 +50,10 @@ const ResourceCollectionButton: React.FC<ResourceCollectionButtonProps> = ({
       
       const collection = SpaceshipResourceCollectionManager.getLocationCollection(fullLocationId);
       setCollectionCount(collection?.totalCollections || 0);
+      
+      // Get daily limits info
+      const limitsInfo = UnifiedSpaceshipStorage.getDailyCollectionInfo();
+      setDailyLimitsInfo(limitsInfo);
     };
 
     updateState();
@@ -154,6 +160,27 @@ const ResourceCollectionButton: React.FC<ResourceCollectionButtonProps> = ({
     const reward = SpaceshipResourceCollectionManager.calculateReward(locationType, coordinates, collectionCount, planetData, true);
     return `${reward.antimatter}AM | ${reward.element115}E115 | ${reward.deuterium}D`;
   };
+  
+  const getTooltipText = () => {
+    if (!dailyLimitsInfo) return canCollect ? `Mine: ${getRewardPreview()}` : `Cooldown: ${getButtonText()} remaining`;
+    
+    const typeInfo = locationType === 'planet' ? dailyLimitsInfo.planets :
+                     locationType === 'system' ? dailyLimitsInfo.systems :
+                     dailyLimitsInfo.galaxies;
+    
+    const limitText = typeInfo.unlimited ? '' : ` | Daily: ${typeInfo.used}/${typeInfo.limit}`;
+    
+    if (canCollect) {
+      return `Mine: ${getRewardPreview()}${limitText}`;
+    } else {
+      // Check if it's blocked by daily limit or cooldown
+      if (!typeInfo.unlimited && typeInfo.used >= typeInfo.limit) {
+        return `Daily limit reached: ${typeInfo.used}/${typeInfo.limit} ${locationType}s today`;
+      } else {
+        return `Cooldown: ${getButtonText()} remaining${limitText}`;
+      }
+    }
+  };
 
   return (
     <button 
@@ -164,7 +191,7 @@ const ResourceCollectionButton: React.FC<ResourceCollectionButtonProps> = ({
         canCollect ? "bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-white hover:text-blue-300" :
         "bg-gray-500/20 border border-gray-500/50 text-gray-400"
       } ${className}`} 
-      title={canCollect ? `Mine: ${getRewardPreview()}` : `Cooldown: ${getButtonText()} remaining`}
+      title={getTooltipText()}
     >
       {getButtonIcon()}
       <span className="text-[10px] uppercase">{getButtonText()}</span>

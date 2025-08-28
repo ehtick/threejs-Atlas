@@ -36,6 +36,11 @@ export interface SpaceshipData {
     tt?: number; // total travels
     cs?: number; // collection streak (consecutive days)
     dc?: number; // daily collections today
+    // Daily collections by type
+    dcp?: number; // daily collections planets
+    dcs?: number; // daily collections systems  
+    dcg?: number; // daily collections galaxies
+    lcd?: string; // last collection date (for daily reset)
   };
 }
 
@@ -46,6 +51,14 @@ export class UnifiedSpaceshipStorage {
     system: 45 * 60 * 1000,    // 45 minutes - reduced for better flow
     galaxy: 8 * 60 * 60 * 1000 // 8 hours - valuable rewards require patience
   };
+  
+  // Daily collection limits by location type
+  private static readonly DAILY_COLLECTION_LIMITS = {
+    planet: Infinity, // No limit for planets
+    system: 15,       // 15 systems per day
+    galaxy: 5         // 5 galaxies per day
+  };
+  
   private static readonly PASSIVE_INTERVAL = 1 * 60 * 1000; // 1 minute for immediate feedback
   
   // Default initial state - generous starting resources
@@ -54,7 +67,7 @@ export class UnifiedSpaceshipStorage {
     u: { l: 1, ef: 1.0, rn: 500, st: 1000, m: 1.0 }, // Better starting stats
     c: {},
     t: {},
-    s: { tc: 0, tr: { a: 0, e: 0, d: 0 }, tt: 0, cs: 0, dc: 0 }
+    s: { tc: 0, tr: { a: 0, e: 0, d: 0 }, tt: 0, cs: 0, dc: 0, dcp: 0, dcs: 0, dcg: 0, lcd: new Date().toDateString() }
   };
   
   // Get all spaceship data
@@ -283,17 +296,51 @@ export class UnifiedSpaceshipStorage {
     const locationType = this.getLocationTypeFromId(locationId);
     return this.COLLECTION_COOLDOWNS[locationType];
   }
+  
+  // Check if we can collect from a location type based on daily limits
+  private static canCollectFromLocationType(locationType: "planet" | "system" | "galaxy", data?: SpaceshipData): boolean {
+    if (!data) data = this.getData();
+    
+    const today = new Date().toDateString();
+    
+    // Reset daily counters if it's a new day
+    if (data.s && data.s.lcd !== today) {
+      data.s.dcp = 0;
+      data.s.dcs = 0; 
+      data.s.dcg = 0;
+      data.s.lcd = today;
+      this.saveData(data);
+    }
+    
+    if (!data.s) return true;
+    
+    const limit = this.DAILY_COLLECTION_LIMITS[locationType];
+    if (limit === Infinity) return true;
+    
+    const currentCount = locationType === 'planet' ? (data.s.dcp || 0) :
+                        locationType === 'system' ? (data.s.dcs || 0) :
+                        (data.s.dcg || 0);
+    
+    return currentCount < limit;
+  }
 
   // Collection management
   static canCollectFromLocation(locationId: string): boolean {
     const data = this.getData();
     const lastCollected = data.c[locationId];
     
-    if (!lastCollected) return true;
+    // Check cooldown first
+    if (lastCollected) {
+      const now = Date.now();
+      const cooldown = this.getCooldownForLocation(locationId);
+      if ((now - lastCollected) < cooldown) {
+        return false; // Still on cooldown
+      }
+    }
     
-    const now = Date.now();
-    const cooldown = this.getCooldownForLocation(locationId);
-    return (now - lastCollected) >= cooldown;
+    // Check daily limits
+    const locationType = this.getLocationTypeFromId(locationId);
+    return this.canCollectFromLocationType(locationType, data);
   }
   
   static getTimeUntilNextCollection(locationId: string): number {
@@ -312,10 +359,40 @@ export class UnifiedSpaceshipStorage {
     const data = this.getData();
     data.c[locationId] = Date.now();
     
+    // Update daily collection counters by type
+    const locationType = this.getLocationTypeFromId(locationId);
+    this.updateDailyCollectionCounters(data, locationType);
+    
     // Update collection stats and streaks
     this.updateCollectionStreaks(data);
     
     this.saveData(data);
+  }
+  
+  // Helper to update daily collection counters by type
+  private static updateDailyCollectionCounters(data: SpaceshipData, locationType: "planet" | "system" | "galaxy"): void {
+    const today = new Date().toDateString();
+    
+    if (!data.s) {
+      data.s = { tc: 0, tr: { a: 0, e: 0, d: 0 }, tt: 0, cs: 0, dc: 0, dcp: 0, dcs: 0, dcg: 0, lcd: today };
+    }
+    
+    // Reset counters if it's a new day
+    if (data.s.lcd !== today) {
+      data.s.dcp = 0;
+      data.s.dcs = 0;
+      data.s.dcg = 0;
+      data.s.lcd = today;
+    }
+    
+    // Increment the appropriate counter
+    if (locationType === 'planet') {
+      data.s.dcp = (data.s.dcp || 0) + 1;
+    } else if (locationType === 'system') {
+      data.s.dcs = (data.s.dcs || 0) + 1;
+    } else if (locationType === 'galaxy') {
+      data.s.dcg = (data.s.dcg || 0) + 1;
+    }
   }
   
   // Helper to update collection streaks
@@ -560,7 +637,7 @@ export class UnifiedSpaceshipStorage {
       u: compactData.u || { l: 1, ef: 1.0, rn: 500, st: 1000, m: 1.0 }, // Match new defaults
       c: expandedCollections,
       t: compactData.t || {}, // Use timestamps directly (uncompressed)
-      s: compactData.s || { tc: 0, tr: { a: 0, e: 0, d: 0 }, tt: 0, cs: 0, dc: 0 }
+      s: compactData.s || { tc: 0, tr: { a: 0, e: 0, d: 0 }, tt: 0, cs: 0, dc: 0, dcp: 0, dcs: 0, dcg: 0, lcd: new Date().toDateString() }
     };
 
     return expandedData;
@@ -589,5 +666,48 @@ export class UnifiedSpaceshipStorage {
     if (cleaned) {
       this.saveData(data);
     }
+  }
+  
+  // Get daily collection information
+  static getDailyCollectionInfo(): {
+    planets: { used: number; limit: number; unlimited: boolean };
+    systems: { used: number; limit: number; unlimited: boolean };
+    galaxies: { used: number; limit: number; unlimited: boolean };
+  } {
+    const data = this.getData();
+    const today = new Date().toDateString();
+    
+    // Initialize stats if missing
+    if (!data.s) {
+      data.s = { tc: 0, tr: { a: 0, e: 0, d: 0 }, tt: 0, cs: 0, dc: 0, dcp: 0, dcs: 0, dcg: 0, lcd: today };
+      this.saveData(data);
+    }
+    
+    // Reset counters if it's a new day
+    if (data.s.lcd !== today) {
+      data.s.dcp = 0;
+      data.s.dcs = 0;
+      data.s.dcg = 0;
+      data.s.lcd = today;
+      this.saveData(data);
+    }
+    
+    return {
+      planets: {
+        used: data.s.dcp || 0,
+        limit: this.DAILY_COLLECTION_LIMITS.planet,
+        unlimited: this.DAILY_COLLECTION_LIMITS.planet === Infinity
+      },
+      systems: {
+        used: data.s.dcs || 0,
+        limit: this.DAILY_COLLECTION_LIMITS.system,
+        unlimited: this.DAILY_COLLECTION_LIMITS.system === Infinity
+      },
+      galaxies: {
+        used: data.s.dcg || 0,
+        limit: this.DAILY_COLLECTION_LIMITS.galaxy,
+        unlimited: this.DAILY_COLLECTION_LIMITS.galaxy === Infinity
+      }
+    };
   }
 }

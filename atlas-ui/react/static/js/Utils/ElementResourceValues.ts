@@ -14,7 +14,7 @@ export const ELEMENT_RESOURCE_VALUES: { [key: string]: ElementValue } = {
   "Z-Divinium": { antimatter: 100, element115: 150, deuterium: 80 },
 
   // Extremely rare materials (probability 0.00000001)
-  Oganesson: { antimatter: 50, element115: 70, deuterium: 40 },
+  Oganesson: { antimatter: 80, element115: 95, deuterium: 40 },
   Tennessine: { antimatter: 50, element115: 70, deuterium: 40 },
   Livermorium: { antimatter: 50, element115: 70, deuterium: 40 },
   Moscovium: { antimatter: 50, element115: 70, deuterium: 40 },
@@ -162,9 +162,9 @@ export const ELEMENT_RESOURCE_VALUES: { [key: string]: ElementValue } = {
   // Most abundant elements (probability 0.0004-0.7)
   Nitrogen: { antimatter: 0, element115: 0, deuterium: 1 },
   Carbon: { antimatter: 0, element115: 0, deuterium: 1 },
-  Oxygen: { antimatter: 0, element115: 0, deuterium: 1 },
-  Helium: { antimatter: 0, element115: 0, deuterium: 0 },
-  Hydrogen: { antimatter: 0, element115: 0, deuterium: 0 },
+  Oxygen: { antimatter: 0, element115: 1, deuterium: 1 },
+  Helium: { antimatter: 1, element115: 0, deuterium: 0 },
+  Hydrogen: { antimatter: 0, element115: 1, deuterium: 0 },
 };
 
 // Calculate total resources from a planet's element array
