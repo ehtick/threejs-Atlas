@@ -229,16 +229,23 @@ export class SpaceshipResourceManager {
     const intervalsPassed = Math.floor((now - lastPassive) / (1 * 60 * 1000)); // 1 minute intervals for immediate feedback
     
     if (intervalsPassed < 1) {
-      // Less than one interval passed - no resources available yet
+      // Less than one interval passed - still return 0 to wait for the full minute
       return {
         antimatter: 0,
         element115: 0,
         deuterium: 0,
         sources: baseGeneration.sources
       };
-    } else if (intervalsPassed === 1) {
-      // Exactly one interval - return base generation
-      return baseGeneration;
+    } else if (intervalsPassed >= 1) {
+      // One or more intervals - calculate accumulated resources
+      const accumulated = {
+        antimatter: Math.min(baseGeneration.antimatter * intervalsPassed, limit.antimatter * 2),
+        element115: Math.min(baseGeneration.element115 * intervalsPassed, limit.element115 * 2),
+        deuterium: Math.min(baseGeneration.deuterium * intervalsPassed, limit.deuterium * 2),
+        sources: baseGeneration.sources
+      };
+      
+      return accumulated;
     }
     
     // Calculate total accumulated resources with higher caps for smoother progression

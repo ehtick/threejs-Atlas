@@ -354,8 +354,8 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
                         const upgrade = SpaceshipResourceManager.getUpgrade();
                         setUpgradeCost(SpaceshipResourceManager.getUpgradeCost(upgrade.level));
                         
-                        // Update passive generation info after upgrade
-                        const passiveInfo = SpaceshipResourceManager.calculatePassiveGeneration();
+                        // Update passive generation info after upgrade with correct multipliers
+                        const passiveInfo = SpaceshipResourceManager.getAccumulatedResourcesWithLimit();
                         setPassiveGeneration(passiveInfo);
                         
                         // Emit resource update event to notify other components about storage changes
@@ -403,9 +403,9 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
                       <div className="flex items-center justify-between text-[10px] mb-1">
                         <span className="text-purple-300">Generating/min:</span>
                         <div className="flex gap-2">
-                          <span className="text-purple-300">+{Math.round(spaceshipUpgrade.multiplier * passiveGeneration.sources.planets + spaceshipUpgrade.multiplier * passiveGeneration.sources.systems * 0.5)} AM</span>
-                          <span className="text-cyan-300">+{Math.round(spaceshipUpgrade.multiplier * passiveGeneration.sources.planets * 0.8 + spaceshipUpgrade.multiplier * passiveGeneration.sources.systems * 0.6)} E115</span>
-                          <span className="text-orange-300">+{Math.round(spaceshipUpgrade.multiplier * passiveGeneration.sources.planets * 0.6 + spaceshipUpgrade.multiplier * passiveGeneration.sources.systems * 0.4)} D</span>
+                          <span className="text-purple-300">+{Math.round(spaceshipUpgrade.multiplier * (passiveGeneration.sources.planets * 3 + passiveGeneration.sources.systems * 1))} AM</span>
+                          <span className="text-cyan-300">+{Math.round(spaceshipUpgrade.multiplier * (passiveGeneration.sources.planets * 2 + passiveGeneration.sources.systems * 1))} E115</span>
+                          <span className="text-orange-300">+{Math.round(spaceshipUpgrade.multiplier * (passiveGeneration.sources.planets * 3 + passiveGeneration.sources.systems * 1))} D</span>
                         </div>
                       </div>
                       
