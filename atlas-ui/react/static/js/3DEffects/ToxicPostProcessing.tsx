@@ -27,6 +27,45 @@ export interface ToxicPostProcessingParams {
 }
 
 /**
+ * Rangos procedurales para efectos de post-procesamiento tóxico
+ * Permite variación significativa entre planetas
+ */
+const TOXIC_PROCEDURAL_RANGES = {
+  bloomStrength: {
+    min: 0.3,    // Bloom sutil
+    max: 0.6,    // Bloom intenso (2x)
+  },
+  bloomRadius: {
+    min: 0.4,    // Radio concentrado
+    max: 0.8,    // Radio amplio (2x)
+  },
+  bloomThreshold: {
+    min: 0.2,    // Más selectivo
+    max: 0.5,    // Muy selectivo
+  },
+  godrayIntensity: {
+    min: 0.05,   // Godrays muy sutiles
+    max: 0.16,   // Godrays notables (3.2x)
+  },
+  chromaticAberrationIntensity: {
+    min: 0.001,  // Aberración apenas perceptible
+    max: 0.004,  // Aberración notable (4x)
+  },
+  timeSpeed: {
+    min: 0.6,    // Animaciones lentas
+    max: 1.8,    // Animaciones rápidas (3x)
+  },
+  breathingAmplitude: {
+    min: 0.05,   // Respiración sutil
+    max: 0.2,    // Respiración intensa (4x)
+  },
+  pulseAmplitude: {
+    min: 0.02,   // Pulso sutil
+    max: 0.1,    // Pulso intenso (5x)
+  }
+} as const;
+
+/**
  * Shader para chromatic aberration con tinte tóxico
  */
 const ToxicChromaticAberrationShader = {
@@ -178,9 +217,16 @@ export class ToxicPostProcessingEffect {
   private timeSpeed: number;
 
   // Parámetros procedurales únicos por planeta
-  private bloomVariation: number;
-  private chromaticVariation: number;
-  private godrayVariation: number;
+  private proceduralParams: {
+    bloomStrength: number;
+    bloomRadius: number;
+    bloomThreshold: number;
+    godrayIntensity: number;
+    chromaticAberrationIntensity: number;
+    timeSpeed: number;
+    breathingAmplitude: number;
+    pulseAmplitude: number;
+  };
   private toxicTint: THREE.Color;
 
   constructor(
@@ -197,17 +243,23 @@ export class ToxicPostProcessingEffect {
     
     // Parámetros de tiempo procedural
     this.startTime = this.rng.uniform(0, 1000);
-    this.timeSpeed = this.rng.uniform(0.8, 1.5);
 
-    // Generar variaciones procedurales basadas en semilla
-    this.bloomVariation = this.rng.uniform(0.7, 1.3);
-    this.chromaticVariation = this.rng.uniform(0.5, 1.5);
-    this.godrayVariation = this.rng.uniform(0.6, 1.2);
+    // Generar parámetros procedurales usando los rangos definidos
+    this.proceduralParams = {
+      bloomStrength: this.rng.uniform(TOXIC_PROCEDURAL_RANGES.bloomStrength.min, TOXIC_PROCEDURAL_RANGES.bloomStrength.max),
+      bloomRadius: this.rng.uniform(TOXIC_PROCEDURAL_RANGES.bloomRadius.min, TOXIC_PROCEDURAL_RANGES.bloomRadius.max),
+      bloomThreshold: this.rng.uniform(TOXIC_PROCEDURAL_RANGES.bloomThreshold.min, TOXIC_PROCEDURAL_RANGES.bloomThreshold.max),
+      godrayIntensity: this.rng.uniform(TOXIC_PROCEDURAL_RANGES.godrayIntensity.min, TOXIC_PROCEDURAL_RANGES.godrayIntensity.max),
+      chromaticAberrationIntensity: this.rng.uniform(TOXIC_PROCEDURAL_RANGES.chromaticAberrationIntensity.min, TOXIC_PROCEDURAL_RANGES.chromaticAberrationIntensity.max),
+      timeSpeed: this.rng.uniform(TOXIC_PROCEDURAL_RANGES.timeSpeed.min, TOXIC_PROCEDURAL_RANGES.timeSpeed.max),
+      breathingAmplitude: this.rng.uniform(TOXIC_PROCEDURAL_RANGES.breathingAmplitude.min, TOXIC_PROCEDURAL_RANGES.breathingAmplitude.max),
+      pulseAmplitude: this.rng.uniform(TOXIC_PROCEDURAL_RANGES.pulseAmplitude.min, TOXIC_PROCEDURAL_RANGES.pulseAmplitude.max),
+    };
 
-    // Color tóxico procedural
-    const toxicHue = this.rng.uniform(0.7, 0.9); // Púrpura a magenta
-    const toxicSaturation = this.rng.uniform(0.8, 1.0);
-    const toxicBrightness = this.rng.uniform(0.3, 0.6);
+    // Color tóxico procedural con mayor variación
+    const toxicHue = this.rng.uniform(0.65, 0.95); // Mayor rango de púrpura a magenta
+    const toxicSaturation = this.rng.uniform(0.7, 1.0);
+    const toxicBrightness = this.rng.uniform(0.25, 0.7);
     this.toxicTint = new THREE.Color().setHSL(toxicHue, toxicSaturation, toxicBrightness);
 
     // Inicializar composer
@@ -217,10 +269,10 @@ export class ToxicPostProcessingEffect {
     this.renderPass = new RenderPass(scene, camera);
     this.composer.addPass(this.renderPass);
 
-    // Pass de bloom con parámetros tóxicos más sutiles
-    const bloomStrength = (params.bloomStrength || 0.4) * this.bloomVariation; // Reducido de 1.2 a 0.4
-    const bloomRadius = params.bloomRadius || 0.6; // Reducido de 0.8 a 0.6
-    const bloomThreshold = params.bloomThreshold || 0.3; // Aumentado de 0.1 a 0.3 para ser más selectivo
+    // Pass de bloom usando parámetros procedurales
+    const bloomStrength = params.bloomStrength || this.proceduralParams.bloomStrength;
+    const bloomRadius = params.bloomRadius || this.proceduralParams.bloomRadius;
+    const bloomThreshold = params.bloomThreshold || this.proceduralParams.bloomThreshold;
     
     this.bloomPass = new UnrealBloomPass(
       new THREE.Vector2(window.innerWidth, window.innerHeight),
@@ -230,15 +282,15 @@ export class ToxicPostProcessingEffect {
     );
     this.composer.addPass(this.bloomPass);
 
-    // Pass de godrays con intensidad muy reducida
+    // Pass de godrays usando parámetros procedurales
     this.godrayPass = new ShaderPass(ToxicGodrayShader);
-    this.godrayPass.uniforms.uIntensity.value = (params.godrayIntensity || 0.08) * this.godrayVariation; // Reducido de 0.3 a 0.08
+    this.godrayPass.uniforms.uIntensity.value = params.godrayIntensity || this.proceduralParams.godrayIntensity;
     this.godrayPass.uniforms.uToxicColor.value = this.toxicTint;
     this.composer.addPass(this.godrayPass);
 
-    // Pass de chromatic aberration más sutil
+    // Pass de chromatic aberration usando parámetros procedurales
     this.chromaticAberrationPass = new ShaderPass(ToxicChromaticAberrationShader);
-    this.chromaticAberrationPass.uniforms.uIntensity.value = (params.chromaticAberrationIntensity || 0.002) * this.chromaticVariation; // Reducido de 0.005 a 0.002
+    this.chromaticAberrationPass.uniforms.uIntensity.value = params.chromaticAberrationIntensity || this.proceduralParams.chromaticAberrationIntensity;
     this.chromaticAberrationPass.uniforms.uToxicTint.value = this.toxicTint;
     this.composer.addPass(this.chromaticAberrationPass);
 
@@ -247,23 +299,23 @@ export class ToxicPostProcessingEffect {
   }
 
   update(_deltaTime: number = 0.016): void {
-    // Tiempo procedural determinista
+    // Tiempo procedural determinista usando parámetros procedurales
     const cosmicOriginTime = DEFAULT_COSMIC_ORIGIN_TIME;
-    const currentTime = getAnimatedUniverseTime(cosmicOriginTime, this.timeSpeed, this.startTime);
+    const currentTime = getAnimatedUniverseTime(cosmicOriginTime, this.proceduralParams.timeSpeed, this.startTime);
 
     // Actualizar uniforms de tiempo
     this.chromaticAberrationPass.uniforms.uTime.value = currentTime;
     this.godrayPass.uniforms.uTime.value = currentTime;
 
-    // Modular efectos con el tiempo para mayor dinamismo (más sutil)
-    const breathingCycle = Math.sin(currentTime * 0.3) * 0.1 + 1.0; // Reducido de 0.2 a 0.1
-    const pulseCycle = Math.sin(currentTime * 0.7) * 0.05 + 1.0; // Reducido de 0.1 a 0.05
+    // Modular efectos con el tiempo usando amplitudes procedurales
+    const breathingCycle = Math.sin(currentTime * 0.3) * this.proceduralParams.breathingAmplitude + 1.0;
+    const pulseCycle = Math.sin(currentTime * 0.7) * this.proceduralParams.pulseAmplitude + 1.0;
 
-    // Modular bloom dinámicamente con valores más bajos
-    this.bloomPass.strength = (0.4 * this.bloomVariation) * breathingCycle; // Cambiado de 1.2 a 0.4
+    // Modular bloom dinámicamente usando base procedural
+    this.bloomPass.strength = this.proceduralParams.bloomStrength * breathingCycle;
     
-    // Modular aberración cromática con intensidad reducida
-    this.chromaticAberrationPass.uniforms.uIntensity.value = (0.002 * this.chromaticVariation) * pulseCycle; // Cambiado de 0.005 a 0.002
+    // Modular aberración cromática usando base procedural
+    this.chromaticAberrationPass.uniforms.uIntensity.value = this.proceduralParams.chromaticAberrationIntensity * pulseCycle;
   }
 
   updateLightPosition(lightPosition: THREE.Vector3, camera: THREE.Camera): void {
@@ -312,19 +364,46 @@ export function createToxicPostProcessingFromPythonData(
   }
 
   const seed = globalSeed || Math.floor(Math.random() * 1000000);
+  const rng = new SeededRandom(seed + 20000);
   
-  // Parámetros basados en intensidad tóxica
-  const toxicIntensity = surfaceData.toxic_intensity || 0.7;
-  const atmosphereThickness = surfaceData.atmosphere_thickness || 0.5;
+  // Parámetros basados en intensidad tóxica (si están disponibles)
+  const toxicIntensity = surfaceData.toxic_intensity || rng.uniform(0.4, 1.0);
+  const atmosphereThickness = surfaceData.atmosphere_thickness || rng.uniform(0.3, 0.8);
 
-  const bloomStrength = 0.3 + (toxicIntensity * 0.2); // Reducido significativamente
-  const chromaticIntensity = 0.001 + (toxicIntensity * 0.002); // Muy sutil
-  const godrayIntensity = 0.05 + (atmosphereThickness * 0.08); // Mucho más sutil
+  // Usar rangos procedurales con modificadores basados en datos del planeta
+  const intensityMultiplier = 0.7 + (toxicIntensity * 0.6); // 0.7 to 1.3 multiplier
+  const atmosphereMultiplier = 0.8 + (atmosphereThickness * 0.4); // 0.8 to 1.2 multiplier
+
+  // Calcular parámetros dentro de los rangos, pero influenciados por datos del planeta
+  const bloomStrength = rng.uniform(
+    TOXIC_PROCEDURAL_RANGES.bloomStrength.min * intensityMultiplier,
+    TOXIC_PROCEDURAL_RANGES.bloomStrength.max * intensityMultiplier
+  );
+
+  const bloomRadius = rng.uniform(
+    TOXIC_PROCEDURAL_RANGES.bloomRadius.min,
+    TOXIC_PROCEDURAL_RANGES.bloomRadius.max
+  );
+
+  const bloomThreshold = rng.uniform(
+    TOXIC_PROCEDURAL_RANGES.bloomThreshold.min,
+    TOXIC_PROCEDURAL_RANGES.bloomThreshold.max
+  );
+
+  const chromaticIntensity = rng.uniform(
+    TOXIC_PROCEDURAL_RANGES.chromaticAberrationIntensity.min * intensityMultiplier,
+    TOXIC_PROCEDURAL_RANGES.chromaticAberrationIntensity.max * intensityMultiplier
+  );
+
+  const godrayIntensity = rng.uniform(
+    TOXIC_PROCEDURAL_RANGES.godrayIntensity.min * atmosphereMultiplier,
+    TOXIC_PROCEDURAL_RANGES.godrayIntensity.max * atmosphereMultiplier
+  );
 
   return new ToxicPostProcessingEffect(scene, camera, renderer, planetRadius, {
     bloomStrength,
-    bloomRadius: 0.6, // Reducido de 0.9 a 0.6
-    bloomThreshold: 0.4, // Aumentado de 0.05 a 0.4 para ser muy selectivo
+    bloomRadius,
+    bloomThreshold,
     chromaticAberrationIntensity: chromaticIntensity,
     godrayIntensity: godrayIntensity,
     seed: seed + 20000,
