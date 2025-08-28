@@ -30,6 +30,7 @@ import { PlanetLayerSystem } from "../3DComponents/PlanetLayerSystem";
 import { CloudBandsLayer, createCloudBandsLayerFromPythonData } from "./CloudBandsLayer";
 import { CloudGyrosLayer, createCloudGyrosLayerFromPythonData } from "./CloudGyrosLayer";
 import { RockyTerrainLayer, createRockyTerrainLayerFromPythonData } from "./RockyTerrainLayer";
+import { SavannahTerrainLayer, createSavannahTerrainLayerFromPythonData } from "./SavannahTerrainLayer";
 import { IcyTerrainLayer, createIcyTerrainLayerFromPythonData } from "./IcyTerrainLayer";
 import { MetallicSurfaceLayer, createMetallicSurfaceLayerFromPythonData } from "./MetallicSurfaceLayer";
 import { DiamondSurfaceLayer, createDiamondSurfaceLayerFromPythonData } from "./DiamondSurfaceLayer";
@@ -109,6 +110,7 @@ export enum EffectType {
 
   // Efectos de superficie específicos
   ROCKY_TERRAIN = "rocky_terrain",
+  SAVANNAH_TERRAIN = "savannah_terrain",
   ICY_TERRAIN = "icy_terrain",
   LAND_MASSES = "land_masses",
   OCEAN_WAVES = "ocean_waves",
@@ -1396,7 +1398,29 @@ export class EffectRegistry {
           case "savannah":
             // Savannah planets: orangish terrain with large atmospheric clouds and terrain patches
             
-            // 1. Add large atmospheric clouds if available from Python data
+            // 1. Add Savannah terrain layer
+            if (this.layerSystem) {
+              const savannahLayer = createSavannahTerrainLayerFromPythonData(
+                this.layerSystem,
+                pythonData,
+                pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed,
+                'SAVANNAH'
+              );
+
+              const savannahInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "savannah_terrain_layer",
+                effect: savannahLayer,
+                priority: 2,
+                enabled: true,
+                name: "Savannah Terrain Layer",
+              };
+
+              this.effects.set(savannahInstance.id, savannahInstance);
+              effects.push(savannahInstance);
+            }
+            
+            // 2. Add large atmospheric clouds if available from Python data
             if (surface.clouds && surface.clouds.length > 0) {
               const savannahCloudsEffect = createAtmosphereCloudsFromPythonData(
                 planetRadius,
@@ -1421,7 +1445,7 @@ export class EffectRegistry {
               }
             }
             
-            // 2. Add terrain patches (green_patches) with savannah colors
+            // 3. Add terrain patches (green_patches) with savannah colors
             if (surface.green_patches && surface.green_patches.length > 0) {
               const savannahLandMassesEffect = createLandMassesFromPythonData(
                 planetRadius,
