@@ -252,20 +252,15 @@ export class UnifiedSpaceshipStorage {
         : 1000 + 20 * 400 + Math.floor(Math.log(data.u.l - 20 + 1) * 1200);
       storage = Math.min(storage, 50000); // Double the cap
       
-      let multiplier = Math.min(6.0, 1 + (data.u.l - 1) * 0.3); // Higher cap and faster growth
+      // Simple, smooth multiplier progression - always increases, never decreases
+      let multiplier = 1.0 + (data.u.l - 1) * 0.242; // Calculated to reach exactly 25x at level 100
       
-      // Milestone rewards every 5 levels - more generous
-      if (data.u.l % 5 === 0) {
-        efficiency *= 1.3; // 30% bonus efficiency
-        range = Math.min(range * 1.2, 25000); // 20% bonus range but respect cap
-        storage = Math.min(storage * 1.15, 50000); // 15% bonus storage but respect cap
-        multiplier *= 1.4; // 40% bonus multiplier
-      }
+      // No milestone bonuses - all stats progress smoothly and predictably
       
       data.u.ef = Math.min(6.0, efficiency); // Higher efficiency cap
       data.u.rn = Math.floor(range);
       data.u.st = Math.floor(storage);
-      data.u.m = Math.min(10.0, multiplier); // Higher multiplier cap
+      data.u.m = Math.min(25.0, multiplier); // New 25x multiplier cap
       
       this.saveData(data);
       return true;
