@@ -196,29 +196,27 @@ const ResourceCollectionButton: React.FC<ResourceCollectionButtonProps> = ({
   };
 
   return (
-    <div className="relative">
-      <button 
-        onClick={handleCollect} 
-        disabled={!canCollect || isCollecting} 
-        className={`inline-flex items-center space-x-1 px-1.5 py-0.5 rounded transition-all duration-200 text-[10px] font-medium h-[21px] box-border ${
-          isCollecting ? "bg-blue-500/20 border border-blue-500/50 text-blue-400" : 
-          canCollect ? "bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-white hover:text-blue-300" :
-          isDailyLimitReached() ? "bg-red-500/20 border border-red-500/50 text-red-400" :
-          "bg-gray-500/20 border border-gray-500/50 text-gray-400"
-        } ${className}`} 
-        title={getTooltipText()}
-      >
-        {getButtonIcon()}
-        <span className="text-[10px] uppercase">{getButtonText()}</span>
-      </button>
+    <button 
+      onClick={handleCollect} 
+      disabled={!canCollect || isCollecting} 
+      className={`relative inline-flex items-center space-x-1 px-1.5 py-0.5 rounded transition-all duration-200 text-[10px] font-medium h-[21px] box-border ${
+        isCollecting ? "bg-blue-500/20 border border-blue-500/50 text-blue-400" : 
+        canCollect ? "bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-white hover:text-blue-300" :
+        isDailyLimitReached() ? "bg-red-500/20 border border-red-500/50 text-red-400" :
+        "bg-gray-500/20 border border-gray-500/50 text-gray-400"
+      } ${className}`} 
+      title={getTooltipText()}
+    >
+      {getButtonIcon()}
+      <span className="text-[10px] uppercase">{getButtonText()}</span>
       
       {/* Daily limit indicator */}
       {isDailyLimitReached() && (
-        <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] px-1 py-0.5 rounded-full font-bold leading-none min-w-[16px] text-center">
+        <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] px-1 py-0.5 rounded-full font-bold leading-none min-w-[16px] text-center z-10">
           MAX
         </div>
       )}
-    </div>
+    </button>
   );
 };
 
