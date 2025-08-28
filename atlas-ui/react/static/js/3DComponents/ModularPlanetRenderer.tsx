@@ -161,17 +161,9 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
 
       // Crear post-procesamiento específico para planetas tóxicos
       const planetType = planetData.planet_info?.type || planetData.surface_elements?.planet_type || planetData.planet_type;
-      console.log("DEBUG: Planet type detected:", planetType, "Full planet data:", planetData);
       
-      // Detectar si debemos forzar modo toxic (para testing)
-      const urlParams = new URLSearchParams(window.location.search);
-      const forceToxic = urlParams.get('toxic') === 'true';
-      const shouldApplyToxicEffects = (planetType === "toxic" || planetType === "Toxic") || forceToxic;
-      
-      console.log("DEBUG: Should apply toxic effects:", shouldApplyToxicEffects, "Force toxic:", forceToxic);
-      
-      // Activar para planetas toxic o si se fuerza con parámetro URL
-      if (shouldApplyToxicEffects && sceneRef.current && cameraRef.current && rendererRef.current) {
+      // Activar solo para planetas genuinamente tóxicos
+      if ((planetType === "toxic" || planetType === "Toxic") && sceneRef.current && cameraRef.current && rendererRef.current) {
         try {
           const toxicPostProcessing = createToxicPostProcessingFromPythonData(
             sceneRef.current,
