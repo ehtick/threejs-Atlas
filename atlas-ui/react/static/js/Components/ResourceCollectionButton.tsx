@@ -27,6 +27,11 @@ const ResourceCollectionButton: React.FC<ResourceCollectionButtonProps> = ({
   const [collectionCount, setCollectionCount] = useState(0);
 
   useEffect(() => {
+    // Clean corrupted timestamps on mount (run once)
+    import("../Utils/UnifiedSpaceshipStorage").then(({ UnifiedSpaceshipStorage }) => {
+      UnifiedSpaceshipStorage.cleanCorruptedTimestamps();
+    });
+    
     const fullLocationId = SpaceshipResourceCollectionManager.generateLocationId(
       locationType,
       coordinates,
@@ -35,8 +40,11 @@ const ResourceCollectionButton: React.FC<ResourceCollectionButtonProps> = ({
     );
     
     const updateState = () => {
-      setCanCollect(SpaceshipResourceCollectionManager.canCollectFromLocation(fullLocationId));
-      setTimeUntilNext(SpaceshipResourceCollectionManager.getTimeUntilNextCollection(fullLocationId));
+      const canCollectNow = SpaceshipResourceCollectionManager.canCollectFromLocation(fullLocationId);
+      const timeRemaining = SpaceshipResourceCollectionManager.getTimeUntilNextCollection(fullLocationId);
+      
+      setCanCollect(canCollectNow);
+      setTimeUntilNext(timeRemaining);
       
       const collection = SpaceshipResourceCollectionManager.getLocationCollection(fullLocationId);
       setCollectionCount(collection?.totalCollections || 0);
@@ -44,8 +52,8 @@ const ResourceCollectionButton: React.FC<ResourceCollectionButtonProps> = ({
 
     updateState();
     
-    // Update every 30 seconds
-    const interval = setInterval(updateState, 30000);
+    // Update every second for real-time countdown
+    const interval = setInterval(updateState, 1000);
     return () => clearInterval(interval);
   }, [locationType, coordinates, systemIndex, planetName]);
 
@@ -84,7 +92,7 @@ const ResourceCollectionButton: React.FC<ResourceCollectionButtonProps> = ({
       }, isFirstTime);
       
       setCanCollect(false);
-      setTimeUntilNext(1); // 1 hour cooldown
+      setTimeUntilNext(SpaceshipResourceCollectionManager.getTimeUntilNextCollection(fullLocationId));
       setCollectionCount(prev => prev + 1);
       
       // Emit resource update event
@@ -98,8 +106,20 @@ const ResourceCollectionButton: React.FC<ResourceCollectionButtonProps> = ({
   const getButtonText = () => {
     if (isCollecting) return "Mining...";
     if (!canCollect && timeUntilNext > 0) {
-      const minutes = Math.ceil(timeUntilNext * 60);
-      return `${minutes}m`;
+      const totalSeconds = Math.ceil(timeUntilNext * 3600); // Convert hours to seconds
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      
+      // Show format based on time remaining
+      if (minutes >= 60) {
+        const hours = Math.floor(minutes / 60);
+        const remainingMinutes = minutes % 60;
+        return `${hours}h ${remainingMinutes}m`;
+      } else if (minutes > 0) {
+        return `${minutes}m ${seconds}s`;
+      } else {
+        return `${seconds}s`;
+      }
     }
     return "Mine";
   };
@@ -144,7 +164,7 @@ const ResourceCollectionButton: React.FC<ResourceCollectionButtonProps> = ({
         canCollect ? "bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-white hover:text-blue-300" :
         "bg-gray-500/20 border border-gray-500/50 text-gray-400"
       } ${className}`} 
-      title={canCollect ? `Mine: ${getRewardPreview()}` : `Cooldown: ${Math.ceil(timeUntilNext * 60)} minutes remaining`}
+      title={canCollect ? `Mine: ${getRewardPreview()}` : `Cooldown: ${getButtonText()} remaining`}
     >
       {getButtonIcon()}
       <span className="text-[10px] uppercase">{getButtonText()}</span>

@@ -506,20 +506,12 @@ export class UnifiedSpaceshipStorage {
 
   // Compact data for storage efficiency (like atlasArchive optimization)
   private static compactData(data: SpaceshipData): any {
-    const now = Date.now();
-    
-    // Convert absolute timestamps to relative minutes (saves space)
-    // But keep enough precision for 1-minute intervals
-    const compactCollections: { [key: string]: number } = {};
-    Object.keys(data.c).forEach(key => {
-      // Store as seconds ago instead of milliseconds (still precise enough)
-      compactCollections[key] = Math.floor((now - data.c[key]) / 1000);
-    });
-
+    // Keep timestamps absolute to avoid recalculation issues
+    // The space savings from relative timestamps isn't worth the bugs
     const compactData: any = {
       r: data.r, // Resources stay the same
       u: data.u, // Upgrades stay the same  
-      c: compactCollections, // Compacted collections
+      c: data.c, // Keep collections with absolute timestamps
       s: data.s, // Stats stay the same
       t: data.t // Keep timestamps uncompressed for simplicity
     };
@@ -530,18 +522,35 @@ export class UnifiedSpaceshipStorage {
   // Expand compact data after loading (like atlasArchive optimization)  
   private static expandData(compactData: any): SpaceshipData {
     const now = Date.now();
+    const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
     
-    // Handle legacy data (might be already in absolute format)
+    // Handle legacy data - migrate from relative to absolute timestamps
     const expandedCollections: { [key: string]: number } = {};
     if (compactData.c) {
       Object.keys(compactData.c).forEach(key => {
         const value = compactData.c[key];
-        // If value is very large, it's probably already absolute timestamp
-        if (value > 1000000000) {
+        
+        // Check if this is a valid Unix timestamp in milliseconds
+        // Valid timestamps should be between 2020 and 2030 (in milliseconds)
+        const MIN_VALID_TIMESTAMP = 1577836800000; // Jan 1, 2020
+        const MAX_VALID_TIMESTAMP = 1893456000000; // Jan 1, 2030
+        
+        if (value === 0) {
+          // Special case: 0 means corrupted data from old version
+          // Set it to 24 hours ago so the location is immediately available
+          const migratedTimestamp = now - TWENTY_FOUR_HOURS;
+          expandedCollections[key] = migratedTimestamp;
+        } else if (value >= MIN_VALID_TIMESTAMP && value <= MAX_VALID_TIMESTAMP) {
+          // This is already a valid absolute timestamp
           expandedCollections[key] = value;
+        } else if (value > 0 && value < 86400 * 30) {
+          // If value is less than 30 days in seconds, it's likely a relative timestamp
+          // Convert from seconds ago to absolute timestamp
+          const converted = now - (value * 1000);
+          expandedCollections[key] = converted;
         } else {
-          // Convert seconds ago back to absolute timestamp
-          expandedCollections[key] = now - (value * 1000);
+          // Invalid or corrupted data - set to 24 hours ago
+          expandedCollections[key] = now - TWENTY_FOUR_HOURS;
         }
       });
     }
@@ -555,5 +564,30 @@ export class UnifiedSpaceshipStorage {
     };
 
     return expandedData;
+  }
+  
+  // Public method to clean corrupted collection timestamps
+  static cleanCorruptedTimestamps(): void {
+    const data = this.getData();
+    const now = Date.now();
+    const MIN_VALID_TIMESTAMP = 1577836800000; // Jan 1, 2020
+    const MAX_VALID_TIMESTAMP = 1893456000000; // Jan 1, 2030
+    const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+    
+    let cleaned = false;
+    Object.keys(data.c).forEach(key => {
+      const value = data.c[key];
+      if (value === 0) {
+        data.c[key] = now - TWENTY_FOUR_HOURS;
+        cleaned = true;
+      } else if (value < MIN_VALID_TIMESTAMP || value > MAX_VALID_TIMESTAMP) {
+        data.c[key] = now - TWENTY_FOUR_HOURS; // Instead of deleting, set to 24hrs ago
+        cleaned = true;
+      }
+    });
+    
+    if (cleaned) {
+      this.saveData(data);
+    }
   }
 }
