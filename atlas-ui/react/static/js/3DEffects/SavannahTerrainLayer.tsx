@@ -48,6 +48,7 @@ export class SavannahTerrainLayer {
     
     varying vec3 vPosition;
     varying vec3 vNormal;
+    varying vec3 vWorldPosition;
     varying vec2 vUv;
     varying float vElevation;
     
@@ -93,6 +94,8 @@ export class SavannahTerrainLayer {
     
     void main() {
       vPosition = position;
+      vec4 worldPos = modelMatrix * vec4(position, 1.0);
+      vWorldPosition = worldPos.xyz;
       vUv = uv;
       
       // Generate terrain height
@@ -123,9 +126,11 @@ export class SavannahTerrainLayer {
     uniform vec3 terrainColor;
     uniform float opacity;
     uniform vec3 lightDirection;
+    uniform vec3 lightPosition;
     
     varying vec3 vPosition;
     varying vec3 vNormal;
+    varying vec3 vWorldPosition;
     varying vec2 vUv;
     varying float vElevation;
     
@@ -141,7 +146,6 @@ export class SavannahTerrainLayer {
     
     void main() {
       vec3 normal = normalize(vNormal);
-      vec3 lightDir = normalize(lightDirection);
       
       // Height-based coloring (like the Three.js terrain example)
       vec3 lowColor = terrainColor * 0.6;  // Valley color (darker)
@@ -171,19 +175,27 @@ export class SavannahTerrainLayer {
         color *= 0.8;
       }
       
-      // Calculate lighting with enhanced shadows
+      // Calculate light direction using position if available (like PlanetLayerSystem)
+      vec3 lightDir;
+      if (length(lightPosition) > 0.0) {
+        lightDir = normalize(lightPosition - vWorldPosition);
+      } else {
+        lightDir = normalize(-lightDirection);
+      }
+      
+      // Calculate lighting (simpler version, closer to original)
       float dotNL = dot(normal, lightDir);
       float lighting = max(0.0, dotNL);
       
-      // Ambient light + directional light
-      color *= 0.5 + 0.5 * lighting;
+      // Reduce ambient light to make dark areas darker but keep terrain visible
+      color *= 0.25 + 0.75 * lighting;
       
       // Add atmospheric perspective (distant areas slightly bluer/lighter)
       float viewDistance = length(vPosition);
       vec3 atmosphereColor = vec3(0.7, 0.75, 0.85);
       color = mix(color, atmosphereColor, min(0.3, viewDistance * 0.0001));
       
-      // Transparency based on terrain feature visibility
+      // Restore original opacity calculation
       float alpha = (0.5 + 0.5 * vElevation) * opacity;
       
       gl_FragColor = vec4(color, alpha);
@@ -224,18 +236,25 @@ export class SavannahTerrainLayer {
         erosionStrength: { value: this.params.erosionStrength },
         opacity: { value: this.params.opacity },
         lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
+        lightPosition: { value: new THREE.Vector3(10, 10, 10) },
       },
       transparent: true,
       side: THREE.FrontSide,
       depthWrite: false,
     });
 
-    // Add layer to system
-    this.layerMesh = this.layerSystem.addEffectLayer("savannahTerrain", this.material, this.layerSystem.getNextScaleFactor());
+    // Add layer to system and pass this instance as layerObject for light updates
+    this.layerMesh = this.layerSystem.addEffectLayer("savannahTerrain", this.material, this.layerSystem.getNextScaleFactor(), this);
   }
 
   update(deltaTime: number): void {
     // Static terrain - no updates needed
+  }
+
+  updateLightDirection(direction: THREE.Vector3): void {
+    if (this.material.uniforms.lightDirection) {
+      this.material.uniforms.lightDirection.value = direction.clone().normalize();
+    }
   }
 
   dispose(): void {
