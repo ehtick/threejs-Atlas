@@ -31,7 +31,7 @@ const GalaxyInfo: React.FC<GalaxyInfoProps> = ({ galaxy }) => {
           className="text-xs" 
         />
         <SaveLocationButton type="galaxy" name={galaxy.name} coordinates={galaxy.coordinates.join(",")} className="text-xs" />
-        <div className="bg-green-500/20 border border-green-500/50 text-green-400 text-[10px] px-1.5 py-0.5 rounded">VISITED</div>
+        <div className="inline-flex items-center bg-green-500/20 border border-green-500/50 text-green-400 text-[10px] font-medium px-1.5 py-0.5 rounded h-[21px] box-border">VISITED</div>
       </div>
 
       <div className="mb-3">
