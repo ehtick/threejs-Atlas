@@ -194,7 +194,7 @@ export class SpaceshipResourceCollectionManager {
 
   static showCollectionSuccess(reward: ResourceReward, locationType: string, bonusInfo?: BonusInfo, isFirstTime?: boolean): void {
     const toast = document.createElement("div");
-    toast.className = "fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-gradient-to-r from-green-900/90 to-blue-900/90 text-white px-4 py-3 rounded-lg shadow-lg border border-green-500/50";
+    toast.className = "fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-gradient-to-r from-green-900/90 to-blue-900/90 text-white px-4 py-3 rounded-lg shadow-lg border border-green-500/50 w-[90vw] max-w-lg";
     toast.style.animation = "slideInDown 0.3s ease-out";
     
     const typeEmojis = {
