@@ -24,7 +24,7 @@ export interface ToxicWasteRenderParams {
 // Rangos para generación procedural
 const PROCEDURAL_RANGES = {
   OBJECT_COUNT: { min: 31, max: 33 }, // Cantidad de objetos/figuras tóxicas
-  SPOT_SIZE: { min: 0.4, max: 1.2 }, // Tamaño de cada figura individual
+  SPOT_SIZE: { min: 0.4, max: 4.2 }, // Tamaño de cada figura individual
   MOVE_SPEED: { min: 0.1, max: 0.3 }, // Velocidad de movimiento orbital
   INNER_ROTATION_SPEED: { min: -150.0, max: 150.0 }, // Velocidad de rotación sobre sí misma
   PULSE_AMPLITUDE: { min: 0.1, max: 1.3 }, // Intensidad de pulsación
@@ -152,9 +152,36 @@ class ToxicSpot {
     this.phiSpeed = rng.uniform(-0.3, 0.3) * baseMoveSpeed;
     this.rotationSpeed = baseInnerRotationSpeed * rng.uniform(0.8, 1.2); // Pequeña variación individual
 
-    // Crear geometría plana centrada en el origen local del objeto
-    // Esto permite que la rotación sea sobre el centro del objeto individual
-    const geometry = new THREE.PlaneGeometry(this.size * 2, this.size * 2, 1, 1);
+    // Crear geometría plana con más segmentos para poder curvarla
+    const geometry = new THREE.PlaneGeometry(this.size * 2, this.size * 2, 8, 8);
+    
+    // Curvar la geometría para que siga la forma esférica del planeta
+    const positions = geometry.attributes.position.array;
+    
+    for (let i = 0; i < positions.length; i += 3) {
+      const x = positions[i];
+      const y = positions[i + 1];
+      const z = positions[i + 2];
+      
+      // Proyectar cada vértice sobre la superficie de la esfera
+      // Crear un vector 3D del vértice actual
+      const vertex = new THREE.Vector3(x, y, 0);
+      
+      // Normalizar el vector y escalarlo al radio de la superficie
+      const surfaceRadius = this.planetRadius * 1.001; // Muy cerca de la superficie
+      vertex.normalize().multiplyScalar(surfaceRadius);
+      
+      // Calcular la altura que debe tener este punto para seguir la curvatura esférica
+      // La altura Z debe ser la diferencia entre la superficie esférica y el plano Z=0
+      const sphericalZ = Math.sqrt(Math.max(0, surfaceRadius * surfaceRadius - x * x - y * y));
+      const heightOffset = sphericalZ - surfaceRadius;
+      
+      // Aplicar la curvatura manteniendo el punto muy cerca de la superficie
+      positions[i + 2] = heightOffset;
+    }
+    
+    geometry.attributes.position.needsUpdate = true;
+    geometry.computeVertexNormals();
     
     this.material = createToxicSpotMaterial(toxicColor, this.size, seed);
     this.material.uniforms.uPulseAmplitude.value = this.pulseAmplitude;
@@ -176,21 +203,26 @@ class ToxicSpot {
       currentPhi = Math.PI * 2 - currentPhi;
     }
 
-    // Convertir coordenadas esféricas a cartesianas para posición real en la superficie
+    // Convertir coordenadas esféricas a cartesianas para posición en la superficie
     const radius = this.planetRadius * 1.005; // Radio del planeta con pequeño offset
     const x = radius * Math.sin(currentPhi) * Math.cos(currentAngle);
     const y = radius * Math.cos(currentPhi);
     const z = radius * Math.sin(currentPhi) * Math.sin(currentAngle);
     
-    // Posicionar directamente el mesh en la superficie del planeta
+    // Posicionar el mesh en la superficie del planeta
     this.mesh.position.set(x, y, z);
     
-    // Orientar el mesh para que mire hacia afuera desde la superficie
-    this.mesh.lookAt(x * 2, y * 2, z * 2);
+    // Orientar el mesh para que mire hacia afuera desde la superficie (normal a la superficie)
+    const normal = new THREE.Vector3(x, y, z).normalize();
+    this.mesh.lookAt(
+      this.mesh.position.x + normal.x,
+      this.mesh.position.y + normal.y,
+      this.mesh.position.z + normal.z
+    );
     
     // Rotación sobre sí mismo controlado por inner_rotation_speed
-    const selfRotationAngle = time * this.rotationSpeed;
-    this.mesh.rotateZ(selfRotationAngle * 0.01); // Aplicar incrementalmente para evitar acumulación
+    const selfRotationAngle = time * this.rotationSpeed * 0.01;
+    this.mesh.rotateZ(selfRotationAngle);
   }
 
   update(_deltaTime: number, time: number): void {
