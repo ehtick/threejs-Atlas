@@ -2450,6 +2450,58 @@ export class EffectRegistry {
             }
             break;
 
+          case "crystalline":
+            // Crystalline planets: cyan crystalline atmospheres and cyan crystal formations
+            
+            // 1. Add cyan crystalline atmospheric clouds
+            if (surface.clouds && surface.clouds.length > 0) {
+              const crystallineCloudsEffect = createAtmosphereCloudsFromPythonData(
+                planetRadius,
+                surface,
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 9000,
+                pythonData.timing?.cosmic_origin_time
+              );
+
+              if (crystallineCloudsEffect) {
+                const crystallineCloudsInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "atmosphere_clouds",
+                  effect: crystallineCloudsEffect,
+                  priority: 15,
+                  enabled: true,
+                  name: "Crystalline Cyan Atmosphere",
+                };
+                this.effects.set(crystallineCloudsInstance.id, crystallineCloudsInstance);
+                effects.push(crystallineCloudsInstance);
+                crystallineCloudsEffect.addToScene(scene, mesh.position);
+              }
+            }
+
+            // 2. Add cyan crystal formations 
+            if (surface.green_patches && surface.green_patches.length > 0) {
+              const crystallineLandMassesEffect = createLandMassesFromPythonData(
+                planetRadius, 
+                surface, 
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 9500
+              );
+
+              if (crystallineLandMassesEffect) {
+                const crystallineLandMassesInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "land_masses",
+                  effect: crystallineLandMassesEffect,
+                  priority: 5,
+                  enabled: true,
+                  name: "Crystalline Cyan Formations",
+                };
+
+                this.effects.set(crystallineLandMassesInstance.id, crystallineLandMassesInstance);
+                effects.push(crystallineLandMassesInstance);
+                crystallineLandMassesEffect.addToScene(scene, mesh.position);
+              }
+            }
+            break;
+
           case "toxic":
             // Planetas Toxic: nubes púrpuras tóxicas y masas terrestres contaminadas
             
