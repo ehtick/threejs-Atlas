@@ -232,11 +232,14 @@ const TreasureChest: React.FC = () => {
     <>
       {/* Treasure Chest Button - Positioned above spaceship control */}
       <button 
-        onClick={handleTreasureChestClick}
-        className={`fixed bottom-20 sm:bottom-24 right-4 sm:right-6 z-50 w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-yellow-600 via-amber-600 to-yellow-800 hover:from-yellow-500 hover:via-amber-500 hover:to-yellow-700 text-white rounded-full shadow-2xl border-2 border-yellow-400/30 transition-all duration-300 transform hover:scale-105 backdrop-blur-sm ${
-          isButtonDisappearing ? 'animate-popAndFadeOut' : ''
+        onClick={isButtonDisappearing ? undefined : handleTreasureChestClick}
+        disabled={isButtonDisappearing}
+        className={`fixed bottom-20 sm:bottom-24 right-4 sm:right-6 z-50 w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-yellow-600 via-amber-600 to-yellow-800 text-white rounded-full shadow-2xl border-2 border-yellow-400/30 backdrop-blur-sm ${
+          isButtonDisappearing 
+            ? 'animate-popAndFadeOut cursor-not-allowed' 
+            : 'hover:from-yellow-500 hover:via-amber-500 hover:to-yellow-700 transition-all duration-300 transform hover:scale-105 cursor-pointer'
         }`}
-        title="Treasure Chest - Click for random resources!"
+        title={isButtonDisappearing ? "Treasure chest is disappearing..." : "Treasure Chest - Click for random resources!"}
       >
         <div className="flex items-center justify-center">
           <svg xmlns="http://www.w3.org/2000/svg" width={24} height={24} viewBox="0 0 24 24">
@@ -253,7 +256,7 @@ const TreasureChest: React.FC = () => {
             isClosing ? 'animate-fadeOut' : 'animate-fadeIn'
           }`}
           style={{ zIndex: 10000 }}
-          onClick={handleCloseWithoutCollecting}
+          onClick={isClosing ? undefined : handleCloseWithoutCollecting}
         >
           <div 
             className={`bg-gradient-to-br from-yellow-900/90 via-amber-900/90 to-yellow-800/90 backdrop-blur-xl rounded-2xl border-2 border-yellow-400/50 shadow-2xl w-full max-w-md ${
@@ -268,8 +271,13 @@ const TreasureChest: React.FC = () => {
                   🎉 Treasure Found! 🎉
                 </h3>
                 <button 
-                  onClick={handleCloseWithoutCollecting}
-                  className="text-yellow-400 hover:text-yellow-200 transition-colors duration-200"
+                  onClick={isClosing ? undefined : handleCloseWithoutCollecting}
+                  disabled={isClosing}
+                  className={`transition-colors duration-200 ${
+                    isClosing 
+                      ? 'text-yellow-600 cursor-not-allowed' 
+                      : 'text-yellow-400 hover:text-yellow-200 cursor-pointer'
+                  }`}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -316,14 +324,24 @@ const TreasureChest: React.FC = () => {
               
               <div className="flex gap-3">
                 <button
-                  onClick={handleCloseWithoutCollecting}
-                  className="flex-1 px-4 py-2 rounded-lg text-sm font-medium bg-gray-700/50 text-gray-300 hover:bg-gray-700/70 border border-gray-600/50 transition-all duration-200"
+                  onClick={isClosing ? undefined : handleCloseWithoutCollecting}
+                  disabled={isClosing}
+                  className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium border transition-all duration-200 ${
+                    isClosing 
+                      ? 'bg-gray-700/30 text-gray-500 border-gray-600/30 cursor-not-allowed' 
+                      : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700/70 border-gray-600/50 hover:border-gray-500 cursor-pointer'
+                  }`}
                 >
                   Close
                 </button>
                 <button
-                  onClick={handleCollectRewards}
-                  className="flex-1 px-4 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-yellow-600/30 to-amber-600/30 hover:from-yellow-600/40 hover:to-amber-600/40 text-yellow-300 border border-yellow-500/50 hover:border-yellow-400/70 transition-all duration-200"
+                  onClick={isClosing ? undefined : handleCollectRewards}
+                  disabled={isClosing}
+                  className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium border transition-all duration-200 ${
+                    isClosing 
+                      ? 'bg-yellow-600/20 text-yellow-500 border-yellow-500/30 cursor-not-allowed' 
+                      : 'bg-gradient-to-r from-yellow-600/30 to-amber-600/30 hover:from-yellow-600/40 hover:to-amber-600/40 text-yellow-300 border-yellow-500/50 hover:border-yellow-400/70 cursor-pointer'
+                  }`}
                 >
                   🎉 Collect
                 </button>
