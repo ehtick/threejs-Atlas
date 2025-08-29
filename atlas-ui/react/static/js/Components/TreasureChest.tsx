@@ -16,7 +16,7 @@ declare global {
 
 // Configuration for treasure chest appearance
 if (typeof window !== 'undefined') {
-  window.CHEST_SHOW = true; // Set to true to always show (debugging)
+  window.CHEST_SHOW = false; // Set to true to always show (debugging)
   window.CHEST_PROBABILITY = 0.000001; // 0.0001% = 1 in 1,000,000
   // Common values:
   // 0.000001 = 0.0001% (1 in 1,000,000) - extremely rare
