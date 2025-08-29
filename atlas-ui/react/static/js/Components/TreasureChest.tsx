@@ -38,6 +38,7 @@ const TreasureChest: React.FC = () => {
   const [showTreasureChest, setShowTreasureChest] = useState<boolean>(false); // false for normal behavior
   const [showChestPopup, setShowChestPopup] = useState<boolean>(false);
   const [isClosing, setIsClosing] = useState<boolean>(false);
+  const [isButtonDisappearing, setIsButtonDisappearing] = useState<boolean>(false);
   const [treasureReward, setTreasureReward] = useState<TreasureReward | null>(null);
 
   // Check if treasure chest should show
@@ -184,29 +185,44 @@ const TreasureChest: React.FC = () => {
       ResourceEventManager.emit('resources_updated');
     }
     
-    // Trigger closing animation
+    // Trigger modal closing animation
     setIsClosing(true);
     
-    // After animation, actually close
+    // After modal animation, close modal and start button animation
     setTimeout(() => {
-      setShowTreasureChest(false);
       setShowChestPopup(false);
       setTreasureReward(null);
       setIsClosing(false);
-    }, 300); // Match animation duration
+      
+      // Now trigger the button disappearing animation
+      disappearChestButton();
+    }, 300); // Match modal animation duration
+  };
+
+  const disappearChestButton = () => {
+    // Start button disappearing animation
+    setIsButtonDisappearing(true);
+    
+    // After button animation completes, hide the chest
+    setTimeout(() => {
+      setShowTreasureChest(false);
+      setIsButtonDisappearing(false);
+    }, 800); // Match popAndFadeOut duration
   };
 
   const handleCloseWithoutCollecting = () => {
-    // Trigger closing animation
+    // Trigger modal closing animation
     setIsClosing(true);
     
-    // After animation, actually close
+    // After modal animation, close modal and start button animation
     setTimeout(() => {
-      setShowTreasureChest(false);
       setShowChestPopup(false);
       setTreasureReward(null);
       setIsClosing(false);
-    }, 300); // Match animation duration
+      
+      // Now trigger the button disappearing animation
+      disappearChestButton();
+    }, 300); // Match modal animation duration
   };
 
   console.log('TreasureChest render - showTreasureChest:', showTreasureChest);
@@ -217,7 +233,9 @@ const TreasureChest: React.FC = () => {
       {/* Treasure Chest Button - Positioned above spaceship control */}
       <button 
         onClick={handleTreasureChestClick}
-        className="fixed bottom-20 sm:bottom-24 right-4 sm:right-6 z-50 w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-yellow-600 via-amber-600 to-yellow-800 hover:from-yellow-500 hover:via-amber-500 hover:to-yellow-700 text-white rounded-full shadow-2xl border-2 border-yellow-400/30 transition-all duration-300 transform hover:scale-105 backdrop-blur-sm"
+        className={`fixed bottom-20 sm:bottom-24 right-4 sm:right-6 z-50 w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-yellow-600 via-amber-600 to-yellow-800 hover:from-yellow-500 hover:via-amber-500 hover:to-yellow-700 text-white rounded-full shadow-2xl border-2 border-yellow-400/30 transition-all duration-300 transform hover:scale-105 backdrop-blur-sm ${
+          isButtonDisappearing ? 'animate-popAndFadeOut' : ''
+        }`}
         title="Treasure Chest - Click for random resources!"
       >
         <div className="flex items-center justify-center">
@@ -363,6 +381,37 @@ const TreasureChest: React.FC = () => {
         
         .animate-slideDown {
           animation: slideDown 0.3s ease-in forwards;
+        }
+        
+        @keyframes popAndFadeOut {
+          0% { 
+            opacity: 1; 
+            transform: scale(1); 
+          }
+          20% { 
+            opacity: 1; 
+            transform: scale(1.2) rotate(10deg); 
+          }
+          40% { 
+            opacity: 1; 
+            transform: scale(1.1) rotate(-5deg); 
+          }
+          60% { 
+            opacity: 1; 
+            transform: scale(1.05) rotate(2deg); 
+          }
+          80% { 
+            opacity: 0.7; 
+            transform: scale(1) rotate(0deg); 
+          }
+          100% { 
+            opacity: 0; 
+            transform: scale(0.8); 
+          }
+        }
+        
+        .animate-popAndFadeOut {
+          animation: popAndFadeOut 0.8s ease-out forwards;
         }
       `}</style>
     </>

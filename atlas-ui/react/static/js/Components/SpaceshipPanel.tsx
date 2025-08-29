@@ -33,6 +33,7 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
   const [upgradeCost, setUpgradeCost] = useState<TravelCost>({ antimatter: 0, element115: 0, deuterium: 0 });
   const [passiveGeneration, setPassiveGeneration] = useState<any>({ antimatter: 0, element115: 0, deuterium: 0, sources: { planets: 0, systems: 0, galaxies: 0 } });
   const [showCollectionPopup, setShowCollectionPopup] = useState<boolean>(false);
+  const [isCollectionClosing, setIsCollectionClosing] = useState<boolean>(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -129,6 +130,14 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
     LocationBookmarks.removeLocation(locationId);
     setSavedLocations(LocationBookmarks.getLocations());
     setLocationStats(LocationBookmarks.getLocationStats());
+  };
+
+  const closeCollectionPopup = () => {
+    setIsCollectionClosing(true);
+    setTimeout(() => {
+      setShowCollectionPopup(false);
+      setIsCollectionClosing(false);
+    }, 300);
   };
 
 
@@ -529,15 +538,19 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
         
         {/* Mass Collection Popup */}
         {showCollectionPopup && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-black/90 backdrop-blur-xl rounded-2xl border border-purple-400/30 shadow-2xl w-full max-w-md">
+          <div className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 ${
+            isCollectionClosing ? 'animate-fadeOut' : 'animate-fadeIn'
+          }`}>
+            <div className={`bg-black/90 backdrop-blur-xl rounded-2xl border border-purple-400/30 shadow-2xl w-full max-w-md ${
+              isCollectionClosing ? 'animate-slideDown' : 'animate-slideUp'
+            }`}>
               <div className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 p-4 border-b border-white/10 rounded-t-2xl">
                 <div className="flex items-center justify-between">
                   <h3 className="text-white font-bold text-lg flex items-center gap-2">
                     ⛏️ Mass Collection
                   </h3>
                   <button 
-                    onClick={() => setShowCollectionPopup(false)}
+                    onClick={closeCollectionPopup}
                     className="text-gray-400 hover:text-white transition-colors duration-200"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -585,7 +598,7 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
                 
                 <div className="flex gap-3">
                   <button
-                    onClick={() => setShowCollectionPopup(false)}
+                    onClick={closeCollectionPopup}
                     className="flex-1 px-4 py-2 rounded-lg text-sm font-medium bg-gray-700/50 text-gray-300 hover:bg-gray-700/70 border border-gray-600/50 transition-all duration-200"
                   >
                     Cancel
@@ -616,7 +629,7 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
                       // Emit resource update event to notify other components
                       ResourceEventManager.emit('resources_updated');
                       
-                      setShowCollectionPopup(false);
+                      closeCollectionPopup();
                     }}
                     className="flex-1 px-4 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-purple-600/30 to-blue-600/30 hover:from-purple-600/40 hover:to-blue-600/40 text-purple-300 border border-purple-500/50 hover:border-purple-400/70 transition-all duration-200"
                   >
@@ -628,6 +641,57 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
           </div>
         )}
       </div>
+      
+      {/* Add custom animations for Mass Collection popup */}
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        
+        @keyframes fadeOut {
+          from { opacity: 1; }
+          to { opacity: 0; }
+        }
+        
+        @keyframes slideUp {
+          from { 
+            opacity: 0; 
+            transform: translateY(20px); 
+          }
+          to { 
+            opacity: 1; 
+            transform: translateY(0); 
+          }
+        }
+        
+        @keyframes slideDown {
+          from { 
+            opacity: 1; 
+            transform: translateY(0); 
+          }
+          to { 
+            opacity: 0; 
+            transform: translateY(20px); 
+          }
+        }
+        
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease-out forwards;
+        }
+        
+        .animate-fadeOut {
+          animation: fadeOut 0.3s ease-in forwards;
+        }
+        
+        .animate-slideUp {
+          animation: slideUp 0.3s ease-out forwards;
+        }
+        
+        .animate-slideDown {
+          animation: slideDown 0.3s ease-in forwards;
+        }
+      `}</style>
     </>
   );
 };
