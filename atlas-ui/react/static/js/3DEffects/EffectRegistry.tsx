@@ -14,6 +14,7 @@ import { AtmosphereEffect, createAtmosphereFromPythonData, AtmosphereParams } fr
 
 import { AtmosphereGlowEffect, createAtmosphereGlowFromPythonData, AtmosphereGlowParams } from "./AtmosphereGlow";
 import { AtmosphereCloudsEffect, createAtmosphereCloudsFromPythonData, AtmosphereCloudsParams } from "./AtmosphereClouds";
+import { SecondaryCloudEffect, createSecondaryCloudsFromPythonData, SecondaryCloudsParams } from "./SecondaryCloudEffect";
 import { LandMassesEffect, createLandMassesFromPythonData, createTransparentLandMassesForIcyPlanet, LandMassesParams } from "./LandMasses";
 import { IcyFeaturesEffect, createIcyFeaturesFromPythonData } from "./IcyFeatures";
 import { TundraSnowflakesEffect, createTundraSnowflakesFromPythonData, createCarbonDustParticlesFromPythonData, createDesertSandstormsFromPythonData, createToxicParticlesFromPythonData } from "./TundraSnowflakes";
@@ -961,6 +962,30 @@ export class EffectRegistry {
                 this.effects.set(cloudsInstance.id, cloudsInstance);
                 effects.push(cloudsInstance);
                 cloudsEffect.addToScene(scene, mesh.position);
+              }
+
+              // Add secondary clouds for gas giant atmosphere effect
+              if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
+                const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
+                  planetRadius,
+                  surface,
+                  baseColor, // Pass planet base color
+                  (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 5000, // Different seed for secondary clouds
+                  pythonData.timing?.cosmic_origin_time
+                );
+
+                const secondaryCloudsInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "secondary_clouds",
+                  effect: secondaryCloudsEffect,
+                  priority: 12, // Lower priority than primary clouds (15) but higher than other effects
+                  enabled: true,
+                  name: "Nebulous Secondary Clouds",
+                };
+
+                this.effects.set(secondaryCloudsInstance.id, secondaryCloudsInstance);
+                effects.push(secondaryCloudsInstance);
+                secondaryCloudsEffect.addToScene(scene, mesh.position);
               }
             }
             break;

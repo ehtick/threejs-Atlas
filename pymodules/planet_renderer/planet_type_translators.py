@@ -2086,6 +2086,7 @@ class PlanetTypeTranslators:
     def translate_nebulous(self, planet_radius: int, rng: random.Random, 
                           seed: int, planet_name: str, orbital_period_years: float = 20.0) -> Dict[str, Any]:
         """Translate Nebulous planet - gas giant with nebula-like appearance and possible hexagon"""
+        import math
         
         # Nebula-like swirling patterns
         num_swirls = rng.randint(5, 12)
@@ -2102,19 +2103,19 @@ class PlanetTypeTranslators:
             })
         
         # Generate atmospheric clouds for nebulous planets (gas giant nebula atmospheres)
-        center_x, center_y = 200, 200  # Pillow center coordinates
         num_clouds = rng.randint(12, 20)  # Rich atmospheric activity from nebula gases
         clouds = []
         for i in range(num_clouds):
-            cloud_radius = rng.randint(30, 50)  # Large nebulous clouds
-            max_offset = planet_radius - cloud_radius
-            cloud_x = center_x + rng.randint(-max_offset, max_offset)
-            cloud_y = center_y + rng.randint(-max_offset, max_offset)
+            # Generate 3D coordinates on sphere surface for primary clouds
+            theta = rng.uniform(0, 2 * math.pi)  # Azimuthal angle
+            phi = rng.uniform(0, math.pi)       # Polar angle
             
-            # Convert to normalized coordinates
-            normalized_coords = self.common_utils.normalize_coordinates(
-                cloud_x, cloud_y, center_x, center_y, planet_radius
-            )
+            # Convert to 3D Cartesian coordinates on unit sphere
+            x = math.sin(phi) * math.cos(theta)
+            y = math.sin(phi) * math.sin(theta)
+            z = math.cos(phi)
+            
+            cloud_radius = rng.randint(30, 50)  # Large nebulous clouds
             
             # Nebulous clouds - colorful nebula-like colors with transparency
             cloud_colors = [
@@ -2127,11 +2128,38 @@ class PlanetTypeTranslators:
             ]
             
             clouds.append({
-                "position": normalized_coords,
+                "position": [x, y, z],  # 3D coordinates on unit sphere
                 "radius": cloud_radius / planet_radius,
                 "color": rng.choice(cloud_colors),
                 "type": "cloud",
                 "seed": f"{planet_name}_nebula_cloud_{i}"
+            })
+        
+        # Generate secondary clouds for gas giant atmosphere effect
+        num_secondary_clouds = rng.randint(20, 35)  # More secondary clouds for dense atmosphere
+        secondary_clouds = []
+        for i in range(num_secondary_clouds):
+            # Generate 3D coordinates on sphere surface
+            
+            # Random spherical coordinates
+            theta = rng.uniform(0, 2 * math.pi)  # Azimuthal angle
+            phi = rng.uniform(0, math.pi)       # Polar angle
+            
+            # Convert to 3D Cartesian coordinates on unit sphere
+            x = math.sin(phi) * math.cos(theta)
+            y = math.sin(phi) * math.sin(theta)
+            z = math.cos(phi)
+            
+            cloud_radius = rng.randint(20, 40)  # Smaller than primary clouds
+            
+            # Secondary clouds will inherit planet's base color (handled in TypeScript)
+            # Just need position and size data here
+            secondary_clouds.append({
+                "position": [x, y, z],  # 3D coordinates on unit sphere
+                "radius": cloud_radius / planet_radius,
+                "type": "secondary_cloud",
+                "seed": f"{planet_name}_secondary_cloud_{i}",
+                "turbulence": rng.uniform(0.8, 2.5)  # Variable turbulence for each cloud
             })
         
         # Polar hexagon - medium chance for nebulous
@@ -2163,12 +2191,14 @@ class PlanetTypeTranslators:
             "swirl_patterns": swirl_patterns,
             "polar_hexagon": polar_hexagon,
             "clouds": clouds,
+            "secondary_clouds": secondary_clouds,
             "nebula_density": rng.uniform(0.4, 0.8),
             "color_variance": rng.uniform(0.1, 0.3),
             "debug": {
                 "has_hexagon": polar_hexagon is not None,
                 "swirl_count": num_swirls,
-                "cloud_count": num_clouds
+                "cloud_count": num_clouds,
+                "secondary_cloud_count": num_secondary_clouds
             }
         }
     
