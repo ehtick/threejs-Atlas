@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import { SpaceshipResourceCollectionManager } from "../Utils/SpaceshipResourceCollection.tsx";
 import { ResourceEventManager } from "../Utils/ResourceEventManager.tsx";
 import { UnifiedSpaceshipStorage } from "../Utils/UnifiedSpaceshipStorage.tsx";
+import AntimatterIcon from "../Icons/AntimatterIcon.tsx";
+import DeuteriumIcon from "../Icons/DeuteriumIcon.tsx";
+import Element115Icon from "../Icons/Element115Icon.tsx";
 
 interface ResourceCollectionButtonProps {
   locationType: "galaxy" | "system" | "planet";
@@ -161,7 +164,16 @@ const ResourceCollectionButton: React.FC<ResourceCollectionButtonProps> = ({
   const getRewardPreview = () => {
     const planetData = planetElements ? { elements: planetElements } : undefined;
     const reward = SpaceshipResourceCollectionManager.calculateReward(locationType, coordinates, collectionCount, planetData, true);
-    return `${reward.antimatter}AM | ${reward.element115}E115 | ${reward.deuterium}D`;
+    return (
+      <span className="inline-flex items-center gap-1">
+        <AntimatterIcon size={8} color="#c084fc" />
+        {reward.antimatter}AM |
+        <Element115Icon size={8} color="#67e8f9" />
+        {reward.element115}E115 |
+        <DeuteriumIcon size={8} color="#fb923c" />
+        {reward.deuterium}D
+      </span>
+    );
   };
   
   const getTooltipText = () => {
@@ -174,13 +186,16 @@ const ResourceCollectionButton: React.FC<ResourceCollectionButtonProps> = ({
     const limitText = typeInfo.unlimited ? '' : ` | Daily: ${typeInfo.used}/${typeInfo.limit}`;
     
     if (canCollect) {
-      return `Mine: ${getRewardPreview()}${limitText}`;
+      // For tooltip, return simple text since we can't use JSX in title attribute
+      const reward = SpaceshipResourceCollectionManager.calculateReward(locationType, coordinates, collectionCount, planetElements ? { elements: planetElements } : undefined, true);
+      return `Mine: ${reward.antimatter}AM | ${reward.element115}E115 | ${reward.deuterium}D${limitText}`;
     } else {
       // Check if it's blocked by daily limit or cooldown
       if (!typeInfo.unlimited && typeInfo.used >= typeInfo.limit) {
         return `Daily limit reached: ${typeInfo.used}/${typeInfo.limit} ${locationType}s today`;
       } else {
-        return `Cooldown: ${getButtonText()} remaining${limitText}`;
+        const reward = SpaceshipResourceCollectionManager.calculateReward(locationType, coordinates, collectionCount, planetElements ? { elements: planetElements } : undefined, true);
+        return `Cooldown: ${getButtonText()} remaining | Next: ${reward.antimatter}AM | ${reward.element115}E115 | ${reward.deuterium}D${limitText}`;
       }
     }
   };

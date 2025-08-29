@@ -1,7 +1,11 @@
 import React from "react";
+import { createRoot } from "react-dom/client";
 import { calculatePlanetResources } from "./ElementResourceValues.tsx";
 import { UnifiedSpaceshipStorage } from "./UnifiedSpaceshipStorage.tsx";
 import { ResourceReward } from "./SpaceshipTypes.tsx";
+import AntimatterIcon from "../Icons/AntimatterIcon.tsx";
+import DeuteriumIcon from "../Icons/DeuteriumIcon.tsx";
+import Element115Icon from "../Icons/Element115Icon.tsx";
 
 export interface PlanetData {
   elements?: string[];
@@ -229,17 +233,36 @@ export class SpaceshipResourceCollectionManager {
     const resourceDiv = document.createElement("div");
     resourceDiv.className = "text-xs text-green-200 mt-1 flex gap-3";
 
+    // Create resource spans with icons using createRoot
     const amSpan = document.createElement("span");
-    amSpan.className = "text-purple-300";
-    amSpan.textContent = `+${reward.antimatter} AM`;
+    amSpan.className = "text-purple-300 flex items-center gap-1";
+    const amRoot = createRoot(amSpan);
+    amRoot.render(
+      <>
+        <AntimatterIcon size={12} color="currentColor" />
+        +{reward.antimatter} AM
+      </>
+    );
 
     const e115Span = document.createElement("span");
-    e115Span.className = "text-cyan-300";
-    e115Span.textContent = `+${reward.element115} E115`;
+    e115Span.className = "text-cyan-300 flex items-center gap-1";
+    const e115Root = createRoot(e115Span);
+    e115Root.render(
+      <>
+        <Element115Icon size={12} color="currentColor" />
+        +{reward.element115} E115
+      </>
+    );
 
     const deuteriumSpan = document.createElement("span");
-    deuteriumSpan.className = "text-orange-300";
-    deuteriumSpan.textContent = `+${reward.deuterium} D`;
+    deuteriumSpan.className = "text-orange-300 flex items-center gap-1";
+    const deuteriumRoot = createRoot(deuteriumSpan);
+    deuteriumRoot.render(
+      <>
+        <DeuteriumIcon size={12} color="currentColor" />
+        +{reward.deuterium} D
+      </>
+    );
 
     resourceDiv.appendChild(amSpan);
     resourceDiv.appendChild(e115Span);

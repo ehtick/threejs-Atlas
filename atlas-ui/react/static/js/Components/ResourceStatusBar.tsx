@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import { SpaceshipResourceManager } from "../Utils/SpaceshipResources.tsx";
 import { SpaceshipTravelManager } from "../Utils/SpaceshipTravelCosts.tsx";
 import { ResourceEventManager } from "../Utils/ResourceEventManager.tsx";
+import AntimatterIcon from "../Icons/AntimatterIcon.tsx";
+import DeuteriumIcon from "../Icons/DeuteriumIcon.tsx";
+import Element115Icon from "../Icons/Element115Icon.tsx";
 
 interface ResourceStatusBarProps {
   currentLocation?: {
@@ -55,9 +58,18 @@ const ResourceStatusBar: React.FC<ResourceStatusBarProps> = ({ currentLocation }
         {/* Left side - Resources */}
         <div className="flex items-center space-x-2">
           <div className="flex items-center space-x-2 text-xs">
-            <span className="text-purple-300">{formatResource(resources.antimatter)} AM</span>
-            <span className="text-cyan-300">{formatResource(resources.element115)} E115</span>
-            <span className="text-orange-300">{formatResource(resources.deuterium)} D</span>
+            <span className="text-purple-300 flex items-center gap-1">
+              <AntimatterIcon size={12} color="currentColor" />
+              {formatResource(resources.antimatter)} AM
+            </span>
+            <span className="text-cyan-300 flex items-center gap-1">
+              <Element115Icon size={12} color="currentColor" />
+              {formatResource(resources.element115)} E115
+            </span>
+            <span className="text-orange-300 flex items-center gap-1">
+              <DeuteriumIcon size={12} color="currentColor" />
+              {formatResource(resources.deuterium)} D
+            </span>
           </div>
         </div>
 

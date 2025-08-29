@@ -1,6 +1,10 @@
 import React from "react";
+import { createRoot } from "react-dom/client";
 import { UnifiedSpaceshipStorage } from "./UnifiedSpaceshipStorage.tsx";
 import { getItem } from "./b64.tsx";
+import AntimatterIcon from "../Icons/AntimatterIcon.tsx";
+import DeuteriumIcon from "../Icons/DeuteriumIcon.tsx";
+import Element115Icon from "../Icons/Element115Icon.tsx";
 
 export interface SpaceshipResource {
   antimatter: number;
@@ -285,17 +289,36 @@ export class SpaceshipResourceManager {
     const resourceDiv = document.createElement("div");
     resourceDiv.className = "text-xs text-purple-200 mt-1 flex gap-3";
 
+    // Create resource spans with icons using createRoot
     const amSpan = document.createElement("span");
-    amSpan.className = "text-purple-300";
-    amSpan.textContent = `+${generation.antimatter} AM`;
+    amSpan.className = "text-purple-300 flex items-center gap-1";
+    const amRoot = createRoot(amSpan);
+    amRoot.render(
+      <>
+        <AntimatterIcon size={12} color="currentColor" />
+        +{generation.antimatter} AM
+      </>
+    );
 
     const e115Span = document.createElement("span");
-    e115Span.className = "text-cyan-300";
-    e115Span.textContent = `+${generation.element115} E115`;
+    e115Span.className = "text-cyan-300 flex items-center gap-1";
+    const e115Root = createRoot(e115Span);
+    e115Root.render(
+      <>
+        <Element115Icon size={12} color="currentColor" />
+        +{generation.element115} E115
+      </>
+    );
 
     const deuteriumSpan = document.createElement("span");
-    deuteriumSpan.className = "text-orange-300";
-    deuteriumSpan.textContent = `+${generation.deuterium} D`;
+    deuteriumSpan.className = "text-orange-300 flex items-center gap-1";
+    const deuteriumRoot = createRoot(deuteriumSpan);
+    deuteriumRoot.render(
+      <>
+        <DeuteriumIcon size={12} color="currentColor" />
+        +{generation.deuterium} D
+      </>
+    );
 
     resourceDiv.appendChild(amSpan);
     resourceDiv.appendChild(e115Span);
@@ -476,16 +499,39 @@ export class SpaceshipResourceManager {
     exchangeDiv.className = "text-xs text-amber-200 mt-1";
 
     const fromSpan = document.createElement("span");
-    fromSpan.className = fromLabel.color;
-    fromSpan.textContent = `-${sentAmount} ${fromLabel.name}`;
-
+    fromSpan.className = `${fromLabel.color} flex items-center gap-1`;
+    
+    const toSpan = document.createElement("span");
+    toSpan.className = `${toLabel.color} flex items-center gap-1`;
+    
     const arrowSpan = document.createElement("span");
     arrowSpan.className = "text-amber-300 mx-2";
     arrowSpan.textContent = "→";
-
-    const toSpan = document.createElement("span");
-    toSpan.className = toLabel.color;
-    toSpan.textContent = `+${receivedAmount} ${toLabel.name}`;
+    
+    // Add icons using createRoot
+    const fromRoot = createRoot(fromSpan);
+    const fromIcon = fromResource === 'antimatter' ? <AntimatterIcon size={10} color="currentColor" /> :
+                    fromResource === 'element115' ? <Element115Icon size={10} color="currentColor" /> :
+                    <DeuteriumIcon size={10} color="currentColor" />;
+                    
+    const toRoot = createRoot(toSpan);
+    const toIcon = toResource === 'antimatter' ? <AntimatterIcon size={10} color="currentColor" /> :
+                  toResource === 'element115' ? <Element115Icon size={10} color="currentColor" /> :
+                  <DeuteriumIcon size={10} color="currentColor" />;
+    
+    fromRoot.render(
+      <>
+        {fromIcon}
+        -{sentAmount} {fromLabel.name}
+      </>
+    );
+    
+    toRoot.render(
+      <>
+        {toIcon}
+        +{receivedAmount} {toLabel.name}
+      </>
+    );
 
     exchangeDiv.appendChild(fromSpan);
     exchangeDiv.appendChild(arrowSpan);
