@@ -1580,6 +1580,28 @@ export class EffectRegistry {
               effects.push(desertSnowflakesInstance);
               desertSnowflakesEffect.addToScene(scene, mesh.position);
             }
+            
+            // 5. Add savannah terrain layer for desert environments
+            if (surface.savannah_terrain_layer && this.layerSystem) {
+              const desertSavannahLayer = createSavannahTerrainLayerFromPythonData(
+                this.layerSystem,
+                pythonData,
+                pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed,
+                'SAVANNAH'
+              );
+
+              const desertSavannahInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "savannah_terrain_layer",
+                effect: desertSavannahLayer,
+                priority: 2,
+                enabled: true,
+                name: "Desert Savannah Terrain",
+              };
+
+              this.effects.set(desertSavannahInstance.id, desertSavannahInstance);
+              effects.push(desertSavannahInstance);
+            }
             break;
 
           case "molten_core":
@@ -2666,6 +2688,80 @@ export class EffectRegistry {
               this.effects.set(superEarthWaterFeaturesInstance.id, superEarthWaterFeaturesInstance);
               effects.push(superEarthWaterFeaturesInstance);
               superEarthWaterFeaturesEffect.addToScene(scene, mesh.position);
+            }
+            break;
+
+          case "sub_earth":
+            // Sub Earth planets: thinner atmospheric clouds and smaller landmasses with savannah terrain
+            
+            // 1. Add atmospheric clouds for Sub Earth planets (thinner atmospheres than Earth)
+            if (surface.clouds && surface.clouds.length > 0) {
+              const subEarthCloudsEffect = createAtmosphereCloudsFromPythonData(
+                planetRadius,
+                surface,
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 7000,
+                pythonData.timing?.cosmic_origin_time
+              );
+
+              if (subEarthCloudsEffect) {
+                const subEarthCloudsInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "atmosphere_clouds",
+                  effect: subEarthCloudsEffect,
+                  priority: 15,
+                  enabled: true,
+                  name: "Sub Earth Thin Atmosphere",
+                };
+                this.effects.set(subEarthCloudsInstance.id, subEarthCloudsInstance);
+                effects.push(subEarthCloudsInstance);
+                subEarthCloudsEffect.addToScene(scene, mesh.position);
+              }
+            }
+
+            // 2. Add smaller land masses 
+            if (surface.green_patches && surface.green_patches.length > 0) {
+              const subEarthLandMassesEffect = createLandMassesFromPythonData(
+                planetRadius, 
+                surface, 
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 7500
+              );
+
+              if (subEarthLandMassesEffect) {
+                const subEarthLandMassesInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "land_masses",
+                  effect: subEarthLandMassesEffect,
+                  priority: 5,
+                  enabled: true,
+                  name: "Sub Earth Small Continents",
+                };
+
+                this.effects.set(subEarthLandMassesInstance.id, subEarthLandMassesInstance);
+                effects.push(subEarthLandMassesInstance);
+                subEarthLandMassesEffect.addToScene(scene, mesh.position);
+              }
+            }
+
+            // 3. Add savannah terrain layer
+            if (surface.savannah_terrain_layer && this.layerSystem) {
+              const savannahLayer = createSavannahTerrainLayerFromPythonData(
+                this.layerSystem,
+                pythonData,
+                pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed,
+                'SAVANNAH'
+              );
+
+              const savannahInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "savannah_terrain_layer",
+                effect: savannahLayer,
+                priority: 2,
+                enabled: true,
+                name: "Sub Earth Savannah Terrain",
+              };
+
+              this.effects.set(savannahInstance.id, savannahInstance);
+              effects.push(savannahInstance);
             }
             break;
 

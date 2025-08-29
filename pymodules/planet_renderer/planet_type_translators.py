@@ -565,7 +565,8 @@ class PlanetTypeTranslators:
         return {
             "type": "desert",
             "clouds": clouds,
-            "green_patches": green_patches
+            "green_patches": green_patches,
+            "savannah_terrain_layer": True  # Enable savannah terrain layer for desert environments
         }
     
     def translate_lava(self, planet_radius: int, rng: random.Random, 
@@ -712,7 +713,10 @@ class PlanetTypeTranslators:
     
     def translate_arid(self, planet_radius: int, rng: random.Random, 
                       seed: int, planet_name: str) -> Dict[str, Any]:
-        return {"type": "arid"}
+        """Translate Arid planet elements - dry worlds with sparse atmospheres and rocky terrain"""
+        return {
+            "type": "arid"
+        }
     
     def translate_swamp(self, planet_radius: int, rng: random.Random, 
                        seed: int, planet_name: str) -> Dict[str, Any]:
@@ -1920,7 +1924,100 @@ class PlanetTypeTranslators:
     
     def translate_sub_earth(self, planet_radius: int, rng: random.Random, 
                            seed: int, planet_name: str) -> Dict[str, Any]:
-        return {"type": "sub_earth"}
+        """Translate Sub Earth planet elements - smaller Earth-like worlds with thinner atmospheres and smaller landmasses"""
+        center_x, center_y = 200, 200  # Pillow center coordinates
+        
+        # Generate smaller atmospheric clouds for Sub Earth planets (thinner atmospheres than Earth)
+        num_clouds = rng.randint(6, 10)  # Fewer clouds due to thinner atmosphere
+        clouds = []
+        for i in range(num_clouds):
+            cloud_radius = rng.randint(15, 25)  # Smaller clouds than Super Earth
+            max_offset = planet_radius - cloud_radius
+            cloud_x = center_x + rng.randint(-max_offset, max_offset)
+            cloud_y = center_y + rng.randint(-max_offset, max_offset)
+            
+            # Convert to normalized coordinates
+            normalized_coords = self.common_utils.normalize_coordinates(
+                cloud_x, cloud_y, center_x, center_y, planet_radius
+            )
+            
+            # Sub Earth clouds - similar to Super Earth but lighter due to thinner atmosphere
+            cloud_colors = [
+                [0.95, 0.95, 0.95, 0.7],      # Light white clouds (thinner atmosphere)
+                [0.92, 0.95, 0.98, 0.6],      # Light blue-white
+                [0.94, 0.98, 0.94, 0.65],     # Very light green-white
+                [0.88, 0.92, 0.98, 0.5],      # Light blue atmospheric haze
+            ]
+            
+            clouds.append({
+                "position": normalized_coords,
+                "radius": cloud_radius / planet_radius,
+                "color": rng.choice(cloud_colors),
+                "type": "cloud",
+                "seed": f"{planet_name}_sub_earth_cloud_{i}"
+            })
+        
+        # Generate smaller land masses for Sub Earth planets (smaller continents/islands)
+        num_landmasses = rng.randint(8, 15)  # More numerous but smaller landmasses
+        green_patches = []
+        
+        for i in range(num_landmasses):
+            # Generate uniform position on sphere
+            theta = rng.uniform(0, 2 * math.pi)
+            phi = math.acos(rng.uniform(-1, 1))
+            
+            position_3d = [
+                math.sin(phi) * math.cos(theta),
+                math.sin(phi) * math.sin(theta),
+                math.cos(phi)
+            ]
+            
+            # Size distribution - SMALLER than Super Earth
+            if i < 2:
+                # Larger landmasses (small continents)
+                size = rng.uniform(0.15, 0.25)  # Much smaller than Super Earth continents
+            elif i < 6:
+                # Medium landmasses (large islands)
+                size = rng.uniform(0.08, 0.18)  # Medium-sized landmasses
+            else:
+                # Small landmasses (small islands and archipelagos)
+                size = rng.uniform(0.04, 0.12)  # Small islands
+            
+            # Sub Earth landmass colors - similar to Super Earth but for smaller world
+            landmass_color_choices = [
+                [0.20, 0.40, 0.15],  # Forest green
+                [0.35, 0.28, 0.18],  # Brown for arid regions
+                [0.25, 0.45, 0.20],  # Bright green for fertile areas
+                [0.18, 0.35, 0.12],  # Dark green for forests
+                [0.40, 0.32, 0.22],  # Light brown for grasslands
+                [0.22, 0.42, 0.18],  # Medium green
+                [0.30, 0.25, 0.15],  # Tan for semi-arid regions
+            ]
+            
+            green_patches.append({
+                "position_3d": position_3d,
+                "size": size,  # Smaller sizes for Sub Earth scale
+                "color": rng.choice(landmass_color_choices) + [rng.uniform(0.75, 0.90)],  # Slightly lower opacity
+                "sides": rng.randint(12, 25),  # Less complex coastlines than Super Earth
+                "height": rng.uniform(0.015, 0.035),  # Lower elevation than Super Earth
+                "biome_diversity": rng.uniform(0.5, 0.8),  # Lower biome diversity on smaller landmasses
+                "continental_scale": False  # Flag for smaller scale features
+            })
+        
+        return {
+            "type": "sub_earth",
+            "clouds": clouds,  # AtmosphereClouds will use this
+            "green_patches": green_patches,  # LandMasses will use this
+            "savannah_terrain_layer": True,  # Enable savannah terrain layer
+            "debug": {
+                "original_planet_radius": planet_radius,
+                "center_x": center_x, "center_y": center_y,
+                "cloud_count": num_clouds,
+                "landmass_count": num_landmasses,
+                "largest_landmass_size": max([lm["size"] for lm in green_patches]) if green_patches else 0,
+                "continental_coverage": "small_sub_earth_scale"
+            }
+        }
     
     def translate_frozen_gas_giant(self, planet_radius: int, rng: random.Random, 
                                   seed: int, planet_name: str, orbital_period_years: float = 30.0) -> Dict[str, Any]:
