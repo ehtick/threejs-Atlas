@@ -244,7 +244,7 @@ export class SecondaryCloudEffect {
     for (let i = 0; i < this.cloudCount; i++) {
       let x, y, z;
       let cloudColor = this.params.baseColor.clone().multiplyScalar(0.85); // 15% más oscuro
-      let cloudSize = this.params.size! * rng.uniform(0.6, 1.4); // Mayor variación de tamaño
+      let cloudSize = this.params.size! * rng.uniform(0.8, 1.2); // Mismo rango que AtmosphereClouds
 
       if (cloudsFromPython && i < cloudsFromPython.length) {
         const cloudData = cloudsFromPython[i];
@@ -255,10 +255,10 @@ export class SecondaryCloudEffect {
           continue;
         }
         
-        // Altura ligeramente diferente para evitar solapamiento con primary clouds
-        x = cloudData.position[0] * planetRadius * 1.04;
-        y = cloudData.position[1] * planetRadius * 1.04;
-        z = cloudData.position[2] * planetRadius * 1.04;
+        // Misma altura que primary clouds
+        x = cloudData.position[0] * planetRadius * 1.05;
+        y = cloudData.position[1] * planetRadius * 1.05;
+        z = cloudData.position[2] * planetRadius * 1.05;
         
         // Validar resultados
         if (!isFinite(x) || !isFinite(y) || !isFinite(z)) {
@@ -268,14 +268,14 @@ export class SecondaryCloudEffect {
         
         // Usar color base del planeta, no el color de Python
         // Para secondary clouds queremos que sean coherentes con el planeta
-        cloudSize = cloudData.radius * planetRadius * 0.8; // Tamaño similar a atmosphere clouds
+        cloudSize = cloudData.radius * planetRadius * 0.8; // Tamaño igual que AtmosphereClouds
         
       } else {
         // Generación procedural similar pero con diferentes parámetros
         const phi = rng.uniform(0, 2 * Math.PI);
         const cosTheta = rng.uniform(-1, 1);
         const theta = Math.acos(cosTheta);
-        const surfaceRadius = planetRadius * 1.04; // Altura fija
+        const surfaceRadius = planetRadius * 1.05; // Misma altura que primary clouds
         
         x = surfaceRadius * Math.sin(theta) * Math.cos(phi);
         y = surfaceRadius * Math.sin(theta) * Math.sin(phi);
@@ -294,8 +294,8 @@ export class SecondaryCloudEffect {
         cloudSize = 1.0; // Fallback
       }
 
-      // Billboard geometry muy simple
-      const baseRadius = cloudSize * rng.uniform(0.5, 1.2);
+      // TÉCNICA BILLBOARD ORIENTADA AL PLANETA (igual que AtmosphereClouds)
+      const baseRadius = cloudSize * rng.uniform(0.3, 0.8);
       
       // Validar baseRadius
       if (!isFinite(baseRadius) || baseRadius <= 0) {
@@ -303,13 +303,20 @@ export class SecondaryCloudEffect {
         continue;
       }
       
-      const cloudGeometry = new THREE.PlaneGeometry(baseRadius * 2, baseRadius * 2);
+      // Usar PlaneGeometry con suficientes segmentos para curvar (igual que AtmosphereClouds)
+      const segments = Math.max(8, Math.floor(baseRadius * 15)); // Más segmentos para nubes grandes
+      const cloudGeometry = new THREE.PlaneGeometry(
+        baseRadius * 24,
+        baseRadius * 24,
+        segments, segments
+      );
       
-      // Posicionar la nube (igual que AtmosphereClouds)
+      // ORIENTACIÓN TANGENTE A LA SUPERFICIE DEL PLANETA (igual que AtmosphereClouds)
       const cloudPosition = new THREE.Vector3(x, y, z);
+      const planetCenter = new THREE.Vector3(0, 0, 0);
       const normalFromPlanet = cloudPosition.clone().normalize();
       
-      // Crear sistema de coordenadas tangente (igual que AtmosphereClouds)
+      // Crear vectores tangentes a la superficie esférica
       const tangent1 = new THREE.Vector3();
       const tangent2 = new THREE.Vector3();
       
@@ -361,11 +368,12 @@ export class SecondaryCloudEffect {
       // Material individual
       const cloudMaterial = this.material.clone();
       cloudMaterial.uniforms.cloudColor.value = cloudColor;
-      cloudMaterial.uniforms.density.value = this.params.density! * rng.uniform(0.6, 1.4);
+      cloudMaterial.uniforms.density.value = this.params.density! * rng.uniform(0.8, 1.2);
       cloudMaterial.uniforms.turbulence.value = this.params.turbulence! * rng.uniform(0.8, 1.2);
+      // Offset determinista basado en tiempo cósmico + variación aleatoria (igual que AtmosphereClouds)
       cloudMaterial.uniforms.noiseOffset.value = new THREE.Vector2(
-        (cosmicOffsetBase + rng.uniform(0, 150)) % 150,
-        (cosmicOffsetBase + rng.uniform(0, 150)) % 150
+        (cosmicOffsetBase + rng.uniform(0, 100)) % 100,
+        (cosmicOffsetBase + rng.uniform(0, 100)) % 100
       );
       
       cloudMaterial.uniforms.lightDirection.value = this.material.uniforms.lightDirection.value.clone();
