@@ -239,7 +239,7 @@ const FuelBars: React.FC = () => {
                 
                 {/* Hover effect border */}
                 {isHovered && isExpanded && (
-                  <div className="absolute inset-0 border border-white/30 pointer-events-none" />
+                  <div className="absolute inset-0 pointer-events-none" />
                 )}
               </div>
             );
