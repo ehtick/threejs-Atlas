@@ -64,6 +64,7 @@ export class CrystallineSurfaceEffect {
   private envMap: THREE.CubeTexture | null = null;
   private starFieldReflections: THREE.Points | null = null;
   private starFieldMaterial: THREE.ShaderMaterial | null = null;
+  private crystallineData: any[] = []; // Store crystal data for deterministic reflections
 
   constructor(
     private planetRadius: number,
@@ -75,17 +76,24 @@ export class CrystallineSurfaceEffect {
     this.crystallineGroup.name = "CrystallineSurface";
     
     this.animationSpeed = params.timeSpeed || 0.05;
-    this.startTime = Date.now();
+    this.startTime = params.cosmicOriginTime || 0; // Usar tiempo determinista
 
     // Crear cubemap estrellado para reflexiones
     this.createStarfieldCubemap();
     
-    // Crear reflexiones de partículas del star field
-    if (this.starField) {
-      this.createStarFieldReflections();
-    }
-    
     this.generateCrystallineFormations();
+    
+    // Crear reflexiones de partículas del star field DESPUÉS de generar cristales
+    // Usar setTimeout para asegurar que StarField esté completamente inicializado
+    if (this.starField) {
+      setTimeout(() => {
+        if (this.starField && this.starField.getObject3D && this.starField.getObject3D()) {
+          this.createStarFieldReflections();
+        } else {
+          console.warn('CrystallineSurface: StarField not ready, skipping reflections');
+        }
+      }, 0);
+    }
   }
 
   /**
@@ -112,16 +120,17 @@ export class CrystallineSurfaceEffect {
         faceContext.fillStyle = gradient;
         faceContext.fillRect(0, 0, size, size);
         
-        // Estrellas sutiles pero visibles en reflexiones
-        const starCount = 200 + Math.random() * 100;
+        // Estrellas deterministas para cubemap (usar seed)
+        const cubemapRng = new SeededRandom((this.params.seed || 42) + i * 1000);
+        const starCount = 200 + Math.floor(cubemapRng.random() * 100);
         for (let j = 0; j < starCount; j++) {
-          const x = Math.random() * size;
-          const y = Math.random() * size;
-          const brightness = 0.3 + Math.random() * 0.4;
-          const starSize = Math.random() * 2 + 0.5;
+          const x = cubemapRng.random() * size;
+          const y = cubemapRng.random() * size;
+          const brightness = 0.3 + cubemapRng.random() * 0.4;
+          const starSize = cubemapRng.random() * 2 + 0.5;
           
           // Estrellas con tonos sutiles pero visibles
-          const colorVariant = Math.random();
+          const colorVariant = cubemapRng.random();
           if (colorVariant < 0.4) {
             // Estrellas azuladas suaves
             faceContext.fillStyle = `rgba(${120 + 60 * brightness}, ${140 + 80 * brightness}, 255, ${brightness})`;
@@ -138,7 +147,7 @@ export class CrystallineSurfaceEffect {
           faceContext.fill();
           
           // Halo sutil solo para estrellas brillantes
-          if (brightness > 0.6 && Math.random() < 0.1) {
+          if (brightness > 0.6 && cubemapRng.random() < 0.1) {
             faceContext.fillStyle = `rgba(255, 255, 255, ${brightness * 0.2})`;
             faceContext.beginPath();
             faceContext.arc(x, y, starSize * 2, 0, Math.PI * 2);
@@ -171,9 +180,9 @@ export class CrystallineSurfaceEffect {
    * Generar formaciones cristalinas con materiales avanzados
    */
   private generateCrystallineFormations(): void {
-    const crystallineData = this.params.crystallinePatches || this.generateProceduralCrystals();
+    this.crystallineData = this.params.crystallinePatches || this.generateProceduralCrystals();
     
-    crystallineData.forEach((crystalData: any, index: number) => {
+    this.crystallineData.forEach((crystalData: any, index: number) => {
       this.createCrystalFormation(crystalData, index);
     });
   }
@@ -369,7 +378,8 @@ export class CrystallineSurfaceEffect {
   }
 
   /**
-   * Crear reflexiones de partículas del StarField en los cristales
+   * Crear reflexiones procedurales y deterministas de las partículas del StarField
+   * Cada cristal refleja estrellas basándose en su geometría real y posición
    */
   private createStarFieldReflections(): void {
     if (!this.starField || !this.starField.getObject3D) return;
@@ -384,46 +394,111 @@ export class CrystallineSurfaceEffect {
     
     if (!starPositions || !starSizes || !starBrightnesses) return;
 
-    // Crear geometría para las reflexiones filtradas (solo estrellas brillantes)
-    const reflectionCount = Math.floor(starPositions.count * 0.3); // 30% de las estrellas
-    const reflectionPositions = new Float32Array(reflectionCount * 3);
-    const reflectionSizes = new Float32Array(reflectionCount);
-    const reflectionBrightnesses = new Float32Array(reflectionCount);
-    
-    const rng = this.seededRng || new SeededRandom(42);
-    let reflectionIndex = 0;
-    
-    // Filtrar solo las estrellas más brillantes para reflejar
-    for (let i = 0; i < starPositions.count && reflectionIndex < reflectionCount; i++) {
-      const brightness = starBrightnesses.array[i];
+    const reflections: Array<{
+      position: THREE.Vector3;
+      size: number;
+      brightness: number;
+      crystalIndex: number;
+    }> = [];
+
+    // Para cada cristal, calcular qué estrellas debe reflejar basándose en su geometría DETERMINISTA
+    this.crystallineData.forEach((crystalData, crystalIndex) => {
+      // Usar la posición determinista del crystal data
+      const surfaceNormal = new THREE.Vector3(
+        crystalData.position_3d[0],
+        crystalData.position_3d[1], 
+        crystalData.position_3d[2]
+      ).normalize();
       
-      // Solo reflejar estrellas brillantes
-      if (brightness > 0.7 && rng.random() < 0.5) {
-        // Proyectar la estrella sobre la superficie del planeta (reflexión especular)
-        const starX = starPositions.array[i * 3];
-        const starY = starPositions.array[i * 3 + 1];
-        const starZ = starPositions.array[i * 3 + 2];
+      const crystalWorldPos = surfaceNormal.clone().multiplyScalar(this.planetRadius);
+      const crystalNormal = crystalWorldPos.clone().normalize();
+      
+      // Generar caras deterministas basadas en los datos del cristal
+      const faceNormals = this.generateDeterministicFaceNormals(crystalData, crystalIndex);
+      
+      // Para cada cara del cristal, encontrar estrellas que se reflejarían
+      faceNormals.forEach((faceNormal, faceIndex) => {
+        // Calcular la dirección de reflexión especular para esta cara
+        // R = I - 2 * (I · N) * N, donde I es la dirección incidente y N la normal
         
-        // Normalizar y proyectar sobre la superficie planetaria
-        const starDir = new THREE.Vector3(starX, starY, starZ).normalize();
-        const reflectionPos = starDir.multiplyScalar(this.planetRadius * 1.002); // Ligeramente sobre la superficie
-        
-        reflectionPositions[reflectionIndex * 3] = reflectionPos.x;
-        reflectionPositions[reflectionIndex * 3 + 1] = reflectionPos.y;
-        reflectionPositions[reflectionIndex * 3 + 2] = reflectionPos.z;
-        
-        reflectionSizes[reflectionIndex] = starSizes.array[i] * 0.3; // Más pequeñas que las originales
-        reflectionBrightnesses[reflectionIndex] = brightness * 0.4; // Menos brillantes (reflexión)
-        
-        reflectionIndex++;
-      }
+        for (let starIndex = 0; starIndex < starPositions.count; starIndex++) {
+          const starX = starPositions.getX(starIndex);
+          const starY = starPositions.getY(starIndex);
+          const starZ = starPositions.getZ(starIndex);
+          const starBrightness = starBrightnesses.getX(starIndex);
+          const starSize = starSizes.getX(starIndex);
+          
+          // Solo procesar estrellas brillantes
+          if (starBrightness < 0.6) continue;
+          
+          const starPos = new THREE.Vector3(starX, starY, starZ);
+          const starDir = starPos.clone().normalize();
+          
+          // Dirección incidente desde la estrella al cristal
+          const incidentDir = starDir.clone().negate();
+          
+          // Calcular reflexión especular: R = I - 2 * (I · N) * N
+          const dotProduct = incidentDir.dot(faceNormal);
+          const reflectedDir = incidentDir.clone().sub(
+            faceNormal.clone().multiplyScalar(2 * dotProduct)
+          );
+          
+          // Determinar si esta reflexión es visible desde la cámara
+          // (simplificación: usar ángulo con la normal del cristal)
+          const reflectionVisibility = Math.abs(reflectedDir.dot(crystalNormal));
+          
+          // Usar seed determinista para decidir si crear esta reflexión específica
+          const reflectionSeed = crystalIndex * 10000 + faceIndex * 1000 + starIndex;
+          const seededRng = new SeededRandom(reflectionSeed + (this.params.seed || 42));
+          const shouldCreateReflection = seededRng.random() < 0.4; // 40% probabilidad determinista
+          
+          // Solo crear reflexión si es suficientemente visible, significativa y pasa el test determinista
+          if (reflectionVisibility > 0.3 && dotProduct < -0.1 && shouldCreateReflection) { // dotProduct negativo = estrella "detrás" de la cara
+            // Calcular posición de la reflexión en la superficie del cristal
+            const reflectionPos = crystalWorldPos.clone().add(
+              faceNormal.clone().multiplyScalar(0.001) // Ligeramente fuera de la superficie
+            );
+            
+            // Ajustar la reflexión basándose en la curvatura de la superficie cristalina
+            const surfaceProjection = reflectionPos.clone().normalize().multiplyScalar(this.planetRadius * 1.001);
+            
+            reflections.push({
+              position: surfaceProjection,
+              size: starSize * 0.4 * reflectionVisibility, // Tamaño basado en visibilidad
+              brightness: starBrightness * 0.5 * reflectionVisibility, // Brillo reducido por reflexión
+              crystalIndex
+            });
+          }
+        }
+      });
+    });
+
+    if (reflections.length === 0) {
+      console.warn('CrystallineSurface: No procedural star reflections calculated');
+      return;
     }
 
-    // Crear geometría y material para las reflexiones
+    // Crear geometría para las reflexiones calculadas
+    const reflectionPositions = new Float32Array(reflections.length * 3);
+    const reflectionSizes = new Float32Array(reflections.length);
+    const reflectionBrightnesses = new Float32Array(reflections.length);
+    const reflectionCrystalIndices = new Float32Array(reflections.length);
+    
+    reflections.forEach((reflection, index) => {
+      reflectionPositions[index * 3] = reflection.position.x;
+      reflectionPositions[index * 3 + 1] = reflection.position.y;
+      reflectionPositions[index * 3 + 2] = reflection.position.z;
+      
+      reflectionSizes[index] = reflection.size;
+      reflectionBrightnesses[index] = reflection.brightness;
+      reflectionCrystalIndices[index] = reflection.crystalIndex;
+    });
+
     const reflectionGeometry = new THREE.BufferGeometry();
-    reflectionGeometry.setAttribute('position', new THREE.BufferAttribute(reflectionPositions.slice(0, reflectionIndex * 3), 3));
-    reflectionGeometry.setAttribute('size', new THREE.BufferAttribute(reflectionSizes.slice(0, reflectionIndex), 1));
-    reflectionGeometry.setAttribute('brightness', new THREE.BufferAttribute(reflectionBrightnesses.slice(0, reflectionIndex), 1));
+    reflectionGeometry.setAttribute('position', new THREE.BufferAttribute(reflectionPositions, 3));
+    reflectionGeometry.setAttribute('size', new THREE.BufferAttribute(reflectionSizes, 1));
+    reflectionGeometry.setAttribute('brightness', new THREE.BufferAttribute(reflectionBrightnesses, 1));
+    reflectionGeometry.setAttribute('crystalIndex', new THREE.BufferAttribute(reflectionCrystalIndices, 1));
 
     this.starFieldMaterial = new THREE.ShaderMaterial({
       uniforms: {
@@ -434,6 +509,7 @@ export class CrystallineSurfaceEffect {
       vertexShader: `
         attribute float size;
         attribute float brightness;
+        attribute float crystalIndex;
         
         uniform float time;
         uniform float planetRadius;
@@ -441,19 +517,21 @@ export class CrystallineSurfaceEffect {
         
         varying float vBrightness;
         varying float vLightInfluence;
+        varying float vCrystalIndex;
         
         void main() {
           vBrightness = brightness;
+          vCrystalIndex = crystalIndex;
           
-          // Calcular influencia de la iluminación
+          // Calcular influencia de la iluminación basada en la posición real
           vec3 worldPos = (modelMatrix * vec4(position, 1.0)).xyz;
-          vec3 normal = normalize(worldPos); // Normal de la superficie esférica
+          vec3 normal = normalize(worldPos);
           float lightDot = dot(normal, lightDirection);
-          vLightInfluence = max(0.0, lightDot); // Solo lado iluminado
+          vLightInfluence = max(0.1, lightDot * 0.5 + 0.5);
           
           vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
           gl_Position = projectionMatrix * mvPosition;
-          gl_PointSize = size * (300.0 / -mvPosition.z) * vLightInfluence; // Tamaño afectado por iluminación
+          gl_PointSize = size * (350.0 / -mvPosition.z) * (0.7 + 0.3 * vLightInfluence);
         }
       `,
       fragmentShader: `
@@ -461,19 +539,23 @@ export class CrystallineSurfaceEffect {
         
         varying float vBrightness;
         varying float vLightInfluence;
+        varying float vCrystalIndex;
         
         void main() {
           float dist = distance(gl_PointCoord, vec2(0.5));
           if (dist > 0.5) discard;
           
-          // Solo mostrar reflexiones en el lado iluminado
-          if (vLightInfluence < 0.1) discard;
-          
           float alpha = (1.0 - dist * 2.0) * vBrightness * vLightInfluence;
-          alpha *= 0.6; // Reflexiones sutiles
+          alpha *= 0.8; // Reflexiones visibles pero no dominantes
           
-          // Color cristalino azul-cyan para las reflexiones
-          vec3 reflectionColor = vec3(0.3, 0.7, 1.0);
+          // Color cristalino con variación sutil por cristal
+          vec3 baseColor = vec3(0.4, 0.8, 1.0);
+          float crystalVariation = sin(vCrystalIndex * 0.7) * 0.1;
+          vec3 reflectionColor = baseColor + vec3(crystalVariation, crystalVariation * 0.5, -crystalVariation * 0.3);
+          
+          // Parpadeo sutil sincronizado con el tiempo
+          float twinkle = 0.85 + 0.15 * sin(time * 1.5 + vCrystalIndex);
+          reflectionColor *= twinkle;
           
           gl_FragColor = vec4(reflectionColor, alpha);
         }
@@ -485,6 +567,55 @@ export class CrystallineSurfaceEffect {
 
     this.starFieldReflections = new THREE.Points(reflectionGeometry, this.starFieldMaterial);
     this.crystallineGroup.add(this.starFieldReflections);
+    
+    console.log(`CrystallineSurface: Created ${reflections.length} procedural star reflections from ${this.crystallineFormations.length} crystals`);
+  }
+
+  /**
+   * Generar caras deterministas basadas en la geometría del cristal
+   */
+  private generateDeterministicFaceNormals(crystalData: any, crystalIndex: number): THREE.Vector3[] {
+    const rng = new SeededRandom((this.params.seed || 42) + crystalIndex * 1000);
+    const faceNormals: THREE.Vector3[] = [];
+    
+    // Generar normales deterministas basadas en la forma cristalina
+    const sides = crystalData.sides || 6;
+    const numFaces = Math.min(sides, 8); // Máximo 8 caras para reflexión
+    
+    // Posición base del cristal
+    const crystalNormal = new THREE.Vector3(
+      crystalData.position_3d[0],
+      crystalData.position_3d[1],
+      crystalData.position_3d[2]
+    ).normalize();
+    
+    // Crear vectores tangentes deterministas (igual que en createCrystalFormation)
+    const tangent1 = new THREE.Vector3();
+    const tangent2 = new THREE.Vector3();
+    
+    if (Math.abs(crystalNormal.y) < 0.99) {
+      tangent1.crossVectors(crystalNormal, new THREE.Vector3(0, 1, 0)).normalize();
+    } else {
+      tangent1.crossVectors(crystalNormal, new THREE.Vector3(1, 0, 0)).normalize();
+    }
+    tangent2.crossVectors(crystalNormal, tangent1).normalize();
+    
+    // Generar caras distribuidas determinísticamente alrededor del cristal
+    for (let i = 0; i < numFaces; i++) {
+      const angle1 = (i / numFaces) * Math.PI * 2;
+      const angle2 = rng.uniform(-Math.PI * 0.3, Math.PI * 0.3); // Variación vertical
+      
+      // Crear normal de cara usando los vectores tangentes
+      const faceNormal = new THREE.Vector3()
+        .addScaledVector(tangent1, Math.cos(angle1))
+        .addScaledVector(tangent2, Math.sin(angle1))
+        .addScaledVector(crystalNormal, Math.sin(angle2))
+        .normalize();
+      
+      faceNormals.push(faceNormal);
+    }
+    
+    return faceNormals;
   }
 
   /**
@@ -544,8 +675,9 @@ export class CrystallineSurfaceEffect {
    * Actualizar animaciones de brillo y reflexiones
    */
   public update(): void {
-    const currentTime = Date.now();
-    const elapsed = (currentTime - this.startTime) * 0.001 * this.animationSpeed;
+    // Usar tiempo determinista basado en parámetros
+    const currentTime = this.params.cosmicOriginTime || 0;
+    const elapsed = currentTime * this.animationSpeed;
     
     // Actualizar shaders de brillo
     this.glowMeshes.forEach(mesh => {
@@ -566,6 +698,27 @@ export class CrystallineSurfaceEffect {
   public updateLightDirection(lightDirection: THREE.Vector3): void {
     if (this.starFieldMaterial) {
       this.starFieldMaterial.uniforms.lightDirection.value.copy(lightDirection);
+    }
+  }
+
+  /**
+   * Método para establecer o actualizar el StarField de manera determinista
+   */
+  public setStarField(starField: any): void {
+    this.starField = starField;
+    
+    // Limpiar reflexiones existentes si las hay
+    if (this.starFieldReflections) {
+      this.crystallineGroup.remove(this.starFieldReflections);
+      if (this.starFieldReflections.geometry) this.starFieldReflections.geometry.dispose();
+      if (this.starFieldMaterial) this.starFieldMaterial.dispose();
+      this.starFieldReflections = null;
+      this.starFieldMaterial = null;
+    }
+    
+    // Crear nuevas reflexiones de manera determinista
+    if (this.starField && this.crystallineData.length > 0) {
+      this.createStarFieldReflections();
     }
   }
 
