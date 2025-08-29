@@ -35,14 +35,14 @@ export interface CrystallineSurfaceParams {
 
 // Rangos para generación procedural de cristales con reflexiones optimizadas
 const PROCEDURAL_RANGES = {
-  CRYSTAL_COUNT: { min: 200, max: 400 }, // Número de formaciones cristalinas
+  CRYSTAL_COUNT: { min: 100, max: 400 }, // Número de formaciones cristalinas
   DENSITY: { min: 0.8, max: 1.8 }, // Densidad de cristales
   SIZE: { min: 0.8, max: 1.2 }, // Tamaños de cristales variados
-  TRANSMISSION: { min: 1.0, max: 2.0 }, // Sin transmisión para mantener reflexiones
-  IOR: { min: 1.4, max: 2.1 }, // Rango de índices de refracción (vidrio a diamante)
+  TRANSMISSION: { min: 0, max: 0 }, // Sin transmisión para mantener reflexiones
+  IOR: { min: 2.4, max: 2.1 }, // Rango de índices de refracción (vidrio a diamante)
   ROUGHNESS: { min: 0.0, max: 0.01 }, // Rugosidad mínima para reflexiones perfectas
   GLOW_INTENSITY: { min: 0.1, max: 0.3 }, // Brillo interno reducido para no interferir con reflexiones
-  HEIGHT: { min: 0.001, max: 0.009 }, // Altura de protuberancias cristalinas
+  HEIGHT: { min: 0.01, max: 0.09 }, // Altura de protuberancias cristalinas
 };
 
 /**
