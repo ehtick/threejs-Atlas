@@ -35,7 +35,7 @@ export interface CrystallineSurfaceParams {
 
 // Rangos para generación procedural de cristales con reflexiones optimizadas
 const PROCEDURAL_RANGES = {
-  CRYSTAL_COUNT: { min: 115, max: 130 }, // Número de formaciones cristalinas
+  CRYSTAL_COUNT: { min: 1115, max: 1130 }, // Número de formaciones cristalinas
   DENSITY: { min: 0.8, max: 1.8 }, // Densidad de cristales
   SIZE: { min: 0.1, max: 0.4 }, // Tamaños de cristales variados
   TRANSMISSION: { min: 0.0, max: 0.0 }, // Sin transmisión para mantener reflexiones
@@ -62,11 +62,14 @@ export class CrystallineSurfaceEffect {
   private animationSpeed: number;
   private startTime: number;
   private envMap: THREE.CubeTexture | null = null;
+  private starFieldReflections: THREE.Points | null = null;
+  private starFieldMaterial: THREE.ShaderMaterial | null = null;
 
   constructor(
     private planetRadius: number,
     private params: CrystallineSurfaceParams = {},
-    private seededRng?: SeededRandom
+    private seededRng?: SeededRandom,
+    private starField?: any // StarField effect for reflections
   ) {
     this.crystallineGroup = new THREE.Group();
     this.crystallineGroup.name = "CrystallineSurface";
@@ -76,6 +79,11 @@ export class CrystallineSurfaceEffect {
 
     // Crear cubemap estrellado para reflexiones
     this.createStarfieldCubemap();
+    
+    // Crear reflexiones de partículas del star field
+    if (this.starField) {
+      this.createStarFieldReflections();
+    }
     
     this.generateCrystallineFormations();
   }
@@ -233,13 +241,18 @@ export class CrystallineSurfaceEffect {
       heightSegments       // Segmentos verticales para curvatura
     );
     
-    // Material cristalino con reflexiones sutiles y realistas
-    const material = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(crystalData.color[0], crystalData.color[1], crystalData.color[2]), // Usar color del cristal
-      roughness: crystalData.roughness, // Usar roughness de PROCEDURAL_RANGES
-      metalness: 0.8, // Metálico pero no excesivo
+    // Material cristalino respetando el sistema de iluminación (README guidelines)
+    const material = new THREE.MeshPhysicalMaterial({
+      color: new THREE.Color(crystalData.color[0], crystalData.color[1], crystalData.color[2]),
+      roughness: crystalData.roughness,
+      metalness: 0.1, // Reducido para mejor iluminación
+      transmission: 0.2, // Transmisión para refracción
+      ior: crystalData.ior,
+      thickness: 0.1,
       envMap: this.envMap,
-      envMapIntensity: 1.2 // Intensidad sutil pero visible
+      envMapIntensity: 0.8, // Reducido para no interferir con lighting
+      transparent: true,
+      opacity: 0.9
     });
     
     // TÉCNICA DE AtmosphereClouds: Orientación tangente a la superficie
@@ -356,6 +369,125 @@ export class CrystallineSurfaceEffect {
   }
 
   /**
+   * Crear reflexiones de partículas del StarField en los cristales
+   */
+  private createStarFieldReflections(): void {
+    if (!this.starField || !this.starField.getObject3D) return;
+
+    const starFieldObject = this.starField.getObject3D();
+    if (!starFieldObject.geometry) return;
+
+    // Obtener datos de las partículas del star field
+    const starPositions = starFieldObject.geometry.attributes.position;
+    const starSizes = starFieldObject.geometry.attributes.size;
+    const starBrightnesses = starFieldObject.geometry.attributes.brightness;
+    
+    if (!starPositions || !starSizes || !starBrightnesses) return;
+
+    // Crear geometría para las reflexiones filtradas (solo estrellas brillantes)
+    const reflectionCount = Math.floor(starPositions.count * 0.3); // 30% de las estrellas
+    const reflectionPositions = new Float32Array(reflectionCount * 3);
+    const reflectionSizes = new Float32Array(reflectionCount);
+    const reflectionBrightnesses = new Float32Array(reflectionCount);
+    
+    const rng = this.seededRng || new SeededRandom(42);
+    let reflectionIndex = 0;
+    
+    // Filtrar solo las estrellas más brillantes para reflejar
+    for (let i = 0; i < starPositions.count && reflectionIndex < reflectionCount; i++) {
+      const brightness = starBrightnesses.array[i];
+      
+      // Solo reflejar estrellas brillantes
+      if (brightness > 0.7 && rng.random() < 0.5) {
+        // Proyectar la estrella sobre la superficie del planeta (reflexión especular)
+        const starX = starPositions.array[i * 3];
+        const starY = starPositions.array[i * 3 + 1];
+        const starZ = starPositions.array[i * 3 + 2];
+        
+        // Normalizar y proyectar sobre la superficie planetaria
+        const starDir = new THREE.Vector3(starX, starY, starZ).normalize();
+        const reflectionPos = starDir.multiplyScalar(this.planetRadius * 1.002); // Ligeramente sobre la superficie
+        
+        reflectionPositions[reflectionIndex * 3] = reflectionPos.x;
+        reflectionPositions[reflectionIndex * 3 + 1] = reflectionPos.y;
+        reflectionPositions[reflectionIndex * 3 + 2] = reflectionPos.z;
+        
+        reflectionSizes[reflectionIndex] = starSizes.array[i] * 0.3; // Más pequeñas que las originales
+        reflectionBrightnesses[reflectionIndex] = brightness * 0.4; // Menos brillantes (reflexión)
+        
+        reflectionIndex++;
+      }
+    }
+
+    // Crear geometría y material para las reflexiones
+    const reflectionGeometry = new THREE.BufferGeometry();
+    reflectionGeometry.setAttribute('position', new THREE.BufferAttribute(reflectionPositions.slice(0, reflectionIndex * 3), 3));
+    reflectionGeometry.setAttribute('size', new THREE.BufferAttribute(reflectionSizes.slice(0, reflectionIndex), 1));
+    reflectionGeometry.setAttribute('brightness', new THREE.BufferAttribute(reflectionBrightnesses.slice(0, reflectionIndex), 1));
+
+    this.starFieldMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        time: { value: 0 },
+        planetRadius: { value: this.planetRadius },
+        lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() }
+      },
+      vertexShader: `
+        attribute float size;
+        attribute float brightness;
+        
+        uniform float time;
+        uniform float planetRadius;
+        uniform vec3 lightDirection;
+        
+        varying float vBrightness;
+        varying float vLightInfluence;
+        
+        void main() {
+          vBrightness = brightness;
+          
+          // Calcular influencia de la iluminación
+          vec3 worldPos = (modelMatrix * vec4(position, 1.0)).xyz;
+          vec3 normal = normalize(worldPos); // Normal de la superficie esférica
+          float lightDot = dot(normal, lightDirection);
+          vLightInfluence = max(0.0, lightDot); // Solo lado iluminado
+          
+          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+          gl_Position = projectionMatrix * mvPosition;
+          gl_PointSize = size * (300.0 / -mvPosition.z) * vLightInfluence; // Tamaño afectado por iluminación
+        }
+      `,
+      fragmentShader: `
+        uniform float time;
+        
+        varying float vBrightness;
+        varying float vLightInfluence;
+        
+        void main() {
+          float dist = distance(gl_PointCoord, vec2(0.5));
+          if (dist > 0.5) discard;
+          
+          // Solo mostrar reflexiones en el lado iluminado
+          if (vLightInfluence < 0.1) discard;
+          
+          float alpha = (1.0 - dist * 2.0) * vBrightness * vLightInfluence;
+          alpha *= 0.6; // Reflexiones sutiles
+          
+          // Color cristalino azul-cyan para las reflexiones
+          vec3 reflectionColor = vec3(0.3, 0.7, 1.0);
+          
+          gl_FragColor = vec4(reflectionColor, alpha);
+        }
+      `,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+
+    this.starFieldReflections = new THREE.Points(reflectionGeometry, this.starFieldMaterial);
+    this.crystallineGroup.add(this.starFieldReflections);
+  }
+
+  /**
    * Crear efecto de brillo interno con ShaderMaterial
    */
   private createInnerGlow(parentMesh: THREE.Mesh, crystalData: any, _index: number): void {
@@ -409,7 +541,7 @@ export class CrystallineSurfaceEffect {
   }
 
   /**
-   * Actualizar animaciones de brillo
+   * Actualizar animaciones de brillo y reflexiones
    */
   public update(): void {
     const currentTime = Date.now();
@@ -421,6 +553,20 @@ export class CrystallineSurfaceEffect {
         mesh.material.uniforms.time.value = elapsed;
       }
     });
+    
+    // Actualizar reflexiones del star field
+    if (this.starFieldMaterial) {
+      this.starFieldMaterial.uniforms.time.value = elapsed;
+    }
+  }
+
+  /**
+   * Actualizar dirección de luz para seguir el sistema de iluminación
+   */
+  public updateLightDirection(lightDirection: THREE.Vector3): void {
+    if (this.starFieldMaterial) {
+      this.starFieldMaterial.uniforms.lightDirection.value.copy(lightDirection);
+    }
   }
 
   /**
@@ -452,10 +598,17 @@ export class CrystallineSurfaceEffect {
       if (mesh.material instanceof THREE.Material) mesh.material.dispose();
     });
     
+    if (this.starFieldReflections) {
+      if (this.starFieldReflections.geometry) this.starFieldReflections.geometry.dispose();
+      if (this.starFieldMaterial) this.starFieldMaterial.dispose();
+    }
+    
     if (this.envMap) this.envMap.dispose();
     
     this.crystallineFormations = [];
     this.glowMeshes = [];
+    this.starFieldReflections = null;
+    this.starFieldMaterial = null;
   }
 
   /**
@@ -481,7 +634,8 @@ export function createCrystallineSurfaceFromPythonData(
   planetRadius: number,
   surfaceData: any,
   seed: number,
-  cosmicOriginTime?: number
+  cosmicOriginTime?: number,
+  starField?: any
 ): CrystallineSurfaceEffect | null {
   // Los cristales se generan de forma independiente usando generación procedural
   // No dependen de green_patches ni land_masses
@@ -490,10 +644,10 @@ export function createCrystallineSurfaceFromPythonData(
     seed,
     cosmicOriginTime,
     baseColor: new THREE.Color(0.0, 0.8, 1.0), // Cyan base
-    transmission: 0.0, // Usar valores optimizados para reflexiones
+    transmission: 0.2, // Permitir transmisión para refracción
     ior: 1.6,
     roughness: 0.01,
     glowIntensity: 0.3,
     timeSpeed: 0.05
-  }, new SeededRandom(seed));
+  }, new SeededRandom(seed), starField);
 }
