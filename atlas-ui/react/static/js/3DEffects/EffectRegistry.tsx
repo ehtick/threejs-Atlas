@@ -43,6 +43,7 @@ import { CaveSurfaceHolesEffect, createCaveSurfaceHolesFromPythonData } from "./
 import { VegetationEffect, createVegetationFromPythonData } from "./VegetationEffect";
 import { MagmaFlowsEffect, createMagmaFlowsFromPythonData } from "./MagmaFlowsEffect";
 import { MagmaEruptionsEffect, createMagmaEruptionsFromPythonData } from "./MagmaEruptionsEffect";
+import { CrystallineSurfaceEffect, createCrystallineSurfaceFromPythonData } from "./CrystallineSurfaceEffect";
 
 // Los planetas Carbon usan efectos existentes (TundraSnowflakes, AtmosphereClouds, LandMasses)
 
@@ -127,6 +128,7 @@ export enum EffectType {
   RADIATION_RINGS = "radiation_rings",
   SUPER_EARTH_WATER_FEATURES = "super_earth_water_features",
   CRYSTAL_FORMATIONS = "crystal_formations",
+  CRYSTALLINE_SURFACE = "crystalline_surface",
   CLOUD_LAYERS = "cloud_layers",
   STORM_SYSTEMS = "storm_systems",
   VOLCANIC_ACTIVITY = "volcanic_activity",
@@ -446,6 +448,17 @@ export class EffectRegistry {
     this.registerEffect(EffectType.VEGETATION, {
       create: (params, planetRadius, layerSystem) => new VegetationEffect(planetRadius, params),
       fromPythonData: (data, planetRadius, layerSystem) => createVegetationFromPythonData(
+        planetRadius,
+        data.surface_elements || {},
+        data.seeds?.planet_seed,
+        data.timing?.cosmic_origin_time
+      ),
+    });
+
+    // Efectos para planetas Crystalline
+    this.registerEffect(EffectType.CRYSTALLINE_SURFACE, {
+      create: (params, planetRadius, layerSystem) => new CrystallineSurfaceEffect(planetRadius, params),
+      fromPythonData: (data, planetRadius, layerSystem) => createCrystallineSurfaceFromPythonData(
         planetRadius,
         data.surface_elements || {},
         data.seeds?.planet_seed,
@@ -2499,6 +2512,29 @@ export class EffectRegistry {
                 effects.push(crystallineLandMassesInstance);
                 crystallineLandMassesEffect.addToScene(scene, mesh.position);
               }
+            }
+
+            // 3. Add advanced crystalline surface effect with refraction and glow
+            const crystallineSurfaceEffect = this.createEffectFromPythonData(
+              EffectType.CRYSTALLINE_SURFACE,
+              pythonData,
+              planetRadius,
+              mesh
+            );
+
+            if (crystallineSurfaceEffect) {
+              const crystallineSurfaceInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "crystalline_surface",
+                effect: crystallineSurfaceEffect.effect,
+                priority: 3,
+                enabled: true,
+                name: "Advanced Crystalline Surface",
+              };
+
+              this.effects.set(crystallineSurfaceInstance.id, crystallineSurfaceInstance);
+              effects.push(crystallineSurfaceInstance);
+              crystallineSurfaceEffect.effect.addToScene(scene, mesh.position);
             }
             break;
 
