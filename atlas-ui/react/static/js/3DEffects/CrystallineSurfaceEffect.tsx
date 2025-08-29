@@ -248,9 +248,9 @@ export class CrystallineSurfaceEffect {
       ior: crystalData.ior,
       thickness: 0.1,
       envMap: this.envMap,
-      envMapIntensity: 0.8, // Reducido para no interferir con lighting
+      envMapIntensity: 0.1, // Mucho más reducido para lado oscuro más oscuro
       transparent: true,
-      opacity: 0.9,
+      opacity: 1, // Reducido para menos visibilidad en lado oscuro
     });
 
     // TÉCNICA DE AtmosphereClouds: Orientación tangente a la superficie
@@ -510,7 +510,7 @@ export class CrystallineSurfaceEffect {
           vec3 worldPos = (modelMatrix * vec4(position, 1.0)).xyz;
           vec3 normal = normalize(worldPos);
           float lightDot = dot(normal, lightDirection);
-          vLightInfluence = max(0.1, lightDot * 0.5 + 0.5);
+          vLightInfluence = max(0.01, lightDot * 0.5 + 0.5);
           
           vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
           gl_Position = projectionMatrix * mvPosition;
@@ -527,7 +527,7 @@ export class CrystallineSurfaceEffect {
           if (dist > 0.5) discard;
           
           float alpha = (1.0 - dist * 2.0) * vBrightness * vLightInfluence;
-          alpha *= 0.8; // Reflexiones visibles pero no dominantes
+          alpha *= 0.8 * vLightInfluence; // Reflexiones más oscuras en el lado nocturno
           
           // Color cristalino con variación sutil por cristal (estático)
           vec3 baseColor = vec3(0.4, 0.8, 1.0);
