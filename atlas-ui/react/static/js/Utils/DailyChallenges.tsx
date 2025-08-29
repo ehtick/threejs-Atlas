@@ -1,5 +1,5 @@
-// Daily exploration challenges system
-import { getItem, setItem } from "./b64";
+import React from 'react';
+import { getItem, setItem } from "./b64.tsx";
 
 export interface DailyChallenge {
   type: 'galaxies' | 'systems' | 'planets';

@@ -1,3 +1,5 @@
+import React from 'react';
+
 // Stargate URL generator - matches the Python backend implementation
 
 export class StargateGenerator {

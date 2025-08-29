@@ -1,5 +1,6 @@
+import React from 'react';
 // Utility functions for managing visit history
-import { OptimizedAtlasStorage } from './OptimizedStorage.ts';
+import { OptimizedAtlasStorage } from './OptimizedStorage.tsx';
 
 export interface VisitedData {
   [coordinates: string]: {

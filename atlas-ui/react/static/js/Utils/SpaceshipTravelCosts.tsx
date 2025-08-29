@@ -1,4 +1,5 @@
-import { SpaceshipResourceManager, TravelCost } from "./SpaceshipResources";
+import React from 'react';
+import { SpaceshipResourceManager, TravelCost } from "./SpaceshipResources.tsx";
 
 export class SpaceshipTravelManager {
   static getTravelCost(locationType: "galaxy" | "system" | "planet", distance: number = 0): TravelCost {

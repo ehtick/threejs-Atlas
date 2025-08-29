@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { getSystemVisitStatus } from "../Utils/VisitHistory.ts";
+import { getSystemVisitStatus } from "../Utils/VisitHistory.tsx";
 
 interface System {
   index: number;

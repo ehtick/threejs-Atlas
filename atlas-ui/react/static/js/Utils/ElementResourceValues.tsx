@@ -1,3 +1,5 @@
+import React from 'react';
+
 // Element resource values based on pymodules/__universe_elements.py
 // The rarer the element (lower probability), the more resources it gives
 

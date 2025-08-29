@@ -1,3 +1,5 @@
+import React from 'react';
+
 // Element symbols for periodic table visualization
 export interface ElementInfo {
   symbol: string;

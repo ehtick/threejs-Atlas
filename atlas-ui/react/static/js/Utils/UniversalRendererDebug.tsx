@@ -1,3 +1,5 @@
+import React from 'react';
+
 /**
  * Universal Renderer Debug Utilities
  * Para diagnosticar problemas con el renderizado de planetas

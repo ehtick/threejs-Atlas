@@ -7,7 +7,7 @@
  */
 
 import * as THREE from "three";
-import { SeededRandom } from "../Utils/SeededRandom";
+import { SeededRandom } from "../Utils/SeededRandom.tsx";
 
 // Procedural ranges for water body generation (only actively used values)
 const PROCEDURAL_RANGES = {

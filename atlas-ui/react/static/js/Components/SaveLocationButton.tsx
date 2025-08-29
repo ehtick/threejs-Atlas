@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { LocationBookmarks } from "../Utils/LocationBookmarks.ts";
-import { StargateGenerator } from "../Utils/StargateGenerator.ts";
+import { LocationBookmarks } from "../Utils/LocationBookmarks.tsx";
+import { StargateGenerator } from "../Utils/StargateGenerator.tsx";
 
 interface SaveLocationButtonProps {
   type: "galaxy" | "system" | "planet";

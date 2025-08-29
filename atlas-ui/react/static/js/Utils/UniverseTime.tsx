@@ -1,3 +1,5 @@
+import React from 'react';
+
 /**
  * Universe Time Utilities
  * Provides consistent time calculations across all 3D effects

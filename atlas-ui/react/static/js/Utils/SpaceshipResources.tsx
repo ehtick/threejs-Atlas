@@ -1,5 +1,6 @@
-import { UnifiedSpaceshipStorage } from "./UnifiedSpaceshipStorage";
-import { getItem } from "./b64";
+import React from "react";
+import { UnifiedSpaceshipStorage } from "./UnifiedSpaceshipStorage.tsx";
+import { getItem } from "./b64.tsx";
 
 export interface SpaceshipResource {
   antimatter: number;

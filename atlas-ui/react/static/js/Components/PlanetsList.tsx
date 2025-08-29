@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { getVisitedPlanets, markPlanetAsVisited } from "../Utils/VisitHistory.ts";
+import { getVisitedPlanets, markPlanetAsVisited } from "../Utils/VisitHistory.tsx";
 
 interface Planet {
   name: string;

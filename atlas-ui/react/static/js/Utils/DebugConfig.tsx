@@ -1,3 +1,5 @@
+import React from 'react';
+
 /**
  * Configuración global de depuración
  *

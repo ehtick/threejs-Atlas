@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { SpaceshipResourceManager } from "../Utils/SpaceshipResources";
-import { SpaceshipTravelManager } from "../Utils/SpaceshipTravelCosts";
-import { ResourceEventManager } from "../Utils/ResourceEventManager";
+import { SpaceshipResourceManager } from "../Utils/SpaceshipResources.tsx";
+import { SpaceshipTravelManager } from "../Utils/SpaceshipTravelCosts.tsx";
+import { ResourceEventManager } from "../Utils/ResourceEventManager.tsx";
 
 interface ResourceStatusBarProps {
   currentLocation?: {

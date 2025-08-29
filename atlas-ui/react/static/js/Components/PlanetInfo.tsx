@@ -4,10 +4,10 @@ import ResourceCollectionButton from "./ResourceCollectionButton.tsx";
 import EffectsControl from "./EffectsControl.tsx";
 import MiningIndicator from "./MiningIndicator.tsx";
 import PeriodicElement from "./PeriodicElement.tsx";
-import { SpaceshipResourceCollectionManager } from "../Utils/SpaceshipResourceCollection";
-import { LocationBookmarks } from "../Utils/LocationBookmarks.ts";
-import { StargateGenerator } from "../Utils/StargateGenerator.ts";
-import { ResourceEventManager } from "../Utils/ResourceEventManager";
+import { SpaceshipResourceCollectionManager } from "../Utils/SpaceshipResourceCollection.tsx";
+import { LocationBookmarks } from "../Utils/LocationBookmarks.tsx";
+import { StargateGenerator } from "../Utils/StargateGenerator.tsx";
+import { ResourceEventManager } from "../Utils/ResourceEventManager.tsx";
 
 interface Planet {
   name: string;

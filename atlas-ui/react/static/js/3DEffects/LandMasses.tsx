@@ -6,7 +6,7 @@
  */
 
 import * as THREE from "three";
-import { SeededRandom } from "../Utils/SeededRandom";
+import { SeededRandom } from "../Utils/SeededRandom.tsx";
 
 export interface LandMassesParams {
   greenPatches?: any[]; // Datos de green_patches desde Python

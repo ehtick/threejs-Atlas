@@ -1,6 +1,6 @@
 import React from "react";
-import { ELEMENT_SYMBOLS, getRarityColor } from "../Utils/ElementSymbols";
-import { ELEMENT_RESOURCE_VALUES, getElementRarityTier } from "../Utils/ElementResourceValues";
+import { ELEMENT_SYMBOLS, getRarityColor } from "../Utils/ElementSymbols.tsx";
+import { ELEMENT_RESOURCE_VALUES, getElementRarityTier } from "../Utils/ElementResourceValues.tsx";
 
 interface PeriodicElementProps {
   elementName: string;

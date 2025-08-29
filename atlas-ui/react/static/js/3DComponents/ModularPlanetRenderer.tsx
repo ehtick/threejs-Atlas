@@ -6,7 +6,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
 import { effectRegistry, EffectInstance } from "../3DEffects/EffectRegistry";
 import { createPlanetEffectConfig, EffectsLogger } from "../3DEffects";
-import { DebugPlanetData, useDebugPlanetData } from "../Utils/DebugPlanetData";
+import { DebugPlanetData, useDebugPlanetData } from "../Utils/DebugPlanetData.tsx";
 import { getPlanetBaseColor } from "../3DEffects/PlanetColorBase";
 import { PlanetLayerSystem } from "./PlanetLayerSystem";
 import { ToxicPostProcessingEffect, createToxicPostProcessingFromPythonData } from "../3DEffects/ToxicPostProcessing";

@@ -1,3 +1,5 @@
+import React from 'react';
+
 /**
  * Generador de números aleatorios con semilla para efectos consistentes
  * Esta clase garantiza que los efectos sean reproducibles usando seeds de Python

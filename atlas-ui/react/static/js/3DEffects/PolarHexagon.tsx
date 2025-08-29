@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { SeededRandom } from "../Utils/SeededRandom";
-import { getAnimatedUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime";
+import { SeededRandom } from "../Utils/SeededRandom.tsx";
+import { getAnimatedUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime.tsx";
 
 // Rangos procedurales para hexágonos polares basados en observaciones de Saturno
 const PROCEDURAL_RANGES = {

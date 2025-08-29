@@ -1,3 +1,4 @@
+import React from 'react';
 // Base64 encoder/decoder for localStorage keys and values
 // With pako compression: JSON → gzip → base64 → localStorage
 import * as pako from 'pako';

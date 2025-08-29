@@ -6,9 +6,9 @@
  */
 
 import * as THREE from "three";
-import { SeededRandom } from "../Utils/SeededRandom";
+import { SeededRandom } from "../Utils/SeededRandom.tsx";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry";
-import { getAnimatedUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime";
+import { getAnimatedUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime.tsx";
 
 export interface PulsatingCubeParams {
   color?: THREE.Color | number;

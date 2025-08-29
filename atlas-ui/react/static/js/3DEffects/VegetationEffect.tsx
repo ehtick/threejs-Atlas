@@ -12,7 +12,7 @@
  */
 
 import * as THREE from "three";
-import { SeededRandom } from "../Utils/SeededRandom";
+import { SeededRandom } from "../Utils/SeededRandom.tsx";
 
 export interface VegetationParams {
   vegetationPatches?: any[]; // Datos de vegetación desde Python API

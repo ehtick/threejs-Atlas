@@ -6,8 +6,8 @@
  */
 
 import * as THREE from "three";
-import { SeededRandom } from "../Utils/SeededRandom";
-import { getAnimatedUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime";
+import { SeededRandom } from "../Utils/SeededRandom.tsx";
+import { getAnimatedUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime.tsx";
 
 export interface FireEruptionParams {
   // Configuración de erupciones

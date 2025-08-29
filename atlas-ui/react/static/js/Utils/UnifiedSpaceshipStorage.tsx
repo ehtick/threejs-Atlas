@@ -1,6 +1,7 @@
+import React from 'react';
 // Unified and optimized spaceship storage system
 // All spaceship-related data in a single, compressed localStorage key
-import { getItem, setItem, removeItem } from "./b64";
+import { getItem, setItem, removeItem } from "./b64.tsx";
 
 export interface SpaceshipData {
   // Resources (compressed)

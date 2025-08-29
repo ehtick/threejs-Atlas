@@ -7,8 +7,8 @@ import PlanetNavigation from '../Components/PlanetNavigation.tsx';
 import VersionFooter from '../Components/VersionFooter.tsx';
 import SpaceshipPanel from '../Components/SpaceshipPanel.tsx';
 import FuelBars from '../Components/FuelBars.tsx';
-import { markPlanetAsVisited, markSystemAsVisited } from '../Utils/VisitHistory.ts';
-import { ENABLE_EFFECTS_CONTROL } from '../Utils/DebugConfig.ts';
+import { markPlanetAsVisited, markSystemAsVisited } from '../Utils/VisitHistory.tsx';
+import { ENABLE_EFFECTS_CONTROL } from '../Utils/DebugConfig.tsx';
 
 interface Planet {
   name: string;

@@ -1,3 +1,5 @@
+import React from 'react';
+
 export type ResourceEventType = 'resources_updated' | 'mining_completed';
 
 export interface ResourceEvent {

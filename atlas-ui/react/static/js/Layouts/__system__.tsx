@@ -7,7 +7,7 @@ import SystemNavigation from '../Components/SystemNavigation.tsx';
 import VersionFooter from '../Components/VersionFooter.tsx';
 import SpaceshipPanel from '../Components/SpaceshipPanel.tsx';
 import FuelBars from '../Components/FuelBars.tsx';
-import { markSystemAsVisited } from '../Utils/VisitHistory.ts';
+import { markSystemAsVisited } from '../Utils/VisitHistory.tsx';
 
 interface System {
   name: string;

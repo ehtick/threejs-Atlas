@@ -6,7 +6,7 @@
  */
 
 import * as THREE from "three";
-import { SeededRandom } from "../Utils/SeededRandom";
+import { SeededRandom } from "../Utils/SeededRandom.tsx";
 
 export interface RiverLinesParams {
   riverCount?: number; // Number of river lines (2-4)

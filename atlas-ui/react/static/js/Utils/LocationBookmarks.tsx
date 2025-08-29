@@ -1,6 +1,6 @@
-// Location bookmarks system for saving favorite stargate locations
-import { DailyChallengesManager } from "./DailyChallenges";
-import { getItem, setItem, removeItem } from "./b64";
+import React from 'react';
+import { DailyChallengesManager } from "./DailyChallenges.tsx";
+import { getItem, setItem, removeItem } from "./b64.tsx";
 
 export interface SavedLocation {
   id: string;

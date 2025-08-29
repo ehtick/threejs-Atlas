@@ -6,7 +6,7 @@
  */
 
 import * as THREE from "three";
-import { SeededRandom } from "../Utils/SeededRandom";
+import { SeededRandom } from "../Utils/SeededRandom.tsx";
 
 // Importar todos los efectos disponibles
 import { RingSystemEffect, createRingSystemFromPythonData, RingSystemParams } from "./RingSystem";
@@ -69,7 +69,7 @@ import { SuperEarthWaterFeaturesEffect, createSuperEarthWaterFeaturesFromPythonD
 
 // Importar efectos de debug
 import { VisualDebug3DEffect, createVisualDebug3DFromPythonData } from "./VisualDebug3D";
-import { ENABLE_EFFECTS_LOGGING } from "../Utils/DebugConfig";
+import { ENABLE_EFFECTS_LOGGING } from "../Utils/DebugConfig.tsx";
 
 // Importar función centralizada de colores
 import { getPlanetBaseColor } from "./PlanetColorBase";

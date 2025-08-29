@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { SpaceshipTravelManager } from "../Utils/SpaceshipTravelCosts";
+import { SpaceshipTravelManager } from "../Utils/SpaceshipTravelCosts.tsx";
 
 interface Galaxy {
   name: string;

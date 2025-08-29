@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { markPlanetAsVisited, markSystemAsVisited } from "../Utils/VisitHistory.ts";
-import { SpaceshipTravelManager } from "../Utils/SpaceshipTravelCosts.ts";
+import { markPlanetAsVisited, markSystemAsVisited } from "../Utils/VisitHistory.tsx";
+import { SpaceshipTravelManager } from "../Utils/SpaceshipTravelCosts.tsx";
 
 interface Planet {
   name: string;

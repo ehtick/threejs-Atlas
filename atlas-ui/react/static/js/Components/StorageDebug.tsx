@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { getStorageStats } from "../Utils/VisitHistory.ts";
+import { getStorageStats } from "../Utils/VisitHistory.tsx";
 
 const StorageDebug: React.FC = () => {
   const [stats, setStats] = useState<any>(null);

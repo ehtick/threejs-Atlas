@@ -1,6 +1,7 @@
-import { calculatePlanetResources } from "./ElementResourceValues";
-import { UnifiedSpaceshipStorage } from "./UnifiedSpaceshipStorage";
-import { ResourceReward } from "./SpaceshipTypes";
+import React from "react";
+import { calculatePlanetResources } from "./ElementResourceValues.tsx";
+import { UnifiedSpaceshipStorage } from "./UnifiedSpaceshipStorage.tsx";
+import { ResourceReward } from "./SpaceshipTypes.tsx";
 
 export interface PlanetData {
   elements?: string[];

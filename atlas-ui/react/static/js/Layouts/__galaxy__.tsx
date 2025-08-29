@@ -8,7 +8,7 @@ import Pagination from '../Components/Pagination.tsx';
 import VersionFooter from '../Components/VersionFooter.tsx';
 import SpaceshipPanel from '../Components/SpaceshipPanel.tsx';
 import FuelBars from '../Components/FuelBars.tsx';
-import { markGalaxyAsVisited } from '../Utils/VisitHistory.ts';
+import { markGalaxyAsVisited } from '../Utils/VisitHistory.tsx';
 
 interface Galaxy {
   name: string;

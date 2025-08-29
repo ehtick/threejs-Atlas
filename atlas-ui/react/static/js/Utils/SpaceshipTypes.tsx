@@ -1,3 +1,5 @@
+import React from 'react';
+
 // Shared types for spaceship system
 export interface ShipResource {
   antimatter: number;

@@ -1,6 +1,7 @@
+import React from 'react';
 // Optimized localStorage system for Atlas universe exploration data
-import { DailyChallengesManager } from './DailyChallenges';
-import { ATLAS_KEYS, getItem, setItem, migrateToEncoded } from './b64';
+import { DailyChallengesManager } from './DailyChallenges.tsx';
+import { ATLAS_KEYS, getItem, setItem, migrateToEncoded } from './b64.tsx';
 
 
 // Optimized data structure

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { SpaceshipResourceCollectionManager } from "../Utils/SpaceshipResourceCollection";
-import { ResourceEventManager } from "../Utils/ResourceEventManager";
-import { UnifiedSpaceshipStorage } from "../Utils/UnifiedSpaceshipStorage";
+import { SpaceshipResourceCollectionManager } from "../Utils/SpaceshipResourceCollection.tsx";
+import { ResourceEventManager } from "../Utils/ResourceEventManager.tsx";
+import { UnifiedSpaceshipStorage } from "../Utils/UnifiedSpaceshipStorage.tsx";
 
 interface ResourceCollectionButtonProps {
   locationType: "galaxy" | "system" | "planet";

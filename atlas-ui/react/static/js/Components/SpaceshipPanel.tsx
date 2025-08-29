@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
-import { getStorageStats } from "../Utils/VisitHistory.ts";
-import { LocationBookmarks, SavedLocation } from "../Utils/LocationBookmarks.ts";
-import { DailyChallengesManager, DailyChallenges } from "../Utils/DailyChallenges.ts";
-import { SpaceshipResourceManager, SpaceshipResource, SpaceshipUpgrade, TravelCost } from "../Utils/SpaceshipResources.ts";
-import { ResourceEventManager } from "../Utils/ResourceEventManager.ts";
-import { getItem, setItem } from "../Utils/b64.ts";
+import { getStorageStats } from "../Utils/VisitHistory.tsx";
+import { LocationBookmarks, SavedLocation } from "../Utils/LocationBookmarks.tsx";
+import { DailyChallengesManager, DailyChallenges } from "../Utils/DailyChallenges.tsx";
+import { SpaceshipResourceManager, SpaceshipResource, SpaceshipUpgrade, TravelCost } from "../Utils/SpaceshipResources.tsx";
+import { ResourceEventManager } from "../Utils/ResourceEventManager.tsx";
+import { getItem, setItem } from "../Utils/b64.tsx";
 import ProgressBar from "./ProgressBar.tsx";
 
 interface SpaceshipPanelProps {

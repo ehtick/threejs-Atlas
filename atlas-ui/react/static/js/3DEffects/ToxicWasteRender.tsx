@@ -6,8 +6,8 @@
  */
 
 import * as THREE from "three";
-import { getAnimatedUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime";
-import { SeededRandom } from "../Utils/SeededRandom";
+import { getAnimatedUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime.tsx";
+import { SeededRandom } from "../Utils/SeededRandom.tsx";
 
 export interface ToxicWasteRenderParams {
   spotCount?: number;

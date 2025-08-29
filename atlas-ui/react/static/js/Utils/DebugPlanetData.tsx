@@ -8,7 +8,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { EffectRegistry } from '../3DEffects/EffectRegistry';
+import { EffectRegistry } from '../3DEffects/EffectRegistry.tsx';
 
 interface DebugPlanetDataProps {
   planetData: any;

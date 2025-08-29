@@ -1,5 +1,6 @@
-import { UnifiedSpaceshipStorage } from "./UnifiedSpaceshipStorage";
-import { NavigationHelper } from "./NavigationHelper";
+import React from 'react';
+import { UnifiedSpaceshipStorage } from "./UnifiedSpaceshipStorage.tsx";
+import { NavigationHelper } from "./NavigationHelper.tsx";
 
 export class NavigationManager {
   private static instance: NavigationManager;

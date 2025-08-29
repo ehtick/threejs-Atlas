@@ -4,8 +4,8 @@ import CoordinateSelector from '../Components/CoordinateSelector.tsx';
 import VersionFooter from '../Components/VersionFooter.tsx';
 import SpaceshipPanel from '../Components/SpaceshipPanel.tsx';
 import FuelBars from '../Components/FuelBars.tsx';
-import { UnifiedSpaceshipStorage } from '../Utils/UnifiedSpaceshipStorage.ts';
-import { SpaceshipTravelManager } from '../Utils/SpaceshipTravelCosts.ts';
+import { UnifiedSpaceshipStorage } from '../Utils/UnifiedSpaceshipStorage.tsx';
+import { SpaceshipTravelManager } from '../Utils/SpaceshipTravelCosts.tsx';
 
 interface MainLayoutProps {
   error: string | null;

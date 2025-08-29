@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { SpaceshipResourceManager } from "../Utils/SpaceshipResources";
-import { ResourceEventManager } from "../Utils/ResourceEventManager";
+import { SpaceshipResourceManager } from "../Utils/SpaceshipResources.tsx";
+import { ResourceEventManager } from "../Utils/ResourceEventManager.tsx";
 import AntimatterIcon from "../Icons/AntimatterIcon";
 import Element115Icon from "../Icons/Element115Icon";
 import DeuteriumIcon from "../Icons/DeuteriumIcon";

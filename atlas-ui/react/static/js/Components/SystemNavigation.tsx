@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { markSystemAsVisited } from "../Utils/VisitHistory.ts";
-import { SpaceshipTravelManager } from "../Utils/SpaceshipTravelCosts.ts";
+import { markSystemAsVisited } from "../Utils/VisitHistory.tsx";
+import { SpaceshipTravelManager } from "../Utils/SpaceshipTravelCosts.tsx";
 
 interface System {
   name: string;
