@@ -939,6 +939,29 @@ export class EffectRegistry {
                   hexagonEffect.addToScene(scene);
                 }
               }
+
+              // Add atmospheric clouds for nebulous planets
+              if (surface.clouds && surface.clouds.length > 0) {
+                const cloudsEffect = createAtmosphereCloudsFromPythonData(
+                  planetRadius,
+                  surface,
+                  (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000, // Seed específica para nubes
+                  pythonData.timing?.cosmic_origin_time
+                );
+
+                const cloudsInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "atmosphere_clouds",
+                  effect: cloudsEffect,
+                  priority: 15,
+                  enabled: true,
+                  name: "Nebulous Atmospheric Clouds",
+                };
+
+                this.effects.set(cloudsInstance.id, cloudsInstance);
+                effects.push(cloudsInstance);
+                cloudsEffect.addToScene(scene, mesh.position);
+              }
             }
             break;
 
