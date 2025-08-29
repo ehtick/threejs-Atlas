@@ -248,6 +248,7 @@ export class CrystallineSurfaceEffect {
         roughness: { value: crystalData.roughness },
         ior: { value: crystalData.ior },
         transmission: { value: 0.2 },
+        lightPosition: { value: new THREE.Vector3(1000, 1000, 1000) }, // Para modulación día/noche
       },
       vertexShader: `
         varying vec3 vNormal;
@@ -270,6 +271,7 @@ export class CrystallineSurfaceEffect {
         uniform float roughness;
         uniform float ior;
         uniform float transmission;
+        uniform vec3 lightPosition;
         
         varying vec3 vNormal;
         varying vec3 vPosition;
@@ -279,6 +281,11 @@ export class CrystallineSurfaceEffect {
         void main() {
           vec3 normal = normalize(vWorldNormal);
           vec3 viewDir = normalize(cameraPosition - vWorldPosition);
+          
+          // MODULACIÓN DÍA/NOCHE - Solo para visibilidad, NO para iluminación
+          vec3 lightDir = normalize(lightPosition - vWorldPosition);
+          float NdotL = dot(normal, lightDir);
+          float dayNightFactor = smoothstep(-0.5, 0.2, NdotL); // Transición gradual
           
           // Fresnel más intenso para cristales
           float NdotV = max(dot(normal, viewDir), 0.0);
@@ -347,9 +354,15 @@ export class CrystallineSurfaceEffect {
           // Añadir brillo interno
           finalColor += glowColor;
           
-          // Alpha cristalino - más opaco en bordes (Fresnel), más transparente en centro
+          // APLICAR MODULACIÓN DÍA/NOCHE - Oscurecer en cara oculta
+          // Mantener un mínimo de visibilidad para que no desaparezcan completamente
+          float visibilityFactor = 0.15 + 0.85 * dayNightFactor; // Mínimo 15%, máximo 100%
+          finalColor *= visibilityFactor;
+          
+          // Alpha cristalino también modulado por día/noche
           float alpha = mix(0.3 + transmission * 0.4, 0.85, fresnel);
           alpha = clamp(alpha, 0.3, 0.9);
+          alpha *= visibilityFactor; // Menos visible en lado oscuro
           
           gl_FragColor = vec4(finalColor, alpha);
         }
@@ -770,12 +783,12 @@ export class CrystallineSurfaceEffect {
       this.starFieldMaterial.uniforms.lightDirection.value.copy(lightDirection);
     }
     
-    // Los cristales ahora usan MeshPhysicalMaterial con lights = false
-    // No necesitan actualización manual de uniforms
+    // Los cristales usan ShaderMaterial pero no necesitan dirección de luz
+    // Solo usan posición para modulación día/noche
   }
   
   /**
-   * Actualizar posición de luz para los cristales  
+   * Actualizar posición de luz para modulación día/noche de los cristales
    */
   public updateLightPosition(lightPosition: THREE.Vector3): void {
     // Actualizar posición de luz en reflexiones de estrellas
@@ -783,8 +796,12 @@ export class CrystallineSurfaceEffect {
       this.starFieldMaterial.uniforms.lightPosition.value.copy(lightPosition);
     }
     
-    // Los cristales ahora usan MeshPhysicalMaterial con lights = false
-    // No necesitan actualización manual de posición de luz
+    // CRÍTICO: Actualizar posición de luz en todos los cristales para modulación día/noche
+    this.crystallineFormations.forEach((mesh) => {
+      if (mesh.material instanceof THREE.ShaderMaterial) {
+        mesh.material.uniforms.lightPosition.value.copy(lightPosition);
+      }
+    });
   }
 
   /**
