@@ -1,6 +1,9 @@
 import React from "react";
 import { ELEMENT_SYMBOLS, getRarityColor } from "../Utils/ElementSymbols.tsx";
 import { ELEMENT_RESOURCE_VALUES, getElementRarityTier } from "../Utils/ElementResourceValues.tsx";
+import AntimatterIcon from "../Icons/AntimatterIcon.tsx";
+import DeuteriumIcon from "../Icons/DeuteriumIcon.tsx";
+import Element115Icon from "../Icons/Element115Icon.tsx";
 
 interface PeriodicElementProps {
   elementName: string;
@@ -60,19 +63,28 @@ const PeriodicElement: React.FC<PeriodicElementProps> = ({
           <div className="space-y-1">
             {resourceValues.antimatter > 0 && (
               <div className="flex justify-between text-[10px] opacity-90">
-                <span className="text-red-300">Antimatter:</span>
+                <span className="text-purple-300 flex items-center gap-1">
+                  <AntimatterIcon size={10} color="currentColor" />
+                  Antimatter:
+                </span>
                 <span className="font-mono">{resourceValues.antimatter}</span>
               </div>
             )}
             {resourceValues.element115 > 0 && (
               <div className="flex justify-between text-[10px] opacity-90">
-                <span className="text-blue-300">Element115:</span>
+                <span className="text-cyan-300 flex items-center gap-1">
+                  <Element115Icon size={10} color="currentColor" />
+                  Element115:
+                </span>
                 <span className="font-mono">{resourceValues.element115}</span>
               </div>
             )}
             {resourceValues.deuterium > 0 && (
               <div className="flex justify-between text-[10px] opacity-90">
-                <span className="text-green-300">Deuterium:</span>
+                <span className="text-orange-300 flex items-center gap-1">
+                  <DeuteriumIcon size={10} color="currentColor" />
+                  Deuterium:
+                </span>
                 <span className="font-mono">{resourceValues.deuterium}</span>
               </div>
             )}
