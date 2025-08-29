@@ -176,12 +176,69 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
           <input type="number" id={`${coordinate}-value`} name={coordinate} value={coordinates[coordinate]} className={`w-full bg-white/10 border ${style.border} rounded-lg px-4 py-3 text-white focus:ring-2 ${style.ring} focus:border-transparent backdrop-blur-sm`} min="0" max="10000000" onChange={(e) => handleInputChange(coordinate, e.target.value)} />
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-3">
           <label className="block text-sm font-medium text-gray-300">Quick Adjust</label>
-          <input type="range" id={`${coordinate}-slider`} name={coordinate} min="0" max="10000000" value={coordinates[coordinate]} className="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer" onChange={(e) => handleSliderChange(coordinate, e.target.value)} />
-          <div className="flex justify-between text-xs text-gray-400">
-            <span>The Edge</span>
-            <span>The Unknown</span>
+          <div className="relative">
+            <div className={`absolute inset-0 bg-gradient-to-r ${style.gradient} opacity-20 rounded-xl blur-sm`}></div>
+            <div className="relative p-4 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm">
+              <div className="relative">
+                <div className="absolute top-1 left-3 right-3 h-3 bg-white/10 rounded-xl"></div>
+                <div 
+                  className={`absolute top-1 left-3 right-3 h-3 bg-gradient-to-r ${style.gradient} rounded-xl transition-all duration-200 pointer-events-none z-10`}
+                  style={{ width: `calc(${(coordinates[coordinate] / 10000000) * 100}% - 12px)` }}
+                ></div>
+                <input 
+                  type="range" 
+                  id={`${coordinate}-slider`} 
+                  name={coordinate} 
+                  min="0" 
+                  max="10000000" 
+                  value={coordinates[coordinate]} 
+                  className={`
+                    relative z-20 w-full h-3 bg-transparent rounded-xl appearance-none cursor-pointer
+                    [&::-webkit-slider-track]:bg-transparent
+                    [&::-webkit-slider-track]:rounded-xl
+                    [&::-webkit-slider-thumb]:appearance-none
+                    [&::-webkit-slider-thumb]:w-6
+                    [&::-webkit-slider-thumb]:h-6
+                    [&::-webkit-slider-thumb]:bg-gradient-to-br
+                    [&::-webkit-slider-thumb]:${style.gradient}
+                    [&::-webkit-slider-thumb]:rounded-full
+                    [&::-webkit-slider-thumb]:border-2
+                    [&::-webkit-slider-thumb]:border-white/30
+                    [&::-webkit-slider-thumb]:shadow-lg
+                    [&::-webkit-slider-thumb]:hover:shadow-xl
+                    [&::-webkit-slider-thumb]:hover:scale-110
+                    [&::-webkit-slider-thumb]:transition-all
+                    [&::-webkit-slider-thumb]:duration-200
+                    [&::-webkit-slider-thumb]:-mt-1.5
+                    [&::-moz-range-thumb]:w-6
+                    [&::-moz-range-thumb]:h-6
+                    [&::-moz-range-thumb]:bg-gradient-to-br
+                    [&::-moz-range-thumb]:${style.gradient}
+                    [&::-moz-range-thumb]:rounded-full
+                    [&::-moz-range-thumb]:border-2
+                    [&::-moz-range-thumb]:border-white/30
+                    [&::-moz-range-thumb]:cursor-pointer
+                    [&::-moz-range-thumb]:shadow-lg
+                    [&::-moz-range-thumb]:border-none
+                    [&::-moz-range-track]:bg-transparent
+                    [&::-moz-range-track]:border-none
+                    [&::-moz-range-track]:h-3
+                    transition-all
+                    duration-200
+                  `}
+                  onChange={(e) => handleSliderChange(coordinate, e.target.value)} 
+                />
+                <div className="flex justify-between mt-3 text-xs font-medium">
+                  <span className={`${style.text} drop-shadow-sm`}>The Edge</span>
+                  <span className={`text-gray-400 text-center ${style.text}`}>
+                    {coordinateOptions[coordinate][selectedIndex >= 0 ? selectedIndex : 0]?.name || 'Unknown Region'}
+                  </span>
+                  <span className={`${style.text} drop-shadow-sm`}>The Unknown</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
