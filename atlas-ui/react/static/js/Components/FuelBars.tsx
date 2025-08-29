@@ -19,6 +19,7 @@ const FuelBars: React.FC = () => {
   const [maxStorage, setMaxStorage] = useState(500);
   const [isExpanded, setIsExpanded] = useState(false);
   const [hoveredResource, setHoveredResource] = useState<string | null>(null);
+  const [isMobileToggled, setIsMobileToggled] = useState(false);
 
   useEffect(() => {
     const updateResources = () => {
@@ -79,11 +80,18 @@ const FuelBars: React.FC = () => {
     }
   ];
 
+  const shouldExpand = isExpanded || isMobileToggled;
+
+  const handleMobileToggle = () => {
+    setIsMobileToggled(!isMobileToggled);
+    setHoveredResource(null);
+  };
+
   return (
     <div className="fixed top-0 left-0 right-0 z-50">
       <div 
         className={`relative w-full transition-all duration-500 ease-out ${
-          isExpanded ? 'h-14 sm:h-20' : 'h-1 sm:h-1.5'
+          shouldExpand ? 'h-14 sm:h-20' : 'h-1 sm:h-1.5'
         }`}
         onMouseEnter={() => setIsExpanded(true)}
         onMouseLeave={() => {
@@ -144,9 +152,9 @@ const FuelBars: React.FC = () => {
                 )}
                 
                 {/* Content overlay */}
-                {isExpanded && (
+                {shouldExpand && (
                   <div className={`absolute inset-0 transition-opacity duration-300 ${
-                    isExpanded ? 'opacity-100' : 'opacity-0'
+                    shouldExpand ? 'opacity-100' : 'opacity-0'
                   }`}>
                     {/* Dark overlay for better text contrast */}
                     <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/50 to-black/60" />
@@ -238,7 +246,7 @@ const FuelBars: React.FC = () => {
                 )}
                 
                 {/* Hover effect border */}
-                {isHovered && isExpanded && (
+                {isHovered && shouldExpand && (
                   <div className="absolute inset-0 pointer-events-none" />
                 )}
               </div>
@@ -248,6 +256,35 @@ const FuelBars: React.FC = () => {
         
         {/* Bottom accent line */}
         <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+      </div>
+
+      {/* Mobile Toggle Ribbon - Only visible on mobile */}
+      <div className="sm:hidden absolute top-full right-2 z-40">
+        <div 
+          onClick={handleMobileToggle}
+          className={`bg-gradient-to-b from-black/40 via-black/50 to-black/60 backdrop-blur-md 
+            border-l border-r border-b border-white/10 w-6 h-6 cursor-pointer 
+            transition-all duration-300 hover:bg-black/70 active:bg-black/80
+            flex items-center justify-center relative overflow-hidden
+            shadow-lg shadow-black/30 ${shouldExpand ? 'opacity-100' : 'opacity-70'}`}
+          style={{
+            borderBottomLeftRadius: '6px',
+            borderBottomRightRadius: '6px'
+          }}
+        >
+          {/* Subtle background glow */}
+          <div className={`absolute inset-0 transition-opacity duration-300 ${
+            shouldExpand ? 'bg-gradient-to-r from-blue-500/10 to-transparent' : 'bg-gradient-to-r from-blue-500/5 to-transparent'
+          }`} />
+          
+          <div className="text-white/90 relative z-10">
+            <div className={`text-sm font-bold transition-all duration-300 transform ${
+              shouldExpand ? 'rotate-180 scale-110' : 'rotate-0 scale-100'
+            }`}>
+              {shouldExpand ? '−' : '+'}
+            </div>
+          </div>
+        </div>
       </div>
       
       {/* Add custom animations */}
