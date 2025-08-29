@@ -6,6 +6,7 @@ import PlanetVisualizationUniversal from '../Components/PlanetVisualizationUnive
 import PlanetNavigation from '../Components/PlanetNavigation.tsx';
 import VersionFooter from '../Components/VersionFooter.tsx';
 import SpaceshipPanel from '../Components/SpaceshipPanel.tsx';
+import TreasureChest from '../Components/TreasureChest.tsx';
 import FuelBars from '../Components/FuelBars.tsx';
 import { markPlanetAsVisited, markSystemAsVisited } from '../Utils/VisitHistory.tsx';
 import { ENABLE_EFFECTS_CONTROL } from '../Utils/DebugConfig.tsx';
@@ -194,6 +195,7 @@ const PlanetLayout: React.FC<PlanetLayoutProps> = ({
       </div>
       
       {/* Spaceship Panel */}
+      <TreasureChest />
       <SpaceshipPanel
         currentLocation={{
           type: 'planet',

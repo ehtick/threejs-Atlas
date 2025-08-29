@@ -6,6 +6,7 @@ import PlanetsList from '../Components/PlanetsList.tsx';
 import SystemNavigation from '../Components/SystemNavigation.tsx';
 import VersionFooter from '../Components/VersionFooter.tsx';
 import SpaceshipPanel from '../Components/SpaceshipPanel.tsx';
+import TreasureChest from '../Components/TreasureChest.tsx';
 import FuelBars from '../Components/FuelBars.tsx';
 import { markSystemAsVisited } from '../Utils/VisitHistory.tsx';
 
@@ -154,6 +155,7 @@ const SystemLayout: React.FC<SystemLayoutProps> = ({
       </div>
       
       {/* Spaceship Panel */}
+      <TreasureChest />
       <SpaceshipPanel
         currentLocation={{
           type: 'system',

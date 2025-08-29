@@ -7,6 +7,7 @@ import GalaxyNavigation from '../Components/GalaxyNavigation.tsx';
 import Pagination from '../Components/Pagination.tsx';
 import VersionFooter from '../Components/VersionFooter.tsx';
 import SpaceshipPanel from '../Components/SpaceshipPanel.tsx';
+import TreasureChest from '../Components/TreasureChest.tsx';
 import FuelBars from '../Components/FuelBars.tsx';
 import { markGalaxyAsVisited } from '../Utils/VisitHistory.tsx';
 
@@ -145,6 +146,7 @@ const GalaxyLayout: React.FC<GalaxyLayoutProps> = ({
       </div>
       
       {/* Spaceship Panel */}
+      <TreasureChest />
       <SpaceshipPanel
         currentLocation={{
           type: 'galaxy',

@@ -56,6 +56,7 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
     }
   }, [isOpen]);
 
+
   // Update passive generation display every 30 seconds when panel is open
   useEffect(() => {
     if (!isOpen) return;
@@ -130,9 +131,12 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
     setLocationStats(LocationBookmarks.getLocationStats());
   };
 
+
+
   return (
     <>
       <div ref={panelRef} className="fixed bottom-4 sm:bottom-6 right-4 sm:right-6 z-50">
+
         <button onClick={handleToggle} className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-blue-600 via-purple-600 to-blue-800 hover:from-blue-500 hover:via-purple-500 hover:to-blue-700 text-white rounded-full shadow-2xl border-2 border-blue-400/30 transition-all duration-300 transform hover:scale-105 backdrop-blur-sm" title="Spaceship Control Panel">
           <div className="flex items-center justify-center">
             <svg className="flex items-center justify-center" xmlns="http://www.w3.org/2000/svg" width={24} height={24} viewBox="0 0 24 24">
