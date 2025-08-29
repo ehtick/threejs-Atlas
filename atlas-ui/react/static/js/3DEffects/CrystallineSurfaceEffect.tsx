@@ -41,7 +41,7 @@ const PROCEDURAL_RANGES = {
   TRANSMISSION: { min: 0, max: 0 }, // Sin transmisión para mantener reflexiones
   IOR: { min: 2.4, max: 2.1 }, // Rango de índices de refracción (vidrio a diamante)
   ROUGHNESS: { min: 0.0, max: 0.01 }, // Rugosidad mínima para reflexiones perfectas
-  GLOW_INTENSITY: { min: 0.1, max: 0.3 }, // Brillo interno reducido para no interferir con reflexiones
+  GLOW_INTENSITY: { min: 0.1, max: 2.1 }, // Brillo interno reducido para no interferir con reflexiones
   HEIGHT: { min: 0.01, max: 0.09 }, // Altura de protuberancias cristalinas
 };
 
