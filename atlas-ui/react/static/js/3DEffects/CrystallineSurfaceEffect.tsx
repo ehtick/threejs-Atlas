@@ -33,15 +33,15 @@ export interface CrystallineSurfaceParams {
   timeSpeed?: number; // Velocidad de animación de brillo
 }
 
-// Rangos para generación procedural de cristales
+// Rangos para generación procedural de cristales con reflexiones optimizadas
 const PROCEDURAL_RANGES = {
-  CRYSTAL_COUNT: { min: 15, max: 30 }, // Número de formaciones cristalinas
+  CRYSTAL_COUNT: { min: 115, max: 130 }, // Número de formaciones cristalinas
   DENSITY: { min: 0.8, max: 1.8 }, // Densidad de cristales
   SIZE: { min: 0.1, max: 0.4 }, // Tamaños de cristales variados
-  TRANSMISSION: { min: 0.6, max: 0.95 }, // Alta transmisión para efecto vidrio
+  TRANSMISSION: { min: 0.0, max: 0.0 }, // Sin transmisión para mantener reflexiones
   IOR: { min: 1.4, max: 2.1 }, // Rango de índices de refracción (vidrio a diamante)
-  ROUGHNESS: { min: 0.0, max: 0.15 }, // Muy bajo para superficie cristalina
-  GLOW_INTENSITY: { min: 0.3, max: 0.8 }, // Intensidad de brillo interno
+  ROUGHNESS: { min: 0.0, max: 0.01 }, // Rugosidad mínima para reflexiones perfectas
+  GLOW_INTENSITY: { min: 0.1, max: 0.3 }, // Brillo interno reducido para no interferir con reflexiones
   HEIGHT: { min: 0.04, max: 0.12 }, // Altura de protuberancias cristalinas
   TIME_SPEED: { min: 0.02, max: 0.08 } // Animación sutil de brillo
 };
@@ -81,60 +81,81 @@ export class CrystallineSurfaceEffect {
   }
 
   /**
-   * Crear cubemap procedural con estrellas para reflexiones
+   * Crear cubemap sutil con starfield realista para reflexiones cristalinas
    */
   private createStarfieldCubemap(): void {
     try {
       const size = 512;
-      const canvas = document.createElement('canvas');
-      canvas.width = size;
-      canvas.height = size;
-      const context = canvas.getContext('2d');
-      
-      if (!context) {
-        console.warn('CrystallineSurfaceEffect: Could not get 2D canvas context');
-        return;
-      }
-
       const images: HTMLCanvasElement[] = [];
     
-    // Crear 6 caras del cubemap con estrellas
-    for (let i = 0; i < 6; i++) {
-      const faceCanvas = document.createElement('canvas');
-      faceCanvas.width = size;
-      faceCanvas.height = size;
-      const faceContext = faceCanvas.getContext('2d');
-      
-      if (!faceContext) continue;
-
-      // Fondo azul oscuro espacial
-      faceContext.fillStyle = '#001122';
-      faceContext.fillRect(0, 0, size, size);
-      
-      // Añadir estrellas aleatorias
-      const starCount = 200 + Math.random() * 300;
-      for (let j = 0; j < starCount; j++) {
-        const x = Math.random() * size;
-        const y = Math.random() * size;
-        const brightness = Math.random();
-        const starSize = Math.random() * 2 + 1;
+      for (let i = 0; i < 6; i++) {
+        const faceCanvas = document.createElement('canvas');
+        faceCanvas.width = size;
+        faceCanvas.height = size;
+        const faceContext = faceCanvas.getContext('2d');
         
-        faceContext.fillStyle = `rgba(${255 * brightness}, ${255 * brightness}, 255, ${brightness})`;
-        faceContext.beginPath();
-        faceContext.arc(x, y, starSize, 0, Math.PI * 2);
-        faceContext.fill();
+        if (!faceContext) continue;
+
+        // Fondo espacial sutil con gradiente suave
+        const gradient = faceContext.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
+        gradient.addColorStop(0, '#1a1a2e');  // Centro azul muy oscuro
+        gradient.addColorStop(0.5, '#16213e'); // Medio azul espacial
+        gradient.addColorStop(1, '#0f0f23');   // Borde casi negro
+        faceContext.fillStyle = gradient;
+        faceContext.fillRect(0, 0, size, size);
+        
+        // Estrellas sutiles pero visibles en reflexiones
+        const starCount = 200 + Math.random() * 100;
+        for (let j = 0; j < starCount; j++) {
+          const x = Math.random() * size;
+          const y = Math.random() * size;
+          const brightness = 0.3 + Math.random() * 0.4;
+          const starSize = Math.random() * 2 + 0.5;
+          
+          // Estrellas con tonos sutiles pero visibles
+          const colorVariant = Math.random();
+          if (colorVariant < 0.4) {
+            // Estrellas azuladas suaves
+            faceContext.fillStyle = `rgba(${120 + 60 * brightness}, ${140 + 80 * brightness}, 255, ${brightness})`;
+          } else if (colorVariant < 0.7) {
+            // Estrellas blancas suaves
+            faceContext.fillStyle = `rgba(${200 + 55 * brightness}, ${200 + 55 * brightness}, ${200 + 55 * brightness}, ${brightness})`;
+          } else {
+            // Estrellas cálidas suaves
+            faceContext.fillStyle = `rgba(255, ${180 + 60 * brightness}, ${120 + 60 * brightness}, ${brightness})`;
+          }
+          
+          faceContext.beginPath();
+          faceContext.arc(x, y, starSize, 0, Math.PI * 2);
+          faceContext.fill();
+          
+          // Halo sutil solo para estrellas brillantes
+          if (brightness > 0.6 && Math.random() < 0.1) {
+            faceContext.fillStyle = `rgba(255, 255, 255, ${brightness * 0.2})`;
+            faceContext.beginPath();
+            faceContext.arc(x, y, starSize * 2, 0, Math.PI * 2);
+            faceContext.fill();
+          }
+        }
+        
+        images.push(faceCanvas);
       }
-      
-      images.push(faceCanvas);
-    }
     
       // Crear textura cubemap
       if (images.length === 6) {
         this.envMap = new THREE.CubeTexture(images);
         this.envMap.needsUpdate = true;
+        this.envMap.mapping = THREE.CubeReflectionMapping;
+        this.envMap.format = THREE.RGBAFormat;
+        this.envMap.generateMipmaps = false;
+        this.envMap.minFilter = THREE.LinearFilter;
+        this.envMap.magFilter = THREE.LinearFilter;
+        console.log('CrystallineSurfaceEffect: Simple test environment map created');
+      } else {
+        console.warn('CrystallineSurfaceEffect: Failed to create environment map');
       }
     } catch (error) {
-      console.error('CrystallineSurfaceEffect: Error creating starfield cubemap:', error);
+      console.error('CrystallineSurfaceEffect: Error creating cubemap:', error);
     }
   }
 
@@ -195,74 +216,104 @@ export class CrystallineSurfaceEffect {
       crystalData.position_3d[2]
     ).normalize();
     
-    // Geometría cristalina con múltiples caras
-    const geometry = new THREE.ConeGeometry(
-      crystalData.size * this.planetRadius * 0.5, // Hacer cristales más pequeños
-      crystalData.height * this.planetRadius,
-      crystalData.sides
+    // CREAR GEOMETRÍA CRISTALINA REALISTA que se curve siguiendo la superficie
+    
+    const baseRadius = crystalData.size * this.planetRadius * 0.5;
+    const crystalHeight = crystalData.height * this.planetRadius; // Usar altura real de PROCEDURAL_RANGES
+    
+    // Crear geometría cristalina usando CylinderGeometry con pocos lados (forma cristalina)
+    const radialSegments = crystalData.sides; // Usar lados del cristal (6-12)
+    const heightSegments = 4; // Suficientes segmentos para curvar
+    
+    const geometry = new THREE.CylinderGeometry(
+      baseRadius * 0.8,    // Radio superior ligeramente menor
+      baseRadius,          // Radio base
+      crystalHeight,       // Altura del cristal
+      radialSegments,      // Lados cristalinos
+      heightSegments       // Segmentos verticales para curvatura
     );
     
-    // Añadir ruido procedural a la geometría
-    this.applyProceduralNoise(geometry, crystalData.size);
-    
-    // Material físico avanzado para cristales
-    const material = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color(crystalData.color[0], crystalData.color[1], crystalData.color[2]),
-      transmission: crystalData.transmission || 0.8,
-      opacity: crystalData.color[3] || 0.9,
-      transparent: true,
-      ior: crystalData.ior || 1.6,
-      roughness: crystalData.roughness || 0.05,
-      metalness: 0.1,
+    // Material cristalino con reflexiones sutiles y realistas
+    const material = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(crystalData.color[0], crystalData.color[1], crystalData.color[2]), // Usar color del cristal
+      roughness: crystalData.roughness, // Usar roughness de PROCEDURAL_RANGES
+      metalness: 0.8, // Metálico pero no excesivo
       envMap: this.envMap,
-      envMapIntensity: 0.8,
-      clearcoat: 1.0,
-      clearcoatRoughness: 0.03,
-      reflectivity: 0.9
+      envMapIntensity: 1.2 // Intensidad sutil pero visible
     });
     
-    const crystalMesh = new THREE.Mesh(geometry, material);
+    // TÉCNICA DE AtmosphereClouds: Orientación tangente a la superficie
+    const crystalPosition = surfaceNormal.clone().multiplyScalar(this.planetRadius);
+    const normalFromPlanet = crystalPosition.clone().normalize();
     
-    // Posicionar el cristal exactamente en la superficie del planeta
-    const planetSurfacePosition = surfaceNormal.clone().multiplyScalar(this.planetRadius);
-    crystalMesh.position.copy(planetSurfacePosition);
+    // Crear vectores tangentes a la superficie esférica (EXACTO de AtmosphereClouds)
+    const tangent1 = new THREE.Vector3();
+    const tangent2 = new THREE.Vector3();
     
-    // ORIENTACIÓN CORRECTA: El cristal debe estar ACOSTADO sobre la superficie
-    // Crear dos vectores tangentes a la superficie (perpendiculares al normal)
-    
-    // Vector tangente 1: perpendicular al normal de la superficie
-    let tangent1 = new THREE.Vector3();
-    if (Math.abs(surfaceNormal.y) < 0.9) {
-      tangent1.crossVectors(surfaceNormal, new THREE.Vector3(0, 1, 0)).normalize();
+    // Calcular primer vector tangente
+    if (Math.abs(normalFromPlanet.y) < 0.99) {
+      tangent1.crossVectors(normalFromPlanet, new THREE.Vector3(0, 1, 0)).normalize();
     } else {
-      tangent1.crossVectors(surfaceNormal, new THREE.Vector3(1, 0, 0)).normalize();
+      tangent1.crossVectors(normalFromPlanet, new THREE.Vector3(1, 0, 0)).normalize();
     }
     
-    // Vector tangente 2: perpendicular tanto al normal como al tangente 1
-    const tangent2 = new THREE.Vector3().crossVectors(surfaceNormal, tangent1).normalize();
+    // Calcular segundo vector tangente (perpendicular al primero y al normal)
+    tangent2.crossVectors(normalFromPlanet, tangent1).normalize();
     
-    // Rotación aleatoria para variedad, pero manteniéndolo en el plano de la superficie
-    const randomAngle = (index * 137.5) % 360 * (Math.PI / 180); // Golden angle
-    const finalTangent1 = tangent1.clone().multiplyScalar(Math.cos(randomAngle))
+    // Rotación aleatoria para variedad
+    const randomAngle = (index * 137.5) % 360 * (Math.PI / 180);
+    const rotatedTangent1 = tangent1.clone().multiplyScalar(Math.cos(randomAngle))
       .add(tangent2.clone().multiplyScalar(Math.sin(randomAngle)));
-    const finalTangent2 = new THREE.Vector3().crossVectors(surfaceNormal, finalTangent1).normalize();
+    const rotatedTangent2 = new THREE.Vector3().crossVectors(normalFromPlanet, rotatedTangent1).normalize();
     
-    // CRUCIAL: Crear matriz donde el UP del cristal sea el TANGENTE, no el normal
-    // Esto hace que el cristal esté acostado SOBRE la superficie
+    // CRÍTICO: Rotar el cilindro 90 grados primero para que esté ACOSTADO
+    // El CylinderGeometry por defecto tiene altura en Y (vertical), necesitamos que esté horizontal
+    const flattenMatrix = new THREE.Matrix4();
+    flattenMatrix.makeRotationX(Math.PI / 2); // Rotar 90 grados para acostar el cilindro
+    geometry.applyMatrix4(flattenMatrix);
+    
+    // Crear matriz de rotación para que el cristal siga la superficie (EXACTO de AtmosphereClouds)
     const rotationMatrix = new THREE.Matrix4();
-    rotationMatrix.makeBasis(
-      finalTangent2,    // Right vector (lado del cristal)
-      finalTangent1,    // Up vector del cristal (tangente a la superficie, no normal!)
-      surfaceNormal     // Forward vector (apunta hacia afuera, pero cristal está acostado)
-    );
+    rotationMatrix.makeBasis(rotatedTangent1, rotatedTangent2, normalFromPlanet);
     
-    // Aplicar la rotación que hace que el cristal esté acostado
-    crystalMesh.setRotationFromMatrix(rotationMatrix);
+    // ORIENTAR Y CURVAR LA GEOMETRÍA CRISTALINA PARA SEGUIR LA SUPERFICIE ESFÉRICA
+    const positions = geometry.attributes.position;
+    const vertex = new THREE.Vector3();
     
-    // Levantar ligeramente el cristal para que no esté enterrado
-    const liftOffset = crystalData.size * this.planetRadius * 0.05; // Lift muy pequeño
-    const liftVector = surfaceNormal.clone().multiplyScalar(liftOffset);
-    crystalMesh.position.add(liftVector);
+    // Aplicar la orientación para que el cristal siga la superficie
+    geometry.applyMatrix4(rotationMatrix);
+    
+    // CURVAR cada vértice del cristal para seguir la superficie esférica
+    for (let i = 0; i < positions.count; i++) {
+      vertex.fromBufferAttribute(positions, i);
+      
+      // Convertir a coordenadas del mundo
+      const worldVertex = vertex.clone().add(crystalPosition);
+      
+      // Calcular la distancia desde el centro del planeta
+      const distanceFromCenter = worldVertex.length();
+      
+      // Proyectar sobre una superficie esférica que mantenga el grosor del cristal
+      const direction = worldVertex.clone().normalize();
+      const surfaceRadius = this.planetRadius + (distanceFromCenter - this.planetRadius) * 0.5; // Mantener algo de altura
+      const projectedVertex = direction.multiplyScalar(surfaceRadius);
+      
+      // Volver a coordenadas locales del cristal
+      const localVertex = projectedVertex.sub(crystalPosition);
+      
+      positions.setXYZ(i, localVertex.x, localVertex.y, localVertex.z);
+    }
+    
+    positions.needsUpdate = true;
+    geometry.computeVertexNormals();
+    
+    // Añadir ruido procedural DESPUÉS de la curvatura
+    this.applyProceduralNoise(geometry, crystalData.size * 0.3);
+    
+    // Posicionar el cristal exactamente en la superficie (EXACTO de AtmosphereClouds)
+    geometry.translate(crystalPosition.x, crystalPosition.y, crystalPosition.z);
+    
+    const crystalMesh = new THREE.Mesh(geometry, material);
     
     // Crear efecto de brillo interno
     this.createInnerGlow(crystalMesh, crystalData, index);
@@ -413,10 +464,18 @@ export class CrystallineSurfaceEffect {
   public getGroup(): THREE.Group {
     return this.crystallineGroup;
   }
+
+  /**
+   * Obtener objeto 3D para el sistema de efectos (compatibilidad con EffectRegistry)
+   */
+  public getObject3D(): THREE.Group {
+    return this.crystallineGroup;
+  }
 }
 
 /**
  * Función helper para crear efecto desde datos de Python
+ * Los cristales tienen distribución independiente de las land_masses
  */
 export function createCrystallineSurfaceFromPythonData(
   planetRadius: number,
@@ -424,19 +483,17 @@ export function createCrystallineSurfaceFromPythonData(
   seed: number,
   cosmicOriginTime?: number
 ): CrystallineSurfaceEffect | null {
-  if (!surfaceData.green_patches || surfaceData.green_patches.length === 0) {
-    return null;
-  }
-
+  // Los cristales se generan de forma independiente usando generación procedural
+  // No dependen de green_patches ni land_masses
   return new CrystallineSurfaceEffect(planetRadius, {
-    crystallinePatches: surfaceData.green_patches,
+    // No pasar crystallinePatches para usar generación procedural independiente
     seed,
     cosmicOriginTime,
     baseColor: new THREE.Color(0.0, 0.8, 1.0), // Cyan base
-    transmission: 0.8,
+    transmission: 0.0, // Usar valores optimizados para reflexiones
     ior: 1.6,
-    roughness: 0.05,
-    glowIntensity: 0.6,
+    roughness: 0.01,
+    glowIntensity: 0.3,
     timeSpeed: 0.05
   }, new SeededRandom(seed));
 }

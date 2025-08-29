@@ -26,15 +26,35 @@ const EffectsControl: React.FC<EffectsControlProps> = ({ effects, onToggleEffect
   };
 
   const formatEffectName = (type: string): string => {
-    // Mostrar el nombre real del efecto para depuración
-    return type;
-    // Versión anterior con nombres bonitos:
-    // return type
-    //   .replace(/_/g, ' ')
-    //   .replace(/\b\w/g, l => l.toUpperCase())
-    //   .replace('Layer', '')
-    //   .replace('Effect', '')
-    //   .trim();
+    // Nombres específicos para efectos conocidos
+    const effectNames: Record<string, string> = {
+      'crystalline_surface': 'Crystalline Surface',
+      'fire_eruption': 'Fire Eruption',
+      'carbon_trails': 'Carbon Trails',
+      'radiation_rings': 'Radiation Rings',
+      'molten_lava': 'Molten Lava',
+      'lava_flows': 'Lava Flows',
+      'lava_rivers': 'Lava Rivers',
+      'aquifer_water': 'Aquifer Water',
+      'ocean_currents': 'Ocean Currents',
+      'atmosphere_clouds': 'Atmosphere Clouds',
+      'crystal_formations': 'Crystal Formations',
+      'cloud_layers': 'Cloud Layers',
+      'storm_systems': 'Storm Systems',
+      'volcanic_activity': 'Volcanic Activity',
+      'aurora': 'Aurora',
+      'magnetic_field': 'Magnetic Field',
+      'city_lights': 'City Lights',
+      'bioluminescence': 'Bioluminescence',
+      'thermal_emissions': 'Thermal Emissions'
+    };
+
+    return effectNames[type] || type
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, l => l.toUpperCase())
+      .replace('Layer', '')
+      .replace('Effect', '')
+      .trim();
   };
 
   if (localEffects.length === 0) {
