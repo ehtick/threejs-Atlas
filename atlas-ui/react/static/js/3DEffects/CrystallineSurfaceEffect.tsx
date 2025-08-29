@@ -173,6 +173,7 @@ export class CrystallineSurfaceEffect {
     }
   }
 
+
   /**
    * Generar formaciones cristalinas con materiales avanzados
    */
@@ -239,18 +240,122 @@ export class CrystallineSurfaceEffect {
       heightSegments // Segmentos verticales para curvatura
     );
 
-    // Material cristalino respetando el sistema de iluminación (README guidelines)
-    const material = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color(crystalData.color[0], crystalData.color[1], crystalData.color[2]),
-      roughness: crystalData.roughness,
-      metalness: 0.1, // Reducido para mejor iluminación
-      transmission: 0.2, // Transmisión para refracción
-      ior: crystalData.ior,
-      thickness: 0.1,
-      envMap: this.envMap,
-      envMapIntensity: 0.1, // Mucho más reducido para lado oscuro más oscuro
+    // Material cristalino sin luces - solo reflexiones del environment
+    const material = new THREE.ShaderMaterial({
+      uniforms: {
+        color: { value: new THREE.Color(crystalData.color[0], crystalData.color[1], crystalData.color[2]) },
+        envMap: { value: this.envMap },
+        roughness: { value: crystalData.roughness },
+        ior: { value: crystalData.ior },
+        transmission: { value: 0.2 },
+      },
+      vertexShader: `
+        varying vec3 vNormal;
+        varying vec3 vPosition;
+        varying vec3 vWorldNormal;
+        varying vec3 vWorldPosition;
+        
+        void main() {
+          vNormal = normalize(normalMatrix * normal);
+          vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);
+          vPosition = position;
+          vec4 worldPos = modelMatrix * vec4(position, 1.0);
+          vWorldPosition = worldPos.xyz;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 color;
+        uniform samplerCube envMap;
+        uniform float roughness;
+        uniform float ior;
+        uniform float transmission;
+        
+        varying vec3 vNormal;
+        varying vec3 vPosition;
+        varying vec3 vWorldNormal;
+        varying vec3 vWorldPosition;
+        
+        void main() {
+          vec3 normal = normalize(vWorldNormal);
+          vec3 viewDir = normalize(cameraPosition - vWorldPosition);
+          
+          // Fresnel más intenso para cristales
+          float NdotV = max(dot(normal, viewDir), 0.0);
+          float F0 = pow((1.0 - ior) / (1.0 + ior), 2.0);
+          float fresnel = F0 + (1.0 - F0) * pow(1.0 - NdotV, 3.0); // Exponente más bajo para más reflexión
+          
+          // === REFLEXIONES CRISTALINAS MÚLTIPLES ===
+          
+          // Reflexión principal
+          vec3 reflectDir = reflect(-viewDir, normal);
+          vec3 envReflection = textureCube(envMap, reflectDir).rgb;
+          
+          // Reflexiones adicionales con perturbación para facetas cristalinas
+          vec3 perturbedNormal1 = normalize(normal + vec3(0.1, 0.0, 0.0));
+          vec3 perturbedNormal2 = normalize(normal + vec3(0.0, 0.1, 0.0));
+          vec3 reflectDir1 = reflect(-viewDir, perturbedNormal1);
+          vec3 reflectDir2 = reflect(-viewDir, perturbedNormal2);
+          
+          vec3 envReflection1 = textureCube(envMap, reflectDir1).rgb;
+          vec3 envReflection2 = textureCube(envMap, reflectDir2).rgb;
+          
+          // Combinar reflexiones múltiples (característico de cristales facetados)
+          vec3 totalReflection = envReflection * 0.6 + envReflection1 * 0.2 + envReflection2 * 0.2;
+          totalReflection *= (2.0 - roughness); // Más intenso con menos rugosidad
+          
+          // === REFRACCIÓN CRISTALINA ===
+          vec3 refractDir = refract(-viewDir, normal, 1.0 / ior);
+          vec3 envRefraction = vec3(0.0);
+          if (length(refractDir) > 0.0) {
+            envRefraction = textureCube(envMap, refractDir).rgb;
+          }
+          
+          // === COLOR CRISTALINO ===
+          
+          // Color base más saturado y brillante
+          vec3 crystalColor = color * 1.2;
+          
+          // Mezclar con refracción para transmisión
+          vec3 transmittedColor = mix(crystalColor * 0.8, envRefraction * crystalColor, transmission);
+          
+          // === EFECTOS CRISTALINOS ESPECIALES ===
+          
+          // Dispersión cromática sutil (prisma)
+          float dispersion = 0.02;
+          vec3 refractR = refract(-viewDir, normal, 1.0 / (ior - dispersion));
+          vec3 refractG = refract(-viewDir, normal, 1.0 / ior);
+          vec3 refractB = refract(-viewDir, normal, 1.0 / (ior + dispersion));
+          
+          vec3 dispersedColor = vec3(0.0);
+          if (length(refractR) > 0.0) dispersedColor.r = textureCube(envMap, refractR).r;
+          if (length(refractG) > 0.0) dispersedColor.g = textureCube(envMap, refractG).g;
+          if (length(refractB) > 0.0) dispersedColor.b = textureCube(envMap, refractB).b;
+          
+          // Aplicar dispersión sutil
+          transmittedColor = mix(transmittedColor, dispersedColor * crystalColor, 0.15);
+          
+          // Brillo interno cristalino (caustics simulados)
+          float internalGlow = pow(fresnel, 0.5) * (1.0 - roughness);
+          vec3 glowColor = crystalColor * internalGlow * 0.3;
+          
+          // === COMBINACIÓN FINAL ===
+          
+          // Mezclar transmisión y reflexión usando Fresnel
+          vec3 finalColor = mix(transmittedColor, totalReflection, fresnel);
+          
+          // Añadir brillo interno
+          finalColor += glowColor;
+          
+          // Alpha cristalino - más opaco en bordes (Fresnel), más transparente en centro
+          float alpha = mix(0.3 + transmission * 0.4, 0.85, fresnel);
+          alpha = clamp(alpha, 0.3, 0.9);
+          
+          gl_FragColor = vec4(finalColor, alpha);
+        }
+      `,
       transparent: true,
-      opacity: 1, // Reducido para menos visibilidad en lado oscuro
+      side: THREE.FrontSide
     });
 
     // TÉCNICA DE AtmosphereClouds: Orientación tangente a la superficie
@@ -660,9 +765,39 @@ export class CrystallineSurfaceEffect {
    * Actualizar dirección de luz para seguir el sistema de iluminación
    */
   public updateLightDirection(lightDirection: THREE.Vector3): void {
+    // Actualizar luz en reflexiones de estrellas
     if (this.starFieldMaterial) {
       this.starFieldMaterial.uniforms.lightDirection.value.copy(lightDirection);
     }
+    
+    // Los cristales ahora usan MeshPhysicalMaterial con lights = false
+    // No necesitan actualización manual de uniforms
+  }
+  
+  /**
+   * Actualizar posición de luz para los cristales  
+   */
+  public updateLightPosition(lightPosition: THREE.Vector3): void {
+    // Actualizar posición de luz en reflexiones de estrellas
+    if (this.starFieldMaterial) {
+      this.starFieldMaterial.uniforms.lightPosition.value.copy(lightPosition);
+    }
+    
+    // Los cristales ahora usan MeshPhysicalMaterial con lights = false
+    // No necesitan actualización manual de posición de luz
+  }
+
+  /**
+   * Actualizar desde una DirectionalLight de Three.js
+   * IMPORTANTE: Usa SOLO la luz del sistema planetario, no las luces por defecto de Three.js
+   */
+  public updateFromThreeLight(light: THREE.DirectionalLight): void {
+    // Actualizar posición de la luz (la luz del sistema planetario)
+    this.updateLightPosition(light.position);
+    
+    // Calcular y actualizar dirección
+    const direction = light.target.position.clone().sub(light.position).normalize();
+    this.updateLightDirection(direction);
   }
 
   /**
