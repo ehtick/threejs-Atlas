@@ -6,6 +6,10 @@ import SpaceshipPanel from '../Components/SpaceshipPanel.tsx';
 import FuelBars from '../Components/FuelBars.tsx';
 import { UnifiedSpaceshipStorage } from '../Utils/UnifiedSpaceshipStorage.tsx';
 import { SpaceshipTravelManager } from '../Utils/SpaceshipTravelCosts.tsx';
+import { SpaceshipResourceManager } from '../Utils/SpaceshipResources.tsx';
+import AntimatterIcon from '../Icons/AntimatterIcon.tsx';
+import Element115Icon from '../Icons/Element115Icon.tsx';
+import DeuteriumIcon from '../Icons/DeuteriumIcon.tsx';
 
 interface MainLayoutProps {
   error: string | null;
@@ -24,6 +28,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
     y: 1000000,
     z: 1000000
   });
+  const [travelCost, setTravelCost] = useState<{ antimatter: number; element115: number; deuterium: number } | null>(null);
+  const [canAfford, setCanAfford] = useState(false);
   
   // Initialize spaceship system on mount
   useEffect(() => {
@@ -35,6 +41,71 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
 
   const handleCoordinateChange = (coordinates: Coordinates) => {
     setCurrentCoordinates(coordinates);
+  };
+
+  const calculateTravelCost = (coordinates: Coordinates) => {
+    // Calculate distance for travel cost
+    const distance = Math.floor(
+      Math.sqrt(
+        Math.pow(coordinates.x - 1000000, 2) + 
+        Math.pow(coordinates.y - 1000000, 2) + 
+        Math.pow(coordinates.z - 1000000, 2)
+      ) / 10000
+    );
+    
+    // Calculate the REAL consumption (efficiency applied twice)
+    const cost = SpaceshipResourceManager.calculateTravelCost("galaxy", distance);
+    const upgrade = SpaceshipResourceManager.getUpgrade();
+    
+    // First efficiency application (executeTravel)
+    const firstPass = {
+      antimatter: Math.floor(cost.antimatter / upgrade.efficiency),
+      element115: Math.floor(cost.element115 / upgrade.efficiency),
+      deuterium: Math.floor(cost.deuterium / upgrade.efficiency),
+    };
+    
+    // Second efficiency application (consumeResources) - this is what ACTUALLY gets consumed
+    const actualConsumption = {
+      antimatter: Math.floor(firstPass.antimatter / upgrade.efficiency),
+      element115: Math.floor(firstPass.element115 / upgrade.efficiency),
+      deuterium: Math.floor(firstPass.deuterium / upgrade.efficiency),
+    };
+    
+    setTravelCost(actualConsumption);
+    
+    // Check if player can afford the ACTUAL consumption
+    const resources = SpaceshipResourceManager.getResources();
+    const affordable = resources.antimatter >= actualConsumption.antimatter &&
+                      resources.element115 >= actualConsumption.element115 &&
+                      resources.deuterium >= actualConsumption.deuterium;
+    setCanAfford(affordable);
+  };
+
+  // Update travel cost when coordinates change
+  useEffect(() => {
+    calculateTravelCost(currentCoordinates);
+  }, [currentCoordinates.x, currentCoordinates.y, currentCoordinates.z]);
+
+  // Recalculate when resources change (every 5 seconds from FuelBars)
+  useEffect(() => {
+    const updateTravelCost = () => {
+      calculateTravelCost(currentCoordinates);
+    };
+    
+    // Listen to resource updates
+    const interval = setInterval(updateTravelCost, 5000);
+    
+    return () => clearInterval(interval);
+  }, [currentCoordinates.x, currentCoordinates.y, currentCoordinates.z]);
+
+  const formatResource = (value: number) => {
+    if (value >= 1000000) {
+      return `${(value / 1000000).toFixed(2)}M`;
+    }
+    if (value >= 1000) {
+      return `${(value / 1000).toFixed(1)}k`;
+    }
+    return value.toString();
   };
 
   const handleSubmit = () => {
@@ -116,6 +187,66 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
               </div>
             </form>
           </div>
+
+          {/* Travel Cost Display */}
+          {travelCost && (
+            <div className={`bg-gradient-to-r ${canAfford ? 'from-emerald-500/20 via-blue-500/20 to-purple-500/20 border-emerald-500/30' : 'from-red-500/20 via-orange-500/20 to-yellow-500/20 border-red-500/30'} rounded-xl p-4 sm:p-6 mb-8 border backdrop-blur-sm`}>
+              <div className="text-center mb-4">
+                <h3 className={`text-xl sm:text-2xl font-semibold mb-2 ${canAfford ? 'text-emerald-300' : 'text-red-300'}`}>
+                  🚀 Travel Fuel Consumption
+                </h3>
+                <p className="text-sm sm:text-base text-gray-300">
+                  Resources required for this journey (including ship efficiency bonuses)
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="bg-white/10 rounded-lg p-4 border border-purple-500/30 hover:border-purple-500/50 transition-colors duration-300">
+                  <div className="flex items-center gap-3 mb-2">
+                    <AntimatterIcon size={24} color="#a855f7" />
+                    <span className="text-sm font-medium text-gray-300">Antimatter</span>
+                  </div>
+                  <div className="text-2xl sm:text-3xl font-bold text-purple-400">{formatResource(travelCost.antimatter)}</div>
+                  <div className="text-xs text-gray-400 mt-1">AM Required</div>
+                </div>
+                
+                <div className="bg-white/10 rounded-lg p-4 border border-cyan-500/30 hover:border-cyan-500/50 transition-colors duration-300">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Element115Icon size={24} color="#06b6d4" />
+                    <span className="text-sm font-medium text-gray-300">Element 115</span>
+                  </div>
+                  <div className="text-2xl sm:text-3xl font-bold text-cyan-400">{formatResource(travelCost.element115)}</div>
+                  <div className="text-xs text-gray-400 mt-1">E115 Required</div>
+                </div>
+                
+                <div className="bg-white/10 rounded-lg p-4 border border-orange-500/30 hover:border-orange-500/50 transition-colors duration-300 sm:col-span-3 lg:col-span-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <DeuteriumIcon size={24} color="#fb7185" />
+                    <span className="text-sm font-medium text-gray-300">Deuterium</span>
+                  </div>
+                  <div className="text-2xl sm:text-3xl font-bold text-orange-400">{formatResource(travelCost.deuterium)}</div>
+                  <div className="text-xs text-gray-400 mt-1">D Required</div>
+                </div>
+              </div>
+              
+              <div className="mt-4 text-center">
+                {canAfford ? (
+                  <div className="flex items-center justify-center gap-2 text-emerald-300">
+                    <span className="text-lg">✅</span>
+                    <span className="font-medium">Sufficient fuel for travel</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center gap-2 text-red-300">
+                    <span className="text-lg">⚠️</span>
+                    <span className="font-medium">Insufficient fuel - collect more resources</span>
+                  </div>
+                )}
+                <div className="text-xs text-gray-400 mt-2">
+                  Ship efficiency: {SpaceshipTravelManager.getTravelEfficiency().toFixed(2)}x
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Current Coordinates Display */}
           <div className="bg-gradient-to-r from-emerald-500/20 via-violet-500/20 to-rose-500/20 rounded-xl p-4 sm:p-6 text-center border border-white/20">
