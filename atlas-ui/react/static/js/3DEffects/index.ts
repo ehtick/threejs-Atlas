@@ -75,39 +75,7 @@ export type { SuperEarthWaterFeaturesParams } from "./SuperEarthWaterFeatures";
 export { EffectRegistry, effectRegistry, EffectType } from "./EffectRegistry";
 export type { EffectInstance, EffectCreationData, EffectCreator } from "./EffectRegistry";
 
-export const AVAILABLE_EFFECTS = [
-  "cloud_bands",
-  "cloud_gyros",
-  "atmosphere",
-  "atmosphere_glow",
-  "atmosphere_clouds",
-  "atmospheric_streaks",
-  "ring_system",
-  "fragmentation",
-  "rocky_terrain",
-  "icy_terrain",
-  "lava_flows",
-  "lava_rivers",
-  "crystal_formations",
-  "cloud_layers",
-  "storm_systems",
-  "volcanic_activity",
-  "aurora",
-  "magnetic_field",
-  "city_lights",
-  "bioluminescence",
-  "thermal_emissions",
-  "tundra_snowflakes",
-  "toxic_post_processing",
-  "river_lines",
-  "cave_surface_holes",
-  "radiation_pulse",
-  "radiation_rings",
-  "super_earth_water_features",
-  "anomaly_phase_matter",
-  "pulsating_cube",
-  "planet_rays",
-] as const;
+export const AVAILABLE_EFFECTS = ["cloud_bands", "cloud_gyros", "atmosphere", "atmosphere_glow", "atmosphere_clouds", "atmospheric_streaks", "ring_system", "fragmentation", "rocky_terrain", "icy_terrain", "lava_flows", "lava_rivers", "crystal_formations", "cloud_layers", "storm_systems", "volcanic_activity", "aurora", "magnetic_field", "city_lights", "bioluminescence", "thermal_emissions", "tundra_snowflakes", "toxic_post_processing", "river_lines", "cave_surface_holes", "radiation_pulse", "radiation_rings", "super_earth_water_features", "anomaly_phase_matter", "pulsating_cube", "planet_rays"] as const;
 
 export type AvailableEffectType = (typeof AVAILABLE_EFFECTS)[number];
 
@@ -299,14 +267,11 @@ export function validateEffectConfig(effectType: string, params: any): { valid: 
 }
 
 export const EffectsLogger = {
-  log: (message: string, data?: any) => {
-  },
+  log: (message: string, data?: any) => {},
 
-  warn: (message: string, data?: any) => {
-  },
+  warn: (message: string, data?: any) => {},
 
-  error: (message: string, error?: any) => {
-  },
+  error: (message: string, error?: any) => {},
 
   debug: (message: string, data?: any) => {
     if (process.env.NODE_ENV === "development") {

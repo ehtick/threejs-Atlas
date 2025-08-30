@@ -39,7 +39,6 @@ export class SuperEarthWaterFeaturesEffect {
   private animationTime: number = 0;
 
   constructor(planetRadius: number, params: SuperEarthWaterFeaturesParams = {}) {
-
     const seed = params.seed || Math.floor(Math.random() * 1000000);
     this.rng = new SeededRandom(seed);
     this.planetRadius = planetRadius;
@@ -62,7 +61,6 @@ export class SuperEarthWaterFeaturesEffect {
   }
 
   private generateWaterTextures(): void {
-
     const normalSize = 256;
     const normalData = new Uint8Array(normalSize * normalSize * 4);
 
@@ -259,7 +257,6 @@ export class SuperEarthWaterFeaturesEffect {
   }
 
   private generateWaterBodies(): void {
-
     if (this.params.water_bodies && this.params.water_bodies.length > 0) {
       this.params.water_bodies.forEach((bodyData, index) => {
         const waterMesh = this.createTextureBasedWaterBody(bodyData, index);
@@ -275,7 +272,6 @@ export class SuperEarthWaterFeaturesEffect {
 
   private createTextureBasedWaterBody(bodyData: any, bodyIndex: number): THREE.Mesh | null {
     if (!bodyData.position_3d || bodyData.position_3d.length !== 3) {
-
       return null;
     }
 
@@ -466,7 +462,6 @@ export class SuperEarthWaterFeaturesEffect {
   }
 
   private generateRandomSurfacePoint(): number[] {
-
     const theta = this.rng.uniform(0.3, Math.PI - 0.3);
     const phi = this.rng.uniform(0, Math.PI * 2);
 
@@ -488,10 +483,8 @@ export class SuperEarthWaterFeaturesEffect {
    * Update lighting from Three.js DirectionalLight - EXACT same as PlanetLayerSystem
    */
   updateFromThreeLight(light: THREE.DirectionalLight): void {
-
     this.materials.forEach((material) => {
       if (material instanceof THREE.ShaderMaterial && material.uniforms) {
-
         if (material.uniforms.lightPosition) {
           material.uniforms.lightPosition.value.copy(light.position);
         }
@@ -504,7 +497,6 @@ export class SuperEarthWaterFeaturesEffect {
     });
 
     if (this.waterMaterial && this.waterMaterial.uniforms) {
-
       if (this.waterMaterial.uniforms.lightPosition) {
         this.waterMaterial.uniforms.lightPosition.value.copy(light.position);
       }
@@ -514,7 +506,6 @@ export class SuperEarthWaterFeaturesEffect {
         this.waterMaterial.uniforms.lightDirection.value.copy(direction);
       }
     }
-
   }
 
   update(deltaTime: number): void {
@@ -558,7 +549,6 @@ export class SuperEarthWaterFeaturesEffect {
   }
 
   dispose(): void {
-
     if (this.normalMap) this.normalMap.dispose();
     if (this.displacementMap) this.displacementMap.dispose();
     if (this.foamMap) this.foamMap.dispose();
@@ -587,7 +577,6 @@ export function createSuperEarthWaterFeaturesFromPythonData(planetRadius: number
     const roll = rng.uniform(0, 100);
 
     if (roll <= probability) {
-
       const theta = rng.uniform(0, 2 * Math.PI);
       const phi = Math.acos(rng.uniform(-1, 1));
 

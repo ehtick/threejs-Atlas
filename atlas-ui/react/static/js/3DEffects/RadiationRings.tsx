@@ -1,15 +1,15 @@
 // atlas-ui/react/static/js/3DEffects/RadiationRings.tsx
-import * as THREE from 'three';
-import { SeededRandom } from '../Utils/SeededRandom.tsx';
-import { DEFAULT_COSMIC_ORIGIN_TIME } from '../Utils/UniverseTime.tsx';
+import * as THREE from "three";
+import { SeededRandom } from "../Utils/SeededRandom.tsx";
+import { DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime.tsx";
 
 const PROCEDURAL_RANGES = {
   RING_COUNT: { min: 16, max: 256 },
-  EXPANSION_SPEED: { min: 1.5, max: 5},
+  EXPANSION_SPEED: { min: 1.5, max: 5 },
   WAVE_INTENSITY: { min: 0.6, max: 2.0 },
   MAX_RADIUS_MULTIPLIER: { min: 1.5, max: 10 },
   GLOW_INTENSITY: { min: 0.5, max: 2.0 },
-  TIME_SPEED: { min: 0.8, max: 1.3 }
+  TIME_SPEED: { min: 0.8, max: 1.3 },
 };
 
 export interface RadiationRingsParams {
@@ -47,7 +47,7 @@ export class RadiationRingsEffect {
       glowIntensity: params.glowIntensity || this.rng.random() * (PROCEDURAL_RANGES.GLOW_INTENSITY.max - PROCEDURAL_RANGES.GLOW_INTENSITY.min) + PROCEDURAL_RANGES.GLOW_INTENSITY.min,
       cosmicOriginTime: params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME,
       timeSpeed: params.timeSpeed || this.rng.random() * (PROCEDURAL_RANGES.TIME_SPEED.max - PROCEDURAL_RANGES.TIME_SPEED.min) + PROCEDURAL_RANGES.TIME_SPEED.min,
-      seed
+      seed,
     };
 
     this.cosmicOffset = (seed % 100) * 0.1;
@@ -59,49 +59,48 @@ export class RadiationRingsEffect {
   private createConcentricRings(): void {
     const ringCount = this.params.ringCount!;
     const maxRingRadius = this.params.maxRadius!;
-    
-    for (let i = 0; i < ringCount; i++) {
 
+    for (let i = 0; i < ringCount; i++) {
       const t = i / (ringCount - 1);
       const ringRadius = this.planetRadius * 1.02 + (maxRingRadius - this.planetRadius * 1.02) * Math.pow(t, 0.8);
 
       const segments = 128;
       const points = [];
-      
+
       for (let j = 0; j <= segments; j++) {
         const angle = (j / segments) * Math.PI * 2;
         const x = Math.cos(angle) * ringRadius;
         const z = Math.sin(angle) * ringRadius;
 
         const baseHeight = this.planetRadius * 0.005;
-        const variation = (Math.sin(angle * 7 + i * 2) * 0.5) * 0.01 * this.planetRadius;
+        const variation = Math.sin(angle * 7 + i * 2) * 0.5 * 0.01 * this.planetRadius;
         const y = baseHeight + variation;
         points.push(new THREE.Vector3(x, y, z));
       }
-      
+
       const geometry = new THREE.BufferGeometry().setFromPoints(points);
 
       const phases = new Float32Array(segments + 1);
       const distances = new Float32Array(segments + 1);
       const randomOffsets = new Float32Array(segments + 1);
-      
+
       for (let j = 0; j <= segments; j++) {
         phases[j] = i * 0.6 + (j / segments) * Math.PI * 4;
         distances[j] = (ringRadius - this.planetRadius * 1.02) / (maxRingRadius - this.planetRadius * 1.02);
         randomOffsets[j] = ((i * 7 + j * 3) % 100) / 100.0;
       }
-      
-      geometry.setAttribute('phase', new THREE.BufferAttribute(phases, 1));
-      geometry.setAttribute('distance', new THREE.BufferAttribute(distances, 1));
-      geometry.setAttribute('randomOffset', new THREE.BufferAttribute(randomOffsets, 1));
-      
+
+      geometry.setAttribute("phase", new THREE.BufferAttribute(phases, 1));
+      geometry.setAttribute("distance", new THREE.BufferAttribute(distances, 1));
+      geometry.setAttribute("randomOffset", new THREE.BufferAttribute(randomOffsets, 1));
+
       const material = new THREE.ShaderMaterial({
         transparent: true,
         depthWrite: false,
         depthTest: true,
         blending: THREE.AdditiveBlending,
         side: THREE.DoubleSide,
-        
+
         uniforms: {
           time: { value: 0 },
           color: { value: new THREE.Color(this.params.color![0], this.params.color![1], this.params.color![2]) },
@@ -109,9 +108,9 @@ export class RadiationRingsEffect {
           waveIntensity: { value: this.params.waveIntensity },
           glowIntensity: { value: this.params.glowIntensity },
           ringIndex: { value: i },
-          totalRings: { value: ringCount }
+          totalRings: { value: ringCount },
         },
-        
+
         vertexShader: `
           attribute float phase;
           attribute float distance;
@@ -150,7 +149,7 @@ export class RadiationRingsEffect {
             gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
           }
         `,
-        
+
         fragmentShader: `
           uniform vec3 color;
           uniform float glowIntensity;
@@ -178,9 +177,9 @@ export class RadiationRingsEffect {
             
             gl_FragColor = vec4(finalColor, alpha);
           }
-        `
+        `,
       });
-      
+
       const ring = new THREE.Line(geometry, material);
       ring.renderOrder = 1000 + i;
       this.concentricRings.push(ring);
@@ -189,7 +188,6 @@ export class RadiationRingsEffect {
   }
 
   public update(_deltaTime?: number): void {
-
     const currentTimeSeconds = Date.now() / 1000;
     const timeSinceCosmicOrigin = currentTimeSeconds - (this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME);
 
@@ -221,8 +219,7 @@ export class RadiationRingsEffect {
   }
 
   public dispose(): void {
-
-    this.concentricRings.forEach(ring => {
+    this.concentricRings.forEach((ring) => {
       ring.geometry.dispose();
       (ring.material as THREE.Material).dispose();
     });
@@ -239,28 +236,28 @@ export class RadiationRingsEffect {
 
     if (newParams.color) {
       const color = new THREE.Color(newParams.color[0], newParams.color[1], newParams.color[2]);
-      this.concentricRings.forEach(ring => {
+      this.concentricRings.forEach((ring) => {
         const material = ring.material as THREE.ShaderMaterial;
         material.uniforms.color.value = color;
       });
     }
-    
+
     if (newParams.expansionSpeed !== undefined) {
-      this.concentricRings.forEach(ring => {
+      this.concentricRings.forEach((ring) => {
         const material = ring.material as THREE.ShaderMaterial;
         material.uniforms.expansionSpeed.value = newParams.expansionSpeed;
       });
     }
-    
+
     if (newParams.waveIntensity !== undefined) {
-      this.concentricRings.forEach(ring => {
+      this.concentricRings.forEach((ring) => {
         const material = ring.material as THREE.ShaderMaterial;
         material.uniforms.waveIntensity.value = newParams.waveIntensity;
       });
     }
-    
+
     if (newParams.glowIntensity !== undefined) {
-      this.concentricRings.forEach(ring => {
+      this.concentricRings.forEach((ring) => {
         const material = ring.material as THREE.ShaderMaterial;
         material.uniforms.glowIntensity.value = newParams.glowIntensity;
       });
@@ -268,18 +265,13 @@ export class RadiationRingsEffect {
   }
 }
 
-export function createRadiationRingsFromPythonData(
-  planetRadius: number,
-  pythonData: any,
-  globalSeed?: number
-): RadiationRingsEffect {
+export function createRadiationRingsFromPythonData(planetRadius: number, pythonData: any, globalSeed?: number): RadiationRingsEffect {
   const seed = globalSeed || Math.floor(Math.random() * 1000000);
 
   const params: RadiationRingsParams = {
     seed: seed + 42424,
     color: pythonData.color || [0.3, 1.0, 0.2],
     cosmicOriginTime: pythonData?.timing?.cosmic_origin_time || pythonData?.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME,
-
   };
 
   return new RadiationRingsEffect(planetRadius, params);

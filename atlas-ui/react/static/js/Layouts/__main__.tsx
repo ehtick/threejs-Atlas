@@ -1,3 +1,4 @@
+// atlas-ui/react/static/js/Layouts/__main__.tsx
 import React, { useState, useEffect } from 'react';
 import Header from '../Components/Header.tsx';
 import CoordinateSelector from '../Components/CoordinateSelector.tsx';
@@ -31,12 +32,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
   const [travelCost, setTravelCost] = useState<{ antimatter: number; element115: number; deuterium: number } | null>(null);
   const [canAfford, setCanAfford] = useState(false);
   
-  // Initialize spaceship system on mount
   useEffect(() => {
-    // Initialize and migrate from old storage only
     UnifiedSpaceshipStorage.migrateFromOldStorage();
-    
-    // NO MORE AUTOMATIC PASSIVE GENERATION - now manual only via SpaceshipPanel
   }, []);
 
   const handleCoordinateChange = (coordinates: Coordinates) => {
@@ -44,7 +41,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
   };
 
   const calculateTravelCost = (coordinates: Coordinates) => {
-    // Calculate distance for travel cost
     const distance = Math.floor(
       Math.sqrt(
         Math.pow(coordinates.x - 1000000, 2) + 
@@ -53,18 +49,15 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
       ) / 10000
     );
     
-    // Calculate the REAL consumption (efficiency applied twice)
     const cost = SpaceshipResourceManager.calculateTravelCost("galaxy", distance);
     const upgrade = SpaceshipResourceManager.getUpgrade();
     
-    // First efficiency application (executeTravel)
     const firstPass = {
       antimatter: Math.floor(cost.antimatter / upgrade.efficiency),
       element115: Math.floor(cost.element115 / upgrade.efficiency),
       deuterium: Math.floor(cost.deuterium / upgrade.efficiency),
     };
     
-    // Second efficiency application (consumeResources) - this is what ACTUALLY gets consumed
     const actualConsumption = {
       antimatter: Math.floor(firstPass.antimatter / upgrade.efficiency),
       element115: Math.floor(firstPass.element115 / upgrade.efficiency),
@@ -73,7 +66,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
     
     setTravelCost(actualConsumption);
     
-    // Check if player can afford the ACTUAL consumption
     const resources = SpaceshipResourceManager.getResources();
     const affordable = resources.antimatter >= actualConsumption.antimatter &&
                       resources.element115 >= actualConsumption.element115 &&
@@ -81,18 +73,15 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
     setCanAfford(affordable);
   };
 
-  // Update travel cost when coordinates change
   useEffect(() => {
     calculateTravelCost(currentCoordinates);
   }, [currentCoordinates.x, currentCoordinates.y, currentCoordinates.z]);
 
-  // Recalculate when resources change (every 5 seconds from FuelBars)
   useEffect(() => {
     const updateTravelCost = () => {
       calculateTravelCost(currentCoordinates);
     };
     
-    // Listen to resource updates
     const interval = setInterval(updateTravelCost, 5000);
     
     return () => clearInterval(interval);
@@ -109,7 +98,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
   };
 
   const handleSubmit = () => {
-    // Calculate distance for travel cost (simplified - could be more complex)
     const distance = Math.floor(
       Math.sqrt(
         Math.pow(currentCoordinates.x - 1000000, 2) + 
@@ -118,18 +106,15 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
       ) / 10000
     );
     
-    // Check if can afford travel to new galaxy
     if (!SpaceshipTravelManager.canAffordTravel("galaxy", distance)) {
-      SpaceshipTravelManager.executeTravel("galaxy", distance); // Will show insufficient resources message
+      SpaceshipTravelManager.executeTravel("galaxy", distance);
       return;
     }
     
-    // Consume resources for travel
     if (!SpaceshipTravelManager.executeTravel("galaxy", distance)) {
-      return; // Travel failed
+      return;
     }
     
-    // Create a form and submit to Flask
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = '/navigate';
@@ -148,21 +133,17 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
 
   return (
     <div className="w-full h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white overflow-auto">
-      {/* Background Stars Effect */}
       <div className="absolute inset-0 opacity-20" style={{
         backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
       }}></div>
       
-      {/* Fuel Bars */}
       <FuelBars />
       
       <div className="relative z-10 pt-1">
         <Header />
         
-        {/* Main Content Container */}
         <div className="w-full px-2 sm:px-4 lg:px-6 py-4 sm:py-8">
           
-          {/* Hero Section */}
           <div className="text-center mb-12">
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-4">
               Atlas Navigation System
@@ -172,14 +153,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
             </p>
           </div>
 
-          {/* Error Message */}
           {error && (
             <div className="mb-8 bg-red-500/20 border border-red-500 rounded-lg p-4 text-red-200 text-center">
               <span className="font-semibold">Navigation Error:</span> {error}
             </div>
           )}
 
-          {/* Navigation Form */}
           <div className="bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 mb-8 shadow-2xl overflow-hidden">
             <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="w-full">
               <div className="p-3 sm:p-4 lg:p-6">
@@ -188,7 +167,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
             </form>
           </div>
 
-          {/* Travel Cost Display */}
           {travelCost && (
             <div className={`bg-gradient-to-r ${canAfford ? 'from-emerald-500/20 via-blue-500/20 to-purple-500/20 border-emerald-500/30' : 'from-red-500/20 via-orange-500/20 to-yellow-500/20 border-red-500/30'} rounded-xl p-4 sm:p-6 mb-8 border backdrop-blur-sm`}>
               <div className="text-center mb-4">
@@ -248,7 +226,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
             </div>
           )}
 
-          {/* Current Coordinates Display */}
           <div className="bg-gradient-to-r from-emerald-500/20 via-violet-500/20 to-rose-500/20 rounded-xl p-4 sm:p-6 text-center border border-white/20">
             <h3 className="text-xl sm:text-2xl font-semibold mb-4 bg-gradient-to-r from-emerald-300 via-violet-300 to-rose-300 bg-clip-text text-transparent">
               Current Coordinates
@@ -273,7 +250,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
         <VersionFooter version={version} />
       </div>
       
-      {/* Spaceship Control Panel */}
       <SpaceshipPanel />
     </div>
   );

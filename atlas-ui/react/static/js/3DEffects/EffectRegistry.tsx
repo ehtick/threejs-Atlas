@@ -78,7 +78,6 @@ export interface EffectCreationData {
 }
 
 export enum EffectType {
-
   CLOUD_BANDS = "cloud_bands",
   CLOUD_GYROS = "cloud_gyros",
 
@@ -171,7 +170,6 @@ export class EffectRegistry {
    * Registra todos los efectos por defecto
    */
   private registerDefaultEffects(): void {
-
     this.registerEffect(EffectType.ATMOSPHERE_GLOW, {
       create: (params, planetRadius) => new AtmosphereGlowEffect(planetRadius, params),
       fromPythonData: (data, planetRadius) => createAtmosphereGlowFromPythonData(planetRadius, data.atmosphere || {}),
@@ -264,7 +262,6 @@ export class EffectRegistry {
 
     this.registerEffect(EffectType.CRYSTAL_FORMATIONS, {
       create: (params, planetRadius) => {
-
         return null;
       },
     });
@@ -302,7 +299,6 @@ export class EffectRegistry {
     this.registerEffect(EffectType.PULSATING_CUBE, {
       create: (params, planetRadius) => new PulsatingCubeEffect(planetRadius, params),
       fromPythonData: (data, planetRadius) => {
-
         const baseColor = getPlanetBaseColor(data);
 
         return createPulsatingCubeFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed, baseColor, data);
@@ -328,82 +324,44 @@ export class EffectRegistry {
       create: (params, planetRadius) => new ExoticGeometricShapesEffect(planetRadius, params),
       fromPythonData: (data, planetRadius) => {
         const baseColor = getPlanetBaseColor(data);
-        return createExoticGeometricShapesFromPythonData(
-          planetRadius, 
-          data.surface_elements || {}, 
-          data.seeds?.planet_seed,
-          baseColor
-        );
+        return createExoticGeometricShapesFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed, baseColor);
       },
     });
 
     this.registerEffect(EffectType.EXOTIC_DOODLES, {
       create: (params, planetRadius) => new ExoticDoodlesEffect(planetRadius, params),
-      fromPythonData: (data, planetRadius) => createExoticDoodlesFromPythonData(
-        planetRadius, 
-        data.surface_elements || {}, 
-        data.seeds?.planet_seed
-      ),
+      fromPythonData: (data, planetRadius) => createExoticDoodlesFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed),
     });
 
     this.registerEffect(EffectType.CAVE_SURFACE_HOLES, {
       create: (params, planetRadius, layerSystem) => new CaveSurfaceHolesEffect(planetRadius, params),
-      fromPythonData: (data, planetRadius, layerSystem) => createCaveSurfaceHolesFromPythonData(
-        planetRadius,
-        data,
-        data.seeds?.planet_seed
-      ),
+      fromPythonData: (data, planetRadius, layerSystem) => createCaveSurfaceHolesFromPythonData(planetRadius, data, data.seeds?.planet_seed),
     });
 
     this.registerEffect(EffectType.VEGETATION, {
       create: (params, planetRadius, layerSystem) => new VegetationEffect(planetRadius, params),
-      fromPythonData: (data, planetRadius, layerSystem) => createVegetationFromPythonData(
-        planetRadius,
-        data.surface_elements || {},
-        data.seeds?.planet_seed,
-        data.timing?.cosmic_origin_time
-      ),
+      fromPythonData: (data, planetRadius, layerSystem) => createVegetationFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed, data.timing?.cosmic_origin_time),
     });
 
     this.registerEffect(EffectType.CRYSTALLINE_SURFACE, {
       create: (params, planetRadius, layerSystem) => new CrystallineSurfaceEffect(planetRadius, params),
-      fromPythonData: (data, planetRadius, layerSystem) => createCrystallineSurfaceFromPythonData(
-        planetRadius,
-        data.surface_elements || {},
-        data.seeds?.planet_seed,
-        data.timing?.cosmic_origin_time
-      ),
+      fromPythonData: (data, planetRadius, layerSystem) => createCrystallineSurfaceFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed, data.timing?.cosmic_origin_time),
     });
 
     this.registerEffect(EffectType.TOXIC_SWAMP_BUBBLES, {
       create: (params, planetRadius) => new ToxicSwampBubblesEffect(planetRadius, params),
-      fromPythonData: (data, planetRadius) => createToxicSwampBubblesFromPythonData(
-        planetRadius,
-        data.surface_elements || {},
-        data.seeds?.planet_seed
-      ),
+      fromPythonData: (data, planetRadius) => createToxicSwampBubblesFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed),
     });
 
     this.registerEffect(EffectType.MAGMA_FLOWS, {
       create: (params, planetRadius, layerSystem) => new MagmaFlowsEffect(planetRadius, params),
-      fromPythonData: (data, planetRadius, layerSystem) => createMagmaFlowsFromPythonData(
-        planetRadius,
-        data.surface_elements || {},
-        data.seeds?.planet_seed,
-        data.timing?.cosmic_origin_time
-      ),
+      fromPythonData: (data, planetRadius, layerSystem) => createMagmaFlowsFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed, data.timing?.cosmic_origin_time),
     });
 
     this.registerEffect(EffectType.MAGMA_ERUPTIONS, {
       create: (params, planetRadius, layerSystem) => new MagmaEruptionsEffect(planetRadius, params),
-      fromPythonData: (data, planetRadius, layerSystem) => createMagmaEruptionsFromPythonData(
-        planetRadius,
-        data.surface_elements || {},
-        data.seeds?.planet_seed,
-        data.timing?.cosmic_origin_time
-      ),
+      fromPythonData: (data, planetRadius, layerSystem) => createMagmaEruptionsFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed, data.timing?.cosmic_origin_time),
     });
-
   }
 
   /**
@@ -419,7 +377,6 @@ export class EffectRegistry {
   createEffect(type: string, params: any, planetRadius: number, mesh?: THREE.Mesh, priority: number = 0): EffectInstance | null {
     const creator = this.creators.get(type);
     if (!creator) {
-
       return null;
     }
 
@@ -440,7 +397,6 @@ export class EffectRegistry {
       this.effects.set(instance.id, instance);
       return instance;
     } catch (error) {
-
       return null;
     }
   }
@@ -471,7 +427,6 @@ export class EffectRegistry {
       this.effects.set(instance.id, instance);
       return instance;
     } catch (error) {
-
       return null;
     }
   }
@@ -504,7 +459,6 @@ export class EffectRegistry {
     const effects: EffectInstance[] = [];
 
     try {
-
       const baseColor = getPlanetBaseColor(pythonData);
 
       if (existingLayerSystem) {
@@ -518,13 +472,8 @@ export class EffectRegistry {
 
         if (surface.effects_3d && Array.isArray(surface.effects_3d)) {
           for (const effectData of surface.effects_3d) {
-
             if (effectData.type === "atmospheric_streaks") {
-              const streaksEffect = createAtmosphericStreaksFromPythonData(
-                planetRadius,
-                effectData.params,
-                pythonData.seeds?.shape_seed + 3000
-              );
+              const streaksEffect = createAtmosphericStreaksFromPythonData(planetRadius, effectData.params, pythonData.seeds?.shape_seed + 3000);
 
               const streaksInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -544,7 +493,6 @@ export class EffectRegistry {
             const instance = this.createEffect(effectData.type, effectData.params, planetRadius, mesh, effectData.priority || 0);
 
             if (instance) {
-
               instance.name = effectData.type.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
 
               effects.push(instance);
@@ -557,7 +505,6 @@ export class EffectRegistry {
                 instance.effect.addToScene(scene, mesh.position);
               }
             } else {
-
             }
           }
         } else {
@@ -565,9 +512,7 @@ export class EffectRegistry {
 
         switch (surface.type.toLowerCase()) {
           case "gas_giant":
-
             if (this.layerSystem) {
-
               const cloudBandsLayer = createCloudBandsLayerFromPythonData(
                 this.layerSystem,
                 {
@@ -609,7 +554,6 @@ export class EffectRegistry {
               effects.push(gyrosInstance);
 
               if (surface.polar_hexagon && surface.polar_hexagon.enabled) {
-
                 const currentTimeYears = pythonData.timing?.elapsed_time ? pythonData.timing.elapsed_time / (365.25 * 24 * 3600) : 0;
 
                 const hexagonEffect = new PolarHexagonEffect({
@@ -635,13 +579,7 @@ export class EffectRegistry {
               }
 
               if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
-                const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
-                  planetRadius,
-                  surface,
-                  baseColor,
-                  pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
-                  pythonData.timing?.cosmic_origin_time
-                );
+                const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(planetRadius, surface, baseColor, pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000), pythonData.timing?.cosmic_origin_time);
 
                 const secondaryCloudsInstance: EffectInstance = {
                   id: `effect_${this.nextId++}`,
@@ -659,12 +597,7 @@ export class EffectRegistry {
               }
 
               if (surface.atmosphere_clouds && surface.atmosphere_clouds.clouds && surface.atmosphere_clouds.clouds.length > 0) {
-                const atmosphereCloudsEffect = createAtmosphereCloudsFromPythonData(
-                  planetRadius,
-                  surface.atmosphere_clouds,
-                  (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000,
-                  pythonData.timing?.cosmic_origin_time
-                );
+                const atmosphereCloudsEffect = createAtmosphereCloudsFromPythonData(planetRadius, surface.atmosphere_clouds, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000, pythonData.timing?.cosmic_origin_time);
 
                 if (atmosphereCloudsEffect) {
                   const atmosphereCloudsInstance: EffectInstance = {
@@ -681,14 +614,11 @@ export class EffectRegistry {
                 }
               }
             } else {
-
             }
             break;
 
           case "frozen_gas_giant":
-
             if (this.layerSystem) {
-
               const frozenBandsLayer = createCloudBandsLayerFromPythonData(
                 this.layerSystem,
                 {
@@ -736,13 +666,7 @@ export class EffectRegistry {
               }
 
               if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
-                const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
-                  planetRadius,
-                  surface,
-                  baseColor,
-                  pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
-                  pythonData.timing?.cosmic_origin_time
-                );
+                const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(planetRadius, surface, baseColor, pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000), pythonData.timing?.cosmic_origin_time);
 
                 const secondaryCloudsInstance: EffectInstance = {
                   id: `effect_${this.nextId++}`,
@@ -760,12 +684,7 @@ export class EffectRegistry {
               }
 
               if (surface.atmosphere_clouds && surface.atmosphere_clouds.clouds && surface.atmosphere_clouds.clouds.length > 0) {
-                const atmosphereCloudsEffect = createAtmosphereCloudsFromPythonData(
-                  planetRadius,
-                  surface.atmosphere_clouds,
-                  (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000,
-                  pythonData.timing?.cosmic_origin_time
-                );
+                const atmosphereCloudsEffect = createAtmosphereCloudsFromPythonData(planetRadius, surface.atmosphere_clouds, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000, pythonData.timing?.cosmic_origin_time);
 
                 if (atmosphereCloudsEffect) {
                   const atmosphereCloudsInstance: EffectInstance = {
@@ -785,7 +704,6 @@ export class EffectRegistry {
             break;
 
           case "aquifer":
-
             const aquiferWaterEffect = createAquiferWaterFromPythonData(this.layerSystem!, pythonData);
 
             if (aquiferWaterEffect) {
@@ -800,7 +718,6 @@ export class EffectRegistry {
 
               this.effects.set(aquiferWaterInstance.id, aquiferWaterInstance);
               effects.push(aquiferWaterInstance);
-
             }
 
             const oceanCurrentsEffect = createOceanCurrentsFromPythonData(this.layerSystem!, pythonData);
@@ -817,16 +734,10 @@ export class EffectRegistry {
 
               this.effects.set(oceanCurrentsInstance.id, oceanCurrentsInstance);
               effects.push(oceanCurrentsInstance);
-
             }
 
             if (surface.clouds && surface.clouds.length > 0) {
-              const cloudsEffect = createAtmosphereCloudsFromPythonData(
-                planetRadius,
-                surface,
-                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000,
-                pythonData.timing?.cosmic_origin_time
-              );
+              const cloudsEffect = createAtmosphereCloudsFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000, pythonData.timing?.cosmic_origin_time);
               const cloudsInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
                 type: "atmosphere_clouds",
@@ -875,13 +786,7 @@ export class EffectRegistry {
             }
 
             if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
-              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
-                planetRadius,
-                surface,
-                baseColor,
-                pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
-                pythonData.timing?.cosmic_origin_time
-              );
+              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(planetRadius, surface, baseColor, pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000), pythonData.timing?.cosmic_origin_time);
 
               const secondaryCloudsInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -901,9 +806,7 @@ export class EffectRegistry {
             break;
 
           case "nebulous":
-
             if (this.layerSystem) {
-
               const nebulaGyrosLayer = createCloudGyrosLayerFromPythonData(
                 this.layerSystem,
                 {
@@ -951,12 +854,7 @@ export class EffectRegistry {
               }
 
               if (surface.clouds && surface.clouds.length > 0) {
-                const cloudsEffect = createAtmosphereCloudsFromPythonData(
-                  planetRadius,
-                  surface,
-                  (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000,
-                  pythonData.timing?.cosmic_origin_time
-                );
+                const cloudsEffect = createAtmosphereCloudsFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000, pythonData.timing?.cosmic_origin_time);
 
                 const cloudsInstance: EffectInstance = {
                   id: `effect_${this.nextId++}`,
@@ -973,13 +871,7 @@ export class EffectRegistry {
               }
 
               if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
-                const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
-                  planetRadius,
-                  surface,
-                  baseColor,
-                  (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 5000,
-                  pythonData.timing?.cosmic_origin_time
-                );
+                const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(planetRadius, surface, baseColor, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 5000, pythonData.timing?.cosmic_origin_time);
 
                 const secondaryCloudsInstance: EffectInstance = {
                   id: `effect_${this.nextId++}`,
@@ -1013,13 +905,7 @@ export class EffectRegistry {
               effects.push(metallicInstance);
 
               if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
-                const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
-                  planetRadius,
-                  surface,
-                  baseColor,
-                  pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
-                  pythonData.timing?.cosmic_origin_time
-                );
+                const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(planetRadius, surface, baseColor, pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000), pythonData.timing?.cosmic_origin_time);
 
                 const secondaryCloudsInstance: EffectInstance = {
                   id: `effect_${this.nextId++}`,
@@ -1053,12 +939,8 @@ export class EffectRegistry {
               this.effects.set(diamondInstance.id, diamondInstance);
               effects.push(diamondInstance);
 
-              const cracksEffect = createTerrainCracksFromPythonData(
-                pythonData, 
-                planetRadius,
-                pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed
-              );
-              
+              const cracksEffect = createTerrainCracksFromPythonData(pythonData, planetRadius, pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed);
+
               const cracksInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
                 type: "terrain_cracks",
@@ -1072,12 +954,7 @@ export class EffectRegistry {
               cracksEffect.addToScene(scene, mesh.position);
 
               if (surface.clouds && surface.clouds.length > 0) {
-                const cloudsEffect = createAtmosphereCloudsFromPythonData(
-                  planetRadius,
-                  surface,
-                  (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000,
-                  pythonData.timing?.cosmic_origin_time
-                );
+                const cloudsEffect = createAtmosphereCloudsFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000, pythonData.timing?.cosmic_origin_time);
 
                 const cloudsInstance: EffectInstance = {
                   id: `effect_${this.nextId++}`,
@@ -1094,13 +971,7 @@ export class EffectRegistry {
               }
 
               if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
-                const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
-                  planetRadius,
-                  surface,
-                  baseColor,
-                  pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
-                  pythonData.timing?.cosmic_origin_time
-                );
+                const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(planetRadius, surface, baseColor, pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000), pythonData.timing?.cosmic_origin_time);
 
                 const secondaryCloudsInstance: EffectInstance = {
                   id: `effect_${this.nextId++}`,
@@ -1122,12 +993,7 @@ export class EffectRegistry {
 
           case "rocky":
             if (this.layerSystem) {
-              const rockyLayer = createRockyTerrainLayerFromPythonData(
-                this.layerSystem, 
-                pythonData, 
-                pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed,
-                'ROCKY'
-              );
+              const rockyLayer = createRockyTerrainLayerFromPythonData(this.layerSystem, pythonData, pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed, "ROCKY");
 
               const rockyInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -1140,12 +1006,7 @@ export class EffectRegistry {
               effects.push(rockyInstance);
 
               if (surface.clouds && surface.clouds.length > 0) {
-                const cloudsEffect = createAtmosphereCloudsFromPythonData(
-                  planetRadius,
-                  surface,
-                  (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000,
-                  pythonData.timing?.cosmic_origin_time
-                );
+                const cloudsEffect = createAtmosphereCloudsFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000, pythonData.timing?.cosmic_origin_time);
 
                 const cloudsInstance: EffectInstance = {
                   id: `effect_${this.nextId++}`,
@@ -1162,13 +1023,7 @@ export class EffectRegistry {
               }
 
               if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
-                const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
-                  planetRadius,
-                  surface,
-                  baseColor,
-                  pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
-                  pythonData.timing?.cosmic_origin_time
-                );
+                const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(planetRadius, surface, baseColor, pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000), pythonData.timing?.cosmic_origin_time);
 
                 const secondaryCloudsInstance: EffectInstance = {
                   id: `effect_${this.nextId++}`,
@@ -1202,11 +1057,7 @@ export class EffectRegistry {
               this.effects.set(icyInstance.id, icyInstance);
               effects.push(icyInstance);
 
-              const transparentLandMasses = createTransparentLandMassesForIcyPlanet(
-                planetRadius,
-                surface,
-                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 8000
-              );
+              const transparentLandMasses = createTransparentLandMassesForIcyPlanet(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 8000);
 
               if (transparentLandMasses) {
                 const landMassesInstance: EffectInstance = {
@@ -1222,16 +1073,10 @@ export class EffectRegistry {
                 effects.push(landMassesInstance);
                 transparentLandMasses.addToScene(scene, mesh.position);
               } else {
-
               }
 
               if (surface.clouds && surface.clouds.length > 0) {
-                const cloudsEffect = createAtmosphereCloudsFromPythonData(
-                  planetRadius,
-                  surface,
-                  (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000,
-                  pythonData.timing?.cosmic_origin_time
-                );
+                const cloudsEffect = createAtmosphereCloudsFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000, pythonData.timing?.cosmic_origin_time);
 
                 const cloudsInstance: EffectInstance = {
                   id: `effect_${this.nextId++}`,
@@ -1247,11 +1092,7 @@ export class EffectRegistry {
                 cloudsEffect.addToScene(scene, mesh.position);
               }
 
-              const icyFeaturesEffect = createIcyFeaturesFromPythonData(
-                planetRadius,
-                surface,
-                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 9000
-              );
+              const icyFeaturesEffect = createIcyFeaturesFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 9000);
 
               if (icyFeaturesEffect) {
                 const icyFeaturesInstance: EffectInstance = {
@@ -1269,13 +1110,7 @@ export class EffectRegistry {
               }
 
               if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
-                const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
-                  planetRadius,
-                  surface,
-                  baseColor,
-                  pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
-                  pythonData.timing?.cosmic_origin_time
-                );
+                const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(planetRadius, surface, baseColor, pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000), pythonData.timing?.cosmic_origin_time);
 
                 const secondaryCloudsInstance: EffectInstance = {
                   id: `effect_${this.nextId++}`,
@@ -1296,7 +1131,6 @@ export class EffectRegistry {
             break;
 
           case "oceanic":
-
             const fluidLayersEffect = createFluidLayersFromPythonData(planetRadius, pythonData);
 
             if (fluidLayersEffect) {
@@ -1312,7 +1146,6 @@ export class EffectRegistry {
               this.effects.set(fluidLayersInstance.id, fluidLayersInstance);
               effects.push(fluidLayersInstance);
               fluidLayersEffect.addToScene(scene, mesh.position);
-
             }
 
             if (surface.green_patches && surface.green_patches.length > 0) {
@@ -1335,12 +1168,7 @@ export class EffectRegistry {
             }
 
             if (surface.clouds && surface.clouds.length > 0) {
-              const cloudsEffect = createAtmosphereCloudsFromPythonData(
-                planetRadius,
-                surface,
-                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000,
-                pythonData.timing?.cosmic_origin_time
-              );
+              const cloudsEffect = createAtmosphereCloudsFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000, pythonData.timing?.cosmic_origin_time);
 
               const cloudsInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -1357,13 +1185,7 @@ export class EffectRegistry {
             }
 
             if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
-              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
-                planetRadius,
-                surface,
-                baseColor,
-                pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
-                pythonData.timing?.cosmic_origin_time
-              );
+              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(planetRadius, surface, baseColor, pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000), pythonData.timing?.cosmic_origin_time);
 
               const secondaryCloudsInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -1383,9 +1205,7 @@ export class EffectRegistry {
             break;
 
           case "tundra":
-
             if (surface.green_patches && surface.green_patches.length > 0) {
-
               const landMassesEffect = createLandMassesFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 6000);
 
               if (landMassesEffect) {
@@ -1457,18 +1277,10 @@ export class EffectRegistry {
             break;
 
           case "arid":
-
             let cloudsEffect;
             if (surface.clouds && surface.clouds.length > 0) {
-
-              cloudsEffect = createAtmosphereCloudsFromPythonData(
-                planetRadius,
-                surface,
-                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000,
-                pythonData.timing?.cosmic_origin_time
-              );
+              cloudsEffect = createAtmosphereCloudsFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000, pythonData.timing?.cosmic_origin_time);
             } else {
-
               cloudsEffect = new AtmosphereCloudsEffect(planetRadius, {
                 color: new THREE.Color(0.9, 0.8, 0.7),
                 cloudCount: 20,
@@ -1479,7 +1291,7 @@ export class EffectRegistry {
                 rotationSpeed: 0.004,
                 movementAmplitude: 0.012,
                 puffiness: 1.3,
-                timeSpeed: 1.0
+                timeSpeed: 1.0,
               });
             }
 
@@ -1500,55 +1312,42 @@ export class EffectRegistry {
 
             let landMassesEffect;
             if (surface.green_patches && surface.green_patches.length > 0) {
-
               const modifiedSurface = {
                 ...surface,
                 green_patches: surface.green_patches.map((patch: any) => ({
                   ...patch,
-                  color: [0.5, 0.0, 0.0, patch.color?.[3] || 1.0]
-                }))
+                  color: [0.5, 0.0, 0.0, patch.color?.[3] || 1.0],
+                })),
               };
 
-              landMassesEffect = createLandMassesFromPythonData(
-                planetRadius, 
-                modifiedSurface, 
-                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 6000
-              );
+              landMassesEffect = createLandMassesFromPythonData(planetRadius, modifiedSurface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 6000);
             } else {
-
               landMassesEffect = new LandMassesEffect(planetRadius, {
                 seed: (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 6000,
 
-                greenPatches: Array.from({length: 25}, (_, i) => {
+                greenPatches: Array.from({ length: 25 }, (_, i) => {
                   const seed = (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 6000 + i * 100;
                   const rng = Math.sin(seed) * 0.5 + 0.5;
 
-                  const phi = Math.acos(1 - 2 * (i + rng) / 25);
+                  const phi = Math.acos(1 - (2 * (i + rng)) / 25);
                   const theta = 2 * Math.PI * ((i * 2.399) % 1);
 
                   let size;
                   if (i < 8) {
-
                     size = 0.25 + rng * 0.25;
                   } else if (i < 16) {
-
                     size = 0.15 + rng * 0.15;
                   } else {
-
                     size = 0.08 + rng * 0.12;
                   }
-                  
+
                   return {
-                    position_3d: [
-                      Math.sin(phi) * Math.cos(theta),
-                      Math.sin(phi) * Math.sin(theta),
-                      Math.cos(phi)
-                    ],
+                    position_3d: [Math.sin(phi) * Math.cos(theta), Math.sin(phi) * Math.sin(theta), Math.cos(phi)],
                     size: size,
                     sides: 12 + Math.floor(rng * 16),
-                    color: [0.5, 0.0, 0.0, 0.7 + rng * 0.2]
+                    color: [0.5, 0.0, 0.0, 0.7 + rng * 0.2],
                   };
-                })
+                }),
               });
             }
 
@@ -1567,11 +1366,7 @@ export class EffectRegistry {
               landMassesEffect.addToScene(scene, mesh.position);
             }
 
-            const riverLinesEffect = createRiverLinesFromPythonData(
-              planetRadius,
-              surface,
-              (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed)
-            );
+            const riverLinesEffect = createRiverLinesFromPythonData(planetRadius, surface, pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed);
             if (riverLinesEffect) {
               const riverLinesInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -1587,13 +1382,7 @@ export class EffectRegistry {
             }
 
             if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
-              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
-                planetRadius,
-                surface,
-                baseColor,
-                pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
-                pythonData.timing?.cosmic_origin_time
-              );
+              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(planetRadius, surface, baseColor, pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000), pythonData.timing?.cosmic_origin_time);
 
               const secondaryCloudsInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -1613,14 +1402,8 @@ export class EffectRegistry {
             break;
 
           case "savannah":
-
             if (this.layerSystem) {
-              const savannahLayer = createSavannahTerrainLayerFromPythonData(
-                this.layerSystem,
-                pythonData,
-                pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed,
-                'SAVANNAH'
-              );
+              const savannahLayer = createSavannahTerrainLayerFromPythonData(this.layerSystem, pythonData, pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed, "SAVANNAH");
 
               const savannahInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -1636,13 +1419,8 @@ export class EffectRegistry {
             }
 
             if (surface.clouds && surface.clouds.length > 0) {
-              const savannahCloudsEffect = createAtmosphereCloudsFromPythonData(
-                planetRadius,
-                surface,
-                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000,
-                pythonData.timing?.cosmic_origin_time
-              );
-              
+              const savannahCloudsEffect = createAtmosphereCloudsFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000, pythonData.timing?.cosmic_origin_time);
+
               if (savannahCloudsEffect) {
                 const savannahCloudsInstance: EffectInstance = {
                   id: `effect_${this.nextId++}`,
@@ -1652,7 +1430,7 @@ export class EffectRegistry {
                   enabled: true,
                   name: "Savannah Atmospheric Clouds",
                 };
-                
+
                 this.effects.set(savannahCloudsInstance.id, savannahCloudsInstance);
                 effects.push(savannahCloudsInstance);
                 savannahCloudsEffect.addToScene(scene, mesh.position);
@@ -1660,12 +1438,8 @@ export class EffectRegistry {
             }
 
             if (surface.green_patches && surface.green_patches.length > 0) {
-              const savannahLandMassesEffect = createLandMassesFromPythonData(
-                planetRadius,
-                surface,
-                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 6000
-              );
-              
+              const savannahLandMassesEffect = createLandMassesFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 6000);
+
               if (savannahLandMassesEffect) {
                 const savannahLandMassesInstance: EffectInstance = {
                   id: `effect_${this.nextId++}`,
@@ -1675,7 +1449,7 @@ export class EffectRegistry {
                   enabled: true,
                   name: "Savannah Terrain",
                 };
-                
+
                 this.effects.set(savannahLandMassesInstance.id, savannahLandMassesInstance);
                 effects.push(savannahLandMassesInstance);
                 savannahLandMassesEffect.addToScene(scene, mesh.position);
@@ -1683,13 +1457,7 @@ export class EffectRegistry {
             }
 
             if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
-              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
-                planetRadius,
-                surface,
-                baseColor,
-                pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
-                pythonData.timing?.cosmic_origin_time
-              );
+              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(planetRadius, surface, baseColor, pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000), pythonData.timing?.cosmic_origin_time);
 
               const secondaryCloudsInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -1709,15 +1477,9 @@ export class EffectRegistry {
             break;
 
           case "desert":
-
             if (surface.clouds && surface.clouds.length > 0) {
-              const desertCloudsEffect = createAtmosphereCloudsFromPythonData(
-                planetRadius,
-                surface,
-                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000,
-                pythonData.timing?.cosmic_origin_time
-              );
-              
+              const desertCloudsEffect = createAtmosphereCloudsFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000, pythonData.timing?.cosmic_origin_time);
+
               if (desertCloudsEffect) {
                 const desertCloudsInstance: EffectInstance = {
                   id: `effect_${this.nextId++}`,
@@ -1727,7 +1489,7 @@ export class EffectRegistry {
                   enabled: true,
                   name: "Desert Dust Clouds",
                 };
-                
+
                 this.effects.set(desertCloudsInstance.id, desertCloudsInstance);
                 effects.push(desertCloudsInstance);
                 desertCloudsEffect.addToScene(scene, mesh.position);
@@ -1735,12 +1497,8 @@ export class EffectRegistry {
             }
 
             if (surface.green_patches && surface.green_patches.length > 0) {
-              const desertLandMassesEffect = createLandMassesFromPythonData(
-                planetRadius, 
-                surface, 
-                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 6000
-              );
-              
+              const desertLandMassesEffect = createLandMassesFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 6000);
+
               if (desertLandMassesEffect) {
                 const desertLandMassesInstance: EffectInstance = {
                   id: `effect_${this.nextId++}`,
@@ -1750,20 +1508,15 @@ export class EffectRegistry {
                   enabled: true,
                   name: "Desert Oases",
                 };
-                
+
                 this.effects.set(desertLandMassesInstance.id, desertLandMassesInstance);
                 effects.push(desertLandMassesInstance);
                 desertLandMassesEffect.addToScene(scene, mesh.position);
               }
             }
 
-            const desertWaterFeaturesEffect = createSuperEarthWaterFeaturesFromPythonData(
-              planetRadius,
-              surface,
-              (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 7000,
-              "desert"
-            );
-            
+            const desertWaterFeaturesEffect = createSuperEarthWaterFeaturesFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 7000, "desert");
+
             if (desertWaterFeaturesEffect) {
               const desertWaterFeaturesInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -1773,7 +1526,7 @@ export class EffectRegistry {
                 enabled: true,
                 name: "Desert Rare Water Mass",
               };
-              
+
               this.effects.set(desertWaterFeaturesInstance.id, desertWaterFeaturesInstance);
               effects.push(desertWaterFeaturesInstance);
               desertWaterFeaturesEffect.addToScene(scene, mesh.position);
@@ -1795,12 +1548,7 @@ export class EffectRegistry {
             }
 
             if (surface.savannah_terrain_layer && this.layerSystem) {
-              const desertSavannahLayer = createSavannahTerrainLayerFromPythonData(
-                this.layerSystem,
-                pythonData,
-                pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed,
-                'SAVANNAH'
-              );
+              const desertSavannahLayer = createSavannahTerrainLayerFromPythonData(this.layerSystem, pythonData, pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed, "SAVANNAH");
 
               const desertSavannahInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -1818,9 +1566,8 @@ export class EffectRegistry {
 
           case "molten_core":
           case "molten core":
-
             const moltenLavaEffect = createMoltenLavaFromPythonData(this.layerSystem!, pythonData);
-            
+
             if (moltenLavaEffect) {
               const moltenLavaInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -1835,12 +1582,8 @@ export class EffectRegistry {
               effects.push(moltenLavaInstance);
             }
 
-            const lavaFlowsEffect = createLavaFlowsFromPythonData(
-              planetRadius, 
-              surface, 
-              (pythonData.seeds?.planet_seed || pythonData.seeds?.shape_seed) + 9000
-            );
-            
+            const lavaFlowsEffect = createLavaFlowsFromPythonData(planetRadius, surface, (pythonData.seeds?.planet_seed || pythonData.seeds?.shape_seed) + 9000);
+
             if (lavaFlowsEffect) {
               const lavaFlowsInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -1856,12 +1599,7 @@ export class EffectRegistry {
               lavaFlowsEffect.addToScene(scene, mesh.position);
             }
 
-            const fireEruptionEffect = this.createEffectFromPythonData(
-              EffectType.FIRE_ERUPTION,
-              pythonData,
-              planetRadius,
-              mesh
-            )?.effect;
+            const fireEruptionEffect = this.createEffectFromPythonData(EffectType.FIRE_ERUPTION, pythonData, planetRadius, mesh)?.effect;
 
             if (fireEruptionEffect) {
               const fireEruptionInstance: EffectInstance = {
@@ -1879,21 +1617,16 @@ export class EffectRegistry {
             }
 
             if (surface.green_patches && surface.green_patches.length > 0) {
-
               const moltenCoreMassesData = {
                 ...surface,
                 green_patches: surface.green_patches.map((patch: any) => ({
                   ...patch,
 
-                  color: [1.0, 0.55, 0.0, patch.color?.[3] || 0.9]
-                }))
+                  color: [1.0, 0.55, 0.0, patch.color?.[3] || 0.9],
+                })),
               };
 
-              const incandescientLandMasses = createLandMassesFromPythonData(
-                planetRadius, 
-                moltenCoreMassesData, 
-                (pythonData.seeds?.planet_seed || pythonData.seeds?.shape_seed) + 10000
-              );
+              const incandescientLandMasses = createLandMassesFromPythonData(planetRadius, moltenCoreMassesData, (pythonData.seeds?.planet_seed || pythonData.seeds?.shape_seed) + 10000);
 
               if (incandescientLandMasses) {
                 const landMassesInstance: EffectInstance = {
@@ -1912,12 +1645,7 @@ export class EffectRegistry {
             }
 
             if (surface.clouds && surface.clouds.length > 0) {
-              const moltenCloudsEffect = createAtmosphereCloudsFromPythonData(
-                planetRadius,
-                surface,
-                (pythonData.seeds?.planet_seed || pythonData.seeds?.shape_seed) + 4000,
-                pythonData.timing?.cosmic_origin_time
-              );
+              const moltenCloudsEffect = createAtmosphereCloudsFromPythonData(planetRadius, surface, (pythonData.seeds?.planet_seed || pythonData.seeds?.shape_seed) + 4000, pythonData.timing?.cosmic_origin_time);
 
               const moltenCloudsInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -1934,13 +1662,7 @@ export class EffectRegistry {
             }
 
             if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
-              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
-                planetRadius,
-                surface,
-                baseColor,
-                pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
-                pythonData.timing?.cosmic_origin_time
-              );
+              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(planetRadius, surface, baseColor, pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000), pythonData.timing?.cosmic_origin_time);
 
               const secondaryCloudsInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -1960,13 +1682,8 @@ export class EffectRegistry {
             break;
 
           case "lava":
+            const terrainCracksEffect = createTerrainCracksFromPythonData(pythonData, planetRadius, pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed);
 
-            const terrainCracksEffect = createTerrainCracksFromPythonData(
-              pythonData, 
-              planetRadius,
-              pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed
-            );
-            
             if (terrainCracksEffect) {
               const cracksInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -1981,12 +1698,7 @@ export class EffectRegistry {
               terrainCracksEffect.addToScene(scene, mesh.position);
             }
 
-            const lavaRiversEffect = this.createEffectFromPythonData(
-              EffectType.LAVA_RIVERS,
-              pythonData,
-              planetRadius,
-              mesh
-            )?.effect;
+            const lavaRiversEffect = this.createEffectFromPythonData(EffectType.LAVA_RIVERS, pythonData, planetRadius, mesh)?.effect;
 
             if (lavaRiversEffect) {
               const lavaRiversInstance: EffectInstance = {
@@ -2003,12 +1715,7 @@ export class EffectRegistry {
               lavaRiversEffect.addToScene(scene, mesh.position);
             }
 
-            const lavaFireEruptionEffect = this.createEffectFromPythonData(
-              EffectType.FIRE_ERUPTION,
-              pythonData,
-              planetRadius,
-              mesh
-            )?.effect;
+            const lavaFireEruptionEffect = this.createEffectFromPythonData(EffectType.FIRE_ERUPTION, pythonData, planetRadius, mesh)?.effect;
 
             if (lavaFireEruptionEffect) {
               const lavaFireEruptionInstance: EffectInstance = {
@@ -2031,15 +1738,11 @@ export class EffectRegistry {
                 green_patches: surface.green_patches.map((patch: any) => ({
                   ...patch,
 
-                  color: [0.8, 0.3, 0.0, patch.color?.[3] || 0.7]
-                }))
+                  color: [0.8, 0.3, 0.0, patch.color?.[3] || 0.7],
+                })),
               };
 
-              const lavaLandMasses = createLandMassesFromPythonData(
-                planetRadius, 
-                lavaLandMassesData, 
-                (pythonData.seeds?.planet_seed || pythonData.seeds?.shape_seed) + 11000
-              );
+              const lavaLandMasses = createLandMassesFromPythonData(planetRadius, lavaLandMassesData, (pythonData.seeds?.planet_seed || pythonData.seeds?.shape_seed) + 11000);
 
               if (lavaLandMasses) {
                 const lavaLandMassesInstance: EffectInstance = {
@@ -2058,13 +1761,8 @@ export class EffectRegistry {
             }
 
             if (surface.clouds && surface.clouds.length > 0) {
-              const lavaCloudsEffect = createAtmosphereCloudsFromPythonData(
-                planetRadius,
-                surface,
-                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 7000,
-                pythonData.timing?.cosmic_origin_time
-              );
-              
+              const lavaCloudsEffect = createAtmosphereCloudsFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 7000, pythonData.timing?.cosmic_origin_time);
+
               if (lavaCloudsEffect) {
                 const lavaCloudsInstance: EffectInstance = {
                   id: `effect_${this.nextId++}`,
@@ -2074,7 +1772,7 @@ export class EffectRegistry {
                   enabled: true,
                   name: "Volcanic Ash Clouds",
                 };
-                
+
                 this.effects.set(lavaCloudsInstance.id, lavaCloudsInstance);
                 effects.push(lavaCloudsInstance);
                 lavaCloudsEffect.addToScene(scene, mesh.position);
@@ -2082,13 +1780,7 @@ export class EffectRegistry {
             }
 
             if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
-              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
-                planetRadius,
-                surface,
-                baseColor,
-                pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
-                pythonData.timing?.cosmic_origin_time
-              );
+              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(planetRadius, surface, baseColor, pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000), pythonData.timing?.cosmic_origin_time);
 
               const secondaryCloudsInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -2108,15 +1800,9 @@ export class EffectRegistry {
             break;
 
           case "exotic":
-
             if (surface.clouds && surface.clouds.length > 0) {
-              const cloudsEffect = createAtmosphereCloudsFromPythonData(
-                planetRadius,
-                surface,
-                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000,
-                pythonData.timing?.cosmic_origin_time
-              );
-              
+              const cloudsEffect = createAtmosphereCloudsFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000, pythonData.timing?.cosmic_origin_time);
+
               const cloudsInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
                 type: "atmosphere_clouds",
@@ -2125,19 +1811,14 @@ export class EffectRegistry {
                 enabled: true,
                 name: "Exotic Atmospheric Clouds",
               };
-              
+
               this.effects.set(cloudsInstance.id, cloudsInstance);
               effects.push(cloudsInstance);
               cloudsEffect.addToScene(scene, mesh.position);
             }
 
-            const geometricShapesEffect = createExoticGeometricShapesFromPythonData(
-              planetRadius,
-              surface,
-              (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 5000,
-              baseColor
-            );
-            
+            const geometricShapesEffect = createExoticGeometricShapesFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 5000, baseColor);
+
             if (geometricShapesEffect) {
               const shapesInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -2147,19 +1828,14 @@ export class EffectRegistry {
                 enabled: true,
                 name: "Exotic Geometric Shapes",
               };
-              
+
               this.effects.set(shapesInstance.id, shapesInstance);
               effects.push(shapesInstance);
               geometricShapesEffect.addToScene(scene, mesh.position);
             }
 
-            const doodlesEffect = createExoticDoodlesFromPythonData(
-              planetRadius,
-              surface,
-              (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 6000,
-              pythonData
-            );
-            
+            const doodlesEffect = createExoticDoodlesFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 6000, pythonData);
+
             if (doodlesEffect) {
               const doodlesInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -2169,20 +1845,14 @@ export class EffectRegistry {
                 enabled: true,
                 name: "Exotic Doodles",
               };
-              
+
               this.effects.set(doodlesInstance.id, doodlesInstance);
               effects.push(doodlesInstance);
               doodlesEffect.addToScene(scene, mesh.position);
             }
 
             if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
-              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
-                planetRadius,
-                surface,
-                baseColor,
-                pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
-                pythonData.timing?.cosmic_origin_time
-              );
+              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(planetRadius, surface, baseColor, pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000), pythonData.timing?.cosmic_origin_time);
 
               const secondaryCloudsInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -2202,18 +1872,10 @@ export class EffectRegistry {
             break;
 
           case "cave":
-
             let caveCloudsEffect;
             if (surface.atmosphere_clouds && surface.atmosphere_clouds.clouds && surface.atmosphere_clouds.clouds.length > 0) {
-
-              caveCloudsEffect = createAtmosphereCloudsFromPythonData(
-                planetRadius,
-                surface.atmosphere_clouds,
-                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000,
-                pythonData.timing?.cosmic_origin_time
-              );
+              caveCloudsEffect = createAtmosphereCloudsFromPythonData(planetRadius, surface.atmosphere_clouds, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000, pythonData.timing?.cosmic_origin_time);
             } else {
-
               caveCloudsEffect = new AtmosphereCloudsEffect(planetRadius, {
                 color: new THREE.Color(0.75, 0.75, 0.75),
                 cloudCount: 12,
@@ -2224,7 +1886,7 @@ export class EffectRegistry {
                 rotationSpeed: 0.003,
                 movementAmplitude: 0.008,
                 puffiness: 1.1,
-                timeSpeed: 0.8
+                timeSpeed: 0.8,
               });
             }
 
@@ -2245,48 +1907,35 @@ export class EffectRegistry {
 
             let caveLandMassesEffect;
             if (surface.green_patches && surface.green_patches.length > 0) {
-
-              caveLandMassesEffect = createLandMassesFromPythonData(
-                planetRadius,
-                surface,
-                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 5000
-              );
+              caveLandMassesEffect = createLandMassesFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 5000);
             } else {
-
               const rng = new SeededRandom((pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 5000);
               const largeGreenPatches = [];
 
               for (let i = 0; i < 10; i++) {
                 const theta = rng.random() * 2 * Math.PI;
                 const phi = Math.acos(rng.random() * 2 - 1);
-                
+
                 let size;
                 if (i < 3) {
-
-                  size = 0.20 + rng.random() * 0.20;
+                  size = 0.2 + rng.random() * 0.2;
                 } else if (i < 7) {
-
                   size = 0.12 + rng.random() * 0.13;
                 } else {
-
                   size = 0.08 + rng.random() * 0.07;
                 }
-                
+
                 largeGreenPatches.push({
-                  position_3d: [
-                    Math.sin(phi) * Math.cos(theta),
-                    Math.sin(phi) * Math.sin(theta),
-                    Math.cos(phi)
-                  ],
+                  position_3d: [Math.sin(phi) * Math.cos(theta), Math.sin(phi) * Math.sin(theta), Math.cos(phi)],
                   size: size,
                   sides: 12 + Math.floor(rng.random() * 8),
-                  color: [0.29, 0.25, 0.21, 0.75 + rng.random() * 0.15]
+                  color: [0.29, 0.25, 0.21, 0.75 + rng.random() * 0.15],
                 });
               }
-              
+
               caveLandMassesEffect = new LandMassesEffect(planetRadius, {
                 greenPatches: largeGreenPatches,
-                seed: (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 5000
+                seed: (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 5000,
               });
             }
 
@@ -2306,12 +1955,7 @@ export class EffectRegistry {
             }
 
             if (this.layerSystem) {
-              const caveRockyLayer = createRockyTerrainLayerFromPythonData(
-                this.layerSystem, 
-                pythonData, 
-                pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed,
-                'CAVE'
-              );
+              const caveRockyLayer = createRockyTerrainLayerFromPythonData(this.layerSystem, pythonData, pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed, "CAVE");
 
               const caveRockyInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -2325,11 +1969,7 @@ export class EffectRegistry {
               effects.push(caveRockyInstance);
             }
 
-            const caveSurfaceHolesEffect = createCaveSurfaceHolesFromPythonData(
-              planetRadius,
-              pythonData,
-              (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 6000
-            );
+            const caveSurfaceHolesEffect = createCaveSurfaceHolesFromPythonData(planetRadius, pythonData, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 6000);
 
             if (caveSurfaceHolesEffect) {
               const caveSurfaceHolesInstance: EffectInstance = {
@@ -2346,17 +1986,12 @@ export class EffectRegistry {
               caveSurfaceHolesEffect.addToScene(scene, mesh.position);
 
               if (this.layerSystem) {
-
-                const baseColor = this.layerSystem.baseMaterial?.uniforms?.baseColor?.value || new THREE.Color(0x8B4513);
+                const baseColor = this.layerSystem.baseMaterial?.uniforms?.baseColor?.value || new THREE.Color(0x8b4513);
                 caveSurfaceHolesEffect.applyToPlanetSystem(this.layerSystem, baseColor);
               }
             }
 
-            const caveRiverLinesEffect = createRiverLinesFromPythonData(
-              planetRadius,
-              surface,
-              (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 7000
-            );
+            const caveRiverLinesEffect = createRiverLinesFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 7000);
 
             if (caveRiverLinesEffect) {
               const caveRiverLinesInstance: EffectInstance = {
@@ -2374,13 +2009,7 @@ export class EffectRegistry {
             }
 
             if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
-              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
-                planetRadius,
-                surface,
-                baseColor,
-                pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
-                pythonData.timing?.cosmic_origin_time
-              );
+              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(planetRadius, surface, baseColor, pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000), pythonData.timing?.cosmic_origin_time);
 
               const secondaryCloudsInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -2400,14 +2029,7 @@ export class EffectRegistry {
             break;
 
           case "anomaly":
-
-            const allAnomalyEffects = [
-
-              EffectType.ANOMALY_PHASE_MATTER,
-              EffectType.PULSATING_CUBE,
-              EffectType.PLANET_RAYS,
-
-            ];
+            const allAnomalyEffects = [EffectType.ANOMALY_PHASE_MATTER, EffectType.PULSATING_CUBE, EffectType.PLANET_RAYS];
 
             const selectedEffects = allAnomalyEffects;
             const anomalySeed = pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000);
@@ -2417,13 +2039,7 @@ export class EffectRegistry {
               const effectType = selectedEffects[i];
               const effectSeed = anomalySeed + i * 10000;
 
-              const anomalyEffect = this.createEffectFromPythonData(
-                effectType,
-                { ...pythonData, seeds: { ...pythonData.seeds, planet_seed: effectSeed } },
-                planetRadius,
-                mesh,
-                10 + i
-              );
+              const anomalyEffect = this.createEffectFromPythonData(effectType, { ...pythonData, seeds: { ...pythonData.seeds, planet_seed: effectSeed } }, planetRadius, mesh, 10 + i);
 
               if (anomalyEffect) {
                 anomalyEffect.name = effectType.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
@@ -2444,13 +2060,7 @@ export class EffectRegistry {
             }
 
             if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
-              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
-                planetRadius,
-                surface,
-                baseColor,
-                pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
-                pythonData.timing?.cosmic_origin_time
-              );
+              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(planetRadius, surface, baseColor, pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000), pythonData.timing?.cosmic_origin_time);
 
               const secondaryCloudsInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -2470,14 +2080,8 @@ export class EffectRegistry {
             break;
 
           case "carbon":
-
             if (surface.clouds && surface.clouds.length > 0) {
-              const carbonCloudsEffect = createAtmosphereCloudsFromPythonData(
-                planetRadius,
-                surface,
-                (pythonData.seeds?.planet_seed || pythonData.seeds?.shape_seed) + 4000,
-                pythonData.timing?.cosmic_origin_time
-              );
+              const carbonCloudsEffect = createAtmosphereCloudsFromPythonData(planetRadius, surface, (pythonData.seeds?.planet_seed || pythonData.seeds?.shape_seed) + 4000, pythonData.timing?.cosmic_origin_time);
 
               const carbonCloudsInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -2493,23 +2097,18 @@ export class EffectRegistry {
             }
 
             if (surface.green_patches && surface.green_patches.length > 0) {
-
               const modifiedSurface = {
                 ...surface,
                 green_patches: surface.green_patches.map((patch: any) => ({
                   ...patch,
 
-                  color: [0.10, 0.07, 0.06, patch.color?.[3] || 0.9],
+                  color: [0.1, 0.07, 0.06, patch.color?.[3] || 0.9],
 
-                  size: (patch.size || 0.1) * 1.5
-                }))
+                  size: (patch.size || 0.1) * 1.5,
+                })),
               };
 
-              const carbonLandMassesEffect = createLandMassesFromPythonData(
-                planetRadius,
-                modifiedSurface,
-                (pythonData.seeds?.planet_seed || pythonData.seeds?.shape_seed) + 6000
-              );
+              const carbonLandMassesEffect = createLandMassesFromPythonData(planetRadius, modifiedSurface, (pythonData.seeds?.planet_seed || pythonData.seeds?.shape_seed) + 6000);
 
               if (carbonLandMassesEffect) {
                 const carbonLandMassesInstance: EffectInstance = {
@@ -2526,11 +2125,7 @@ export class EffectRegistry {
               }
             }
 
-            const carbonDustEffect = createCarbonDustParticlesFromPythonData(
-              planetRadius,
-              surface,
-              (pythonData.seeds?.planet_seed || pythonData.seeds?.shape_seed) + 15000
-            );
+            const carbonDustEffect = createCarbonDustParticlesFromPythonData(planetRadius, surface, (pythonData.seeds?.planet_seed || pythonData.seeds?.shape_seed) + 15000);
 
             if (carbonDustEffect) {
               const carbonDustInstance: EffectInstance = {
@@ -2546,12 +2141,7 @@ export class EffectRegistry {
               carbonDustEffect.addToScene(scene, mesh.position);
             }
 
-            const carbonTrailsEffect = this.createEffectFromPythonData(
-              EffectType.CARBON_TRAILS,
-              pythonData,
-              planetRadius,
-              mesh
-            );
+            const carbonTrailsEffect = this.createEffectFromPythonData(EffectType.CARBON_TRAILS, pythonData, planetRadius, mesh);
 
             if (carbonTrailsEffect) {
               const carbonTrailsInstance: EffectInstance = {
@@ -2568,13 +2158,7 @@ export class EffectRegistry {
             }
 
             if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
-              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
-                planetRadius,
-                surface,
-                baseColor,
-                pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
-                pythonData.timing?.cosmic_origin_time
-              );
+              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(planetRadius, surface, baseColor, pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000), pythonData.timing?.cosmic_origin_time);
 
               const secondaryCloudsInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -2594,14 +2178,8 @@ export class EffectRegistry {
             break;
 
           case "forest":
+            const vegetationEffect = this.createEffectFromPythonData(EffectType.VEGETATION, pythonData, planetRadius, mesh);
 
-            const vegetationEffect = this.createEffectFromPythonData(
-              EffectType.VEGETATION,
-              pythonData,
-              planetRadius,
-              mesh
-            );
-            
             if (vegetationEffect) {
               const vegetationInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -2611,19 +2189,14 @@ export class EffectRegistry {
                 enabled: true,
                 name: "Forest Vegetation",
               };
-              
+
               this.effects.set(vegetationInstance.id, vegetationInstance);
               effects.push(vegetationInstance);
               vegetationEffect.effect.addToScene(scene, mesh.position);
             }
 
             if (surface.clouds && surface.clouds.length > 0) {
-              const forestCloudsEffect = createAtmosphereCloudsFromPythonData(
-                planetRadius,
-                surface,
-                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000,
-                pythonData.timing?.cosmic_origin_time
-              );
+              const forestCloudsEffect = createAtmosphereCloudsFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000, pythonData.timing?.cosmic_origin_time);
 
               if (forestCloudsEffect) {
                 const forestCloudsInstance: EffectInstance = {
@@ -2641,22 +2214,17 @@ export class EffectRegistry {
             }
 
             if (surface.green_patches && surface.green_patches.length > 0) {
-
               const forestLandMassesData = {
                 ...surface,
                 green_patches: surface.green_patches.map((patch: any) => ({
                   ...patch,
 
                   size: (patch.size || 0.1) * 1.5,
-                  color: patch.color || [0.2, 0.4, 0.1, 1.0]
-                }))
+                  color: patch.color || [0.2, 0.4, 0.1, 1.0],
+                })),
               };
-              
-              const forestLandMassesEffect = createLandMassesFromPythonData(
-                planetRadius, 
-                forestLandMassesData, 
-                (pythonData.seeds?.planet_seed || pythonData.seeds?.shape_seed) + 6000
-              );
+
+              const forestLandMassesEffect = createLandMassesFromPythonData(planetRadius, forestLandMassesData, (pythonData.seeds?.planet_seed || pythonData.seeds?.shape_seed) + 6000);
 
               if (forestLandMassesEffect) {
                 const forestLandMassesInstance: EffectInstance = {
@@ -2675,13 +2243,7 @@ export class EffectRegistry {
             }
 
             if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
-              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
-                planetRadius,
-                surface,
-                baseColor,
-                pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
-                pythonData.timing?.cosmic_origin_time
-              );
+              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(planetRadius, surface, baseColor, pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000), pythonData.timing?.cosmic_origin_time);
 
               const secondaryCloudsInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -2701,14 +2263,8 @@ export class EffectRegistry {
             break;
 
           case "magma":
+            const magmaFlowsEffect = this.createEffectFromPythonData(EffectType.MAGMA_FLOWS, pythonData, planetRadius, mesh);
 
-            const magmaFlowsEffect = this.createEffectFromPythonData(
-              EffectType.MAGMA_FLOWS,
-              pythonData,
-              planetRadius,
-              mesh
-            );
-            
             if (magmaFlowsEffect) {
               const magmaFlowsInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -2718,19 +2274,14 @@ export class EffectRegistry {
                 enabled: true,
                 name: "Magma Flows & Lakes",
               };
-              
+
               this.effects.set(magmaFlowsInstance.id, magmaFlowsInstance);
               effects.push(magmaFlowsInstance);
               magmaFlowsEffect.effect.addToScene(scene, mesh.position);
             }
 
-            const magmaEruptionsEffect = this.createEffectFromPythonData(
-              EffectType.MAGMA_ERUPTIONS,
-              pythonData,
-              planetRadius,
-              mesh
-            );
-            
+            const magmaEruptionsEffect = this.createEffectFromPythonData(EffectType.MAGMA_ERUPTIONS, pythonData, planetRadius, mesh);
+
             if (magmaEruptionsEffect) {
               const magmaEruptionsInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -2740,19 +2291,14 @@ export class EffectRegistry {
                 enabled: true,
                 name: "Magma Eruptions & Arcs",
               };
-              
+
               this.effects.set(magmaEruptionsInstance.id, magmaEruptionsInstance);
               effects.push(magmaEruptionsInstance);
               magmaEruptionsEffect.effect.addToScene(scene, mesh.position);
             }
 
             if (surface.clouds && surface.clouds.length > 0) {
-              const magmaCloudsEffect = createAtmosphereCloudsFromPythonData(
-                planetRadius,
-                surface,
-                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000,
-                pythonData.timing?.cosmic_origin_time
-              );
+              const magmaCloudsEffect = createAtmosphereCloudsFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000, pythonData.timing?.cosmic_origin_time);
 
               if (magmaCloudsEffect) {
                 const magmaCloudsInstance: EffectInstance = {
@@ -2770,11 +2316,7 @@ export class EffectRegistry {
             }
 
             if (surface.green_patches && surface.green_patches.length > 0) {
-              const magmaLandMassesEffect = createLandMassesFromPythonData(
-                planetRadius, 
-                surface, 
-                (pythonData.seeds?.planet_seed || pythonData.seeds?.shape_seed) + 6000
-              );
+              const magmaLandMassesEffect = createLandMassesFromPythonData(planetRadius, surface, (pythonData.seeds?.planet_seed || pythonData.seeds?.shape_seed) + 6000);
 
               if (magmaLandMassesEffect) {
                 const magmaLandMassesInstance: EffectInstance = {
@@ -2793,13 +2335,7 @@ export class EffectRegistry {
             }
 
             if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
-              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
-                planetRadius,
-                surface,
-                baseColor,
-                pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
-                pythonData.timing?.cosmic_origin_time
-              );
+              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(planetRadius, surface, baseColor, pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000), pythonData.timing?.cosmic_origin_time);
 
               const secondaryCloudsInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -2819,13 +2355,7 @@ export class EffectRegistry {
             break;
 
           case "crystalline":
-
-            const crystallineSurfaceEffect = this.createEffectFromPythonData(
-              EffectType.CRYSTALLINE_SURFACE,
-              pythonData,
-              planetRadius,
-              mesh
-            );
+            const crystallineSurfaceEffect = this.createEffectFromPythonData(EffectType.CRYSTALLINE_SURFACE, pythonData, planetRadius, mesh);
 
             if (crystallineSurfaceEffect) {
               const crystallineSurfaceInstance: EffectInstance = {
@@ -2844,14 +2374,8 @@ export class EffectRegistry {
             break;
 
           case "toxic":
-
             if (surface.clouds && surface.clouds.length > 0) {
-              const toxicCloudsEffect = createAtmosphereCloudsFromPythonData(
-                planetRadius,
-                surface,
-                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000,
-                pythonData.timing?.cosmic_origin_time
-              );
+              const toxicCloudsEffect = createAtmosphereCloudsFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000, pythonData.timing?.cosmic_origin_time);
 
               const toxicCloudsInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -2868,11 +2392,7 @@ export class EffectRegistry {
             }
 
             if (surface.green_patches && surface.green_patches.length > 0) {
-              const toxicLandMassesEffect = createLandMassesFromPythonData(
-                planetRadius, 
-                surface, 
-                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4500
-              );
+              const toxicLandMassesEffect = createLandMassesFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4500);
 
               if (toxicLandMassesEffect) {
                 const toxicLandMassesInstance: EffectInstance = {
@@ -2890,11 +2410,7 @@ export class EffectRegistry {
               }
             }
 
-            const toxicParticlesEffect = createToxicParticlesFromPythonData(
-              planetRadius,
-              surface,
-              (pythonData.seeds?.planet_seed || pythonData.seeds?.shape_seed) + 15000
-            );
+            const toxicParticlesEffect = createToxicParticlesFromPythonData(planetRadius, surface, (pythonData.seeds?.planet_seed || pythonData.seeds?.shape_seed) + 15000);
 
             if (toxicParticlesEffect) {
               const toxicParticlesInstance: EffectInstance = {
@@ -2911,11 +2427,7 @@ export class EffectRegistry {
               toxicParticlesEffect.addToScene(scene, mesh.position);
             }
 
-            const toxicWasteEffect = createToxicWasteFromPythonData(
-              planetRadius,
-              surface,
-              pythonData.seeds?.planet_seed
-            );
+            const toxicWasteEffect = createToxicWasteFromPythonData(planetRadius, surface, pythonData.seeds?.planet_seed);
             if (toxicWasteEffect) {
               const toxicWasteInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -2932,14 +2444,8 @@ export class EffectRegistry {
             break;
 
           case "radioactive":
-
             if (surface.clouds && surface.clouds.length > 0) {
-              const radioactiveCloudsEffect = createAtmosphereCloudsFromPythonData(
-                planetRadius,
-                surface,
-                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 5000,
-                pythonData.timing?.cosmic_origin_time
-              );
+              const radioactiveCloudsEffect = createAtmosphereCloudsFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 5000, pythonData.timing?.cosmic_origin_time);
 
               const radioactiveCloudsInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -2956,11 +2462,7 @@ export class EffectRegistry {
             }
 
             if (surface.green_patches && surface.green_patches.length > 0) {
-              const radioactiveLandMassesEffect = createLandMassesFromPythonData(
-                planetRadius, 
-                surface, 
-                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 6000
-              );
+              const radioactiveLandMassesEffect = createLandMassesFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 6000);
 
               if (radioactiveLandMassesEffect) {
                 const radioactiveLandMassesInstance: EffectInstance = {
@@ -2978,13 +2480,8 @@ export class EffectRegistry {
               }
             }
 
-            const radiationRingsEffect = this.createEffectFromPythonData(
-              EffectType.RADIATION_RINGS,
-              pythonData,
-              planetRadius,
-              mesh
-            );
-            
+            const radiationRingsEffect = this.createEffectFromPythonData(EffectType.RADIATION_RINGS, pythonData, planetRadius, mesh);
+
             if (radiationRingsEffect) {
               const radiationRingsInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -3001,13 +2498,7 @@ export class EffectRegistry {
             }
 
             if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
-              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
-                planetRadius,
-                surface,
-                baseColor,
-                pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
-                pythonData.timing?.cosmic_origin_time
-              );
+              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(planetRadius, surface, baseColor, pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000), pythonData.timing?.cosmic_origin_time);
 
               const secondaryCloudsInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -3027,14 +2518,8 @@ export class EffectRegistry {
             break;
 
           case "super_earth":
-
             if (surface.clouds && surface.clouds.length > 0) {
-              const superEarthCloudsEffect = createAtmosphereCloudsFromPythonData(
-                planetRadius,
-                surface,
-                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 8000,
-                pythonData.timing?.cosmic_origin_time
-              );
+              const superEarthCloudsEffect = createAtmosphereCloudsFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 8000, pythonData.timing?.cosmic_origin_time);
 
               if (superEarthCloudsEffect) {
                 const superEarthCloudsInstance: EffectInstance = {
@@ -3052,11 +2537,7 @@ export class EffectRegistry {
             }
 
             if (surface.green_patches && surface.green_patches.length > 0) {
-              const superEarthLandMassesEffect = createLandMassesFromPythonData(
-                planetRadius, 
-                surface, 
-                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 9000
-              );
+              const superEarthLandMassesEffect = createLandMassesFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 9000);
 
               if (superEarthLandMassesEffect) {
                 const superEarthLandMassesInstance: EffectInstance = {
@@ -3075,12 +2556,7 @@ export class EffectRegistry {
             }
 
             if (this.layerSystem) {
-              const superEarthSavannahLayer = createSavannahTerrainLayerFromPythonData(
-                this.layerSystem,
-                pythonData,
-                pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed,
-                'SAVANNAH'
-              );
+              const superEarthSavannahLayer = createSavannahTerrainLayerFromPythonData(this.layerSystem, pythonData, pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed, "SAVANNAH");
 
               const superEarthSavannahInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -3095,11 +2571,7 @@ export class EffectRegistry {
               effects.push(superEarthSavannahInstance);
             }
 
-            const superEarthWaterFeaturesEffect = createSuperEarthWaterFeaturesFromPythonData(
-              planetRadius,
-              surface,
-              (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 11000
-            );
+            const superEarthWaterFeaturesEffect = createSuperEarthWaterFeaturesFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 11000);
             if (superEarthWaterFeaturesEffect) {
               const superEarthWaterFeaturesInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -3115,13 +2587,7 @@ export class EffectRegistry {
             }
 
             if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
-              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
-                planetRadius,
-                surface,
-                baseColor,
-                pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
-                pythonData.timing?.cosmic_origin_time
-              );
+              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(planetRadius, surface, baseColor, pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000), pythonData.timing?.cosmic_origin_time);
 
               const secondaryCloudsInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -3141,14 +2607,8 @@ export class EffectRegistry {
             break;
 
           case "sub_earth":
-
             if (surface.clouds && surface.clouds.length > 0) {
-              const subEarthCloudsEffect = createAtmosphereCloudsFromPythonData(
-                planetRadius,
-                surface,
-                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 7000,
-                pythonData.timing?.cosmic_origin_time
-              );
+              const subEarthCloudsEffect = createAtmosphereCloudsFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 7000, pythonData.timing?.cosmic_origin_time);
 
               if (subEarthCloudsEffect) {
                 const subEarthCloudsInstance: EffectInstance = {
@@ -3166,11 +2626,7 @@ export class EffectRegistry {
             }
 
             if (surface.green_patches && surface.green_patches.length > 0) {
-              const subEarthLandMassesEffect = createLandMassesFromPythonData(
-                planetRadius, 
-                surface, 
-                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 7500
-              );
+              const subEarthLandMassesEffect = createLandMassesFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 7500);
 
               if (subEarthLandMassesEffect) {
                 const subEarthLandMassesInstance: EffectInstance = {
@@ -3189,12 +2645,7 @@ export class EffectRegistry {
             }
 
             if (surface.savannah_terrain_layer && this.layerSystem) {
-              const savannahLayer = createSavannahTerrainLayerFromPythonData(
-                this.layerSystem,
-                pythonData,
-                pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed,
-                'SAVANNAH'
-              );
+              const savannahLayer = createSavannahTerrainLayerFromPythonData(this.layerSystem, pythonData, pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed, "SAVANNAH");
 
               const savannahInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -3210,13 +2661,7 @@ export class EffectRegistry {
             }
 
             if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
-              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
-                planetRadius,
-                surface,
-                baseColor,
-                pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
-                pythonData.timing?.cosmic_origin_time
-              );
+              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(planetRadius, surface, baseColor, pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000), pythonData.timing?.cosmic_origin_time);
 
               const secondaryCloudsInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -3236,14 +2681,8 @@ export class EffectRegistry {
             break;
 
           case "swamp":
-
             if (surface.clouds && surface.clouds.length > 0) {
-              const swampCloudsEffect = createAtmosphereCloudsFromPythonData(
-                planetRadius,
-                surface,
-                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000,
-                pythonData.timing?.cosmic_origin_time
-              );
+              const swampCloudsEffect = createAtmosphereCloudsFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000, pythonData.timing?.cosmic_origin_time);
 
               if (swampCloudsEffect) {
                 const swampCloudsInstance: EffectInstance = {
@@ -3261,11 +2700,7 @@ export class EffectRegistry {
             }
 
             if (surface.green_patches && surface.green_patches.length > 0) {
-              const swampLandMassesEffect = createLandMassesFromPythonData(
-                planetRadius,
-                surface,
-                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 6000
-              );
+              const swampLandMassesEffect = createLandMassesFromPythonData(planetRadius, surface, (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 6000);
 
               if (swampLandMassesEffect) {
                 const swampLandMassesInstance: EffectInstance = {
@@ -3283,12 +2718,7 @@ export class EffectRegistry {
             }
 
             if (this.layerSystem) {
-              const swampSavannahLayer = createSavannahTerrainLayerFromPythonData(
-                this.layerSystem,
-                pythonData,
-                pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed,
-                'SAVANNAH'
-              );
+              const swampSavannahLayer = createSavannahTerrainLayerFromPythonData(this.layerSystem, pythonData, pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed, "SAVANNAH");
 
               const swampSavannahInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -3304,13 +2734,7 @@ export class EffectRegistry {
             }
 
             if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
-              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
-                planetRadius,
-                surface,
-                baseColor,
-                pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
-                pythonData.timing?.cosmic_origin_time
-              );
+              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(planetRadius, surface, baseColor, pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000), pythonData.timing?.cosmic_origin_time);
 
               const secondaryCloudsInstance: EffectInstance = {
                 id: `effect_${this.nextId++}`,
@@ -3329,12 +2753,7 @@ export class EffectRegistry {
             }
 
             if (surface.toxic_bubbles) {
-              const toxicSwampBubblesEffect = this.createEffectFromPythonData(
-                EffectType.TOXIC_SWAMP_BUBBLES,
-                pythonData,
-                planetRadius,
-                mesh
-              )?.effect;
+              const toxicSwampBubblesEffect = this.createEffectFromPythonData(EffectType.TOXIC_SWAMP_BUBBLES, pythonData, planetRadius, mesh)?.effect;
 
               if (toxicSwampBubblesEffect) {
                 const toxicSwampBubblesInstance: EffectInstance = {
@@ -3353,16 +2772,8 @@ export class EffectRegistry {
             break;
 
           default:
-
             if (pythonData.planet_info?.type?.toLowerCase() === "anomaly") {
-
-              const allAnomalyEffects = [
-
-                EffectType.ANOMALY_PHASE_MATTER,
-                EffectType.PULSATING_CUBE,
-                EffectType.PLANET_RAYS,
-
-              ];
+              const allAnomalyEffects = [EffectType.ANOMALY_PHASE_MATTER, EffectType.PULSATING_CUBE, EffectType.PLANET_RAYS];
 
               const selectedEffects = allAnomalyEffects;
               const anomalySeed = pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000);
@@ -3381,7 +2792,6 @@ export class EffectRegistry {
                   if (anomalyEffect.effect.addToScene) {
                     anomalyEffect.effect.addToScene(scene, mesh.position);
                   }
-
                 }
               }
 
@@ -3393,7 +2803,6 @@ export class EffectRegistry {
                 }
               }
             } else {
-
               if (mesh.material instanceof THREE.MeshStandardMaterial) {
                 const baseColor = getPlanetBaseColor(pythonData);
                 mesh.material.color.copy(baseColor);
@@ -3402,7 +2811,6 @@ export class EffectRegistry {
             break;
         }
       } else {
-
         if (mesh.material instanceof THREE.MeshStandardMaterial) {
           const baseColor = getPlanetBaseColor(pythonData);
           mesh.material.color.copy(baseColor);
@@ -3413,14 +2821,8 @@ export class EffectRegistry {
       const isAnomalyPlanet = planetType === "anomaly" || pythonData.surface_elements?.type === "anomaly";
 
       if (pythonData.atmosphere && !isAnomalyPlanet) {
-
         if (pythonData.atmosphere.streaks || ["Gas Giant", "Frozen Gas Giant"].includes(pythonData.planet_info?.type)) {
-
-          const glowEffect = createAtmosphereGlowFromPythonData(
-            planetRadius,
-            pythonData.atmosphere || {},
-            pythonData.seeds?.shape_seed + 2000
-          );
+          const glowEffect = createAtmosphereGlowFromPythonData(planetRadius, pythonData.atmosphere || {}, pythonData.seeds?.shape_seed + 2000);
 
           if (glowEffect) {
             const glowInstance: EffectInstance = {
@@ -3439,10 +2841,8 @@ export class EffectRegistry {
         }
 
         if (pythonData.atmosphere.type && pythonData.atmosphere.type !== "None") {
-
           const atmosphereData = { ...pythonData.atmosphere };
           if (planetType === "oceanic") {
-
             atmosphereData.opacity = Math.min(atmosphereData.opacity || 0.3, 0.15);
             atmosphereData.width = Math.min(atmosphereData.width || 15, 8);
           }
@@ -3461,7 +2861,6 @@ export class EffectRegistry {
           effects.push(ringsEffect);
           ringsEffect.effect.addToScene(scene, mesh.position);
         } else {
-
         }
       } else {
       }
@@ -3475,19 +2874,12 @@ export class EffectRegistry {
       }
 
       if (VISUAL_DEBUG) {
-        const debugEffect = this.createEffectFromPythonData(
-          EffectType.VISUAL_DEBUG_3D,
-          pythonData,
-          planetRadius,
-          mesh,
-          100
-        );
+        const debugEffect = this.createEffectFromPythonData(EffectType.VISUAL_DEBUG_3D, pythonData, planetRadius, mesh, 100);
 
         if (debugEffect) {
           effects.push(debugEffect);
           debugEffect.effect.addToScene(scene, mesh.position);
         } else {
-
         }
       }
 
@@ -3496,31 +2888,21 @@ export class EffectRegistry {
       }
 
       try {
-        const starFieldEffect = this.createEffectFromPythonData(
-          EffectType.STAR_FIELD,
-          pythonData,
-          planetRadius,
-          mesh,
-          -100
-        );
+        const starFieldEffect = this.createEffectFromPythonData(EffectType.STAR_FIELD, pythonData, planetRadius, mesh, -100);
 
         if (starFieldEffect && starFieldEffect.effect) {
           starFieldEffect.effect.addToScene(scene, mesh.position);
           effects.push(starFieldEffect);
         }
-      } catch (error) {
-
-      }
+      } catch (error) {}
 
       effects.forEach((effect, index) => {});
 
       if (effects.length === 0) {
-
       }
 
       return effects;
     } catch (error) {
-
       throw error;
     }
   }
@@ -3564,7 +2946,6 @@ export class EffectRegistry {
       }
 
       if (this.layerSystem) {
-
         const layerMeshes = this.layerSystem.getLayerMeshes();
 
         const layerNameMap: Record<string, string> = {
@@ -3587,7 +2968,6 @@ export class EffectRegistry {
         }
       }
     } else {
-
     }
   }
 
@@ -3595,7 +2975,6 @@ export class EffectRegistry {
    * Actualiza todos los efectos activos
    */
   updateAllEffects(deltaTime: number, planetRotation?: number, camera?: THREE.Camera): void {
-
     if (this.layerSystem) {
       this.layerSystem.update(deltaTime, planetRotation);
     }
@@ -3603,15 +2982,12 @@ export class EffectRegistry {
     for (const instance of this.effects.values()) {
       if (instance.enabled && instance.effect.update) {
         try {
-
-          if (instance.type === 'star_field' && camera && 'updateWithCamera' in instance.effect) {
+          if (instance.type === "star_field" && camera && "updateWithCamera" in instance.effect) {
             (instance.effect as any).updateWithCamera(deltaTime, camera);
           } else {
             instance.effect.update(deltaTime, planetRotation);
           }
-        } catch (error) {
-
-        }
+        } catch (error) {}
       }
     }
   }
@@ -3620,7 +2996,6 @@ export class EffectRegistry {
    * Actualiza la luz de todos los efectos (incluyendo PlanetLayerSystem)
    */
   updateLightForAllEffects(light: THREE.DirectionalLight): void {
-
     if (this.layerSystem) {
       this.layerSystem.updateFromThreeLight(light);
     }
@@ -3629,9 +3004,7 @@ export class EffectRegistry {
       if (instance.enabled && instance.effect.updateFromThreeLight) {
         try {
           instance.effect.updateFromThreeLight(light);
-        } catch (error) {
-
-        }
+        } catch (error) {}
       }
     }
   }
@@ -3653,7 +3026,6 @@ export class EffectRegistry {
    * Limpia todos los efectos
    */
   clearAllEffects(): void {
-
     if (this.layerSystem) {
       this.layerSystem.dispose();
       this.layerSystem = undefined;

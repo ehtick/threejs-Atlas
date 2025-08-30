@@ -75,8 +75,7 @@ export class DiamondSurfaceLayer {
     }
   }
 
-  dispose(): void {
-  }
+  dispose(): void {}
 }
 
 export function createDiamondSurfaceLayerFromPythonData(layerSystem: PlanetLayerSystem, data: any, globalSeed?: number): DiamondSurfaceLayer {

@@ -1,10 +1,9 @@
 // atlas-ui/react/static/js/3DEffects/MoltenLavaEffect.tsx
-import * as THREE from 'three';
-import { PlanetLayerSystem } from '../3DComponents/PlanetLayerSystem';
-import { SeededRandom } from '../Utils/SeededRandom.tsx';
+import * as THREE from "three";
+import { PlanetLayerSystem } from "../3DComponents/PlanetLayerSystem";
+import { SeededRandom } from "../Utils/SeededRandom.tsx";
 
 export interface MoltenLavaParams {
-
   lavaWaveHeight?: number;
   lavaWaveFrequency?: number;
   lavaWaveSpeed?: number;
@@ -29,7 +28,7 @@ export interface MoltenLavaParams {
   lavaMetalness?: number;
   lavaNormalScale?: number;
   lavaNormalSpeed?: number;
-  
+
   seed?: number;
   startTime?: number;
   timeSpeed?: number;
@@ -61,16 +60,13 @@ export class MoltenLavaEffect {
 
     this.startTime = params.startTime || (seed % 10000) / 1000;
 
-    const moltenCoreColor = new THREE.Color(0xFF8C00);
+    const moltenCoreColor = new THREE.Color(0xff8c00);
     const hsl = { h: 0, s: 0, l: 0 };
     moltenCoreColor.getHSL(hsl);
 
-    const moltenColor = params.moltenColor instanceof THREE.Color ? params.moltenColor : 
-      new THREE.Color().setHSL(hsl.h, 1.0, 0.5);
-    const coreColor = params.coreColor instanceof THREE.Color ? params.coreColor : 
-      new THREE.Color().setHSL(hsl.h + 0.05, 0.9, 0.6);
-    const coolingColor = params.coolingColor instanceof THREE.Color ? params.coolingColor : 
-      new THREE.Color().setHSL(hsl.h - 0.05, 0.8, 0.3);
+    const moltenColor = params.moltenColor instanceof THREE.Color ? params.moltenColor : new THREE.Color().setHSL(hsl.h, 1.0, 0.5);
+    const coreColor = params.coreColor instanceof THREE.Color ? params.coreColor : new THREE.Color().setHSL(hsl.h + 0.05, 0.9, 0.6);
+    const coolingColor = params.coolingColor instanceof THREE.Color ? params.coolingColor : new THREE.Color().setHSL(hsl.h - 0.05, 0.8, 0.3);
 
     this.params = {
       moltenColor,
@@ -94,21 +90,15 @@ export class MoltenLavaEffect {
       lavaNormalSpeed: params.lavaNormalSpeed || 0.1,
       seed,
       startTime: this.startTime,
-      timeSpeed: params.timeSpeed || rng.uniform(LAVA_PROCEDURAL_RANGES.TIME_SPEED.min, LAVA_PROCEDURAL_RANGES.TIME_SPEED.max)
+      timeSpeed: params.timeSpeed || rng.uniform(LAVA_PROCEDURAL_RANGES.TIME_SPEED.min, LAVA_PROCEDURAL_RANGES.TIME_SPEED.max),
     };
 
     this.material = this.layerSystem.createMoltenLavaLayerMaterial(this.params);
 
-    this.layerMesh = this.layerSystem.addEffectLayer(
-      "moltenLava",
-      this.material,
-      this.layerSystem.getNextScaleFactor(),
-      this
-    );
+    this.layerMesh = this.layerSystem.addEffectLayer("moltenLava", this.material, this.layerSystem.getNextScaleFactor(), this);
   }
 
   update(deltaTime: number): void {
-
     const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!;
     const currentTime = rawTime % 1000;
 
@@ -117,13 +107,10 @@ export class MoltenLavaEffect {
     }
   }
 
-  dispose(): void {
-
-  }
+  dispose(): void {}
 }
 
 export function createMoltenLavaFromPythonData(layerSystem: PlanetLayerSystem, pythonData: any, globalSeed?: number): MoltenLavaEffect {
-
   const seed = globalSeed || 12345;
   const rng = new SeededRandom(seed + 8000);
 
@@ -136,8 +123,8 @@ export function createMoltenLavaFromPythonData(layerSystem: PlanetLayerSystem, p
     lavaMetalness: 0.1,
     lavaNormalScale: 0.06,
     lavaNormalSpeed: 0.08,
-    seed
+    seed,
   };
-  
+
   return new MoltenLavaEffect(layerSystem, params);
 }

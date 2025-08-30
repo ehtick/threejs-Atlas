@@ -1,7 +1,7 @@
 // atlas-ui/react/static/js/3DEffects/CloudGyrosLayer.tsx
-import * as THREE from 'three';
-import { PlanetLayerSystem } from '../3DComponents/PlanetLayerSystem';
-import { SeededRandom } from '../Utils/SeededRandom.tsx';
+import * as THREE from "three";
+import { PlanetLayerSystem } from "../3DComponents/PlanetLayerSystem";
+import { SeededRandom } from "../Utils/SeededRandom.tsx";
 
 export interface StormData {
   x: number;
@@ -30,7 +30,7 @@ const PROCEDURAL_RANGES = {
   STORM_INTENSITY: { min: 0.6, max: 1.2 },
   SPIRAL_SPEED: { min: 0.5, max: 1.5 },
   ANIMATION_SPEED: { min: 0.1, max: 0.5 },
-  OPACITY: { min: 0.1, max: 0.3 }
+  OPACITY: { min: 0.1, max: 0.3 },
 };
 
 export class CloudGyrosLayer {
@@ -162,34 +162,32 @@ export class CloudGyrosLayer {
 
     const seed = params.seed || Math.floor(Math.random() * 1000000);
     const rng = new SeededRandom(seed);
-    
+
     this.params = {
       stormCenters: params.stormCenters || this.generateStormCenters(seed),
-      stormColor: params.stormColor || new THREE.Color(0xFF3030),
+      stormColor: params.stormColor || new THREE.Color(0xff3030),
       stormIntensity: params.stormIntensity || rng.uniform(PROCEDURAL_RANGES.STORM_INTENSITY.min, PROCEDURAL_RANGES.STORM_INTENSITY.max),
       spiralSpeed: params.spiralSpeed || rng.uniform(PROCEDURAL_RANGES.SPIRAL_SPEED.min, PROCEDURAL_RANGES.SPIRAL_SPEED.max),
       animationSpeed: params.animationSpeed || rng.uniform(PROCEDURAL_RANGES.ANIMATION_SPEED.min, PROCEDURAL_RANGES.ANIMATION_SPEED.max),
       opacity: params.opacity || rng.uniform(PROCEDURAL_RANGES.OPACITY.min, PROCEDURAL_RANGES.OPACITY.max),
-      seed
+      seed,
     };
 
     this.material = this.createShaderMaterial();
 
-    this.layerMesh = this.layerSystem.addEffectLayer('cloudGyros', this.material, 1.002, this);
+    this.layerMesh = this.layerSystem.addEffectLayer("cloudGyros", this.material, 1.002, this);
   }
 
   private createShaderMaterial(): THREE.ShaderMaterial {
-
     const centers3DArray = new Array(90).fill(0);
     const sizesArray = new Array(30).fill(0.25);
     const intensitiesArray = new Array(30).fill(1.0);
     const spiralSpeedsArray = new Array(30).fill(1.0);
     const animationSpeedsArray = new Array(30).fill(1.0);
-    
+
     if (this.params.stormCenters) {
       this.params.stormCenters.forEach((storm: StormData, i: number) => {
         if (i < 30) {
-
           centers3DArray[i * 3] = storm.x;
           centers3DArray[i * 3 + 1] = storm.y;
           centers3DArray[i * 3 + 2] = storm.z;
@@ -198,7 +196,6 @@ export class CloudGyrosLayer {
           intensitiesArray[i] = storm.intensity;
           spiralSpeedsArray[i] = storm.spiralSpeed;
           animationSpeedsArray[i] = storm.animationSpeed;
-        
         }
       });
     }
@@ -208,7 +205,7 @@ export class CloudGyrosLayer {
       fragmentShader: CloudGyrosLayer.fragmentShader,
       uniforms: {
         time: { value: 0 },
-        stormColor: { value: this.params.stormColor || new THREE.Color(0xFF3030) },
+        stormColor: { value: this.params.stormColor || new THREE.Color(0xff3030) },
         opacity: { value: this.params.opacity || PROCEDURAL_RANGES.OPACITY.max },
         stormCenters3D: { value: centers3DArray },
         stormSizes: { value: sizesArray },
@@ -229,16 +226,14 @@ export class CloudGyrosLayer {
   }
 
   private generateStormCenters(seed: number): Array<StormData> {
-
     const normalizedSeed = Math.abs(seed % 1000000);
-    
+
     const storms: Array<StormData> = [];
 
     const stormRng = new SeededRandom(normalizedSeed);
     const stormCount = Math.floor(stormRng.uniform(PROCEDURAL_RANGES.STORM_COUNT.min, PROCEDURAL_RANGES.STORM_COUNT.max + 1));
 
     for (let i = 0; i < stormCount; i++) {
-
       const stormSeed = normalizedSeed + i * 7919;
       const stormRng = new SeededRandom(stormSeed);
 
@@ -248,12 +243,12 @@ export class CloudGyrosLayer {
       const x = Math.sin(theta) * Math.cos(phi);
       const y = Math.sin(theta) * Math.sin(phi);
       const z = Math.cos(theta);
-      
+
       const size = stormRng.uniform(PROCEDURAL_RANGES.STORM_SIZE.min, PROCEDURAL_RANGES.STORM_SIZE.max);
       const intensity = stormRng.uniform(PROCEDURAL_RANGES.STORM_INTENSITY.min, PROCEDURAL_RANGES.STORM_INTENSITY.max);
       const spiralSpeed = stormRng.uniform(PROCEDURAL_RANGES.SPIRAL_SPEED.min, PROCEDURAL_RANGES.SPIRAL_SPEED.max);
       const animationSpeed = stormRng.uniform(PROCEDURAL_RANGES.ANIMATION_SPEED.min, PROCEDURAL_RANGES.ANIMATION_SPEED.max);
-      
+
       storms.push({
         x,
         y,
@@ -261,10 +256,10 @@ export class CloudGyrosLayer {
         size,
         intensity,
         spiralSpeed,
-        animationSpeed
+        animationSpeed,
       });
     }
-    
+
     return storms;
   }
 
@@ -300,29 +295,23 @@ export class CloudGyrosLayer {
     }
   }
 
-  dispose(): void {
-
-  }
+  dispose(): void {}
 }
 
-export function createCloudGyrosLayerFromPythonData(
-  layerSystem: PlanetLayerSystem,
-  gasGiantData: any,
-  globalSeed?: number
-): CloudGyrosLayer {
+export function createCloudGyrosLayerFromPythonData(layerSystem: PlanetLayerSystem, gasGiantData: any, globalSeed?: number): CloudGyrosLayer {
   const storms = gasGiantData.storms || {};
 
   const seed = globalSeed || Math.floor(Math.random() * 1000000);
   const rng = new SeededRandom(seed + 5000);
-  
+
   const params: CloudGyrosLayerParams = {
     stormCenters: storms.centers || undefined,
-    stormColor: new THREE.Color(0xFF3030),
+    stormColor: new THREE.Color(0xff3030),
     stormIntensity: storms.intensity || gasGiantData.storm_intensity || rng.uniform(PROCEDURAL_RANGES.STORM_INTENSITY.min, PROCEDURAL_RANGES.STORM_INTENSITY.max),
     spiralSpeed: storms.spiral_speed || rng.uniform(PROCEDURAL_RANGES.SPIRAL_SPEED.min, PROCEDURAL_RANGES.SPIRAL_SPEED.max),
     animationSpeed: rng.uniform(PROCEDURAL_RANGES.ANIMATION_SPEED.min, PROCEDURAL_RANGES.ANIMATION_SPEED.max),
     opacity: rng.uniform(PROCEDURAL_RANGES.OPACITY.min, PROCEDURAL_RANGES.OPACITY.max),
-    seed
+    seed,
   };
 
   return new CloudGyrosLayer(layerSystem, params);

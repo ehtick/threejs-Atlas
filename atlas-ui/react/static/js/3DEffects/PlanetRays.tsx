@@ -41,7 +41,7 @@ export class PlanetRaysEffect {
     color: THREE.Color;
     activationOffset: number;
   }>;
-  
+
   private stormFreq1: number;
   private stormFreq2: number;
   private stormThreshold: number;
@@ -178,10 +178,10 @@ export class PlanetRaysEffect {
       const baseHue = 200 + rng.uniform(-30, 30);
       const saturation = 0.6 + rng.uniform(-0.2, 0.2);
       const lightness = 0.4 + rng.uniform(-0.1, 0.1);
-      
+
       const color = new THREE.Color();
       color.setHSL(baseHue / 360, saturation, lightness);
-      
+
       const colorShift = this.params.colorVariation! * 0.7;
       color.r = Math.min(1.0, color.r + rng.uniform(-colorShift, colorShift));
       color.g = Math.min(1.0, color.g + rng.uniform(-colorShift, colorShift));

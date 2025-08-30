@@ -8,20 +8,20 @@ export interface LavaFlowsParams {
   flowLength?: number;
   flowWidth?: number;
   flowIntensity?: number;
-  
+
   flowSpeed?: number;
   pulseSpeed?: number;
   turbulence?: number;
   emergenceHeight?: number;
-  
+
   coreColor?: THREE.Color | number[];
   hotColor?: THREE.Color | number[];
   coolColor?: THREE.Color | number[];
-  
+
   emissiveIntensity?: number;
   glowRadius?: number;
   sparkleIntensity?: number;
-  
+
   seed?: number;
   startTime?: number;
   timeSpeed?: number;
@@ -202,10 +202,10 @@ export class LavaFlowsEffect {
   constructor(planetRadius: number, params: LavaFlowsParams = {}) {
     const seed = params.seed || Math.floor(Math.random() * 1000000);
     const rng = new SeededRandom(seed);
-    
+
     this.startTime = params.startTime || (seed % 10000) / 1000;
 
-    const moltenCoreColor = new THREE.Color(0xFF8C00);
+    const moltenCoreColor = new THREE.Color(0xff8c00);
     const hsl = { h: 0, s: 0, l: 0 };
     moltenCoreColor.getHSL(hsl);
 
@@ -217,22 +217,19 @@ export class LavaFlowsEffect {
       flowSpeed: params.flowSpeed || rng.uniform(PROCEDURAL_RANGES.FLOW_SPEED.min, PROCEDURAL_RANGES.FLOW_SPEED.max),
       pulseSpeed: params.pulseSpeed || rng.uniform(PROCEDURAL_RANGES.PULSE_SPEED.min, PROCEDURAL_RANGES.PULSE_SPEED.max),
       turbulence: params.turbulence || rng.uniform(PROCEDURAL_RANGES.TURBULENCE.min, PROCEDURAL_RANGES.TURBULENCE.max),
-      
-      coreColor: params.coreColor instanceof THREE.Color ? params.coreColor : 
-        new THREE.Color().setHSL(hsl.h, 1.0, 0.6),
-      hotColor: params.hotColor instanceof THREE.Color ? params.hotColor :
-        new THREE.Color().setHSL(hsl.h + 0.05, 0.9, 0.5),
-      coolColor: params.coolColor instanceof THREE.Color ? params.coolColor :
-        new THREE.Color().setHSL(hsl.h - 0.05, 0.8, 0.3),
-      
+
+      coreColor: params.coreColor instanceof THREE.Color ? params.coreColor : new THREE.Color().setHSL(hsl.h, 1.0, 0.6),
+      hotColor: params.hotColor instanceof THREE.Color ? params.hotColor : new THREE.Color().setHSL(hsl.h + 0.05, 0.9, 0.5),
+      coolColor: params.coolColor instanceof THREE.Color ? params.coolColor : new THREE.Color().setHSL(hsl.h - 0.05, 0.8, 0.3),
+
       emissiveIntensity: params.emissiveIntensity || rng.uniform(PROCEDURAL_RANGES.EMISSIVE_INTENSITY.min, PROCEDURAL_RANGES.EMISSIVE_INTENSITY.max),
       glowRadius: params.glowRadius || rng.uniform(PROCEDURAL_RANGES.GLOW_RADIUS.min, PROCEDURAL_RANGES.GLOW_RADIUS.max),
       sparkleIntensity: params.sparkleIntensity || 1.0,
       emergenceHeight: params.emergenceHeight || rng.uniform(PROCEDURAL_RANGES.EMERGENCE_HEIGHT.min, PROCEDURAL_RANGES.EMERGENCE_HEIGHT.max),
-      
+
       seed,
       startTime: this.startTime,
-      timeSpeed: params.timeSpeed || rng.uniform(PROCEDURAL_RANGES.TIME_SPEED.min, PROCEDURAL_RANGES.TIME_SPEED.max)
+      timeSpeed: params.timeSpeed || rng.uniform(PROCEDURAL_RANGES.TIME_SPEED.min, PROCEDURAL_RANGES.TIME_SPEED.max),
     };
 
     this.lavaGroup = new THREE.Group();
@@ -248,27 +245,19 @@ export class LavaFlowsEffect {
       const phi = rng.uniform(0, 2 * Math.PI);
       const cosTheta = rng.uniform(-1, 1);
       const theta = Math.acos(cosTheta);
-      
-      const startPosition = new THREE.Vector3(
-        Math.sin(theta) * Math.cos(phi),
-        Math.sin(theta) * Math.sin(phi),
-        Math.cos(theta)
-      );
+
+      const startPosition = new THREE.Vector3(Math.sin(theta) * Math.cos(phi), Math.sin(theta) * Math.sin(phi), Math.cos(theta));
 
       const flowLength = this.params.flowLength! * rng.uniform(0.7, 1.3);
       const flowWidth = this.params.flowWidth! * rng.uniform(0.8, 1.2);
-      
+
       const segments = Math.max(16, Math.floor(flowLength * 32));
-      const geometry = new THREE.PlaneGeometry(
-        flowLength * planetRadius * 2,
-        flowWidth * planetRadius * 2,
-        segments, 8
-      );
+      const geometry = new THREE.PlaneGeometry(flowLength * planetRadius * 2, flowWidth * planetRadius * 2, segments, 8);
 
       const normal = startPosition.clone().normalize();
       const tangent1 = new THREE.Vector3();
       const tangent2 = new THREE.Vector3();
-      
+
       if (Math.abs(normal.y) < 0.99) {
         tangent1.crossVectors(normal, new THREE.Vector3(0, 1, 0)).normalize();
       } else {
@@ -280,32 +269,32 @@ export class LavaFlowsEffect {
       rotationMatrix.makeBasis(tangent1, tangent2, normal);
 
       geometry.applyMatrix4(rotationMatrix);
-      
+
       const positions = geometry.attributes.position;
       const vertex = new THREE.Vector3();
       const surfacePosition = startPosition.clone().multiplyScalar(planetRadius);
-      
+
       for (let j = 0; j < positions.count; j++) {
         vertex.fromBufferAttribute(positions, j);
         const worldVertex = vertex.clone().add(surfacePosition);
-        
+
         const direction = worldVertex.clone().normalize();
         const baseElevation = rng.uniform(-0.002, 0.008) * planetRadius;
         const projectedVertex = direction.multiplyScalar(planetRadius + baseElevation);
-        
+
         const localVertex = projectedVertex.sub(surfacePosition);
         positions.setXYZ(j, localVertex.x, localVertex.y, localVertex.z);
       }
-      
+
       positions.needsUpdate = true;
       geometry.computeVertexNormals();
       geometry.translate(surfacePosition.x, surfacePosition.y, surfacePosition.z);
 
       const flowMaterial = this.material.clone();
-      
+
       const flowMesh = new THREE.Mesh(geometry, flowMaterial);
       flowMesh.renderOrder = 3;
-      
+
       this.lavaFlows.push(flowMesh);
       this.lavaGroup.add(flowMesh);
     }
@@ -347,15 +336,15 @@ export class LavaFlowsEffect {
   update(deltaTime: number): void {
     const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!;
     const currentTime = rawTime % 1000;
-    
-    this.lavaFlows.forEach(flow => {
+
+    this.lavaFlows.forEach((flow) => {
       const material = flow.material as THREE.ShaderMaterial;
       material.uniforms.time.value = currentTime;
     });
   }
 
   updateLightPosition(position: THREE.Vector3): void {
-    this.lavaFlows.forEach(flow => {
+    this.lavaFlows.forEach((flow) => {
       const material = flow.material as THREE.ShaderMaterial;
       if (material.uniforms.lightPosition) {
         material.uniforms.lightPosition.value.copy(position);
@@ -364,7 +353,7 @@ export class LavaFlowsEffect {
   }
 
   updateLightDirection(direction: THREE.Vector3): void {
-    this.lavaFlows.forEach(flow => {
+    this.lavaFlows.forEach((flow) => {
       const material = flow.material as THREE.ShaderMaterial;
       if (material.uniforms.lightDirection) {
         material.uniforms.lightDirection.value.copy(direction);
@@ -383,7 +372,7 @@ export class LavaFlowsEffect {
   }
 
   dispose(): void {
-    this.lavaFlows.forEach(flow => {
+    this.lavaFlows.forEach((flow) => {
       flow.geometry.dispose();
       if (flow.material instanceof THREE.Material) {
         flow.material.dispose();
@@ -394,13 +383,9 @@ export class LavaFlowsEffect {
   }
 }
 
-export function createLavaFlowsFromPythonData(
-  planetRadius: number,
-  surfaceData: any,
-  globalSeed?: number
-): LavaFlowsEffect {
+export function createLavaFlowsFromPythonData(planetRadius: number, surfaceData: any, globalSeed?: number): LavaFlowsEffect {
   const seed = globalSeed || Math.floor(Math.random() * 1000000);
-  
+
   const params: LavaFlowsParams = {
     flowCount: 28,
     flowLength: 0.8,
@@ -410,7 +395,7 @@ export function createLavaFlowsFromPythonData(
     turbulence: 1.5,
     emergenceHeight: 0.02,
     emissiveIntensity: 4.0,
-    seed: seed + 7000
+    seed: seed + 7000,
   };
 
   return new LavaFlowsEffect(planetRadius, params);

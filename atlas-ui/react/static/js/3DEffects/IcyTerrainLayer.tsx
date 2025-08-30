@@ -1,7 +1,7 @@
 // atlas-ui/react/static/js/3DEffects/IcyTerrainLayer.tsx
-import * as THREE from 'three';
-import { PlanetLayerSystem } from '../3DComponents/PlanetLayerSystem';
-import { SeededRandom } from '../Utils/SeededRandom.tsx';
+import * as THREE from "three";
+import { PlanetLayerSystem } from "../3DComponents/PlanetLayerSystem";
+import { SeededRandom } from "../Utils/SeededRandom.tsx";
 
 export interface IcyTerrainLayerParams {
   color?: THREE.Color | number[];
@@ -24,7 +24,7 @@ const PROCEDURAL_RANGES = {
   CRYSTAL_SCALE: { min: 15.0, max: 35.0 },
   CRYSTAL_DENSITY: { min: 0.4, max: 0.8 },
   CRYSTAL_SHARPNESS: { min: 100.0, max: 250.0 },
-  FROST_PATTERN: { min: 8.0, max: 16.0 }
+  FROST_PATTERN: { min: 8.0, max: 16.0 },
 };
 
 export class IcyTerrainLayer {
@@ -38,10 +38,9 @@ export class IcyTerrainLayer {
 
     const seed = params.seed || Math.floor(Math.random() * 1000000);
     const rng = new SeededRandom(seed);
-    
-    const baseColor = params.color instanceof THREE.Color ? 
-      params.color : (params.color ? new THREE.Color(params.color as any) : new THREE.Color(0xB0E0E6));
-    
+
+    const baseColor = params.color instanceof THREE.Color ? params.color : params.color ? new THREE.Color(params.color as any) : new THREE.Color(0xb0e0e6);
+
     this.params = {
       color: baseColor,
       iceReflectivity: params.iceReflectivity || rng.uniform(PROCEDURAL_RANGES.ICE_REFLECTIVITY.min, PROCEDURAL_RANGES.ICE_REFLECTIVITY.max),
@@ -52,17 +51,12 @@ export class IcyTerrainLayer {
       crystalDensity: params.crystalDensity || rng.uniform(PROCEDURAL_RANGES.CRYSTAL_DENSITY.min, PROCEDURAL_RANGES.CRYSTAL_DENSITY.max),
       crystalSharpness: params.crystalSharpness || rng.uniform(PROCEDURAL_RANGES.CRYSTAL_SHARPNESS.min, PROCEDURAL_RANGES.CRYSTAL_SHARPNESS.max),
       frostPattern: params.frostPattern || rng.uniform(PROCEDURAL_RANGES.FROST_PATTERN.min, PROCEDURAL_RANGES.FROST_PATTERN.max),
-      seed
+      seed,
     };
 
     this.material = this.layerSystem.createIcyTerrainLayerMaterial(this.params);
 
-    this.layerMesh = this.layerSystem.addEffectLayer(
-      'icyTerrain', 
-      this.material, 
-      this.layerSystem.getNextScaleFactor(),
-      this
-    );
+    this.layerMesh = this.layerSystem.addEffectLayer("icyTerrain", this.material, this.layerSystem.getNextScaleFactor(), this);
   }
 
   update(deltaTime: number): void {
@@ -71,24 +65,18 @@ export class IcyTerrainLayer {
     }
   }
 
-  dispose(): void {
-
-  }
+  dispose(): void {}
 }
 
-export function createIcyTerrainLayerFromPythonData(
-  layerSystem: PlanetLayerSystem,
-  data: any,
-  globalSeed?: number
-): IcyTerrainLayer {
+export function createIcyTerrainLayerFromPythonData(layerSystem: PlanetLayerSystem, data: any, globalSeed?: number): IcyTerrainLayer {
   const surface = data.surface || {};
   const baseColor = data.planet_info?.base_color || surface.base_color;
 
   const seed = globalSeed || Math.floor(Math.random() * 1000000);
   const rng = new SeededRandom(seed + 6000);
-  
+
   return new IcyTerrainLayer(layerSystem, {
-    color: baseColor ? new THREE.Color(baseColor) : new THREE.Color(0xB0E0E6),
+    color: baseColor ? new THREE.Color(baseColor) : new THREE.Color(0xb0e0e6),
     iceReflectivity: surface.ice_reflectivity || rng.uniform(PROCEDURAL_RANGES.ICE_REFLECTIVITY.min, PROCEDURAL_RANGES.ICE_REFLECTIVITY.max),
     frostDensity: surface.frost_density || rng.uniform(PROCEDURAL_RANGES.FROST_DENSITY.min, PROCEDURAL_RANGES.FROST_DENSITY.max),
     crackIntensity: surface.crack_intensity || rng.uniform(PROCEDURAL_RANGES.CRACK_INTENSITY.min, PROCEDURAL_RANGES.CRACK_INTENSITY.max),
@@ -97,6 +85,6 @@ export function createIcyTerrainLayerFromPythonData(
     crystalDensity: surface.crystal_density || rng.uniform(PROCEDURAL_RANGES.CRYSTAL_DENSITY.min, PROCEDURAL_RANGES.CRYSTAL_DENSITY.max),
     crystalSharpness: surface.crystal_sharpness || rng.uniform(PROCEDURAL_RANGES.CRYSTAL_SHARPNESS.min, PROCEDURAL_RANGES.CRYSTAL_SHARPNESS.max),
     frostPattern: surface.frost_pattern || rng.uniform(PROCEDURAL_RANGES.FROST_PATTERN.min, PROCEDURAL_RANGES.FROST_PATTERN.max),
-    seed
+    seed,
   });
 }

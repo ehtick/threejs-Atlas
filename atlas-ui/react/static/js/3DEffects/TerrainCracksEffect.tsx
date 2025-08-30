@@ -206,8 +206,7 @@ export class TerrainCracksEffect {
     }
   }
 
-  updateFromThreeLight(_light: THREE.DirectionalLight): void {
-  }
+  updateFromThreeLight(_light: THREE.DirectionalLight): void {}
 
   getObject3D(): THREE.Mesh {
     return this.crackMesh;

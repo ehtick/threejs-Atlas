@@ -1,7 +1,7 @@
 // atlas-ui/react/static/js/3DComponents/ModularPlanetRendererWrapper.tsx
 
-import React from 'react';
-import { ModularPlanetRenderer } from './ModularPlanetRenderer';
+import React from "react";
+import { ModularPlanetRenderer } from "./ModularPlanetRenderer";
 
 interface ModularPlanetRendererProps {
   planetName: string;
@@ -33,10 +33,7 @@ interface ModularPlanetRendererProps {
   onEffectsCreated?: (effects: any[]) => void;
 }
 
-class ErrorBoundary extends React.Component<
-  { children: React.ReactNode },
-  { hasError: boolean; error: string | null }
-> {
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error: string | null }> {
   constructor(props: { children: React.ReactNode }) {
     super(props);
     this.state = { hasError: false, error: null };
@@ -46,8 +43,7 @@ class ErrorBoundary extends React.Component<
     return { hasError: true, error: error.message };
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-  }
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {}
 
   render() {
     if (this.state.hasError) {

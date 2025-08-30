@@ -673,7 +673,7 @@ export class PlanetLayerSystem {
       fragmentShader,
       uniforms: {
         time: { value: 0 },
-        iceColor: { value: params.color || new THREE.Color(0xB0E0E6) },
+        iceColor: { value: params.color || new THREE.Color(0xb0e0e6) },
         iceReflectivity: { value: params.iceReflectivity || 0.8 },
         frostDensity: { value: params.frostDensity || 0.5 },
         crackIntensity: { value: params.crackIntensity || 0.4 },
@@ -689,7 +689,7 @@ export class PlanetLayerSystem {
       },
       transparent: true,
       side: THREE.FrontSide,
-      depthWrite: false
+      depthWrite: false,
     });
   }
 
@@ -820,12 +820,9 @@ export class PlanetLayerSystem {
       }
     `;
 
-    const waterColor = params.waterColor instanceof THREE.Color ? 
-      params.waterColor : new THREE.Color((params.waterColor as THREE.ColorRepresentation) || 0x2E8B8B);
-    const deepWaterColor = params.deepWaterColor instanceof THREE.Color ? 
-      params.deepWaterColor : new THREE.Color((params.deepWaterColor as THREE.ColorRepresentation) || 0x003366);
-    const foamColor = params.foamColor instanceof THREE.Color ? 
-      params.foamColor : new THREE.Color((params.foamColor as THREE.ColorRepresentation) || 0xffffff);
+    const waterColor = params.waterColor instanceof THREE.Color ? params.waterColor : new THREE.Color((params.waterColor as THREE.ColorRepresentation) || 0x2e8b8b);
+    const deepWaterColor = params.deepWaterColor instanceof THREE.Color ? params.deepWaterColor : new THREE.Color((params.deepWaterColor as THREE.ColorRepresentation) || 0x003366);
+    const foamColor = params.foamColor instanceof THREE.Color ? params.foamColor : new THREE.Color((params.foamColor as THREE.ColorRepresentation) || 0xffffff);
 
     return new THREE.ShaderMaterial({
       vertexShader,
@@ -977,10 +974,8 @@ export class PlanetLayerSystem {
       }
     `;
 
-    const currentColor = params.currentColor instanceof THREE.Color ? 
-      params.currentColor : new THREE.Color((params.currentColor as THREE.ColorRepresentation) || 0x4A9B8E);
-    const deepCurrentColor = params.deepCurrentColor instanceof THREE.Color ? 
-      params.deepCurrentColor : new THREE.Color((params.deepCurrentColor as THREE.ColorRepresentation) || 0x2D5D52);
+    const currentColor = params.currentColor instanceof THREE.Color ? params.currentColor : new THREE.Color((params.currentColor as THREE.ColorRepresentation) || 0x4a9b8e);
+    const deepCurrentColor = params.deepCurrentColor instanceof THREE.Color ? params.deepCurrentColor : new THREE.Color((params.deepCurrentColor as THREE.ColorRepresentation) || 0x2d5d52);
 
     return new THREE.ShaderMaterial({
       vertexShader,
@@ -1028,11 +1023,10 @@ export class PlanetLayerSystem {
         layer.material.uniforms.rotationAngle.value = planetRotation;
       }
 
-      if (layer.layerObject && typeof layer.layerObject === 'object' && layer.layerObject !== null && 'update' in layer.layerObject) {
+      if (layer.layerObject && typeof layer.layerObject === "object" && layer.layerObject !== null && "update" in layer.layerObject) {
         try {
           (layer.layerObject as { update: (deltaTime: number, planetRotation?: number) => void }).update(deltaTime, planetRotation);
-        } catch (error) {
-        }
+        } catch (error) {}
       }
 
       if (layer.mesh) {
@@ -1077,7 +1071,7 @@ export class PlanetLayerSystem {
     if (this.baseMaterial) {
       this.baseMaterial.dispose();
     }
-    
+
     this.baseMaterial = holeShader;
     this.baseMesh.material = holeShader;
   }
@@ -1533,12 +1527,9 @@ export class PlanetLayerSystem {
       }
     `;
 
-    const moltenColor = params.moltenColor instanceof THREE.Color ? 
-      params.moltenColor : new THREE.Color((params.moltenColor as THREE.ColorRepresentation) || 0xFF8C00);
-    const coreColor = params.coreColor instanceof THREE.Color ? 
-      params.coreColor : new THREE.Color((params.coreColor as THREE.ColorRepresentation) || 0xFFB347);
-    const coolingColor = params.coolingColor instanceof THREE.Color ? 
-      params.coolingColor : new THREE.Color((params.coolingColor as THREE.ColorRepresentation) || 0xCC4400);
+    const moltenColor = params.moltenColor instanceof THREE.Color ? params.moltenColor : new THREE.Color((params.moltenColor as THREE.ColorRepresentation) || 0xff8c00);
+    const coreColor = params.coreColor instanceof THREE.Color ? params.coreColor : new THREE.Color((params.coreColor as THREE.ColorRepresentation) || 0xffb347);
+    const coolingColor = params.coolingColor instanceof THREE.Color ? params.coolingColor : new THREE.Color((params.coolingColor as THREE.ColorRepresentation) || 0xcc4400);
 
     return new THREE.ShaderMaterial({
       vertexShader,
@@ -1577,7 +1568,7 @@ export class PlanetLayerSystem {
 
   getLayerMeshes(): Record<string, THREE.Mesh | undefined> {
     const meshes: Record<string, THREE.Mesh | undefined> = {};
-    this.effectLayers.forEach(layer => {
+    this.effectLayers.forEach((layer) => {
       if (layer.name && layer.mesh) {
         meshes[layer.name] = layer.mesh;
       }

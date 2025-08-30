@@ -1,6 +1,6 @@
 // atlas-ui/react/static/js/3DEffects/CaveSurfaceHoles.tsx
-import * as THREE from 'three';
-import { SeededRandom } from '../Utils/SeededRandom.tsx';
+import * as THREE from "three";
+import { SeededRandom } from "../Utils/SeededRandom.tsx";
 
 export interface CaveSurfaceHolesParams {
   holes?: Array<{
@@ -18,7 +18,7 @@ export interface CaveSurfaceHolesParams {
 
 const PROCEDURAL_RANGES = {
   HOLE_COUNT: { min: 22, max: 36 },
-  HOLE_RADIUS: { min: 0.03, max: 0.10 },
+  HOLE_RADIUS: { min: 0.03, max: 0.1 },
   HOLE_DEPTH: { min: 0.02, max: 0.12 },
   ROUGHNESS: { min: 0.4, max: 0.8 },
   COLOR_VARIATION: { min: 0.2, max: 0.5 },
@@ -28,7 +28,7 @@ export class CaveSurfaceHolesEffect {
   private group: THREE.Group;
   private planetRadius: number;
   private rng: SeededRandom;
-  private holesData: CaveSurfaceHolesParams['holes'] = [];
+  private holesData: CaveSurfaceHolesParams["holes"] = [];
   private coneMeshes: THREE.Mesh[] = [];
   private holeMask?: THREE.Mesh;
   private holeColor: THREE.Color;
@@ -36,56 +36,45 @@ export class CaveSurfaceHolesEffect {
   constructor(planetRadius: number, params: CaveSurfaceHolesParams = {}, seed?: number) {
     this.group = new THREE.Group();
     this.planetRadius = planetRadius;
-    
+
     const actualSeed = seed || 12345;
     this.rng = new SeededRandom(actualSeed);
-    
-    this.holeColor = params.holeColor instanceof THREE.Color
-      ? params.holeColor
-      : new THREE.Color(params.holeColor || '#000000');
+
+    this.holeColor = params.holeColor instanceof THREE.Color ? params.holeColor : new THREE.Color(params.holeColor || "#000000");
 
     this.holesData = this.generateProceduralHoles();
-    
+
     if (this.holesData.length > 0) {
       this.createHoles();
     }
   }
 
-  private generateProceduralHoles(): CaveSurfaceHolesParams['holes'] {
-    const holes: NonNullable<CaveSurfaceHolesParams['holes']> = [];
-    const holeCount = this.rng.randint(
-      PROCEDURAL_RANGES.HOLE_COUNT.min,
-      PROCEDURAL_RANGES.HOLE_COUNT.max
-    );
-    
-    for (let i = 0; i < holeCount; i++) {
+  private generateProceduralHoles(): CaveSurfaceHolesParams["holes"] {
+    const holes: NonNullable<CaveSurfaceHolesParams["holes"]> = [];
+    const holeCount = this.rng.randint(PROCEDURAL_RANGES.HOLE_COUNT.min, PROCEDURAL_RANGES.HOLE_COUNT.max);
 
+    for (let i = 0; i < holeCount; i++) {
       const theta = this.rng.random() * 2 * Math.PI;
       const phi = Math.acos(this.rng.random() * 2 - 1);
-      
-      const position_3d: [number, number, number] = [
-        Math.sin(phi) * Math.cos(theta),
-        Math.sin(phi) * Math.sin(theta),
-        Math.cos(phi)
-      ];
-      
+
+      const position_3d: [number, number, number] = [Math.sin(phi) * Math.cos(theta), Math.sin(phi) * Math.sin(theta), Math.cos(phi)];
+
       holes.push({
         position_3d,
         radius: this.rng.uniform(PROCEDURAL_RANGES.HOLE_RADIUS.min, PROCEDURAL_RANGES.HOLE_RADIUS.max),
         depth: this.rng.uniform(PROCEDURAL_RANGES.HOLE_DEPTH.min, PROCEDURAL_RANGES.HOLE_DEPTH.max),
         roughness: this.rng.uniform(PROCEDURAL_RANGES.ROUGHNESS.min, PROCEDURAL_RANGES.ROUGHNESS.max),
-        color_variation: this.rng.uniform(PROCEDURAL_RANGES.COLOR_VARIATION.min, PROCEDURAL_RANGES.COLOR_VARIATION.max)
+        color_variation: this.rng.uniform(PROCEDURAL_RANGES.COLOR_VARIATION.min, PROCEDURAL_RANGES.COLOR_VARIATION.max),
       });
     }
-    
+
     return holes;
   }
 
   createPlanetHoleShader(baseColor: THREE.Color): THREE.ShaderMaterial {
-
     const MAX_SHADER_HOLES = 64;
     const maxHoles = Math.min(this.holesData.length, MAX_SHADER_HOLES);
-    
+
     const vertexShader = `
       varying vec3 vPosition;
       varying vec3 vNormal;
@@ -157,15 +146,9 @@ export class CaveSurfaceHolesEffect {
       }
     `;
 
-    const holePositions = new Array(maxHoles).fill(null).map((_, i) => 
-      i < this.holesData.length 
-        ? new THREE.Vector3(...this.holesData[i].position_3d)
-        : new THREE.Vector3(0, 0, 0)
-    );
-    
-    const holeRadii = new Array(maxHoles).fill(null).map((_, i) => 
-      i < this.holesData.length ? this.holesData[i].radius : 0
-    );
+    const holePositions = new Array(maxHoles).fill(null).map((_, i) => (i < this.holesData.length ? new THREE.Vector3(...this.holesData[i].position_3d) : new THREE.Vector3(0, 0, 0)));
+
+    const holeRadii = new Array(maxHoles).fill(null).map((_, i) => (i < this.holesData.length ? this.holesData[i].radius : 0));
 
     return new THREE.ShaderMaterial({
       vertexShader,
@@ -178,17 +161,16 @@ export class CaveSurfaceHolesEffect {
         lightIntensity: { value: 0.85 },
         holePositions: { value: holePositions },
         holeRadii: { value: holeRadii },
-        numHoles: { value: maxHoles }
+        numHoles: { value: maxHoles },
       },
-      side: THREE.FrontSide
+      side: THREE.FrontSide,
     });
   }
 
   private createHoles(): void {
-
     const MAX_SHADER_HOLES = 64;
     const holesForCones = this.holesData.slice(0, MAX_SHADER_HOLES);
-    
+
     holesForCones.forEach((holeData) => {
       this.createHoleCone(holeData);
     });
@@ -213,7 +195,7 @@ export class CaveSurfaceHolesEffect {
       const radiusFromCenter = Math.sqrt(topX * topX + topZ * topZ);
       const curvatureFactor = (radiusFromCenter * radiusFromCenter) / (planetRadius * 2);
       const curvedY = topY - curvatureFactor;
-      
+
       vertices.push(topX, curvedY, topZ);
       uvs.push(i / segments, 1);
 
@@ -232,7 +214,7 @@ export class CaveSurfaceHolesEffect {
       indices.push(bottomIndex1, bottomIndex2, topIndex2);
 
       const angle = (i / segments) * Math.PI * 2;
-      
+
       const normal1x = Math.cos(angle);
       const normal1z = Math.sin(angle);
 
@@ -247,14 +229,14 @@ export class CaveSurfaceHolesEffect {
     normals.push(normalX, 0.5, normalZ);
 
     geometry.setIndex(indices);
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-    geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
-    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+    geometry.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
+    geometry.setAttribute("normal", new THREE.Float32BufferAttribute(normals, 3));
+    geometry.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
 
     return geometry;
   }
 
-  private createHoleCone(holeData: NonNullable<CaveSurfaceHolesParams['holes']>[0]): void {
+  private createHoleCone(holeData: NonNullable<CaveSurfaceHolesParams["holes"]>[0]): void {
     const position = new THREE.Vector3(...holeData.position_3d).normalize();
     const coneRadius = holeData.radius * this.planetRadius;
     const caveDepth = holeData.depth * this.planetRadius * 2;
@@ -264,9 +246,9 @@ export class CaveSurfaceHolesEffect {
       color: new THREE.Color(0x808080),
       transparent: false,
       opacity: 1.0,
-      side: THREE.DoubleSide
+      side: THREE.DoubleSide,
     });
-    
+
     const coneMesh = new THREE.Mesh(coneGeometry, coneMaterial);
 
     const surfacePosition = position.clone().multiplyScalar(this.planetRadius);
@@ -280,14 +262,12 @@ export class CaveSurfaceHolesEffect {
 
     const quaternion = new THREE.Quaternion().setFromUnitVectors(up, targetDirection);
     coneMesh.setRotationFromQuaternion(quaternion);
-    
+
     this.coneMeshes.push(coneMesh);
     this.group.add(coneMesh);
   }
 
-  update(_deltaTime: number): void {
-
-  }
+  update(_deltaTime: number): void {}
 
   updateLightDirection(direction: THREE.Vector3): void {
     if (this.planetShader) {
@@ -325,14 +305,14 @@ export class CaveSurfaceHolesEffect {
   }
 
   dispose(): void {
-    this.coneMeshes.forEach(mesh => {
+    this.coneMeshes.forEach((mesh) => {
       mesh.geometry.dispose();
       if (mesh.material instanceof THREE.Material) {
         mesh.material.dispose();
       }
     });
     this.coneMeshes = [];
-    
+
     if (this.planetShader) {
       this.planetShader.dispose();
       this.planetShader = undefined;
@@ -340,23 +320,18 @@ export class CaveSurfaceHolesEffect {
   }
 }
 
-export function createCaveSurfaceHolesFromPythonData(
-  planetRadius: number,
-  pythonData?: any,
-  seed?: number
-): CaveSurfaceHolesEffect | null {
-
+export function createCaveSurfaceHolesFromPythonData(planetRadius: number, pythonData?: any, seed?: number): CaveSurfaceHolesEffect | null {
   const caveData = pythonData?.surface_elements?.cave_holes;
-  
+
   const params: CaveSurfaceHolesParams = {};
-  
+
   if (caveData?.holes) {
     params.holes = caveData.holes;
   }
-  
+
   if (caveData?.hole_color) {
     params.holeColor = caveData.hole_color;
   }
-  
+
   return new CaveSurfaceHolesEffect(planetRadius, params, seed);
 }

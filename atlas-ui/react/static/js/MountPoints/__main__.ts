@@ -1,3 +1,4 @@
+// atlas-ui/react/static/js/MountPoints/__main__.ts
 import { createRoot } from 'react-dom/client';
 import { createElement } from 'react';
 import MainLayout from '../Layouts/__main__.tsx';
@@ -7,7 +8,6 @@ interface AtlasData {
   version: string;
 }
 
-// Get Flask template variables from meta tags
 const errorMeta = document.querySelector('meta[name="atlas-error"]');
 const versionMeta = document.querySelector('meta[name="atlas-version"]');
 
@@ -21,6 +21,4 @@ const container = document.getElementById('atlas-react-root');
 if (container) {
   const root = createRoot(container);
   root.render(createElement(MainLayout, atlasData));
-} else {
-  console.error('Container atlas-react-root not found!');
 }

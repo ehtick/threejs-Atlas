@@ -169,14 +169,14 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
             {
               planet_type: "toxic",
               toxic_intensity: 0.8, // Valor procedural basado en datos del planeta
-              atmosphere_thickness: 0.6
+              atmosphere_thickness: 0.6,
             },
             planetData.seeds?.planet_seed
           );
 
           if (toxicPostProcessing) {
             toxicPostProcessingRef.current = toxicPostProcessing;
-            
+
             const toxicPostProcessingInstance: EffectInstance = {
               id: `effect_toxic_postprocessing_${Date.now()}`,
               type: "toxic_post_processing",
@@ -191,10 +191,10 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
               enabled: true,
               name: "Toxic Post-Processing (Bloom + Godrays + Chromatic Aberration)",
             };
-            
+
             (effectRegistry as any).effects.set(toxicPostProcessingInstance.id, toxicPostProcessingInstance);
             newEffects.push(toxicPostProcessingInstance);
-            
+
             EffectsLogger.log("Created toxic post-processing effects");
           }
         } catch (error) {
@@ -206,7 +206,6 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
           toxicPostProcessingRef.current = null;
         }
       }
-
 
       setEffects(newEffects);
       activeEffectsRef.current = newEffects;
@@ -356,8 +355,6 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
     }
   };
 
-
-
   const setupLighting = (scene: THREE.Scene, planetData?: any) => {
     if (!planetData) {
       const defaultSunLight = new THREE.DirectionalLight(0xffffff, 2.0);
@@ -442,7 +439,6 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
     planetLayerSystemRef.current = new PlanetLayerSystem(planetMesh, defaultColor);
     planetLayerSystemRef.current.addToScene(scene);
   };
-
 
   const setupControls = (camera: THREE.PerspectiveCamera, domElement: HTMLElement) => {
     const controls = new OrbitControls(camera, domElement);
@@ -724,8 +720,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
 
         activeEffectsRef.current = fallbackEffects;
         setEffects(fallbackEffects);
-      } catch (effectError) {
-      }
+      } catch (effectError) {}
 
       updateStats();
     } catch (error) {
@@ -811,13 +806,11 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
       }
     });
 
-    const toxicPostProcessingEffect = Array.from((effectRegistry as any).effects.values()).find(
-      (effect: any) => effect.type === "toxic_post_processing"
-    );
+    const toxicPostProcessingEffect = Array.from((effectRegistry as any).effects.values()).find((effect: any) => effect.type === "toxic_post_processing");
     const toxicPostProcessingEnabled = (toxicPostProcessingEffect as any)?.enabled || false;
     if (toxicPostProcessingRef.current && toxicPostProcessingEnabled) {
       toxicPostProcessingRef.current.update(deltaTime);
-      
+
       if (sunLightRef.current) {
         toxicPostProcessingRef.current.updateLightPosition(sunLightRef.current.position, cameraRef.current!);
       }
@@ -825,13 +818,13 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
 
     if (rendererRef.current && sceneRef.current && cameraRef.current) {
       const renderStartTime = performance.now();
-      
+
       if (toxicPostProcessingRef.current && toxicPostProcessingEnabled) {
         toxicPostProcessingRef.current.render();
       } else {
         rendererRef.current.render(sceneRef.current, cameraRef.current);
       }
-      
+
       const renderTime = performance.now() - renderStartTime;
 
       if (currentTime - lastFrameTimeRef.current > 5000) {
@@ -1036,16 +1029,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
 export const ExampleModularPlanet: React.FC<{ planetName?: string }> = ({ planetName = "metallic_test_planet" }) => {
   return (
     <div className="w-full h-screen bg-gray-900">
-      <ModularPlanetRenderer
-        planetName={planetName}
-        containerClassName="w-full h-full"
-        autoRotate={true}
-        enableControls={true}
-        showDebugInfo={true}
-        onDataLoaded={(data) => {}}
-        onEffectsCreated={(effects) => {}}
-        onError={(error) => {}}
-      />
+      <ModularPlanetRenderer planetName={planetName} containerClassName="w-full h-full" autoRotate={true} enableControls={true} showDebugInfo={true} onDataLoaded={(data) => {}} onEffectsCreated={(effects) => {}} onError={(error) => {}} />
     </div>
   );
 };

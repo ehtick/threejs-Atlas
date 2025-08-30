@@ -1,3 +1,4 @@
+// atlas-ui/react/static/js/MountPoints/__system__.ts
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import SystemLayout from '../Layouts/__system__.tsx';
@@ -32,13 +33,11 @@ interface SystemProps {
 document.addEventListener('DOMContentLoaded', async () => {
   
   try {
-    // Get data from JSON scripts in HTML
     const systemDataElement = document.getElementById('system-data');
     const galaxyDataElement = document.getElementById('galaxy-data');
     const metaDataElement = document.getElementById('meta-data');
     
     if (!systemDataElement || !galaxyDataElement || !metaDataElement) {
-      console.error('Missing required data elements');
       return;
     }
 
@@ -57,13 +56,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       cosmic_origin_time: metaData.cosmic_origin_time
     };
 
-    // Render React app
     const container = document.getElementById('atlas-react-root');
     if (container) {
       const root = createRoot(container);
       root.render(React.createElement(SystemLayout, props));
     }
   } catch (error) {
-    console.error('Error initializing System React app:', error);
   }
 });

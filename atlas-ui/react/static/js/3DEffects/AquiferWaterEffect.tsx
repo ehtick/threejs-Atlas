@@ -1,10 +1,9 @@
 // atlas-ui/react/static/js/3DEffects/AquiferWaterEffect.tsx
-import * as THREE from 'three';
-import { PlanetLayerSystem } from '../3DComponents/PlanetLayerSystem';
-import { SeededRandom } from '../Utils/SeededRandom.tsx';
+import * as THREE from "three";
+import { PlanetLayerSystem } from "../3DComponents/PlanetLayerSystem";
+import { SeededRandom } from "../Utils/SeededRandom.tsx";
 
 export interface AquiferWaterParams {
-
   waveHeight?: number;
   waveFrequency?: number;
   waveSpeed?: number;
@@ -57,7 +56,7 @@ export class AquiferWaterEffect {
 
     this.startTime = params.startTime || (seed % 10000) / 1000;
 
-    const waterColor = params.waterColor instanceof THREE.Color ? params.waterColor : params.waterColor ? new THREE.Color(params.waterColor as any) : new THREE.Color(0x2E8B8B);
+    const waterColor = params.waterColor instanceof THREE.Color ? params.waterColor : params.waterColor ? new THREE.Color(params.waterColor as any) : new THREE.Color(0x2e8b8b);
     const deepWaterColor = params.deepWaterColor instanceof THREE.Color ? params.deepWaterColor : params.deepWaterColor ? new THREE.Color(params.deepWaterColor as any) : new THREE.Color(0x003366);
     const foamColor = params.foamColor instanceof THREE.Color ? params.foamColor : params.foamColor ? new THREE.Color(params.foamColor as any) : new THREE.Color(0xffffff);
 
@@ -82,21 +81,15 @@ export class AquiferWaterEffect {
       normalSpeed: params.normalSpeed || 0.5,
       seed,
       startTime: this.startTime,
-      timeSpeed: params.timeSpeed || rng.uniform(PROCEDURAL_RANGES.TIME_SPEED.min, PROCEDURAL_RANGES.TIME_SPEED.max)
+      timeSpeed: params.timeSpeed || rng.uniform(PROCEDURAL_RANGES.TIME_SPEED.min, PROCEDURAL_RANGES.TIME_SPEED.max),
     };
 
     this.material = this.layerSystem.createAquiferWaterLayerMaterial(this.params);
 
-    this.layerMesh = this.layerSystem.addEffectLayer(
-      "aquiferWater",
-      this.material,
-      this.layerSystem.getNextScaleFactor(),
-      this
-    );
+    this.layerMesh = this.layerSystem.addEffectLayer("aquiferWater", this.material, this.layerSystem.getNextScaleFactor(), this);
   }
 
   update(deltaTime: number): void {
-
     const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!;
     const currentTime = rawTime % 1000;
 
@@ -105,33 +98,19 @@ export class AquiferWaterEffect {
     }
   }
 
-  dispose(): void {
-
-  }
+  dispose(): void {}
 }
 
 export function createAquiferWaterFromPythonData(layerSystem: PlanetLayerSystem, pythonData: any, globalSeed?: number): AquiferWaterEffect {
   const planetInfo = pythonData.planet_info || {};
-  const baseColor = planetInfo.base_color ? 
-    (typeof planetInfo.base_color === 'string' ? 
-      new THREE.Color(planetInfo.base_color) : 
-      new THREE.Color().fromArray(planetInfo.base_color)) :
-    new THREE.Color(0x4A90E2);
+  const baseColor = planetInfo.base_color ? (typeof planetInfo.base_color === "string" ? new THREE.Color(planetInfo.base_color) : new THREE.Color().fromArray(planetInfo.base_color)) : new THREE.Color(0x4a90e2);
 
   const hsl = { h: 0, s: 0, l: 0 };
   baseColor.getHSL(hsl);
 
-  const waterColor = new THREE.Color().setHSL(
-    hsl.h,
-    Math.min(1, hsl.s * 1.2),
-    Math.min(1, hsl.l * 0.8)
-  );
-  
-  const deepWaterColor = new THREE.Color().setHSL(
-    hsl.h,
-    Math.min(1, hsl.s * 1.3),
-    Math.max(0, hsl.l * 0.4)
-  );
+  const waterColor = new THREE.Color().setHSL(hsl.h, Math.min(1, hsl.s * 1.2), Math.min(1, hsl.l * 0.8));
+
+  const deepWaterColor = new THREE.Color().setHSL(hsl.h, Math.min(1, hsl.s * 1.3), Math.max(0, hsl.l * 0.4));
 
   const seed = globalSeed || 12345;
   const rng = new SeededRandom(seed + 5000);
@@ -147,8 +126,8 @@ export function createAquiferWaterFromPythonData(layerSystem: PlanetLayerSystem,
     metalness: 0.1,
     normalScale: 0.02,
     normalSpeed: 0.6,
-    seed
+    seed,
   };
-  
+
   return new AquiferWaterEffect(layerSystem, params);
 }

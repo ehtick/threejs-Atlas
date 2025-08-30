@@ -1,18 +1,16 @@
+// atlas-ui/react/static/js/MountPoints/__galaxy__.ts
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import GalaxyLayout from '../Layouts/__galaxy__.tsx';
 
 
-// Mount React component when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
   
   const rootElement = document.getElementById('atlas-react-root');
   if (!rootElement) {
-    console.error('Could not find atlas-react-root element');
     return;
   }
 
-  // Helper function to parse JSON data from script tags
   const getDataFromScript = (id: string) => {
     const script = document.getElementById(id);
     if (!script || !script.textContent) return null;
@@ -20,12 +18,10 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       return JSON.parse(script.textContent.trim());
     } catch (error) {
-      console.error(`Error parsing data from script ${id}:`, error);
       return null;
     }
   };
 
-  // Extract props from JSON scripts (HomeDockOS pattern)
   try {
     const galaxyData = getDataFromScript('data-galaxy') || {};
     const systemsData = getDataFromScript('data-systems') || [];
@@ -57,9 +53,6 @@ document.addEventListener('DOMContentLoaded', () => {
     root.render(React.createElement(GalaxyLayout, props));
     
   } catch (error) {
-    console.error('Error parsing galaxy data:', error);
-    
-    // Fallback props
     const fallbackProps = {
       galaxy: {
         name: 'Unknown Galaxy',

@@ -89,13 +89,7 @@ export class TundraSnowflakesEffect {
     this.burstDuration = this.rng.uniform(8, 15);
     this.burstStartOffset = this.rng.uniform(0, this.burstCycleDuration);
 
-    const colors = params.colors || [
-      new THREE.Color(1.0, 1.0, 1.0),
-      new THREE.Color(0.9, 0.9, 0.9),
-      new THREE.Color(0.7, 0.7, 0.7),
-      new THREE.Color(0.5, 0.5, 0.5),
-      new THREE.Color(0.3, 0.3, 0.3),
-    ];
+    const colors = params.colors || [new THREE.Color(1.0, 1.0, 1.0), new THREE.Color(0.9, 0.9, 0.9), new THREE.Color(0.7, 0.7, 0.7), new THREE.Color(0.5, 0.5, 0.5), new THREE.Color(0.3, 0.3, 0.3)];
 
     this.createSnowflakeSystem(this.particleCount, baseSize, opacity, colors);
   }
@@ -104,12 +98,10 @@ export class TundraSnowflakesEffect {
     const vertices: number[] = [];
 
     for (let i = 0; i < particleCount; i++) {
-
       let phi: number, theta: number, distanceFromCenter: number;
       let attempts = 0;
 
       do {
-
         const latOffset = (this.rng.uniform(-1, 1) + this.rng.uniform(-1, 1)) * 0.2;
         const lonOffset = this.rng.uniform(-1, 1) * this.burstZone.radius;
 
@@ -148,7 +140,6 @@ export class TundraSnowflakesEffect {
     }
 
     for (let particleIndex = 0; particleIndex < particleCount; particleIndex++) {
-
       const baseIndex = particleIndex * 3;
       const startX = vertices[baseIndex];
       const startY = vertices[baseIndex + 1];
@@ -190,7 +181,6 @@ export class TundraSnowflakesEffect {
   }
 
   update(_deltaTime: number = 0.016): void {
-
     const cosmicOriginTime = DEFAULT_COSMIC_ORIGIN_TIME;
     const currentTime = getAnimatedUniverseTime(cosmicOriginTime, this.timeSpeed, this.startTime);
 
@@ -199,16 +189,12 @@ export class TundraSnowflakesEffect {
     let burstIntensity = 0;
 
     if (burstTime < this.burstDuration) {
-
       const burstProgress = burstTime / this.burstDuration;
       if (burstProgress < 0.2) {
-
         burstIntensity = burstProgress / 0.2;
       } else if (burstProgress > 0.8) {
-
         burstIntensity = (1 - burstProgress) / 0.2;
       } else {
-
         burstIntensity = 1;
       }
     }
@@ -245,13 +231,10 @@ export class TundraSnowflakesEffect {
 
       let gustIntensity = 0;
       if (gustProgress < 0.3) {
-
         gustIntensity = gustProgress / 0.3;
       } else if (gustProgress < 0.7) {
-
         gustIntensity = 1;
       } else {
-
         gustIntensity = (1 - gustProgress) / 0.3;
       }
 
@@ -264,7 +247,6 @@ export class TundraSnowflakesEffect {
       if (zone.start < zone.end) {
         inZone = normalizedTheta >= zone.start && normalizedTheta <= zone.end;
       } else {
-
         inZone = normalizedTheta >= zone.start || normalizedTheta <= zone.end;
       }
 
@@ -273,7 +255,6 @@ export class TundraSnowflakesEffect {
   }
 
   private calculateTrailPath(t: number, particleIndex: number, rnd: number): { x: number; y: number; z: number } {
-
     t += 10 * rnd + particleIndex * 0.1;
 
     const initialTheta = this.burstZone.lon + (rnd - 0.5) * this.burstZone.radius;
@@ -342,13 +323,7 @@ export function createTundraSnowflakesFromPythonData(planetRadius: number, surfa
 export function createCarbonDustParticlesFromPythonData(planetRadius: number, surfaceData: any, globalSeed?: number): TundraSnowflakesEffect | null {
   const seed = globalSeed || Math.floor(Math.random() * 1000000);
 
-  const carbonDustColors = [
-    new THREE.Color(0.8, 0.7, 0.6),
-    new THREE.Color(0.9, 0.8, 0.7),
-    new THREE.Color(0.6, 0.5, 0.4),
-    new THREE.Color(1.0, 0.9, 0.8),
-    new THREE.Color(0.7, 0.6, 0.5),
-  ];
+  const carbonDustColors = [new THREE.Color(0.8, 0.7, 0.6), new THREE.Color(0.9, 0.8, 0.7), new THREE.Color(0.6, 0.5, 0.4), new THREE.Color(1.0, 0.9, 0.8), new THREE.Color(0.7, 0.6, 0.5)];
 
   const particleCount = 15;
   const windSpeed = 2.5;
@@ -366,13 +341,7 @@ export function createCarbonDustParticlesFromPythonData(planetRadius: number, su
 export function createDesertSandstormsFromPythonData(planetRadius: number, surfaceData: any, globalSeed?: number): TundraSnowflakesEffect | null {
   const seed = globalSeed || Math.floor(Math.random() * 1000000);
 
-  const sandColors = [
-    new THREE.Color(0.9, 0.8, 0.6),
-    new THREE.Color(0.8, 0.7, 0.5),
-    new THREE.Color(0.7, 0.6, 0.4),
-    new THREE.Color(1.0, 0.9, 0.7),
-    new THREE.Color(0.6, 0.5, 0.3),
-  ];
+  const sandColors = [new THREE.Color(0.9, 0.8, 0.6), new THREE.Color(0.8, 0.7, 0.5), new THREE.Color(0.7, 0.6, 0.4), new THREE.Color(1.0, 0.9, 0.7), new THREE.Color(0.6, 0.5, 0.3)];
 
   const particleCount = 12;
   const windSpeed = 3.5;
@@ -390,13 +359,7 @@ export function createDesertSandstormsFromPythonData(planetRadius: number, surfa
 export function createToxicParticlesFromPythonData(planetRadius: number, surfaceData: any, globalSeed?: number): TundraSnowflakesEffect | null {
   const seed = globalSeed || Math.floor(Math.random() * 1000000);
 
-  const toxicColors = [
-    new THREE.Color(0.5, 0.0, 0.8),
-    new THREE.Color(0.7, 0.2, 0.7),
-    new THREE.Color(0.4, 0.0, 0.6),
-    new THREE.Color(0.8, 0.0, 0.8),
-    new THREE.Color(0.3, 0.6, 0.3),
-  ];
+  const toxicColors = [new THREE.Color(0.5, 0.0, 0.8), new THREE.Color(0.7, 0.2, 0.7), new THREE.Color(0.4, 0.0, 0.6), new THREE.Color(0.8, 0.0, 0.8), new THREE.Color(0.3, 0.6, 0.3)];
 
   const particleCount = 18;
   const windSpeed = 2.8;

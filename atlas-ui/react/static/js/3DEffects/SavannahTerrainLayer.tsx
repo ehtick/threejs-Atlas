@@ -218,8 +218,7 @@ export class SavannahTerrainLayer {
     this.layerMesh = this.layerSystem.addEffectLayer("savannahTerrain", this.material, this.layerSystem.getNextScaleFactor(), this);
   }
 
-  update(deltaTime: number): void {
-  }
+  update(deltaTime: number): void {}
 
   updateLightDirection(direction: THREE.Vector3): void {
     if (this.material.uniforms.lightDirection) {
@@ -227,8 +226,7 @@ export class SavannahTerrainLayer {
     }
   }
 
-  dispose(): void {
-  }
+  dispose(): void {}
 }
 
 export function createSavannahTerrainLayerFromPythonData(layerSystem: PlanetLayerSystem, data: any, globalSeed?: number, planetType: "SAVANNAH" | "DEFAULT" = "DEFAULT"): SavannahTerrainLayer {

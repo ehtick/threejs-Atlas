@@ -27,7 +27,7 @@ const PROCEDURAL_RANGES = {
   TURBULENCE: { min: 0.1, max: 0.5 },
   ROTATION_SPEED: { min: 0.01, max: 0.05 },
   MOVEMENT_AMPLITUDE: { min: 0.005, max: 0.05 },
-  TIME_SPEED: { min: 0.1, max: 3.0 }
+  TIME_SPEED: { min: 0.1, max: 3.0 },
 };
 
 export class AtmosphereGlowEffect {
@@ -95,9 +95,9 @@ export class AtmosphereGlowEffect {
   constructor(planetRadius: number, params: AtmosphereGlowParams = {}) {
     const seed = params.seed || Math.floor(Math.random() * 1000000);
     const rng = new SeededRandom(seed);
-    
+
     this.startTime = params.startTime || (seed % 10000) / 1000;
-    
+
     this.params = {
       color: params.color || new THREE.Color(0xffffff),
       particleCount: params.particleCount || Math.floor(rng.uniform(PROCEDURAL_RANGES.PARTICLE_COUNT.min, PROCEDURAL_RANGES.PARTICLE_COUNT.max)),
@@ -180,7 +180,7 @@ export class AtmosphereGlowEffect {
   update(deltaTime: number): void {
     const cosmicOriginTime = DEFAULT_COSMIC_ORIGIN_TIME;
     const currentTime = getAnimatedUniverseTime(cosmicOriginTime, this.params.timeSpeed!, this.startTime);
-    
+
     this.material.uniforms.time.value = currentTime;
 
     this.particleSystem.rotation.y = currentTime * this.params.rotationSpeed!;
@@ -198,7 +198,6 @@ export class AtmosphereGlowEffect {
     return this.particleSystem;
   }
 
-
   dispose(): void {
     this.geometry.dispose();
     this.material.dispose();
@@ -210,7 +209,7 @@ export function createAtmosphereGlowFromPythonData(planetRadius: number, atmosph
 
   const seed = globalSeed || Math.floor(Math.random() * 1000000);
   const rng = new SeededRandom(seed + 3000);
-  
+
   const particleCount = streaksData.count || Math.floor(rng.uniform(PROCEDURAL_RANGES.PARTICLE_COUNT.min, PROCEDURAL_RANGES.PARTICLE_COUNT.max));
   const speed = streaksData.speed || rng.uniform(PROCEDURAL_RANGES.SPEED.min, PROCEDURAL_RANGES.SPEED.max);
   const size = rng.uniform(PROCEDURAL_RANGES.SIZE.min, PROCEDURAL_RANGES.SIZE.max);
@@ -219,7 +218,7 @@ export function createAtmosphereGlowFromPythonData(planetRadius: number, atmosph
   const rotationSpeed = rng.uniform(PROCEDURAL_RANGES.ROTATION_SPEED.min, PROCEDURAL_RANGES.ROTATION_SPEED.max);
   const movementAmplitude = rng.uniform(PROCEDURAL_RANGES.MOVEMENT_AMPLITUDE.min, PROCEDURAL_RANGES.MOVEMENT_AMPLITUDE.max);
   const timeSpeed = rng.uniform(PROCEDURAL_RANGES.TIME_SPEED.min, PROCEDURAL_RANGES.TIME_SPEED.max);
-  
+
   const params: AtmosphereGlowParams = {
     color: streaksData.color ? new THREE.Color().setRGB(streaksData.color[0], streaksData.color[1], streaksData.color[2]) : new THREE.Color(0xffffff),
     particleCount,

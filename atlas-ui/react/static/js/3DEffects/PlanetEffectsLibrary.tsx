@@ -1,6 +1,6 @@
 // atlas-ui/react/static/js/3DEffects/PlanetEffectsLibrary.tsx
 
-import * as THREE from 'three';
+import * as THREE from "three";
 
 export interface EffectParameters {
   intensity?: number;
@@ -43,7 +43,7 @@ export const MetallicPBRShader = {
       gl_Position = projectionMatrix * mvPosition;
     }
   `,
-  
+
   fragmentShader: `
     uniform float time;
     uniform vec3 baseColor;
@@ -155,7 +155,7 @@ export const MetallicPBRShader = {
       
       gl_FragColor = vec4(finalColor, 1.0);
     }
-  `
+  `,
 };
 
 export const AtmosphericHaloShader = {
@@ -170,7 +170,7 @@ export const AtmosphericHaloShader = {
       gl_Position = projectionMatrix * mvPosition;
     }
   `,
-  
+
   fragmentShader: `
     uniform vec3 glowColor;
     uniform float glowIntensity;
@@ -194,7 +194,7 @@ export const AtmosphericHaloShader = {
       
       gl_FragColor = vec4(color, fresnel * 0.8);
     }
-  `
+  `,
 };
 
 export const AtmosphericStreaksShader = {
@@ -223,7 +223,7 @@ export const AtmosphericStreaksShader = {
       gl_Position = projectionMatrix * mvPosition;
     }
   `,
-  
+
   fragmentShader: `
     varying vec3 vColor;
     varying float vAlpha;
@@ -237,13 +237,13 @@ export const AtmosphericStreaksShader = {
       
       gl_FragColor = vec4(vColor, streak * vAlpha * 0.6);
     }
-  `
+  `,
 };
 
 export class MetallicSurfaceEffect {
   private material: THREE.ShaderMaterial;
   private metallicLayerMesh?: THREE.Mesh;
-  
+
   constructor(params: EffectParameters) {
     this.material = new THREE.ShaderMaterial({
       vertexShader: MetallicPBRShader.vertexShader,
@@ -255,31 +255,31 @@ export class MetallicSurfaceEffect {
         metalness: { value: params.metalness || 0.9 },
         fragmentationIntensity: { value: params.fragmentationIntensity || 0.5 },
         noiseScale: { value: params.noiseScale || 8.0 },
-        noiseIntensity: { value: params.noiseIntensity || 0.3 }
-      }
+        noiseIntensity: { value: params.noiseIntensity || 0.3 },
+      },
     });
   }
-  
+
   apply(mesh: THREE.Mesh): void {
     this.createMetallicLayer(mesh);
   }
 
   private createMetallicLayer(baseMesh: THREE.Mesh): void {
     const geometry = baseMesh.geometry.clone();
-    
+
     geometry.scale(1.001, 1.001, 1.001);
-    
+
     const metallicMesh = new THREE.Mesh(geometry, this.material);
-    
+
     metallicMesh.position.copy(baseMesh.position);
     metallicMesh.rotation.copy(baseMesh.rotation);
-    
+
     this.metallicLayerMesh = metallicMesh;
   }
-  
+
   update(deltaTime: number, planetRotation?: number): void {
     this.material.uniforms.time.value += deltaTime;
-    
+
     if (this.metallicLayerMesh && planetRotation !== undefined) {
       this.metallicLayerMesh.rotation.y = planetRotation;
     }
@@ -293,7 +293,7 @@ export class MetallicSurfaceEffect {
       scene.add(this.metallicLayerMesh);
     }
   }
-  
+
   updateParams(params: EffectParameters): void {
     if (params.roughness !== undefined) {
       this.material.uniforms.roughness.value = params.roughness;
@@ -320,14 +320,10 @@ export class MetallicSurfaceEffect {
 export class AtmosphericHaloEffect {
   private mesh: THREE.Mesh;
   private material: THREE.ShaderMaterial;
-  
+
   constructor(planetRadius: number, params: EffectParameters) {
-    const geometry = new THREE.SphereGeometry(
-      planetRadius * (params.scale || 1.15),
-      64,
-      64
-    );
-    
+    const geometry = new THREE.SphereGeometry(planetRadius * (params.scale || 1.15), 64, 64);
+
     this.material = new THREE.ShaderMaterial({
       vertexShader: AtmosphericHaloShader.vertexShader,
       fragmentShader: AtmosphericHaloShader.fragmentShader,
@@ -335,26 +331,26 @@ export class AtmosphericHaloEffect {
         glowColor: { value: new THREE.Color(params.color || [0.5, 0.0, 1.0]) },
         glowIntensity: { value: params.intensity || 1.0 },
         glowFalloff: { value: params.falloff || 2.0 },
-        time: { value: 0 }
+        time: { value: 0 },
       },
       transparent: true,
       blending: THREE.AdditiveBlending,
       side: THREE.BackSide,
-      depthWrite: false
+      depthWrite: false,
     });
-    
+
     this.mesh = new THREE.Mesh(geometry, this.material);
   }
-  
+
   addToScene(scene: THREE.Scene, planetPosition: THREE.Vector3): void {
     this.mesh.position.copy(planetPosition);
     scene.add(this.mesh);
   }
-  
+
   update(deltaTime: number): void {
     this.material.uniforms.time.value += deltaTime;
   }
-  
+
   updateParams(params: EffectParameters): void {
     if (params.color) {
       this.material.uniforms.glowColor.value = new THREE.Color(params.color);
@@ -369,59 +365,59 @@ export class AtmosphericStreaksEffect {
   private particleSystem: THREE.Points;
   private material: THREE.ShaderMaterial;
   private particleCount: number;
-  
+
   constructor(planetRadius: number, params: EffectParameters) {
     this.particleCount = params.particleCount || 100;
-    
+
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(this.particleCount * 3);
     const colors = new Float32Array(this.particleCount * 3);
     const sizes = new Float32Array(this.particleCount);
     const speeds = new Float32Array(this.particleCount);
-    
+
     const color = new THREE.Color(params.color || [1, 1, 1]);
-    
+
     for (let i = 0; i < this.particleCount; i++) {
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.acos(Math.random() * 2 - 1);
       const r = planetRadius * (1.0 + Math.random() * 0.1);
-      
+
       positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
       positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
       positions[i * 3 + 2] = r * Math.cos(phi);
-      
+
       colors[i * 3] = color.r;
       colors[i * 3 + 1] = color.g;
       colors[i * 3 + 2] = color.b;
-      
+
       sizes[i] = Math.random() * 3 + 1;
       speeds[i] = Math.random() * 2 + 0.5;
     }
-    
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute('customColor', new THREE.BufferAttribute(colors, 3));
-    geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
-    geometry.setAttribute('speed', new THREE.BufferAttribute(speeds, 1));
-    
+
+    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute("customColor", new THREE.BufferAttribute(colors, 3));
+    geometry.setAttribute("size", new THREE.BufferAttribute(sizes, 1));
+    geometry.setAttribute("speed", new THREE.BufferAttribute(speeds, 1));
+
     this.material = new THREE.ShaderMaterial({
       vertexShader: AtmosphericStreaksShader.vertexShader,
       fragmentShader: AtmosphericStreaksShader.fragmentShader,
       uniforms: {
-        time: { value: 0 }
+        time: { value: 0 },
       },
       transparent: true,
       blending: THREE.AdditiveBlending,
-      depthWrite: false
+      depthWrite: false,
     });
-    
+
     this.particleSystem = new THREE.Points(geometry, this.material);
   }
-  
+
   addToScene(scene: THREE.Scene, planetPosition: THREE.Vector3): void {
     this.particleSystem.position.copy(planetPosition);
     scene.add(this.particleSystem);
   }
-  
+
   update(deltaTime: number): void {
     this.material.uniforms.time.value += deltaTime;
     this.particleSystem.rotation.y += deltaTime * 0.1;
@@ -431,76 +427,64 @@ export class AtmosphericStreaksEffect {
 export class FragmentationEffect {
   private fragments: THREE.Group;
   private fragmentMeshes: THREE.Mesh[] = [];
-  
+
   constructor(planetRadius: number, params: EffectParameters) {
     this.fragments = new THREE.Group();
-    
+
     const fragmentCount = params.fragmentCount || 20;
     const material = new THREE.MeshStandardMaterial({
       color: params.color || 0x444444,
       metalness: 0.9,
-      roughness: 0.6
+      roughness: 0.6,
     });
-    
+
     for (let i = 0; i < fragmentCount; i++) {
       const vertices = this.generateFragmentVertices();
       const geometry = new THREE.BufferGeometry();
-      geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+      geometry.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
       geometry.computeVertexNormals();
-      
+
       const fragment = new THREE.Mesh(geometry, material);
-      
+
       const angle = (i / fragmentCount) * Math.PI * 2;
       const edgeOffset = planetRadius * 0.95;
-      fragment.position.set(
-        Math.cos(angle) * edgeOffset,
-        (Math.random() - 0.5) * planetRadius * 0.5,
-        Math.sin(angle) * edgeOffset
-      );
-      
-      fragment.rotation.set(
-        Math.random() * Math.PI,
-        Math.random() * Math.PI,
-        Math.random() * Math.PI
-      );
-      
+      fragment.position.set(Math.cos(angle) * edgeOffset, (Math.random() - 0.5) * planetRadius * 0.5, Math.sin(angle) * edgeOffset);
+
+      fragment.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+
       const scale = Math.random() * 0.1 + 0.05;
       fragment.scale.set(scale, scale, scale);
-      
+
       this.fragmentMeshes.push(fragment);
       this.fragments.add(fragment);
     }
   }
-  
+
   private generateFragmentVertices(): Float32Array {
     const sides = Math.floor(Math.random() * 3) + 3;
     const vertices = [];
-    
+
     vertices.push(0, 0, 0);
-    
+
     for (let i = 0; i < sides; i++) {
       const angle = (i / sides) * Math.PI * 2;
       const radius = Math.random() * 0.5 + 0.5;
-      vertices.push(
-        Math.cos(angle) * radius,
-        Math.sin(angle) * radius,
-        Math.random() * 0.2 - 0.1
-      );
+      vertices.push(Math.cos(angle) * radius, Math.sin(angle) * radius, Math.random() * 0.2 - 0.1);
     }
-    
+
     const faces = [];
     for (let i = 0; i < sides; i++) {
       faces.push(0, i + 1, ((i + 1) % sides) + 1);
     }
-    
-    return new Float32Array(faces.flatMap(i => vertices.slice(i * 3, i * 3 + 3)));
+
+    return new Float32Array(faces.flatMap((i) => vertices.slice(i * 3, i * 3 + 3)));
   }
-  
+
   addToScene(scene: THREE.Scene, planetPosition: THREE.Vector3): void {
     this.fragments.position.copy(planetPosition);
     scene.add(this.fragments);
   }
-  
+
   update(deltaTime: number): void {
     this.fragmentMeshes.forEach((fragment, i) => {
       fragment.rotation.x += deltaTime * 0.1 * (i % 2 === 0 ? 1 : -1);
@@ -514,61 +498,61 @@ export class PlanetEffectsManager {
   private scene: THREE.Scene;
   private planetMesh: THREE.Mesh;
   private planetRadius: number;
-  
+
   constructor(scene: THREE.Scene, planetMesh: THREE.Mesh, planetRadius: number) {
     this.scene = scene;
     this.planetMesh = planetMesh;
     this.planetRadius = planetRadius;
   }
-  
+
   applyEffectsFromData(effectsData: PlanetEffect[]): void {
     const sortedEffects = effectsData.sort((a, b) => (a.priority || 0) - (b.priority || 0));
-    
+
     for (const effectData of sortedEffects) {
       this.addEffect(effectData.type, effectData.params);
     }
   }
-  
+
   addEffect(type: string, params: EffectParameters): void {
     let effect;
-    
+
     switch (type) {
-      case 'atmospheric_halo':
+      case "atmospheric_halo":
         effect = new AtmosphericHaloEffect(this.planetRadius, params);
         effect.addToScene(this.scene, this.planetMesh.position);
         break;
-        
-      case 'atmospheric_streaks':
+
+      case "atmospheric_streaks":
         effect = new AtmosphericStreaksEffect(this.planetRadius, params);
         effect.addToScene(this.scene, this.planetMesh.position);
         break;
-        
-      case 'fragmentation':
+
+      case "fragmentation":
         effect = new FragmentationEffect(this.planetRadius, params);
         effect.addToScene(this.scene, this.planetMesh.position);
         break;
     }
-    
+
     if (effect) {
       this.effects.set(type, effect);
     }
   }
-  
+
   update(deltaTime: number): void {
-    this.effects.forEach(effect => {
+    this.effects.forEach((effect) => {
       if (effect.update) {
         effect.update(deltaTime);
       }
     });
   }
-  
+
   updateEffectParams(type: string, params: EffectParameters): void {
     const effect = this.effects.get(type);
     if (effect && effect.updateParams) {
       effect.updateParams(params);
     }
   }
-  
+
   removeEffect(type: string): void {
     const effect = this.effects.get(type);
     if (effect) {
@@ -578,9 +562,9 @@ export class PlanetEffectsManager {
       this.effects.delete(type);
     }
   }
-  
+
   dispose(): void {
-    this.effects.forEach(effect => {
+    this.effects.forEach((effect) => {
       if (effect.dispose) {
         effect.dispose();
       }
@@ -591,42 +575,42 @@ export class PlanetEffectsManager {
 
 export function translatePythonEffectsToThreeJS(pythonData: any): PlanetEffect[] {
   const effects: PlanetEffect[] = [];
-  
+
   if (pythonData.atmosphere?.halo) {
     effects.push({
-      type: 'atmospheric_halo',
+      type: "atmospheric_halo",
       params: {
         color: pythonData.atmosphere.halo.color || [0.5, 0.0, 1.0],
         intensity: pythonData.atmosphere.halo.intensity || 1.0,
         falloff: pythonData.atmosphere.halo.falloff || 2.0,
-        scale: pythonData.atmosphere.halo.scale || 1.15
+        scale: pythonData.atmosphere.halo.scale || 1.15,
       },
-      priority: 10
+      priority: 10,
     });
   }
-  
+
   if (pythonData.atmosphere?.streaks) {
     effects.push({
-      type: 'atmospheric_streaks',
+      type: "atmospheric_streaks",
       params: {
         color: pythonData.atmosphere.streaks.color || [1, 1, 1],
         particleCount: pythonData.atmosphere.streaks.count || 100,
-        speed: pythonData.atmosphere.streaks.speed || 1.0
+        speed: pythonData.atmosphere.streaks.speed || 1.0,
       },
-      priority: 20
+      priority: 20,
     });
   }
-  
+
   if (pythonData.surface?.fragmentation_zones) {
     effects.push({
-      type: 'fragmentation',
+      type: "fragmentation",
       params: {
         color: pythonData.surface.fragment_color || [0.3, 0.3, 0.3],
-        fragmentCount: pythonData.surface.fragment_count || 20
+        fragmentCount: pythonData.surface.fragment_count || 20,
       },
-      priority: 5
+      priority: 5,
     });
   }
-  
+
   return effects;
 }

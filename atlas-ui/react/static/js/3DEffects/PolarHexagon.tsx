@@ -189,11 +189,9 @@ export class PolarHexagonEffect {
     }
 
     const currentTime = this.params.currentTime || 0;
-    const cycleProgress = (currentTime % this.params.hexagonData.cycle_duration_years) / 
-                         this.params.hexagonData.cycle_duration_years;
-    const visibleFraction = this.params.hexagonData.visible_duration_years / 
-                           this.params.hexagonData.cycle_duration_years;
-    
+    const cycleProgress = (currentTime % this.params.hexagonData.cycle_duration_years) / this.params.hexagonData.cycle_duration_years;
+    const visibleFraction = this.params.hexagonData.visible_duration_years / this.params.hexagonData.cycle_duration_years;
+
     if (cycleProgress < visibleFraction) {
       const localProgress = cycleProgress / visibleFraction;
       if (localProgress < 0.1) {

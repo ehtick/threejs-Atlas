@@ -1,6 +1,6 @@
 // atlas-ui/react/static/js/3DEffects/FluidLayers.tsx
 
-import * as THREE from 'three';
+import * as THREE from "three";
 
 export interface FluidLayersParams {
   radius?: number;
@@ -260,18 +260,14 @@ export class FluidLayersEffect {
       radius: params.radius || planetRadius * 0.999,
       detail: params.detail || 128,
       flowSpeed: params.flowSpeed || 0.5,
-      waveAmplitude: params.waveAmplitude || 0.020,
+      waveAmplitude: params.waveAmplitude || 0.02,
       opacity: params.opacity || 0.75,
       colorDeep: params.colorDeep || new THREE.Color(0x001033),
       colorShallow: params.colorShallow || new THREE.Color(0x0066dd),
-      ...params
+      ...params,
     };
 
-    const geometry = new THREE.SphereGeometry(
-      this.params.radius!,
-      this.params.detail!,
-      this.params.detail!
-    );
+    const geometry = new THREE.SphereGeometry(this.params.radius!, this.params.detail!, this.params.detail!);
 
     this.material = new THREE.ShaderMaterial({
       vertexShader: FluidLayersEffect.vertexShader,
@@ -282,22 +278,20 @@ export class FluidLayersEffect {
         uWaveAmplitude: { value: this.params.waveAmplitude },
         uFresnelPower: { value: 1.5 },
         uOpacity: { value: this.params.opacity },
-        uColorDeep: { value: this.params.colorDeep instanceof THREE.Color ? 
-          this.params.colorDeep : new THREE.Color(this.params.colorDeep as any) },
-        uColorShallow: { value: this.params.colorShallow instanceof THREE.Color ? 
-          this.params.colorShallow : new THREE.Color(this.params.colorShallow as any) },
+        uColorDeep: { value: this.params.colorDeep instanceof THREE.Color ? this.params.colorDeep : new THREE.Color(this.params.colorDeep as any) },
+        uColorShallow: { value: this.params.colorShallow instanceof THREE.Color ? this.params.colorShallow : new THREE.Color(this.params.colorShallow as any) },
         uNoiseScale: { value: 3.0 },
         uSecondaryWaveScale: { value: 6.0 },
         uPrimaryFlowSpeed: { value: this.params.flowSpeed || 0.5 },
         uSecondaryFlowSpeed: { value: (this.params.flowSpeed || 0.5) * 1.6 },
         uUvPatternSpeed1: { value: (this.params.flowSpeed || 0.5) * 4.0 },
-        uUvPatternSpeed2: { value: (this.params.flowSpeed || 0.5) * 3.0 }
+        uUvPatternSpeed2: { value: (this.params.flowSpeed || 0.5) * 3.0 },
       },
       transparent: true,
       depthWrite: false,
       depthTest: true,
       side: THREE.FrontSide,
-      blending: THREE.NormalBlending
+      blending: THREE.NormalBlending,
     });
 
     this.mesh = new THREE.Mesh(geometry, this.material);
@@ -313,7 +307,7 @@ export class FluidLayersEffect {
 
   update(deltaTime: number, planetRotation?: number): void {
     this.material.uniforms.uTime.value += deltaTime;
-    
+
     if (planetRotation !== undefined) {
       this.mesh.rotation.y = planetRotation;
     }
@@ -321,7 +315,7 @@ export class FluidLayersEffect {
 
   updateParams(newParams: Partial<FluidLayersParams>): void {
     this.params = { ...this.params, ...newParams };
-    
+
     if (newParams.flowSpeed !== undefined) {
       this.material.uniforms.uFlowSpeed.value = newParams.flowSpeed;
       this.material.uniforms.uPrimaryFlowSpeed.value = newParams.flowSpeed;
@@ -336,13 +330,11 @@ export class FluidLayersEffect {
       this.material.uniforms.uOpacity.value = newParams.opacity;
     }
     if (newParams.colorDeep) {
-      const color = newParams.colorDeep instanceof THREE.Color ? 
-        newParams.colorDeep : new THREE.Color(newParams.colorDeep as any);
+      const color = newParams.colorDeep instanceof THREE.Color ? newParams.colorDeep : new THREE.Color(newParams.colorDeep as any);
       this.material.uniforms.uColorDeep.value = color;
     }
     if (newParams.colorShallow) {
-      const color = newParams.colorShallow instanceof THREE.Color ? 
-        newParams.colorShallow : new THREE.Color(newParams.colorShallow as any);
+      const color = newParams.colorShallow instanceof THREE.Color ? newParams.colorShallow : new THREE.Color(newParams.colorShallow as any);
       this.material.uniforms.uColorShallow.value = color;
     }
   }
@@ -365,7 +357,7 @@ export function createFluidLayersFromPythonData(planetRadius: number, pythonData
   let flowSpeed = 0.5;
   let waveAmplitude = 0.025;
   let opacity = 0.75;
-  
+
   if (pythonData.seeds) {
     const seed = pythonData.seeds.shape_seed || pythonData.seeds.planet_seed;
     const rng = (seed: number) => {
@@ -375,13 +367,13 @@ export function createFluidLayersFromPythonData(planetRadius: number, pythonData
         return s / 4294967296;
       };
     };
-    
+
     const random = rng(seed);
     flowSpeed = 0.05 + random() * 0.3;
     waveAmplitude = 0.02 + random() * 0.02;
     opacity = 0.25 + random() * 0.6;
   }
-  
+
   const params: FluidLayersParams = {
     radius: planetRadius * 0.999,
     detail: 128,
@@ -389,9 +381,9 @@ export function createFluidLayersFromPythonData(planetRadius: number, pythonData
     waveAmplitude: waveAmplitude * 0.4,
     opacity,
     colorDeep: new THREE.Color(0x001033),
-    colorShallow: new THREE.Color(0x0066dd)
+    colorShallow: new THREE.Color(0x0066dd),
   };
-  
+
   return new FluidLayersEffect(planetRadius, params);
 }
 

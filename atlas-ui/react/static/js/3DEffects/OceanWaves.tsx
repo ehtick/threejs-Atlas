@@ -1,23 +1,23 @@
 // atlas-ui/react/static/js/3DEffects/OceanWaves.tsx
 
-import * as THREE from 'three';
-import { getPlanetBaseColor } from './PlanetColorBase';
+import * as THREE from "three";
+import { getPlanetBaseColor } from "./PlanetColorBase";
 
 export interface OceanWavesParams {
   waveIntensity?: number;
   waveSpeed?: number;
   waveScale?: number;
-  
+
   landmassThreshold?: number;
   landmassColor?: THREE.Color | number[];
-  
+
   deepOceanThreshold?: number;
   deepOceanMultiplier?: number;
-  
+
   foamThreshold?: number;
   foamColor?: THREE.Color | number[];
   foamIntensity?: number;
-  
+
   oceanColor?: THREE.Color | number[];
 }
 
@@ -162,19 +162,16 @@ export class OceanWavesEffect {
       foamColor: params.foamColor || new THREE.Color(0.9, 0.9, 1.0),
       foamIntensity: params.foamIntensity || 0.4,
       oceanColor: params.oceanColor || new THREE.Color(0.1, 0.3, 0.6),
-      ...params
+      ...params,
     };
 
     this.material = this.createMaterial();
   }
 
   private createMaterial(): THREE.ShaderMaterial {
-    const landmassColor = this.params.landmassColor instanceof THREE.Color ? 
-      this.params.landmassColor : new THREE.Color(this.params.landmassColor as any);
-    const foamColor = this.params.foamColor instanceof THREE.Color ? 
-      this.params.foamColor : new THREE.Color(this.params.foamColor as any);
-    const oceanColor = this.params.oceanColor instanceof THREE.Color ? 
-      this.params.oceanColor : new THREE.Color(this.params.oceanColor as any);
+    const landmassColor = this.params.landmassColor instanceof THREE.Color ? this.params.landmassColor : new THREE.Color(this.params.landmassColor as any);
+    const foamColor = this.params.foamColor instanceof THREE.Color ? this.params.foamColor : new THREE.Color(this.params.foamColor as any);
+    const oceanColor = this.params.oceanColor instanceof THREE.Color ? this.params.oceanColor : new THREE.Color(this.params.oceanColor as any);
 
     return new THREE.ShaderMaterial({
       vertexShader: OceanWavesEffect.vertexShader,
@@ -182,23 +179,23 @@ export class OceanWavesEffect {
       uniforms: {
         time: { value: 0 },
         baseColor: { value: oceanColor },
-        
+
         waveIntensity: { value: this.params.waveIntensity },
         waveSpeed: { value: this.params.waveSpeed },
         waveScale: { value: this.params.waveScale },
-        
+
         landmassThreshold: { value: this.params.landmassThreshold },
         landmassColor: { value: landmassColor },
-        
+
         deepOceanThreshold: { value: this.params.deepOceanThreshold },
         deepOceanMultiplier: { value: this.params.deepOceanMultiplier },
-        
+
         foamThreshold: { value: this.params.foamThreshold },
         foamColor: { value: foamColor },
         foamIntensity: { value: this.params.foamIntensity },
-        
-        oceanColor: { value: oceanColor }
-      }
+
+        oceanColor: { value: oceanColor },
+      },
     });
   }
 
@@ -208,20 +205,20 @@ export class OceanWavesEffect {
 
   private createOceanLayer(baseMesh: THREE.Mesh): void {
     const geometry = baseMesh.geometry.clone();
-    
+
     geometry.scale(1.002, 1.002, 1.002);
-    
+
     const oceanMesh = new THREE.Mesh(geometry, this.material);
-    
+
     oceanMesh.position.copy(baseMesh.position);
     oceanMesh.rotation.copy(baseMesh.rotation);
-    
+
     this.oceanLayerMesh = oceanMesh;
   }
 
   update(deltaTime: number, planetRotation?: number): void {
     this.material.uniforms.time.value += deltaTime;
-    
+
     if (this.oceanLayerMesh && planetRotation !== undefined) {
       this.oceanLayerMesh.rotation.y = planetRotation;
     }
@@ -229,8 +226,8 @@ export class OceanWavesEffect {
 
   updateParams(newParams: Partial<OceanWavesParams>): void {
     this.params = { ...this.params, ...newParams };
-    
-    Object.keys(newParams).forEach(key => {
+
+    Object.keys(newParams).forEach((key) => {
       const value = newParams[key as keyof OceanWavesParams];
       if (value !== undefined && this.material.uniforms[key]) {
         if (value instanceof THREE.Color || Array.isArray(value)) {
@@ -270,13 +267,13 @@ export class OceanWavesEffect {
 export function createOceanWavesFromPythonData(pythonData: any): OceanWavesEffect {
   const baseColor = getPlanetBaseColor(pythonData);
   const oceanColor = [baseColor.r, baseColor.g, baseColor.b];
-  
+
   let waveIntensity = 0.3;
   let waveSpeed = 2.0;
   let waveScale = 8.0;
   let landmassThreshold = 0.3;
   let deepOceanThreshold = 0.2;
-  
+
   if (pythonData.seeds) {
     const seed = pythonData.seeds.shape_seed;
     const rng = (seed: number) => {
@@ -286,7 +283,7 @@ export function createOceanWavesFromPythonData(pythonData: any): OceanWavesEffec
         return s / 4294967296;
       };
     };
-    
+
     const random = rng(seed);
     waveIntensity = 0.2 + random() * 0.3;
     waveSpeed = 1.5 + random() * 1.5;
@@ -294,7 +291,7 @@ export function createOceanWavesFromPythonData(pythonData: any): OceanWavesEffec
     landmassThreshold = 0.25 + random() * 0.15;
     deepOceanThreshold = 0.15 + random() * 0.1;
   }
-  
+
   const params: OceanWavesParams = {
     waveIntensity,
     waveSpeed,
@@ -305,7 +302,7 @@ export function createOceanWavesFromPythonData(pythonData: any): OceanWavesEffec
     foamThreshold: 0.8,
     foamColor: new THREE.Color(0.9, 0.9, 1.0),
     foamIntensity: 0.4,
-    oceanColor: oceanColor
+    oceanColor: oceanColor,
   };
 
   return new OceanWavesEffect(params);

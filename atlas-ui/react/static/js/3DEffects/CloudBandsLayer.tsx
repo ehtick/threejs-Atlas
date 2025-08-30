@@ -116,9 +116,7 @@ export class CloudBandsLayer {
     }
   }
 
-  dispose(): void {
-
-  }
+  dispose(): void {}
 }
 
 export function createCloudBandsLayerFromPythonData(layerSystem: PlanetLayerSystem, gasGiantData: any, globalSeed?: number): CloudBandsLayer {

@@ -1,3 +1,4 @@
+// atlas-ui/react/static/js/MountPoints/__planet__.ts
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import PlanetLayout from '../Layouts/__planet__.tsx';
@@ -20,7 +21,7 @@ interface PlanetProps {
     rotation_period_seconds: number;
     surface_temperature: number;
     elements: string[];
-    index?: number; // Planet index within the system
+    index?: number;
   };
   system: {
     name: string;
@@ -40,14 +41,12 @@ interface PlanetProps {
 document.addEventListener('DOMContentLoaded', async () => {
   
   try {
-    // Get data from JSON scripts in HTML
     const planetDataElement = document.getElementById('planet-data');
     const systemDataElement = document.getElementById('system-data');
     const galaxyDataElement = document.getElementById('galaxy-data');
     const metaDataElement = document.getElementById('meta-data');
     
     if (!planetDataElement || !systemDataElement || !galaxyDataElement || !metaDataElement) {
-      console.error('Missing required data elements');
       return;
     }
 
@@ -67,13 +66,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       initial_angle_rotation: metaData.initial_angle_rotation
     };
 
-    // Render React app
     const container = document.getElementById('atlas-react-root');
     if (container) {
       const root = createRoot(container);
       root.render(React.createElement(PlanetLayout, props));
     }
   } catch (error) {
-    console.error('Error initializing Planet React app:', error);
   }
 });

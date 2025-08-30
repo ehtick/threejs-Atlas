@@ -196,13 +196,9 @@ export class RockyTerrainLayer {
     this.layerMesh = this.layerSystem.addEffectLayer("rockyTerrain", this.material, this.layerSystem.getNextScaleFactor());
   }
 
-  update(deltaTime: number): void {
+  update(deltaTime: number): void {}
 
-  }
-
-  dispose(): void {
-
-  }
+  dispose(): void {}
 }
 
 export function createRockyTerrainLayerFromPythonData(layerSystem: PlanetLayerSystem, data: any, globalSeed?: number, planetType: "ROCKY" | "CAVE" | "DEFAULT" = "DEFAULT"): RockyTerrainLayer {

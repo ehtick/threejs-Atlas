@@ -1,6 +1,6 @@
 // atlas-ui/react/static/js/3DEffects/ExoticGeometricShapes.tsx
-import * as THREE from 'three';
-import { SeededRandom } from '../Utils/SeededRandom.tsx';
+import * as THREE from "three";
+import { SeededRandom } from "../Utils/SeededRandom.tsx";
 
 export interface ExoticGeometricShapesParams {
   shapes?: Array<{
@@ -32,15 +32,11 @@ export class ExoticGeometricShapesEffect {
     }
   }
 
-  private createShapes(shapesData: ExoticGeometricShapesParams['shapes']) {
+  private createShapes(shapesData: ExoticGeometricShapesParams["shapes"]) {
     if (!shapesData) return;
 
     shapesData.forEach((shapeData) => {
-
-      const geometry = new THREE.CircleGeometry(
-        shapeData.size * this.planetRadius,
-        shapeData.sides
-      );
+      const geometry = new THREE.CircleGeometry(shapeData.size * this.planetRadius, shapeData.sides);
 
       const darkerFactor = 0.7;
       const shapeColor = this.planetColor.clone();
@@ -53,17 +49,13 @@ export class ExoticGeometricShapesEffect {
         emissive: shapeColor.clone().multiplyScalar(0.3),
         emissiveIntensity: 0.3,
         shininess: 60,
-        side: THREE.DoubleSide
+        side: THREE.DoubleSide,
       });
 
       const mesh = new THREE.Mesh(geometry, material);
 
       const distance = this.planetRadius * 1.005;
-      mesh.position.set(
-        shapeData.position_3d[0] * distance,
-        shapeData.position_3d[1] * distance,
-        shapeData.position_3d[2] * distance
-      );
+      mesh.position.set(shapeData.position_3d[0] * distance, shapeData.position_3d[1] * distance, shapeData.position_3d[2] * distance);
 
       mesh.lookAt(0, 0, 0);
 
@@ -76,7 +68,6 @@ export class ExoticGeometricShapesEffect {
   }
 
   update(deltaTime: number): void {
-
     this.shapes.forEach((shape, index) => {
       shape.rotateZ(this.rotationSpeeds[index] * deltaTime);
     });
@@ -96,7 +87,7 @@ export class ExoticGeometricShapesEffect {
   }
 
   dispose(): void {
-    this.shapes.forEach(shape => {
+    this.shapes.forEach((shape) => {
       shape.geometry.dispose();
       if (shape.material instanceof THREE.Material) {
         shape.material.dispose();
@@ -106,13 +97,7 @@ export class ExoticGeometricShapesEffect {
   }
 }
 
-export function createExoticGeometricShapesFromPythonData(
-  planetRadius: number,
-  surfaceElements: any,
-  seed?: number,
-  planetColor?: THREE.Color
-): ExoticGeometricShapesEffect | null {
-
+export function createExoticGeometricShapesFromPythonData(planetRadius: number, surfaceElements: any, seed?: number, planetColor?: THREE.Color): ExoticGeometricShapesEffect | null {
   if (!surfaceElements.small_geometric_shapes || surfaceElements.small_geometric_shapes.length === 0) {
     return null;
   }
@@ -120,6 +105,6 @@ export function createExoticGeometricShapesFromPythonData(
   return new ExoticGeometricShapesEffect(planetRadius, {
     shapes: surfaceElements.small_geometric_shapes,
     planetRadius: planetRadius,
-    planetColor: planetColor
+    planetColor: planetColor,
   });
 }

@@ -301,9 +301,7 @@ export class CarbonTrailsEffect {
     this.trailGroup.add(this.particleSystem);
   }
 
-  private initializeActiveTrails(): void {
-  }
-
+  private initializeActiveTrails(): void {}
 
   private calculateOrbitalVisibility(): number {
     if (!this.params.orbitalData || !this.params.orbitalData.enabled) {
@@ -331,7 +329,6 @@ export class CarbonTrailsEffect {
         visibility = 1.0;
       }
     }
-
 
     return visibility;
   }

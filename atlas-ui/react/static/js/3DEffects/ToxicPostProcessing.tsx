@@ -51,7 +51,7 @@ const PROCEDURAL_RANGES = {
   pulseAmplitude: {
     min: 0.02,
     max: 0.1,
-  }
+  },
 } as const;
 
 const ToxicChromaticAberrationShader = {
@@ -106,7 +106,7 @@ const ToxicChromaticAberrationShader = {
       
       gl_FragColor = vec4(color, 1.0);
     }
-  `
+  `,
 };
 
 const ToxicGodrayShader = {
@@ -171,7 +171,7 @@ const ToxicGodrayShader = {
       
       gl_FragColor = vec4(color.rgb + godrayColor, color.a);
     }
-  `
+  `,
 };
 
 export class ToxicPostProcessingEffect {
@@ -197,18 +197,12 @@ export class ToxicPostProcessingEffect {
   };
   private toxicTint: THREE.Color;
 
-  constructor(
-    scene: THREE.Scene, 
-    camera: THREE.Camera, 
-    renderer: THREE.WebGLRenderer,
-    planetRadius: number, 
-    params: ToxicPostProcessingParams = {}
-  ) {
+  constructor(scene: THREE.Scene, camera: THREE.Camera, renderer: THREE.WebGLRenderer, planetRadius: number, params: ToxicPostProcessingParams = {}) {
     this.planetRadius = planetRadius;
-    
+
     const seed = params.seed || Math.floor(Math.random() * 1000000);
     this.rng = new SeededRandom(seed);
-    
+
     this.startTime = this.rng.uniform(0, 1000);
 
     this.proceduralParams = {
@@ -235,13 +229,8 @@ export class ToxicPostProcessingEffect {
     const bloomStrength = params.bloomStrength || this.proceduralParams.bloomStrength;
     const bloomRadius = params.bloomRadius || this.proceduralParams.bloomRadius;
     const bloomThreshold = params.bloomThreshold || this.proceduralParams.bloomThreshold;
-    
-    this.bloomPass = new UnrealBloomPass(
-      new THREE.Vector2(window.innerWidth, window.innerHeight),
-      bloomStrength,
-      bloomRadius,
-      bloomThreshold
-    );
+
+    this.bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), bloomStrength, bloomRadius, bloomThreshold);
     this.composer.addPass(this.bloomPass);
 
     this.godrayPass = new ShaderPass(ToxicGodrayShader);
@@ -268,17 +257,14 @@ export class ToxicPostProcessingEffect {
     const pulseCycle = Math.sin(currentTime * 0.7) * this.proceduralParams.pulseAmplitude + 1.0;
 
     this.bloomPass.strength = this.proceduralParams.bloomStrength * breathingCycle;
-    
+
     this.chromaticAberrationPass.uniforms.uIntensity.value = this.proceduralParams.chromaticAberrationIntensity * pulseCycle;
   }
 
   updateLightPosition(lightPosition: THREE.Vector3, camera: THREE.Camera): void {
     const screenPosition = lightPosition.clone().project(camera);
-    
-    const uv = new THREE.Vector2(
-      (screenPosition.x + 1) / 2,
-      (screenPosition.y + 1) / 2
-    );
+
+    const uv = new THREE.Vector2((screenPosition.x + 1) / 2, (screenPosition.y + 1) / 2);
 
     this.godrayPass.uniforms.uLightPosition.value = uv;
   }
@@ -299,51 +285,29 @@ export class ToxicPostProcessingEffect {
   }
 }
 
-export function createToxicPostProcessingFromPythonData(
-  scene: THREE.Scene,
-  camera: THREE.Camera,
-  renderer: THREE.WebGLRenderer,
-  planetRadius: number,
-  surfaceData: any,
-  globalSeed?: number
-): ToxicPostProcessingEffect | null {
+export function createToxicPostProcessingFromPythonData(scene: THREE.Scene, camera: THREE.Camera, renderer: THREE.WebGLRenderer, planetRadius: number, surfaceData: any, globalSeed?: number): ToxicPostProcessingEffect | null {
   if (!surfaceData || !surfaceData.planet_type || surfaceData.planet_type !== "toxic") {
     return null;
   }
 
   const seed = globalSeed || Math.floor(Math.random() * 1000000);
   const rng = new SeededRandom(seed + 20000);
-  
+
   const toxicIntensity = surfaceData.toxic_intensity || rng.uniform(0.4, 1.0);
   const atmosphereThickness = surfaceData.atmosphere_thickness || rng.uniform(0.3, 0.8);
 
-  const intensityMultiplier = 0.7 + (toxicIntensity * 0.6);
-  const atmosphereMultiplier = 0.8 + (atmosphereThickness * 0.4);
+  const intensityMultiplier = 0.7 + toxicIntensity * 0.6;
+  const atmosphereMultiplier = 0.8 + atmosphereThickness * 0.4;
 
-  const bloomStrength = rng.uniform(
-    PROCEDURAL_RANGES.bloomStrength.min * intensityMultiplier,
-    PROCEDURAL_RANGES.bloomStrength.max * intensityMultiplier
-  );
+  const bloomStrength = rng.uniform(PROCEDURAL_RANGES.bloomStrength.min * intensityMultiplier, PROCEDURAL_RANGES.bloomStrength.max * intensityMultiplier);
 
-  const bloomRadius = rng.uniform(
-    PROCEDURAL_RANGES.bloomRadius.min,
-    PROCEDURAL_RANGES.bloomRadius.max
-  );
+  const bloomRadius = rng.uniform(PROCEDURAL_RANGES.bloomRadius.min, PROCEDURAL_RANGES.bloomRadius.max);
 
-  const bloomThreshold = rng.uniform(
-    PROCEDURAL_RANGES.bloomThreshold.min,
-    PROCEDURAL_RANGES.bloomThreshold.max
-  );
+  const bloomThreshold = rng.uniform(PROCEDURAL_RANGES.bloomThreshold.min, PROCEDURAL_RANGES.bloomThreshold.max);
 
-  const chromaticIntensity = rng.uniform(
-    PROCEDURAL_RANGES.chromaticAberrationIntensity.min * intensityMultiplier,
-    PROCEDURAL_RANGES.chromaticAberrationIntensity.max * intensityMultiplier
-  );
+  const chromaticIntensity = rng.uniform(PROCEDURAL_RANGES.chromaticAberrationIntensity.min * intensityMultiplier, PROCEDURAL_RANGES.chromaticAberrationIntensity.max * intensityMultiplier);
 
-  const godrayIntensity = rng.uniform(
-    PROCEDURAL_RANGES.godrayIntensity.min * atmosphereMultiplier,
-    PROCEDURAL_RANGES.godrayIntensity.max * atmosphereMultiplier
-  );
+  const godrayIntensity = rng.uniform(PROCEDURAL_RANGES.godrayIntensity.min * atmosphereMultiplier, PROCEDURAL_RANGES.godrayIntensity.max * atmosphereMultiplier);
 
   return new ToxicPostProcessingEffect(scene, camera, renderer, planetRadius, {
     bloomStrength,

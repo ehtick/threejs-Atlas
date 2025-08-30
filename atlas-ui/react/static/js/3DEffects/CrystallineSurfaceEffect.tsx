@@ -39,12 +39,7 @@ export class CrystallineSurfaceEffect {
   private starFieldMaterial: THREE.ShaderMaterial | null = null;
   private crystallineData: any[] = [];
 
-  constructor(
-    private planetRadius: number,
-    private params: CrystallineSurfaceParams = {},
-    private seededRng?: SeededRandom,
-    private starField?: any
-  ) {
+  constructor(private planetRadius: number, private params: CrystallineSurfaceParams = {}, private seededRng?: SeededRandom, private starField?: any) {
     this.crystallineGroup = new THREE.Group();
     this.crystallineGroup.name = "CrystallineSurface";
 
@@ -59,7 +54,6 @@ export class CrystallineSurfaceEffect {
         if (this.starField && this.starField.getObject3D && this.starField.getObject3D()) {
           this.createStarFieldReflections();
         } else {
-
         }
       }, 0);
     }
@@ -98,13 +92,10 @@ export class CrystallineSurfaceEffect {
 
           const colorVariant = cubemapRng.random();
           if (colorVariant < 0.4) {
-
             faceContext.fillStyle = `rgba(${120 + 60 * brightness}, ${140 + 80 * brightness}, 255, ${brightness})`;
           } else if (colorVariant < 0.7) {
-
             faceContext.fillStyle = `rgba(${200 + 55 * brightness}, ${200 + 55 * brightness}, ${200 + 55 * brightness}, ${brightness})`;
           } else {
-
             faceContext.fillStyle = `rgba(255, ${180 + 60 * brightness}, ${120 + 60 * brightness}, ${brightness})`;
           }
 
@@ -131,13 +122,9 @@ export class CrystallineSurfaceEffect {
         this.envMap.generateMipmaps = false;
         this.envMap.minFilter = THREE.LinearFilter;
         this.envMap.magFilter = THREE.LinearFilter;
-
       } else {
-
       }
-    } catch (error) {
-
-    }
+    } catch (error) {}
   }
 
   /**
@@ -160,7 +147,6 @@ export class CrystallineSurfaceEffect {
     const crystals = [];
 
     for (let i = 0; i < crystalCount; i++) {
-
       const theta = rng.random() * Math.PI * 2;
       const phi = Math.acos(rng.random() * 2 - 1);
 
@@ -186,7 +172,6 @@ export class CrystallineSurfaceEffect {
    * Crear formación cristalina individual con efectos avanzados
    */
   private createCrystalFormation(crystalData: any, index: number): void {
-
     const surfaceNormal = new THREE.Vector3(crystalData.position_3d[0], crystalData.position_3d[1], crystalData.position_3d[2]).normalize();
 
     const baseRadius = crystalData.size * this.planetRadius * 0.5;
@@ -195,13 +180,7 @@ export class CrystallineSurfaceEffect {
     const radialSegments = crystalData.sides;
     const heightSegments = 4;
 
-    const geometry = new THREE.CylinderGeometry(
-      baseRadius * 0.8,
-      baseRadius,
-      crystalHeight,
-      radialSegments,
-      heightSegments
-    );
+    const geometry = new THREE.CylinderGeometry(baseRadius * 0.8, baseRadius, crystalHeight, radialSegments, heightSegments);
 
     const material = new THREE.ShaderMaterial({
       uniforms: {
@@ -306,7 +285,7 @@ export class CrystallineSurfaceEffect {
         }
       `,
       transparent: true,
-      side: THREE.FrontSide
+      side: THREE.FrontSide,
     });
 
     const crystalPosition = surfaceNormal.clone().multiplyScalar(this.planetRadius);
@@ -425,7 +404,6 @@ export class CrystallineSurfaceEffect {
     }> = [];
 
     this.crystallineData.forEach((crystalData, crystalIndex) => {
-
       const surfaceNormal = new THREE.Vector3(crystalData.position_3d[0], crystalData.position_3d[1], crystalData.position_3d[2]).normalize();
 
       const crystalWorldPos = surfaceNormal.clone().multiplyScalar(this.planetRadius);
@@ -434,7 +412,6 @@ export class CrystallineSurfaceEffect {
       const faceNormals = this.generateDeterministicFaceNormals(crystalData, crystalIndex);
 
       faceNormals.forEach((faceNormal, faceIndex) => {
-
         for (let starIndex = 0; starIndex < starPositions.count; starIndex++) {
           const starX = starPositions.getX(starIndex);
           const starY = starPositions.getY(starIndex);
@@ -459,10 +436,7 @@ export class CrystallineSurfaceEffect {
           const shouldCreateReflection = seededRng.random() < 0.4;
 
           if (reflectionVisibility > 0.3 && dotProduct < -0.1 && shouldCreateReflection) {
-
-            const reflectionPos = crystalWorldPos.clone().add(
-              faceNormal.clone().multiplyScalar(0.001)
-            );
+            const reflectionPos = crystalWorldPos.clone().add(faceNormal.clone().multiplyScalar(0.001));
 
             const surfaceProjection = reflectionPos
               .clone()
@@ -481,7 +455,6 @@ export class CrystallineSurfaceEffect {
     });
 
     if (reflections.length === 0) {
-
       return;
     }
 
@@ -563,7 +536,6 @@ export class CrystallineSurfaceEffect {
 
     this.starFieldReflections = new THREE.Points(reflectionGeometry, this.starFieldMaterial);
     this.crystallineGroup.add(this.starFieldReflections);
-
   }
 
   /**
@@ -670,18 +642,15 @@ export class CrystallineSurfaceEffect {
    * Actualizar dirección de luz para seguir el sistema de iluminación
    */
   public updateLightDirection(lightDirection: THREE.Vector3): void {
-
     if (this.starFieldMaterial) {
       this.starFieldMaterial.uniforms.lightDirection.value.copy(lightDirection);
     }
-
   }
-  
+
   /**
    * Actualizar posición de luz para modulación día/noche de los cristales
    */
   public updateLightPosition(lightPosition: THREE.Vector3): void {
-
     if (this.starFieldMaterial) {
       this.starFieldMaterial.uniforms.lightPosition.value.copy(lightPosition);
     }
@@ -698,7 +667,6 @@ export class CrystallineSurfaceEffect {
    * IMPORTANTE: Usa SOLO la luz del sistema planetario, no las luces por defecto de Three.js
    */
   public updateFromThreeLight(light: THREE.DirectionalLight): void {
-
     this.updateLightPosition(light.position);
 
     const direction = light.target.position.clone().sub(light.position).normalize();
@@ -782,11 +750,9 @@ export class CrystallineSurfaceEffect {
 }
 
 export function createCrystallineSurfaceFromPythonData(planetRadius: number, surfaceData: any, seed: number, cosmicOriginTime?: number, starField?: any): CrystallineSurfaceEffect | null {
-
   return new CrystallineSurfaceEffect(
     planetRadius,
     {
-
       seed,
       cosmicOriginTime,
       baseColor: new THREE.Color(0.0, 0.8, 1.0),

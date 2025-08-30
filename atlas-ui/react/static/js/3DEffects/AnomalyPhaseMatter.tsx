@@ -22,7 +22,7 @@ const PROCEDURAL_RANGES = {
   TRANSITION_SPEED: { min: 1.0, max: 4.0 },
   COHERENCE_LEVEL: { min: 0.7, max: 0.7 },
   TIME_SPEED: { min: 0.0003, max: 0.0006 },
-  PHASE_STATES: { min: 3, max: 6 }
+  PHASE_STATES: { min: 3, max: 6 },
 };
 
 export class AnomalyPhaseMatterEffect {
@@ -189,9 +189,9 @@ export class AnomalyPhaseMatterEffect {
   constructor(planetRadius: number, params: AnomalyPhaseMatterParams = {}) {
     const seed = params.seed || Math.floor(Math.random() * 1000000);
     const rng = new SeededRandom(seed);
-    
+
     this.startTime = params.startTime || (seed % 10000) / 1000;
-    
+
     this.params = {
       particleCount: params.particleCount || Math.floor(rng.uniform(PROCEDURAL_RANGES.PARTICLE_COUNT.min, PROCEDURAL_RANGES.PARTICLE_COUNT.max)),
       phaseIntensity: params.phaseIntensity || rng.uniform(PROCEDURAL_RANGES.PHASE_INTENSITY.min, PROCEDURAL_RANGES.PHASE_INTENSITY.max),
@@ -225,7 +225,7 @@ export class AnomalyPhaseMatterEffect {
     for (let i = 0; i < this.particleCount; i++) {
       const distance = planetRadius * rng.uniform(1.1, 1.9);
       const pos = rng.spherePosition(distance);
-      
+
       positions[i * 3] = pos.x;
       positions[i * 3 + 1] = pos.y;
       positions[i * 3 + 2] = pos.z;
@@ -279,9 +279,9 @@ export class AnomalyPhaseMatterEffect {
   update(): void {
     const cosmicOriginTime = DEFAULT_COSMIC_ORIGIN_TIME;
     const currentTime = getAnimatedUniverseTime(cosmicOriginTime, this.params.timeSpeed!, this.startTime);
-    
+
     this.material.uniforms.time.value = currentTime;
-    
+
     this.phaseSystem.rotation.x = currentTime * 0.012 * Math.cos(currentTime * 0.3);
     this.phaseSystem.rotation.y = currentTime * 0.008 * Math.sin(currentTime * 0.5);
     this.phaseSystem.rotation.z = currentTime * 0.006 * Math.cos(currentTime * 0.7);
@@ -300,7 +300,7 @@ export class AnomalyPhaseMatterEffect {
 export function createAnomalyPhaseMatterFromPythonData(planetRadius: number, anomalyData: any, globalSeed?: number): AnomalyPhaseMatterEffect {
   const seed = globalSeed || Math.floor(Math.random() * 1000000);
   const rng = new SeededRandom(seed + 9000);
-  
+
   const params: AnomalyPhaseMatterParams = {
     particleCount: Math.floor(rng.uniform(PROCEDURAL_RANGES.PARTICLE_COUNT.min, PROCEDURAL_RANGES.PARTICLE_COUNT.max)),
     phaseIntensity: rng.uniform(PROCEDURAL_RANGES.PHASE_INTENSITY.min, PROCEDURAL_RANGES.PHASE_INTENSITY.max),

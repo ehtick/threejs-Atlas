@@ -58,7 +58,7 @@ interface BubbleCycleData {
 interface Bubble {
   cycleData: BubbleCycleData;
   mesh: THREE.Mesh;
-  currentPhase: 'hidden' | 'fadeIn' | 'emerging' | 'rising' | 'popping' | 'fadeOut';
+  currentPhase: "hidden" | "fadeIn" | "emerging" | "rising" | "popping" | "fadeOut";
 }
 
 export class ToxicSwampBubblesEffect {
@@ -75,13 +75,13 @@ export class ToxicSwampBubblesEffect {
   constructor(planetRadius: number, params: ToxicSwampBubblesParams = {}) {
     this.planetRadius = planetRadius;
     this.rng = new SeededRandom(params.seed || Math.random() * 1000000);
-    
+
     const planetType = params.planetType || "SWAMP";
     const ranges = PROCEDURAL_RANGES[planetType];
-    
+
     const actualBubbleCount = params.bubbleCount || this.rng.randint(ranges.BUBBLE_COUNT.min, ranges.BUBBLE_COUNT.max);
     const actualBubbleSize = params.bubbleSize || planetRadius * this.rng.uniform(ranges.BUBBLE_SIZE.min, ranges.BUBBLE_SIZE.max);
-    
+
     this.params = {
       bubbleCount: actualBubbleCount,
       bubbleSize: actualBubbleSize,
@@ -119,9 +119,8 @@ export class ToxicSwampBubblesEffect {
   private setupGeometry(): void {
     this.geometry = new THREE.SphereGeometry(0.3, 12, 8);
   }
-  
-  private generateBubbleCycleData(): void {
 
+  private generateBubbleCycleData(): void {
     for (let i = 0; i < this.params.bubbleCount; i++) {
       const rng = new SeededRandom(this.params.seed + i);
 
@@ -132,12 +131,12 @@ export class ToxicSwampBubblesEffect {
       const riseDuration = rng.uniform(15, 25);
       const popDuration = 0.5;
       const fadeOutDuration = 1;
-      
+
       const cycleDuration = fadeInDuration + emergeDuration + riseDuration + popDuration + fadeOutDuration + rng.uniform(5, 15);
 
       const startPosition = this.getProceduralSurfacePoint(i);
       const riseDirection = startPosition.clone().sub(this.planetCenter).normalize();
-      
+
       const cycleData: BubbleCycleData = {
         bubbleIndex: i,
         birthOffset,
@@ -152,15 +151,14 @@ export class ToxicSwampBubblesEffect {
         wobbleAmplitude: rng.uniform(0.002, 0.008),
         emergenceSpeed: rng.uniform(0.3, 0.6),
         startPosition: startPosition.clone(),
-        riseDirection: riseDirection
+        riseDirection: riseDirection,
       };
-      
+
       this.bubbleCycleData.push(cycleData);
     }
   }
-  
-  private getProceduralSurfacePoint(bubbleIndex: number): THREE.Vector3 {
 
+  private getProceduralSurfacePoint(bubbleIndex: number): THREE.Vector3 {
     const rng = new SeededRandom(this.params.seed);
 
     for (let i = 0; i < bubbleIndex; i++) {
@@ -184,27 +182,27 @@ export class ToxicSwampBubblesEffect {
 
     const depthVariation = 0.95 + 0.05 * rng.uniform(0, 1);
     const startDepth = this.planetRadius * depthVariation;
-    
+
     return surfacePoint.multiplyScalar(startDepth).add(this.planetCenter);
   }
 
   private createBubbleMeshes(): void {
     for (let i = 0; i < this.bubbleCycleData.length; i++) {
       const cycleData = this.bubbleCycleData[i];
-      
+
       const bubbleMaterial = this.material.clone();
       bubbleMaterial.opacity = 0;
       const bubbleMesh = new THREE.Mesh(this.geometry, bubbleMaterial);
       bubbleMesh.position.copy(cycleData.startPosition);
       bubbleMesh.scale.setScalar(0);
       bubbleMesh.visible = false;
-      
+
       const bubble: Bubble = {
         cycleData,
         mesh: bubbleMesh,
-        currentPhase: 'hidden'
+        currentPhase: "hidden",
       };
-      
+
       this.bubbles.push(bubble);
       this.bubbleGroup.add(bubbleMesh);
     }
@@ -228,37 +226,28 @@ export class ToxicSwampBubblesEffect {
     const riseEnd = emergeEnd + cycleData.riseDuration;
     const popEnd = riseEnd + cycleData.popDuration;
     const fadeOutEnd = popEnd + 1;
-    
-    let phase: Bubble['currentPhase'] = 'hidden';
+
+    let phase: Bubble["currentPhase"] = "hidden";
     let opacity = 0;
     let size = 0;
     let position = cycleData.startPosition.clone();
-    
-    if (cycleTime < fadeInEnd) {
 
-      phase = 'fadeIn';
+    if (cycleTime < fadeInEnd) {
+      phase = "fadeIn";
       const progress = cycleTime / cycleData.fadeInDuration;
       opacity = this.params.opacity * progress;
       size = cycleData.maxSize * 0.1 * progress;
-      
     } else if (cycleTime < emergeEnd) {
-
-      phase = 'emerging';
+      phase = "emerging";
       const progress = (cycleTime - fadeInEnd) / cycleData.emergeDuration;
       opacity = this.params.opacity;
-      size = THREE.MathUtils.lerp(
-        cycleData.maxSize * 0.1,
-        cycleData.maxSize * 0.7,
-        THREE.MathUtils.smoothstep(progress, 0, 1)
-      );
+      size = THREE.MathUtils.lerp(cycleData.maxSize * 0.1, cycleData.maxSize * 0.7, THREE.MathUtils.smoothstep(progress, 0, 1));
 
       const emergeFactor = THREE.MathUtils.smoothstep(progress, 0, 1);
       const surfacePosition = cycleData.riseDirection.clone().multiplyScalar(this.planetRadius).add(this.planetCenter);
       position = cycleData.startPosition.clone().lerp(surfacePosition, emergeFactor);
-      
     } else if (cycleTime < riseEnd) {
-
-      phase = 'rising';
+      phase = "rising";
       const progress = (cycleTime - emergeEnd) / cycleData.riseDuration;
       opacity = this.params.opacity;
       size = THREE.MathUtils.lerp(cycleData.maxSize * 0.7, cycleData.maxSize, progress);
@@ -271,14 +260,10 @@ export class ToxicSwampBubblesEffect {
       const wobbleY = Math.cos(wobbleTime * 1.3 + cycleData.bubbleIndex * 0.47) * cycleData.wobbleAmplitude;
       const wobbleZ = Math.sin(wobbleTime * 0.7 + cycleData.bubbleIndex * 0.13) * cycleData.wobbleAmplitude;
       const wobble = new THREE.Vector3(wobbleX, wobbleY, wobbleZ);
-      
-      position = surfacePosition.clone()
-        .add(cycleData.riseDirection.clone().multiplyScalar(riseDistance))
-        .add(wobble);
-      
-    } else if (cycleTime < popEnd) {
 
-      phase = 'popping';
+      position = surfacePosition.clone().add(cycleData.riseDirection.clone().multiplyScalar(riseDistance)).add(wobble);
+    } else if (cycleTime < popEnd) {
+      phase = "popping";
       const progress = (cycleTime - riseEnd) / cycleData.popDuration;
       opacity = this.params.opacity * (1 - progress) * 0.5;
       size = cycleData.maxSize * (1 + progress * 1.5);
@@ -286,23 +271,19 @@ export class ToxicSwampBubblesEffect {
       const riseDistance = cycleData.riseSpeed * cycleData.riseDuration;
       const surfacePosition = cycleData.riseDirection.clone().multiplyScalar(this.planetRadius).add(this.planetCenter);
       position = surfacePosition.clone().add(cycleData.riseDirection.clone().multiplyScalar(riseDistance));
-      
     } else if (cycleTime < fadeOutEnd) {
-
-      phase = 'fadeOut';
+      phase = "fadeOut";
       const progress = (cycleTime - popEnd) / 1;
       opacity = 0;
       size = 0;
-      
     } else {
-
-      phase = 'hidden';
+      phase = "hidden";
       opacity = 0;
       size = 0;
     }
 
     bubble.currentPhase = phase;
-    bubble.mesh.visible = phase !== 'hidden';
+    bubble.mesh.visible = phase !== "hidden";
     bubble.mesh.position.copy(position);
     bubble.mesh.scale.setScalar(size);
     (bubble.mesh.material as THREE.MeshBasicMaterial).opacity = Math.max(0, opacity);
@@ -336,14 +317,14 @@ export class ToxicSwampBubblesEffect {
   public dispose(): void {
     this.geometry.dispose();
     this.material.dispose();
-    
-    this.bubbles.forEach(bubble => {
+
+    this.bubbles.forEach((bubble) => {
       this.bubbleGroup.remove(bubble.mesh);
       if (bubble.mesh.material !== this.material) {
         (bubble.mesh.material as THREE.Material).dispose();
       }
     });
-    
+
     this.bubbles.length = 0;
   }
 
@@ -356,16 +337,11 @@ export class ToxicSwampBubblesEffect {
   }
 
   public getBubbleCount(): number {
-    return this.bubbles.filter(b => b.currentPhase !== 'hidden').length;
+    return this.bubbles.filter((b) => b.currentPhase !== "hidden").length;
   }
 }
 
-export function createToxicSwampBubblesFromPythonData(
-  planetRadius: number,
-  surface: any,
-  seed: number,
-  cosmicOriginTime?: number
-): ToxicSwampBubblesEffect | null {
+export function createToxicSwampBubblesFromPythonData(planetRadius: number, surface: any, seed: number, cosmicOriginTime?: number): ToxicSwampBubblesEffect | null {
   if (!surface.toxic_bubbles) {
     return null;
   }
@@ -373,11 +349,7 @@ export function createToxicSwampBubblesFromPythonData(
   const bubbleData = surface.toxic_bubbles;
 
   return new ToxicSwampBubblesEffect(planetRadius, {
-    bubbleColor: bubbleData.color ? new THREE.Color(
-      bubbleData.color[0],
-      bubbleData.color[1],
-      bubbleData.color[2]
-    ) : undefined,
+    bubbleColor: bubbleData.color ? new THREE.Color(bubbleData.color[0], bubbleData.color[1], bubbleData.color[2]) : undefined,
     seed: seed,
     planetType: "SWAMP",
     cosmicOriginTime: cosmicOriginTime,

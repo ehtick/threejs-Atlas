@@ -51,12 +51,7 @@ export class MetallicSurfaceLayer {
 
     this.material = this.layerSystem.createMetallicSurfaceLayerMaterial(this.params);
 
-    this.layerMesh = this.layerSystem.addEffectLayer(
-      "metallicSurface",
-      this.material,
-      this.layerSystem.getNextScaleFactor(),
-      this
-    );
+    this.layerMesh = this.layerSystem.addEffectLayer("metallicSurface", this.material, this.layerSystem.getNextScaleFactor(), this);
   }
 
   update(deltaTime: number): void {
@@ -65,9 +60,7 @@ export class MetallicSurfaceLayer {
     }
   }
 
-  dispose(): void {
-
-  }
+  dispose(): void {}
 }
 
 export function createMetallicSurfaceLayerFromPythonData(layerSystem: PlanetLayerSystem, data: any, globalSeed?: number): MetallicSurfaceLayer {

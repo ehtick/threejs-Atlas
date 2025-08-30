@@ -1,3 +1,4 @@
+// atlas-ui/react/static/js/Layouts/__error__.tsx
 import React from "react";
 import VersionFooter from "../Components/VersionFooter.tsx";
 
@@ -10,7 +11,6 @@ interface ErrorLayoutProps {
 const ErrorLayout: React.FC<ErrorLayoutProps> = ({ version, message }) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-red-900 to-slate-900 text-white flex flex-col">
-      {/* Background Pattern */}
       <div
         className="absolute inset-0 opacity-10"
         style={{
@@ -18,11 +18,8 @@ const ErrorLayout: React.FC<ErrorLayoutProps> = ({ version, message }) => {
         }}
       />
 
-      {/* Main Content */}
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
-        {/* Logo and Error Section */}
         <div className="text-center space-y-8 max-w-md w-full">
-          {/* Atlas Logo */}
           <div className="flex justify-center mb-8">
             <img 
               src="/static/atlas-logo.jpg" 
@@ -31,7 +28,6 @@ const ErrorLayout: React.FC<ErrorLayoutProps> = ({ version, message }) => {
             />
           </div>
 
-          {/* Error Icon */}
           <div className="flex justify-center mb-6">
             <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center border border-red-500/30">
               <svg 
@@ -50,7 +46,6 @@ const ErrorLayout: React.FC<ErrorLayoutProps> = ({ version, message }) => {
             </div>
           </div>
 
-          {/* Error Message */}
           <div className="space-y-4">
             <h1 className="text-2xl sm:text-3xl font-bold text-red-400">
               System Error
@@ -60,7 +55,6 @@ const ErrorLayout: React.FC<ErrorLayoutProps> = ({ version, message }) => {
             </p>
           </div>
 
-          {/* Action Button */}
           <div className="pt-8">
             <a
               href="/"
@@ -85,7 +79,6 @@ const ErrorLayout: React.FC<ErrorLayoutProps> = ({ version, message }) => {
         </div>
       </div>
 
-      {/* Footer */}
       <div className="relative z-10">
         <VersionFooter version={version} />
       </div>

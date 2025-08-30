@@ -1,10 +1,9 @@
 // atlas-ui/react/static/js/3DEffects/OceanCurrentsEffect.tsx
-import * as THREE from 'three';
-import { PlanetLayerSystem } from '../3DComponents/PlanetLayerSystem';
-import { SeededRandom } from '../Utils/SeededRandom.tsx';
+import * as THREE from "three";
+import { PlanetLayerSystem } from "../3DComponents/PlanetLayerSystem";
+import { SeededRandom } from "../Utils/SeededRandom.tsx";
 
 export interface OceanCurrentsParams {
-
   currentIntensity?: number;
   currentScale?: number;
   currentSpeed?: number;
@@ -47,8 +46,8 @@ export class OceanCurrentsEffect {
 
     this.startTime = params.startTime || (seed % 10000) / 1000;
 
-    const currentColor = params.currentColor instanceof THREE.Color ? params.currentColor : params.currentColor ? new THREE.Color(params.currentColor as any) : new THREE.Color(0x4A9B8E);
-    const deepCurrentColor = params.deepCurrentColor instanceof THREE.Color ? params.deepCurrentColor : params.deepCurrentColor ? new THREE.Color(params.deepCurrentColor as any) : new THREE.Color(0x2D5D52);
+    const currentColor = params.currentColor instanceof THREE.Color ? params.currentColor : params.currentColor ? new THREE.Color(params.currentColor as any) : new THREE.Color(0x4a9b8e);
+    const deepCurrentColor = params.deepCurrentColor instanceof THREE.Color ? params.deepCurrentColor : params.deepCurrentColor ? new THREE.Color(params.deepCurrentColor as any) : new THREE.Color(0x2d5d52);
 
     this.params = {
       currentColor,
@@ -63,21 +62,15 @@ export class OceanCurrentsEffect {
       transparency: params.transparency || 0.8,
       seed,
       startTime: this.startTime,
-      timeSpeed: params.timeSpeed || rng.uniform(PROCEDURAL_RANGES.TIME_SPEED.min, PROCEDURAL_RANGES.TIME_SPEED.max)
+      timeSpeed: params.timeSpeed || rng.uniform(PROCEDURAL_RANGES.TIME_SPEED.min, PROCEDURAL_RANGES.TIME_SPEED.max),
     };
 
     this.material = this.layerSystem.createOceanCurrentsLayerMaterial(this.params);
 
-    this.layerMesh = this.layerSystem.addEffectLayer(
-      "oceanCurrents",
-      this.material,
-      this.layerSystem.getNextScaleFactor(),
-      this
-    );
+    this.layerMesh = this.layerSystem.addEffectLayer("oceanCurrents", this.material, this.layerSystem.getNextScaleFactor(), this);
   }
 
   update(deltaTime: number): void {
-
     const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!;
     const currentTime = rawTime % 2000;
 
@@ -86,9 +79,7 @@ export class OceanCurrentsEffect {
     }
   }
 
-  dispose(): void {
-
-  }
+  dispose(): void {}
 }
 
 export function createOceanCurrentsFromPythonData(layerSystem: PlanetLayerSystem, pythonData: any, globalSeed?: number): OceanCurrentsEffect {
@@ -98,13 +89,13 @@ export function createOceanCurrentsFromPythonData(layerSystem: PlanetLayerSystem
   const seed = globalSeed || 12345;
   const rng = new SeededRandom(seed + 6000);
 
-  let currentColor = new THREE.Color(0x4A9B8E);
-  let deepCurrentColor = new THREE.Color(0x2D5D52);
+  let currentColor = new THREE.Color(0x4a9b8e);
+  let deepCurrentColor = new THREE.Color(0x2d5d52);
 
   if (surface.ocean_currents && surface.ocean_currents.current_color) {
     currentColor = new THREE.Color().fromArray(surface.ocean_currents.current_color);
   }
-  
+
   if (surface.ocean_currents && surface.ocean_currents.deep_current_color) {
     deepCurrentColor = new THREE.Color().fromArray(surface.ocean_currents.deep_current_color);
   }
@@ -117,8 +108,8 @@ export function createOceanCurrentsFromPythonData(layerSystem: PlanetLayerSystem
     currentSpeed: surface.ocean_currents?.speed || rng.uniform(PROCEDURAL_RANGES.CURRENT_SPEED.min, PROCEDURAL_RANGES.CURRENT_SPEED.max),
     opacity: surface.ocean_currents?.opacity || rng.uniform(PROCEDURAL_RANGES.OPACITY.min, PROCEDURAL_RANGES.OPACITY.max),
     transparency: 0.8,
-    seed
+    seed,
   };
-  
+
   return new OceanCurrentsEffect(layerSystem, params);
 }

@@ -1,4 +1,3 @@
-import React from 'react';
 
 /**
  * Generador de números aleatorios con semilla para efectos consistentes

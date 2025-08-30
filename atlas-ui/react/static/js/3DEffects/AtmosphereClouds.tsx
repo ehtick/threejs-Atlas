@@ -25,7 +25,7 @@ const PROCEDURAL_RANGES = {
   ROTATION_SPEED: { min: 0.002, max: 0.008 },
   MOVEMENT_AMPLITUDE: { min: 0.003, max: 0.02 },
   PUFFINESS: { min: 1.0, max: 1.4 },
-  TIME_SPEED: { min: 0.1, max: 3.0 }
+  TIME_SPEED: { min: 0.1, max: 3.0 },
 };
 
 export class AtmosphereCloudsEffect {
@@ -170,14 +170,13 @@ export class AtmosphereCloudsEffect {
   `;
 
   constructor(planetRadius: number, params: AtmosphereCloudsParams = {}) {
-
     const seed = params.seed || Math.floor(Math.random() * 1000000);
     const rng = new SeededRandom(seed);
 
     this.cosmicOriginTime = params.cosmicOriginTime || 514080000;
 
     this.cosmicOffset = (seed % 3600) * 10;
-    
+
     this.params = {
       color: params.color || new THREE.Color(0xffffff),
       cloudCount: params.cloudCount || Math.floor(rng.uniform(PROCEDURAL_RANGES.CLOUD_COUNT.min, PROCEDURAL_RANGES.CLOUD_COUNT.max)),
@@ -214,7 +213,6 @@ export class AtmosphereCloudsEffect {
       let cloudSize = this.params.size! * rng.uniform(0.8, 1.2);
 
       if (cloudsFromPython && i < cloudsFromPython.length) {
-
         const cloudData = cloudsFromPython[i];
 
         x = cloudData.position[0] * planetRadius * 1.05;
@@ -226,14 +224,12 @@ export class AtmosphereCloudsEffect {
         }
 
         cloudSize = cloudData.radius * planetRadius * 0.8;
-        
       } else {
-
         const phi = rng.uniform(0, 2 * Math.PI);
         const cosTheta = rng.uniform(-1, 1);
         const theta = Math.acos(cosTheta);
         const surfaceRadius = planetRadius * rng.uniform(1.03, 1.07);
-        
+
         x = surfaceRadius * Math.sin(theta) * Math.cos(phi);
         y = surfaceRadius * Math.sin(theta) * Math.sin(phi);
         z = surfaceRadius * Math.cos(theta);
@@ -242,11 +238,7 @@ export class AtmosphereCloudsEffect {
       const baseRadius = cloudSize * rng.uniform(0.3, 0.8);
 
       const segments = Math.max(8, Math.floor(baseRadius * 15));
-      const cloudGeometry = new THREE.PlaneGeometry(
-        baseRadius * 2,
-        baseRadius * 2,
-        segments, segments
-      );
+      const cloudGeometry = new THREE.PlaneGeometry(baseRadius * 2, baseRadius * 2, segments, segments);
 
       const cloudPosition = new THREE.Vector3(x, y, z);
       const planetCenter = new THREE.Vector3(0, 0, 0);
@@ -281,10 +273,10 @@ export class AtmosphereCloudsEffect {
         const projectedVertex = direction.multiplyScalar(cloudRadius);
 
         const localVertex = projectedVertex.sub(cloudPosition);
-        
+
         positions.setXYZ(i, localVertex.x, localVertex.y, localVertex.z);
       }
-      
+
       positions.needsUpdate = true;
       cloudGeometry.computeVertexNormals();
 
@@ -294,10 +286,7 @@ export class AtmosphereCloudsEffect {
       cloudMaterial.uniforms.cloudColor.value = cloudColor;
       cloudMaterial.uniforms.density.value = this.params.density! * rng.uniform(0.8, 1.2);
 
-      cloudMaterial.uniforms.noiseOffset.value = new THREE.Vector2(
-        (cosmicOffsetBase + rng.uniform(0, 100)) % 100,
-        (cosmicOffsetBase + rng.uniform(0, 100)) % 100
-      );
+      cloudMaterial.uniforms.noiseOffset.value = new THREE.Vector2((cosmicOffsetBase + rng.uniform(0, 100)) % 100, (cosmicOffsetBase + rng.uniform(0, 100)) % 100);
 
       cloudMaterial.uniforms.shapeVariation.value = rng.uniform(-1.0, 1.0);
 
@@ -310,7 +299,7 @@ export class AtmosphereCloudsEffect {
 
       cloudMesh.userData.isAtmosphericCloud = true;
       cloudMesh.userData.planetNormal = normalFromPlanet.clone();
-      
+
       this.clouds.push(cloudMesh);
       this.cloudSystem.add(cloudMesh);
     }
@@ -346,18 +335,16 @@ export class AtmosphereCloudsEffect {
   }
 
   update(deltaTime: number, camera?: THREE.Camera): void {
-
     const currentTimeSeconds = Date.now() / 1000;
     const timeSinceCosmicOrigin = currentTimeSeconds - this.cosmicOriginTime;
     const animTime = (timeSinceCosmicOrigin + this.cosmicOffset) * this.params.timeSpeed!;
 
     const windowedTime = animTime % 10000;
 
-    this.clouds.forEach(cloud => {
+    this.clouds.forEach((cloud) => {
       const material = cloud.material as THREE.ShaderMaterial;
 
       material.uniforms.time.value = windowedTime;
-
     });
 
     this.cloudSystem.rotation.y = animTime * this.params.rotationSpeed!;
@@ -366,9 +353,9 @@ export class AtmosphereCloudsEffect {
   updateParams(newParams: Partial<AtmosphereCloudsParams>): void {
     this.params = { ...this.params, ...newParams };
 
-    this.clouds.forEach(cloud => {
+    this.clouds.forEach((cloud) => {
       const material = cloud.material as THREE.ShaderMaterial;
-      
+
       if (newParams.opacity !== undefined) {
         material.uniforms.opacity.value = newParams.opacity;
       }
@@ -380,7 +367,7 @@ export class AtmosphereCloudsEffect {
   }
 
   updateLightPosition(position: THREE.Vector3): void {
-    this.clouds.forEach(cloud => {
+    this.clouds.forEach((cloud) => {
       const material = cloud.material as THREE.ShaderMaterial;
       if (material.uniforms.lightPosition) {
         material.uniforms.lightPosition.value.copy(position);
@@ -389,7 +376,7 @@ export class AtmosphereCloudsEffect {
   }
 
   updateLightDirection(direction: THREE.Vector3): void {
-    this.clouds.forEach(cloud => {
+    this.clouds.forEach((cloud) => {
       const material = cloud.material as THREE.ShaderMaterial;
       if (material.uniforms.lightDirection) {
         material.uniforms.lightDirection.value.copy(direction);
@@ -408,8 +395,7 @@ export class AtmosphereCloudsEffect {
   }
 
   dispose(): void {
-
-    this.clouds.forEach(cloud => {
+    this.clouds.forEach((cloud) => {
       cloud.geometry.dispose();
       (cloud.material as THREE.ShaderMaterial).dispose();
     });
@@ -420,14 +406,12 @@ export class AtmosphereCloudsEffect {
 }
 
 export function createAtmosphereCloudsFromPythonData(planetRadius: number, surfaceData: any, globalSeed?: number, cosmicOriginTime?: number): AtmosphereCloudsEffect {
-
   const cloudsArray = surfaceData.clouds || [];
 
   if (cloudsArray.length === 0) {
-
     const seed = globalSeed || Math.floor(Math.random() * 1000000);
     const rng = new SeededRandom(seed + 4000);
-    
+
     const params: AtmosphereCloudsParams = {
       color: new THREE.Color(1, 1, 1.0),
       cloudCount: 15,
@@ -447,7 +431,7 @@ export function createAtmosphereCloudsFromPythonData(planetRadius: number, surfa
 
   const seed = globalSeed || Math.floor(Math.random() * 1000000);
   const rng = new SeededRandom(seed + 4000);
-  
+
   const params: AtmosphereCloudsParams = {
     color: new THREE.Color(0xffffff),
     cloudCount: cloudsArray.length,

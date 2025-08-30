@@ -1,12 +1,12 @@
 // atlas-ui/react/static/js/3DEffects/FragmentationEffect.tsx
 
-import * as THREE from 'three';
+import * as THREE from "three";
 
 export interface FragmentationParams {
   fragmentCount?: number;
   color?: THREE.Color | number[];
   size?: number;
-  distribution?: 'edge' | 'surface' | 'random';
+  distribution?: "edge" | "surface" | "random";
   animationSpeed?: number;
   rotationSpeed?: number;
   metalness?: number;
@@ -25,11 +25,11 @@ export class FragmentationEffect {
       fragmentCount: params.fragmentCount || 20,
       color: params.color || new THREE.Color(0x444444),
       size: params.size || 0.05,
-      distribution: params.distribution || 'edge',
+      distribution: params.distribution || "edge",
       animationSpeed: params.animationSpeed || 1.0,
       rotationSpeed: params.rotationSpeed || 0.1,
       metalness: params.metalness || 0.9,
-      roughness: params.roughness || 0.6
+      roughness: params.roughness || 0.6,
     };
 
     this.fragments = new THREE.Group();
@@ -38,10 +38,9 @@ export class FragmentationEffect {
 
   private generateFragments(): void {
     const material = new THREE.MeshStandardMaterial({
-      color: this.params.color instanceof THREE.Color ? 
-        this.params.color : new THREE.Color(this.params.color as any),
+      color: this.params.color instanceof THREE.Color ? this.params.color : new THREE.Color(this.params.color as any),
       metalness: this.params.metalness,
-      roughness: this.params.roughness
+      roughness: this.params.roughness,
     });
 
     for (let i = 0; i < this.params.fragmentCount!; i++) {
@@ -50,22 +49,14 @@ export class FragmentationEffect {
 
       this.positionFragment(fragment, i);
 
-      fragment.rotation.set(
-        Math.random() * Math.PI,
-        Math.random() * Math.PI,
-        Math.random() * Math.PI
-      );
+      fragment.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
 
       const scale = this.params.size! * (Math.random() * 0.5 + 0.75);
       fragment.scale.set(scale, scale, scale);
 
       (fragment as any).userData = {
-        rotationAxis: new THREE.Vector3(
-          Math.random() - 0.5,
-          Math.random() - 0.5,
-          Math.random() - 0.5
-        ).normalize(),
-        rotationSpeed: (Math.random() - 0.5) * this.params.rotationSpeed!
+        rotationAxis: new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize(),
+        rotationSpeed: (Math.random() - 0.5) * this.params.rotationSpeed!,
       };
 
       this.fragmentMeshes.push(fragment);
@@ -80,19 +71,15 @@ export class FragmentationEffect {
     const indices: number[] = [];
 
     const baseVertices: THREE.Vector3[] = [];
-    
+
     baseVertices.push(new THREE.Vector3(0, 0, 0));
-    
+
     for (let i = 0; i < sides; i++) {
       const angle = (i / sides) * Math.PI * 2;
       const radius = Math.random() * 0.5 + 0.5;
       const height = (Math.random() - 0.5) * 0.3;
-      
-      baseVertices.push(new THREE.Vector3(
-        Math.cos(angle) * radius,
-        Math.sin(angle) * radius,
-        height
-      ));
+
+      baseVertices.push(new THREE.Vector3(Math.cos(angle) * radius, Math.sin(angle) * radius, height));
     }
 
     for (let i = 1; i <= sides; i++) {
@@ -119,7 +106,7 @@ export class FragmentationEffect {
 
     for (let i = 0; i < sides; i++) {
       const bottom1 = i + 1;
-      const bottom2 = (i + 1) % sides + 1;
+      const bottom2 = ((i + 1) % sides) + 1;
       const top1 = bottom1 + sides;
       const top2 = bottom2 + sides;
 
@@ -128,7 +115,7 @@ export class FragmentationEffect {
     }
 
     const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    geometry.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
     geometry.setIndex(indices);
     geometry.computeVertexNormals();
 
@@ -139,15 +126,15 @@ export class FragmentationEffect {
     let position: THREE.Vector3;
 
     switch (this.params.distribution) {
-      case 'edge':
+      case "edge":
         position = this.generateEdgePosition(index);
         break;
 
-      case 'surface':
+      case "surface":
         position = this.generateSurfacePosition();
         break;
 
-      case 'random':
+      case "random":
       default:
         position = this.generateRandomPosition();
         break;
@@ -161,11 +148,7 @@ export class FragmentationEffect {
     const edgeOffset = this.planetRadius * (0.95 + Math.random() * 0.1);
     const heightVariation = (Math.random() - 0.5) * this.planetRadius * 0.5;
 
-    return new THREE.Vector3(
-      Math.cos(angle) * edgeOffset,
-      heightVariation,
-      Math.sin(angle) * edgeOffset
-    );
+    return new THREE.Vector3(Math.cos(angle) * edgeOffset, heightVariation, Math.sin(angle) * edgeOffset);
   }
 
   private generateSurfacePosition(): THREE.Vector3 {
@@ -173,11 +156,7 @@ export class FragmentationEffect {
     const phi = Math.acos(Math.random() * 2 - 1);
     const radius = this.planetRadius * (1.0 + Math.random() * 0.05);
 
-    return new THREE.Vector3(
-      radius * Math.sin(phi) * Math.cos(theta),
-      radius * Math.sin(phi) * Math.sin(theta),
-      radius * Math.cos(phi)
-    );
+    return new THREE.Vector3(radius * Math.sin(phi) * Math.cos(theta), radius * Math.sin(phi) * Math.sin(theta), radius * Math.cos(phi));
   }
 
   private generateRandomPosition(): THREE.Vector3 {
@@ -185,11 +164,7 @@ export class FragmentationEffect {
     const angle1 = Math.random() * Math.PI * 2;
     const angle2 = Math.random() * Math.PI * 2;
 
-    return new THREE.Vector3(
-      radius * Math.sin(angle1) * Math.cos(angle2),
-      radius * Math.sin(angle1) * Math.sin(angle2),
-      radius * Math.cos(angle1)
-    );
+    return new THREE.Vector3(radius * Math.sin(angle1) * Math.cos(angle2), radius * Math.sin(angle1) * Math.sin(angle2), radius * Math.cos(angle1));
   }
 
   addToScene(scene: THREE.Scene, planetPosition?: THREE.Vector3): void {
@@ -202,11 +177,8 @@ export class FragmentationEffect {
   update(deltaTime: number): void {
     this.fragmentMeshes.forEach((fragment, i) => {
       const userData = (fragment as any).userData;
-      
-      fragment.rotateOnAxis(
-        userData.rotationAxis, 
-        userData.rotationSpeed * deltaTime * this.params.animationSpeed!
-      );
+
+      fragment.rotateOnAxis(userData.rotationAxis, userData.rotationSpeed * deltaTime * this.params.animationSpeed!);
 
       const floatOffset = Math.sin(Date.now() * 0.001 + i) * 0.001;
       fragment.position.y += floatOffset * deltaTime;
@@ -219,10 +191,9 @@ export class FragmentationEffect {
     this.params = { ...this.params, ...newParams };
 
     if (newParams.color) {
-      const color = newParams.color instanceof THREE.Color ? 
-        newParams.color : new THREE.Color(newParams.color as any);
-      
-      this.fragmentMeshes.forEach(fragment => {
+      const color = newParams.color instanceof THREE.Color ? newParams.color : new THREE.Color(newParams.color as any);
+
+      this.fragmentMeshes.forEach((fragment) => {
         if (fragment.material instanceof THREE.MeshStandardMaterial) {
           fragment.material.color = color;
         }
@@ -230,7 +201,7 @@ export class FragmentationEffect {
     }
 
     if (newParams.metalness !== undefined || newParams.roughness !== undefined) {
-      this.fragmentMeshes.forEach(fragment => {
+      this.fragmentMeshes.forEach((fragment) => {
         if (fragment.material instanceof THREE.MeshStandardMaterial) {
           if (newParams.metalness !== undefined) {
             fragment.material.metalness = newParams.metalness;
@@ -248,11 +219,11 @@ export class FragmentationEffect {
   }
 
   private regenerateFragments(): void {
-    this.fragmentMeshes.forEach(fragment => {
+    this.fragmentMeshes.forEach((fragment) => {
       if (fragment.geometry) fragment.geometry.dispose();
       if (fragment.material instanceof THREE.Material) fragment.material.dispose();
     });
-    
+
     this.fragments.clear();
     this.fragmentMeshes = [];
 
@@ -268,11 +239,11 @@ export class FragmentationEffect {
   }
 
   dispose(): void {
-    this.fragmentMeshes.forEach(fragment => {
+    this.fragmentMeshes.forEach((fragment) => {
       if (fragment.geometry) fragment.geometry.dispose();
       if (fragment.material instanceof THREE.Material) fragment.material.dispose();
     });
-    
+
     this.fragmentMeshes = [];
     this.fragments.clear();
   }

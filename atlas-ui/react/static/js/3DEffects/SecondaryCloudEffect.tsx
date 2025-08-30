@@ -25,7 +25,7 @@ const SECONDARY_CLOUD_RANGES = {
   ROTATION_SPEED: { min: 0.002, max: 0.008 },
   MOVEMENT_AMPLITUDE: { min: 0.003, max: 0.02 },
   TURBULENCE: { min: 1.0, max: 2.0 },
-  TIME_SPEED: { min: 0.1, max: 3.0 }
+  TIME_SPEED: { min: 0.1, max: 3.0 },
 };
 
 export class SecondaryCloudEffect {
@@ -176,10 +176,10 @@ export class SecondaryCloudEffect {
   constructor(planetRadius: number, params: SecondaryCloudsParams) {
     const seed = params.seed || Math.floor(Math.random() * 1000000);
     const rng = new SeededRandom(seed + 5000);
-    
+
     this.cosmicOriginTime = params.cosmicOriginTime || 514080000;
     this.cosmicOffset = (seed % 3600) * 15;
-    
+
     this.params = {
       baseColor: params.baseColor,
       cloudCount: params.cloudCount || Math.floor(rng.uniform(SECONDARY_CLOUD_RANGES.CLOUD_COUNT.min, SECONDARY_CLOUD_RANGES.CLOUD_COUNT.max)),
@@ -205,7 +205,7 @@ export class SecondaryCloudEffect {
   private generateClouds(planetRadius: number): void {
     const seed = this.params.seed || Math.floor(Math.random() * 1000000);
     const rng = new SeededRandom(seed + 5000);
-    
+
     const cosmicOffsetBase = this.cosmicOriginTime + this.cosmicOffset;
     const cloudsFromPython = this.params.cloudsFromPython;
 
@@ -218,7 +218,6 @@ export class SecondaryCloudEffect {
         const cloudData = cloudsFromPython[i];
 
         if (!cloudData.position || cloudData.position.length !== 3) {
-
           continue;
         }
 
@@ -227,47 +226,37 @@ export class SecondaryCloudEffect {
         z = cloudData.position[2] * planetRadius * 1.05;
 
         if (!isFinite(x) || !isFinite(y) || !isFinite(z)) {
-
           continue;
         }
 
         cloudSize = cloudData.radius * planetRadius * 0.8;
-        
       } else {
-
         const phi = rng.uniform(0, 2 * Math.PI);
         const cosTheta = rng.uniform(-1, 1);
         const theta = Math.acos(cosTheta);
         const surfaceRadius = planetRadius * 1.05;
-        
+
         x = surfaceRadius * Math.sin(theta) * Math.cos(phi);
         y = surfaceRadius * Math.sin(theta) * Math.sin(phi);
         z = surfaceRadius * Math.cos(theta);
 
         if (!isFinite(x) || !isFinite(y) || !isFinite(z)) {
-
           continue;
         }
       }
 
       if (!isFinite(cloudSize) || cloudSize <= 0) {
-
         cloudSize = 1.0;
       }
 
       const baseRadius = cloudSize * rng.uniform(0.3, 0.8);
 
       if (!isFinite(baseRadius) || baseRadius <= 0) {
-
         continue;
       }
 
       const segments = Math.max(8, Math.floor(baseRadius * 15));
-      const cloudGeometry = new THREE.PlaneGeometry(
-        baseRadius * 24,
-        baseRadius * 24,
-        segments, segments
-      );
+      const cloudGeometry = new THREE.PlaneGeometry(baseRadius * 24, baseRadius * 24, segments, segments);
 
       const cloudPosition = new THREE.Vector3(x, y, z);
       const planetCenter = new THREE.Vector3(0, 0, 0);
@@ -302,10 +291,10 @@ export class SecondaryCloudEffect {
         const projectedVertex = direction.multiplyScalar(cloudRadius);
 
         const localVertex = projectedVertex.sub(cloudPosition);
-        
+
         positions.setXYZ(i, localVertex.x, localVertex.y, localVertex.z);
       }
-      
+
       positions.needsUpdate = true;
       cloudGeometry.computeVertexNormals();
 
@@ -316,19 +305,16 @@ export class SecondaryCloudEffect {
       cloudMaterial.uniforms.density.value = this.params.density! * rng.uniform(0.8, 1.2);
       cloudMaterial.uniforms.turbulence.value = this.params.turbulence! * rng.uniform(0.8, 1.2);
 
-      cloudMaterial.uniforms.noiseOffset.value = new THREE.Vector2(
-        (cosmicOffsetBase + rng.uniform(0, 100)) % 100,
-        (cosmicOffsetBase + rng.uniform(0, 100)) % 100
-      );
-      
+      cloudMaterial.uniforms.noiseOffset.value = new THREE.Vector2((cosmicOffsetBase + rng.uniform(0, 100)) % 100, (cosmicOffsetBase + rng.uniform(0, 100)) % 100);
+
       cloudMaterial.uniforms.lightDirection.value = this.material.uniforms.lightDirection.value.clone();
       cloudMaterial.uniforms.lightPosition.value = this.material.uniforms.lightPosition.value.clone();
-      
+
       const cloudMesh = new THREE.Mesh(cloudGeometry, cloudMaterial);
       cloudMesh.renderOrder = 3;
       cloudMesh.userData.isSecondaryCloud = true;
       cloudMesh.userData.planetNormal = normalFromPlanet.clone();
-      
+
       this.clouds.push(cloudMesh);
       this.cloudSystem.add(cloudMesh);
     }
@@ -369,7 +355,7 @@ export class SecondaryCloudEffect {
     const animTime = (timeSinceCosmicOrigin + this.cosmicOffset) * this.params.timeSpeed!;
     const windowedTime = animTime % 10000;
 
-    this.clouds.forEach(cloud => {
+    this.clouds.forEach((cloud) => {
       const material = cloud.material as THREE.ShaderMaterial;
       material.uniforms.time.value = windowedTime;
     });
@@ -381,9 +367,9 @@ export class SecondaryCloudEffect {
   updateParams(newParams: Partial<SecondaryCloudsParams>): void {
     this.params = { ...this.params, ...newParams };
 
-    this.clouds.forEach(cloud => {
+    this.clouds.forEach((cloud) => {
       const material = cloud.material as THREE.ShaderMaterial;
-      
+
       if (newParams.opacity !== undefined) {
         material.uniforms.opacity.value = newParams.opacity;
       }
@@ -397,7 +383,7 @@ export class SecondaryCloudEffect {
   }
 
   updateLightPosition(position: THREE.Vector3): void {
-    this.clouds.forEach(cloud => {
+    this.clouds.forEach((cloud) => {
       const material = cloud.material as THREE.ShaderMaterial;
       if (material.uniforms.lightPosition) {
         material.uniforms.lightPosition.value.copy(position);
@@ -406,7 +392,7 @@ export class SecondaryCloudEffect {
   }
 
   updateLightDirection(direction: THREE.Vector3): void {
-    this.clouds.forEach(cloud => {
+    this.clouds.forEach((cloud) => {
       const material = cloud.material as THREE.ShaderMaterial;
       if (material.uniforms.lightDirection) {
         material.uniforms.lightDirection.value.copy(direction);
@@ -425,7 +411,7 @@ export class SecondaryCloudEffect {
   }
 
   dispose(): void {
-    this.clouds.forEach(cloud => {
+    this.clouds.forEach((cloud) => {
       cloud.geometry.dispose();
       (cloud.material as THREE.ShaderMaterial).dispose();
     });
@@ -434,20 +420,13 @@ export class SecondaryCloudEffect {
   }
 }
 
-export function createSecondaryCloudsFromPythonData(
-  planetRadius: number, 
-  surfaceData: any, 
-  baseColor: THREE.Color,
-  globalSeed?: number, 
-  cosmicOriginTime?: number
-): SecondaryCloudEffect {
+export function createSecondaryCloudsFromPythonData(planetRadius: number, surfaceData: any, baseColor: THREE.Color, globalSeed?: number, cosmicOriginTime?: number): SecondaryCloudEffect {
   const secondaryCloudsArray = surfaceData.secondary_clouds || [];
-  
-  if (secondaryCloudsArray.length === 0) {
 
+  if (secondaryCloudsArray.length === 0) {
     const seed = globalSeed || Math.floor(Math.random() * 1000000);
     const rng = new SeededRandom(seed + 5000);
-    
+
     const params: SecondaryCloudsParams = {
       baseColor: baseColor,
       cloudCount: 20,
@@ -467,7 +446,7 @@ export function createSecondaryCloudsFromPythonData(
 
   const seed = globalSeed || Math.floor(Math.random() * 1000000);
   const rng = new SeededRandom(seed + 5000);
-  
+
   const params: SecondaryCloudsParams = {
     baseColor: baseColor,
     cloudCount: secondaryCloudsArray.length,

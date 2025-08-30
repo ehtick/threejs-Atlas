@@ -1,17 +1,17 @@
 // atlas-ui/react/static/js/3DEffects/ExoticDoodles.tsx
-import * as THREE from 'three';
-import { SeededRandom } from '../Utils/SeededRandom.tsx';
+import * as THREE from "three";
+import { SeededRandom } from "../Utils/SeededRandom.tsx";
 import { getAnimatedUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime.tsx";
 
 export interface ExoticDoodlesParams {
   doodles?: Array<{
     position_3d: [number, number, number];
-    type: 'arc' | 'fractals' | 'squiggle';
+    type: "arc" | "fractals" | "squiggle";
     size: number;
     color: [string, number];
     complexity: number;
     movement_speed: number;
-    movement_pattern: 'wave' | 'pulse' | 'spiral';
+    movement_pattern: "wave" | "pulse" | "spiral";
   }>;
   planetRadius?: number;
 
@@ -26,7 +26,7 @@ export interface ExoticDoodlesParams {
 
 const PROCEDURAL_RANGES = {
   DOODLE_COUNT: { min: 30, max: 48 },
-  DOODLE_SIZE: { min: 0.08, max: 0.20 },
+  DOODLE_SIZE: { min: 0.08, max: 0.2 },
   COMPLEXITY: { min: 15, max: 35 },
   MOVEMENT_SPEED: { min: 0.03, max: 0.09 },
   COLOR_HUE: { min: 0.0, max: 1.0 },
@@ -41,12 +41,12 @@ const PROCEDURAL_RANGES = {
   RETURNING_DURATION: { min: 0.8, max: 2.5 },
 };
 
-type CosmicRingState = 'normal' | 'separating' | 'ring_mode' | 'returning';
+type CosmicRingState = "normal" | "separating" | "ring_mode" | "returning";
 
 export class ExoticDoodlesEffect {
   private group: THREE.Group;
   private doodles: THREE.Object3D[] = [];
-  private doodleData: ExoticDoodlesParams['doodles'] = [];
+  private doodleData: ExoticDoodlesParams["doodles"] = [];
   private planetRadius: number;
   private startTime: number;
   private timeSpeed: number;
@@ -56,14 +56,14 @@ export class ExoticDoodlesEffect {
   private debugInterval: number = 30;
   public debugMode: boolean = false;
 
-  private cosmicRingState: CosmicRingState = 'normal';
+  private cosmicRingState: CosmicRingState = "normal";
   private ringCycleDuration: number;
   private ringEventDuration: number;
   private separationDuration: number;
   private returningDuration: number;
   private doodleBasePositions: THREE.Vector3[] = [];
   private orbitalVisibilityFactor: number;
-  private orbitalData?: ExoticDoodlesParams['orbitalData'];
+  private orbitalData?: ExoticDoodlesParams["orbitalData"];
   private currentTimeYears: number;
 
   private createLitMaterial(color: string, opacity: number): THREE.ShaderMaterial {
@@ -117,36 +117,34 @@ export class ExoticDoodlesEffect {
         opacity: { value: opacity },
         lightDirection: { value: this.lightDirection.clone() },
         ambientStrength: { value: 0.5 },
-        lightIntensity: { value: 0.8 }
+        lightIntensity: { value: 0.8 },
       },
       transparent: true,
-      side: THREE.DoubleSide
+      side: THREE.DoubleSide,
     });
   }
 
   private projectPointOnSphere(localX: number, localY: number, radius: number, baseDirection: THREE.Vector3): THREE.Vector3 {
-
     const normal = baseDirection.clone().normalize();
     const tangent = new THREE.Vector3(0, 1, 0).cross(normal).normalize();
 
     if (tangent.lengthSq() < 0.001) {
       tangent.set(1, 0, 0).cross(normal).normalize();
     }
-    
+
     const bitangent = normal.clone().cross(tangent).normalize();
 
-    const localPosition = tangent.clone().multiplyScalar(localX)
-      .add(bitangent.clone().multiplyScalar(localY));
+    const localPosition = tangent.clone().multiplyScalar(localX).add(bitangent.clone().multiplyScalar(localY));
 
     const surfacePosition = normal.clone().add(localPosition).normalize().multiplyScalar(radius);
-    
+
     return surfacePosition;
   }
 
   constructor(planetRadius: number, params: ExoticDoodlesParams = {}, seed?: number) {
     this.group = new THREE.Group();
     this.planetRadius = planetRadius;
-    
+
     const actualSeed = seed || 12345;
     this.rng = new SeededRandom(actualSeed);
 
@@ -175,34 +173,26 @@ export class ExoticDoodlesEffect {
     }
   }
 
-  private generateProceduralDoodles(): ExoticDoodlesParams['doodles'] {
-    const doodles: NonNullable<ExoticDoodlesParams['doodles']> = [];
-    const doodleCount = this.rng.randint(
-      PROCEDURAL_RANGES.DOODLE_COUNT.min, 
-      PROCEDURAL_RANGES.DOODLE_COUNT.max
-    );
-    
-    const doodleTypes: Array<'arc' | 'fractals' | 'squiggle'> = ['arc', 'fractals', 'squiggle'];
-    const movementPatterns: Array<'wave' | 'pulse' | 'spiral'> = ['wave', 'pulse', 'spiral'];
-    
-    for (let i = 0; i < doodleCount; i++) {
+  private generateProceduralDoodles(): ExoticDoodlesParams["doodles"] {
+    const doodles: NonNullable<ExoticDoodlesParams["doodles"]> = [];
+    const doodleCount = this.rng.randint(PROCEDURAL_RANGES.DOODLE_COUNT.min, PROCEDURAL_RANGES.DOODLE_COUNT.max);
 
+    const doodleTypes: Array<"arc" | "fractals" | "squiggle"> = ["arc", "fractals", "squiggle"];
+    const movementPatterns: Array<"wave" | "pulse" | "spiral"> = ["wave", "pulse", "spiral"];
+
+    for (let i = 0; i < doodleCount; i++) {
       const theta = this.rng.random() * 2 * Math.PI;
       const phi = Math.acos(this.rng.random() * 2 - 1);
-      
-      const position_3d: [number, number, number] = [
-        Math.sin(phi) * Math.cos(theta),
-        Math.sin(phi) * Math.sin(theta),
-        Math.cos(phi)
-      ];
+
+      const position_3d: [number, number, number] = [Math.sin(phi) * Math.cos(theta), Math.sin(phi) * Math.sin(theta), Math.cos(phi)];
 
       const r = this.rng.randint(200, 255);
       const g = this.rng.randint(0, 100);
       const b = this.rng.randint(150, 255);
       const opacity = this.rng.uniform(PROCEDURAL_RANGES.OPACITY.min, PROCEDURAL_RANGES.OPACITY.max);
 
-      const hexColor = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-      
+      const hexColor = `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+
       doodles.push({
         position_3d,
         type: doodleTypes[this.rng.randint(0, doodleTypes.length - 1)],
@@ -210,10 +200,10 @@ export class ExoticDoodlesEffect {
         color: [hexColor, opacity],
         complexity: this.rng.randint(PROCEDURAL_RANGES.COMPLEXITY.min, PROCEDURAL_RANGES.COMPLEXITY.max),
         movement_speed: this.rng.uniform(PROCEDURAL_RANGES.MOVEMENT_SPEED.min, PROCEDURAL_RANGES.MOVEMENT_SPEED.max),
-        movement_pattern: movementPatterns[this.rng.randint(0, movementPatterns.length - 1)]
+        movement_pattern: movementPatterns[this.rng.randint(0, movementPatterns.length - 1)],
       });
     }
-    
+
     return doodles;
   }
 
@@ -222,13 +212,13 @@ export class ExoticDoodlesEffect {
       let doodleObject: THREE.Object3D;
 
       switch (doodle.type) {
-        case 'arc':
+        case "arc":
           doodleObject = this.createArcDoodle(doodle);
           break;
-        case 'fractals':
+        case "fractals":
           doodleObject = this.createFractalDoodle(doodle);
           break;
-        case 'squiggle':
+        case "squiggle":
           doodleObject = this.createSquiggleDoodle(doodle);
           break;
         default:
@@ -243,21 +233,14 @@ export class ExoticDoodlesEffect {
     });
   }
 
-  private createArcDoodle(doodle: NonNullable<ExoticDoodlesParams['doodles']>[0]): THREE.Object3D {
+  private createArcDoodle(doodle: NonNullable<ExoticDoodlesParams["doodles"]>[0]): THREE.Object3D {
     const group = new THREE.Group();
 
-    const curve = new THREE.EllipseCurve(
-      0, 0,
-      doodle.size * this.planetRadius,
-      doodle.size * this.planetRadius * 0.7,
-      0, Math.PI * 1.5,
-      false,
-      0
-    );
+    const curve = new THREE.EllipseCurve(0, 0, doodle.size * this.planetRadius, doodle.size * this.planetRadius * 0.7, 0, Math.PI * 1.5, false, 0);
 
     const points = curve.getPoints(50);
     const geometry = new THREE.BufferGeometry().setFromPoints(points);
-    
+
     const material = this.createLitMaterial(doodle.color[0], doodle.color[1]);
 
     const arc = new THREE.Line(geometry, material);
@@ -266,28 +249,27 @@ export class ExoticDoodlesEffect {
     return group;
   }
 
-  private createFractalDoodle(doodle: NonNullable<ExoticDoodlesParams['doodles']>[0]): THREE.Object3D {
+  private createFractalDoodle(doodle: NonNullable<ExoticDoodlesParams["doodles"]>[0]): THREE.Object3D {
     const group = new THREE.Group();
 
     const numElements = Math.floor(doodle.complexity * 0.6) + 2;
     const baseDirection = new THREE.Vector3(...doodle.position_3d);
     const radius = this.planetRadius;
-    
-    for (let i = 0; i < numElements; i++) {
 
+    for (let i = 0; i < numElements; i++) {
       const centerX = (this.rng.random() - 0.5) * doodle.size * this.planetRadius;
       const centerY = (this.rng.random() - 0.5) * doodle.size * this.planetRadius;
 
       const points: THREE.Vector3[] = [];
       const numPoints = Math.floor(this.rng.random() * 20) + 8;
       const baseCircleRadius = this.rng.random() * doodle.size * this.planetRadius * 0.3 + 0.1;
-      
+
       for (let j = 0; j <= numPoints; j++) {
         const angle = (j / numPoints) * Math.PI * 2;
 
         const radiusVariation = baseCircleRadius * (0.7 + this.rng.random() * 0.6);
         const angleJitter = angle + (this.rng.random() - 0.5) * 0.5;
-        
+
         const localX = centerX + Math.cos(angleJitter) * radiusVariation;
         const localY = centerY + Math.sin(angleJitter) * radiusVariation;
 
@@ -296,7 +278,7 @@ export class ExoticDoodlesEffect {
       }
 
       points.push(points[0]);
-      
+
       const geometry = new THREE.BufferGeometry().setFromPoints(points);
       const material = this.createLitMaterial(doodle.color[0], doodle.color[1]);
 
@@ -307,22 +289,21 @@ export class ExoticDoodlesEffect {
     return group;
   }
 
-  private createSquiggleDoodle(doodle: NonNullable<ExoticDoodlesParams['doodles']>[0]): THREE.Object3D {
+  private createSquiggleDoodle(doodle: NonNullable<ExoticDoodlesParams["doodles"]>[0]): THREE.Object3D {
     const group = new THREE.Group();
 
     const numStrokes = Math.floor(doodle.complexity * 0.8) + 3;
     const baseDirection = new THREE.Vector3(...doodle.position_3d);
     const radius = this.planetRadius;
-    
+
     for (let stroke = 0; stroke < numStrokes; stroke++) {
       const points: THREE.Vector3[] = [];
       const strokeLength = this.rng.random() * 15 + 5;
 
       let currentX = (this.rng.random() - 0.5) * doodle.size * this.planetRadius;
       let currentY = (this.rng.random() - 0.5) * doodle.size * this.planetRadius;
-      
-      for (let i = 0; i <= strokeLength; i++) {
 
+      for (let i = 0; i <= strokeLength; i++) {
         const pointOnSphere = this.projectPointOnSphere(currentX, currentY, radius, baseDirection);
         points.push(pointOnSphere);
 
@@ -345,7 +326,6 @@ export class ExoticDoodlesEffect {
   }
 
   update(_deltaTime: number): void {
-
     const cosmicOriginTime = DEFAULT_COSMIC_ORIGIN_TIME;
     const currentTime = getAnimatedUniverseTime(cosmicOriginTime, this.timeSpeed, this.startTime);
 
@@ -360,16 +340,13 @@ export class ExoticDoodlesEffect {
       }
 
       if (previousVisibility <= 0.001 && this.orbitalVisibilityFactor > 0.001) {
-
       } else if (previousVisibility > 0.001 && this.orbitalVisibilityFactor <= 0.001) {
-
       }
     }
 
     if (!this.orbitalData || !this.orbitalData.enabled) {
-
-      this.cosmicRingState = 'normal';
-      this.doodles.forEach(doodle => {
+      this.cosmicRingState = "normal";
+      this.doodles.forEach((doodle) => {
         doodle.position.set(0, 0, 0);
       });
       this.applyNormalAnimations(currentTime);
@@ -377,9 +354,9 @@ export class ExoticDoodlesEffect {
     }
 
     if (this.orbitalVisibilityFactor <= 0.001) {
-      this.cosmicRingState = 'normal';
+      this.cosmicRingState = "normal";
 
-      this.doodles.forEach(doodle => {
+      this.doodles.forEach((doodle) => {
         doodle.position.set(0, 0, 0);
       });
 
@@ -402,60 +379,59 @@ export class ExoticDoodlesEffect {
       const ringLayer = index % 3;
       const targetSeparationDistance = this.planetRadius * 2.5;
       const layerOffset = ringLayer * 0.3 * this.planetRadius;
-      const targetRingPos = basePos.clone().normalize().multiplyScalar(targetSeparationDistance + layerOffset);
+      const targetRingPos = basePos
+        .clone()
+        .normalize()
+        .multiplyScalar(targetSeparationDistance + layerOffset);
 
       const ringCalculationTime = currentTime;
-      
+
       const baseAngle = ringCalculationTime * 12;
       const layerSpeedMultiplier = 1 + ringLayer * 0.4;
-      const targetAngle = baseAngle * layerSpeedMultiplier + index * (Math.PI * 2 / this.doodles.length);
+      const targetAngle = baseAngle * layerSpeedMultiplier + index * ((Math.PI * 2) / this.doodles.length);
       const ringRadius = targetSeparationDistance * 0.08;
-      
+
       const tangent = new THREE.Vector3().crossVectors(targetRingPos, new THREE.Vector3(0, 1, 0)).normalize();
       if (tangent.lengthSq() < 0.001) {
         tangent.set(1, 0, 0).cross(targetRingPos.clone().normalize()).normalize();
       }
       const bitangent = new THREE.Vector3().crossVectors(targetRingPos.clone().normalize(), tangent).normalize();
-      
-      const targetRingPosition = targetRingPos.clone()
+
+      const targetRingPosition = targetRingPos
+        .clone()
         .add(tangent.multiplyScalar(Math.cos(targetAngle) * ringRadius))
         .add(bitangent.multiplyScalar(Math.sin(targetAngle) * ringRadius));
 
       let finalPosition: THREE.Vector3;
-      
-      if (ringEffect.separationFactor <= 0.001) {
 
+      if (ringEffect.separationFactor <= 0.001) {
         finalPosition = surfacePosition.clone();
       } else {
-
         let lerpFactor = ringEffect.separationFactor;
 
-        if (this.cosmicRingState === 'separating') {
+        if (this.cosmicRingState === "separating") {
           lerpFactor = this.easeOutQuart(lerpFactor);
-        } else if (this.cosmicRingState === 'returning') {
+        } else if (this.cosmicRingState === "returning") {
           lerpFactor = this.easeInOutCubic(lerpFactor);
         }
 
         finalPosition = surfacePosition.clone().lerp(targetRingPosition, lerpFactor);
       }
-      
+
       doodle.position.copy(finalPosition);
 
       const speed = data.movement_speed * ringEffect.speedMultiplier;
-      
-      switch (data.movement_pattern) {
-        case 'wave':
 
+      switch (data.movement_pattern) {
+        case "wave":
           doodle.rotation.z = Math.sin(currentTime * speed) * 0.2;
           break;
-          
-        case 'pulse':
 
+        case "pulse":
           doodle.rotation.z = Math.sin(currentTime * speed * 2) * 0.15;
           break;
-          
-        case 'spiral':
 
+        case "spiral":
           doodle.rotation.z = currentTime * speed;
           break;
       }
@@ -466,19 +442,15 @@ export class ExoticDoodlesEffect {
    * Calcular factor de visibilidad basado en datos orbitales (como PulsatingCube)
    */
   private calculateOrbitalVisibility(): number {
-
     if (!this.orbitalData || !this.orbitalData.enabled) {
       return 1.0;
     }
 
     const currentTime = this.currentTimeYears;
-    const cycleProgress = (currentTime % this.orbitalData.cycle_duration_years) / 
-                         this.orbitalData.cycle_duration_years;
-    const visibleFraction = this.orbitalData.visible_duration_years / 
-                           this.orbitalData.cycle_duration_years;
+    const cycleProgress = (currentTime % this.orbitalData.cycle_duration_years) / this.orbitalData.cycle_duration_years;
+    const visibleFraction = this.orbitalData.visible_duration_years / this.orbitalData.cycle_duration_years;
 
     if (cycleProgress < visibleFraction) {
-
       const localProgress = cycleProgress / visibleFraction;
       if (localProgress < 0.1) {
         return localProgress / 0.1;
@@ -498,15 +470,15 @@ export class ExoticDoodlesEffect {
       if (!data) return;
 
       const speed = data.movement_speed;
-      
+
       switch (data.movement_pattern) {
-        case 'wave':
+        case "wave":
           doodle.rotation.z = Math.sin(currentTime * speed) * 0.2;
           break;
-        case 'pulse':
+        case "pulse":
           doodle.rotation.z = Math.sin(currentTime * speed * 2) * 0.15;
           break;
-        case 'spiral':
+        case "spiral":
           doodle.rotation.z = currentTime * speed;
           break;
       }
@@ -515,19 +487,22 @@ export class ExoticDoodlesEffect {
 
   private updateCosmicRingState(cycleTime: number): void {
     const normalDuration = this.ringCycleDuration - this.ringEventDuration;
-    
+
     if (cycleTime < normalDuration) {
-      this.cosmicRingState = 'normal';
+      this.cosmicRingState = "normal";
     } else if (cycleTime < normalDuration + this.separationDuration) {
-      this.cosmicRingState = 'separating';
+      this.cosmicRingState = "separating";
     } else if (cycleTime < normalDuration + this.separationDuration + (this.ringEventDuration - this.separationDuration - this.returningDuration)) {
-      this.cosmicRingState = 'ring_mode';
+      this.cosmicRingState = "ring_mode";
     } else {
-      this.cosmicRingState = 'returning';
+      this.cosmicRingState = "returning";
     }
   }
 
-  private calculateCosmicRingEffect(cycleTime: number, doodleIndex: number): {
+  private calculateCosmicRingEffect(
+    cycleTime: number,
+    doodleIndex: number
+  ): {
     separationFactor: number;
     orbitalSpeed: number;
     speedMultiplier: number;
@@ -538,13 +513,13 @@ export class ExoticDoodlesEffect {
     let speedMultiplier = 1;
 
     switch (this.cosmicRingState) {
-      case 'normal':
+      case "normal":
         separationFactor = 0;
         orbitalSpeed = 0;
         speedMultiplier = 1;
         break;
 
-      case 'separating':
+      case "separating":
         const separatingProgress = (cycleTime - normalDuration) / this.separationDuration;
 
         separationFactor = this.easeOutQuart(separatingProgress);
@@ -552,13 +527,13 @@ export class ExoticDoodlesEffect {
         speedMultiplier = 1 + separationFactor * 7;
         break;
 
-      case 'ring_mode':
+      case "ring_mode":
         separationFactor = 1;
         orbitalSpeed = 12;
         speedMultiplier = 8;
         break;
 
-      case 'returning':
+      case "returning":
         const returningStart = normalDuration + this.separationDuration + (this.ringEventDuration - this.separationDuration - this.returningDuration);
         const returningProgress = (cycleTime - returningStart) / this.returningDuration;
 
@@ -571,10 +546,10 @@ export class ExoticDoodlesEffect {
 
     const doodleDelayFactor = (doodleIndex / this.doodles.length) * 0.3;
 
-    if (this.cosmicRingState === 'separating') {
+    if (this.cosmicRingState === "separating") {
       const adjustedProgress = Math.max(0, (cycleTime - normalDuration - doodleDelayFactor * this.separationDuration) / this.separationDuration);
       separationFactor = this.easeOutQuart(adjustedProgress);
-    } else if (this.cosmicRingState === 'returning') {
+    } else if (this.cosmicRingState === "returning") {
       const returningStart = normalDuration + this.separationDuration + (this.ringEventDuration - this.separationDuration - this.returningDuration);
       const adjustedProgress = Math.max(0, (cycleTime - returningStart - doodleDelayFactor * this.returningDuration) / this.returningDuration);
       separationFactor = 1 - this.easeInQuart(adjustedProgress);
@@ -583,7 +558,7 @@ export class ExoticDoodlesEffect {
     return {
       separationFactor,
       orbitalSpeed,
-      speedMultiplier
+      speedMultiplier,
     };
   }
 
@@ -591,7 +566,7 @@ export class ExoticDoodlesEffect {
     const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
     return t * t * (3 - 2 * t);
   }
-  
+
   /**
    * Debug method to log current orbital status and time until next appearance
    */
@@ -599,33 +574,29 @@ export class ExoticDoodlesEffect {
     if (!this.orbitalData || !this.orbitalData.enabled) {
       return;
     }
-    
+
     const currentTime = this.currentTimeYears;
-    const cycleProgress = (currentTime % this.orbitalData.cycle_duration_years) / 
-                         this.orbitalData.cycle_duration_years;
-    const visibleFraction = this.orbitalData.visible_duration_years / 
-                           this.orbitalData.cycle_duration_years;
-    
+    const cycleProgress = (currentTime % this.orbitalData.cycle_duration_years) / this.orbitalData.cycle_duration_years;
+    const visibleFraction = this.orbitalData.visible_duration_years / this.orbitalData.cycle_duration_years;
+
     const isCurrentlyVisible = cycleProgress < visibleFraction;
     const cycleTimeYears = currentTime % this.orbitalData.cycle_duration_years;
-    
+
     let timeUntilNextEvent: number;
     let nextEventType: string;
-    
+
     if (isCurrentlyVisible) {
-
       timeUntilNextEvent = this.orbitalData.visible_duration_years - cycleTimeYears;
-      nextEventType = 'DISAPPEAR';
+      nextEventType = "DISAPPEAR";
     } else {
-
       timeUntilNextEvent = this.orbitalData.cycle_duration_years - cycleTimeYears;
-      nextEventType = 'APPEAR';
+      nextEventType = "APPEAR";
     }
 
     const timeInDays = timeUntilNextEvent * 365.25;
     const timeInHours = timeInDays * 24;
     const timeInMinutes = timeInHours * 60;
-    
+
     let timeString: string;
     if (timeInDays > 1) {
       timeString = `${timeInDays.toFixed(1)} days`;
@@ -634,7 +605,6 @@ export class ExoticDoodlesEffect {
     } else {
       timeString = `${timeInMinutes.toFixed(1)} minutes`;
     }
-    
   }
 
   private easeInOutCubic(t: number): number {
@@ -652,7 +622,7 @@ export class ExoticDoodlesEffect {
   updateLightDirection(direction: THREE.Vector3): void {
     this.lightDirection.copy(direction).normalize();
 
-    this.doodles.forEach(doodle => {
+    this.doodles.forEach((doodle) => {
       doodle.traverse((child) => {
         if (child instanceof THREE.Line && child.material instanceof THREE.ShaderMaterial) {
           if (child.material.uniforms.lightDirection) {
@@ -682,7 +652,7 @@ export class ExoticDoodlesEffect {
   }
 
   dispose(): void {
-    this.doodles.forEach(doodle => {
+    this.doodles.forEach((doodle) => {
       doodle.traverse((child) => {
         if (child instanceof THREE.Mesh) {
           child.geometry.dispose();
@@ -701,22 +671,19 @@ export class ExoticDoodlesEffect {
   }
 }
 
-export function createExoticDoodlesFromPythonData(
-  planetRadius: number,
-  _surfaceElements?: any,
-  seed?: number,
-  pythonData?: any
-): ExoticDoodlesEffect | null {
-
-  const currentTimeYears = pythonData?.timing?.elapsed_time ? 
-    pythonData.timing.elapsed_time / (365.25 * 24 * 3600) : 0;
+export function createExoticDoodlesFromPythonData(planetRadius: number, _surfaceElements?: any, seed?: number, pythonData?: any): ExoticDoodlesEffect | null {
+  const currentTimeYears = pythonData?.timing?.elapsed_time ? pythonData.timing.elapsed_time / (365.25 * 24 * 3600) : 0;
 
   const doodleData = pythonData?.surface_elements?.exotic_doodles;
 
-  return new ExoticDoodlesEffect(planetRadius, {
-    planetRadius: planetRadius,
+  return new ExoticDoodlesEffect(
+    planetRadius,
+    {
+      planetRadius: planetRadius,
 
-    orbitalData: doodleData,
-    currentTime: currentTimeYears
-  }, seed);
+      orbitalData: doodleData,
+      currentTime: currentTimeYears,
+    },
+    seed
+  );
 }

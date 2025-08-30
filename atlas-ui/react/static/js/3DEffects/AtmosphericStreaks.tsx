@@ -1,6 +1,6 @@
 // atlas-ui/react/static/js/3DEffects/AtmosphericStreaks.tsx
-import * as THREE from 'three';
-import { SeededRandom } from '../Utils/SeededRandom.tsx';
+import * as THREE from "three";
+import { SeededRandom } from "../Utils/SeededRandom.tsx";
 
 export interface AtmosphericStreaksParams {
   color?: number[] | THREE.Color;
@@ -22,10 +22,9 @@ export class AtmosphericStreaksEffect {
   private rng: SeededRandom;
 
   constructor(planetRadius: number, params: AtmosphericStreaksParams = {}) {
-
     const seed = params.seed || Math.floor(Math.random() * 1000000);
     this.rng = new SeededRandom(seed);
-    
+
     this.params = {
       color: params.color || [0.95, 0.95, 1.0],
       particleCount: params.particleCount || 50,
@@ -33,7 +32,7 @@ export class AtmosphericStreaksEffect {
       size: params.size || 1.0,
       opacity: params.opacity || 0.3,
       brightness: params.brightness || 1.0,
-      seed
+      seed,
     };
 
     this.particleCount = this.params.particleCount!;
@@ -50,16 +49,15 @@ export class AtmosphericStreaksEffect {
     const phases = new Float32Array(this.particleCount);
 
     const atmosphereRadius = planetRadius * 1.3;
-    
-    for (let i = 0; i < this.particleCount; i++) {
 
+    for (let i = 0; i < this.particleCount; i++) {
       const phi = this.rng.random() * Math.PI * 2;
       const costheta = this.rng.random() * 2 - 1;
       const u = this.rng.random();
-      
+
       const theta = Math.acos(costheta);
       const r = atmosphereRadius * Math.cbrt(u);
-      
+
       positions[i * 3] = r * Math.sin(theta) * Math.cos(phi);
       positions[i * 3 + 1] = r * Math.sin(theta) * Math.sin(phi);
       positions[i * 3 + 2] = r * Math.cos(theta);
@@ -69,20 +67,14 @@ export class AtmosphericStreaksEffect {
       phases[i] = this.rng.random() * Math.PI * 2;
     }
 
-    this.geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    this.geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
-    this.geometry.setAttribute('speed', new THREE.BufferAttribute(speeds, 1));
-    this.geometry.setAttribute('phase', new THREE.BufferAttribute(phases, 1));
+    this.geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    this.geometry.setAttribute("size", new THREE.BufferAttribute(sizes, 1));
+    this.geometry.setAttribute("speed", new THREE.BufferAttribute(speeds, 1));
+    this.geometry.setAttribute("phase", new THREE.BufferAttribute(phases, 1));
   }
 
   private createMaterial(): void {
-    const color = this.params.color instanceof THREE.Color ? 
-      this.params.color : 
-      new THREE.Color().setRGB(
-        this.params.color![0], 
-        this.params.color![1], 
-        this.params.color![2]
-      );
+    const color = this.params.color instanceof THREE.Color ? this.params.color : new THREE.Color().setRGB(this.params.color![0], this.params.color![1], this.params.color![2]);
 
     const vertexShader = `
       attribute float size;
@@ -144,13 +136,13 @@ export class AtmosphericStreaksEffect {
         time: { value: 0 },
         color: { value: color },
         opacity: { value: this.params.opacity },
-        brightness: { value: this.params.brightness }
+        brightness: { value: this.params.brightness },
       },
       vertexShader,
       fragmentShader,
       transparent: true,
       blending: THREE.AdditiveBlending,
-      depthWrite: false
+      depthWrite: false,
     });
   }
 
@@ -162,7 +154,6 @@ export class AtmosphericStreaksEffect {
   }
 
   update(deltaTime: number): void {
-
     this.time += deltaTime;
     this.material.uniforms.time.value = this.time;
 
@@ -174,20 +165,14 @@ export class AtmosphericStreaksEffect {
     this.params = { ...this.params, ...newParams };
 
     if (newParams.color) {
-      const color = newParams.color instanceof THREE.Color ? 
-        newParams.color : 
-        new THREE.Color().setRGB(
-          newParams.color[0], 
-          newParams.color[1], 
-          newParams.color[2]
-        );
+      const color = newParams.color instanceof THREE.Color ? newParams.color : new THREE.Color().setRGB(newParams.color[0], newParams.color[1], newParams.color[2]);
       this.material.uniforms.color.value = color;
     }
-    
+
     if (newParams.opacity !== undefined) {
       this.material.uniforms.opacity.value = newParams.opacity;
     }
-    
+
     if (newParams.brightness !== undefined) {
       this.material.uniforms.brightness.value = newParams.brightness;
     }
@@ -203,14 +188,9 @@ export class AtmosphericStreaksEffect {
   }
 }
 
-export function createAtmosphericStreaksFromPythonData(
-  planetRadius: number, 
-  atmosphereData: any,
-  seed?: number
-): AtmosphericStreaksEffect {
-
+export function createAtmosphericStreaksFromPythonData(planetRadius: number, atmosphereData: any, seed?: number): AtmosphericStreaksEffect {
   const streaksData = atmosphereData.streaks || atmosphereData;
-  
+
   const params: AtmosphericStreaksParams = {
     color: streaksData.color || [0.95, 0.95, 1.0],
     particleCount: streaksData.particleCount || 30,
@@ -218,7 +198,7 @@ export function createAtmosphericStreaksFromPythonData(
     size: 0.8,
     opacity: 0.2,
     brightness: 0.8,
-    seed: seed || Math.floor(Math.random() * 1000000)
+    seed: seed || Math.floor(Math.random() * 1000000),
   };
 
   return new AtmosphericStreaksEffect(planetRadius, params);

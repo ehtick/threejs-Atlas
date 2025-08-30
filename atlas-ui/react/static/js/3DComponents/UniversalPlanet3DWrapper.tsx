@@ -1,9 +1,9 @@
 // atlas-ui/react/static/js/3DComponents/UniversalPlanet3DWrapper.tsx
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
-import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { UniversalPlanetRenderer } from './UniversalPlanetRenderer';
+import React, { useEffect, useRef, useState, useCallback } from "react";
+import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import { UniversalPlanetRenderer } from "./UniversalPlanetRenderer";
 
 interface UniversalPlanet3DProps {
   planetName: string;
@@ -38,10 +38,7 @@ interface RendererStats {
   renderCalls: number;
 }
 
-class ErrorBoundary extends React.Component<
-  { children: React.ReactNode; onError?: (error: string) => void },
-  { hasError: boolean; error: string | null }
-> {
+class ErrorBoundary extends React.Component<{ children: React.ReactNode; onError?: (error: string) => void }, { hasError: boolean; error: string | null }> {
   constructor(props: { children: React.ReactNode; onError?: (error: string) => void }) {
     super(props);
     this.state = { hasError: false, error: null };
@@ -64,7 +61,7 @@ class ErrorBoundary extends React.Component<
           <div className="text-center p-4">
             <div className="text-red-400 text-sm mb-2">3D Renderer Error</div>
             <div className="text-xs text-gray-400 max-w-xs">{this.state.error}</div>
-            <button 
+            <button
               onClick={() => {
                 this.setState({ hasError: false, error: null });
                 window.location.reload();
@@ -82,20 +79,7 @@ class ErrorBoundary extends React.Component<
   }
 }
 
-export const UniversalPlanet3DWrapper: React.FC<UniversalPlanet3DProps> = ({
-  planetName,
-  containerClassName = '',
-  width = 800,
-  height = 600,
-  autoRotate = true,
-  enableControls = true,
-  showDebugInfo = false,
-  planetData,
-  cosmicOriginTime,
-  initialAngleRotation,
-  onDataLoaded,
-  onError
-}) => {
+export const UniversalPlanet3DWrapper: React.FC<UniversalPlanet3DProps> = ({ planetName, containerClassName = "", width = 800, height = 600, autoRotate = true, enableControls = true, showDebugInfo = false, planetData, cosmicOriginTime, initialAngleRotation, onDataLoaded, onError }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -111,7 +95,7 @@ export const UniversalPlanet3DWrapper: React.FC<UniversalPlanet3DProps> = ({
   const [stats, setStats] = useState<RendererStats>({
     frameRate: 0,
     renderTime: 0,
-    renderCalls: 0
+    renderCalls: 0,
   });
 
   const initializeThreeJS = useCallback(() => {
@@ -136,12 +120,12 @@ export const UniversalPlanet3DWrapper: React.FC<UniversalPlanet3DProps> = ({
       camera.position.set(0, 0, 5);
       cameraRef.current = camera;
 
-      const renderer = new THREE.WebGLRenderer({ 
+      const renderer = new THREE.WebGLRenderer({
         antialias: true,
         alpha: true,
-        powerPreference: 'high-performance'
+        powerPreference: "high-performance",
       });
-      
+
       renderer.setSize(containerWidth, containerHeight);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.shadowMap.enabled = true;
@@ -149,7 +133,7 @@ export const UniversalPlanet3DWrapper: React.FC<UniversalPlanet3DProps> = ({
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.2;
       renderer.outputColorSpace = THREE.SRGBColorSpace;
-      
+
       mountRef.current.appendChild(renderer.domElement);
       rendererRef.current = renderer;
 
@@ -191,14 +175,14 @@ export const UniversalPlanet3DWrapper: React.FC<UniversalPlanet3DProps> = ({
     const planetMaterial = new THREE.MeshStandardMaterial({
       color: 0x808080,
       metalness: 0.1,
-      roughness: 0.8
+      roughness: 0.8,
     });
 
     const planetMesh = new THREE.Mesh(planetGeometry, planetMaterial);
     planetMesh.castShadow = true;
     planetMesh.receiveShadow = true;
     scene.add(planetMesh);
-    
+
     return planetMesh;
   };
 
@@ -224,40 +208,39 @@ export const UniversalPlanet3DWrapper: React.FC<UniversalPlanet3DProps> = ({
 
       if (planetData) {
         await universalRendererRef.current.loadPlanetData(planetName);
-        
+
         if (onDataLoaded) {
           onDataLoaded({
             planet_info: {
               name: planetName,
               type: planetData.planet_type,
-              base_color: '#808080',
-              radius: planetData.diameter / 2
+              base_color: "#808080",
+              radius: planetData.diameter / 2,
             },
             universal_actions: [],
-            source: 'local_data'
+            source: "local_data",
           });
         }
       } else {
         await universalRendererRef.current.loadPlanetData(planetName);
-        
+
         if (onDataLoaded) {
           onDataLoaded({
             planet_info: {
               name: planetName,
-              type: 'unknown',
-              base_color: '#808080',
-              radius: 1
+              type: "unknown",
+              base_color: "#808080",
+              radius: 1,
             },
             universal_actions: [],
-            source: 'api'
+            source: "api",
           });
         }
       }
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error loading planet';
+      const errorMessage = error instanceof Error ? error.message : "Unknown error loading planet";
       setError(errorMessage);
-      
+
       if (onError) {
         onError(errorMessage);
       }
@@ -270,7 +253,7 @@ export const UniversalPlanet3DWrapper: React.FC<UniversalPlanet3DProps> = ({
     frameIdRef.current = requestAnimationFrame(animate);
 
     const currentTime = performance.now();
-    
+
     if (controlsRef.current) {
       controlsRef.current.update();
     }
@@ -282,10 +265,10 @@ export const UniversalPlanet3DWrapper: React.FC<UniversalPlanet3DProps> = ({
 
       if (currentTime - lastFrameTimeRef.current > 1000) {
         const frameRate = 1000 / (currentTime - lastFrameTimeRef.current);
-        setStats(prevStats => ({
+        setStats((prevStats) => ({
           frameRate: Math.round(frameRate),
           renderTime: Math.round(renderTime * 100) / 100,
-          renderCalls: prevStats.renderCalls + 1
+          renderCalls: prevStats.renderCalls + 1,
         }));
         lastFrameTimeRef.current = currentTime;
       }
@@ -296,16 +279,15 @@ export const UniversalPlanet3DWrapper: React.FC<UniversalPlanet3DProps> = ({
     const initialize = async () => {
       try {
         if (!initializeThreeJS()) {
-          setError('Failed to initialize 3D renderer');
+          setError("Failed to initialize 3D renderer");
           return;
         }
 
         animate();
 
         await loadPlanetData();
-        
       } catch (error) {
-        setError(error instanceof Error ? error.message : 'Unknown initialization error');
+        setError(error instanceof Error ? error.message : "Unknown initialization error");
       }
     };
 
@@ -330,28 +312,26 @@ export const UniversalPlanet3DWrapper: React.FC<UniversalPlanet3DProps> = ({
             mountRef.current.removeChild(rendererRef.current.domElement);
           }
           rendererRef.current.dispose();
-        } catch (error) {
-        }
+        } catch (error) {}
       }
     };
   }, [initializeThreeJS, animate, loadPlanetData, planetName]);
 
-  const handleError = useCallback((errorMessage: string) => {
-    setError(errorMessage);
-    if (onError) {
-      onError(errorMessage);
-    }
-  }, [onError]);
+  const handleError = useCallback(
+    (errorMessage: string) => {
+      setError(errorMessage);
+      if (onError) {
+        onError(errorMessage);
+      }
+    },
+    [onError]
+  );
 
   return (
     <ErrorBoundary onError={handleError}>
       <div className={`relative ${containerClassName}`}>
-        <div 
-          ref={mountRef} 
-          className="w-full h-full"
-          style={{ width, height }}
-        />
-        
+        <div ref={mountRef} className="w-full h-full" style={{ width, height }} />
+
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded">
             <div className="text-white text-center">
@@ -360,20 +340,18 @@ export const UniversalPlanet3DWrapper: React.FC<UniversalPlanet3DProps> = ({
             </div>
           </div>
         )}
-        
+
         {error && (
           <div className="absolute top-0 left-0 right-0 p-2 bg-red-500 text-white text-sm rounded-t">
             <strong>3D Error:</strong> {error}
           </div>
         )}
-        
+
         {!loading && !error && (
           <div className="absolute bottom-0 left-0 p-4 text-white bg-black bg-opacity-50 max-w-xs rounded-tr">
             <h3 className="text-lg font-bold">{planetName}</h3>
             <p className="text-sm opacity-80">Universal 3D Renderer</p>
-            <p className="text-xs mt-1 opacity-60">
-              Active • {stats.renderCalls} renders
-            </p>
+            <p className="text-xs mt-1 opacity-60">Active • {stats.renderCalls} renders</p>
           </div>
         )}
 

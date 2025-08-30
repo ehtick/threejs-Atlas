@@ -1,6 +1,6 @@
 // atlas-ui/react/static/js/3DEffects/RingSystem.tsx
 
-import * as THREE from 'three';
+import * as THREE from "three";
 
 export interface RingSystemParams {
   full_ring?: { particles: any[] };
@@ -42,106 +42,106 @@ export class RingSystemEffect {
   constructor(planetRadius: number, params: RingSystemParams) {
     this.planetRadius = planetRadius;
     this.params = params;
-    
+
     this.createRingSystemFromAPI(params);
   }
 
   private createRingSystemFromAPI(ringsData: RingSystemParams): void {
     const { full_ring, ontop_ring, ring_inner_radius, ring_outer_radius, tilt_factor, planet_radius, shape_seed } = ringsData;
-    
+
     if (!full_ring || !ontop_ring) {
       return;
     }
-    
+
     const allParticles = [...full_ring.particles, ...ontop_ring.particles];
     const totalParticles = allParticles.length;
-    
+
     const visualRNG = new VisualRNG(shape_seed || 12345);
-    
+
     const particles = new THREE.BufferGeometry();
     const positions = new Float32Array(totalParticles * 3);
     const colors = new Float32Array(totalParticles * 3);
     const sizes = new Float32Array(totalParticles);
-    
+
     const grayVariations = [
-      { baseGray: 0.18, variation: 0.04, name: 'dark' },
-      { baseGray: 0.25, variation: 0.06, name: 'medium' },
-      { baseGray: 0.32, variation: 0.06, name: 'light' },
-      { baseGray: 0.25, variation: 0.08, name: 'mixed' }
+      { baseGray: 0.18, variation: 0.04, name: "dark" },
+      { baseGray: 0.25, variation: 0.06, name: "medium" },
+      { baseGray: 0.32, variation: 0.06, name: "light" },
+      { baseGray: 0.25, variation: 0.08, name: "mixed" },
     ];
-    
+
     const chosenGrayVariation = visualRNG.choice(grayVariations);
-    
+
     for (let i = 0; i < totalParticles; i++) {
       const particle = allParticles[i];
-      
+
       const scale = this.planetRadius / (planet_radius || 200);
-      
+
       const particleSeed = (shape_seed || 12345) + i;
       const particleRNG = new VisualRNG(particleSeed);
-      
+
       const distance = particle.distance * scale;
       const angle = particle.angle;
-      
+
       const baseX = distance * Math.cos(angle);
       const baseZ = distance * Math.sin(angle);
       const baseY = 0;
-      
+
       const tiltAngle = Math.asin((tilt_factor || 0.2) * 0.5);
       const tiltedY = baseZ * Math.sin(tiltAngle);
       const tiltedZ = baseZ * Math.cos(tiltAngle);
-      
+
       const ringThickness = ((ring_outer_radius || 400) - (ring_inner_radius || 200)) * scale * 0.4;
-      
+
       const ySpread = particleRNG.uniform(-ringThickness * 0.8, ringThickness * 0.8);
       const radialSpread = particleRNG.uniform(-ringThickness * 0.3, ringThickness * 0.3);
       const angularSpread = particleRNG.uniform(-0.08, 0.08);
-      
+
       const finalDistance = distance + radialSpread;
       const finalAngle = angle + angularSpread;
-      
+
       positions[i * 3] = finalDistance * Math.cos(finalAngle);
-      positions[i * 3 + 1] = (tiltedY + ySpread) + (this.planetRadius * 0.15);
+      positions[i * 3 + 1] = tiltedY + ySpread + this.planetRadius * 0.15;
       positions[i * 3 + 2] = tiltedZ + particleRNG.uniform(-ringThickness * 0.4, ringThickness * 0.4);
-      
+
       const pythonGrayValue = particle.color[0] / 255;
-      
+
       const distanceFromCenter = particle.distance;
       const normalizedDistance = (distanceFromCenter - (ring_inner_radius || 200)) / ((ring_outer_radius || 400) - (ring_inner_radius || 200));
-      
+
       const baseGray = chosenGrayVariation.baseGray;
       const variation = chosenGrayVariation.variation;
-      
+
       const grayVariation = particleRNG.uniform(-variation, variation);
       const finalGray = Math.max(0.12, Math.min(0.45, baseGray + grayVariation));
-      
+
       const distanceGradient = 0.8 + normalizedDistance * 0.4;
-      
+
       const brightnessVariation = particleRNG.uniform(0.85, 1.15);
-      
+
       const sparkleChance = particleRNG.uniform(0, 1);
       const sparkleMultiplier = sparkleChance < 0.03 ? particleRNG.uniform(1.1, 1.3) : 1.0;
-      
+
       const finalGrayValue = finalGray * distanceGradient * brightnessVariation * sparkleMultiplier;
-      
-      const clampedGrayValue = Math.max(0.10, Math.min(0.55, finalGrayValue));
+
+      const clampedGrayValue = Math.max(0.1, Math.min(0.55, finalGrayValue));
       colors[i * 3] = clampedGrayValue;
       colors[i * 3 + 1] = clampedGrayValue;
       colors[i * 3 + 2] = clampedGrayValue;
-      
+
       const sizeScale = 0.15;
       const baseSizeMultiplier = particleRNG.uniform(0.3, 0.7);
       const sparkleSize = sparkleChance < 0.1 ? particleRNG.uniform(1.05, 1.2) : 1.0;
       sizes[i] = particle.size * sizeScale * baseSizeMultiplier * sparkleSize;
     }
-    
-    particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    particles.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    particles.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
-    
+
+    particles.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    particles.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    particles.setAttribute("size", new THREE.BufferAttribute(sizes, 1));
+
     this.material = new THREE.ShaderMaterial({
       uniforms: {
-        brightness: { value: 2.2 }
+        brightness: { value: 2.2 },
       },
       vertexShader: `
         attribute float size;
@@ -184,25 +184,25 @@ export class RingSystemEffect {
       transparent: true,
       vertexColors: true,
       depthWrite: false,
-      blending: THREE.NormalBlending
+      blending: THREE.NormalBlending,
     });
-    
+
     this.ringSystem = new THREE.Points(particles, this.material);
-    
+
     this.ringSystem.position.set(0, 0, 0);
-    
+
     this.ringSystem.renderOrder = 1;
   }
 
   addToScene(scene: THREE.Scene, planetPosition?: THREE.Vector3): void {
     if (!this.ringSystem) return;
-    
+
     if (planetPosition) {
       this.ringSystem.position.copy(planetPosition);
     } else {
       this.ringSystem.position.set(0, 0, 0);
     }
-    
+
     scene.add(this.ringSystem);
   }
 
@@ -240,7 +240,7 @@ export function createRingSystemFromPythonData(ringsData: any, planetRadius: num
     ring_outer_radius: ringsData.ring_outer_radius,
     tilt_factor: ringsData.tilt_factor,
     planet_radius: ringsData.planet_radius,
-    shape_seed: ringsData.shape_seed
+    shape_seed: ringsData.shape_seed,
   };
 
   return new RingSystemEffect(planetRadius, params);

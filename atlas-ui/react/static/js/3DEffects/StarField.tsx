@@ -236,16 +236,14 @@ export class StarFieldEffect {
   update(_deltaTime: number, _planetRotation?: number, camera?: THREE.Camera): void {
     const cosmicOriginTime = this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME;
     const currentTime = getAnimatedUniverseTime(cosmicOriginTime, this.params.timeSpeed!, this.startTime);
-    
+
     this.material.uniforms.time.value = currentTime;
 
     if (camera) {
       this.cameraPosition.copy(camera.position);
-      
-      const cameraOffset = new THREE.Vector3()
-        .subVectors(this.cameraPosition, this.lastCameraPosition)
-        .multiplyScalar(0.3);
-      
+
+      const cameraOffset = new THREE.Vector3().subVectors(this.cameraPosition, this.lastCameraPosition).multiplyScalar(0.3);
+
       this.material.uniforms.cameraOffset.value.lerp(cameraOffset, 0.1);
       this.lastCameraPosition.copy(this.cameraPosition);
     }
