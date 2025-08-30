@@ -165,9 +165,9 @@ export class ToxicSwampBubblesEffect {
         growthFactor * growthFactor
       );
       
-      // Move them to their current position
+      // Move them to their current position - shorter emergence distance
       const directionFromCenter = bubble.position.clone().sub(this.planetCenter).normalize();
-      const distance = bubble.emergencePhase * this.planetRadius * 0.4;
+      const distance = bubble.emergencePhase * this.planetRadius * 0.1; // Much shorter emergence
       bubble.position.add(directionFromCenter.multiplyScalar(distance));
     }
     
@@ -193,10 +193,10 @@ export class ToxicSwampBubblesEffect {
     const finalTheta = theta + noiseTheta;
     const finalPhi = phi + noisePhi;
     
-    // Start bubbles INSIDE the planet surface - they'll emerge outward
-    // Depth varies procedurally too for more organic emergence
-    const depthVariation = 0.5 + 0.3 * Math.sin(i * 0.73 + time * 0.2);
-    const startDepth = this.planetRadius * depthVariation; // Start 20-80% inside planet
+    // Start bubbles just slightly inside the planet surface - shallow emergence
+    // Small depth variation for natural look but keep them close to surface
+    const depthVariation = 0.95 + 0.05 * Math.sin(i * 0.73 + time * 0.2);
+    const startDepth = this.planetRadius * depthVariation; // Start 95-100% of radius (just under surface)
     
     const x = startDepth * Math.sin(finalPhi) * Math.cos(finalTheta);
     const y = startDepth * Math.sin(finalPhi) * Math.sin(finalTheta);
@@ -325,11 +325,11 @@ export class ToxicSwampBubblesEffect {
         bubble.size = bubble.maxSize * explosionScale;
       }
       
-      // Check if bubble should pop
-      const shouldPop = (
+      // Check if bubble should pop - only after fully emerging from surface
+      const shouldPop = bubble.isFullyEmerged && (
         distanceFromSurface >= this.params.popDistance ||
         bubble.life >= bubble.maxLife * 0.8 ||
-        (bubble.isFullyEmerged && bubble.size >= bubble.maxSize * 0.9)
+        bubble.size >= bubble.maxSize * 0.9
       );
       
       if (shouldPop && !bubble.hasPopped) {
