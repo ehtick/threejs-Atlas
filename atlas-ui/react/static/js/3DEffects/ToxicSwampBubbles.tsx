@@ -38,11 +38,11 @@ const PROCEDURAL_RANGES = {
   },
   SWAMP: {
     BUBBLE_COUNT: { min: 15, max: 25 }, // Target amount of bubbles
-    BUBBLE_SIZE: { min: 0.003, max: 0.006 }, // Much smaller bubbles
-    RISE_SPEED: { min: 0.015, max: 0.025 }, // Slow organic movement
-    EXPANSION_RATE: { min: 0.004, max: 0.008 }, // Gradual expansion
+    BUBBLE_SIZE: { min: 0.0003, max: 0.0008 }, // Extremely tiny bubbles like methane gas
+    RISE_SPEED: { min: 0.005, max: 0.012 }, // Much slower organic movement
+    EXPANSION_RATE: { min: 0.002, max: 0.004 }, // Much slower expansion
     POP_DISTANCE: { min: 0.2, max: 0.35 }, // Pop at reasonable distance
-    OPACITY: { min: 0.4, max: 0.6 }, // Semi-transparent
+    OPACITY: { min: 0.3, max: 0.5 }, // More transparent
     EMISSION_RATE: { min: 3.0, max: 5.0 }, // Higher rate for truly continuous flow
   },
 };
@@ -102,7 +102,7 @@ export class ToxicSwampBubblesEffect {
       riseSpeed: params.riseSpeed || this.rng.uniform(ranges.RISE_SPEED.min, ranges.RISE_SPEED.max),
       expansionRate: params.expansionRate || this.rng.uniform(ranges.EXPANSION_RATE.min, ranges.EXPANSION_RATE.max),
       popDistance: params.popDistance || planetRadius * this.rng.uniform(ranges.POP_DISTANCE.min, ranges.POP_DISTANCE.max),
-      bubbleColor: params.bubbleColor || new THREE.Color(0x88dd88), // More vibrant swampy green
+      bubbleColor: params.bubbleColor || new THREE.Color(0x4d7c0f), // Dark swampy green with transparency
       opacity: params.opacity || this.rng.uniform(ranges.OPACITY.min, ranges.OPACITY.max),
       emissionRate: params.emissionRate || this.rng.uniform(ranges.EMISSION_RATE.min, ranges.EMISSION_RATE.max),
       seed: params.seed || Math.random() * 1000000,
@@ -217,26 +217,26 @@ export class ToxicSwampBubblesEffect {
     
     const bubble: Bubble = {
       position: surfacePoint.clone(), // Start inside the planet
-      velocity: directionFromCenter.multiplyScalar(this.params.riseSpeed),
-      size: this.params.bubbleSize * 0.3, // Start small but visible
-      maxSize: this.params.bubbleSize * this.rng.uniform(2.0, 3.5), // Good size variation
+      velocity: directionFromCenter.multiplyScalar(this.params.riseSpeed * 0.3), // Much slower individual bubble rise
+      size: this.params.bubbleSize * 0.2, // Start very small
+      maxSize: this.params.bubbleSize * this.rng.uniform(1.2, 1.8), // Much smaller max size for swamp bubbles
       life: 0,
-      maxLife: this.rng.uniform(3, 6), // Shorter lifetime for more turnover
+      maxLife: this.rng.uniform(8, 12), // Longer lifetime for slower swamp bubbles
       originalSurfacePoint: actualSurfacePoint.clone(),
       wobbleOffset: new THREE.Vector3(
         this.rng.uniform(-1, 1),
         this.rng.uniform(-1, 1), 
         this.rng.uniform(-1, 1)
       ).normalize(),
-      wobbleSpeed: this.rng.uniform(1.5, 3.0), // Slow organic wobble
+      wobbleSpeed: this.rng.uniform(0.8, 1.5), // Very slow organic wobble
       wobbleAmplitude: this.rng.uniform(0.002, 0.008), // Subtle wobble
       startOpacity: 0, // Start invisible
       hasPopped: false,
       emergencePhase: 0.1, // Start slightly emerged for immediate visibility
-      emergenceSpeed: this.rng.uniform(0.8, 1.2), // Faster emergence
+      emergenceSpeed: this.rng.uniform(0.4, 0.8), // Much slower emergence
       isFullyEmerged: false,
       fadeInPhase: 0.3, // Start partially faded in
-      fadeInSpeed: this.rng.uniform(2.0, 3.0), // Faster fade in
+      fadeInSpeed: this.rng.uniform(1.0, 1.8), // Slower fade in
       bubbleIndex: bubbleIndex,
       birthTime: this.globalTime,
       popPhase: 0,
