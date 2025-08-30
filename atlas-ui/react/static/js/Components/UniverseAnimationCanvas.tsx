@@ -1,3 +1,4 @@
+// atlas-ui/react/static/js/Components/UniverseAnimationCanvas.tsx
 import React, { useRef, useEffect, useState } from "react";
 import * as THREE from "three";
 
@@ -42,7 +43,6 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
 
   const initScene = () => {
     if (!mountRef.current) {
-      console.error("mountRef.current is null");
       return;
     }
 
@@ -222,7 +222,6 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
 
       animate();
     } catch (error) {
-      console.error("Error initializing Three.js scene:", error);
     }
   };
 

@@ -1,3 +1,4 @@
+// atlas-ui/react/static/js/Components/SpaceshipPanel.tsx
 import React, { useState, useEffect, useRef } from "react";
 import { getStorageStats } from "../Utils/VisitHistory.tsx";
 import { LocationBookmarks, SavedLocation } from "../Utils/LocationBookmarks.tsx";

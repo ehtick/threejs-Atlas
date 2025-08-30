@@ -1,3 +1,4 @@
+// atlas-ui/react/static/js/Components/StargateAnimation.tsx
 import React, { useState, useEffect, useRef } from "react";
 
 const StargateAnimation = ({ stargateUrl }) => {

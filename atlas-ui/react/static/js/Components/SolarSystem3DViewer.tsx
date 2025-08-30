@@ -1,3 +1,4 @@
+// atlas-ui/react/static/js/Components/SolarSystem3DViewer.tsx
 import React, { useRef, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import * as THREE from "three";
@@ -497,7 +498,7 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({ planets, star
       orbitsRef.current = [];
       planetLabelsRef.current = [];
     };
-  }, [planets, stars, cosmicOriginTime, systemData]); // 🚀 Added systemData dependency
+  }, [planets, stars, cosmicOriginTime, systemData]);
 
   const formatTime = (seconds: number) => {
     const years = Math.floor(seconds / (365.25 * 24 * 3600));

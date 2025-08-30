@@ -1,3 +1,4 @@
+// atlas-ui/react/static/js/Components/SaveLocationButton.tsx
 import React, { useState, useEffect } from "react";
 import { LocationBookmarks } from "../Utils/LocationBookmarks.tsx";
 import { StargateGenerator } from "../Utils/StargateGenerator.tsx";
@@ -38,7 +39,6 @@ const SaveLocationButton: React.FC<SaveLocationButtonProps> = ({ type, name, coo
       // Fallback to current URL if something goes wrong
       return window.location.pathname;
     } catch (error) {
-      console.error("Error generating stargate URL:", error);
       return window.location.pathname;
     }
   };
@@ -73,11 +73,8 @@ const SaveLocationButton: React.FC<SaveLocationButtonProps> = ({ type, name, coo
           setIsLoading(false);
         }, 300);
       } else {
-        // User cancelled - don't change any state
-        console.log("User cancelled save operation");
       }
     } catch (error) {
-      console.error("Error saving location:", error);
       setIsLoading(false);
     }
   };

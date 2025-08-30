@@ -1,3 +1,4 @@
+// atlas-ui/react/static/js/Components/TreasureChest.tsx
 import React, { useState, useEffect } from "react";
 import { SpaceshipResourceManager } from "../Utils/SpaceshipResources.tsx";
 import { ResourceEventManager } from "../Utils/ResourceEventManager.tsx";
@@ -6,7 +7,6 @@ import Element115Icon from "../Icons/Element115Icon.tsx";
 import DeuteriumIcon from "../Icons/DeuteriumIcon.tsx";
 import { createRoot } from 'react-dom/client';
 
-// Global debug variables for treasure chest
 declare global {
   interface Window {
     CHEST_SHOW?: boolean;
@@ -14,18 +14,9 @@ declare global {
   }
 }
 
-// Configuration for treasure chest appearance
 if (typeof window !== 'undefined') {
-  window.CHEST_SHOW = false; // Set to true to always show (debugging)
-  window.CHEST_PROBABILITY = 0.000001; // 0.0001% = 1 in 1,000,000
-  // Common values:
-  // 0.000001 = 0.0001% (1 in 1,000,000) - extremely rare
-  // 0.00001 = 0.001% (1 in 100,000) - very rare
-  // 0.0001 = 0.01% (1 in 10,000) - rare
-  // 0.001 = 0.1% (1 in 1,000) - uncommon
-  // 0.01 = 1% (1 in 100) - occasional
-  // 0.1 = 10% (1 in 10) - common
-  // 1.0 = 100% - always
+  window.CHEST_SHOW = false;
+  window.CHEST_PROBABILITY = 0.000001;
 }
 
 interface TreasureReward {

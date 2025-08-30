@@ -1,3 +1,4 @@
+// atlas-ui/react/static/js/Components/SolarSystem3DViewerFullscreen.tsx
 import React, { useRef, useEffect } from "react";
 import * as THREE from "three";
 

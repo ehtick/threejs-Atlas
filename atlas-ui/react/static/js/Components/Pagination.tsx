@@ -1,3 +1,4 @@
+// atlas-ui/react/static/js/Components/Pagination.tsx
 import React from "react";
 
 interface PaginationProps {

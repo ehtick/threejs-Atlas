@@ -1,3 +1,4 @@
+// atlas-ui/react/static/js/Components/GalaxyInfo.tsx
 import React, { useState, useEffect } from "react";
 import Universe3DViewer from "./Universe3DViewer.tsx";
 import SaveLocationButton from "./SaveLocationButton.tsx";

@@ -1,3 +1,4 @@
+// atlas-ui/react/static/js/Components/ProgressBar.tsx
 import React from "react";
 
 interface ProgressBarProps {

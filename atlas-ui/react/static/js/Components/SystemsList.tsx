@@ -1,3 +1,4 @@
+// atlas-ui/react/static/js/Components/SystemsList.tsx
 import React, { useEffect, useState } from "react";
 import { getSystemVisitStatus } from "../Utils/VisitHistory.tsx";
 
@@ -28,7 +29,6 @@ const SystemsList: React.FC<SystemsListProps> = ({ systems, coordinates }) => {
 
         setSystemVisitStates(states);
       } catch (error) {
-        console.error("Error loading historical data:", error);
       }
     };
 

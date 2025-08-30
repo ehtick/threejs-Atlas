@@ -1,3 +1,4 @@
+// atlas-ui/react/static/js/Components/SystemVisualization.tsx
 import React, { useEffect, useRef, useState } from "react";
 import Zoom from "react-medium-image-zoom";
 import "react-medium-image-zoom/dist/styles.css";
@@ -151,7 +152,6 @@ const SystemVisualization: React.FC<SystemVisualizationProps> = ({ systemUrl, im
       };
 
       highResImg.onerror = () => {
-        console.error("Failed to load system image:", imageUrl);
         setTimeout(() => {
           setImageLoaded(true);
           setCanvasHidden(true);

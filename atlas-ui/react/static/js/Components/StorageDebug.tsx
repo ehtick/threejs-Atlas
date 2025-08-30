@@ -1,3 +1,4 @@
+// atlas-ui/react/static/js/Components/StorageDebug.tsx
 import React, { useState, useEffect } from "react";
 import { getStorageStats } from "../Utils/VisitHistory.tsx";
 

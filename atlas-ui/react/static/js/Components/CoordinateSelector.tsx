@@ -1,3 +1,4 @@
+// atlas-ui/react/static/js/Components/CoordinateSelector.tsx
 import React, { useState, useEffect } from "react";
 
 interface Coordinates {

@@ -1,3 +1,4 @@
+// atlas-ui/react/static/js/Components/GalaxyVisualization.tsx
 import React, { useEffect, useRef, useState } from "react";
 import Zoom from "react-medium-image-zoom";
 import "react-medium-image-zoom/dist/styles.css";
@@ -123,7 +124,6 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, im
       };
 
       highResImg.onerror = () => {
-        console.error("Failed to load galaxy image:", imageUrl);
         setTimeout(() => {
           setImageLoaded(true);
           setCanvasHidden(true);

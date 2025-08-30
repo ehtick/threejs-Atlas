@@ -1,3 +1,4 @@
+// atlas-ui/react/static/js/Components/VersionFooter.tsx
 import React from "react";
 
 interface VersionFooterProps {

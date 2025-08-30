@@ -1,3 +1,4 @@
+// atlas-ui/react/static/js/Components/PlanetVisualization.tsx
 import React, { useEffect, useRef, useState } from "react";
 import Zoom from "react-medium-image-zoom";
 import "react-medium-image-zoom/dist/styles.css";
@@ -177,7 +178,6 @@ const PlanetVisualization: React.FC<PlanetVisualizationProps> = ({ planetUrl, im
       };
 
       highResImg.onerror = () => {
-        console.error("Failed to load planet image:", imageUrl);
         setTimeout(() => {
           setImageLoaded(true);
           setCanvasHidden(true);
@@ -324,7 +324,6 @@ const PlanetVisualization: React.FC<PlanetVisualizationProps> = ({ planetUrl, im
               }}
               onError={(errorMessage) => {
                 setRenderingError(errorMessage);
-                console.error('❌ Modular Planet rendering error:', errorMessage);
               }}
             />
           </div>

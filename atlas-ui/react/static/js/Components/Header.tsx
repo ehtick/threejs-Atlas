@@ -1,3 +1,4 @@
+// atlas-ui/react/static/js/Components/Header.tsx
 import React from "react";
 
 const Header: React.FC = () => {

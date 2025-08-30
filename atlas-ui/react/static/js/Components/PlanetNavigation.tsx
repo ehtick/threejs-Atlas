@@ -1,3 +1,4 @@
+// atlas-ui/react/static/js/Components/PlanetNavigation.tsx
 import React, { useState, useEffect } from "react";
 import { markPlanetAsVisited, markSystemAsVisited } from "../Utils/VisitHistory.tsx";
 import { SpaceshipTravelManager } from "../Utils/SpaceshipTravelCosts.tsx";

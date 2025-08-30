@@ -1,3 +1,4 @@
+// atlas-ui/react/static/js/Components/ResourceStatusBar.tsx
 import React, { useState, useEffect } from "react";
 import { SpaceshipResourceManager } from "../Utils/SpaceshipResources.tsx";
 import { SpaceshipTravelManager } from "../Utils/SpaceshipTravelCosts.tsx";

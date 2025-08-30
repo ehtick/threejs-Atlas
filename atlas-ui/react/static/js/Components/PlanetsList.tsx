@@ -1,3 +1,4 @@
+// atlas-ui/react/static/js/Components/PlanetsList.tsx
 import React, { useEffect, useState } from "react";
 import { getVisitedPlanets, markPlanetAsVisited } from "../Utils/VisitHistory.tsx";
 
@@ -26,7 +27,6 @@ const PlanetsList: React.FC<PlanetsListProps> = ({ planets, coordinates, systemI
 
         setVisitedPlanets(visited);
       } catch (error) {
-        console.error("Error loading historical data:", error);
       }
     };
 
@@ -41,7 +41,6 @@ const PlanetsList: React.FC<PlanetsListProps> = ({ planets, coordinates, systemI
     try {
       markPlanetAsVisited(coordinates, systemIndex, planetName, planets);
     } catch (error) {
-      console.error("Error marking planet as visited:", error);
     }
 
     window.location.href = `/planet/${planetName.toLowerCase()}`;

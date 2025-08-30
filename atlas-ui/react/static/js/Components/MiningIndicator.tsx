@@ -1,3 +1,4 @@
+// atlas-ui/react/static/js/Components/MiningIndicator.tsx
 import React from "react";
 
 interface MiningIndicatorProps {

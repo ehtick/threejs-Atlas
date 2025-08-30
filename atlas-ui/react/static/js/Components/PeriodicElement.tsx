@@ -1,3 +1,4 @@
+// atlas-ui/react/static/js/Components/PeriodicElement.tsx
 import React from "react";
 import { ELEMENT_SYMBOLS, getRarityColor } from "../Utils/ElementSymbols.tsx";
 import { ELEMENT_RESOURCE_VALUES, getElementRarityTier } from "../Utils/ElementResourceValues.tsx";

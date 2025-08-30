@@ -1,3 +1,4 @@
+// atlas-ui/react/static/js/Components/PlanetInfo.tsx
 import React, { useState, useEffect } from "react";
 import SaveLocationButton from "./SaveLocationButton.tsx";
 import ResourceCollectionButton from "./ResourceCollectionButton.tsx";

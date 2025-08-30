@@ -1,3 +1,4 @@
+// atlas-ui/react/static/js/Components/GalaxyNavigation.tsx
 import React, { useState, useEffect } from "react";
 import { SpaceshipTravelManager } from "../Utils/SpaceshipTravelCosts.tsx";
 

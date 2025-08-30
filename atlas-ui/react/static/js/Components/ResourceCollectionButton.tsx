@@ -1,3 +1,4 @@
+// atlas-ui/react/static/js/Components/ResourceCollectionButton.tsx
 import React, { useState, useEffect } from "react";
 import { SpaceshipResourceCollectionManager } from "../Utils/SpaceshipResourceCollection.tsx";
 import { ResourceEventManager } from "../Utils/ResourceEventManager.tsx";
