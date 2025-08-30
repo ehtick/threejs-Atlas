@@ -52,12 +52,11 @@ const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> 
   const [isAnimating, setIsAnimating] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [canvasHidden, setCanvasHidden] = useState(false);
-  const [view3D, setView3D] = useState(true); // 3D por defecto
-  const [enable3D, setEnable3D] = useState(true); // Enable 3D by default
+  const [view3D, setView3D] = useState(true);
+  const [enable3D, setEnable3D] = useState(true);
   const [renderingData, setRenderingData] = useState<any>(null);
   const [renderingError, setRenderingError] = useState<string | null>(null);
   
-  // Handle effect toggling
   useEffect(() => {
     if (effects && onToggleEffect) {
       effects.forEach(effect => {
@@ -307,7 +306,6 @@ const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> 
       </div>
 
       <div className="relative w-full max-w-80 sm:max-w-96 aspect-square mx-auto bg-black/50 flex justify-center items-center rounded-xl overflow-hidden border-2 border-blue-400/30 mb-4">
-        {/* Starfield animation canvas */}
         <canvas 
           ref={canvasRef} 
           className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[2500ms] ${
@@ -316,7 +314,6 @@ const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> 
           style={{ filter: canvasHidden ? "blur(50px)" : "none" }} 
         />
 
-        {/* 3D View - Direct ModularPlanetRenderer */}
         {view3D && imageLoaded && planet && (
           <div className={`absolute inset-0 w-full h-full transition-all duration-500 ${
             imageLoaded ? "opacity-100 blur-0" : "opacity-0 blur-[25px]"
@@ -329,20 +326,19 @@ const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> 
               showDebugInfo={false}
               onEffectsCreated={onEffectsCreated}
               planetData={{
-                name: planet.name, // AÑADIDO: el nombre del planeta
+                name: planet.name,
                 diameter: planet.diameter,
                 density: planet.density,
                 gravity: planet.gravity,
                 mass: planet.mass,
                 orbital_radius: planet.orbital_radius,
-                orbital_period_seconds: planet.orbital_period_seconds, // AÑADIDO para cálculo orbital
+                orbital_period_seconds: planet.orbital_period_seconds,
                 rotation_period_seconds: planet.rotation_period_seconds,
                 surface_temperature: planet.surface_temperature,
                 axial_tilt: planet.axial_tilt,
                 planet_type: planet.planet_type,
                 atmosphere: planet.atmosphere,
                 elements: planet.elements,
-                // initial_orbital_angle debe venir del backend - usar el valor real del planet si existe
                 initial_orbital_angle: (planet as any).initial_orbital_angle || 0
               }}
               cosmicOriginTime={cosmicOriginTime}
@@ -357,7 +353,6 @@ const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> 
           </div>
         )}
 
-        {/* 2D View */}
         {!view3D && (
           <div className={`absolute inset-0 w-full h-full transition-all duration-500 ${
             imageLoaded ? "opacity-100 blur-0" : "opacity-0 blur-[25px]"
@@ -385,7 +380,6 @@ const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> 
           </div>
         )}
         
-        {/* View indicator */}
         {enable3D && (
           <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-xs">
             {view3D ? '🌍 3D' : '🖼️ 2D'}
