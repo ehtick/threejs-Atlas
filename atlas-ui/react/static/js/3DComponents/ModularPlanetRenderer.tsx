@@ -1,4 +1,4 @@
-// ModularPlanetRenderer.tsx
+// atlas-ui/react/static/js/3DComponents/ModularPlanetRenderer.tsx
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import * as THREE from "three";
@@ -134,7 +134,6 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
 
     rendererRef.current.setSize(containerWidth, containerHeight);
 
-    // Redimensionar post-procesamiento tóxico si está activo
     if (toxicPostProcessingRef.current) {
       toxicPostProcessingRef.current.setSize(containerWidth, containerHeight);
     }
@@ -159,10 +158,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
 
       const newEffects = effectRegistry.createEffectsFromPythonPlanetData(planetData, NORMALIZED_PLANET_RADIUS, planetMeshRef.current, sceneRef.current, planetLayerSystemRef.current);
 
-      // Crear post-procesamiento específico para planetas tóxicos
       const planetType = planetData.planet_info?.type || planetData.surface_elements?.planet_type || planetData.planet_type;
-      
-      // Activar solo para planetas genuinamente tóxicos
       if ((planetType === "toxic" || planetType === "Toxic") && sceneRef.current && cameraRef.current && rendererRef.current) {
         try {
           const toxicPostProcessing = createToxicPostProcessingFromPythonData(
@@ -181,7 +177,6 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
           if (toxicPostProcessing) {
             toxicPostProcessingRef.current = toxicPostProcessing;
             
-            // Crear EffectInstance y registrarlo correctamente en el effectRegistry
             const toxicPostProcessingInstance: EffectInstance = {
               id: `effect_toxic_postprocessing_${Date.now()}`,
               type: "toxic_post_processing",
@@ -189,18 +184,15 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
                 dispose: () => toxicPostProcessing.dispose(),
                 update: (deltaTime: number) => toxicPostProcessing.update(deltaTime),
                 updateUniforms: (deltaTime: number) => toxicPostProcessing.update(deltaTime),
-                addToScene: () => {}, // Ya está integrado en el renderer
-                apply: () => {}, // Ya está aplicado
+                addToScene: () => {},
+                apply: () => {},
               } as any,
-              priority: 100, // Prioridad alta para post-procesamiento
+              priority: 100,
               enabled: true,
               name: "Toxic Post-Processing (Bloom + Godrays + Chromatic Aberration)",
             };
             
-            // Registrar el efecto en el registry para que el control funcione (acceso directo al Map privado)
             (effectRegistry as any).effects.set(toxicPostProcessingInstance.id, toxicPostProcessingInstance);
-            
-            // Agregar al array de efectos activos para que aparezca en la interfaz
             newEffects.push(toxicPostProcessingInstance);
             
             EffectsLogger.log("Created toxic post-processing effects");
@@ -209,19 +201,12 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
           EffectsLogger.error("Error creating toxic post-processing", error);
         }
       } else {
-        // Limpiar post-procesamiento si el planeta no es tóxico
         if (toxicPostProcessingRef.current) {
           toxicPostProcessingRef.current.dispose();
           toxicPostProcessingRef.current = null;
         }
       }
 
-      // Log de efectos activos
-      console.log(
-        `Planet: ${planetData.planet_info?.name}, Effects:`,
-        newEffects.map((e) => e.type),
-        toxicPostProcessingRef.current ? "with toxic post-processing" : "no post-processing"
-      );
 
       setEffects(newEffects);
       activeEffectsRef.current = newEffects;
@@ -238,9 +223,6 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
     }
   };
 
-  /**
-   * Inicialización de Three.js
-   */
   const initializeThreeJS = useCallback(() => {
     if (!mountRef.current) {
       return false;
@@ -299,14 +281,10 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
 
       return true;
     } catch (error) {
-      console.error("Error initializing Three.js:", error);
       return false;
     }
   }, [renderingData, planetData, cosmicOriginTime]);
 
-  /**
-   * Calcular ángulo del sol basándose en la posición ORBITAL del planeta (no rotación)
-   */
   const calculateSunAngle = (planetData?: any): number => {
     if (!planetData) {
       return 0;
@@ -332,9 +310,6 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
 
   const orbitLineRef = useRef<THREE.Line | null>(null);
 
-  /**
-   * Configurar propiedades de sombra para una luz direccional
-   */
   const setupShadowProperties = (light: THREE.DirectionalLight) => {
     light.castShadow = true;
     light.shadow.mapSize.width = 2048;
@@ -347,9 +322,6 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
     light.shadow.camera.bottom = -10;
   };
 
-  /**
-   * ACTUALIZADO: iluminación cuando lleguen datos reales de la API Sincroniza con PlanetLayerSystem
-   */
   const updateLightingWithRealData = (planetData: any) => {
     if (!sunLightRef.current || !sceneRef.current) {
       return;
@@ -379,82 +351,13 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
       planetLayerSystemRef.current.updateFromThreeLight(sunLightRef.current);
     }
 
-    // ACTUALIZAR LUZ DE TODOS LOS EFECTOS (incluidas las nubes atmosféricas)
     if (sunLightRef.current) {
       effectRegistry.updateLightForAllEffects(sunLightRef.current);
     }
   };
 
-  /**
-   * Crear línea orbital alrededor del sol
-   */
-  // const createOrbitLine = (scene: THREE.Scene, renderingData?: any) => {
-  //   if (!planetData?.orbital_radius) {
-  //     return;
-  //   }
 
-  //   const systemMaxOrbitalRadius = renderingData?.timing?.max_orbital_radius;
 
-  //   if (!systemMaxOrbitalRadius) {
-  //     return;
-  //   }
-
-  //   const relativeOrbitRadius = planetData.orbital_radius / systemMaxOrbitalRadius;
-  //   const scaleFactor = 80;
-  //   const orbitalRadius = 20 + relativeOrbitRadius * scaleFactor;
-
-  //   const segments = 64;
-  //   const orbitPoints = [];
-
-  //   for (let i = 0; i <= segments; i++) {
-  //     const angle = (i / segments) * Math.PI * 2;
-  //     orbitPoints.push(new THREE.Vector3(orbitalRadius * Math.cos(angle), 0, orbitalRadius * Math.sin(angle)));
-  //   }
-
-  //   const orbitGeometry = new THREE.BufferGeometry().setFromPoints(orbitPoints);
-  //   const orbitMaterial = new THREE.LineBasicMaterial({
-  //     color: 0x708090,
-  //     transparent: true,
-  //     opacity: 0.4,
-  //     linewidth: 1,
-  //   });
-
-  //   const orbitLine = new THREE.Line(orbitGeometry, orbitMaterial);
-  //   scene.add(orbitLine);
-  //   orbitLineRef.current = orbitLine;
-  // };
-
-  /**
-   * Crear esfera del sol en el centro de la escena
-   */
-  // const createSunSphere = (scene: THREE.Scene) => {
-  //   const sunRadius = 3;
-  //   const sunGeometry = new THREE.SphereGeometry(sunRadius, 32, 32);
-
-  //   const sunMaterial = new THREE.MeshBasicMaterial({
-  //     color: 0xffff44,
-  //     transparent: false,
-  //     opacity: 1.0,
-  //   });
-
-  //   const sunSphere = new THREE.Mesh(sunGeometry, sunMaterial);
-  //   sunSphere.position.set(0, 0, 0);
-  //   const glowGeometry = new THREE.SphereGeometry(sunRadius * 1.8, 16, 16);
-  //   const glowMaterial = new THREE.MeshBasicMaterial({
-  //     color: 0xffff44,
-  //     transparent: true,
-  //     opacity: 0.3,
-  //   });
-  //   const sunGlow = new THREE.Mesh(glowGeometry, glowMaterial);
-  //   sunSphere.add(sunGlow);
-
-  //   scene.add(sunSphere);
-  //   sunSphereRef.current = sunSphere;
-  // };
-
-  /**
-   * ACTUALIZADO: Configura iluminación de la escena basada en datos reales de Python Sincroniza con PlanetLayerSystem desde el inicio
-   */
   const setupLighting = (scene: THREE.Scene, planetData?: any) => {
     if (!planetData) {
       const defaultSunLight = new THREE.DirectionalLight(0xffffff, 2.0);
@@ -478,7 +381,6 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
         if (planetLayerSystemRef.current && defaultSunLight) {
           planetLayerSystemRef.current.updateFromThreeLight(defaultSunLight);
         }
-        // ACTUALIZAR LUZ DE TODOS LOS EFECTOS (incluidas las nubes atmosféricas)
         if (defaultSunLight) {
           effectRegistry.updateLightForAllEffects(defaultSunLight);
         }
@@ -519,15 +421,11 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
       planetLayerSystemRef.current.updateFromThreeLight(sunLight);
     }
 
-    // ACTUALIZAR LUZ DE TODOS LOS EFECTOS (incluidas las nubes atmosféricas)
     if (sunLight) {
       effectRegistry.updateLightForAllEffects(sunLight);
     }
   };
 
-  /**
-   * Crear planeta base genérico usando PlanetLayerSystem desde el inicio
-   */
   const createBasePlanet = (scene: THREE.Scene) => {
     const planetGeometry = new THREE.SphereGeometry(NORMALIZED_PLANET_RADIUS, 128, 64);
 
@@ -545,46 +443,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
     planetLayerSystemRef.current.addToScene(scene);
   };
 
-  /**
-   * Actualizar material del planeta con datos reales de la API USA LA FUNCIÓN CENTRALIZADA DE COLORES (solo como fallback)
-   */
-  // const updatePlanetMaterialWithAPIData = (renderingData: PlanetRenderingData) => {
-  //   if (!planetMeshRef.current || !renderingData) return;
 
-  //   const material = planetMeshRef.current.material;
-
-  //   if (!(material instanceof THREE.MeshStandardMaterial)) {
-  //
-  //     return;
-  //   }
-
-  //   const currentColor = material.color;
-  //   const isDefaultGray = Math.abs(currentColor.r - 0.5) < 0.01 && Math.abs(currentColor.g - 0.5) < 0.01 && Math.abs(currentColor.b - 0.5) < 0.01;
-
-  //   if (isDefaultGray) {
-  //     const baseColor = getPlanetBaseColor(renderingData);
-  //     material.color.copy(baseColor);
-
-  //     console.log("🎨 Applied fallback color from centralized system:", {
-  //       apiColor: renderingData.planet_info?.base_color,
-  //       appliedColor: baseColor,
-  //       planetType: renderingData.planet_info?.type,
-  //     });
-  //   } else {
-  //
-  //   }
-
-  //   if (renderingData.surface_elements?.metalness !== undefined) {
-  //     material.metalness = renderingData.surface_elements.metalness;
-  //   }
-  //   if (renderingData.surface_elements?.roughness !== undefined) {
-  //     material.roughness = renderingData.surface_elements.roughness;
-  //   }
-  // };
-
-  /**
-   * Configurar controles orbitales CENTRADOS EN EL PLANETA
-   */
   const setupControls = (camera: THREE.PerspectiveCamera, domElement: HTMLElement) => {
     const controls = new OrbitControls(camera, domElement);
     controls.enableDamping = true;
@@ -602,9 +461,6 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
     controlsRef.current = controls;
   };
 
-  /**
-   * Cargar SOLO los datos del planeta desde la API (sin depender de la escena ThreeJS)
-   */
   const loadPlanetDataOnly = useCallback(async () => {
     if ((window as any).isLoadingPlanetData) {
       return;
@@ -690,9 +546,6 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
     }
   }, [planetName, onDataLoaded, onError]);
 
-  /**
-   * Cargar datos del planeta desde la API o usar datos locales
-   */
   const loadPlanetData = useCallback(async () => {
     if ((window as any).isLoadingPlanetData) {
       return;
@@ -788,9 +641,6 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
     }
   }, [planetName, planetData, cosmicOriginTime, initialAngleRotation]);
 
-  /**
-   * Actualizar SOLO la posición del planeta con los datos correctos de la API
-   */
   const updatePlanetPositionWithAPIData = useCallback(() => {
     if (!renderingData || !planetMeshRef.current) {
       return;
@@ -818,9 +668,6 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
     planetMeshRef.current.position.y = 0;
   }, [renderingData, planetData, cosmicOriginTime]);
 
-  /**
-   * Aplicar los datos ya cargados de la API a la escena ThreeJS
-   */
   const applyAPIDataToScene = useCallback(
     async (apiData?: PlanetRenderingData) => {
       const dataToUse = apiData || renderingData;
@@ -851,9 +698,6 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
     [renderingData]
   );
 
-  /**
-   * Aplicar efectos de emergencia usando el sistema modular
-   */
   const applyFallbackEffects = () => {
     if (!sceneRef.current || !planetMeshRef.current) return;
 
@@ -881,7 +725,6 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
         activeEffectsRef.current = fallbackEffects;
         setEffects(fallbackEffects);
       } catch (effectError) {
-        console.warn("Could not create fallback effects, using basic material only:", effectError);
       }
 
       updateStats();
@@ -890,15 +733,8 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
     }
   };
 
-  /**
-   * Limpiar efectos activos
-   * ACTUALIZADO: Preserva PlanetLayerSystem base
-   */
   const clearActiveEffects = () => {
-    // Limpiar del registro global PRIMERO para resetear IDs
     effectRegistry.clearAllEffects();
-
-    // Luego limpiar la referencia local
     activeEffectsRef.current.forEach((effect) => {
       try {
         if (effect.effect.dispose) {
@@ -907,7 +743,6 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
       } catch (error) {}
     });
 
-    // Limpiar post-procesamiento tóxico
     if (toxicPostProcessingRef.current) {
       toxicPostProcessingRef.current.dispose();
       toxicPostProcessingRef.current = null;
@@ -917,9 +752,6 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
     setEffects([]);
   };
 
-  /**
-   * Bucle de animación principal
-   */
   const animate = useCallback(() => {
     frameIdRef.current = requestAnimationFrame(animate);
 
@@ -979,17 +811,13 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
       }
     });
 
-    // Verificar si el post-procesamiento tóxico está habilitado directamente desde el registry
     const toxicPostProcessingEffect = Array.from((effectRegistry as any).effects.values()).find(
       (effect: any) => effect.type === "toxic_post_processing"
     );
     const toxicPostProcessingEnabled = toxicPostProcessingEffect?.enabled || false;
-
-    // Actualizar post-procesamiento tóxico si está activo y habilitado
     if (toxicPostProcessingRef.current && toxicPostProcessingEnabled) {
       toxicPostProcessingRef.current.update(deltaTime);
       
-      // Actualizar posición de luz para godrays
       if (sunLightRef.current) {
         toxicPostProcessingRef.current.updateLightPosition(sunLightRef.current.position, cameraRef.current!);
       }
@@ -998,7 +826,6 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
     if (rendererRef.current && sceneRef.current && cameraRef.current) {
       const renderStartTime = performance.now();
       
-      // Usar post-procesamiento tóxico si está disponible Y habilitado, sino renderizado normal
       if (toxicPostProcessingRef.current && toxicPostProcessingEnabled) {
         toxicPostProcessingRef.current.render();
       } else {
@@ -1020,9 +847,6 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
     }
   }, []);
 
-  /**
-   * Actualizar estadísticas de efectos
-   */
   const updateStats = useCallback(() => {
     const registryStats = effectRegistry.getStats();
     setStats((prevStats) => ({
@@ -1032,9 +856,6 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
     }));
   }, []);
 
-  /**
-   * Efecto de inicialización
-   */
   useEffect(() => {
     let isMounted = true;
 
@@ -1138,9 +959,6 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
     };
   }, []);
 
-  /**
-   * Efecto para actualizar estadísticas periódicamente
-   */
   useEffect(() => {
     const interval = setInterval(() => {
       const registryStats = effectRegistry.getStats();
@@ -1154,9 +972,6 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
     return () => clearInterval(interval);
   }, []);
 
-  /**
-   * Efecto para monitorear cuando renderingData se actualiza
-   */
   useEffect(() => {
     if (renderingData) {
       if (sceneRef.current && planetMeshRef.current) {
@@ -1165,17 +980,10 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
     }
   }, [renderingData, updatePlanetPositionWithAPIData]);
 
-  /**
-   * Hook de debug para los datos del planeta
-   */
   useDebugPlanetData(renderingData);
 
-  /**
-   * Renderizado del componente
-   */
   return (
     <div className={`relative ${containerClassName}`}>
-      {/* Componente de debug visual (solo si está habilitado) */}
       {showDebugInfo && renderingData && <DebugPlanetData planetData={renderingData} showInPage={true} showInConsole={true} />}
 
       <div ref={mountRef} className="w-full h-full" style={{ minHeight: "300px", aspectRatio: "1" }} />
@@ -1236,9 +1044,7 @@ export const ExampleModularPlanet: React.FC<{ planetName?: string }> = ({ planet
         showDebugInfo={true}
         onDataLoaded={(data) => {}}
         onEffectsCreated={(effects) => {}}
-        onError={(error) => {
-          console.error("❌ Planet renderer error:", error);
-        }}
+        onError={(error) => {}}
       />
     </div>
   );

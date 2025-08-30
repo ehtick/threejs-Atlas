@@ -1,8 +1,4 @@
-/**
- * Universal Planet 3D Wrapper - Wrapper mejorado para el sistema universal
- * 
- * Integra el UniversalPlanetRenderer con React y maneja errores de forma robusta
- */
+// atlas-ui/react/static/js/3DComponents/UniversalPlanet3DWrapper.tsx
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as THREE from 'three';
@@ -52,12 +48,10 @@ class ErrorBoundary extends React.Component<
   }
 
   static getDerivedStateFromError(error: Error) {
-    console.error(' Planet 3D ErrorBoundary caught error:', error);
     return { hasError: true, error: error.message };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error(' Planet 3D componentDidCatch:', error, errorInfo);
     if (this.props.onError) {
       this.props.onError(error.message);
     }
@@ -102,7 +96,6 @@ export const UniversalPlanet3DWrapper: React.FC<UniversalPlanet3DProps> = ({
   onDataLoaded,
   onError
 }) => {
-  // Referencias para Three.js
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene>();
   const rendererRef = useRef<THREE.WebGLRenderer>();
@@ -113,7 +106,6 @@ export const UniversalPlanet3DWrapper: React.FC<UniversalPlanet3DProps> = ({
   const frameIdRef = useRef<number>();
   const lastFrameTimeRef = useRef<number>(0);
 
-  // Estado del componente
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<RendererStats>({
@@ -122,39 +114,28 @@ export const UniversalPlanet3DWrapper: React.FC<UniversalPlanet3DProps> = ({
     renderCalls: 0
   });
 
-  /**
-   * Inicialización de Three.js
-   */
   const initializeThreeJS = useCallback(() => {
-    
     if (!mountRef.current) {
-      console.error(' Mount ref is null');
       return false;
     }
 
     try {
-      // Limpiar contenido anterior
       while (mountRef.current.firstChild) {
         mountRef.current.removeChild(mountRef.current.firstChild);
       }
 
-      // Obtener dimensiones del contenedor
       const container = mountRef.current;
       const containerWidth = container.clientWidth || width;
       const containerHeight = container.clientHeight || height;
-      
-      
-      // Crear escena
+
       const scene = new THREE.Scene();
       scene.background = new THREE.Color(0x000511);
       sceneRef.current = scene;
 
-      // Configurar cámara
       const camera = new THREE.PerspectiveCamera(45, containerWidth / containerHeight, 0.1, 1000);
       camera.position.set(0, 0, 5);
       cameraRef.current = camera;
 
-      // Configurar renderer
       const renderer = new THREE.WebGLRenderer({ 
         antialias: true,
         alpha: true,
@@ -172,33 +153,24 @@ export const UniversalPlanet3DWrapper: React.FC<UniversalPlanet3DProps> = ({
       mountRef.current.appendChild(renderer.domElement);
       rendererRef.current = renderer;
 
-      // Configurar iluminación
       setupLighting(scene);
 
-      // Crear planeta base
       const planetMesh = createBasePlanet(scene);
       planetMeshRef.current = planetMesh;
 
-      // Configurar controles si están habilitados
       if (enableControls) {
         setupControls(camera, renderer.domElement);
       }
 
-      // Crear el Universal Planet Renderer
       universalRendererRef.current = new UniversalPlanetRenderer(scene, planetMesh);
 
       return true;
     } catch (error) {
-      console.error(' Error initializing Three.js:', error);
       return false;
     }
   }, [width, height, enableControls]);
 
-  /**
-   * Configurar iluminación de la escena
-   */
   const setupLighting = (scene: THREE.Scene) => {
-    // Luz principal (sol)
     const sunLight = new THREE.DirectionalLight(0xffffff, 2.0);
     sunLight.position.set(5, 3, 5);
     sunLight.castShadow = true;
@@ -206,19 +178,14 @@ export const UniversalPlanet3DWrapper: React.FC<UniversalPlanet3DProps> = ({
     sunLight.shadow.mapSize.height = 2048;
     scene.add(sunLight);
 
-    // Luz de relleno
     const fillLight = new THREE.DirectionalLight(0x4466ff, 0.4);
     fillLight.position.set(-5, -3, -5);
     scene.add(fillLight);
 
-    // Luz ambiental
     const ambientLight = new THREE.AmbientLight(0x222244, 0.3);
     scene.add(ambientLight);
   };
 
-  /**
-   * Crear planeta base
-   */
   const createBasePlanet = (scene: THREE.Scene): THREE.Mesh => {
     const planetGeometry = new THREE.SphereGeometry(1, 128, 64);
     const planetMaterial = new THREE.MeshStandardMaterial({
@@ -235,26 +202,19 @@ export const UniversalPlanet3DWrapper: React.FC<UniversalPlanet3DProps> = ({
     return planetMesh;
   };
 
-  /**
-   * Configurar controles orbitales
-   */
   const setupControls = (camera: THREE.PerspectiveCamera, domElement: HTMLElement) => {
     const controls = new OrbitControls(camera, domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    controls.minDistance = 0.3; // Permitir acercamiento mucho mayor para ver los cristales
+    controls.minDistance = 0.3;
     controls.maxDistance = 10;
     controls.autoRotate = autoRotate;
     controls.autoRotateSpeed = 0.5;
     controlsRef.current = controls;
   };
 
-  /**
-   * Cargar datos del planeta
-   */
   const loadPlanetData = useCallback(async () => {
     if (!universalRendererRef.current) {
-      console.error(' Universal renderer not initialized');
       return;
     }
 
@@ -262,12 +222,7 @@ export const UniversalPlanet3DWrapper: React.FC<UniversalPlanet3DProps> = ({
       setLoading(true);
       setError(null);
 
-
-      // Si tenemos datos locales, crear renderizador con fallback
       if (planetData) {
-        
-        // Para el sistema universal, necesitamos transformar los datos
-        // En este caso, usaremos el fallback del renderer
         await universalRendererRef.current.loadPlanetData(planetName);
         
         if (onDataLoaded) {
@@ -283,7 +238,6 @@ export const UniversalPlanet3DWrapper: React.FC<UniversalPlanet3DProps> = ({
           });
         }
       } else {
-        // Cargar desde API
         await universalRendererRef.current.loadPlanetData(planetName);
         
         if (onDataLoaded) {
@@ -302,7 +256,6 @@ export const UniversalPlanet3DWrapper: React.FC<UniversalPlanet3DProps> = ({
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error loading planet';
-      console.error(' Error loading planet data:', errorMessage);
       setError(errorMessage);
       
       if (onError) {
@@ -313,26 +266,20 @@ export const UniversalPlanet3DWrapper: React.FC<UniversalPlanet3DProps> = ({
     }
   }, [planetName, planetData, onDataLoaded, onError]);
 
-  /**
-   * Bucle de animación
-   */
   const animate = useCallback(() => {
     frameIdRef.current = requestAnimationFrame(animate);
 
     const currentTime = performance.now();
     
-    // Actualizar controles
     if (controlsRef.current) {
       controlsRef.current.update();
     }
 
-    // Renderizar escena
     if (rendererRef.current && sceneRef.current && cameraRef.current) {
       const renderStartTime = performance.now();
       rendererRef.current.render(sceneRef.current, cameraRef.current);
       const renderTime = performance.now() - renderStartTime;
 
-      // Actualizar estadísticas cada segundo
       if (currentTime - lastFrameTimeRef.current > 1000) {
         const frameRate = 1000 / (currentTime - lastFrameTimeRef.current);
         setStats(prevStats => ({
@@ -345,33 +292,25 @@ export const UniversalPlanet3DWrapper: React.FC<UniversalPlanet3DProps> = ({
     }
   }, []);
 
-  /**
-   * Efecto de inicialización
-   */
   useEffect(() => {
     const initialize = async () => {
       try {
-        
         if (!initializeThreeJS()) {
           setError('Failed to initialize 3D renderer');
           return;
         }
 
-        // Iniciar animación
         animate();
 
-        // Cargar datos del planeta
         await loadPlanetData();
         
       } catch (error) {
-        console.error(' Error during initialization:', error);
         setError(error instanceof Error ? error.message : 'Unknown initialization error');
       }
     };
 
     initialize();
 
-    // Cleanup
     return () => {
       if (frameIdRef.current) {
         cancelAnimationFrame(frameIdRef.current);
@@ -392,17 +331,12 @@ export const UniversalPlanet3DWrapper: React.FC<UniversalPlanet3DProps> = ({
           }
           rendererRef.current.dispose();
         } catch (error) {
-          console.error('Error during cleanup:', error);
         }
       }
     };
   }, [initializeThreeJS, animate, loadPlanetData, planetName]);
 
-  /**
-   * Manejo de errores del componente
-   */
   const handleError = useCallback((errorMessage: string) => {
-    console.error(' Universal Planet 3D Error:', errorMessage);
     setError(errorMessage);
     if (onError) {
       onError(errorMessage);

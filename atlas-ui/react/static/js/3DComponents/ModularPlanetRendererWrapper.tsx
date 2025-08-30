@@ -1,3 +1,5 @@
+// atlas-ui/react/static/js/3DComponents/ModularPlanetRendererWrapper.tsx
+
 import React from 'react';
 import { ModularPlanetRenderer } from './ModularPlanetRenderer';
 
@@ -15,20 +17,20 @@ interface ModularPlanetRendererProps {
     gravity: number;
     mass: number;
     orbital_radius: number;
-    orbital_period_seconds?: number; // Añadido para cálculo orbital
+    orbital_period_seconds?: number;
     rotation_period_seconds: number;
     surface_temperature: number;
     axial_tilt: number;
     planet_type: string;
     atmosphere: string;
     elements: string[];
-    initial_orbital_angle?: number; // Añadido para posición orbital inicial
+    initial_orbital_angle?: number;
   };
   cosmicOriginTime?: number;
   initialAngleRotation?: number;
   onDataLoaded?: (data: any) => void;
   onError?: (error: string) => void;
-  onEffectsCreated?: (effects: any[]) => void; // Añadido para exponer efectos
+  onEffectsCreated?: (effects: any[]) => void;
 }
 
 class ErrorBoundary extends React.Component<
@@ -41,13 +43,10 @@ class ErrorBoundary extends React.Component<
   }
 
   static getDerivedStateFromError(error: Error) {
-    console.error('🚨 ErrorBoundary caught error:', error);
-    console.error('🚨 Error stack:', error.stack);
     return { hasError: true, error: error.message };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('🚨 componentDidCatch:', error, errorInfo);
   }
 
   render() {
