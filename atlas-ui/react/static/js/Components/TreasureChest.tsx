@@ -45,7 +45,6 @@ const TreasureChest: React.FC = () => {
   useEffect(() => {
     const probability = window.CHEST_PROBABILITY || 0.000001; // Default to 0.0001%
     const shouldShow = window.CHEST_SHOW || Math.random() < probability;
-    console.log('TreasureChest - CHEST_SHOW:', window.CHEST_SHOW, 'CHEST_PROBABILITY:', probability, 'shouldShow:', shouldShow);
     setShowTreasureChest(shouldShow);
   }, []);
 
@@ -225,7 +224,6 @@ const TreasureChest: React.FC = () => {
     }, 300); // Match modal animation duration
   };
 
-  console.log('TreasureChest render - showTreasureChest:', showTreasureChest);
   if (!showTreasureChest) return null;
 
   return (
