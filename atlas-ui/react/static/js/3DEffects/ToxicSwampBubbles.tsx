@@ -37,13 +37,13 @@ const PROCEDURAL_RANGES = {
     EMISSION_RATE: { min: 0.8, max: 1.5 },
   },
   SWAMP: {
-    BUBBLE_COUNT: { min: 12, max: 20 }, // Reduced for better control
-    BUBBLE_SIZE: { min: 0.015, max: 0.025 }, // More reasonable size
-    RISE_SPEED: { min: 0.02, max: 0.04 }, // Much slower, organic movement
-    EXPANSION_RATE: { min: 0.008, max: 0.015 }, // Slower expansion
-    POP_DISTANCE: { min: 0.3, max: 0.5 }, // Moderate distance
-    OPACITY: { min: 0.6, max: 0.85 }, // Visible but translucent
-    EMISSION_RATE: { min: 0.3, max: 0.8 }, // Slower emission for organic feel
+    BUBBLE_COUNT: { min: 15, max: 25 }, // Target amount of bubbles
+    BUBBLE_SIZE: { min: 0.003, max: 0.006 }, // Much smaller bubbles
+    RISE_SPEED: { min: 0.015, max: 0.025 }, // Slow organic movement
+    EXPANSION_RATE: { min: 0.004, max: 0.008 }, // Gradual expansion
+    POP_DISTANCE: { min: 0.2, max: 0.35 }, // Pop at reasonable distance
+    OPACITY: { min: 0.4, max: 0.6 }, // Semi-transparent
+    EMISSION_RATE: { min: 3.0, max: 5.0 }, // Higher rate for truly continuous flow
   },
 };
 
@@ -84,7 +84,8 @@ export class ToxicSwampBubblesEffect {
   private planetCenter: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
   private globalTime: number = 0; // Track global time for procedural patterns
   private nextBubbleIndex: number = 0; // Unique index for each bubble
-  private bubbleSpawnTimer: number = 0; // Timer for controlled spawning
+  private bubbleSpawnTimer: number = 0;
+  private debugLogTimer: number = 0; // Timer for controlled spawning
 
   constructor(planetRadius: number, params: ToxicSwampBubblesParams = {}) {
     this.planetRadius = planetRadius;
@@ -140,24 +141,34 @@ export class ToxicSwampBubblesEffect {
   }
   
   private createInitialBubbles(): void {
-    // Create a few bubbles at different stages of emergence for immediate visual impact
-    const initialBubbleCount = Math.min(5, Math.floor(this.params.bubbleCount / 3));
+    // Fill the scene with bubbles at different life stages
+    const initialBubbleCount = Math.floor(this.params.bubbleCount * 0.8);
     
     for (let i = 0; i < initialBubbleCount; i++) {
       this.createBubble();
       
-      // Advance each bubble to a different stage
+      // Distribute bubbles across their entire lifecycle
       const bubble = this.bubbles[this.bubbles.length - 1];
-      const advanceAmount = (i / initialBubbleCount) * 0.5; // Stagger their emergence
+      const lifeProgress = (i / initialBubbleCount);
       
-      bubble.emergencePhase = advanceAmount;
-      bubble.fadeInPhase = Math.min(1, advanceAmount * 2);
-      bubble.life = advanceAmount * 2; // Different ages
+      // Set different life stages
+      bubble.life = bubble.maxLife * lifeProgress * 0.8; // Up to 80% of max life
+      bubble.emergencePhase = Math.min(1.0, lifeProgress * 2);
+      bubble.isFullyEmerged = bubble.emergencePhase >= 1.0;
+      bubble.fadeInPhase = bubble.emergencePhase;
       
-      // Move them partway out
+      // Update size based on life
+      const growthFactor = bubble.life / bubble.maxLife;
+      bubble.size = THREE.MathUtils.lerp(
+        this.params.bubbleSize * 0.5,
+        bubble.maxSize,
+        growthFactor * growthFactor
+      );
+      
+      // Move them to their current position
       const directionFromCenter = bubble.position.clone().sub(this.planetCenter).normalize();
-      const emergenceDistance = this.planetRadius * advanceAmount * 0.3;
-      bubble.position.add(directionFromCenter.multiplyScalar(emergenceDistance));
+      const distance = bubble.emergencePhase * this.planetRadius * 0.4;
+      bubble.position.add(directionFromCenter.multiplyScalar(distance));
     }
     
     console.log(`Created ${initialBubbleCount} initial bubbles for immediate effect`);
@@ -195,9 +206,7 @@ export class ToxicSwampBubblesEffect {
   }
 
   private createBubble(): void {
-    if (this.bubbles.length >= this.params.bubbleCount) {
-      return; // Don't exceed maximum bubble count
-    }
+    // No limit - bubbles will be created continuously as old ones disappear
 
     const bubbleIndex = this.nextBubbleIndex++;
     const surfacePoint = this.getProceduralSurfacePoint(bubbleIndex);
@@ -209,10 +218,10 @@ export class ToxicSwampBubblesEffect {
     const bubble: Bubble = {
       position: surfacePoint.clone(), // Start inside the planet
       velocity: directionFromCenter.multiplyScalar(this.params.riseSpeed),
-      size: 0.001, // Start very small (will grow as it emerges)
-      maxSize: this.params.bubbleSize * this.rng.uniform(1.5, 2.5), // Final size variation
+      size: this.params.bubbleSize * 0.3, // Start small but visible
+      maxSize: this.params.bubbleSize * this.rng.uniform(2.0, 3.5), // Good size variation
       life: 0,
-      maxLife: this.rng.uniform(8, 12), // Longer lifetime for slow organic movement
+      maxLife: this.rng.uniform(3, 6), // Shorter lifetime for more turnover
       originalSurfacePoint: actualSurfacePoint.clone(),
       wobbleOffset: new THREE.Vector3(
         this.rng.uniform(-1, 1),
@@ -223,11 +232,11 @@ export class ToxicSwampBubblesEffect {
       wobbleAmplitude: this.rng.uniform(0.002, 0.008), // Subtle wobble
       startOpacity: 0, // Start invisible
       hasPopped: false,
-      emergencePhase: 0, // Start not emerged
-      emergenceSpeed: this.rng.uniform(0.3, 0.6), // Slow emergence
+      emergencePhase: 0.1, // Start slightly emerged for immediate visibility
+      emergenceSpeed: this.rng.uniform(0.8, 1.2), // Faster emergence
       isFullyEmerged: false,
-      fadeInPhase: 0, // Start not faded in
-      fadeInSpeed: this.rng.uniform(1.5, 2.5), // Gradual fade in
+      fadeInPhase: 0.3, // Start partially faded in
+      fadeInSpeed: this.rng.uniform(2.0, 3.0), // Faster fade in
       bubbleIndex: bubbleIndex,
       birthTime: this.globalTime,
       popPhase: 0,
@@ -249,6 +258,8 @@ export class ToxicSwampBubblesEffect {
     
     this.bubbleMeshes.push(bubbleMesh);
     this.bubbleGroup.add(bubbleMesh);
+    
+    // Removed debug logs for cleaner output
   }
 
   private updateBubbles(deltaTime: number): void {
@@ -342,6 +353,8 @@ export class ToxicSwampBubblesEffect {
         const distanceFade = Math.max(0, 1 - distanceFromSurface / (this.params.popDistance * 2));
         
         opacity = this.params.opacity * emergenceOpacity * fadeInOpacity * distanceFade;
+        
+        // Removed debug logs for cleaner output
       } else {
         // Rapid fade out during pop
         const popFade = 1 - bubble.popPhase;
@@ -353,14 +366,16 @@ export class ToxicSwampBubblesEffect {
       bubbleMesh.scale.setScalar(bubble.size);
       (bubbleMesh.material as THREE.MeshBasicMaterial).opacity = Math.max(0, opacity);
       
-      // Remove when done
+      // Remove when done (don't remove based on opacity for emerging bubbles)
       const shouldRemove = (
         bubble.life >= bubble.maxLife ||
         (bubble.hasPopped && bubble.popPhase >= 1) ||
-        opacity <= 0.01
+        (opacity <= 0.01 && bubble.isFullyEmerged) // Only remove by opacity if fully emerged
       );
       
       if (shouldRemove) {
+        // Removed debug logs for cleaner output
+        
         this.bubbles.splice(i, 1);
         this.bubbleGroup.remove(bubbleMesh);
         this.bubbleMeshes.splice(i, 1);
@@ -377,30 +392,65 @@ export class ToxicSwampBubblesEffect {
   }
 
   public update(deltaTime: number): void {
+    // Ensure deltaTime is valid
+    if (!deltaTime || deltaTime <= 0) {
+      deltaTime = 0.016; // Default to 60fps if invalid
+    }
+    
     // Update global time for procedural patterns (in seconds)
     this.globalTime += deltaTime;
     
     // Update spawn timer
     this.bubbleSpawnTimer += deltaTime;
     
-    // Procedural bubble spawning with organic timing
-    // Use a pattern similar to marching cubes for spawn timing
-    const spawnInterval = 1.0 / this.params.emissionRate; // seconds between spawns
+    // Calculate spawn interval for continuous creation
+    const baseInterval = 1.0 / this.params.emissionRate;
     
-    // Add some organic variation to spawn timing
-    const timeVariation = Math.sin(this.globalTime * 0.7) * 0.3 + 1.0;
-    const adjustedInterval = spawnInterval * timeVariation;
+    // Add variation for organic feel
+    const timeVariation = Math.sin(this.globalTime * 2.3) * 0.3 + 1.0;
+    const adjustedInterval = baseInterval * timeVariation;
     
+    // Always spawn bubbles at regular intervals
     if (this.bubbleSpawnTimer >= adjustedInterval) {
-      this.createBubble();
+      // Always try to maintain target count
+      const targetCount = this.params.bubbleCount;
+      const currentCount = this.bubbles.length;
+      
+      // Create bubbles if below target (no upper limit)
+      if (currentCount < targetCount) {
+        const bubblesNeeded = targetCount - currentCount;
+        const bubblesToCreate = Math.min(3, Math.max(1, Math.ceil(bubblesNeeded / 5)));
+        
+        for (let i = 0; i < bubblesToCreate; i++) {
+          this.createBubble();
+        }
+      } else {
+        // Even if at target, create one bubble occasionally for continuous flow
+        this.createBubble();
+      }
+      
       this.bubbleSpawnTimer = 0;
       
-      // Add some randomness to avoid too regular patterns
-      this.bubbleSpawnTimer -= this.rng.uniform(0, adjustedInterval * 0.2);
+      // Add slight randomness
+      this.bubbleSpawnTimer -= this.rng.uniform(0, adjustedInterval * 0.05);
     }
     
     // Update existing bubbles
     this.updateBubbles(deltaTime);
+    
+    // Debug logging every 2 seconds
+    this.debugLogTimer += deltaTime;
+    if (this.debugLogTimer >= 2.0) {
+      console.log('ToxicSwampBubbles status:', {
+        bubbleCount: this.bubbles.length,
+        targetCount: this.params.bubbleCount,
+        spawnTimer: this.bubbleSpawnTimer,
+        nextSpawnIn: adjustedInterval - this.bubbleSpawnTimer,
+        emissionRate: this.params.emissionRate,
+        globalTime: this.globalTime
+      });
+      this.debugLogTimer = 0;
+    }
   }
 
   public addToScene(scene: THREE.Scene, planetPosition?: THREE.Vector3): void {
