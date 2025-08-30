@@ -758,6 +758,30 @@ export class EffectRegistry {
                   secondaryCloudsEffect.addToScene(scene);
                 }
               }
+
+              // Add atmosphere clouds for gas giant
+              if (surface.atmosphere_clouds && surface.atmosphere_clouds.clouds && surface.atmosphere_clouds.clouds.length > 0) {
+                const atmosphereCloudsEffect = createAtmosphereCloudsFromPythonData(
+                  planetRadius,
+                  surface.atmosphere_clouds,
+                  (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000,
+                  pythonData.timing?.cosmic_origin_time
+                );
+
+                if (atmosphereCloudsEffect) {
+                  const atmosphereCloudsInstance: EffectInstance = {
+                    id: `effect_${this.nextId++}`,
+                    type: "atmosphere_clouds",
+                    effect: atmosphereCloudsEffect,
+                    priority: 15, // Higher priority than secondary clouds
+                    enabled: true,
+                    name: "Gas Giant Atmosphere Clouds",
+                  };
+                  this.effects.set(atmosphereCloudsInstance.id, atmosphereCloudsInstance);
+                  effects.push(atmosphereCloudsInstance);
+                  atmosphereCloudsEffect.addToScene(scene, mesh.position);
+                }
+              }
             } else {
               console.error("❌ PlanetLayerSystem not initialized!");
             }
@@ -837,6 +861,30 @@ export class EffectRegistry {
 
                 if (scene) {
                   secondaryCloudsEffect.addToScene(scene);
+                }
+              }
+
+              // Add atmosphere clouds for frozen gas giant
+              if (surface.atmosphere_clouds && surface.atmosphere_clouds.clouds && surface.atmosphere_clouds.clouds.length > 0) {
+                const atmosphereCloudsEffect = createAtmosphereCloudsFromPythonData(
+                  planetRadius,
+                  surface.atmosphere_clouds,
+                  (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000,
+                  pythonData.timing?.cosmic_origin_time
+                );
+
+                if (atmosphereCloudsEffect) {
+                  const atmosphereCloudsInstance: EffectInstance = {
+                    id: `effect_${this.nextId++}`,
+                    type: "atmosphere_clouds",
+                    effect: atmosphereCloudsEffect,
+                    priority: 15, // Higher priority than secondary clouds
+                    enabled: true,
+                    name: "Frozen Gas Giant Atmosphere Clouds",
+                  };
+                  this.effects.set(atmosphereCloudsInstance.id, atmosphereCloudsInstance);
+                  effects.push(atmosphereCloudsInstance);
+                  atmosphereCloudsEffect.addToScene(scene, mesh.position);
                 }
               }
             }

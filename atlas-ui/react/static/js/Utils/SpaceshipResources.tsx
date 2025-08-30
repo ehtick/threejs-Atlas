@@ -163,9 +163,9 @@ export class SpaceshipResourceManager {
     savedLocations.forEach((location: any) => {
       if (location.type === "planet") {
         sources.planets++;
-        totalGeneration.antimatter += 3; // Per minute generation (was 12/5min = 2.4, rounded up)
-        totalGeneration.element115 += 2; // Per minute generation (was 9/5min = 1.8, rounded up)
-        totalGeneration.deuterium += 3; // Per minute generation (was 15/5min = 3)
+        totalGeneration.antimatter += 1.1; // Per minute generation
+        totalGeneration.element115 += 1; // Per minute generation
+        totalGeneration.deuterium += 1.2; // Per minute generation
       } else if (location.type === "system") {
         sources.systems++;
         totalGeneration.antimatter += 1; // Per minute generation (was 5/5min = 1)

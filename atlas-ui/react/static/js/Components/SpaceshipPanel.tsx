@@ -440,15 +440,15 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
                         <div className="flex gap-2">
                           <span className="text-purple-300 flex items-center gap-0.5">
                             <AntimatterIcon size={8} color="currentColor" />
-                            +{Math.round(spaceshipUpgrade.multiplier * (passiveGeneration.sources.planets * 3 + passiveGeneration.sources.systems * 1))} AM
+                            +{Math.round(spaceshipUpgrade.multiplier * (passiveGeneration.sources.planets * 1.1 + passiveGeneration.sources.systems * 1))} AM
                           </span>
                           <span className="text-cyan-300 flex items-center gap-0.5">
                             <Element115Icon size={8} color="currentColor" />
-                            +{Math.round(spaceshipUpgrade.multiplier * (passiveGeneration.sources.planets * 2 + passiveGeneration.sources.systems * 1))} E115
+                            +{Math.round(spaceshipUpgrade.multiplier * (passiveGeneration.sources.planets * 1 + passiveGeneration.sources.systems * 1))} E115
                           </span>
                           <span className="text-orange-300 flex items-center gap-0.5">
                             <DeuteriumIcon size={8} color="currentColor" />
-                            +{Math.round(spaceshipUpgrade.multiplier * (passiveGeneration.sources.planets * 3 + passiveGeneration.sources.systems * 1))} D
+                            +{Math.round(spaceshipUpgrade.multiplier * (passiveGeneration.sources.planets * 1.2 + passiveGeneration.sources.systems * 1))} D
                           </span>
                         </div>
                       </div>

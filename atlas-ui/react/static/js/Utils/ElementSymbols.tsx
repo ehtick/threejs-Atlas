@@ -3,7 +3,7 @@ import React from 'react';
 // Element symbols for periodic table visualization
 export interface ElementInfo {
   symbol: string;
-  atomicNumber: number;
+  atomicNumber: number | string;
   category: string;
 }
 
@@ -142,7 +142,8 @@ export const ELEMENT_SYMBOLS: { [key: string]: ElementInfo } = {
   
   // Special elements
   Tritium: { symbol: "T", atomicNumber: 1, category: "isotope" },
-  "Z-Divinium": { symbol: "Zd", atomicNumber: 119, category: "synthetic" }
+  "Z-Divinium": { symbol: "Zd", atomicNumber: 119, category: "synthetic" },
+  Methane: { symbol: "CH₄", atomicNumber: "~", category: "compound" }
 };
 
 // Color mapping for element categories
@@ -158,7 +159,8 @@ export const ELEMENT_CATEGORY_COLORS = {
   "lanthanide": "bg-indigo-500/20 border-indigo-500/50 text-indigo-300",
   "actinide": "bg-red-600/20 border-red-600/50 text-red-400",
   "isotope": "bg-emerald-500/20 border-emerald-500/50 text-emerald-300",
-  "synthetic": "bg-violet-500/20 border-violet-500/50 text-violet-300"
+  "synthetic": "bg-violet-500/20 border-violet-500/50 text-violet-300",
+  "compound": "bg-teal-500/20 border-teal-500/50 text-teal-300"
 };
 
 // Get rarity-based colors for element tiles

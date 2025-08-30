@@ -107,6 +107,38 @@ class PlanetTypeTranslators:
                 "turbulence": rng.uniform(1.0, 2.5)  # High turbulence for gas giants
             })
         
+        # Generate atmospheric clouds for gas giant
+        num_atmosphere_clouds = rng.randint(15, 25)  # Rich atmospheric activity
+        clouds = []
+        center_x, center_y = 200, 200  # Pillow center coordinates
+        
+        for i in range(num_atmosphere_clouds):
+            cloud_radius = rng.randint(30, 55)  # Large clouds for gas giants
+            max_offset = planet_radius - cloud_radius
+            cloud_x = center_x + rng.randint(-max_offset, max_offset)
+            cloud_y = center_y + rng.randint(-max_offset, max_offset)
+            
+            # Convert to normalized coordinates
+            normalized_coords = self.common_utils.normalize_coordinates(
+                cloud_x, cloud_y, center_x, center_y, planet_radius
+            )
+            
+            # Gas giant atmosphere clouds - white to light colored matching planet atmosphere
+            cloud_colors = [
+                "#ffffff", "#f5f5f5", "#e8e8e8", "#f0f8ff",  # White to light blue
+                "#fffaf0", "#f8f8ff", "#f5f5dc", "#faf0e6"   # Light cream and beige tones
+            ]
+            
+            clouds.append({
+                "x": normalized_coords[0],
+                "y": normalized_coords[1], 
+                "radius": cloud_radius,
+                "color": rng.choice(cloud_colors),
+                "opacity": rng.uniform(0.6, 0.9),
+                "type": "cloud",
+                "seed": f"{planet_name}_atmosphere_cloud_{i}"
+            })
+        
         return {
             "type": "gas_giant",
             "cloud_bands": {
@@ -118,13 +150,17 @@ class PlanetTypeTranslators:
             "storms": storms,
             "polar_hexagon": polar_hexagon,
             "secondary_clouds": secondary_clouds,
+            "atmosphere_clouds": {
+                "clouds": clouds
+            },
             "debug": {
                 "original_planet_radius": planet_radius,
                 "center_y": center_y,
                 "band_count": num_bands,
                 "rotation_degrees": rotation_angle * 180 / math.pi,
                 "has_hexagon": polar_hexagon is not None,
-                "secondary_cloud_count": num_secondary_clouds
+                "secondary_cloud_count": num_secondary_clouds,
+                "atmosphere_cloud_count": num_atmosphere_clouds
             }
         }
     
@@ -2116,6 +2152,38 @@ class PlanetTypeTranslators:
                 "turbulence": rng.uniform(0.8, 2.0)  # Lower turbulence for frozen atmosphere
             })
         
+        # Generate atmospheric clouds for frozen gas giant
+        num_atmosphere_clouds = rng.randint(12, 20)  # Slightly fewer than regular gas giants
+        clouds = []
+        center_x, center_y = 200, 200  # Pillow center coordinates
+        
+        for i in range(num_atmosphere_clouds):
+            cloud_radius = rng.randint(25, 50)  # Slightly smaller clouds for frozen giants
+            max_offset = planet_radius - cloud_radius
+            cloud_x = center_x + rng.randint(-max_offset, max_offset)
+            cloud_y = center_y + rng.randint(-max_offset, max_offset)
+            
+            # Convert to normalized coordinates
+            normalized_coords = self.common_utils.normalize_coordinates(
+                cloud_x, cloud_y, center_x, center_y, planet_radius
+            )
+            
+            # Frozen gas giant atmosphere clouds - icy white to light blue tones
+            cloud_colors = [
+                "#ffffff", "#f0f8ff", "#e6f3ff", "#f5f5ff",  # White to light blue
+                "#e0f6ff", "#f8f8ff", "#e8e8ff", "#f0f0ff"   # Icy tones
+            ]
+            
+            clouds.append({
+                "x": normalized_coords[0],
+                "y": normalized_coords[1], 
+                "radius": cloud_radius,
+                "color": rng.choice(cloud_colors),
+                "opacity": rng.uniform(0.7, 0.95),  # Slightly more opaque for icy appearance
+                "type": "cloud",
+                "seed": f"{planet_name}_atmosphere_cloud_{i}"
+            })
+        
         return {
             "type": "frozen_gas_giant",
             "cloud_bands": {
@@ -2126,10 +2194,14 @@ class PlanetTypeTranslators:
             },
             "polar_hexagon": polar_hexagon,
             "secondary_clouds": secondary_clouds,
+            "atmosphere_clouds": {
+                "clouds": clouds
+            },
             "icy_tint": True,  # Flag for blue-white tinting
             "debug": {
                 "has_hexagon": polar_hexagon is not None,
-                "secondary_cloud_count": num_secondary_clouds
+                "secondary_cloud_count": num_secondary_clouds,
+                "atmosphere_cloud_count": num_atmosphere_clouds
             }
         }
     

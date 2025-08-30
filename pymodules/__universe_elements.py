@@ -121,4 +121,5 @@ periodic_table = [
     ("Tennessine", 0.00000001),
     ("Oganesson", 0.00000001),
     ("Z-Divinium", 0.000000001),
+    ("Methane", 0.001),
 ]

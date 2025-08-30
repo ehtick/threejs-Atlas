@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 // Element resource values based on pymodules/__universe_elements.py
 // The rarer the element (lower probability), the more resources it gives
@@ -15,7 +15,7 @@ export const ELEMENT_RESOURCE_VALUES: { [key: string]: ElementValue } = {
   // Ultra rare materials (probability 0.000000001)
   "Z-Divinium": { antimatter: 100, element115: 150, deuterium: 80 },
 
-  // Extremely rare materials (probability 0.00000001)
+  // Extremely rare materials (probability 0.001)
   Oganesson: { antimatter: 80, element115: 95, deuterium: 40 },
   Tennessine: { antimatter: 50, element115: 70, deuterium: 40 },
   Livermorium: { antimatter: 50, element115: 70, deuterium: 40 },
@@ -144,6 +144,7 @@ export const ELEMENT_RESOURCE_VALUES: { [key: string]: ElementValue } = {
   Manganese: { antimatter: 1, element115: 2, deuterium: 1 },
   Nickel: { antimatter: 1, element115: 2, deuterium: 1 },
   Calcium: { antimatter: 1, element115: 2, deuterium: 1 },
+  Methane: { antimatter: 1, element115: 1, deuterium: 2 },
 
   // Very common elements (probability 0.00005-0.0005)
   Argon: { antimatter: 1, element115: 1, deuterium: 1 },
