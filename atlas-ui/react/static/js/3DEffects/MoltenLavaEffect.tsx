@@ -46,7 +46,7 @@ const LAVA_PROCEDURAL_RANGES = {
 };
 
 export class MoltenLavaEffect {
-  private layerMesh?: THREE.Mesh;
+  private _layerMesh?: THREE.Mesh;
   private material: THREE.ShaderMaterial;
   private params: MoltenLavaParams;
   private layerSystem: PlanetLayerSystem;
@@ -93,9 +93,9 @@ export class MoltenLavaEffect {
       timeSpeed: params.timeSpeed || rng.uniform(LAVA_PROCEDURAL_RANGES.TIME_SPEED.min, LAVA_PROCEDURAL_RANGES.TIME_SPEED.max),
     };
 
-    this.material = this.layerSystem.createMoltenLavaLayerMaterial(this.params);
+    this.material = this.layerSystem.createMoltenLavaLayerMaterial(this.params as Record<string, unknown>);
 
-    this.layerMesh = this.layerSystem.addEffectLayer("moltenLava", this.material, this.layerSystem.getNextScaleFactor(), this);
+    this._layerMesh = this.layerSystem.addEffectLayer("moltenLava", this.material, this.layerSystem.getNextScaleFactor(), this);
   }
 
   update(deltaTime: number): void {

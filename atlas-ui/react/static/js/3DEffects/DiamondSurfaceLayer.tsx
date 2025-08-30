@@ -35,7 +35,7 @@ const PROCEDURAL_RANGES = {
 };
 
 export class DiamondSurfaceLayer {
-  private layerMesh?: THREE.Mesh;
+  private _layerMesh?: THREE.Mesh;
   private material: THREE.ShaderMaterial;
   private params: DiamondSurfaceLayerParams;
   private layerSystem: PlanetLayerSystem;
@@ -64,9 +64,9 @@ export class DiamondSurfaceLayer {
       iridescenceScale: params.iridescenceScale || rng.uniform(PROCEDURAL_RANGES.IRIDESCENCE_SCALE.min, PROCEDURAL_RANGES.IRIDESCENCE_SCALE.max),
     };
 
-    this.material = this.layerSystem.createDiamondSurfaceLayerMaterial(this.params);
+    this.material = this.layerSystem.createDiamondSurfaceLayerMaterial(this.params as Record<string, unknown>);
 
-    this.layerMesh = this.layerSystem.addEffectLayer("diamondSurface", this.material, this.layerSystem.getNextScaleFactor(), this);
+    this._layerMesh = this.layerSystem.addEffectLayer("diamondSurface", this.material, this.layerSystem.getNextScaleFactor(), this);
   }
 
   update(deltaTime: number): void {

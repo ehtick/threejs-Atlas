@@ -1,7 +1,10 @@
 // atlas-ui/react/static/js/3DEffects/index.ts
 
+import type { EffectCreationData } from "./EffectRegistry";
+import { effectRegistry } from "./EffectRegistry";
+
 export { RingSystemEffect, createRingSystemFromPythonData } from "./RingSystem";
-export type { RingSystemParams, RingParticle } from "./RingSystem";
+export type { RingSystemParams } from "./RingSystem";
 
 export { CloudBandsLayer, createCloudBandsLayerFromPythonData } from "./CloudBandsLayer";
 export type { CloudBandsLayerParams } from "./CloudBandsLayer";
@@ -43,7 +46,7 @@ export { ToxicPostProcessingEffect, createToxicPostProcessingFromPythonData } fr
 export type { ToxicPostProcessingParams } from "./ToxicPostProcessing";
 
 export { RiverLinesEffect, createRiverLinesFromPythonData, createRiverLinesWithPreset } from "./RiverLines";
-export type { RiverLinesParams, RiverSegment } from "./RiverLines";
+export type { RiverLinesParams } from "./RiverLines";
 
 export { CaveSurfaceHolesEffect, createCaveSurfaceHolesFromPythonData } from "./CaveSurfaceHoles";
 export type { CaveSurfaceHolesParams } from "./CaveSurfaceHoles";

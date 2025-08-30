@@ -24,7 +24,6 @@ const PROCEDURAL_RANGES = {
 };
 
 export class MetallicSurfaceLayer {
-  private layerMesh?: THREE.Mesh;
   private material: THREE.ShaderMaterial;
   private params: MetallicSurfaceLayerParams;
   private layerSystem: PlanetLayerSystem;
@@ -49,9 +48,9 @@ export class MetallicSurfaceLayer {
       crystalScale: params.crystalScale || rng.uniform(PROCEDURAL_RANGES.CRYSTAL_SCALE.min, PROCEDURAL_RANGES.CRYSTAL_SCALE.max),
     };
 
-    this.material = this.layerSystem.createMetallicSurfaceLayerMaterial(this.params);
+    this.material = this.layerSystem.createMetallicSurfaceLayerMaterial(this.params as Record<string, unknown>);
 
-    this.layerMesh = this.layerSystem.addEffectLayer("metallicSurface", this.material, this.layerSystem.getNextScaleFactor(), this);
+    this.layerSystem.addEffectLayer("metallicSurface", this.material, this.layerSystem.getNextScaleFactor(), this);
   }
 
   update(deltaTime: number): void {

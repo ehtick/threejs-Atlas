@@ -2,9 +2,24 @@
 
 import * as THREE from "three";
 
+// Helper function to convert color parameter to THREE.Color
+function toThreeColor(color: number[] | THREE.Color | number | undefined, defaultColor: THREE.Color | number): THREE.Color {
+  if (color === undefined) {
+    return typeof defaultColor === 'number' ? new THREE.Color(defaultColor) : defaultColor;
+  }
+  if (color instanceof THREE.Color) {
+    return color;
+  }
+  if (Array.isArray(color)) {
+    return new THREE.Color(color[0], color[1], color[2]);
+  }
+  // color is a number (hex value)
+  return new THREE.Color(color);
+}
+
 export interface EffectParameters {
   intensity?: number;
-  color?: number[] | THREE.Color;
+  color?: number[] | THREE.Color | number;
   opacity?: number;
   speed?: number;
   frequency?: number;
@@ -12,13 +27,49 @@ export interface EffectParameters {
   scale?: number;
   roughness?: number;
   metalness?: number;
-  [key: string]: any;
+  fragmentationIntensity?: number;
+  noiseScale?: number;
+  noiseIntensity?: number;
+  falloff?: number;
+  particleCount?: number;
+  fragmentCount?: number;
+  [key: string]: unknown;
 }
 
 export interface PlanetEffect {
   type: string;
   params: EffectParameters;
   priority?: number;
+}
+
+// Interfaces for Python data structure
+interface AtmosphereHaloData {
+  color?: number[] | number;
+  intensity?: number;
+  falloff?: number;
+  scale?: number;
+}
+
+interface AtmosphereStreaksData {
+  color?: number[] | number;
+  count?: number;
+  speed?: number;
+}
+
+interface AtmosphereData {
+  halo?: AtmosphereHaloData;
+  streaks?: AtmosphereStreaksData;
+}
+
+interface SurfaceData {
+  fragmentation_zones?: boolean;
+  fragment_color?: number[] | number;
+  fragment_count?: number;
+}
+
+interface PythonPlanetData {
+  atmosphere?: AtmosphereData;
+  surface?: SurfaceData;
 }
 
 export const MetallicPBRShader = {
@@ -240,7 +291,7 @@ export const AtmosphericStreaksShader = {
   `,
 };
 
-export class MetallicSurfaceEffect {
+export class MetallicSurfaceEffect implements BaseEffect {
   private material: THREE.ShaderMaterial;
   private metallicLayerMesh?: THREE.Mesh;
 
@@ -250,7 +301,7 @@ export class MetallicSurfaceEffect {
       fragmentShader: MetallicPBRShader.fragmentShader,
       uniforms: {
         time: { value: 0 },
-        baseColor: { value: new THREE.Color(params.color || [0.5, 0.5, 0.5]) },
+        baseColor: { value: toThreeColor(params.color, new THREE.Color(0.5, 0.5, 0.5)) },
         roughness: { value: params.roughness || 0.7 },
         metalness: { value: params.metalness || 0.9 },
         fragmentationIntensity: { value: params.fragmentationIntensity || 0.5 },
@@ -285,14 +336,6 @@ export class MetallicSurfaceEffect {
     }
   }
 
-  addToScene(scene: THREE.Scene, planetPosition?: THREE.Vector3): void {
-    if (this.metallicLayerMesh) {
-      if (planetPosition) {
-        this.metallicLayerMesh.position.copy(planetPosition);
-      }
-      scene.add(this.metallicLayerMesh);
-    }
-  }
 
   updateParams(params: EffectParameters): void {
     if (params.roughness !== undefined) {
@@ -303,6 +346,13 @@ export class MetallicSurfaceEffect {
     }
     if (params.fragmentationIntensity !== undefined) {
       this.material.uniforms.fragmentationIntensity.value = params.fragmentationIntensity;
+    }
+  }
+
+  addToScene(scene: THREE.Scene, planetPosition: THREE.Vector3): void {
+    if (this.metallicLayerMesh) {
+      this.metallicLayerMesh.position.copy(planetPosition);
+      scene.add(this.metallicLayerMesh);
     }
   }
 
@@ -317,7 +367,7 @@ export class MetallicSurfaceEffect {
   }
 }
 
-export class AtmosphericHaloEffect {
+export class AtmosphericHaloEffect implements BaseEffect {
   private mesh: THREE.Mesh;
   private material: THREE.ShaderMaterial;
 
@@ -328,7 +378,7 @@ export class AtmosphericHaloEffect {
       vertexShader: AtmosphericHaloShader.vertexShader,
       fragmentShader: AtmosphericHaloShader.fragmentShader,
       uniforms: {
-        glowColor: { value: new THREE.Color(params.color || [0.5, 0.0, 1.0]) },
+        glowColor: { value: toThreeColor(params.color, new THREE.Color(0.5, 0.0, 1.0)) },
         glowIntensity: { value: params.intensity || 1.0 },
         glowFalloff: { value: params.falloff || 2.0 },
         time: { value: 0 },
@@ -352,16 +402,23 @@ export class AtmosphericHaloEffect {
   }
 
   updateParams(params: EffectParameters): void {
-    if (params.color) {
-      this.material.uniforms.glowColor.value = new THREE.Color(params.color);
+    if (params.color !== undefined) {
+      this.material.uniforms.glowColor.value = toThreeColor(params.color, new THREE.Color(0.5, 0.0, 1.0));
     }
     if (params.intensity !== undefined) {
       this.material.uniforms.glowIntensity.value = params.intensity;
     }
   }
+
+  dispose(): void {
+    this.material.dispose();
+    if (this.mesh.geometry) {
+      this.mesh.geometry.dispose();
+    }
+  }
 }
 
-export class AtmosphericStreaksEffect {
+export class AtmosphericStreaksEffect implements BaseEffect {
   private particleSystem: THREE.Points;
   private material: THREE.ShaderMaterial;
   private particleCount: number;
@@ -375,7 +432,7 @@ export class AtmosphericStreaksEffect {
     const sizes = new Float32Array(this.particleCount);
     const speeds = new Float32Array(this.particleCount);
 
-    const color = new THREE.Color(params.color || [1, 1, 1]);
+    const color = toThreeColor(params.color, new THREE.Color(1, 1, 1));
 
     for (let i = 0; i < this.particleCount; i++) {
       const theta = Math.random() * Math.PI * 2;
@@ -422,9 +479,21 @@ export class AtmosphericStreaksEffect {
     this.material.uniforms.time.value += deltaTime;
     this.particleSystem.rotation.y += deltaTime * 0.1;
   }
+
+  updateParams(params: EffectParameters): void {
+    // Particle parameters can't be updated after creation
+    // This method exists to satisfy the BaseEffect interface
+  }
+
+  dispose(): void {
+    this.material.dispose();
+    if (this.particleSystem.geometry) {
+      this.particleSystem.geometry.dispose();
+    }
+  }
 }
 
-export class FragmentationEffect {
+export class FragmentationEffect implements BaseEffect {
   private fragments: THREE.Group;
   private fragmentMeshes: THREE.Mesh[] = [];
 
@@ -433,7 +502,7 @@ export class FragmentationEffect {
 
     const fragmentCount = params.fragmentCount || 20;
     const material = new THREE.MeshStandardMaterial({
-      color: params.color || 0x444444,
+      color: toThreeColor(params.color, 0x444444),
       metalness: 0.9,
       roughness: 0.6,
     });
@@ -491,10 +560,35 @@ export class FragmentationEffect {
       fragment.rotation.y += deltaTime * 0.05;
     });
   }
+
+  updateParams(params: EffectParameters): void {
+    // Fragment parameters can't be updated after creation
+    // This method exists to satisfy the BaseEffect interface
+  }
+
+  dispose(): void {
+    this.fragmentMeshes.forEach(mesh => {
+      if (mesh.geometry) {
+        mesh.geometry.dispose();
+      }
+      if (mesh.material) {
+        (mesh.material as THREE.Material).dispose();
+      }
+    });
+    this.fragmentMeshes = [];
+  }
+}
+
+// Base interface for all effects
+interface BaseEffect {
+  update?: (deltaTime: number) => void;
+  updateParams?: (params: EffectParameters) => void;
+  dispose?: () => void;
+  addToScene?: (scene: THREE.Scene, position: THREE.Vector3) => void;
 }
 
 export class PlanetEffectsManager {
-  private effects: Map<string, any> = new Map();
+  private effects: Map<string, BaseEffect> = new Map();
   private scene: THREE.Scene;
   private planetMesh: THREE.Mesh;
   private planetRadius: number;
@@ -514,22 +608,36 @@ export class PlanetEffectsManager {
   }
 
   addEffect(type: string, params: EffectParameters): void {
-    let effect;
+    let effect: BaseEffect | undefined;
 
     switch (type) {
       case "atmospheric_halo":
         effect = new AtmosphericHaloEffect(this.planetRadius, params);
-        effect.addToScene(this.scene, this.planetMesh.position);
+        if (effect.addToScene) {
+          effect.addToScene(this.scene, this.planetMesh.position);
+        }
         break;
 
       case "atmospheric_streaks":
         effect = new AtmosphericStreaksEffect(this.planetRadius, params);
-        effect.addToScene(this.scene, this.planetMesh.position);
+        if (effect.addToScene) {
+          effect.addToScene(this.scene, this.planetMesh.position);
+        }
         break;
 
       case "fragmentation":
         effect = new FragmentationEffect(this.planetRadius, params);
-        effect.addToScene(this.scene, this.planetMesh.position);
+        if (effect.addToScene) {
+          effect.addToScene(this.scene, this.planetMesh.position);
+        }
+        break;
+        
+      case "metallic_surface":
+        effect = new MetallicSurfaceEffect(params);
+        (effect as MetallicSurfaceEffect).apply(this.planetMesh);
+        if (effect.addToScene) {
+          effect.addToScene(this.scene, this.planetMesh.position);
+        }
         break;
     }
 
@@ -573,40 +681,43 @@ export class PlanetEffectsManager {
   }
 }
 
-export function translatePythonEffectsToThreeJS(pythonData: any): PlanetEffect[] {
+export function translatePythonEffectsToThreeJS(pythonData: PythonPlanetData): PlanetEffect[] {
   const effects: PlanetEffect[] = [];
 
   if (pythonData.atmosphere?.halo) {
+    const halo = pythonData.atmosphere.halo;
     effects.push({
       type: "atmospheric_halo",
       params: {
-        color: pythonData.atmosphere.halo.color || [0.5, 0.0, 1.0],
-        intensity: pythonData.atmosphere.halo.intensity || 1.0,
-        falloff: pythonData.atmosphere.halo.falloff || 2.0,
-        scale: pythonData.atmosphere.halo.scale || 1.15,
+        color: halo.color || [0.5, 0.0, 1.0],
+        intensity: halo.intensity || 1.0,
+        falloff: halo.falloff || 2.0,
+        scale: halo.scale || 1.15,
       },
       priority: 10,
     });
   }
 
   if (pythonData.atmosphere?.streaks) {
+    const streaks = pythonData.atmosphere.streaks;
     effects.push({
       type: "atmospheric_streaks",
       params: {
-        color: pythonData.atmosphere.streaks.color || [1, 1, 1],
-        particleCount: pythonData.atmosphere.streaks.count || 100,
-        speed: pythonData.atmosphere.streaks.speed || 1.0,
+        color: streaks.color || [1, 1, 1],
+        particleCount: streaks.count || 100,
+        speed: streaks.speed || 1.0,
       },
       priority: 20,
     });
   }
 
   if (pythonData.surface?.fragmentation_zones) {
+    const surface = pythonData.surface;
     effects.push({
       type: "fragmentation",
       params: {
-        color: pythonData.surface.fragment_color || [0.3, 0.3, 0.3],
-        fragmentCount: pythonData.surface.fragment_count || 20,
+        color: surface.fragment_color || [0.3, 0.3, 0.3],
+        fragmentCount: surface.fragment_count || 20,
       },
       priority: 5,
     });

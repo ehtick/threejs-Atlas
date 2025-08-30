@@ -32,7 +32,6 @@ const PROCEDURAL_RANGES = {
 };
 
 export class OceanCurrentsEffect {
-  private layerMesh?: THREE.Mesh;
   private material: THREE.ShaderMaterial;
   private params: OceanCurrentsParams;
   private layerSystem: PlanetLayerSystem;
@@ -65,12 +64,12 @@ export class OceanCurrentsEffect {
       timeSpeed: params.timeSpeed || rng.uniform(PROCEDURAL_RANGES.TIME_SPEED.min, PROCEDURAL_RANGES.TIME_SPEED.max),
     };
 
-    this.material = this.layerSystem.createOceanCurrentsLayerMaterial(this.params);
+    this.material = this.layerSystem.createOceanCurrentsLayerMaterial(this.params as Record<string, unknown>);
 
-    this.layerMesh = this.layerSystem.addEffectLayer("oceanCurrents", this.material, this.layerSystem.getNextScaleFactor(), this);
+    this.layerSystem.addEffectLayer("oceanCurrents", this.material, this.layerSystem.getNextScaleFactor(), this);
   }
 
-  update(deltaTime: number): void {
+  update(_deltaTime: number): void {
     const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!;
     const currentTime = rawTime % 2000;
 
@@ -83,7 +82,6 @@ export class OceanCurrentsEffect {
 }
 
 export function createOceanCurrentsFromPythonData(layerSystem: PlanetLayerSystem, pythonData: any, globalSeed?: number): OceanCurrentsEffect {
-  const planetInfo = pythonData.planet_info || {};
   const surface = pythonData.surface_elements || {};
 
   const seed = globalSeed || 12345;

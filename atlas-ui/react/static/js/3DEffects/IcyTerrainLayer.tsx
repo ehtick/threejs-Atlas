@@ -1,7 +1,7 @@
 // atlas-ui/react/static/js/3DEffects/IcyTerrainLayer.tsx
 import * as THREE from "three";
 import { PlanetLayerSystem } from "../3DComponents/PlanetLayerSystem";
-import { SeededRandom } from "../Utils/SeededRandom.tsx";
+import { SeededRandom } from "../Utils/SeededRandom";
 
 export interface IcyTerrainLayerParams {
   color?: THREE.Color | number[];
@@ -14,6 +14,7 @@ export interface IcyTerrainLayerParams {
   crystalSharpness?: number;
   frostPattern?: number;
   seed?: number;
+  [key: string]: unknown;
 }
 
 const PROCEDURAL_RANGES = {
@@ -39,7 +40,13 @@ export class IcyTerrainLayer {
     const seed = params.seed || Math.floor(Math.random() * 1000000);
     const rng = new SeededRandom(seed);
 
-    const baseColor = params.color instanceof THREE.Color ? params.color : params.color ? new THREE.Color(params.color as any) : new THREE.Color(0xb0e0e6);
+    const baseColor = params.color instanceof THREE.Color 
+      ? params.color 
+      : params.color 
+        ? Array.isArray(params.color) 
+          ? new THREE.Color(params.color[0], params.color[1], params.color[2])
+          : new THREE.Color(params.color)
+        : new THREE.Color(0xb0e0e6);
 
     this.params = {
       color: baseColor,
