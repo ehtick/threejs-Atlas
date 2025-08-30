@@ -71,21 +71,18 @@ const PlanetNavigation: React.FC<PlanetNavigationProps> = ({ currentPlanet, syst
     return name.replace(/_/g, " ");
   };
 
-
-
   const handlePrevious = async () => {
     const coordinates = galaxy.coordinates.join(",");
 
     if (prevPlanet === "__prev_system__") {
-      // Going to previous system
       const distance = 1;
       if (!SpaceshipTravelManager.canAffordTravel("system", distance)) {
-        SpaceshipTravelManager.executeTravel("system", distance); // Will show insufficient resources message
+        SpaceshipTravelManager.executeTravel("system", distance);
         return;
       }
-      
+
       if (!SpaceshipTravelManager.executeTravel("system", distance)) {
-        return; // Travel failed
+        return;
       }
       try {
         const response = await fetch(`/system/${system.index - 1}`, {
@@ -107,19 +104,17 @@ const PlanetNavigation: React.FC<PlanetNavigationProps> = ({ currentPlanet, syst
         }
         window.location.href = `/system/${system.index - 1}`;
       } catch (error) {
-        // Fallback to system page on error
         window.location.href = `/system/${system.index - 1}`;
       }
     } else if (prevPlanet) {
-      // Going to previous planet in same system
       const distance = 1;
       if (!SpaceshipTravelManager.canAffordTravel("planet", distance)) {
-        SpaceshipTravelManager.executeTravel("planet", distance); // Will show insufficient resources message
+        SpaceshipTravelManager.executeTravel("planet", distance);
         return;
       }
-      
+
       if (!SpaceshipTravelManager.executeTravel("planet", distance)) {
-        return; // Travel failed
+        return;
       }
       markPlanetAsVisited(coordinates, system.index, prevPlanet, systemPlanets);
       window.location.href = `/planet/${prevPlanet}`;
@@ -130,15 +125,14 @@ const PlanetNavigation: React.FC<PlanetNavigationProps> = ({ currentPlanet, syst
     const coordinates = galaxy.coordinates.join(",");
 
     if (nextPlanet === "__next_system__") {
-      // Going to next system
       const distance = 1;
       if (!SpaceshipTravelManager.canAffordTravel("system", distance)) {
-        SpaceshipTravelManager.executeTravel("system", distance); // Will show insufficient resources message
+        SpaceshipTravelManager.executeTravel("system", distance);
         return;
       }
-      
+
       if (!SpaceshipTravelManager.executeTravel("system", distance)) {
-        return; // Travel failed
+        return;
       }
       try {
         const response = await fetch(`/system/${system.index + 1}`, {
@@ -163,13 +157,12 @@ const PlanetNavigation: React.FC<PlanetNavigationProps> = ({ currentPlanet, syst
         window.location.href = `/system/${system.index + 1}`;
       }
     } else if (nextPlanet) {
-      // Going to next planet in same system
       const distance = 1;
       if (!SpaceshipTravelManager.canAffordTravel("planet", distance)) {
-        SpaceshipTravelManager.executeTravel("planet", distance); // Will show insufficient resources message
+        SpaceshipTravelManager.executeTravel("planet", distance);
         return;
       }
-      
+
       if (!SpaceshipTravelManager.executeTravel("planet", distance)) {
         return; // Travel failed
       }
@@ -185,27 +178,18 @@ const PlanetNavigation: React.FC<PlanetNavigationProps> = ({ currentPlanet, syst
   return (
     <div className="relative">
       <div className="flex items-center justify-between mb-4">
-        <button 
-          onClick={handlePrevious} 
-          disabled={!hasPrev} 
-          className={`flex items-center justify-center px-3 py-1.5 rounded-lg transition-all duration-200 ${hasPrev ? "bg-white/10 hover:bg-white/20 border border-white/20 text-white hover:text-blue-300" : "bg-white/5 border border-white/10 text-gray-600 cursor-not-allowed"}`}
-        >
+        <button onClick={handlePrevious} disabled={!hasPrev} className={`flex items-center justify-center px-3 py-1.5 rounded-lg transition-all duration-200 ${hasPrev ? "bg-white/10 hover:bg-white/20 border border-white/20 text-white hover:text-blue-300" : "bg-white/5 border border-white/10 text-gray-600 cursor-not-allowed"}`}>
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
 
-        <button 
-          onClick={handleNext} 
-          disabled={!hasNext} 
-          className={`flex items-center justify-center px-3 py-1.5 rounded-lg transition-all duration-200 ${hasNext ? "bg-white/10 hover:bg-white/20 border border-white/20 text-white hover:text-blue-300" : "bg-white/5 border border-white/10 text-gray-600 cursor-not-allowed"}`}
-        >
+        <button onClick={handleNext} disabled={!hasNext} className={`flex items-center justify-center px-3 py-1.5 rounded-lg transition-all duration-200 ${hasNext ? "bg-white/10 hover:bg-white/20 border border-white/20 text-white hover:text-blue-300" : "bg-white/5 border border-white/10 text-gray-600 cursor-not-allowed"}`}>
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </button>
       </div>
-
     </div>
   );
 };

@@ -184,17 +184,14 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
             <div className="relative p-4 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm">
               <div className="relative">
                 <div className="absolute top-1 left-3 right-3 h-3 bg-white/10 rounded-xl"></div>
-                <div 
-                  className={`absolute top-1 left-3 right-3 h-3 bg-gradient-to-r ${style.gradient} rounded-xl transition-all duration-200 pointer-events-none z-10`}
-                  style={{ width: `calc(${(coordinates[coordinate] / 10000000) * 100}% - 12px)` }}
-                ></div>
-                <input 
-                  type="range" 
-                  id={`${coordinate}-slider`} 
-                  name={coordinate} 
-                  min="0" 
-                  max="10000000" 
-                  value={coordinates[coordinate]} 
+                <div className={`absolute top-1 left-3 right-3 h-3 bg-gradient-to-r ${style.gradient} rounded-xl transition-all duration-200 pointer-events-none z-10`} style={{ width: `calc(${(coordinates[coordinate] / 10000000) * 100}% - 12px)` }}></div>
+                <input
+                  type="range"
+                  id={`${coordinate}-slider`}
+                  name={coordinate}
+                  min="0"
+                  max="10000000"
+                  value={coordinates[coordinate]}
                   className={`
                     relative z-20 w-full h-3 bg-transparent rounded-xl appearance-none cursor-pointer
                     [&::-webkit-slider-track]:bg-transparent
@@ -229,13 +226,11 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
                     transition-all
                     duration-200
                   `}
-                  onChange={(e) => handleSliderChange(coordinate, e.target.value)} 
+                  onChange={(e) => handleSliderChange(coordinate, e.target.value)}
                 />
                 <div className="flex justify-between mt-3 text-xs font-medium">
                   <span className={`${style.text} drop-shadow-sm`}>The Edge</span>
-                  <span className={`text-gray-400 text-center ${style.text}`}>
-                    {coordinateOptions[coordinate][selectedIndex >= 0 ? selectedIndex : 0]?.name || 'Unknown Region'}
-                  </span>
+                  <span className={`text-gray-400 text-center ${style.text}`}>{coordinateOptions[coordinate][selectedIndex >= 0 ? selectedIndex : 0]?.name || "Unknown Region"}</span>
                   <span className={`${style.text} drop-shadow-sm`}>The Unknown</span>
                 </div>
               </div>

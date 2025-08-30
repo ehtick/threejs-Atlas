@@ -26,13 +26,11 @@ const ResourceStatusBar: React.FC<ResourceStatusBarProps> = ({ currentLocation }
     };
 
     updateResources();
-    
-    // Update every 5 seconds as fallback
+
     const interval = setInterval(updateResources, 5000);
-    
-    // Subscribe to resource update events for immediate updates
-    const unsubscribe = ResourceEventManager.subscribe('resources_updated', updateResources);
-    
+
+    const unsubscribe = ResourceEventManager.subscribe("resources_updated", updateResources);
+
     return () => {
       clearInterval(interval);
       unsubscribe();
@@ -48,7 +46,7 @@ const ResourceStatusBar: React.FC<ResourceStatusBarProps> = ({ currentLocation }
 
   const getTravelCostPreview = () => {
     if (!currentLocation) return "N/A";
-    
+
     const cost = SpaceshipTravelManager.previewTravelCost(currentLocation.type, 1);
     return cost;
   };
@@ -56,7 +54,6 @@ const ResourceStatusBar: React.FC<ResourceStatusBarProps> = ({ currentLocation }
   return (
     <div className="fixed top-0 left-0 right-0 z-40 bg-black/80 backdrop-blur-xl border-b border-white/10">
       <div className="flex items-center justify-between px-4 py-2">
-        {/* Left side - Resources */}
         <div className="flex items-center space-x-2">
           <div className="flex items-center space-x-2 text-xs">
             <span className="text-purple-300 flex items-center gap-1">

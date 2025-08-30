@@ -36,7 +36,6 @@ const SaveLocationButton: React.FC<SaveLocationButtonProps> = ({ type, name, coo
           break;
       }
 
-      // Fallback to current URL if something goes wrong
       return window.location.pathname;
     } catch (error) {
       return window.location.pathname;
@@ -51,12 +50,9 @@ const SaveLocationButton: React.FC<SaveLocationButtonProps> = ({ type, name, coo
   }, [coordinates, systemIndex, planetName, type]);
 
   const handleSaveLocation = async () => {
-    // DON'T set loading state before dialog - user hasn't decided yet!
-    
     try {
       const stargateUrl = generateStargateUrl();
 
-      // Wait for user decision from dialog
       const saved = await LocationBookmarks.saveLocation({
         name,
         type,
@@ -64,10 +60,8 @@ const SaveLocationButton: React.FC<SaveLocationButtonProps> = ({ type, name, coo
       });
 
       if (saved) {
-        // User confirmed - NOW show loading/saving state
         setIsLoading(true);
-        
-        // Brief delay for visual feedback
+
         setTimeout(() => {
           setIsSaved(true);
           setIsLoading(false);

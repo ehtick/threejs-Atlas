@@ -47,11 +47,11 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({ planets, star
   const [isClosing, setIsClosing] = useState(false);
   const [isEntering, setIsEntering] = useState(false);
   const [sliderTimeOffset, setSliderTimeOffset] = useState(0);
-  
+
   const [systemData, setSystemData] = useState<any>(null);
   const [loadingAPI, setLoadingAPI] = useState(true);
   const [apiError, setApiError] = useState<string | null>(null);
-  
+
   const currentTime = realCurrentTime - cosmicOriginTime + timeOffset;
 
   currentTimeRef.current = currentTime;
@@ -61,31 +61,29 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({ planets, star
       try {
         setLoadingAPI(true);
         setApiError(null);
-        
-        const response = await fetch('/api/system/rendering-data');
-        
+
+        const response = await fetch("/api/system/rendering-data");
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         const result = await response.json();
-        
+
         if (result.success) {
           setSystemData(result.system_data);
         } else {
-          throw new Error(result.error || 'Failed to fetch system data');
+          throw new Error(result.error || "Failed to fetch system data");
         }
-        
       } catch (error) {
-        setApiError(error instanceof Error ? error.message : 'Unknown error');
+        setApiError(error instanceof Error ? error.message : "Unknown error");
       } finally {
         setLoadingAPI(false);
       }
     };
-    
+
     fetchSystemData();
   }, []);
-  
 
   const handleCloseFullscreen = () => {
     setIsClosing(true);
@@ -161,9 +159,9 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({ planets, star
     if (loadingAPI || !systemData) {
       return;
     }
-    
+
     (window as any).tonnirLoggedInSystem = false;
-    
+
     if (!mountRef.current) return;
 
     const container = mountRef.current;
@@ -261,7 +259,7 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({ planets, star
 
     const maxOrbitalRadius = systemData.timing.max_orbital_radius;
     const scaleFactor = 80;
-    
+
     (window as any).systemMaxOrbitalRadius = maxOrbitalRadius;
 
     systemData.planets.forEach((planet, index) => {

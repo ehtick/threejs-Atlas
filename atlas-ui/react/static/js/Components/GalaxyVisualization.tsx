@@ -156,9 +156,9 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, im
 
     const phases = [
       { chars: "01", duration: 40, iterations: 20 },
-      { chars: "0123456789", duration: 25, iterations: 30 },
-      { chars: "0123456789ABCDEF", duration: 20, iterations: 40 },
-      { chars: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{}|;:'\",.<>?/`~", duration: 10, iterations: 100 },
+      { chars: "0123456789", duration: 25, iterations: 35 },
+      { chars: "0123456789ABCDEF", duration: 20, iterations: 50 },
+      { chars: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{}|;:'\",.<>?/`~", duration: 15, iterations: 100 },
     ];
 
     let currentPhase = 0;

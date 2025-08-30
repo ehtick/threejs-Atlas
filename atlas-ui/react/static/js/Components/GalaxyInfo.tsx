@@ -28,55 +28,50 @@ const GalaxyInfo: React.FC<GalaxyInfoProps> = ({ galaxy }) => {
     isOnCooldown: false,
     isSaved: false,
     isCollecting: false,
-    timeUntilNext: 0
+    timeUntilNext: 0,
   });
 
   useEffect(() => {
     let collectingTimeout: NodeJS.Timeout;
-    
+
     const updateMiningState = () => {
-      const fullLocationId = SpaceshipResourceCollectionManager.generateLocationId(
-        "galaxy",
-        galaxy.coordinates.join(","),
-        undefined,
-        undefined
-      );
-      
+      const fullLocationId = SpaceshipResourceCollectionManager.generateLocationId("galaxy", galaxy.coordinates.join(","), undefined, undefined);
+
       const canCollect = SpaceshipResourceCollectionManager.canCollectFromLocation(fullLocationId);
       const timeRemaining = SpaceshipResourceCollectionManager.getTimeUntilNextCollection(fullLocationId);
-      
+
       const galaxyCoords = galaxy.coordinates;
       const stargateUrl = StargateGenerator.generateGalaxyUrl(galaxyCoords, StargateGenerator.getCurrentPage());
       const savedLocations = LocationBookmarks.getLocations();
       const isSaved = savedLocations.some((loc) => loc.stargateUrl === stargateUrl);
-      
-      setMiningState(prev => ({
+
+      setMiningState((prev) => ({
         isOnCooldown: !canCollect && timeRemaining > 0,
         isSaved: isSaved,
         isCollecting: prev.isCollecting,
-        timeUntilNext: timeRemaining
+        timeUntilNext: timeRemaining,
       }));
     };
 
     const handleMiningCompleted = () => {
-      setMiningState(prev => ({
+      setMiningState((prev) => ({
         ...prev,
-        isCollecting: true
+        isCollecting: true,
       }));
 
       collectingTimeout = setTimeout(() => {
-        setMiningState(prev => ({
+        setMiningState((prev) => ({
           ...prev,
-          isCollecting: false
+          isCollecting: false,
         }));
       }, 1000);
     };
 
     updateMiningState();
     const interval = setInterval(updateMiningState, 1000);
-    
-    const unsubscribe = ResourceEventManager.subscribe('mining_completed', handleMiningCompleted);
-    
+
+    const unsubscribe = ResourceEventManager.subscribe("mining_completed", handleMiningCompleted);
+
     return () => {
       clearInterval(interval);
       if (collectingTimeout) clearTimeout(collectingTimeout);
@@ -87,26 +82,17 @@ const GalaxyInfo: React.FC<GalaxyInfoProps> = ({ galaxy }) => {
   const formatName = (name: string) => {
     return name.replace(/_/g, " ");
   };
-  
+
   return (
     <div className="h-full flex flex-col relative">
       <div className="absolute top-0 right-0 flex gap-2 z-10">
-        <ResourceCollectionButton 
-          locationType="galaxy" 
-          locationId={galaxy.name} 
-          coordinates={galaxy.coordinates.join(",")} 
-          className="text-xs" 
-        />
+        <ResourceCollectionButton locationType="galaxy" locationId={galaxy.name} coordinates={galaxy.coordinates.join(",")} className="text-xs" />
         <SaveLocationButton type="galaxy" name={galaxy.name} coordinates={galaxy.coordinates.join(",")} className="text-xs" />
         <div className="inline-flex items-center bg-green-500/20 border border-green-500/50 text-green-400 text-[10px] font-medium px-1.5 py-0.5 rounded h-[21px] box-border">VISITED</div>
       </div>
 
       <div className="flex items-center gap-3 mb-3">
-        <MiningIndicator
-          isOnCooldown={miningState.isOnCooldown}
-          isSaved={miningState.isSaved}
-          isCollecting={miningState.isCollecting}
-        />
+        <MiningIndicator isOnCooldown={miningState.isOnCooldown} isSaved={miningState.isSaved} isCollecting={miningState.isCollecting} />
         <h3 className="text-lg sm:text-xl font-bold text-white">Details</h3>
       </div>
 

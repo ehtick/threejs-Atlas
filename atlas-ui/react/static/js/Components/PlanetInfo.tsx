@@ -60,55 +60,50 @@ const PlanetInfo: React.FC<PlanetInfoProps> = ({ planet, system, galaxy, cosmicO
     isOnCooldown: false,
     isSaved: false,
     isCollecting: false,
-    timeUntilNext: 0
+    timeUntilNext: 0,
   });
 
   useEffect(() => {
     let collectingTimeout: NodeJS.Timeout;
-    
+
     const updateMiningState = () => {
-      const fullLocationId = SpaceshipResourceCollectionManager.generateLocationId(
-        "planet",
-        galaxy.coordinates.join(","),
-        system.index,
-        planet.name
-      );
-      
+      const fullLocationId = SpaceshipResourceCollectionManager.generateLocationId("planet", galaxy.coordinates.join(","), system.index, planet.name);
+
       const canCollect = SpaceshipResourceCollectionManager.canCollectFromLocation(fullLocationId);
       const timeRemaining = SpaceshipResourceCollectionManager.getTimeUntilNextCollection(fullLocationId);
-      
+
       const galaxyCoords = galaxy.coordinates;
       const stargateUrl = StargateGenerator.generatePlanetUrl(galaxyCoords, system.index, planet.name, StargateGenerator.getCurrentPage());
       const savedLocations = LocationBookmarks.getLocations();
       const isSaved = savedLocations.some((loc) => loc.stargateUrl === stargateUrl);
-      
-      setMiningState(prev => ({
+
+      setMiningState((prev) => ({
         isOnCooldown: !canCollect && timeRemaining > 0,
         isSaved: isSaved,
         isCollecting: prev.isCollecting,
-        timeUntilNext: timeRemaining
+        timeUntilNext: timeRemaining,
       }));
     };
 
     const handleMiningCompleted = () => {
-      setMiningState(prev => ({
+      setMiningState((prev) => ({
         ...prev,
-        isCollecting: true
+        isCollecting: true,
       }));
 
       collectingTimeout = setTimeout(() => {
-        setMiningState(prev => ({
+        setMiningState((prev) => ({
           ...prev,
-          isCollecting: false
+          isCollecting: false,
         }));
       }, 1000);
     };
 
     updateMiningState();
     const interval = setInterval(updateMiningState, 1000);
-    
-    const unsubscribe = ResourceEventManager.subscribe('mining_completed', handleMiningCompleted);
-    
+
+    const unsubscribe = ResourceEventManager.subscribe("mining_completed", handleMiningCompleted);
+
     return () => {
       clearInterval(interval);
       if (collectingTimeout) clearTimeout(collectingTimeout);
@@ -147,25 +142,13 @@ const PlanetInfo: React.FC<PlanetInfoProps> = ({ planet, system, galaxy, cosmicO
   return (
     <div className="h-full flex flex-col relative">
       <div className="absolute top-0 right-0 flex gap-2 z-10">
-        <ResourceCollectionButton 
-          locationType="planet" 
-          locationId={planet.name} 
-          coordinates={galaxy.coordinates.join(",")} 
-          systemIndex={system.index} 
-          planetName={planet.name} 
-          planetElements={planet.elements}
-          className="text-xs" 
-        />
+        <ResourceCollectionButton locationType="planet" locationId={planet.name} coordinates={galaxy.coordinates.join(",")} systemIndex={system.index} planetName={planet.name} planetElements={planet.elements} className="text-xs" />
         <SaveLocationButton type="planet" name={planet.name} coordinates={galaxy.coordinates.join(",")} systemIndex={system.index} planetName={planet.name} className="text-xs" />
         <div className="inline-flex items-center bg-green-500/20 border border-green-500/50 text-green-400 text-[10px] font-medium px-1.5 py-0.5 rounded h-[21px] box-border">VISITED</div>
       </div>
 
       <div className="flex items-center gap-3 mb-3">
-        <MiningIndicator
-          isOnCooldown={miningState.isOnCooldown}
-          isSaved={miningState.isSaved}
-          isCollecting={miningState.isCollecting}
-        />
+        <MiningIndicator isOnCooldown={miningState.isOnCooldown} isSaved={miningState.isSaved} isCollecting={miningState.isCollecting} />
         <h3 className="text-lg sm:text-xl font-bold text-white">Details</h3>
       </div>
 
@@ -183,7 +166,6 @@ const PlanetInfo: React.FC<PlanetInfoProps> = ({ planet, system, galaxy, cosmicO
           <div className="text-sm font-bold text-green-300 capitalize">{planet.life_forms}</div>
         </div>
       </div>
-
 
       <div className="bg-white/10 rounded-lg p-2 border border-orange-500/30 mb-3">
         <div className="text-xs text-gray-200 mb-2">Physical Properties</div>
@@ -255,30 +237,15 @@ const PlanetInfo: React.FC<PlanetInfoProps> = ({ planet, system, galaxy, cosmicO
           {showAllElements ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
               {planet.elements.map((element, index) => (
-                <PeriodicElement
-                  key={index}
-                  elementName={element}
-                  expanded={true}
-                  showResources={true}
-                  className="min-w-0"
-                />
+                <PeriodicElement key={index} elementName={element} expanded={true} showResources={true} className="min-w-0" />
               ))}
             </div>
           ) : (
             <div className="flex flex-wrap gap-1 justify-center">
               {planet.elements.slice(0, 6).map((element, index) => (
-                <PeriodicElement
-                  key={index}
-                  elementName={element}
-                  expanded={false}
-                  className=""
-                />
+                <PeriodicElement key={index} elementName={element} expanded={false} className="" />
               ))}
-              {planet.elements.length > 6 && (
-                <div className="inline-flex items-center justify-center h-10 w-10 rounded border border-dashed border-yellow-500/50 text-yellow-400 text-xs">
-                  +{planet.elements.length - 6}
-                </div>
-              )}
+              {planet.elements.length > 6 && <div className="inline-flex items-center justify-center h-10 w-10 rounded border border-dashed border-yellow-500/50 text-yellow-400 text-xs">+{planet.elements.length - 6}</div>}
             </div>
           )}
         </div>
@@ -314,9 +281,7 @@ const PlanetInfo: React.FC<PlanetInfoProps> = ({ planet, system, galaxy, cosmicO
         </div>
       </div>
 
-      {effects && onToggleEffect && (
-        <EffectsControl effects={effects} onToggleEffect={onToggleEffect} />
-      )}
+      {effects && onToggleEffect && <EffectsControl effects={effects} onToggleEffect={onToggleEffect} />}
     </div>
   );
 };

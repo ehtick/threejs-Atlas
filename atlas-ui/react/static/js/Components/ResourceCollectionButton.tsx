@@ -17,15 +17,7 @@ interface ResourceCollectionButtonProps {
   className?: string;
 }
 
-const ResourceCollectionButton: React.FC<ResourceCollectionButtonProps> = ({
-  locationType,
-  locationId,
-  coordinates,
-  systemIndex,
-  planetName,
-  planetElements,
-  className = ""
-}) => {
+const ResourceCollectionButton: React.FC<ResourceCollectionButtonProps> = ({ locationType, locationId, coordinates, systemIndex, planetName, planetElements, className = "" }) => {
   const [canCollect, setCanCollect] = useState(false);
   const [timeUntilNext, setTimeUntilNext] = useState(0);
   const [isCollecting, setIsCollecting] = useState(false);
@@ -33,94 +25,77 @@ const ResourceCollectionButton: React.FC<ResourceCollectionButtonProps> = ({
   const [dailyLimitsInfo, setDailyLimitsInfo] = useState<any>(null);
 
   useEffect(() => {
-    // Clean corrupted timestamps on mount (run once)
     import("../Utils/UnifiedSpaceshipStorage").then(({ UnifiedSpaceshipStorage }) => {
       UnifiedSpaceshipStorage.cleanCorruptedTimestamps();
     });
-    
-    const fullLocationId = SpaceshipResourceCollectionManager.generateLocationId(
-      locationType,
-      coordinates,
-      systemIndex,
-      planetName
-    );
-    
+
+    const fullLocationId = SpaceshipResourceCollectionManager.generateLocationId(locationType, coordinates, systemIndex, planetName);
+
     const updateState = () => {
       const canCollectNow = SpaceshipResourceCollectionManager.canCollectFromLocation(fullLocationId);
       const timeRemaining = SpaceshipResourceCollectionManager.getTimeUntilNextCollection(fullLocationId);
-      
+
       setCanCollect(canCollectNow);
       setTimeUntilNext(timeRemaining);
-      
+
       const collection = SpaceshipResourceCollectionManager.getLocationCollection(fullLocationId);
       setCollectionCount(collection?.totalCollections || 0);
-      
-      // Get daily limits info
+
       const limitsInfo = UnifiedSpaceshipStorage.getDailyCollectionInfo();
       setDailyLimitsInfo(limitsInfo);
     };
 
     updateState();
-    
-    // Update every second for real-time countdown
+
     const interval = setInterval(updateState, 1000);
     return () => clearInterval(interval);
   }, [locationType, coordinates, systemIndex, planetName]);
 
   const handleCollect = async () => {
     setIsCollecting(true);
-    
-    const fullLocationId = SpaceshipResourceCollectionManager.generateLocationId(
-      locationType,
-      coordinates,
-      systemIndex,
-      planetName
-    );
-    
-    // Check if this is first time collection
+
+    const fullLocationId = SpaceshipResourceCollectionManager.generateLocationId(locationType, coordinates, systemIndex, planetName);
+
     const isFirstTime = collectionCount === 0;
-    
+
     const planetData = planetElements ? { elements: planetElements } : undefined;
     const reward = SpaceshipResourceCollectionManager.collectResources(fullLocationId, locationType, coordinates, planetData);
-    
+
     if (reward) {
-      // Get streak info for proper bonus display (after collection has been processed)
       const { UnifiedSpaceshipStorage } = await import("../Utils/UnifiedSpaceshipStorage");
       const streakInfo = UnifiedSpaceshipStorage.getCollectionStreakInfo();
-      
-      // Calculate discovery bonus based on current daily collections (which now includes this collection)
-      const discoveryBonus = streakInfo.dailyCollections <= 3 ? 5.0 : 
-                            streakInfo.dailyCollections <= 5 ? 3.0 : 
-                            streakInfo.dailyCollections <= 7 ? 2.0 : 
-                            streakInfo.dailyCollections <= 10 ? 1.5 : 1.0;
-      
-      // Show consolidated notification with all bonus info
-      SpaceshipResourceCollectionManager.showCollectionSuccess(reward, locationType, {
-        streakBonus: streakInfo.streakMultiplier > 1.0,
-        discoveryBonus: discoveryBonus,
-        shipMultiplier: UnifiedSpaceshipStorage.getUpgrade().multiplier
-      }, isFirstTime);
-      
+
+      const discoveryBonus = streakInfo.dailyCollections <= 3 ? 5.0 : streakInfo.dailyCollections <= 5 ? 3.0 : streakInfo.dailyCollections <= 7 ? 2.0 : streakInfo.dailyCollections <= 10 ? 1.5 : 1.0;
+
+      SpaceshipResourceCollectionManager.showCollectionSuccess(
+        reward,
+        locationType,
+        {
+          streakBonus: streakInfo.streakMultiplier > 1.0,
+          discoveryBonus: discoveryBonus,
+          shipMultiplier: UnifiedSpaceshipStorage.getUpgrade().multiplier,
+        },
+        isFirstTime
+      );
+
       setCanCollect(false);
       setTimeUntilNext(SpaceshipResourceCollectionManager.getTimeUntilNextCollection(fullLocationId));
-      setCollectionCount(prev => prev + 1);
-      
-      // Emit resource update event
-      ResourceEventManager.emit('resources_updated');
-      ResourceEventManager.emit('mining_completed', reward);
+      setCollectionCount((prev) => prev + 1);
+
+      ResourceEventManager.emit("resources_updated");
+      ResourceEventManager.emit("mining_completed", reward);
     }
-    
+
     setTimeout(() => setIsCollecting(false), 1000);
   };
 
   const getButtonText = () => {
     if (isCollecting) return "Mining...";
     if (!canCollect && timeUntilNext > 0) {
-      const totalSeconds = Math.ceil(timeUntilNext * 3600); // Convert hours to seconds
+      const totalSeconds = Math.ceil(timeUntilNext * 3600);
       const minutes = Math.floor(totalSeconds / 60);
       const seconds = totalSeconds % 60;
-      
-      // Show format based on time remaining
+
       if (minutes >= 60) {
         const hours = Math.floor(minutes / 60);
         const remainingMinutes = minutes % 60;
@@ -149,8 +124,8 @@ const ResourceCollectionButton: React.FC<ResourceCollectionButtonProps> = ({
     if (!canCollect && timeUntilNext > 0) {
       return (
         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"/>
-          <path d="M13 7h-2v5.414l3.293 3.293 1.414-1.414L13 11.586z"/>
+          <path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z" />
+          <path d="M13 7h-2v5.414l3.293 3.293 1.414-1.414L13 11.586z" />
         </svg>
       );
     }
@@ -176,22 +151,18 @@ const ResourceCollectionButton: React.FC<ResourceCollectionButtonProps> = ({
       </span>
     );
   };
-  
+
   const getTooltipText = () => {
     if (!dailyLimitsInfo) return canCollect ? `Mine: ${getRewardPreview()}` : `Cooldown: ${getButtonText()} remaining`;
-    
-    const typeInfo = locationType === 'planet' ? dailyLimitsInfo.planets :
-                     locationType === 'system' ? dailyLimitsInfo.systems :
-                     dailyLimitsInfo.galaxies;
-    
-    const limitText = typeInfo.unlimited ? '' : ` | Daily: ${typeInfo.used}/${typeInfo.limit}`;
-    
+
+    const typeInfo = locationType === "planet" ? dailyLimitsInfo.planets : locationType === "system" ? dailyLimitsInfo.systems : dailyLimitsInfo.galaxies;
+
+    const limitText = typeInfo.unlimited ? "" : ` | Daily: ${typeInfo.used}/${typeInfo.limit}`;
+
     if (canCollect) {
-      // For tooltip, return simple text since we can't use JSX in title attribute
       const reward = SpaceshipResourceCollectionManager.calculateReward(locationType, coordinates, collectionCount, planetElements ? { elements: planetElements } : undefined, true);
       return `Mine: ${reward.antimatter}AM | ${reward.element115}E115 | ${reward.deuterium}D${limitText}`;
     } else {
-      // Check if it's blocked by daily limit or cooldown
       if (!typeInfo.unlimited && typeInfo.used >= typeInfo.limit) {
         return `Daily limit reached: ${typeInfo.used}/${typeInfo.limit} ${locationType}s today`;
       } else {
@@ -200,38 +171,21 @@ const ResourceCollectionButton: React.FC<ResourceCollectionButtonProps> = ({
       }
     }
   };
-  
+
   const isDailyLimitReached = () => {
     if (!dailyLimitsInfo) return false;
-    
-    const typeInfo = locationType === 'planet' ? dailyLimitsInfo.planets :
-                     locationType === 'system' ? dailyLimitsInfo.systems :
-                     dailyLimitsInfo.galaxies;
-    
+
+    const typeInfo = locationType === "planet" ? dailyLimitsInfo.planets : locationType === "system" ? dailyLimitsInfo.systems : dailyLimitsInfo.galaxies;
+
     return !typeInfo.unlimited && typeInfo.used >= typeInfo.limit;
   };
 
   return (
-    <button 
-      onClick={handleCollect} 
-      disabled={!canCollect || isCollecting} 
-      className={`relative inline-flex items-center space-x-1 px-1.5 py-0.5 rounded transition-all duration-200 text-[10px] font-medium h-[21px] box-border ${
-        isCollecting ? "bg-blue-500/20 border border-blue-500/50 text-blue-400" : 
-        canCollect ? "bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-white hover:text-blue-300" :
-        isDailyLimitReached() ? "bg-red-500/20 border border-red-500/50 text-red-400" :
-        "bg-gray-500/20 border border-gray-500/50 text-gray-400"
-      } ${className}`} 
-      title={getTooltipText()}
-    >
+    <button onClick={handleCollect} disabled={!canCollect || isCollecting} className={`relative inline-flex items-center space-x-1 px-1.5 py-0.5 rounded transition-all duration-200 text-[10px] font-medium h-[21px] box-border ${isCollecting ? "bg-blue-500/20 border border-blue-500/50 text-blue-400" : canCollect ? "bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-white hover:text-blue-300" : isDailyLimitReached() ? "bg-red-500/20 border border-red-500/50 text-red-400" : "bg-gray-500/20 border border-gray-500/50 text-gray-400"} ${className}`} title={getTooltipText()}>
       {getButtonIcon()}
       <span className="text-[10px] uppercase">{getButtonText()}</span>
-      
-      {/* Daily limit indicator */}
-      {isDailyLimitReached() && (
-        <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] px-1 py-0.5 rounded-full font-bold leading-none min-w-[16px] text-center z-10">
-          MAX
-        </div>
-      )}
+
+      {isDailyLimitReached() && <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] px-1 py-0.5 rounded-full font-bold leading-none min-w-[16px] text-center z-10">MAX</div>}
     </button>
   );
 };

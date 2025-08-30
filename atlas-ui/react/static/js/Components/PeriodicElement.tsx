@@ -13,23 +13,13 @@ interface PeriodicElementProps {
   className?: string;
 }
 
-const PeriodicElement: React.FC<PeriodicElementProps> = ({ 
-  elementName, 
-  expanded = false, 
-  showResources = false,
-  className = "" 
-}) => {
+const PeriodicElement: React.FC<PeriodicElementProps> = ({ elementName, expanded = false, showResources = false, className = "" }) => {
   const elementInfo = ELEMENT_SYMBOLS[elementName];
   const resourceValues = ELEMENT_RESOURCE_VALUES[elementName];
   const rarityTier = getElementRarityTier(elementName);
-  
+
   if (!elementInfo) {
-    // Fallback for unknown elements
-    return (
-      <span className={`inline-flex items-center text-xs bg-gray-500/20 text-gray-300 px-1.5 py-0.5 rounded border border-gray-500/30 ${className}`}>
-        {elementName}
-      </span>
-    );
+    return <span className={`inline-flex items-center text-xs bg-gray-500/20 text-gray-300 px-1.5 py-0.5 rounded border border-gray-500/30 ${className}`}>{elementName}</span>;
   }
 
   const rarityColorClass = getRarityColor(rarityTier);
@@ -37,29 +27,18 @@ const PeriodicElement: React.FC<PeriodicElementProps> = ({
 
   if (expanded) {
     return (
-      <div className={`flex flex-col p-2 rounded-lg border ${rarityColorClass} ${isException ? 'relative overflow-hidden' : ''} shadow-lg transition-all duration-200 hover:scale-105 ${className}`}>
-        {/* Special glow effect for Exception elements */}
-        {isException && (
-          <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/10 via-purple-500/10 to-cyan-400/10 animate-pulse pointer-events-none rounded-lg"></div>
-        )}
-        
-        {/* Element tile (periodic table style) */}
-        <div className={`flex flex-col items-center justify-center h-12 w-12 mx-auto mb-2 ${isException ? 'bg-black/30 border-cyan-400/30' : 'bg-black/20'} rounded border border-white/10 relative z-10`}>
-          <div className={`text-xs font-bold leading-none ${isException ? 'text-cyan-100' : ''}`}>{elementInfo.symbol}</div>
-          <div className={`text-[8px] opacity-70 leading-none mt-0.5 ${isException ? 'text-cyan-200' : ''}`}>{elementInfo.atomicNumber}</div>
+      <div className={`flex flex-col p-2 rounded-lg border ${rarityColorClass} ${isException ? "relative overflow-hidden" : ""} shadow-lg transition-all duration-200 hover:scale-105 ${className}`}>
+        {isException && <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/10 via-purple-500/10 to-cyan-400/10 animate-pulse pointer-events-none rounded-lg"></div>}
+
+        <div className={`flex flex-col items-center justify-center h-12 w-12 mx-auto mb-2 ${isException ? "bg-black/30 border-cyan-400/30" : "bg-black/20"} rounded border border-white/10 relative z-10`}>
+          <div className={`text-xs font-bold leading-none ${isException ? "text-cyan-100" : ""}`}>{elementInfo.symbol}</div>
+          <div className={`text-[8px] opacity-70 leading-none mt-0.5 ${isException ? "text-cyan-200" : ""}`}>{elementInfo.atomicNumber}</div>
         </div>
-        
-        {/* Element name */}
-        <div className={`text-xs font-medium text-center leading-tight mb-1 relative z-10 ${isException ? 'text-cyan-100 font-bold' : ''}`}>
-          {elementName}
-        </div>
-        
-        {/* Rarity */}
-        <div className={`text-[10px] text-center mb-2 relative z-10 ${isException ? 'text-cyan-200 font-semibold animate-pulse' : 'opacity-80'}`}>
-          {rarityTier}
-        </div>
-        
-        {/* Resource information */}
+
+        <div className={`text-xs font-medium text-center leading-tight mb-1 relative z-10 ${isException ? "text-cyan-100 font-bold" : ""}`}>{elementName}</div>
+
+        <div className={`text-[10px] text-center mb-2 relative z-10 ${isException ? "text-cyan-200 font-semibold animate-pulse" : "opacity-80"}`}>{rarityTier}</div>
+
         {showResources && resourceValues && (
           <div className="space-y-1">
             {resourceValues.antimatter > 0 && (
@@ -95,15 +74,11 @@ const PeriodicElement: React.FC<PeriodicElementProps> = ({
     );
   }
 
-  // Compact version (periodic table tile only)
   return (
-    <div className={`inline-flex flex-col items-center justify-center h-10 w-10 rounded border ${rarityColorClass} ${isException ? 'relative overflow-hidden' : ''} transition-all duration-200 hover:scale-110 cursor-pointer ${className}`}>
-      {/* Special glow effect for Exception elements in compact view */}
-      {isException && (
-        <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/20 to-purple-500/20 animate-pulse pointer-events-none rounded"></div>
-      )}
-      <div className={`text-xs font-bold leading-none relative z-10 ${isException ? 'text-cyan-100' : ''}`}>{elementInfo.symbol}</div>
-      <div className={`text-[8px] opacity-70 leading-none mt-0.5 relative z-10 ${isException ? 'text-cyan-200' : ''}`}>{elementInfo.atomicNumber}</div>
+    <div className={`inline-flex flex-col items-center justify-center h-10 w-10 rounded border ${rarityColorClass} ${isException ? "relative overflow-hidden" : ""} transition-all duration-200 hover:scale-110 cursor-pointer ${className}`}>
+      {isException && <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/20 to-purple-500/20 animate-pulse pointer-events-none rounded"></div>}
+      <div className={`text-xs font-bold leading-none relative z-10 ${isException ? "text-cyan-100" : ""}`}>{elementInfo.symbol}</div>
+      <div className={`text-[8px] opacity-70 leading-none mt-0.5 relative z-10 ${isException ? "text-cyan-200" : ""}`}>{elementInfo.atomicNumber}</div>
     </div>
   );
 };

@@ -15,7 +15,6 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
   const animationIdRef = useRef<number | null>(null);
   const [isVisible, setIsVisible] = useState(false);
 
-
   const createCircleTexture = () => {
     const canvas = document.createElement("canvas");
     canvas.width = 64;
@@ -62,7 +61,6 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
       renderer.setSize(window.innerWidth, window.innerHeight);
       mountRef.current.appendChild(renderer.domElement);
       rendererRef.current = renderer;
-
 
       const cubeGeometry = new THREE.BoxGeometry(10, 10, 10);
       const cubeEdges = new THREE.EdgesGeometry(cubeGeometry);
@@ -221,12 +219,10 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
       };
 
       animate();
-    } catch (error) {
-    }
+    } catch (error) {}
   };
 
   useEffect(() => {
-
     if (animationType && !isVisible) {
       setIsVisible(true);
 
@@ -247,7 +243,6 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
       }
     };
   }, []);
-
 
   if (!isVisible) {
     return null;

@@ -265,36 +265,21 @@ const PlanetVisualization: React.FC<PlanetVisualizationProps> = ({ planetUrl, im
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-lg sm:text-xl font-bold text-white">Planet Visualization</h3>
-        
+
         {enable3D && planet && (
           <div className="flex items-center gap-2">
-            <button
-              onClick={toggleView}
-              className={`px-3 py-1 text-xs font-medium rounded-full transition-all duration-300 ${
-                view3D 
-                  ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/25' 
-                  : 'bg-gray-600 text-gray-200 hover:bg-gray-500'
-              }`}
-            >
-              {view3D ? '2D View' : '3D View'}
+            <button onClick={toggleView} className={`px-3 py-1 text-xs font-medium rounded-full transition-all duration-300 ${view3D ? "bg-blue-500 text-white shadow-lg shadow-blue-500/25" : "bg-gray-600 text-gray-200 hover:bg-gray-500"}`}>
+              {view3D ? "2D View" : "3D View"}
             </button>
           </div>
         )}
       </div>
 
       <div className="relative w-full max-w-80 sm:max-w-96 aspect-square mx-auto bg-black/50 flex justify-center items-center rounded-xl overflow-hidden border-2 border-blue-400/30 mb-4">
-        <canvas 
-          ref={canvasRef} 
-          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[2500ms] ${
-            canvasHidden ? "opacity-0" : "opacity-100"
-          }`} 
-          style={{ filter: canvasHidden ? "blur(50px)" : "none" }} 
-        />
+        <canvas ref={canvasRef} className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[2500ms] ${canvasHidden ? "opacity-0" : "opacity-100"}`} style={{ filter: canvasHidden ? "blur(50px)" : "none" }} />
 
         {view3D && imageLoaded && planet && (
-          <div className={`absolute inset-0 w-full h-full transition-all duration-500 ${
-            imageLoaded ? "opacity-100 blur-0" : "opacity-0 blur-[25px]"
-          }`}>
+          <div className={`absolute inset-0 w-full h-full transition-all duration-500 ${imageLoaded ? "opacity-100 blur-0" : "opacity-0 blur-[25px]"}`}>
             <ModularPlanetRenderer
               planetName={planet.name}
               containerClassName="w-full h-full"
@@ -313,7 +298,7 @@ const PlanetVisualization: React.FC<PlanetVisualizationProps> = ({ planetUrl, im
                 axial_tilt: planet.axial_tilt,
                 planet_type: planet.planet_type,
                 atmosphere: planet.atmosphere,
-                elements: planet.elements
+                elements: planet.elements,
               }}
               cosmicOriginTime={cosmicOriginTime}
               initialAngleRotation={initialAngleRotation}
@@ -328,9 +313,7 @@ const PlanetVisualization: React.FC<PlanetVisualizationProps> = ({ planetUrl, im
         )}
 
         {!view3D && (
-          <div className={`absolute inset-0 w-full h-full transition-all duration-500 ${
-            imageLoaded ? "opacity-100 blur-0" : "opacity-0 blur-[25px]"
-          }`}>
+          <div className={`absolute inset-0 w-full h-full transition-all duration-500 ${imageLoaded ? "opacity-100 blur-0" : "opacity-0 blur-[25px]"}`}>
             {imageLoaded && imageUrl ? (
               <div className="w-full h-full flex items-center justify-center">
                 <Zoom zoomMargin={20} classDialog="backdrop-blur-3xl">
@@ -353,14 +336,9 @@ const PlanetVisualization: React.FC<PlanetVisualizationProps> = ({ planetUrl, im
             )}
           </div>
         )}
-        
-        {enable3D && planet && (
-          <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-xs">
-            {view3D ? '🌍 3D' : '🖼️ 2D'}
-          </div>
-        )}
+
+        {enable3D && planet && <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-xs">{view3D ? "🌍 3D" : "🖼️ 2D"}</div>}
       </div>
-      
 
       <div className="text-center mt-auto">
         <a
@@ -389,9 +367,7 @@ const PlanetVisualization: React.FC<PlanetVisualizationProps> = ({ planetUrl, im
               {renderingData.rings?.has_rings && <span className="text-yellow-400"> • Rings</span>}
             </div>
           )}
-          {view3D && renderingError && (
-            <div className="ml-2 text-red-400 mt-1">• Rendering Error</div>
-          )}
+          {view3D && renderingError && <div className="ml-2 text-red-400 mt-1">• Rendering Error</div>}
         </div>
       </div>
     </div>

@@ -28,8 +28,7 @@ const SystemsList: React.FC<SystemsListProps> = ({ systems, coordinates }) => {
         });
 
         setSystemVisitStates(states);
-      } catch (error) {
-      }
+      } catch (error) {}
     };
 
     loadHistoricalData();

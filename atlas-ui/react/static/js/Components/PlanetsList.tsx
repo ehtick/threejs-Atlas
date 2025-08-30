@@ -26,8 +26,7 @@ const PlanetsList: React.FC<PlanetsListProps> = ({ planets, coordinates, systemI
         });
 
         setVisitedPlanets(visited);
-      } catch (error) {
-      }
+      } catch (error) {}
     };
 
     loadHistoricalData();
@@ -40,8 +39,7 @@ const PlanetsList: React.FC<PlanetsListProps> = ({ planets, coordinates, systemI
   const handlePlanetClick = (planetName: string) => {
     try {
       markPlanetAsVisited(coordinates, systemIndex, planetName, planets);
-    } catch (error) {
-    }
+    } catch (error) {}
 
     window.location.href = `/planet/${planetName.toLowerCase()}`;
   };

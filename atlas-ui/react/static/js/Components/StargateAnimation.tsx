@@ -89,7 +89,6 @@ const StargateAnimation = ({ stargateUrl }) => {
       >
         <span id="stargate-text">{displayText}</span>
       </a>
-      <div className="tooltip">Right-click and select 'Copy Link' to save this Stargate location</div>
     </div>
   );
 };

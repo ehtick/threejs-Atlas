@@ -8,12 +8,7 @@ interface MiningIndicatorProps {
   className?: string;
 }
 
-const MiningIndicator: React.FC<MiningIndicatorProps> = ({ 
-  isOnCooldown, 
-  isSaved, 
-  isCollecting, 
-  className = "" 
-}) => {
+const MiningIndicator: React.FC<MiningIndicatorProps> = ({ isOnCooldown, isSaved, isCollecting, className = "" }) => {
   if (isCollecting) {
     return (
       <div className={`flex items-center justify-center w-8 h-8 relative ${className}`}>
@@ -30,14 +25,14 @@ const MiningIndicator: React.FC<MiningIndicatorProps> = ({
     return (
       <div className={`flex items-center justify-center w-8 h-8 relative ${className}`}>
         <div className="relative">
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            width={24} 
-            height={24} 
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width={24}
+            height={24}
             viewBox="0 0 24 24"
             className="w-6 h-6 text-orange-400"
             style={{
-              animation: 'drill-hammer 1.5s ease-in-out infinite',
+              animation: "drill-hammer 1.5s ease-in-out infinite",
             }}
           >
             <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.3}>
@@ -49,16 +44,6 @@ const MiningIndicator: React.FC<MiningIndicatorProps> = ({
             <div className="w-full h-full bg-red-400 rounded-full animate-ping"></div>
           </div>
         </div>
-        <style dangerouslySetInnerHTML={{
-          __html: `
-            @keyframes drill-hammer {
-              0%, 100% { transform: translateY(0px) rotate(-5deg); }
-              25% { transform: translateY(-3px) rotate(5deg); }
-              50% { transform: translateY(-1px) rotate(-3deg); }
-              75% { transform: translateY(-2px) rotate(3deg); }
-            }
-          `
-        }} />
       </div>
     );
   }
@@ -67,14 +52,14 @@ const MiningIndicator: React.FC<MiningIndicatorProps> = ({
     return (
       <div className={`flex items-center justify-center w-8 h-8 relative ${className}`}>
         <div className="relative">
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            width={24} 
-            height={24} 
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width={24}
+            height={24}
             viewBox="0 0 24 24"
             className="w-6 h-6 text-green-400"
             style={{
-              animation: 'auto-mining 2s ease-in-out infinite',
+              animation: "auto-mining 2s ease-in-out infinite",
             }}
           >
             <path fill="currentColor" d="M6.75 3A2.75 2.75 0 0 0 4 5.75V20.5h-.25a.75.75 0 0 0 0 1.5h13.5a.75.75 0 0 0 0-1.5H17v-1.803a2.745 2.745 0 0 0 4-2.442v-5.838a2.75 2.75 0 0 0-.55-1.65L19.35 7.3a.75.75 0 0 0-1.2.9l1.1 1.467c.162.216.25.48.25.75v5.838a1.245 1.245 0 1 1-2.49 0V14.5a1 1 0 0 0-.01-.121V5.75A2.75 2.75 0 0 0 14.25 3zM7 6.75A.75.75 0 0 1 7.75 6h5.5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-.75.75h-5.5a.75.75 0 0 1-.75-.75z"></path>
@@ -83,43 +68,25 @@ const MiningIndicator: React.FC<MiningIndicatorProps> = ({
             <div className="w-full h-full bg-green-400 rounded-full animate-pulse"></div>
           </div>
         </div>
-        <div 
+        <div
           className="absolute top-1 left-1"
           style={{
-            animation: 'processing-dots 1.5s ease-in-out infinite',
+            animation: "processing-dots 1.5s ease-in-out infinite",
           }}
         >
           <div className="flex gap-0.5">
-            <div className="w-1 h-1 bg-emerald-300 rounded-full" style={{ animationDelay: '0s' }}></div>
-            <div className="w-1 h-1 bg-emerald-300 rounded-full" style={{ animationDelay: '0.2s' }}></div>
-            <div className="w-1 h-1 bg-emerald-300 rounded-full" style={{ animationDelay: '0.4s' }}></div>
+            <div className="w-1 h-1 bg-emerald-300 rounded-full" style={{ animationDelay: "0s" }}></div>
+            <div className="w-1 h-1 bg-emerald-300 rounded-full" style={{ animationDelay: "0.2s" }}></div>
+            <div className="w-1 h-1 bg-emerald-300 rounded-full" style={{ animationDelay: "0.4s" }}></div>
           </div>
         </div>
-        <style dangerouslySetInnerHTML={{
-          __html: `
-            @keyframes auto-mining {
-              0%, 100% { transform: scale(1); opacity: 1; }
-              50% { transform: scale(1.05); opacity: 0.9; }
-            }
-            @keyframes processing-dots {
-              0%, 100% { opacity: 0.3; }
-              50% { opacity: 1; }
-            }
-          `
-        }} />
       </div>
     );
   }
 
   return (
     <div className={`flex items-center justify-center w-8 h-8 ${className}`}>
-      <svg 
-        xmlns="http://www.w3.org/2000/svg" 
-        width={24} 
-        height={24} 
-        viewBox="0 0 256 256"
-        className="w-6 h-6 text-gray-400 opacity-60"
-      >
+      <svg xmlns="http://www.w3.org/2000/svg" width={24} height={24} viewBox="0 0 256 256" className="w-6 h-6 text-gray-400 opacity-60">
         <g fill="currentColor" strokeWidth={6.5} stroke="currentColor">
           <path d="M216 96v120H96l-56-56V40h120Z" opacity={0.2}></path>
           <path d="m221.66 90.34l-56-56A8 8 0 0 0 160 32H40a8 8 0 0 0-8 8v120a8 8 0 0 0 2.3 5.61l56 56A8 8 0 0 0 96 224h120a8 8 0 0 0 8-8V96a8 8 0 0 0-2.34-5.66M168 59.31L196.69 88H168ZM88 196.69L59.31 168H88ZM88 152H48V59.31l40 40ZM59.31 48H152v40H99.31ZM152 104v48h-48v-48Zm-48 104v-40h52.69l40 40Zm104-11.31l-40-40V104h40Z"></path>
