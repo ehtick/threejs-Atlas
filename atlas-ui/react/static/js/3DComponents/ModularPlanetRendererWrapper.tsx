@@ -12,6 +12,7 @@ interface ModularPlanetRendererProps {
   enableControls?: boolean;
   showDebugInfo?: boolean;
   planetData?: {
+    name?: string;
     diameter: number;
     density: number;
     gravity: number;
