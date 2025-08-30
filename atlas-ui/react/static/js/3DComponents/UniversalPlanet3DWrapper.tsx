@@ -97,13 +97,13 @@ export const UniversalPlanet3DWrapper: React.FC<UniversalPlanet3DProps> = ({
   onError
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
-  const sceneRef = useRef<THREE.Scene>();
-  const rendererRef = useRef<THREE.WebGLRenderer>();
-  const cameraRef = useRef<THREE.PerspectiveCamera>();
-  const planetMeshRef = useRef<THREE.Mesh>();
-  const controlsRef = useRef<OrbitControls>();
-  const universalRendererRef = useRef<UniversalPlanetRenderer>();
-  const frameIdRef = useRef<number>();
+  const sceneRef = useRef<THREE.Scene | null>(null);
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const planetMeshRef = useRef<THREE.Mesh | null>(null);
+  const controlsRef = useRef<OrbitControls | null>(null);
+  const universalRendererRef = useRef<UniversalPlanetRenderer | null>(null);
+  const frameIdRef = useRef<number | null>(null);
   const lastFrameTimeRef = useRef<number>(0);
 
   const [loading, setLoading] = useState(true);

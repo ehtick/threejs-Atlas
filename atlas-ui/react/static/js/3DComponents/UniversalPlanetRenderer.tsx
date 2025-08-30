@@ -10,10 +10,10 @@ interface PlanetRenderingData {
     base_color: string;
     radius: number;
   };
-  surface_elements?: any;
-  atmosphere?: any;
-  rings?: any;
-  timing?: any;
+  surface_elements?: unknown;
+  atmosphere?: unknown;
+  rings?: unknown;
+  timing?: unknown;
 }
 
 export class UniversalPlanetRenderer {
@@ -63,7 +63,7 @@ export class UniversalPlanetRenderer {
       if (data.atmosphere) {
       }
       
-      if (data.rings && data.rings.has_rings) {
+      if (data.rings && typeof data.rings === 'object' && data.rings !== null && 'has_rings' in data.rings) {
       }
       
     } catch (error) {

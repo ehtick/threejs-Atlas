@@ -6,7 +6,7 @@ export interface LayerEffect {
   name: string;
   mesh?: THREE.Mesh;
   material: THREE.ShaderMaterial;
-  layerObject?: any;
+  layerObject?: unknown;
   update?: (deltaTime: number, planetRotation?: number) => void;
   dispose?: () => void;
 }
@@ -75,13 +75,13 @@ export class PlanetLayerSystem {
     }
   `;
 
-  constructor(baseMesh: THREE.Mesh, baseColor: THREE.Color | number[] = new THREE.Color(0xffa500)) {
+  constructor(baseMesh: THREE.Mesh, baseColor: THREE.Color | THREE.ColorRepresentation = new THREE.Color(0xffa500)) {
     this.baseMesh = baseMesh;
 
     const geometry = baseMesh.geometry as THREE.SphereGeometry;
     this.planetRadius = geometry.parameters.radius || 1;
 
-    const color = baseColor instanceof THREE.Color ? baseColor : new THREE.Color(baseColor as any);
+    const color = baseColor instanceof THREE.Color ? baseColor : new THREE.Color(baseColor);
 
     this.baseMaterial = new THREE.ShaderMaterial({
       vertexShader: PlanetLayerSystem.baseVertexShader,
@@ -99,7 +99,7 @@ export class PlanetLayerSystem {
     this.baseMesh.material = this.baseMaterial;
   }
 
-  addEffectLayer(name: string, material: THREE.ShaderMaterial, scaleFactor: number = 1.001, layerObject?: any): THREE.Mesh {
+  addEffectLayer(name: string, material: THREE.ShaderMaterial, scaleFactor: number = 1.001, layerObject?: unknown): THREE.Mesh {
     const layerGeometry = new THREE.SphereGeometry(this.planetRadius * scaleFactor, 256, 256);
 
     const layerMesh = new THREE.Mesh(layerGeometry, material);
@@ -121,7 +121,7 @@ export class PlanetLayerSystem {
     return layerMesh;
   }
 
-  createCloudBandsLayerMaterial(params: any): THREE.ShaderMaterial {
+  createCloudBandsLayerMaterial(params: Record<string, unknown>): THREE.ShaderMaterial {
     const vertexShader = `
       varying vec3 vPosition;
       varying vec3 vNormal;
@@ -282,7 +282,7 @@ export class PlanetLayerSystem {
     });
   }
 
-  createMetallicSurfaceLayerMaterial(params: any): THREE.ShaderMaterial {
+  createMetallicSurfaceLayerMaterial(params: Record<string, unknown>): THREE.ShaderMaterial {
     const vertexShader = `
       varying vec3 vPosition;
       varying vec3 vNormal;
@@ -506,7 +506,7 @@ export class PlanetLayerSystem {
     });
   }
 
-  createIcyTerrainLayerMaterial(params: any): THREE.ShaderMaterial {
+  createIcyTerrainLayerMaterial(params: Record<string, unknown>): THREE.ShaderMaterial {
     const vertexShader = `
       varying vec3 vPosition;
       varying vec3 vNormal;
@@ -693,7 +693,7 @@ export class PlanetLayerSystem {
     });
   }
 
-  createAquiferWaterLayerMaterial(params: any): THREE.ShaderMaterial {
+  createAquiferWaterLayerMaterial(params: Record<string, unknown>): THREE.ShaderMaterial {
     const vertexShader = `
       uniform float time;
       uniform float waveHeight;
@@ -821,18 +821,18 @@ export class PlanetLayerSystem {
     `;
 
     const waterColor = params.waterColor instanceof THREE.Color ? 
-      params.waterColor : new THREE.Color(params.waterColor || 0x2E8B8B);
+      params.waterColor : new THREE.Color((params.waterColor as THREE.ColorRepresentation) || 0x2E8B8B);
     const deepWaterColor = params.deepWaterColor instanceof THREE.Color ? 
-      params.deepWaterColor : new THREE.Color(params.deepWaterColor || 0x003366);
+      params.deepWaterColor : new THREE.Color((params.deepWaterColor as THREE.ColorRepresentation) || 0x003366);
     const foamColor = params.foamColor instanceof THREE.Color ? 
-      params.foamColor : new THREE.Color(params.foamColor || 0xffffff);
+      params.foamColor : new THREE.Color((params.foamColor as THREE.ColorRepresentation) || 0xffffff);
 
     return new THREE.ShaderMaterial({
       vertexShader,
       fragmentShader,
       uniforms: {
         time: { value: 0 },
-        seedOffset: { value: (params.seed || 0) % 100 },
+        seedOffset: { value: ((params.seed as number) || 0) % 100 },
         waveHeight: { value: params.waveHeight || 0.08 },
         waveFrequency: { value: params.waveFrequency || 3.0 },
         waveSpeed: { value: params.waveSpeed || 0.5 },
@@ -854,7 +854,7 @@ export class PlanetLayerSystem {
     });
   }
 
-  createOceanCurrentsLayerMaterial(params: any): THREE.ShaderMaterial {
+  createOceanCurrentsLayerMaterial(params: Record<string, unknown>): THREE.ShaderMaterial {
     const vertexShader = `
       varying vec3 vPosition;
       varying vec3 vNormal;
@@ -978,16 +978,16 @@ export class PlanetLayerSystem {
     `;
 
     const currentColor = params.currentColor instanceof THREE.Color ? 
-      params.currentColor : new THREE.Color(params.currentColor || 0x4A9B8E);
+      params.currentColor : new THREE.Color((params.currentColor as THREE.ColorRepresentation) || 0x4A9B8E);
     const deepCurrentColor = params.deepCurrentColor instanceof THREE.Color ? 
-      params.deepCurrentColor : new THREE.Color(params.deepCurrentColor || 0x2D5D52);
+      params.deepCurrentColor : new THREE.Color((params.deepCurrentColor as THREE.ColorRepresentation) || 0x2D5D52);
 
     return new THREE.ShaderMaterial({
       vertexShader,
       fragmentShader,
       uniforms: {
         time: { value: 0 },
-        seedOffset: { value: (params.seed || 0) % 100 },
+        seedOffset: { value: ((params.seed as number) || 0) % 100 },
         currentIntensity: { value: params.currentIntensity || 0.5 },
         currentScale: { value: params.currentScale || 2.0 },
         currentSpeed: { value: params.currentSpeed || 0.2 },
@@ -1028,9 +1028,9 @@ export class PlanetLayerSystem {
         layer.material.uniforms.rotationAngle.value = planetRotation;
       }
 
-      if (layer.layerObject && layer.layerObject.update) {
+      if (layer.layerObject && typeof layer.layerObject === 'object' && layer.layerObject !== null && 'update' in layer.layerObject) {
         try {
-          layer.layerObject.update(deltaTime, planetRotation);
+          (layer.layerObject as { update: (deltaTime: number, planetRotation?: number) => void }).update(deltaTime, planetRotation);
         } catch (error) {
         }
       }
@@ -1041,8 +1041,8 @@ export class PlanetLayerSystem {
     });
   }
 
-  updateBaseColor(color: THREE.Color | number[]): void {
-    const newColor = color instanceof THREE.Color ? color : new THREE.Color(color as any);
+  updateBaseColor(color: THREE.Color | THREE.ColorRepresentation): void {
+    const newColor = color instanceof THREE.Color ? color : new THREE.Color(color);
     this.baseMaterial.uniforms.baseColor.value = newColor;
   }
 
@@ -1082,7 +1082,7 @@ export class PlanetLayerSystem {
     this.baseMesh.material = holeShader;
   }
 
-  createGenericLayerMaterial(vertexShader: string, fragmentShader: string, uniforms: any, transparent: boolean = true, blending: THREE.Blending = THREE.NormalBlending): THREE.ShaderMaterial {
+  createGenericLayerMaterial(vertexShader: string, fragmentShader: string, uniforms: { [uniform: string]: THREE.IUniform<any> }, transparent: boolean = true, blending: THREE.Blending = THREE.NormalBlending): THREE.ShaderMaterial {
     if (!uniforms.lightDirection) {
       uniforms.lightDirection = { value: new THREE.Vector3(1, 1, 1).normalize() };
     }
@@ -1119,7 +1119,7 @@ export class PlanetLayerSystem {
     return null;
   }
 
-  createDiamondSurfaceLayerMaterial(params: any): THREE.ShaderMaterial {
+  createDiamondSurfaceLayerMaterial(params: Record<string, unknown>): THREE.ShaderMaterial {
     const vertexShader = `
       varying vec3 vPosition;
       varying vec3 vNormal;
@@ -1347,7 +1347,7 @@ export class PlanetLayerSystem {
     });
   }
 
-  createMoltenLavaLayerMaterial(params: any): THREE.ShaderMaterial {
+  createMoltenLavaLayerMaterial(params: Record<string, unknown>): THREE.ShaderMaterial {
     const vertexShader = `
       uniform float time;
       uniform float lavaWaveHeight;
@@ -1534,18 +1534,18 @@ export class PlanetLayerSystem {
     `;
 
     const moltenColor = params.moltenColor instanceof THREE.Color ? 
-      params.moltenColor : new THREE.Color(params.moltenColor || 0xFF8C00);
+      params.moltenColor : new THREE.Color((params.moltenColor as THREE.ColorRepresentation) || 0xFF8C00);
     const coreColor = params.coreColor instanceof THREE.Color ? 
-      params.coreColor : new THREE.Color(params.coreColor || 0xFFB347);
+      params.coreColor : new THREE.Color((params.coreColor as THREE.ColorRepresentation) || 0xFFB347);
     const coolingColor = params.coolingColor instanceof THREE.Color ? 
-      params.coolingColor : new THREE.Color(params.coolingColor || 0xCC4400);
+      params.coolingColor : new THREE.Color((params.coolingColor as THREE.ColorRepresentation) || 0xCC4400);
 
     return new THREE.ShaderMaterial({
       vertexShader,
       fragmentShader,
       uniforms: {
         time: { value: 0 },
-        seedOffset: { value: (params.seed || 0) % 100 },
+        seedOffset: { value: ((params.seed as number) || 0) % 100 },
         lavaWaveHeight: { value: params.lavaWaveHeight || 0.04 },
         lavaWaveFrequency: { value: params.lavaWaveFrequency || 2.0 },
         lavaWaveSpeed: { value: params.lavaWaveSpeed || 0.05 },

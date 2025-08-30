@@ -1,11 +1,5 @@
-/**
- * 3D Effects Library - Índice principal
- *
- * Exporta todos los efectos 3D disponibles para facilitar las importaciones
- * y proporcionar una API unificada para el sistema de efectos modulares.
- */
+// atlas-ui/react/static/js/3DEffects/index.ts
 
-// Efectos principales
 export { RingSystemEffect, createRingSystemFromPythonData } from "./RingSystem";
 export type { RingSystemParams, RingParticle } from "./RingSystem";
 
@@ -54,20 +48,6 @@ export type { RiverLinesParams, RiverSegment } from "./RiverLines";
 export { CaveSurfaceHolesEffect, createCaveSurfaceHolesFromPythonData } from "./CaveSurfaceHoles";
 export type { CaveSurfaceHolesParams } from "./CaveSurfaceHoles";
 
-// Efectos anómalos
-// AnomalyGlitchFieldEffect, AnomalyGeometricMorphEffect y AnomalyVoidSphereEffect movidos a Unused3DEffects
-// export {
-//   AnomalyGlitchFieldEffect,
-//   createAnomalyGlitchFieldFromPythonData
-// } from './AnomalyGlitchField';
-// export type { AnomalyGlitchFieldParams } from './AnomalyGlitchField';
-
-// export {
-//   AnomalyVoidSphereEffect,
-//   createAnomalyVoidSphereFromPythonData
-// } from './AnomalyVoidSphere';
-// export type { AnomalyVoidSphereParams } from './AnomalyVoidSphere';
-
 export { AnomalyPhaseMatterEffect, createAnomalyPhaseMatterFromPythonData } from "./AnomalyPhaseMatter";
 export type { AnomalyPhaseMatterParams } from "./AnomalyPhaseMatter";
 
@@ -86,34 +66,16 @@ export type { LavaRiverParams } from "./LavaRiversEffect";
 export { CarbonTrailsEffect, createCarbonTrailsFromPythonData } from "./CarbonTrails";
 export type { CarbonTrailsParams } from "./CarbonTrails";
 
-
 export { RadiationRingsEffect, createRadiationRingsFromPythonData } from "./RadiationRings";
 export type { RadiationRingsParams } from "./RadiationRings";
 
 export { SuperEarthWaterFeaturesEffect, createSuperEarthWaterFeaturesFromPythonData } from "./SuperEarthWaterFeatures";
 export type { SuperEarthWaterFeaturesParams } from "./SuperEarthWaterFeatures";
 
-// export {
-//   AnomalyGeometricMorphEffect,
-//   createAnomalyGeometricMorphFromPythonData
-// } from './AnomalyGeometricMorph';
-// export type { AnomalyGeometricMorphParams } from './AnomalyGeometricMorph';
-
-// export {
-//   AnomalyGravityWellEffect,
-//   createAnomalyGravityWellFromPythonData
-// } from './AnomalyGravityWell';
-// export type { AnomalyGravityWellParams } from './AnomalyGravityWell';
-
-// OceanWaves eliminado - no respeta los datos de Python
-
-// Sistema de registro y gestión
 export { EffectRegistry, effectRegistry, EffectType } from "./EffectRegistry";
 export type { EffectInstance, EffectCreationData, EffectCreator } from "./EffectRegistry";
 
-// Utilidades y constantes
 export const AVAILABLE_EFFECTS = [
-  // 'metallic_surface', // ELIMINADO: usar MetallicSurfaceLayer
   "cloud_bands",
   "cloud_gyros",
   "atmosphere",
@@ -124,7 +86,6 @@ export const AVAILABLE_EFFECTS = [
   "fragmentation",
   "rocky_terrain",
   "icy_terrain",
-  // 'ocean_waves', // Eliminado - no respeta datos de Python
   "lava_flows",
   "lava_rivers",
   "crystal_formations",
@@ -143,22 +104,14 @@ export const AVAILABLE_EFFECTS = [
   "radiation_pulse",
   "radiation_rings",
   "super_earth_water_features",
-  // Efectos anómalos (algunos desactivados)
-  // 'anomaly_glitch_field', // Movido a Unused3DEffects
-  // 'anomaly_void_sphere', // Movido a Unused3DEffects
   "anomaly_phase_matter",
   "pulsating_cube",
   "planet_rays",
-  // 'anomaly_geometric_morph', // Movido a Unused3DEffects
-  // 'anomaly_gravity_well' // Movido a Unused3DEffects
 ] as const;
 
 export type AvailableEffectType = (typeof AVAILABLE_EFFECTS)[number];
 
-// Configuración por defecto para efectos comunes
 export const DEFAULT_EFFECT_CONFIGS = {
-  // metallic_surface ELIMINADO: usar MetallicSurfaceLayer
-
   atmosphere: {
     type: "Thin",
     width: 12,
@@ -230,11 +183,8 @@ export const DEFAULT_EFFECT_CONFIGS = {
     holeColor: "#1a1512",
     enableShadows: true,
   },
-
-  // ocean_waves eliminado - no respeta datos de Python
 } as const;
 
-// Funciones de utilidad
 export function getEffectDefaultConfig(effectType: string): any {
   return DEFAULT_EFFECT_CONFIGS[effectType as keyof typeof DEFAULT_EFFECT_CONFIGS] || {};
 }
@@ -243,15 +193,11 @@ export function isEffectAvailable(effectType: string): boolean {
   return AVAILABLE_EFFECTS.includes(effectType as any);
 }
 
-/**
- * Crea una configuración de efectos optimizada para un tipo de planeta
- */
 export function createPlanetEffectConfig(planetType: string): EffectCreationData[] {
   const effects: EffectCreationData[] = [];
 
   switch (planetType.toLowerCase()) {
     case "metallic":
-      // ELIMINADO: metallic_surface - ahora se maneja por MetallicSurfaceLayer automáticamente
       effects.push(
         {
           type: "atmosphere",
@@ -312,7 +258,6 @@ export function createPlanetEffectConfig(planetType: string): EffectCreationData
       break;
 
     default:
-      // Efectos genéricos por defecto
       effects.push({
         type: "atmosphere",
         params: {
@@ -326,9 +271,6 @@ export function createPlanetEffectConfig(planetType: string): EffectCreationData
   return effects;
 }
 
-/**
- * Validador de configuración de efectos
- */
 export function validateEffectConfig(effectType: string, params: any): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
 
@@ -336,10 +278,7 @@ export function validateEffectConfig(effectType: string, params: any): { valid: 
     errors.push(`Effect type '${effectType}' is not available`);
   }
 
-  // Validaciones específicas por tipo de efecto
   switch (effectType) {
-    // ELIMINADO: validación de metallic_surface - usar MetallicSurfaceLayer
-
     case "ring_system":
       if (params.particleCount !== undefined && params.particleCount < 1) {
         errors.push("Particle count must be positive");
@@ -359,33 +298,24 @@ export function validateEffectConfig(effectType: string, params: any): { valid: 
   };
 }
 
-/**
- * Logger para debug de efectos
- */
 export const EffectsLogger = {
   log: (message: string, data?: any) => {
-    // Logs disabled for cleaner console
   },
 
   warn: (message: string, data?: any) => {
-    console.warn(`[Effects] ${message}`, data || "");
   },
 
   error: (message: string, error?: any) => {
-    console.error(`[Effects] ${message}`, error || "");
   },
 
   debug: (message: string, data?: any) => {
     if (process.env.NODE_ENV === "development") {
-      console.debug(`[Effects] ${message}`, data || "");
     }
   },
 };
 
-// Re-exportar el registry para acceso directo
 export { effectRegistry as Effects };
 
-// Versión y metadata
 export const EFFECTS_LIBRARY_VERSION = "1.0.0";
 export const EFFECTS_LIBRARY_NAME = "Atlas Planet Effects Library";
 
@@ -397,6 +327,3 @@ export const EFFECTS_METADATA = {
   author: "Atlas Universal Planet Renderer",
   description: "Modular 3D effects library for procedural planet rendering",
 };
-
-// Inicialización
-EffectsLogger.log(`Initialized ${EFFECTS_LIBRARY_NAME} v${EFFECTS_LIBRARY_VERSION}`);

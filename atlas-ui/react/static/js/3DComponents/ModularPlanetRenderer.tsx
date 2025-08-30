@@ -158,7 +158,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
 
       const newEffects = effectRegistry.createEffectsFromPythonPlanetData(planetData, NORMALIZED_PLANET_RADIUS, planetMeshRef.current, sceneRef.current, planetLayerSystemRef.current);
 
-      const planetType = planetData.planet_info?.type || planetData.surface_elements?.planet_type || planetData.planet_type;
+      const planetType = planetData.planet_info?.type || (planetData.surface_elements as any)?.planet_type || (planetData as any).planet_type;
       if ((planetType === "toxic" || planetType === "Toxic") && sceneRef.current && cameraRef.current && rendererRef.current) {
         try {
           const toxicPostProcessing = createToxicPostProcessingFromPythonData(
@@ -814,7 +814,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
     const toxicPostProcessingEffect = Array.from((effectRegistry as any).effects.values()).find(
       (effect: any) => effect.type === "toxic_post_processing"
     );
-    const toxicPostProcessingEnabled = toxicPostProcessingEffect?.enabled || false;
+    const toxicPostProcessingEnabled = (toxicPostProcessingEffect as any)?.enabled || false;
     if (toxicPostProcessingRef.current && toxicPostProcessingEnabled) {
       toxicPostProcessingRef.current.update(deltaTime);
       
