@@ -38,7 +38,7 @@ const PROCEDURAL_RANGES = {
   },
   SWAMP: {
     BUBBLE_COUNT: { min: 15, max: 25 }, // Target amount of bubbles
-    BUBBLE_SIZE: { min: 0.0003, max: 0.0008 }, // Extremely tiny bubbles like methane gas
+    BUBBLE_SIZE: { min: 0.001, max: 0.003 }, // Small but visible swamp bubbles
     RISE_SPEED: { min: 0.005, max: 0.012 }, // Much slower organic movement
     EXPANSION_RATE: { min: 0.002, max: 0.004 }, // Much slower expansion
     POP_DISTANCE: { min: 0.2, max: 0.35 }, // Pop at reasonable distance
@@ -137,7 +137,7 @@ export class ToxicSwampBubblesEffect {
   }
 
   private setupGeometry(): void {
-    this.geometry = new THREE.SphereGeometry(1, 12, 8); // Slightly higher poly for smoother appearance
+    this.geometry = new THREE.SphereGeometry(0.3, 12, 8); // Balanced size for visible but small swamp bubbles
   }
   
   private createInitialBubbles(): void {
