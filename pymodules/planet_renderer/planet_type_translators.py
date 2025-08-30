@@ -84,6 +84,29 @@ class PlanetTypeTranslators:
                 "opacity": rng.uniform(0.6, 0.9)
             }
         
+        # Generate secondary clouds for gas giant atmosphere effect
+        num_secondary_clouds = rng.randint(25, 40)  # Dense secondary clouds for gas giants
+        secondary_clouds = []
+        for i in range(num_secondary_clouds):
+            # Random spherical coordinates
+            theta = rng.uniform(0, 2 * math.pi)  # Azimuthal angle
+            phi = rng.uniform(0, math.pi)       # Polar angle
+            
+            # Convert to 3D Cartesian coordinates on unit sphere
+            x = math.sin(phi) * math.cos(theta)
+            y = math.sin(phi) * math.sin(theta)
+            z = math.cos(phi)
+            
+            cloud_radius = rng.randint(25, 45)  # Medium-sized secondary clouds
+            
+            secondary_clouds.append({
+                "position": [x, y, z],  # 3D coordinates on unit sphere
+                "radius": cloud_radius / planet_radius,
+                "type": "secondary_cloud",
+                "seed": f"{planet_name}_secondary_cloud_{i}",
+                "turbulence": rng.uniform(1.0, 2.5)  # High turbulence for gas giants
+            })
+        
         return {
             "type": "gas_giant",
             "cloud_bands": {
@@ -94,12 +117,14 @@ class PlanetTypeTranslators:
             },
             "storms": storms,
             "polar_hexagon": polar_hexagon,
+            "secondary_clouds": secondary_clouds,
             "debug": {
                 "original_planet_radius": planet_radius,
                 "center_y": center_y,
                 "band_count": num_bands,
                 "rotation_degrees": rotation_angle * 180 / math.pi,
-                "has_hexagon": polar_hexagon is not None
+                "has_hexagon": polar_hexagon is not None,
+                "secondary_cloud_count": num_secondary_clouds
             }
         }
     
@@ -2068,6 +2093,29 @@ class PlanetTypeTranslators:
                 "opacity": rng.uniform(0.7, 0.95)
             }
         
+        # Generate secondary clouds for frozen gas giant atmosphere effect
+        num_secondary_clouds = rng.randint(20, 35)  # Slightly fewer than regular gas giants
+        secondary_clouds = []
+        for i in range(num_secondary_clouds):
+            # Random spherical coordinates
+            theta = rng.uniform(0, 2 * math.pi)  # Azimuthal angle
+            phi = rng.uniform(0, math.pi)       # Polar angle
+            
+            # Convert to 3D Cartesian coordinates on unit sphere
+            x = math.sin(phi) * math.cos(theta)
+            y = math.sin(phi) * math.sin(theta)
+            z = math.cos(phi)
+            
+            cloud_radius = rng.randint(20, 40)  # Smaller clouds for frozen giants
+            
+            secondary_clouds.append({
+                "position": [x, y, z],  # 3D coordinates on unit sphere
+                "radius": cloud_radius / planet_radius,
+                "type": "secondary_cloud",
+                "seed": f"{planet_name}_secondary_cloud_{i}",
+                "turbulence": rng.uniform(0.8, 2.0)  # Lower turbulence for frozen atmosphere
+            })
+        
         return {
             "type": "frozen_gas_giant",
             "cloud_bands": {
@@ -2077,9 +2125,11 @@ class PlanetTypeTranslators:
                 "rotation": rotation_angle
             },
             "polar_hexagon": polar_hexagon,
+            "secondary_clouds": secondary_clouds,
             "icy_tint": True,  # Flag for blue-white tinting
             "debug": {
-                "has_hexagon": polar_hexagon is not None
+                "has_hexagon": polar_hexagon is not None,
+                "secondary_cloud_count": num_secondary_clouds
             }
         }
     

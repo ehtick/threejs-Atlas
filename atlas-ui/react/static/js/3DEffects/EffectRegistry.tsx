@@ -733,6 +733,31 @@ export class EffectRegistry {
                   hexagonEffect.addToScene(scene);
                 }
               }
+
+              // Add secondary clouds for gas giant atmosphere effect
+              if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
+                const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
+                  planetRadius,
+                  surface,
+                  baseColor, // Use planet's base color for secondary clouds
+                  pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
+                  pythonData.timing?.cosmic_origin_time
+                );
+
+                const secondaryCloudsInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "secondary_clouds",
+                  effect: secondaryCloudsEffect,
+                  priority: 12, // Lower priority than primary clouds but higher than other effects
+                  enabled: true,
+                };
+                this.effects.set(secondaryCloudsInstance.id, secondaryCloudsInstance);
+                effects.push(secondaryCloudsInstance);
+
+                if (scene) {
+                  secondaryCloudsEffect.addToScene(scene);
+                }
+              }
             } else {
               console.error("❌ PlanetLayerSystem not initialized!");
             }
@@ -787,6 +812,31 @@ export class EffectRegistry {
                 // Add to scene
                 if (scene) {
                   hexagonEffect.addToScene(scene);
+                }
+              }
+
+              // Add secondary clouds for frozen gas giant atmosphere effect
+              if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
+                const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
+                  planetRadius,
+                  surface,
+                  baseColor, // Use planet's base color for secondary clouds
+                  pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
+                  pythonData.timing?.cosmic_origin_time
+                );
+
+                const secondaryCloudsInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "secondary_clouds",
+                  effect: secondaryCloudsEffect,
+                  priority: 12, // Lower priority than primary clouds but higher than other effects
+                  enabled: true,
+                };
+                this.effects.set(secondaryCloudsInstance.id, secondaryCloudsInstance);
+                effects.push(secondaryCloudsInstance);
+
+                if (scene) {
+                  secondaryCloudsEffect.addToScene(scene);
                 }
               }
             }
