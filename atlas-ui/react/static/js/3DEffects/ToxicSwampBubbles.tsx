@@ -37,13 +37,13 @@ const PROCEDURAL_RANGES = {
     EMISSION_RATE: { min: 0.8, max: 1.5 },
   },
   SWAMP: {
-    BUBBLE_COUNT: { min: 15, max: 25 }, // Target amount of bubbles
-    BUBBLE_SIZE: { min: 0.001, max: 0.003 }, // Small but visible swamp bubbles
+    BUBBLE_COUNT: { min: 450, max: 900 }, // More reasonable amount for performance
+    BUBBLE_SIZE: { min: 0.01, max: 0.05 }, // Small but visible swamp bubbles
     RISE_SPEED: { min: 0.005, max: 0.012 }, // Much slower organic movement
     EXPANSION_RATE: { min: 0.002, max: 0.004 }, // Much slower expansion
     POP_DISTANCE: { min: 0.2, max: 0.35 }, // Pop at reasonable distance
-    OPACITY: { min: 0.3, max: 0.5 }, // More transparent
-    EMISSION_RATE: { min: 3.0, max: 5.0 }, // Higher rate for truly continuous flow
+    OPACITY: { min: 0.2, max: 0.9 }, // More visible
+    EMISSION_RATE: { min: 13.0, max: 15.0 }, // Higher rate for truly continuous flow
   },
 };
 
@@ -96,9 +96,21 @@ export class ToxicSwampBubblesEffect {
     const ranges = PROCEDURAL_RANGES[planetType];
     
     // Set default parameters using procedural ranges
+    const actualBubbleCount = params.bubbleCount || this.rng.randint(ranges.BUBBLE_COUNT.min, ranges.BUBBLE_COUNT.max);
+    const actualBubbleSize = params.bubbleSize || planetRadius * this.rng.uniform(ranges.BUBBLE_SIZE.min, ranges.BUBBLE_SIZE.max);
+    
+    console.log("DEBUG: ToxicSwampBubbles params calculation:", {
+      planetType,
+      ranges: ranges,
+      providedBubbleCount: params.bubbleCount,
+      calculatedBubbleCount: actualBubbleCount,
+      providedBubbleSize: params.bubbleSize,
+      calculatedBubbleSize: actualBubbleSize
+    });
+    
     this.params = {
-      bubbleCount: params.bubbleCount || this.rng.randint(ranges.BUBBLE_COUNT.min, ranges.BUBBLE_COUNT.max),
-      bubbleSize: params.bubbleSize || planetRadius * this.rng.uniform(ranges.BUBBLE_SIZE.min, ranges.BUBBLE_SIZE.max),
+      bubbleCount: actualBubbleCount,
+      bubbleSize: actualBubbleSize,
       riseSpeed: params.riseSpeed || this.rng.uniform(ranges.RISE_SPEED.min, ranges.RISE_SPEED.max),
       expansionRate: params.expansionRate || this.rng.uniform(ranges.EXPANSION_RATE.min, ranges.EXPANSION_RATE.max),
       popDistance: params.popDistance || planetRadius * this.rng.uniform(ranges.POP_DISTANCE.min, ranges.POP_DISTANCE.max),
@@ -142,7 +154,7 @@ export class ToxicSwampBubblesEffect {
   
   private createInitialBubbles(): void {
     // Fill the scene with bubbles at different life stages
-    const initialBubbleCount = Math.floor(this.params.bubbleCount * 0.8);
+    const initialBubbleCount = Math.floor(this.params.bubbleCount * 0.9); // Start with 90% of target bubbles
     
     for (let i = 0; i < initialBubbleCount; i++) {
       this.createBubble();
@@ -221,7 +233,7 @@ export class ToxicSwampBubblesEffect {
       size: this.params.bubbleSize * 0.2, // Start very small
       maxSize: this.params.bubbleSize * this.rng.uniform(1.2, 1.8), // Much smaller max size for swamp bubbles
       life: 0,
-      maxLife: this.rng.uniform(8, 12), // Longer lifetime for slower swamp bubbles
+      maxLife: this.rng.uniform(15, 25), // Much longer lifetime so bubbles don't disappear so fast
       originalSurfacePoint: actualSurfacePoint.clone(),
       wobbleOffset: new THREE.Vector3(
         this.rng.uniform(-1, 1),
@@ -419,7 +431,7 @@ export class ToxicSwampBubblesEffect {
       // Create bubbles if below target (no upper limit)
       if (currentCount < targetCount) {
         const bubblesNeeded = targetCount - currentCount;
-        const bubblesToCreate = Math.min(3, Math.max(1, Math.ceil(bubblesNeeded / 5)));
+        const bubblesToCreate = Math.min(20, Math.max(1, Math.ceil(bubblesNeeded / 2))); // Create more bubbles faster
         
         for (let i = 0; i < bubblesToCreate; i++) {
           this.createBubble();
@@ -441,13 +453,24 @@ export class ToxicSwampBubblesEffect {
     // Debug logging every 2 seconds
     this.debugLogTimer += deltaTime;
     if (this.debugLogTimer >= 2.0) {
+      // Sample a few bubbles for debugging
+      const sampleBubbles = this.bubbles.slice(0, 3).map(bubble => ({
+        size: bubble.size,
+        opacity: (this.bubbleMeshes[this.bubbles.indexOf(bubble)]?.material as THREE.MeshBasicMaterial)?.opacity,
+        position: bubble.position.toArray(),
+        isFullyEmerged: bubble.isFullyEmerged,
+        life: bubble.life,
+        maxLife: bubble.maxLife
+      }));
+      
       console.log('ToxicSwampBubbles status:', {
         bubbleCount: this.bubbles.length,
         targetCount: this.params.bubbleCount,
         spawnTimer: this.bubbleSpawnTimer,
         nextSpawnIn: adjustedInterval - this.bubbleSpawnTimer,
         emissionRate: this.params.emissionRate,
-        globalTime: this.globalTime
+        globalTime: this.globalTime,
+        sampleBubbles: sampleBubbles
       });
       this.debugLogTimer = 0;
     }
@@ -533,19 +556,13 @@ export function createToxicSwampBubblesFromPythonData(
   console.log("Creating ToxicSwampBubblesEffect with data:", bubbleData);
 
   return new ToxicSwampBubblesEffect(planetRadius, {
-    bubbleCount: bubbleData.bubble_count,
-    bubbleSize: bubbleData.bubble_size,
-    riseSpeed: bubbleData.rise_speed,
-    expansionRate: bubbleData.expansion_rate,
-    popDistance: bubbleData.pop_distance,
+    // Don't pass bubbleCount, bubbleSize, riseSpeed, etc. - let PROCEDURAL_RANGES handle it
     bubbleColor: bubbleData.color ? new THREE.Color(
       bubbleData.color[0],
       bubbleData.color[1],
       bubbleData.color[2]
     ) : undefined, // Let constructor use default
-    opacity: bubbleData.opacity,
-    emissionRate: bubbleData.emission_rate,
     seed: seed,
-    planetType: "SWAMP",
+    planetType: "SWAMP", // This will use SWAMP PROCEDURAL_RANGES
   });
 }
