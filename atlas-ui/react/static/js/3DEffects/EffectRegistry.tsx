@@ -3298,6 +3298,28 @@ export class EffectRegistry {
               }
             }
             
+            // 2.5. Add savannah terrain layer for varied Earth-like terrain
+            if (this.layerSystem) {
+              const superEarthSavannahLayer = createSavannahTerrainLayerFromPythonData(
+                this.layerSystem,
+                pythonData,
+                pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed,
+                'SAVANNAH'
+              );
+
+              const superEarthSavannahInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "savannah_terrain_layer",
+                effect: superEarthSavannahLayer,
+                priority: 3, // Between land masses and water features
+                enabled: true,
+                name: "Super Earth Savannah Terrain",
+              };
+
+              this.effects.set(superEarthSavannahInstance.id, superEarthSavannahInstance);
+              effects.push(superEarthSavannahInstance);
+            }
+            
             // 3. Add small water features on top of the surface
             const superEarthWaterFeaturesEffect = createSuperEarthWaterFeaturesFromPythonData(
               planetRadius,
