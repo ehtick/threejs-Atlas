@@ -45,6 +45,7 @@ import { VegetationEffect, createVegetationFromPythonData } from "./VegetationEf
 import { MagmaFlowsEffect, createMagmaFlowsFromPythonData } from "./MagmaFlowsEffect";
 import { MagmaEruptionsEffect, createMagmaEruptionsFromPythonData } from "./MagmaEruptionsEffect";
 import { CrystallineSurfaceEffect, createCrystallineSurfaceFromPythonData } from "./CrystallineSurfaceEffect";
+import { ToxicSwampBubblesEffect, createToxicSwampBubblesFromPythonData } from "./ToxicSwampBubbles";
 
 // Los planetas Carbon usan efectos existentes (TundraSnowflakes, AtmosphereClouds, LandMasses)
 
@@ -148,6 +149,7 @@ export enum EffectType {
   TOXIC_POST_PROCESSING = "toxic_post_processing",
   // Efectos de superficie tóxica
   TOXIC_WASTE_RENDER = "toxic_waste_render",
+  TOXIC_SWAMP_BUBBLES = "toxic_swamp_bubbles",
 
   // Efectos geológicos
   RIVER_LINES = "river_lines",
@@ -464,6 +466,16 @@ export class EffectRegistry {
         data.surface_elements || {},
         data.seeds?.planet_seed,
         data.timing?.cosmic_origin_time
+      ),
+    });
+
+    // Efectos para planetas Swamp
+    this.registerEffect(EffectType.TOXIC_SWAMP_BUBBLES, {
+      create: (params, planetRadius) => new ToxicSwampBubblesEffect(planetRadius, params),
+      fromPythonData: (data, planetRadius) => createToxicSwampBubblesFromPythonData(
+        planetRadius,
+        data.surface_elements || {},
+        data.seeds?.planet_seed
       ),
     });
 
@@ -3562,6 +3574,30 @@ export class EffectRegistry {
 
               if (scene) {
                 secondaryCloudsEffect.addToScene(scene);
+              }
+            }
+
+            // 5. Add toxic swamp bubbles (methane gas emissions)
+            if (surface.toxic_bubbles) {
+              const toxicSwampBubblesEffect = this.createEffectFromPythonData(
+                EffectType.TOXIC_SWAMP_BUBBLES,
+                pythonData,
+                planetRadius,
+                mesh
+              )?.effect;
+
+              if (toxicSwampBubblesEffect) {
+                const toxicSwampBubblesInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: EffectType.TOXIC_SWAMP_BUBBLES,
+                  effect: toxicSwampBubblesEffect,
+                  priority: 25,
+                  enabled: true,
+                  name: "Toxic Swamp Bubbles",
+                };
+                this.effects.set(toxicSwampBubblesInstance.id, toxicSwampBubblesInstance);
+                effects.push(toxicSwampBubblesInstance);
+                toxicSwampBubblesEffect.addToScene(scene, mesh.position);
               }
             }
             break;

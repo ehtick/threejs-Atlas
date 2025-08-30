@@ -1024,11 +1024,48 @@ class PlanetTypeTranslators:
                 "turbulence": rng.uniform(1.6, 2.8)  # High turbulence from humid weather systems
             })
         
+        # Generate toxic swamp bubbles (methane gas emission points)
+        num_bubble_areas = rng.randint(6, 12)  # Multiple methane emission areas
+        toxic_bubbles = {
+            "bubble_count": rng.randint(12, 18),  # Total active bubbles at any time
+            "bubble_size": planet_radius * rng.uniform(0.006, 0.012),  # Small methane bubbles
+            "rise_speed": rng.uniform(0.018, 0.028),  # Slow rising speed for organic look
+            "expansion_rate": rng.uniform(0.012, 0.022),  # Gradual expansion as they rise
+            "pop_distance": planet_radius * rng.uniform(0.28, 0.42),  # Pop distance from surface
+            "color": [
+                rng.uniform(0.4, 0.6),   # Green component (swamp gas green)
+                rng.uniform(0.6, 0.8),   # Slightly more green
+                rng.uniform(0.3, 0.5)    # Blue component for toxic look
+            ],
+            "opacity": rng.uniform(0.5, 0.75),  # Semi-transparent bubbles
+            "emission_rate": rng.uniform(1.8, 3.2),  # Bubbles per second emission rate
+            "emission_areas": []
+        }
+        
+        # Generate emission areas (spots on planet where bubbles emerge)
+        for i in range(num_bubble_areas):
+            # Random spherical coordinates for emission points
+            theta = rng.uniform(0, 2 * math.pi)  # Azimuthal angle
+            phi = rng.uniform(0, math.pi)       # Polar angle
+            
+            # Convert to 3D Cartesian coordinates on unit sphere
+            x = math.sin(phi) * math.cos(theta)
+            y = math.sin(phi) * math.sin(theta)
+            z = math.cos(phi)
+            
+            toxic_bubbles["emission_areas"].append({
+                "position_3d": [x, y, z],  # 3D coordinates on unit sphere
+                "intensity": rng.uniform(0.6, 1.2),  # How active this emission area is
+                "radius": rng.uniform(0.05, 0.15),   # Area of methane seepage
+                "seed": f"{planet_name}_bubble_area_{i}"
+            })
+
         return {
             "type": "swamp",
             "clouds": clouds,  # AtmosphereClouds will use this
             "green_patches": green_patches,  # LandMasses will use this (swampy landmasses)
             "secondary_clouds": secondary_clouds,
+            "toxic_bubbles": toxic_bubbles,  # ToxicSwampBubbles will use this
             "surface_properties": {
                 "humidity": rng.uniform(0.8, 0.95),      # Very high humidity
                 "vegetation_density": rng.uniform(0.6, 0.9),  # Dense swamp vegetation
@@ -1042,6 +1079,7 @@ class PlanetTypeTranslators:
                 "cloud_count": num_clouds,
                 "green_patch_count": num_green_patches,
                 "secondary_cloud_count": num_secondary_clouds,
+                "bubble_area_count": num_bubble_areas,
                 "swamp_coverage": "high_humidity_wetland_coverage"
             }
         }

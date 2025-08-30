@@ -1,0 +1,501 @@
+/**
+ * Toxic Swamp Bubbles Effect - Procedural methane gas bubbles with marching cubes-style patterns
+ *
+ * Creates dynamic bubbles that:
+ * - Use mathematical functions for organic placement (similar to marching cubes metaballs)
+ * - Emerge gradually from inside the planet surface
+ * - Follow time-based procedural patterns for natural movement
+ * - Pop with visual explosion when reaching maximum size
+ * - Have slow, organic timing similar to marching cubes animations
+ */
+
+import * as THREE from "three";
+import { SeededRandom } from "../Utils/SeededRandom.tsx";
+
+export interface ToxicSwampBubblesParams {
+  bubbleCount?: number;
+  bubbleSize?: number;
+  riseSpeed?: number;
+  expansionRate?: number;
+  popDistance?: number;
+  bubbleColor?: THREE.Color;
+  opacity?: number;
+  emissionRate?: number;
+  seed?: number;
+  planetType?: "SWAMP" | "DEFAULT";
+}
+
+// Ranges for procedural generation
+const PROCEDURAL_RANGES = {
+  DEFAULT: {
+    BUBBLE_COUNT: { min: 8, max: 15 },
+    BUBBLE_SIZE: { min: 0.004, max: 0.008 },
+    RISE_SPEED: { min: 0.008, max: 0.015 },
+    EXPANSION_RATE: { min: 0.006, max: 0.012 },
+    POP_DISTANCE: { min: 0.15, max: 0.25 },
+    OPACITY: { min: 0.15, max: 0.35 },
+    EMISSION_RATE: { min: 0.8, max: 1.5 },
+  },
+  SWAMP: {
+    BUBBLE_COUNT: { min: 12, max: 20 }, // Reduced for better control
+    BUBBLE_SIZE: { min: 0.015, max: 0.025 }, // More reasonable size
+    RISE_SPEED: { min: 0.02, max: 0.04 }, // Much slower, organic movement
+    EXPANSION_RATE: { min: 0.008, max: 0.015 }, // Slower expansion
+    POP_DISTANCE: { min: 0.3, max: 0.5 }, // Moderate distance
+    OPACITY: { min: 0.6, max: 0.85 }, // Visible but translucent
+    EMISSION_RATE: { min: 0.3, max: 0.8 }, // Slower emission for organic feel
+  },
+};
+
+interface Bubble {
+  position: THREE.Vector3;
+  velocity: THREE.Vector3;
+  size: number;
+  maxSize: number;
+  life: number;
+  maxLife: number;
+  originalSurfacePoint: THREE.Vector3;
+  wobbleOffset: THREE.Vector3; // For organic wobbling motion
+  wobbleSpeed: number; // Individual wobble frequency
+  wobbleAmplitude: number; // How much the bubble wobbles
+  startOpacity: number; // Starting opacity for fade in
+  hasPopped: boolean; // Track if bubble has exploded
+  emergencePhase: number; // 0-1: how far the bubble has emerged from surface
+  emergenceSpeed: number; // How fast the bubble emerges
+  isFullyEmerged: boolean; // Whether bubble has fully emerged from surface
+  fadeInPhase: number; // 0-1: how much the bubble has faded in
+  fadeInSpeed: number; // How fast the bubble fades in
+  bubbleIndex: number; // Unique index for procedural patterns
+  birthTime: number; // When the bubble was created
+  popPhase: number; // 0-1: explosion animation phase
+  popStartTime: number; // When popping started
+}
+
+export class ToxicSwampBubblesEffect {
+  private bubbles: Bubble[] = [];
+  private bubbleMeshes: THREE.Mesh[] = [];
+  private bubbleGroup: THREE.Group;
+  private material: THREE.MeshBasicMaterial;
+  private geometry: THREE.SphereGeometry;
+  private rng: SeededRandom;
+  private params: Required<ToxicSwampBubblesParams>;
+  private planetRadius: number;
+  private lastBubbleTime: number = 0;
+  private planetCenter: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
+  private globalTime: number = 0; // Track global time for procedural patterns
+  private nextBubbleIndex: number = 0; // Unique index for each bubble
+  private bubbleSpawnTimer: number = 0; // Timer for controlled spawning
+
+  constructor(planetRadius: number, params: ToxicSwampBubblesParams = {}) {
+    this.planetRadius = planetRadius;
+    this.rng = new SeededRandom(params.seed || Math.random() * 1000000);
+    
+    // Select ranges based on planet type
+    const planetType = params.planetType || "SWAMP";
+    const ranges = PROCEDURAL_RANGES[planetType];
+    
+    // Set default parameters using procedural ranges
+    this.params = {
+      bubbleCount: params.bubbleCount || this.rng.randint(ranges.BUBBLE_COUNT.min, ranges.BUBBLE_COUNT.max),
+      bubbleSize: params.bubbleSize || planetRadius * this.rng.uniform(ranges.BUBBLE_SIZE.min, ranges.BUBBLE_SIZE.max),
+      riseSpeed: params.riseSpeed || this.rng.uniform(ranges.RISE_SPEED.min, ranges.RISE_SPEED.max),
+      expansionRate: params.expansionRate || this.rng.uniform(ranges.EXPANSION_RATE.min, ranges.EXPANSION_RATE.max),
+      popDistance: params.popDistance || planetRadius * this.rng.uniform(ranges.POP_DISTANCE.min, ranges.POP_DISTANCE.max),
+      bubbleColor: params.bubbleColor || new THREE.Color(0x88dd88), // More vibrant swampy green
+      opacity: params.opacity || this.rng.uniform(ranges.OPACITY.min, ranges.OPACITY.max),
+      emissionRate: params.emissionRate || this.rng.uniform(ranges.EMISSION_RATE.min, ranges.EMISSION_RATE.max),
+      seed: params.seed || Math.random() * 1000000,
+      planetType,
+    };
+
+    this.bubbleGroup = new THREE.Group();
+    this.setupMaterials();
+    this.setupGeometry();
+    
+    console.log("ToxicSwampBubbles initialized:", {
+      planetRadius: this.planetRadius,
+      params: this.params,
+      materialColor: this.material.color.getHex(),
+      materialOpacity: this.material.opacity
+    });
+    
+    // Create initial bubbles for immediate effect
+    this.createInitialBubbles();
+  }
+
+  private setupMaterials(): void {
+    this.material = new THREE.MeshBasicMaterial({
+      color: this.params.bubbleColor,
+      transparent: true,
+      opacity: this.params.opacity,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      depthTest: true,
+      blending: THREE.NormalBlending, // Normal blending for better visibility
+    });
+  }
+
+  private setupGeometry(): void {
+    this.geometry = new THREE.SphereGeometry(1, 12, 8); // Slightly higher poly for smoother appearance
+  }
+  
+  private createInitialBubbles(): void {
+    // Create a few bubbles at different stages of emergence for immediate visual impact
+    const initialBubbleCount = Math.min(5, Math.floor(this.params.bubbleCount / 3));
+    
+    for (let i = 0; i < initialBubbleCount; i++) {
+      this.createBubble();
+      
+      // Advance each bubble to a different stage
+      const bubble = this.bubbles[this.bubbles.length - 1];
+      const advanceAmount = (i / initialBubbleCount) * 0.5; // Stagger their emergence
+      
+      bubble.emergencePhase = advanceAmount;
+      bubble.fadeInPhase = Math.min(1, advanceAmount * 2);
+      bubble.life = advanceAmount * 2; // Different ages
+      
+      // Move them partway out
+      const directionFromCenter = bubble.position.clone().sub(this.planetCenter).normalize();
+      const emergenceDistance = this.planetRadius * advanceAmount * 0.3;
+      bubble.position.add(directionFromCenter.multiplyScalar(emergenceDistance));
+    }
+    
+    console.log(`Created ${initialBubbleCount} initial bubbles for immediate effect`);
+  }
+  
+  private getProceduralSurfacePoint(bubbleIndex: number): THREE.Vector3 {
+    // Use marching cubes-style mathematical patterns for organic bubble placement
+    // Similar to: ballx = Math.sin(i + 1.26 * time * (1.03 + 0.5 * Math.cos(0.21 * i))) * 0.27 + 0.5
+    
+    const i = bubbleIndex;
+    const time = this.globalTime * 0.5; // Slow time factor for organic movement
+    
+    // Generate procedural coordinates using complex sin/cos patterns
+    // These create organic, non-repeating patterns across the sphere surface
+    const theta = Math.sin(i * 0.618 + 1.26 * time * (1.03 + 0.5 * Math.cos(0.21 * i))) * Math.PI * 2;
+    const phi = Math.abs(Math.cos(i * 0.382 + 1.12 * time * Math.cos(1.22 + 0.1424 * i))) * Math.PI;
+    
+    // Add some noise for variation
+    const noiseTheta = Math.sin(i * 1.32 + time * 0.1 * Math.sin((0.92 + 0.53 * i))) * 0.3;
+    const noisePhi = Math.cos(i * 2.43 + time * 0.15 * Math.cos((1.37 + 0.29 * i))) * 0.2;
+    
+    const finalTheta = theta + noiseTheta;
+    const finalPhi = phi + noisePhi;
+    
+    // Start bubbles INSIDE the planet surface - they'll emerge outward
+    // Depth varies procedurally too for more organic emergence
+    const depthVariation = 0.5 + 0.3 * Math.sin(i * 0.73 + time * 0.2);
+    const startDepth = this.planetRadius * depthVariation; // Start 20-80% inside planet
+    
+    const x = startDepth * Math.sin(finalPhi) * Math.cos(finalTheta);
+    const y = startDepth * Math.sin(finalPhi) * Math.sin(finalTheta);
+    const z = startDepth * Math.cos(finalPhi);
+    
+    return new THREE.Vector3(x, y, z).add(this.planetCenter);
+  }
+
+  private createBubble(): void {
+    if (this.bubbles.length >= this.params.bubbleCount) {
+      return; // Don't exceed maximum bubble count
+    }
+
+    const bubbleIndex = this.nextBubbleIndex++;
+    const surfacePoint = this.getProceduralSurfacePoint(bubbleIndex);
+    const directionFromCenter = surfacePoint.clone().sub(this.planetCenter).normalize();
+    
+    // Calculate actual surface position for this bubble
+    const actualSurfacePoint = directionFromCenter.clone().multiplyScalar(this.planetRadius).add(this.planetCenter);
+    
+    const bubble: Bubble = {
+      position: surfacePoint.clone(), // Start inside the planet
+      velocity: directionFromCenter.multiplyScalar(this.params.riseSpeed),
+      size: 0.001, // Start very small (will grow as it emerges)
+      maxSize: this.params.bubbleSize * this.rng.uniform(1.5, 2.5), // Final size variation
+      life: 0,
+      maxLife: this.rng.uniform(8, 12), // Longer lifetime for slow organic movement
+      originalSurfacePoint: actualSurfacePoint.clone(),
+      wobbleOffset: new THREE.Vector3(
+        this.rng.uniform(-1, 1),
+        this.rng.uniform(-1, 1), 
+        this.rng.uniform(-1, 1)
+      ).normalize(),
+      wobbleSpeed: this.rng.uniform(1.5, 3.0), // Slow organic wobble
+      wobbleAmplitude: this.rng.uniform(0.002, 0.008), // Subtle wobble
+      startOpacity: 0, // Start invisible
+      hasPopped: false,
+      emergencePhase: 0, // Start not emerged
+      emergenceSpeed: this.rng.uniform(0.3, 0.6), // Slow emergence
+      isFullyEmerged: false,
+      fadeInPhase: 0, // Start not faded in
+      fadeInSpeed: this.rng.uniform(1.5, 2.5), // Gradual fade in
+      bubbleIndex: bubbleIndex,
+      birthTime: this.globalTime,
+      popPhase: 0,
+      popStartTime: 0,
+    };
+
+    // Add procedural variation to velocity based on index
+    const velocityVariation = Math.sin(bubbleIndex * 0.47) * 0.3 + 1.0;
+    bubble.velocity.multiplyScalar(velocityVariation);
+
+    this.bubbles.push(bubble);
+
+    // Create visual mesh for the bubble with its own material instance
+    const bubbleMaterial = this.material.clone();
+    bubbleMaterial.opacity = 0; // Start invisible
+    const bubbleMesh = new THREE.Mesh(this.geometry, bubbleMaterial);
+    bubbleMesh.position.copy(bubble.position);
+    bubbleMesh.scale.setScalar(bubble.size);
+    
+    this.bubbleMeshes.push(bubbleMesh);
+    this.bubbleGroup.add(bubbleMesh);
+  }
+
+  private updateBubbles(deltaTime: number): void {
+    for (let i = this.bubbles.length - 1; i >= 0; i--) {
+      const bubble = this.bubbles[i];
+      const bubbleMesh = this.bubbleMeshes[i];
+      
+      // Update bubble life
+      bubble.life += deltaTime;
+      
+      // Calculate distance from planet center
+      const distanceFromCenter = bubble.position.distanceTo(this.planetCenter);
+      const distanceFromSurface = distanceFromCenter - this.planetRadius;
+      
+      // Update emergence phase (bubble coming out from inside planet)
+      if (!bubble.isFullyEmerged) {
+        bubble.emergencePhase = Math.min(1, bubble.emergencePhase + deltaTime * bubble.emergenceSpeed);
+        if (bubble.emergencePhase >= 1) {
+          bubble.isFullyEmerged = true;
+        }
+      }
+      
+      // Update fade in phase
+      if (bubble.fadeInPhase < 1) {
+        bubble.fadeInPhase = Math.min(1, bubble.fadeInPhase + deltaTime * bubble.fadeInSpeed);
+      }
+      
+      // Organic procedural wobble using marching cubes-style patterns
+      const timeSinceBirth = this.globalTime - bubble.birthTime;
+      const wobbleTime = timeSinceBirth * bubble.wobbleSpeed;
+      
+      // Complex wobble pattern similar to marching cubes
+      const wobbleX = Math.sin(wobbleTime + bubble.bubbleIndex * 0.31) * bubble.wobbleAmplitude;
+      const wobbleY = Math.cos(wobbleTime * 1.3 + bubble.bubbleIndex * 0.47) * bubble.wobbleAmplitude;
+      const wobbleZ = Math.sin(wobbleTime * 0.7 + bubble.bubbleIndex * 0.13) * bubble.wobbleAmplitude;
+      
+      const wobbleVector = new THREE.Vector3(wobbleX, wobbleY, wobbleZ);
+      wobbleVector.multiply(bubble.wobbleOffset);
+      
+      // Slow organic movement with emergence factor
+      const emergenceFactor = THREE.MathUtils.smoothstep(bubble.emergencePhase, 0, 1);
+      const frameVelocity = bubble.velocity.clone().add(wobbleVector);
+      bubble.position.add(frameVelocity.multiplyScalar(deltaTime * emergenceFactor));
+      
+      // Size growth based on emergence and life
+      const lifeFactor = Math.min(bubble.life / bubble.maxLife, 1);
+      const sizeEmergenceFactor = THREE.MathUtils.smoothstep(bubble.emergencePhase, 0, 1);
+      
+      // Bubble grows as it emerges and over its lifetime
+      const baseSize = bubble.maxSize * 0.1; // Start small
+      const targetSize = bubble.maxSize;
+      
+      if (!bubble.hasPopped) {
+        bubble.size = THREE.MathUtils.lerp(
+          baseSize,
+          targetSize,
+          sizeEmergenceFactor * Math.min(lifeFactor * 2, 1) // Grow to full size by half lifetime
+        );
+      } else {
+        // Explosion animation - rapid expansion
+        const popProgress = bubble.popPhase;
+        const explosionScale = 1 + popProgress * 1.5; // Expand up to 2.5x size
+        bubble.size = bubble.maxSize * explosionScale;
+      }
+      
+      // Check if bubble should pop
+      const shouldPop = (
+        distanceFromSurface >= this.params.popDistance ||
+        bubble.life >= bubble.maxLife * 0.8 ||
+        (bubble.isFullyEmerged && bubble.size >= bubble.maxSize * 0.9)
+      );
+      
+      if (shouldPop && !bubble.hasPopped) {
+        bubble.hasPopped = true;
+        bubble.popStartTime = this.globalTime;
+      }
+      
+      // Update pop animation
+      if (bubble.hasPopped) {
+        const timeSincePop = this.globalTime - bubble.popStartTime;
+        bubble.popPhase = Math.min(1, timeSincePop * 3); // Quick 0.33 second pop
+      }
+      
+      // Calculate opacity with emergence, fade-in, and pop effects
+      let opacity = 0;
+      
+      if (!bubble.hasPopped) {
+        // Gradual fade in as bubble emerges
+        const emergenceOpacity = THREE.MathUtils.smoothstep(bubble.emergencePhase, 0.3, 1);
+        const fadeInOpacity = bubble.fadeInPhase;
+        const distanceFade = Math.max(0, 1 - distanceFromSurface / (this.params.popDistance * 2));
+        
+        opacity = this.params.opacity * emergenceOpacity * fadeInOpacity * distanceFade;
+      } else {
+        // Rapid fade out during pop
+        const popFade = 1 - bubble.popPhase;
+        opacity = this.params.opacity * popFade * 0.5; // Dimmer during explosion
+      }
+      
+      // Update mesh
+      bubbleMesh.position.copy(bubble.position);
+      bubbleMesh.scale.setScalar(bubble.size);
+      (bubbleMesh.material as THREE.MeshBasicMaterial).opacity = Math.max(0, opacity);
+      
+      // Remove when done
+      const shouldRemove = (
+        bubble.life >= bubble.maxLife ||
+        (bubble.hasPopped && bubble.popPhase >= 1) ||
+        opacity <= 0.01
+      );
+      
+      if (shouldRemove) {
+        this.bubbles.splice(i, 1);
+        this.bubbleGroup.remove(bubbleMesh);
+        this.bubbleMeshes.splice(i, 1);
+        
+        // Dispose
+        if (bubbleMesh.material !== this.material) {
+          (bubbleMesh.material as THREE.Material).dispose();
+        }
+        if (bubbleMesh.geometry !== this.geometry) {
+          bubbleMesh.geometry.dispose();
+        }
+      }
+    }
+  }
+
+  public update(deltaTime: number): void {
+    // Update global time for procedural patterns (in seconds)
+    this.globalTime += deltaTime;
+    
+    // Update spawn timer
+    this.bubbleSpawnTimer += deltaTime;
+    
+    // Procedural bubble spawning with organic timing
+    // Use a pattern similar to marching cubes for spawn timing
+    const spawnInterval = 1.0 / this.params.emissionRate; // seconds between spawns
+    
+    // Add some organic variation to spawn timing
+    const timeVariation = Math.sin(this.globalTime * 0.7) * 0.3 + 1.0;
+    const adjustedInterval = spawnInterval * timeVariation;
+    
+    if (this.bubbleSpawnTimer >= adjustedInterval) {
+      this.createBubble();
+      this.bubbleSpawnTimer = 0;
+      
+      // Add some randomness to avoid too regular patterns
+      this.bubbleSpawnTimer -= this.rng.uniform(0, adjustedInterval * 0.2);
+    }
+    
+    // Update existing bubbles
+    this.updateBubbles(deltaTime);
+  }
+
+  public addToScene(scene: THREE.Scene, planetPosition?: THREE.Vector3): void {
+    if (planetPosition) {
+      this.planetCenter.copy(planetPosition);
+      this.bubbleGroup.position.copy(planetPosition);
+    }
+    scene.add(this.bubbleGroup);
+    
+    console.log("ToxicSwampBubbles: Added to scene:", {
+      planetPosition: planetPosition?.toArray(),
+      planetCenter: this.planetCenter.toArray(),
+      bubbleGroupPosition: this.bubbleGroup.position.toArray(),
+      sceneChildren: scene.children.length,
+      bubbleGroupVisible: this.bubbleGroup.visible
+    });
+  }
+
+  public removeFromScene(scene: THREE.Scene): void {
+    scene.remove(this.bubbleGroup);
+  }
+
+  public dispose(): void {
+    // Clean up geometry and materials
+    this.geometry.dispose();
+    this.material.dispose();
+    
+    // Clean up all bubble meshes
+    this.bubbleMeshes.forEach(mesh => {
+      this.bubbleGroup.remove(mesh);
+      
+      // Dispose individual materials
+      if (mesh.material !== this.material) {
+        (mesh.material as THREE.Material).dispose();
+      }
+      
+      if (mesh.geometry !== this.geometry) {
+        mesh.geometry.dispose();
+      }
+    });
+    
+    // Clear arrays
+    this.bubbles.length = 0;
+    this.bubbleMeshes.length = 0;
+  }
+
+  public setEnabled(enabled: boolean): void {
+    this.bubbleGroup.visible = enabled;
+  }
+
+  public isEnabled(): boolean {
+    return this.bubbleGroup.visible;
+  }
+
+  // Get current bubble count for debugging
+  public getBubbleCount(): number {
+    return this.bubbles.length;
+  }
+}
+
+// Factory function for creating from Python data
+export function createToxicSwampBubblesFromPythonData(
+  planetRadius: number,
+  surface: any,
+  seed: number
+): ToxicSwampBubblesEffect | null {
+  console.log("createToxicSwampBubblesFromPythonData called:", {
+    planetRadius,
+    surface: surface,
+    hasToxicBubbles: !!surface.toxic_bubbles,
+    seed
+  });
+  
+  if (!surface.toxic_bubbles) {
+    console.log("No toxic_bubbles data found in surface:", surface);
+    return null; // No bubble data from Python
+  }
+
+  const bubbleData = surface.toxic_bubbles;
+  console.log("Creating ToxicSwampBubblesEffect with data:", bubbleData);
+
+  return new ToxicSwampBubblesEffect(planetRadius, {
+    bubbleCount: bubbleData.bubble_count,
+    bubbleSize: bubbleData.bubble_size,
+    riseSpeed: bubbleData.rise_speed,
+    expansionRate: bubbleData.expansion_rate,
+    popDistance: bubbleData.pop_distance,
+    bubbleColor: bubbleData.color ? new THREE.Color(
+      bubbleData.color[0],
+      bubbleData.color[1],
+      bubbleData.color[2]
+    ) : undefined, // Let constructor use default
+    opacity: bubbleData.opacity,
+    emissionRate: bubbleData.emission_rate,
+    seed: seed,
+    planetType: "SWAMP",
+  });
+}
