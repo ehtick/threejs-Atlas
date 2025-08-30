@@ -1,3 +1,5 @@
+// atlas-ui/react/static/js/3DEffects/FluidLayers.tsx
+
 import * as THREE from 'three';
 
 export interface FluidLayersParams {
@@ -15,7 +17,6 @@ export class FluidLayersEffect {
   private material: THREE.ShaderMaterial;
   private params: FluidLayersParams;
 
-  // Vertex Shader
   private static readonly vertexShader = `
     varying vec3 vNormal;
     varying vec3 vViewPosition;
@@ -30,7 +31,6 @@ export class FluidLayersEffect {
     uniform float uPrimaryFlowSpeed;
     uniform float uSecondaryFlowSpeed;
     
-    //	Simplex 3D Noise 
     vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x, 289.0);}
     vec4 taylorInvSqrt(vec4 r){return 1.79284291400159 - 0.85373472095314 * r;}
 
@@ -95,7 +95,6 @@ export class FluidLayersEffect {
                                     dot(p2,x2), dot(p3,x3) ) );
     }
     
-    // FBM (Fractal Brownian Motion)
     float fbm(vec3 p, int octaves, float persistence, float lacunarity) {
       float amplitude = 0.5;
       float frequency = 1.0;
@@ -119,23 +118,19 @@ export class FluidLayersEffect {
       
       vec3 pos = position;
       
-      // Corrientes oceánicas principales usando FBM - velocidad configurable
       float primaryFlow = fbm(
         vec3(pos.x * uNoiseScale, pos.y * uNoiseScale, pos.z * uNoiseScale + uTime * uPrimaryFlowSpeed),
         4, 0.5, 2.0
       );
       
-      // Corrientes secundarias más pequeñas - movimiento contrario configurable
       float secondaryFlow = fbm(
         vec3(pos.x * uSecondaryWaveScale, pos.y * uSecondaryWaveScale, pos.z * uSecondaryWaveScale - uTime * uSecondaryFlowSpeed),
         3, 0.4, 2.5
       );
       
-      // Combinar ambas corrientes
       float displacement = primaryFlow * 0.7 + secondaryFlow * 0.3;
       displacement *= uWaveAmplitude;
       
-      // Aplicar desplazamiento en la dirección de la normal
       pos += normal * displacement;
       vDisplacement = displacement;
       
@@ -147,7 +142,6 @@ export class FluidLayersEffect {
     }
   `;
 
-  // Fragment Shader
   private static readonly fragmentShader = `
     varying vec3 vNormal;
     varying vec3 vViewPosition;
@@ -165,7 +159,6 @@ export class FluidLayersEffect {
     uniform float uUvPatternSpeed1;
     uniform float uUvPatternSpeed2;
     
-    // Simplex noise function (same as vertex shader)
     vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x, 289.0);}
     vec4 taylorInvSqrt(vec4 r){return 1.79284291400159 - 0.85373472095314 * r;}
     
@@ -220,53 +213,41 @@ export class FluidLayersEffect {
       vec3 viewDirection = normalize(vViewPosition);
       vec3 normal = normalize(vNormal);
       
-      // Efecto Fresnel para los bordes
       float fresnel = pow(1.0 - abs(dot(viewDirection, normal)), uFresnelPower);
       
-      // Patrón de flujo animado - más dinámico
       float flowPattern = snoise(vWorldPosition * uNoiseScale + vec3(uTime * uFlowSpeed, uTime * uFlowSpeed * 0.5, 0.0));
-      flowPattern = (flowPattern + 1.0) * 0.5; // Normalizar a 0-1
+      flowPattern = (flowPattern + 1.0) * 0.5;
       
-      // Variación adicional basada en la posición UV - velocidades configurables
       float uvPattern = sin(vUv.x * 15.0 + uTime * uUvPatternSpeed1) * cos(vUv.y * 15.0 - uTime * uUvPatternSpeed2);
       uvPattern = (uvPattern + 1.0) * 0.5;
       
-      // Combinar patrones
       float combinedPattern = flowPattern * 0.7 + uvPattern * 0.3;
       
-      // Calcular opacidad basada en el desplazamiento y el fresnel
       float opacity = uOpacity;
-      opacity *= (0.4 + fresnel * 0.6); // Más visible en los bordes
-      opacity *= (0.6 + abs(vDisplacement) * 15.0); // Más visible donde hay olas
-      opacity *= (0.5 + combinedPattern * 0.5); // Variación por el patrón de flujo
+      opacity *= (0.4 + fresnel * 0.6);
+      opacity *= (0.6 + abs(vDisplacement) * 15.0);
+      opacity *= (0.5 + combinedPattern * 0.5);
       
-      // Aumentar opacidad en áreas iluminadas para mejor contraste
       float lightIntensity = max(dot(normal, vec3(0.5, 0.8, 0.3)), 0.0);
       opacity = mix(opacity, opacity * 1.3, lightIntensity * 0.5);
       
-      // Color gradiente basado en la profundidad y el patrón
       vec3 color = mix(uColorDeep, uColorShallow, combinedPattern);
       
-      // Añadir un brillo sutil en las crestas de las olas
       float highlight = smoothstep(0.01, 0.02, vDisplacement);
       color += vec3(0.2, 0.3, 0.4) * highlight * fresnel;
       
-      // Sombreado adaptativo según la iluminación
       vec3 lightDir = normalize(vec3(0.5, 0.8, 0.3));
       float NdotL = max(dot(normal, lightDir), 0.0);
       
-      // En áreas iluminadas, usar colores más oscuros para contraste
       vec3 finalColor = mix(
-        vec3(0.4, 0.5, 0.6), // Color oscuro para áreas iluminadas
-        vec3(0.9, 0.95, 1.0), // Color claro para áreas en sombra
+        vec3(0.4, 0.5, 0.6),
+        vec3(0.9, 0.95, 1.0),
         1.0 - NdotL
       );
       
-      // Aplicar sombreado
       finalColor *= (0.5 + 0.5 * NdotL);
       finalColor *= (0.7 + 0.3 * fresnel);
       
-      // Mezclar con color del agua, más intenso en áreas iluminadas
       float colorMix = mix(0.35, 0.55, NdotL);
       finalColor = mix(finalColor, color, colorMix);
       
@@ -276,24 +257,22 @@ export class FluidLayersEffect {
 
   constructor(planetRadius: number, params: FluidLayersParams = {}) {
     this.params = {
-      radius: params.radius || planetRadius * 0.999,  // DEBAJO del planeta y LandMasses
+      radius: params.radius || planetRadius * 0.999,
       detail: params.detail || 128,
-      flowSpeed: params.flowSpeed || 0.5,  // Mantener velocidad
-      waveAmplitude: params.waveAmplitude || 0.020,  // Olas un poco más bajas
-      opacity: params.opacity || 0.75,  // Mayor opacidad base
-      colorDeep: params.colorDeep || new THREE.Color(0x001033),  // Azul más oscuro
-      colorShallow: params.colorShallow || new THREE.Color(0x0066dd),  // Azul intenso
+      flowSpeed: params.flowSpeed || 0.5,
+      waveAmplitude: params.waveAmplitude || 0.020,
+      opacity: params.opacity || 0.75,
+      colorDeep: params.colorDeep || new THREE.Color(0x001033),
+      colorShallow: params.colorShallow || new THREE.Color(0x0066dd),
       ...params
     };
 
-    // Crear geometría
     const geometry = new THREE.SphereGeometry(
       this.params.radius!,
       this.params.detail!,
       this.params.detail!
     );
 
-    // Crear material con shaders
     this.material = new THREE.ShaderMaterial({
       vertexShader: FluidLayersEffect.vertexShader,
       fragmentShader: FluidLayersEffect.fragmentShader,
@@ -301,15 +280,14 @@ export class FluidLayersEffect {
         uTime: { value: 0 },
         uFlowSpeed: { value: this.params.flowSpeed },
         uWaveAmplitude: { value: this.params.waveAmplitude },
-        uFresnelPower: { value: 1.5 },  // Menos fresnel para ver mejor el interior
+        uFresnelPower: { value: 1.5 },
         uOpacity: { value: this.params.opacity },
         uColorDeep: { value: this.params.colorDeep instanceof THREE.Color ? 
           this.params.colorDeep : new THREE.Color(this.params.colorDeep as any) },
         uColorShallow: { value: this.params.colorShallow instanceof THREE.Color ? 
           this.params.colorShallow : new THREE.Color(this.params.colorShallow as any) },
-        uNoiseScale: { value: 3.0 },  // Más detalle en las olas
-        uSecondaryWaveScale: { value: 6.0 },  // Más variación
-        // Nuevos uniforms basados en flowSpeed principal
+        uNoiseScale: { value: 3.0 },
+        uSecondaryWaveScale: { value: 6.0 },
         uPrimaryFlowSpeed: { value: this.params.flowSpeed || 0.5 },
         uSecondaryFlowSpeed: { value: (this.params.flowSpeed || 0.5) * 1.6 },
         uUvPatternSpeed1: { value: (this.params.flowSpeed || 0.5) * 4.0 },
@@ -317,20 +295,15 @@ export class FluidLayersEffect {
       },
       transparent: true,
       depthWrite: false,
-      depthTest: true,  // Asegurar que respete la profundidad
+      depthTest: true,
       side: THREE.FrontSide,
-      blending: THREE.NormalBlending  // Normal blending con opacidad adaptativa
+      blending: THREE.NormalBlending
     });
 
-    // Crear mesh
     this.mesh = new THREE.Mesh(geometry, this.material);
-    this.mesh.renderOrder = -1; // Renderizar ANTES que elementos con renderOrder 0 (como LandMasses)
-    
+    this.mesh.renderOrder = -1;
   }
 
-  /**
-   * Añade el efecto a la escena
-   */
   addToScene(scene: THREE.Scene, planetPosition?: THREE.Vector3): void {
     if (planetPosition) {
       this.mesh.position.copy(planetPosition);
@@ -338,28 +311,19 @@ export class FluidLayersEffect {
     scene.add(this.mesh);
   }
 
-  /**
-   * Actualiza la animación
-   */
   update(deltaTime: number, planetRotation?: number): void {
     this.material.uniforms.uTime.value += deltaTime;
     
-    // Sincronizar rotación con el planeta si está disponible
     if (planetRotation !== undefined) {
       this.mesh.rotation.y = planetRotation;
     }
   }
 
-  /**
-   * Actualiza parámetros dinámicamente
-   */
   updateParams(newParams: Partial<FluidLayersParams>): void {
     this.params = { ...this.params, ...newParams };
     
-    // Actualizar uniformes
     if (newParams.flowSpeed !== undefined) {
       this.material.uniforms.uFlowSpeed.value = newParams.flowSpeed;
-      // Actualizar todos los patrones basados en flowSpeed
       this.material.uniforms.uPrimaryFlowSpeed.value = newParams.flowSpeed;
       this.material.uniforms.uSecondaryFlowSpeed.value = newParams.flowSpeed * 1.6;
       this.material.uniforms.uUvPatternSpeed1.value = newParams.flowSpeed * 4.0;
@@ -383,16 +347,10 @@ export class FluidLayersEffect {
     }
   }
 
-  /**
-   * Obtiene el objeto 3D para manipulación directa
-   */
   getObject3D(): THREE.Mesh {
     return this.mesh;
   }
 
-  /**
-   * Limpia recursos
-   */
   dispose(): void {
     if (this.mesh.geometry) {
       this.mesh.geometry.dispose();
@@ -403,9 +361,7 @@ export class FluidLayersEffect {
   }
 }
 
-// Función para crear desde datos de Python
 export function createFluidLayersFromPythonData(planetRadius: number, pythonData: any): FluidLayersEffect {
-  // Usar parámetros procedurales basados en seeds si están disponibles
   let flowSpeed = 0.5;
   let waveAmplitude = 0.025;
   let opacity = 0.75;
@@ -421,19 +377,19 @@ export function createFluidLayersFromPythonData(planetRadius: number, pythonData
     };
     
     const random = rng(seed);
-    flowSpeed = 0.05 + random() * 0.3; // 0.1 - 0.5 (velocidad variable)
-    waveAmplitude = 0.02 + random() * 0.02; // 0.02 - 0.04 (olas sutiles)
-    opacity = 0.25 + random() * 0.6; // 0.25 - 0.85 (mayor opacidad)
+    flowSpeed = 0.05 + random() * 0.3;
+    waveAmplitude = 0.02 + random() * 0.02;
+    opacity = 0.25 + random() * 0.6;
   }
   
   const params: FluidLayersParams = {
-    radius: planetRadius * 0.999,  // DEBAJO del planeta y LandMasses  
+    radius: planetRadius * 0.999,
     detail: 128,
     flowSpeed,
-    waveAmplitude: waveAmplitude * 0.4,  // Reducir un poco las olas
+    waveAmplitude: waveAmplitude * 0.4,
     opacity,
-    colorDeep: new THREE.Color(0x001033),  // Azul muy oscuro
-    colorShallow: new THREE.Color(0x0066dd)  // Azul intenso
+    colorDeep: new THREE.Color(0x001033),
+    colorShallow: new THREE.Color(0x0066dd)
   };
   
   return new FluidLayersEffect(planetRadius, params);

@@ -1,15 +1,6 @@
-/**
- * Planet Effects Library - Sistema modular de efectos 3D reutilizables
- * 
- * Cada efecto es independiente y puede componerse dinámicamente
- * basándose en los datos procedurales de Python sin hardcodeo.
- */
+// atlas-ui/react/static/js/3DEffects/PlanetEffectsLibrary.tsx
 
 import * as THREE from 'three';
-
-// ============================================================================
-// TIPOS Y INTERFACES
-// ============================================================================
 
 export interface EffectParameters {
   intensity?: number;
@@ -27,17 +18,9 @@ export interface EffectParameters {
 export interface PlanetEffect {
   type: string;
   params: EffectParameters;
-  priority?: number; // Orden de renderizado
+  priority?: number;
 }
 
-// ============================================================================
-// SHADERS REUTILIZABLES
-// ============================================================================
-
-/**
- * Shader PBR Metálico Procedural
- * Simula superficies metálicas con variaciones procedurales
- */
 export const MetallicPBRShader = {
   vertexShader: `
     varying vec3 vPosition;
@@ -76,7 +59,6 @@ export const MetallicPBRShader = {
     varying vec3 vWorldPosition;
     varying vec3 vViewPosition;
     
-    // Ruido procedural para variaciones de superficie
     float hash(vec3 p) {
       p = fract(p * vec3(443.8975, 397.2973, 491.1871));
       p += dot(p, p.yxz + 19.19);
@@ -97,7 +79,6 @@ export const MetallicPBRShader = {
       return n;
     }
     
-    // Fractales para fragmentación
     float fractal(vec3 p, int octaves) {
       float value = 0.0;
       float amplitude = 0.5;
@@ -112,7 +93,6 @@ export const MetallicPBRShader = {
       return value;
     }
     
-    // Función para crear grietas angulares
     float angularCracks(vec2 uv, float scale, float sharpness) {
       vec2 id = floor(uv * scale);
       vec2 f = fract(uv * scale);
@@ -130,21 +110,17 @@ export const MetallicPBRShader = {
       return pow(1.0 - d, sharpness);
     }
     
-    // PBR básico
     vec3 calculatePBR(vec3 albedo, float metallic, float rough, vec3 normal, vec3 viewDir) {
       vec3 lightDir = normalize(vec3(1.0, 1.0, 0.5));
       vec3 halfwayDir = normalize(lightDir + viewDir);
       
-      // Difuso
       float NdotL = max(dot(normal, lightDir), 0.0);
       vec3 diffuse = albedo * (1.0 - metallic) * NdotL;
       
-      // Especular simplificado
       float NdotH = max(dot(normal, halfwayDir), 0.0);
       float specularStrength = pow(NdotH, mix(4.0, 128.0, 1.0 - rough));
       vec3 specular = mix(vec3(0.04), albedo, metallic) * specularStrength;
       
-      // Fresnel para bordes metálicos
       float fresnel = pow(1.0 - max(dot(normal, viewDir), 0.0), 2.0);
       vec3 fresnelColor = mix(vec3(0.04), albedo, metallic) * fresnel;
       
@@ -155,34 +131,26 @@ export const MetallicPBRShader = {
       vec3 normal = normalize(vNormal);
       vec3 viewDir = normalize(vViewPosition);
       
-      // Base metálica con variaciones
       vec3 color = baseColor;
       
-      // Añadir ruido para variaciones sutiles
       float surfaceNoise = noise3D(vPosition * noiseScale);
       color = mix(color, color * 0.7, surfaceNoise * noiseIntensity);
       
-      // Fragmentación angular en los bordes
       float edgeFactor = 1.0 - abs(dot(normal, viewDir));
       float fragmentation = angularCracks(vUv, 5.0 + fragmentationIntensity * 10.0, 2.0);
       
-      // Aplicar fragmentación más fuerte en los bordes
       if(edgeFactor > 0.7) {
         color = mix(color, color * 0.3, fragmentation * edgeFactor);
         
-        // Añadir grietas más pronunciadas
         float cracks = angularCracks(vUv * 2.0, 8.0, 4.0);
         color = mix(color, color * 0.2, cracks * edgeFactor * 0.5);
       }
       
-      // Ondas circulares sutiles en el interior
       float radialWaves = sin(length(vUv - 0.5) * 20.0 + time * 0.5) * 0.5 + 0.5;
       color = mix(color, color * 1.1, radialWaves * 0.1 * (1.0 - edgeFactor));
       
-      // Calcular iluminación PBR
       vec3 finalColor = calculatePBR(color, metalness, roughness, normal, viewDir);
       
-      // Añadir un toque de color oscuro para profundidad
       finalColor = mix(finalColor, finalColor * 0.5, pow(surfaceNoise, 2.0) * 0.3);
       
       gl_FragColor = vec4(finalColor, 1.0);
@@ -190,10 +158,6 @@ export const MetallicPBRShader = {
   `
 };
 
-/**
- * Shader de Halo Atmosférico
- * Crea un halo luminoso alrededor del planeta
- */
 export const AtmosphericHaloShader = {
   vertexShader: `
     varying vec3 vNormal;
@@ -220,16 +184,12 @@ export const AtmosphericHaloShader = {
       vec3 normal = normalize(vNormal);
       vec3 viewDir = normalize(vViewPosition);
       
-      // Efecto Fresnel para el halo
       float fresnel = pow(1.0 - abs(dot(normal, viewDir)), glowFalloff);
       
-      // Pulsación sutil
       float pulse = sin(time * 2.0) * 0.1 + 1.0;
       
-      // Color del halo con gradiente
       vec3 color = glowColor * glowIntensity * fresnel * pulse;
       
-      // Añadir variación de color en los bordes
       color += glowColor * 0.5 * pow(fresnel, 3.0);
       
       gl_FragColor = vec4(color, fresnel * 0.8);
@@ -237,10 +197,6 @@ export const AtmosphericHaloShader = {
   `
 };
 
-/**
- * Shader de Estelas Atmosféricas
- * Simula partículas y estelas en movimiento
- */
 export const AtmosphericStreaksShader = {
   vertexShader: `
     attribute float size;
@@ -255,13 +211,11 @@ export const AtmosphericStreaksShader = {
     void main() {
       vColor = customColor;
       
-      // Movimiento de las partículas
       vec3 pos = position;
       float angle = time * speed;
       pos.x += sin(angle) * 0.1;
       pos.y += cos(angle * 0.7) * 0.05;
       
-      // Fade basado en la posición
       vAlpha = 1.0 - length(pos.xy) / 2.0;
       
       vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
@@ -275,11 +229,9 @@ export const AtmosphericStreaksShader = {
     varying float vAlpha;
     
     void main() {
-      // Crear forma de estela
       vec2 uv = gl_PointCoord - 0.5;
       float dist = length(uv);
       
-      // Estela alargada
       float streak = 1.0 - smoothstep(0.0, 0.5, dist);
       streak *= 1.0 - smoothstep(0.0, 0.2, abs(uv.x));
       
@@ -288,13 +240,6 @@ export const AtmosphericStreaksShader = {
   `
 };
 
-// ============================================================================
-// CLASES DE EFECTOS
-// ============================================================================
-
-/**
- * Efecto de Superficie Metálica PBR
- */
 export class MetallicSurfaceEffect {
   private material: THREE.ShaderMaterial;
   private metallicLayerMesh?: THREE.Mesh;
@@ -316,51 +261,36 @@ export class MetallicSurfaceEffect {
   }
   
   apply(mesh: THREE.Mesh): void {
-    // 🚀 NO reemplazar el material base - crear capa metálica
-    
     this.createMetallicLayer(mesh);
   }
 
-  /**
-   * Crea una capa metálica separada del planeta base
-   */
   private createMetallicLayer(baseMesh: THREE.Mesh): void {
     const geometry = baseMesh.geometry.clone();
     
-    // Escalar ligeramente para evitar z-fighting
     geometry.scale(1.001, 1.001, 1.001);
     
     const metallicMesh = new THREE.Mesh(geometry, this.material);
     
-    // Copiar posición y rotación del mesh base
     metallicMesh.position.copy(baseMesh.position);
     metallicMesh.rotation.copy(baseMesh.rotation);
     
     this.metallicLayerMesh = metallicMesh;
-    
   }
   
   update(deltaTime: number, planetRotation?: number): void {
     this.material.uniforms.time.value += deltaTime;
     
-    // Sincronizar rotación con el planeta base
     if (this.metallicLayerMesh && planetRotation !== undefined) {
       this.metallicLayerMesh.rotation.y = planetRotation;
     }
   }
 
-  /**
-   * Añade la capa metálica a la escena
-   */
   addToScene(scene: THREE.Scene, planetPosition?: THREE.Vector3): void {
     if (this.metallicLayerMesh) {
       if (planetPosition) {
         this.metallicLayerMesh.position.copy(planetPosition);
       }
       scene.add(this.metallicLayerMesh);
-      
-    } else {
-      console.warn('🪨 MetallicSurface: No hay capa metálica - call apply() first');
     }
   }
   
@@ -376,9 +306,6 @@ export class MetallicSurfaceEffect {
     }
   }
 
-  /**
-   * Limpia recursos
-   */
   dispose(): void {
     this.material.dispose();
     if (this.metallicLayerMesh) {
@@ -390,9 +317,6 @@ export class MetallicSurfaceEffect {
   }
 }
 
-/**
- * Efecto de Halo Atmosférico
- */
 export class AtmosphericHaloEffect {
   private mesh: THREE.Mesh;
   private material: THREE.ShaderMaterial;
@@ -441,9 +365,6 @@ export class AtmosphericHaloEffect {
   }
 }
 
-/**
- * Efecto de Estelas Atmosféricas
- */
 export class AtmosphericStreaksEffect {
   private particleSystem: THREE.Points;
   private material: THREE.ShaderMaterial;
@@ -461,7 +382,6 @@ export class AtmosphericStreaksEffect {
     const color = new THREE.Color(params.color || [1, 1, 1]);
     
     for (let i = 0; i < this.particleCount; i++) {
-      // Posición aleatoria en la superficie
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.acos(Math.random() * 2 - 1);
       const r = planetRadius * (1.0 + Math.random() * 0.1);
@@ -508,10 +428,6 @@ export class AtmosphericStreaksEffect {
   }
 }
 
-/**
- * Efecto de Fragmentación 3D
- * Crea geometría fragmentada en los bordes
- */
 export class FragmentationEffect {
   private fragments: THREE.Group;
   private fragmentMeshes: THREE.Mesh[] = [];
@@ -527,7 +443,6 @@ export class FragmentationEffect {
     });
     
     for (let i = 0; i < fragmentCount; i++) {
-      // Crear fragmentos triangulares/pentagonales
       const vertices = this.generateFragmentVertices();
       const geometry = new THREE.BufferGeometry();
       geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
@@ -535,7 +450,6 @@ export class FragmentationEffect {
       
       const fragment = new THREE.Mesh(geometry, material);
       
-      // Posicionar en los bordes
       const angle = (i / fragmentCount) * Math.PI * 2;
       const edgeOffset = planetRadius * 0.95;
       fragment.position.set(
@@ -544,14 +458,12 @@ export class FragmentationEffect {
         Math.sin(angle) * edgeOffset
       );
       
-      // Rotación aleatoria
       fragment.rotation.set(
         Math.random() * Math.PI,
         Math.random() * Math.PI,
         Math.random() * Math.PI
       );
       
-      // Escala variable
       const scale = Math.random() * 0.1 + 0.05;
       fragment.scale.set(scale, scale, scale);
       
@@ -561,13 +473,11 @@ export class FragmentationEffect {
   }
   
   private generateFragmentVertices(): Float32Array {
-    const sides = Math.floor(Math.random() * 3) + 3; // 3-5 lados
+    const sides = Math.floor(Math.random() * 3) + 3;
     const vertices = [];
     
-    // Centro
     vertices.push(0, 0, 0);
     
-    // Vértices del polígono
     for (let i = 0; i < sides; i++) {
       const angle = (i / sides) * Math.PI * 2;
       const radius = Math.random() * 0.5 + 0.5;
@@ -578,7 +488,6 @@ export class FragmentationEffect {
       );
     }
     
-    // Crear caras
     const faces = [];
     for (let i = 0; i < sides; i++) {
       faces.push(0, i + 1, ((i + 1) % sides) + 1);
@@ -593,7 +502,6 @@ export class FragmentationEffect {
   }
   
   update(deltaTime: number): void {
-    // Rotación lenta de fragmentos
     this.fragmentMeshes.forEach((fragment, i) => {
       fragment.rotation.x += deltaTime * 0.1 * (i % 2 === 0 ? 1 : -1);
       fragment.rotation.y += deltaTime * 0.05;
@@ -601,13 +509,6 @@ export class FragmentationEffect {
   }
 }
 
-// ============================================================================
-// GESTOR DE EFECTOS
-// ============================================================================
-
-/**
- * PlanetEffectsManager - Gestiona todos los efectos de un planeta
- */
 export class PlanetEffectsManager {
   private effects: Map<string, any> = new Map();
   private scene: THREE.Scene;
@@ -620,11 +521,7 @@ export class PlanetEffectsManager {
     this.planetRadius = planetRadius;
   }
   
-  /**
-   * Aplica efectos basándose en datos JSON de Python
-   */
   applyEffectsFromData(effectsData: PlanetEffect[]): void {
-    // Ordenar por prioridad
     const sortedEffects = effectsData.sort((a, b) => (a.priority || 0) - (b.priority || 0));
     
     for (const effectData of sortedEffects) {
@@ -632,15 +529,10 @@ export class PlanetEffectsManager {
     }
   }
   
-  /**
-   * Añade un efecto individual
-   */
   addEffect(type: string, params: EffectParameters): void {
     let effect;
     
     switch (type) {
-      // ELIMINADO: metallic_surface - usar MetallicSurfaceLayer en su lugar
-        
       case 'atmospheric_halo':
         effect = new AtmosphericHaloEffect(this.planetRadius, params);
         effect.addToScene(this.scene, this.planetMesh.position);
@@ -655,23 +547,6 @@ export class PlanetEffectsManager {
         effect = new FragmentationEffect(this.planetRadius, params);
         effect.addToScene(this.scene, this.planetMesh.position);
         break;
-        
-      // Más efectos pueden añadirse aquí sin modificar el resto del código
-      case 'lava_flows':
-        // effect = new LavaFlowsEffect(this.planetRadius, params);
-        break;
-        
-      case 'crystal_formations':
-        // effect = new CrystalFormationsEffect(this.planetRadius, params);
-        break;
-        
-      case 'ocean_waves':
-        // effect = new OceanWavesEffect(this.planetRadius, params);
-        break;
-        
-      case 'cloud_layers':
-        // effect = new CloudLayersEffect(this.planetRadius, params);
-        break;
     }
     
     if (effect) {
@@ -679,9 +554,6 @@ export class PlanetEffectsManager {
     }
   }
   
-  /**
-   * Actualiza todos los efectos activos
-   */
   update(deltaTime: number): void {
     this.effects.forEach(effect => {
       if (effect.update) {
@@ -690,9 +562,6 @@ export class PlanetEffectsManager {
     });
   }
   
-  /**
-   * Actualiza parámetros de un efecto específico
-   */
   updateEffectParams(type: string, params: EffectParameters): void {
     const effect = this.effects.get(type);
     if (effect && effect.updateParams) {
@@ -700,9 +569,6 @@ export class PlanetEffectsManager {
     }
   }
   
-  /**
-   * Elimina un efecto
-   */
   removeEffect(type: string): void {
     const effect = this.effects.get(type);
     if (effect) {
@@ -713,9 +579,6 @@ export class PlanetEffectsManager {
     }
   }
   
-  /**
-   * Limpia todos los efectos
-   */
   dispose(): void {
     this.effects.forEach(effect => {
       if (effect.dispose) {
@@ -726,20 +589,9 @@ export class PlanetEffectsManager {
   }
 }
 
-// ============================================================================
-// UTILIDADES
-// ============================================================================
-
-/**
- * Convierte datos de Python a efectos Three.js
- */
 export function translatePythonEffectsToThreeJS(pythonData: any): PlanetEffect[] {
   const effects: PlanetEffect[] = [];
   
-  // ELIMINADO: Superficie metálica legacy - usar MetallicSurfaceLayer en su lugar
-  // Este código ya no se usa porque los planetas metálicos usan el sistema de capas
-  
-  // Halo atmosférico
   if (pythonData.atmosphere?.halo) {
     effects.push({
       type: 'atmospheric_halo',
@@ -753,7 +605,6 @@ export function translatePythonEffectsToThreeJS(pythonData: any): PlanetEffect[]
     });
   }
   
-  // Estelas atmosféricas
   if (pythonData.atmosphere?.streaks) {
     effects.push({
       type: 'atmospheric_streaks',
@@ -766,7 +617,6 @@ export function translatePythonEffectsToThreeJS(pythonData: any): PlanetEffect[]
     });
   }
   
-  // Fragmentación
   if (pythonData.surface?.fragmentation_zones) {
     effects.push({
       type: 'fragmentation',

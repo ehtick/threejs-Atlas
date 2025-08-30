@@ -1,57 +1,45 @@
-/**
- * AquiferWaterEffect.tsx
- * 
- * Efecto de agua para planetas tipo Aquifer.
- * Funciona EXACTAMENTE como MetallicSurfaceLayer.tsx usando PlanetLayerSystem.
- */
-
+// atlas-ui/react/static/js/3DEffects/AquiferWaterEffect.tsx
 import * as THREE from 'three';
 import { PlanetLayerSystem } from '../3DComponents/PlanetLayerSystem';
 import { SeededRandom } from '../Utils/SeededRandom.tsx';
 
 export interface AquiferWaterParams {
-  // Configuración de olas principales
+
   waveHeight?: number;
   waveFrequency?: number;
   waveSpeed?: number;
-  
-  // Configuración de olas secundarias
+
   secondaryWaveHeight?: number;
   secondaryWaveFrequency?: number;
   secondaryWaveSpeed?: number;
-  
-  // Configuración de distorsión
+
   distortionScale?: number;
   distortionSpeed?: number;
-  
-  // Colores
+
   waterColor?: THREE.Color | number[];
   deepWaterColor?: THREE.Color | number[];
   foamColor?: THREE.Color | number[];
-  
-  // Efectos visuales
+
   specularIntensity?: number;
   reflectivity?: number;
   transparency?: number;
   roughness?: number;
   metalness?: number;
-  
-  // Configuración de normales
+
   normalScale?: number;
   normalSpeed?: number;
   seed?: number;
-  startTime?: number; // Tiempo inicial fijo para determinismo
-  timeSpeed?: number; // Velocidad del tiempo para movimiento de olas (0.1 - 1.0)
+  startTime?: number;
+  timeSpeed?: number;
 }
 
-// Rangos para generación procedural
 const PROCEDURAL_RANGES = {
   WAVE_HEIGHT: { min: 0.05, max: 0.12 },
   WAVE_FREQUENCY: { min: 2.0, max: 5.0 },
-  WAVE_SPEED: { min: 0.2, max: 0.8 },  // Reducido de 1.5-3.5 a 0.2-0.8
+  WAVE_SPEED: { min: 0.2, max: 0.8 },
   SPECULAR_INTENSITY: { min: 2.0, max: 6.0 },
   TRANSPARENCY: { min: 0.2, max: 0.5 },
-  TIME_SPEED: { min: 0.1, max: 1.0 }, // Rango de velocidades del tiempo
+  TIME_SPEED: { min: 0.1, max: 1.0 },
 };
 
 export class AquiferWaterEffect {
@@ -61,17 +49,13 @@ export class AquiferWaterEffect {
   private layerSystem: PlanetLayerSystem;
   private startTime: number;
 
-  // Shaders eliminados - ahora se usan desde PlanetLayerSystem.createAquiferWaterLayerMaterial
-
   constructor(layerSystem: PlanetLayerSystem, params: AquiferWaterParams = {}) {
     this.layerSystem = layerSystem;
 
-    // Generar valores procedurales usando seed
     const seed = params.seed || Math.floor(Math.random() * 1000000);
     const rng = new SeededRandom(seed);
-    
-    // Tiempo inicial determinista basado en el seed
-    this.startTime = params.startTime || (seed % 10000) / 1000; // Convertir seed a tiempo inicial
+
+    this.startTime = params.startTime || (seed % 10000) / 1000;
 
     const waterColor = params.waterColor instanceof THREE.Color ? params.waterColor : params.waterColor ? new THREE.Color(params.waterColor as any) : new THREE.Color(0x2E8B8B);
     const deepWaterColor = params.deepWaterColor instanceof THREE.Color ? params.deepWaterColor : params.deepWaterColor ? new THREE.Color(params.deepWaterColor as any) : new THREE.Color(0x003366);
@@ -101,63 +85,56 @@ export class AquiferWaterEffect {
       timeSpeed: params.timeSpeed || rng.uniform(PROCEDURAL_RANGES.TIME_SPEED.min, PROCEDURAL_RANGES.TIME_SPEED.max)
     };
 
-    // Crear material usando el sistema de capas (como MetallicSurfaceLayer)
     this.material = this.layerSystem.createAquiferWaterLayerMaterial(this.params);
 
-    // Añadir capa al sistema, pasando referencia a este objeto
     this.layerMesh = this.layerSystem.addEffectLayer(
       "aquiferWater",
       this.material,
       this.layerSystem.getNextScaleFactor(),
-      this // Pasar referencia como MetallicSurfaceLayer
+      this
     );
   }
 
   update(deltaTime: number): void {
-    // Calcular tiempo absoluto determinista desde el inicio con ciclo y velocidad procedural
+
     const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!;
-    const currentTime = rawTime % 1000; // Mantener el tiempo en un ciclo de 1000 segundos
-    
-    // Actualizar tiempo en el material con el tiempo determinista
+    const currentTime = rawTime % 1000;
+
     if (this.material.uniforms.time) {
       this.material.uniforms.time.value = currentTime;
     }
   }
 
   dispose(): void {
-    // La limpieza se maneja en PlanetLayerSystem
+
   }
 }
 
-// Función para crear desde datos de Python
 export function createAquiferWaterFromPythonData(layerSystem: PlanetLayerSystem, pythonData: any, globalSeed?: number): AquiferWaterEffect {
   const planetInfo = pythonData.planet_info || {};
   const baseColor = planetInfo.base_color ? 
     (typeof planetInfo.base_color === 'string' ? 
       new THREE.Color(planetInfo.base_color) : 
       new THREE.Color().fromArray(planetInfo.base_color)) :
-    new THREE.Color(0x4A90E2); // Color azul por defecto para agua
-  
-  // Generar colores de agua basados en el color base
+    new THREE.Color(0x4A90E2);
+
   const hsl = { h: 0, s: 0, l: 0 };
   baseColor.getHSL(hsl);
-  
-  // Ajustar para aspecto acuático
+
   const waterColor = new THREE.Color().setHSL(
     hsl.h,
-    Math.min(1, hsl.s * 1.2), // Más saturado
-    Math.min(1, hsl.l * 0.8)  // Ligeramente más oscuro
+    Math.min(1, hsl.s * 1.2),
+    Math.min(1, hsl.l * 0.8)
   );
   
   const deepWaterColor = new THREE.Color().setHSL(
     hsl.h,
     Math.min(1, hsl.s * 1.3),
-    Math.max(0, hsl.l * 0.4) // Mucho más oscuro para profundidad
+    Math.max(0, hsl.l * 0.4)
   );
 
-  // Usar el seed del planeta para variaciones sutiles
-  const seed = globalSeed || 12345; // Seed determinista por defecto
-  const rng = new SeededRandom(seed + 5000); // +5000 para AquiferWaterEffect
+  const seed = globalSeed || 12345;
+  const rng = new SeededRandom(seed + 5000);
 
   const params: AquiferWaterParams = {
     waterColor,

@@ -1,50 +1,29 @@
-/**
- * Vegetation Effect - Sistema de vegetación para planetas forestales
- *
- * Crea efectos de vegetación densa con árboles, plantas y manchas verdes
- * que cubren la superficie del planeta para simular ecosistemas forestales.
- *
- * Responsabilidades:
- * - Renderiza parches de vegetación densa
- * - Simula árboles y vegetación variada
- * - Se integra con el sistema de iluminación planetaria
- * - Sigue la curvatura de la superficie del planeta
- */
+// atlas-ui/react/static/js/3DEffects/VegetationEffect.tsx
 
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom.tsx";
 
 export interface VegetationParams {
-  vegetationPatches?: any[]; // Datos de vegetación desde Python API
+  vegetationPatches?: any[];
   seed?: number;
-  density?: number; // Densidad de la vegetación (0.1 - 2.0)
-  color?: THREE.Color | number; // Color base de la vegetación
-  opacity?: number; // Opacidad general
-  size?: number; // Tamaño de los parches de vegetación
-  treeHeight?: number; // Altura de los "árboles" (relieve)
-  cosmicOriginTime?: number; // Tiempo de origen cósmico para determinismo
-  timeSpeed?: number; // Velocidad del tiempo para animación sutil
+  density?: number;
+  color?: THREE.Color | number;
+  opacity?: number;
+  size?: number;
+  treeHeight?: number;
+  cosmicOriginTime?: number;
+  timeSpeed?: number;
 }
 
-// Rangos para generación procedural
 const PROCEDURAL_RANGES = {
-  PATCH_COUNT: { min: 20, max: 40 }, // Muchos parches para cobertura densa
-  DENSITY: { min: 0.8, max: 1.5 }, // Densidad alta para bosques
-  SIZE: { min: 0.08, max: 0.25 }, // Variedad de tamaños de parches (más grandes para mayor visibilidad)
-  OPACITY: { min: 0.7, max: 0.95 }, // Opacidad alta para vegetación densa
-  TREE_HEIGHT: { min: 0.015, max: 0.035 }, // Altura de árboles en proporción al planeta
-  TIME_SPEED: { min: 0.05, max: 0.2 } // Animación muy sutil para simular viento
+  PATCH_COUNT: { min: 20, max: 40 },
+  DENSITY: { min: 0.8, max: 1.5 },
+  SIZE: { min: 0.08, max: 0.25 },
+  OPACITY: { min: 0.7, max: 0.95 },
+  TREE_HEIGHT: { min: 0.015, max: 0.035 },
+  TIME_SPEED: { min: 0.05, max: 0.2 }
 };
 
-/**
- * Efecto de Vegetación
- *
- * Crea vegetación densa en la superficie del planeta usando múltiples técnicas:
- * - Parches base de vegetación
- * - Elementos verticales simulando árboles
- * - Variación de color y densidad
- * - Integración con sistema de iluminación planetaria
- */
 export class VegetationEffect {
   private vegetationGroup: THREE.Group;
   private vegetationPatches: THREE.Mesh[] = [];
@@ -53,7 +32,6 @@ export class VegetationEffect {
   private cosmicOriginTime: number;
   private cosmicOffset: number;
 
-  // Shader para vegetación con movimiento sutil simulando viento
   private static readonly vegetationVertexShader = `
     varying vec3 vPosition;
     varying vec3 vNormal;
@@ -82,7 +60,6 @@ export class VegetationEffect {
       // Movimiento más pronunciado en las partes altas (árboles)
       float heightFactor = smoothstep(0.0, 1.0, vUv.y);
       
-      // Oscilar suavemente simulando viento
       pos.x += sin(slowTime + worldPosition.z * 0.1) * treeHeight * 0.1 * heightFactor;
       pos.z += cos(slowTime * 0.7 + worldPosition.x * 0.1) * treeHeight * 0.08 * heightFactor;
       
@@ -105,7 +82,6 @@ export class VegetationEffect {
     uniform vec3 lightPosition;
     uniform float treeHeight;
     
-    // Función de ruido para textura de vegetación
     float random(vec2 st) {
       return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
     }
@@ -137,11 +113,9 @@ export class VegetationEffect {
     }
     
     void main() {
-      // Distancia radial desde el centro para crear transiciones orgánicas
       vec2 center = vec2(0.5);
       float distFromCenter = length(vUv - center);
       
-      // Base de vegetación con múltiples capas de ruido para textura orgánica
       vec2 noiseUv1 = vUv * 12.0 + time * 0.008;
       float vegetationNoise1 = fbm(noiseUv1);
       
@@ -151,39 +125,31 @@ export class VegetationEffect {
       vec2 noiseUv3 = vUv * 20.0 + time * 0.012;
       float vegetationNoise3 = fbm(noiseUv3) * 0.5;
       
-      // Combinar capas de ruido para textura compleja
       float combinedNoise = vegetationNoise1 * 0.6 + vegetationNoise2 * 0.3 + vegetationNoise3 * 0.1;
       
-      // Crear variaciones de color para simular follaje denso
       vec3 baseColor = vegetationColor;
       
-      // Variaciones de color más complejas para simular hojas, ramas, sombras
       float colorVariation = 0.7 + combinedNoise * 0.6;
       
-      // Crear zonas más oscuras (sombras entre hojas) y más claras (hojas al sol)
       float leafPattern = sin(vUv.x * 15.0) * sin(vUv.y * 12.0) * 0.15;
       colorVariation += leafPattern;
       
       vec3 finalColor = baseColor * colorVariation;
       
-      // Añadir variaciones de color naturales (diferentes tonos de verde y marrón)
-      vec3 darkGreen = vec3(0.15, 0.35, 0.12);  // Verde oscuro para sombras
-      vec3 lightGreen = vec3(0.25, 0.50, 0.18); // Verde claro para hojas iluminadas
-      vec3 brownTone = vec3(0.35, 0.25, 0.15);  // Marrón para ramas/troncos
+      vec3 darkGreen = vec3(0.15, 0.35, 0.12);
+      vec3 lightGreen = vec3(0.25, 0.50, 0.18);
+      vec3 brownTone = vec3(0.35, 0.25, 0.15);
       
-      // Mezclar colores basado en el ruido para crear variedad natural
       if (combinedNoise < 0.3) {
         finalColor = mix(finalColor, darkGreen, 0.4);
       } else if (combinedNoise > 0.7) {
         finalColor = mix(finalColor, lightGreen, 0.3);
       }
       
-      // Añadir algunos elementos marrones para simular ramas
       if (vegetationNoise3 > 0.8) {
         finalColor = mix(finalColor, brownTone, 0.2);
       }
       
-      // Iluminación planetaria real
       vec3 lightDir;
       if (length(lightPosition) > 0.0) {
         lightDir = normalize(lightPosition - vWorldPosition);
@@ -191,37 +157,28 @@ export class VegetationEffect {
         lightDir = normalize(-lightDirection);
       }
       
-      // Usar la normal planetaria para determinar iluminación
       vec3 planetNormal = normalize(vWorldPosition);
       float dotNL = dot(planetNormal, lightDir);
       
-      // Iluminación más compleja para vegetación densa
       float lighting = smoothstep(-0.3, 0.8, dotNL);
-      lighting = mix(0.3, 1.0, lighting); // Luz ambiental para simular luz filtrada
+      lighting = mix(0.3, 1.0, lighting);
       
-      // Añadir scattering subsuperficial más pronunciado para hojas
       float subsurface = pow(max(0.0, dot(vWorldNormal, lightDir)), 0.8) * 0.4;
       lighting += subsurface;
       
-      // Simular oclusión ambiental en áreas densas
       float ambientOcclusion = 1.0 - (combinedNoise * 0.2);
       lighting *= ambientOcclusion;
       
       finalColor *= lighting;
       
-      // Alpha con patrón orgánico para bordes naturales
       float alpha = opacity * density;
       
-      // Crear máscara orgánica basada en ruido para bordes irregulares
       float organicMask = smoothstep(0.2, 1.0, combinedNoise);
       
-      // Transición suave desde el centro hacia los bordes
       float radialFade = 1.0 - smoothstep(0.3, 0.9, distFromCenter);
       
-      // Combinar máscaras para efecto natural
       alpha *= organicMask * radialFade;
       
-      // Añadir variación adicional para evitar uniformidad
       alpha *= (0.8 + sin(vUv.x * 25.0) * sin(vUv.y * 30.0) * 0.15);
       
       gl_FragColor = vec4(finalColor, alpha);
@@ -229,7 +186,6 @@ export class VegetationEffect {
   `;
 
   constructor(planetRadius: number, params: VegetationParams = {}) {
-    // Sistema de tiempo híbrido para determinismo
     const seed = params.seed || Math.floor(Math.random() * 1000000);
     this.cosmicOriginTime = params.cosmicOriginTime || 514080000;
     this.cosmicOffset = (seed % 3600) * 10;
@@ -238,7 +194,7 @@ export class VegetationEffect {
     
     this.params = {
       density: params.density || rng.uniform(PROCEDURAL_RANGES.DENSITY.min, PROCEDURAL_RANGES.DENSITY.max),
-      color: params.color || new THREE.Color(0x2d5a3d), // Verde bosque
+      color: params.color || new THREE.Color(0x2d5a3d),
       opacity: params.opacity || rng.uniform(PROCEDURAL_RANGES.OPACITY.min, PROCEDURAL_RANGES.OPACITY.max),
       size: params.size || rng.uniform(PROCEDURAL_RANGES.SIZE.min, PROCEDURAL_RANGES.SIZE.max),
       treeHeight: params.treeHeight || rng.uniform(PROCEDURAL_RANGES.TREE_HEIGHT.min, PROCEDURAL_RANGES.TREE_HEIGHT.max),
@@ -256,7 +212,6 @@ export class VegetationEffect {
     const seed = this.params.seed || Math.floor(Math.random() * 1000000);
     const rng = new SeededRandom(seed);
     
-    // Verificar si tenemos datos de Python
     const vegetationPatches = this.params.vegetationPatches;
     
     let patchCount = 0;
@@ -264,7 +219,6 @@ export class VegetationEffect {
       patchCount = vegetationPatches.length;
       this.generateVegetationFromPython(planetRadius, vegetationPatches, rng);
     } else {
-      // Generación procedural
       patchCount = Math.floor(rng.uniform(PROCEDURAL_RANGES.PATCH_COUNT.min, PROCEDURAL_RANGES.PATCH_COUNT.max));
       this.generateProceduralVegetation(planetRadius, patchCount, rng);
     }
@@ -278,7 +232,6 @@ export class VegetationEffect {
 
   private generateProceduralVegetation(planetRadius: number, patchCount: number, rng: SeededRandom): void {
     for (let i = 0; i < patchCount; i++) {
-      // Crear patch sintético
       const phi = rng.uniform(0, 2 * Math.PI);
       const cosTheta = rng.uniform(-1, 1);
       const theta = Math.acos(cosTheta);
@@ -291,9 +244,9 @@ export class VegetationEffect {
         ],
         size: rng.uniform(PROCEDURAL_RANGES.SIZE.min, PROCEDURAL_RANGES.SIZE.max),
         color: [
-          rng.uniform(0.1, 0.4),  // R - poco rojo
-          rng.uniform(0.4, 0.8),  // G - mucho verde
-          rng.uniform(0.1, 0.3)   // B - poco azul
+          rng.uniform(0.1, 0.4),
+          rng.uniform(0.4, 0.8),
+          rng.uniform(0.1, 0.3)
         ]
       };
       
@@ -305,7 +258,6 @@ export class VegetationEffect {
     const position = patch.position_3d || patch.position || [0, 0, 1];
     const size = (patch.size || this.params.size!) * planetRadius;
     
-    // Color de la vegetación
     let vegetationColor = this.params.color instanceof THREE.Color ? 
       this.params.color : new THREE.Color(this.params.color as number);
     
@@ -313,20 +265,15 @@ export class VegetationEffect {
       vegetationColor = new THREE.Color(patch.color[0], patch.color[1], patch.color[2]);
     }
     
-    // Posición en la superficie del planeta
     const sphericalPos = new THREE.Vector3(position[0], position[1], position[2]).normalize();
     
-    // Crear múltiples capas de vegetación para densidad
     this.createVegetationBase(planetRadius, sphericalPos, size, vegetationColor, rng);
     this.createTreeLayer(planetRadius, sphericalPos, size, vegetationColor, rng);
   }
 
   private createVegetationBase(planetRadius: number, normal: THREE.Vector3, size: number, color: THREE.Color, rng: SeededRandom): void {
-    // Base de vegetación usando geometría procedural orgánica que se extiende sobre la superficie
-    // Crear geometría base como "parche orgánico" en lugar de plano rígido
     const geometry = this.createOrganicVegetationGeometry(planetRadius, normal, size, rng);
     
-    // Material con shader personalizado para vegetación orgánica
     const material = new THREE.ShaderMaterial({
       vertexShader: VegetationEffect.vegetationVertexShader,
       fragmentShader: VegetationEffect.vegetationFragmentShader,
@@ -347,26 +294,22 @@ export class VegetationEffect {
     });
     
     const vegetationMesh = new THREE.Mesh(geometry, material);
-    vegetationMesh.renderOrder = 3; // Después de nubes (2) y land masses (1)
+    vegetationMesh.renderOrder = 3;
     
     this.vegetationPatches.push(vegetationMesh);
     this.vegetationGroup.add(vegetationMesh);
   }
 
   private createTreeLayer(planetRadius: number, normal: THREE.Vector3, size: number, color: THREE.Color, rng: SeededRandom): void {
-    // Crear múltiples elementos de árboles distribuidos de forma orgánica sobre el parche base
-    const numTrees = Math.floor(rng.uniform(8, 20)); // Varios árboles por parche
+    const numTrees = Math.floor(rng.uniform(8, 20));
     
     for (let i = 0; i < numTrees; i++) {
-      // Posición aleatoria dentro del área del parche
       const angle = rng.uniform(0, Math.PI * 2);
-      const radius = rng.uniform(0, size * 0.8); // Dentro del 80% del radio del parche
+      const radius = rng.uniform(0, size * 0.8);
       
-      // Calcular posición local en el plano tangente
       const localX = Math.cos(angle) * radius;
       const localY = Math.sin(angle) * radius;
       
-      // Crear sistema de coordenadas tangente en la superficie
       const tangent1 = new THREE.Vector3();
       const tangent2 = new THREE.Vector3();
       
@@ -377,20 +320,15 @@ export class VegetationEffect {
       }
       tangent2.crossVectors(normal, tangent1).normalize();
       
-      // Posición del árbol en el mundo
       const treePosition = normal.clone().multiplyScalar(planetRadius * 1.002); // Ligeramente elevado sobre la superficie
       treePosition.addScaledVector(tangent1, localX);
       treePosition.addScaledVector(tangent2, localY);
-      
-      // Crear geometría de árbol individual (small billboard que se orienta hacia arriba desde la superficie)
-      const treeSize = rng.uniform(0.008, 0.020) * planetRadius; // Tamaño individual de árbol
+      const treeSize = rng.uniform(0.008, 0.020) * planetRadius;
       const treeGeometry = this.createSingleTreeGeometry(treeSize, rng);
       
-      // Orientar el árbol para que "crezca" desde la superficie hacia afuera
       const treeNormal = treePosition.clone().normalize();
       const rotationMatrix = new THREE.Matrix4();
       
-      // Crear base tangente para orientar el árbol
       const treeTangent1 = new THREE.Vector3();
       const treeTangent2 = new THREE.Vector3();
       
@@ -401,13 +339,11 @@ export class VegetationEffect {
       }
       treeTangent2.crossVectors(treeNormal, treeTangent1).normalize();
       
-      // El árbol "crece" en dirección normal (hacia afuera del planeta)
       rotationMatrix.makeBasis(treeTangent1, treeTangent2, treeNormal);
       treeGeometry.applyMatrix4(rotationMatrix);
       treeGeometry.translate(treePosition.x, treePosition.y, treePosition.z);
       
-      // Material para árbol individual con variación
-      const treeColor = color.clone().multiplyScalar(rng.uniform(0.6, 0.9)); // Variación de color
+      const treeColor = color.clone().multiplyScalar(rng.uniform(0.6, 0.9));
       const treeMaterial = new THREE.ShaderMaterial({
         vertexShader: VegetationEffect.vegetationVertexShader,
         fragmentShader: VegetationEffect.vegetationFragmentShader,
@@ -428,7 +364,7 @@ export class VegetationEffect {
       });
       
       const treeMesh = new THREE.Mesh(treeGeometry, treeMaterial);
-      treeMesh.renderOrder = 4; // Encima de la vegetación base
+      treeMesh.renderOrder = 4;
       
       this.treeLayers.push(treeMesh);
       this.vegetationGroup.add(treeMesh);
@@ -436,12 +372,10 @@ export class VegetationEffect {
   }
 
   private createOrganicVegetationGeometry(planetRadius: number, normal: THREE.Vector3, size: number, rng: SeededRandom): THREE.BufferGeometry {
-    // Crear geometría orgánica que se extiende sobre la superficie como vegetación real
     const vertices: number[] = [];
     const indices: number[] = [];
     const uvs: number[] = [];
     
-    // Crear sistema de coordenadas tangente
     const tangent1 = new THREE.Vector3();
     const tangent2 = new THREE.Vector3();
     
@@ -452,23 +386,18 @@ export class VegetationEffect {
     }
     tangent2.crossVectors(normal, tangent1).normalize();
     
-    // Posición base en la superficie del planeta
-    const centerPosition = normal.clone().multiplyScalar(planetRadius * 1.0005); // Muy ligeramente elevado
+    const centerPosition = normal.clone().multiplyScalar(planetRadius * 1.0005);
     
-    // Crear parche orgánico irregular usando ruido
     let vertexIndex = 0;
     
-    // Generar forma orgánica irregular (no cuadrada)
-    const numPoints = Math.floor(rng.uniform(20, 40)); // Forma poligonal irregular
+    const numPoints = Math.floor(rng.uniform(20, 40));
     const outerPoints: { x: number, y: number, u: number, v: number }[] = [];
     
-    // Crear borde exterior orgánico
     for (let i = 0; i < numPoints; i++) {
       const angle = (i / numPoints) * Math.PI * 2;
       
-      // Usar ruido para hacer el borde irregular
-      const noiseAngle = angle * 3; // Frecuencia del ruido para variación
-      const noiseValue = Math.sin(noiseAngle + rng.uniform(0, Math.PI * 2)) * 0.3 + 1.0; // Variación 0.7 - 1.3
+      const noiseAngle = angle * 3;
+      const noiseValue = Math.sin(noiseAngle + rng.uniform(0, Math.PI * 2)) * 0.3 + 1.0;
       const radiusVariation = rng.uniform(0.6, 1.0) * noiseValue;
       
       const localRadius = size * radiusVariation;
@@ -478,26 +407,22 @@ export class VegetationEffect {
       outerPoints.push({
         x: localX,
         y: localY,
-        u: (localX / size + 1) * 0.5, // Normalizar UV
+        u: (localX / size + 1) * 0.5,
         v: (localY / size + 1) * 0.5
       });
     }
     
-    // Añadir punto central
     vertices.push(centerPosition.x, centerPosition.y, centerPosition.z);
     uvs.push(0.5, 0.5);
     const centerIndex = vertexIndex++;
     
-    // Añadir puntos del borde
     for (const point of outerPoints) {
-      // Convertir coordenadas locales a posición 3D
       const worldPos = centerPosition.clone()
         .addScaledVector(tangent1, point.x)
         .addScaledVector(tangent2, point.y);
       
-      // Proyectar sobre la superficie esférica con elevación muy sutil
       const direction = worldPos.clone().normalize();
-      const elevationNoise = this.noise2D(point.x * 5, point.y * 5, rng) * 0.0002; // Variación mínima de altura
+      const elevationNoise = this.noise2D(point.x * 5, point.y * 5, rng) * 0.0002;
       const finalPos = direction.multiplyScalar(planetRadius * (1.0005 + elevationNoise));
       
       vertices.push(finalPos.x, finalPos.y, finalPos.z);
@@ -505,17 +430,14 @@ export class VegetationEffect {
       vertexIndex++;
     }
     
-    // Crear triangulación en abanico desde el centro
     for (let i = 0; i < outerPoints.length; i++) {
       const nextI = (i + 1) % outerPoints.length;
-      const outerIndex1 = i + 1; // +1 porque el centro es índice 0
+      const outerIndex1 = i + 1;
       const outerIndex2 = nextI + 1;
       
-      // Triángulo desde centro hacia borde
       indices.push(centerIndex, outerIndex1, outerIndex2);
     }
     
-    // Crear la geometría
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
     geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
@@ -526,11 +448,9 @@ export class VegetationEffect {
   }
 
   private createSingleTreeGeometry(treeSize: number, rng: SeededRandom): THREE.BufferGeometry {
-    // Crear geometría simple de árbol individual (billboard vertical orientado radialmente)
-    const height = treeSize * rng.uniform(0.8, 1.5); // Altura variable
-    const width = treeSize * rng.uniform(0.4, 0.8);   // Ancho variable
+    const height = treeSize * rng.uniform(0.8, 1.5);
+    const width = treeSize * rng.uniform(0.4, 0.8);
     
-    // Crear billboard vertical simple (rectangular)
     const vertices = [
       // Triángulo inferior
       -width/2, 0, 0,        // Esquina inferior izquierda
@@ -545,14 +465,13 @@ export class VegetationEffect {
     
     const uvs = [
       // Triángulo inferior
-      0, 0,    // UV inferior izquierda
-      1, 0,    // UV inferior derecha
-      0, 1,    // UV superior izquierda
+      0, 0,
+      1, 0,
+      0, 1,
       
-      // Triángulo superior
-      1, 0,    // UV inferior derecha
-      1, 1,    // UV superior derecha
-      0, 1,    // UV superior izquierda
+      1, 0,
+      1, 1,
+      0, 1,
     ];
     
     const geometry = new THREE.BufferGeometry();
@@ -564,7 +483,6 @@ export class VegetationEffect {
   }
 
   private noise2D(x: number, y: number, rng: SeededRandom): number {
-    // Función de ruido simple para variación de elevación en vegetación
     const seed = this.params.seed || 0;
     const hash = (px: number, py: number) => {
       const dot = px * 12.9898 + py * 78.233 + seed;
@@ -595,20 +513,17 @@ export class VegetationEffect {
   }
 
   update(): void {
-    // Calcular tiempo para animación sutil
     const currentTimeSeconds = Date.now() / 1000;
     const timeSinceCosmicOrigin = currentTimeSeconds - this.cosmicOriginTime;
     const animTime = (timeSinceCosmicOrigin + this.cosmicOffset) * this.params.timeSpeed!;
     const windowedTime = animTime % 10000;
 
-    // Actualizar tiempo en todos los materiales
     [...this.vegetationPatches, ...this.treeLayers].forEach(mesh => {
       const material = mesh.material as THREE.ShaderMaterial;
       material.uniforms.time.value = windowedTime;
     });
   }
 
-  // Métodos para integración con sistema de luz
   updateLightPosition(position: THREE.Vector3): void {
     [...this.vegetationPatches, ...this.treeLayers].forEach(mesh => {
       const material = mesh.material as THREE.ShaderMaterial;
@@ -636,7 +551,6 @@ export class VegetationEffect {
   updateParams(newParams: Partial<VegetationParams>): void {
     this.params = { ...this.params, ...newParams };
     
-    // Actualizar parámetros en todos los materiales
     [...this.vegetationPatches, ...this.treeLayers].forEach(mesh => {
       const material = mesh.material as THREE.ShaderMaterial;
       
@@ -668,9 +582,6 @@ export class VegetationEffect {
   }
 }
 
-/**
- * Función de utilidad para crear efecto desde datos de Python
- */
 export function createVegetationFromPythonData(
   planetRadius: number, 
   surfaceData: any, 
@@ -678,14 +589,13 @@ export function createVegetationFromPythonData(
   cosmicOriginTime?: number
 ): VegetationEffect | null {
   
-  // Buscar datos de vegetación en surface_data
   const vegetationPatches = surfaceData.vegetation;
   
   const seed = globalSeed || Math.floor(Math.random() * 1000000);
-  const rng = new SeededRandom(seed + 8000); // +8000 para vegetation
+  const rng = new SeededRandom(seed + 8000);
   
   const params: VegetationParams = {
-    color: new THREE.Color(0x2d5a3d), // Verde bosque
+    color: new THREE.Color(0x2d5a3d),
     density: rng.uniform(PROCEDURAL_RANGES.DENSITY.min, PROCEDURAL_RANGES.DENSITY.max),
     opacity: rng.uniform(PROCEDURAL_RANGES.OPACITY.min, PROCEDURAL_RANGES.OPACITY.max),
     size: rng.uniform(PROCEDURAL_RANGES.SIZE.min, PROCEDURAL_RANGES.SIZE.max),

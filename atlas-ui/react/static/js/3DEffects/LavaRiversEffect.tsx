@@ -1,37 +1,27 @@
-/**
- * Lava Rivers Effect - Red vascular de canales de lava interconectados
- *
- * COMPLETAMENTE DIFERENTE a LavaFlowsEffect:
- * - LavaFlowsEffect: flujos individuales de lava con partículas
- * - LavaRiversEffect: RED VASCULAR conectada que cubre todo el planeta como venas brillantes
- */
-
+// atlas-ui/react/static/js/3DEffects/LavaRiversEffect.tsx
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom.tsx";
 import { getAnimatedUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime.tsx";
 
 export interface LavaRiverParams {
-  // Configuración del sistema vascular  
-  networkDensity?: number; // Densidad de la red (cuántos puntos de conexión)
-  branchingFactor?: number; // Cuánto se ramifica la red
-  channelWidth?: number; // Ancho muy fino de las venas
-  pulsationSpeed?: number; // Velocidad de pulsación de la lava
-  networkPattern?: "hexagonal" | "organic" | "dendritic"; // Patrón de la red
-  
-  // Sistema de pulsación (como sistema circulatorio)
-  heartbeatRate?: number; // Latidos por minuto del "corazón" de lava
-  pulseWaveSpeed?: number; // Velocidad de ondas de pulso a través de la red
-  pulseIntensity?: number; // Intensidad del efecto de pulso
-  
-  // Colores específicos para red vascular
-  arteryColor?: THREE.Color | number[]; // Color de arterias principales (muy brillante)
-  veinColor?: THREE.Color | number[]; // Color de venas secundarias
-  capillaryColor?: THREE.Color | number[]; // Color de capilares (más tenue)
-  pulseColor?: THREE.Color | number[]; // Color de las ondas de pulso
-  
-  // Efectos de conexión
-  connectionGlow?: number; // Brillo en puntos de conexión
-  networkEmission?: number; // Emisión de toda la red
+
+  networkDensity?: number;
+  branchingFactor?: number;
+  channelWidth?: number;
+  pulsationSpeed?: number;
+  networkPattern?: "hexagonal" | "organic" | "dendritic";
+
+  heartbeatRate?: number;
+  pulseWaveSpeed?: number;
+  pulseIntensity?: number;
+
+  arteryColor?: THREE.Color | number[];
+  veinColor?: THREE.Color | number[];
+  capillaryColor?: THREE.Color | number[];
+  pulseColor?: THREE.Color | number[];
+
+  connectionGlow?: number;
+  networkEmission?: number;
   
   seed?: number;
   startTime?: number;
@@ -48,28 +38,26 @@ export interface LavaRiverParams {
 }
 
 const PROCEDURAL_RANGES = {
-  NETWORK_DENSITY: { min: 50, max: 100 }, // Reducir para mejor performance y visibilidad
-  BRANCHING_FACTOR: { min: 12, max: 15 }, // Cada punto se conecta a varios otros
-  CHANNEL_WIDTH: { min: 0.01, max: 0.03 }, // CANALES MÁS GRUESOS para ser visibles
-  HEARTBEAT_RATE: { min: 30, max: 90 }, // Latidos por minuto más rápidos
-  PULSE_WAVE_SPEED: { min: 1.0, max: 3.0 }, // Velocidad más rápida
-  PULSE_INTENSITY: { min: 1.0, max: 2.5 }, // MAYOR intensidad
-  NETWORK_EMISSION: { min: 4.0, max: 8.0 }, // MUCHA MÁS emisión para ser visible
+  NETWORK_DENSITY: { min: 50, max: 100 },
+  BRANCHING_FACTOR: { min: 12, max: 15 },
+  CHANNEL_WIDTH: { min: 0.01, max: 0.03 },
+  HEARTBEAT_RATE: { min: 30, max: 90 },
+  PULSE_WAVE_SPEED: { min: 1.0, max: 3.0 },
+  PULSE_INTENSITY: { min: 1.0, max: 2.5 },
+  NETWORK_EMISSION: { min: 4.0, max: 8.0 },
 };
 
-// Nodo de la red vascular
 interface NetworkNode {
   position: THREE.Vector3;
-  connections: number[]; // Índices de nodos conectados
-  nodeType: "artery" | "vein" | "capillary"; // Tipo de vaso
-  pulsePhase: number; // Fase del pulso (0-1)
+  connections: number[];
+  nodeType: "artery" | "vein" | "capillary";
+  pulsePhase: number;
 }
 
-// Conexión entre nodos
 interface NetworkConnection {
   from: number;
   to: number;
-  path: THREE.Vector3[]; // Puntos intermedios del canal
+  path: THREE.Vector3[];
   connectionType: "artery" | "vein" | "capillary";
   width: number;
 }
@@ -85,8 +73,7 @@ export class LavaRiversEffect {
   private material: THREE.ShaderMaterial;
   private orbitalVisibilityFactor: number = 1;
   private temperatureActivationFactor: number = 1;
-  
-  // Shader para los canales vasculares
+
   private static readonly channelVertexShader = `
     varying vec2 vUv;
     varying vec3 vPosition;
@@ -97,8 +84,7 @@ export class LavaRiversEffect {
       vUv = uv;
       vPosition = position;
       vNormal = normalize(normalMatrix * normal);
-      
-      // Distancia al centro del canal para efectos de borde
+
       vDistanceToCenter = abs(uv.y - 0.5) * 2.0;
       
       gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
@@ -114,7 +100,7 @@ export class LavaRiversEffect {
     uniform float pulseWaveSpeed;
     uniform float pulseIntensity;
     uniform float networkEmission;
-    uniform float channelType; // 0=capillary, 0.5=vein, 1=artery
+    uniform float channelType;
     
     varying vec2 vUv;
     varying vec3 vPosition;
@@ -122,34 +108,28 @@ export class LavaRiversEffect {
     varying float vDistanceToCenter;
     
     void main() {
-      // Calcular pulso cardíaco
-      float heartbeat = (heartbeatRate / 60.0) * time; // Convertir BPM a Hz
+
+      float heartbeat = (heartbeatRate / 60.0) * time;
       float pulse = sin(heartbeat * 6.28318) * 0.5 + 0.5;
-      
-      // Onda de pulso que viaja a lo largo del canal
+
       float pulseWave = sin((vUv.x * 10.0) - (time * pulseWaveSpeed * 5.0));
       pulseWave = pulseWave * 0.5 + 0.5;
-      
-      // Combinar pulso cardíaco con onda de pulso
+
       float totalPulse = mix(pulse, pulseWave, 0.6) * pulseIntensity;
-      
-      // Color base según tipo de canal
+
       vec3 baseColor;
       if (channelType > 0.75) {
-        baseColor = arteryColor; // Arterias principales
+        baseColor = arteryColor;
       } else if (channelType > 0.25) {
-        baseColor = veinColor; // Venas secundarias
+        baseColor = veinColor;
       } else {
-        baseColor = veinColor * 0.6; // Capilares más tenues
+        baseColor = veinColor * 0.6;
       }
-      
-      // Color del pulso
+
       vec3 finalColor = mix(baseColor, pulseColor, totalPulse * 0.7);
-      
-      // Efecto de borde para hacer canales más finos en los extremos
+
       float edgeFactor = 1.0 - smoothstep(0.3, 1.0, vDistanceToCenter);
-      
-      // Intensidad emisiva variable por tipo de canal
+
       float emission = networkEmission * (0.5 + channelType * 0.5) * edgeFactor;
       
       gl_FragColor = vec4(finalColor * emission, edgeFactor * 0.9);
@@ -163,16 +143,15 @@ export class LavaRiversEffect {
     const rng = new SeededRandom(seed);
     
     this.startTime = params.startTime || (seed % 10000) / 1000;
-    
-    // Colores para el sistema vascular
+
     const arteryColor = params.arteryColor instanceof THREE.Color ? params.arteryColor :
-      new THREE.Color(1.0, 0.8, 0.2); // Amarillo brillante para arterias
+      new THREE.Color(1.0, 0.8, 0.2);
     const veinColor = params.veinColor instanceof THREE.Color ? params.veinColor :
-      new THREE.Color(1.0, 0.3, 0.0); // Naranja para venas
+      new THREE.Color(1.0, 0.3, 0.0);
     const capillaryColor = params.capillaryColor instanceof THREE.Color ? params.capillaryColor :
-      new THREE.Color(0.8, 0.2, 0.0); // Rojo oscuro para capilares
+      new THREE.Color(0.8, 0.2, 0.0);
     const pulseColor = params.pulseColor instanceof THREE.Color ? params.pulseColor :
-      new THREE.Color(1.0, 1.0, 0.8); // Blanco-amarillo para pulsos
+      new THREE.Color(1.0, 1.0, 0.8);
     
     this.params = {
       networkDensity: params.networkDensity || Math.floor(rng.uniform(PROCEDURAL_RANGES.NETWORK_DENSITY.min, PROCEDURAL_RANGES.NETWORK_DENSITY.max)),
@@ -199,21 +178,17 @@ export class LavaRiversEffect {
     this.orbitalVisibilityFactor = this.calculateOrbitalVisibility();
     
     this.networkGroup = new THREE.Group();
-    
-    // Generar red vascular
+
     this.generateVascularNetwork(rng);
-    
-    // Crear materiales
+
     this.createMaterials();
-    
-    // Crear geometrías de los canales
+
     this.createChannelGeometries();
   }
   
   private generateVascularNetwork(rng: SeededRandom): void {
     const density = this.params.networkDensity!;
-    
-    // 1. Generar nodos distribuidos por la superficie
+
     for (let i = 0; i < density; i++) {
       const phi = rng.uniform(0, Math.PI * 2);
       const theta = Math.acos(rng.uniform(-1, 1));
@@ -223,40 +198,36 @@ export class LavaRiversEffect {
         Math.sin(theta) * Math.sin(phi) * this.planetRadius,
         Math.cos(theta) * this.planetRadius
       );
-      
-      // Determinar tipo de nodo basado en distribución
+
       let nodeType: "artery" | "vein" | "capillary";
       const typeRand = rng.random();
       if (typeRand < 0.1) {
-        nodeType = "artery"; // 10% arterias principales
+        nodeType = "artery";
       } else if (typeRand < 0.4) {
-        nodeType = "vein"; // 30% venas
+        nodeType = "vein";
       } else {
-        nodeType = "capillary"; // 60% capilares
+        nodeType = "capillary";
       }
       
       this.nodes.push({
         position,
         connections: [],
         nodeType,
-        pulsePhase: rng.random() * Math.PI * 2 // Fase aleatoria del pulso
+        pulsePhase: rng.random() * Math.PI * 2
       });
     }
-    
-    // 2. Conectar nodos para formar red vascular
+
     this.connectNetworkNodes(rng);
   }
   
   private connectNetworkNodes(rng: SeededRandom): void {
-    const maxDistance = this.planetRadius * 0.3; // Distancia máxima de conexión
+    const maxDistance = this.planetRadius * 0.3;
     const branchingFactor = this.params.branchingFactor!;
-    
-    // Para cada nodo, conectar con nodos cercanos
+
     for (let i = 0; i < this.nodes.length; i++) {
       const node = this.nodes[i];
       const distances: { index: number; distance: number }[] = [];
-      
-      // Calcular distancias a todos los otros nodos
+
       for (let j = 0; j < this.nodes.length; j++) {
         if (i === j) continue;
         
@@ -265,11 +236,9 @@ export class LavaRiversEffect {
           distances.push({ index: j, distance });
         }
       }
-      
-      // Ordenar por distancia y conectar con los más cercanos
+
       distances.sort((a, b) => a.distance - b.distance);
-      
-      // Número de conexiones basado en tipo de nodo
+
       let maxConnections;
       switch (node.nodeType) {
         case "artery":
@@ -282,22 +251,18 @@ export class LavaRiversEffect {
           maxConnections = Math.min(Math.floor(branchingFactor * 0.6), distances.length);
           break;
       }
-      
-      // Crear conexiones
+
       for (let k = 0; k < maxConnections; k++) {
         const targetIndex = distances[k].index;
         const targetNode = this.nodes[targetIndex];
-        
-        // Evitar conexiones duplicadas
+
         if (node.connections.includes(targetIndex) || targetNode.connections.includes(i)) {
           continue;
         }
-        
-        // Añadir conexión bidireccional
+
         node.connections.push(targetIndex);
         targetNode.connections.push(i);
-        
-        // Determinar tipo de conexión basado en los nodos
+
         let connectionType: "artery" | "vein" | "capillary";
         if (node.nodeType === "artery" || targetNode.nodeType === "artery") {
           connectionType = "artery";
@@ -306,11 +271,9 @@ export class LavaRiversEffect {
         } else {
           connectionType = "capillary";
         }
-        
-        // Crear path curvo entre los nodos
+
         const path = this.createCurvedPath(node.position, targetNode.position, rng);
-        
-        // Ancho basado en tipo de conexión
+
         let width;
         switch (connectionType) {
           case "artery":
@@ -337,19 +300,15 @@ export class LavaRiversEffect {
   
   private createCurvedPath(start: THREE.Vector3, end: THREE.Vector3, rng: SeededRandom): THREE.Vector3[] {
     const path: THREE.Vector3[] = [start.clone()];
-    
-    // Crear puntos intermedios para path curvo en la superficie
+
     const segments = 8;
     for (let i = 1; i < segments; i++) {
       const t = i / segments;
-      
-      // Interpolación lineal inicial
+
       const point = start.clone().lerp(end, t);
-      
-      // Proyectar a la superficie
+
       point.normalize().multiplyScalar(this.planetRadius);
-      
-      // Añadir curvatura aleatoria pequeña
+
       const deviation = new THREE.Vector3(
         (rng.random() - 0.5) * 0.1,
         (rng.random() - 0.5) * 0.1,
@@ -366,7 +325,7 @@ export class LavaRiversEffect {
   }
   
   private createMaterials(): void {
-    // Material para los canales
+
     this.material = new THREE.ShaderMaterial({
       vertexShader: LavaRiversEffect.channelVertexShader,
       fragmentShader: LavaRiversEffect.channelFragmentShader,
@@ -379,33 +338,30 @@ export class LavaRiversEffect {
         pulseWaveSpeed: { value: this.params.pulseWaveSpeed },
         pulseIntensity: { value: this.params.pulseIntensity },
         networkEmission: { value: this.params.networkEmission },
-        channelType: { value: 0.5 } // Se ajustará por mesh
+        channelType: { value: 0.5 }
       },
       transparent: true,
       blending: THREE.AdditiveBlending,
       side: THREE.DoubleSide,
       depthWrite: false
     });
-    
-    // No crear material para esferas - solo canales
+
   }
   
   private createChannelGeometries(): void {
-    // Crear geometría para cada conexión
+
     this.connections.forEach(connection => {
-      // Crear curva desde el path
+
       const curve = new THREE.CatmullRomCurve3(connection.path);
-      
-      // Crear geometría tubular muy fina
+
       const tubeGeometry = new THREE.TubeGeometry(
         curve,
-        32, // Segmentos
-        connection.width * 0.5, // Radio
-        4, // Segmentos radiales (pocos para rendimiento)
+        32,
+        connection.width * 0.5,
+        4,
         false
       );
-      
-      // Material específico para este tipo de conexión
+
       const channelMaterial = this.material.clone();
       let channelTypeValue;
       switch (connection.connectionType) {
@@ -422,17 +378,16 @@ export class LavaRiversEffect {
       channelMaterial.uniforms.channelType.value = channelTypeValue;
       
       const channelMesh = new THREE.Mesh(tubeGeometry, channelMaterial);
-      channelMesh.renderOrder = 6; // Encima de superficie pero debajo de partículas
+      channelMesh.renderOrder = 6;
       
       this.channelMeshes.push(channelMesh);
       this.networkGroup.add(channelMesh);
     });
-    
-    // No crear esferas - solo canales de la red vascular
+
   }
   
   private calculateTemperatureActivation(): number {
-    // SIEMPRE ACTIVADO para debugging visual
+
     return 1.0;
   }
   
@@ -473,7 +428,7 @@ export class LavaRiversEffect {
     const totalActivationFactor = this.temperatureActivationFactor * this.orbitalVisibilityFactor;
     
     if (totalActivationFactor > 0) {
-      // Actualizar uniforms de tiempo para todos los materiales
+
       this.channelMeshes.forEach(mesh => {
         const material = mesh.material as THREE.ShaderMaterial;
         material.uniforms.time.value = currentTime;
@@ -483,7 +438,7 @@ export class LavaRiversEffect {
       });
       
     } else {
-      // Ocultar toda la red si no está activa
+
       this.channelMeshes.forEach(mesh => { mesh.visible = false; });
     }
   }
@@ -512,9 +467,6 @@ export class LavaRiversEffect {
   }
 }
 
-/**
- * Función para crear desde datos de Python
- */
 export function createLavaRiversFromPythonData(
   pythonData: any,
   planetRadius: number,
@@ -535,7 +487,7 @@ export function createLavaRiversFromPythonData(
     rng.uniform(orbitalPeriodYears * 0.3, orbitalPeriodYears * 0.6);
   
   const orbitalData = {
-    enabled: false, // Desactivar orbital para debugging - siempre visible
+    enabled: false,
     cycle_duration_years: cycleDuration,
     visible_duration_years: lavaRiversData.visible_duration_years || 
       rng.uniform(cycleDuration * 0.6, cycleDuration * 0.8)

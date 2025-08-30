@@ -1,9 +1,4 @@
-/**
- * Rocky Terrain Layer - Versión que funciona como capa
- *
- * Crea terreno rocoso como capa transparente que respeta la iluminación base
- */
-
+// atlas-ui/react/static/js/3DEffects/RockyTerrainLayer.tsx
 import * as THREE from "three";
 import { PlanetLayerSystem } from "../3DComponents/PlanetLayerSystem";
 import { SeededRandom } from "../Utils/SeededRandom.tsx";
@@ -18,7 +13,6 @@ export interface RockyTerrainLayerParams {
   planetType?: "ROCKY" | "CAVE" | "DEFAULT";
 }
 
-// Rangos para generación procedural - diferentes para cada tipo de planeta
 const PROCEDURAL_RANGES = {
   DEFAULT: {
     ROUGHNESS: { min: 0.6, max: 0.9 },
@@ -35,7 +29,7 @@ const PROCEDURAL_RANGES = {
   CAVE: {
     ROUGHNESS: { min: 0.5, max: 0.7 },
     ROCK_DENSITY: { min: 0.5, max: 1 },
-    CRATER_COUNT: { min: 0.1, max: 0.4 }, // Menos cráteres para cuevas
+    CRATER_COUNT: { min: 0.1, max: 0.4 },
     OPACITY: { min: 0.02, max: 0.05 },
   },
 };
@@ -50,8 +44,7 @@ export class RockyTerrainLayer {
     varying vec3 vPosition;
     varying vec3 vNormal;
     varying vec2 vUv;
-    
-    // Función de ruido para deformar la superficie (estática)
+
     float noise(vec3 p) {
       return sin(p.x * 4.0) * sin(p.y * 4.0) * sin(p.z * 4.0);
     }
@@ -60,10 +53,9 @@ export class RockyTerrainLayer {
       vPosition = position;
       vNormal = normal;
       vUv = uv;
-      
-      // Deformación estática de la superficie para crear relieve rocoso
+
       vec3 deformed = position;
-      float noiseValue = noise(position * 3.0); // SIN time - completamente estático
+      float noiseValue = noise(position * 3.0);
       deformed += normal * noiseValue * 0.02;
       
       gl_Position = projectionMatrix * modelViewMatrix * vec4(deformed, 1.0);
@@ -81,8 +73,7 @@ export class RockyTerrainLayer {
     varying vec3 vPosition;
     varying vec3 vNormal;
     varying vec2 vUv;
-    
-    // Función de ruido mejorada
+
     float noise(vec3 p) {
       vec3 i = floor(p);
       vec3 f = fract(p);
@@ -95,8 +86,7 @@ export class RockyTerrainLayer {
         mix(mix(fract(sin(n + 113.0) * 43758.5453), fract(sin(n + 114.0) * 43758.5453), f.x),
             mix(fract(sin(n + 170.0) * 43758.5453), fract(sin(n + 171.0) * 43758.5453), f.x), f.y), f.z);
     }
-    
-    // FBM para textura rocosa base
+
     float fbm(vec3 p) {
       float value = 0.0;
       float amplitude = 0.5;
@@ -109,30 +99,27 @@ export class RockyTerrainLayer {
       
       return value;
     }
-    
-    // Función para crear cráteres
+
     float craterPattern(vec3 p, float count) {
       float craters = 0.0;
-      float scale = count * 8.0; // Escalar según craterCount
-      
-      // Múltiples capas de cráteres con diferentes tamaños
+      float scale = count * 8.0;
+
       for(int i = 0; i < 3; i++) {
         float layerScale = scale * pow(2.0, float(i));
         vec3 cellPos = p * layerScale;
         vec3 cellId = floor(cellPos);
         vec3 cellLocal = fract(cellPos);
-        
-        // Hash para posición random de crater en celda
+
         float hash = fract(sin(dot(cellId, vec3(12.9898, 78.233, 54.53))) * 43758.5453);
         
-        if(hash > 0.7) { // Solo algunas celdas tienen cráteres
+        if(hash > 0.7) {
           vec2 craterCenter = vec2(0.5) + 0.3 * (vec2(hash, fract(hash * 73.0)) - 0.5);
           float dist = distance(cellLocal.xy, craterCenter);
           float craterSize = 0.2 + 0.3 * fract(hash * 127.0);
           
           if(dist < craterSize) {
             float craterDepth = smoothstep(craterSize, craterSize * 0.3, dist);
-            craters += craterDepth * (0.8 - float(i) * 0.2); // Cráteres más pequeños son menos profundos
+            craters += craterDepth * (0.8 - float(i) * 0.2);
           }
         }
       }
@@ -144,34 +131,25 @@ export class RockyTerrainLayer {
       vec3 pos = normalize(vPosition);
       vec3 normal = normalize(vNormal);
       vec3 lightDir = normalize(lightDirection);
-      
-      // Textura rocosa base usando rockDensity
+
       float rockTexture = fbm(pos * rockDensity);
       rockTexture = pow(rockTexture, roughness);
-      
-      // Crear cráteres usando craterCount
+
       float craters = craterPattern(pos, craterCount);
-      
-      // Combinar texturas
+
       float combinedTexture = rockTexture * (1.0 - craters * 0.5) + craters * 0.3;
-      
-      // Calcular iluminación para el color (pero no para la visibilidad)
+
       float dotNL = dot(normal, lightDir);
       float lightInfluence = smoothstep(-0.2, 0.2, dotNL);
-      
-      // Color base con variación según texturas
+
       vec3 baseColor = rockColor;
-      
-      // Oscurecer cráteres
+
       baseColor = mix(baseColor, baseColor * 0.6, craters);
-      
-      // Aplicar variación rocosa
+
       vec3 color = baseColor * (0.6 + 0.4 * combinedTexture);
-      
-      // Aplicar un poco de variación de luz pero mantener visibilidad en toda la superficie
+
       color *= (0.7 + 0.3 * lightInfluence);
-      
-      // Mostrar en toda la superficie del planeta con opacity variable
+
       float alpha = combinedTexture * opacity;
       
       gl_FragColor = vec4(color, alpha);
@@ -181,27 +159,24 @@ export class RockyTerrainLayer {
   constructor(layerSystem: PlanetLayerSystem, params: RockyTerrainLayerParams = {}) {
     this.layerSystem = layerSystem;
 
-    // Generar valores procedurales usando seed
     const seed = params.seed || Math.floor(Math.random() * 1000000);
     const rng = new SeededRandom(seed);
 
     const baseColor = params.color instanceof THREE.Color ? params.color : params.color ? new THREE.Color(params.color as any) : new THREE.Color(0x8b4513);
 
-    // Seleccionar rangos según tipo de planeta
     const planetType = params.planetType || "DEFAULT";
     const ranges = PROCEDURAL_RANGES[planetType];
 
     this.params = {
       color: baseColor,
       roughness: params.roughness || rng.uniform(ranges.ROUGHNESS.min, ranges.ROUGHNESS.max),
-      rockDensity: params.rockDensity || rng.uniform(ranges.ROCK_DENSITY.min, ranges.ROCK_DENSITY.max) * 10, // Escalar para uso en shader
+      rockDensity: params.rockDensity || rng.uniform(ranges.ROCK_DENSITY.min, ranges.ROCK_DENSITY.max) * 10,
       craterCount: params.craterCount || rng.uniform(ranges.CRATER_COUNT.min, ranges.CRATER_COUNT.max),
       opacity: params.opacity || rng.uniform(ranges.OPACITY.min, ranges.OPACITY.max),
       seed,
       planetType,
     };
 
-    // Crear material
     this.material = new THREE.ShaderMaterial({
       vertexShader: RockyTerrainLayer.vertexShader,
       fragmentShader: RockyTerrainLayer.fragmentShader,
@@ -218,16 +193,15 @@ export class RockyTerrainLayer {
       depthWrite: false,
     });
 
-    // Añadir capa al sistema
     this.layerMesh = this.layerSystem.addEffectLayer("rockyTerrain", this.material, this.layerSystem.getNextScaleFactor());
   }
 
   update(deltaTime: number): void {
-    // Terreno rocoso completamente estático - no necesita updates
+
   }
 
   dispose(): void {
-    // La limpieza se maneja en PlanetLayerSystem
+
   }
 }
 
@@ -235,11 +209,9 @@ export function createRockyTerrainLayerFromPythonData(layerSystem: PlanetLayerSy
   const surface = data.surface || {};
   const baseColor = data.planet_info?.base_color || surface.base_color;
 
-  // Generar valores proceduralmente basados en seed
   const seed = globalSeed || Math.floor(Math.random() * 1000000);
-  const rng = new SeededRandom(seed + 8000); // +8000 para RockyTerrainLayer
+  const rng = new SeededRandom(seed + 8000);
 
-  // Detectar tipo de planeta si no se especifica
   let detectedPlanetType = planetType;
   if (planetType === "DEFAULT" && data.surface_elements?.type) {
     const surfaceType = data.surface_elements.type.toLowerCase();
@@ -250,7 +222,6 @@ export function createRockyTerrainLayerFromPythonData(layerSystem: PlanetLayerSy
     }
   }
 
-  // Seleccionar rangos apropiados
   const ranges = PROCEDURAL_RANGES[detectedPlanetType];
 
   return new RockyTerrainLayer(layerSystem, {

@@ -1,10 +1,4 @@
-/**
- * Cloud Bands Layer - Versión mejorada que funciona como capa
- *
- * Esta versión está diseñada para trabajar con PlanetLayerSystem
- * y no sobrescribe el material base del planeta.
- */
-
+// atlas-ui/react/static/js/3DEffects/CloudBandsLayer.tsx
 import * as THREE from "three";
 import { PlanetLayerSystem } from "../3DComponents/PlanetLayerSystem";
 import { SeededRandom } from "../Utils/SeededRandom.tsx";
@@ -23,7 +17,6 @@ export interface CloudBandsLayerParams {
   seed?: number;
 }
 
-// Rangos para generación procedural
 const PROCEDURAL_RANGES = {
   NUM_BANDS: { min: 6, max: 12 },
   BAND_POSITIONS: { min: -0.8, max: 0.8 },
@@ -44,7 +37,6 @@ export class CloudBandsLayer {
   constructor(layerSystem: PlanetLayerSystem, params: CloudBandsLayerParams = {}) {
     this.layerSystem = layerSystem;
 
-    // Generar valores procedurales usando seed
     const seed = params.seed || Math.floor(Math.random() * 1000000);
     const rng = new SeededRandom(seed);
 
@@ -60,14 +52,12 @@ export class CloudBandsLayer {
       animationSpeed: params.animationSpeed || rng.uniform(PROCEDURAL_RANGES.ANIMATION_SPEED.min, PROCEDURAL_RANGES.ANIMATION_SPEED.max),
       turbulence: params.turbulence || rng.uniform(PROCEDURAL_RANGES.TURBULENCE.min, PROCEDURAL_RANGES.TURBULENCE.max),
       noiseScale: params.noiseScale || rng.uniform(PROCEDURAL_RANGES.NOISE_SCALE.min, PROCEDURAL_RANGES.NOISE_SCALE.max),
-      opacity: params.opacity || 0.4, // Valor por defecto de opacidad reducido
+      opacity: params.opacity || 0.4,
       seed,
     };
 
-    // Crear material usando el sistema de capas
     this.material = this.layerSystem.createCloudBandsLayerMaterial(this.params);
 
-    // Añadir capa al sistema, pasando referencia a este objeto
     this.layerMesh = this.layerSystem.addEffectLayer("cloudBands", this.material, 1.001, this);
   }
 
@@ -127,19 +117,15 @@ export class CloudBandsLayer {
   }
 
   dispose(): void {
-    // La limpieza se maneja en PlanetLayerSystem
+
   }
 }
 
-/**
- * Función de utilidad para crear efecto desde datos de Python
- */
 export function createCloudBandsLayerFromPythonData(layerSystem: PlanetLayerSystem, gasGiantData: any, globalSeed?: number): CloudBandsLayer {
   const cloudBands = gasGiantData.cloud_bands || {};
 
-  // Generar valores proceduralmente basados en seed
   const seed = globalSeed || Math.floor(Math.random() * 1000000);
-  const rng = new SeededRandom(seed + 4000); // +4000 para CloudBandsLayer
+  const rng = new SeededRandom(seed + 4000);
 
   const params: CloudBandsLayerParams = {
     numBands: cloudBands.num_bands || Math.floor(rng.uniform(PROCEDURAL_RANGES.NUM_BANDS.min, PROCEDURAL_RANGES.NUM_BANDS.max)),
@@ -151,7 +137,7 @@ export function createCloudBandsLayerFromPythonData(layerSystem: PlanetLayerSyst
     animationSpeed: rng.uniform(PROCEDURAL_RANGES.ANIMATION_SPEED.min, PROCEDURAL_RANGES.ANIMATION_SPEED.max),
     turbulence: gasGiantData.turbulence || rng.uniform(PROCEDURAL_RANGES.TURBULENCE.min, PROCEDURAL_RANGES.TURBULENCE.max),
     noiseScale: rng.uniform(PROCEDURAL_RANGES.NOISE_SCALE.min, PROCEDURAL_RANGES.NOISE_SCALE.max),
-    opacity: 0.4, // Opacidad fija para que siempre sean semi-transparentes
+    opacity: 0.4,
     seed,
   };
 

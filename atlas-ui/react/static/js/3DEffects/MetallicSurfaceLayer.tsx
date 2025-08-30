@@ -1,9 +1,4 @@
-/**
- * Metallic Surface Layer - Versión que funciona como capa
- *
- * Crea superficie metálica como capa transparente
- */
-
+// atlas-ui/react/static/js/3DEffects/MetallicSurfaceLayer.tsx
 import * as THREE from "three";
 import { PlanetLayerSystem } from "../3DComponents/PlanetLayerSystem";
 import { SeededRandom } from "../Utils/SeededRandom.tsx";
@@ -17,10 +12,9 @@ export interface MetallicSurfaceLayerParams {
   seed?: number;
   noiseScale?: number;
   noiseIntensity?: number;
-  crystalScale?: number; // Tamaño de los cristales facetados (mayor = cristales más pequeños)
+  crystalScale?: number;
 }
 
-// Rangos para generación procedural
 const PROCEDURAL_RANGES = {
   METALNESS: { min: 0.5, max: 5 },
   ROUGHNESS: { min: 0.1, max: 0.6 },
@@ -35,12 +29,9 @@ export class MetallicSurfaceLayer {
   private params: MetallicSurfaceLayerParams;
   private layerSystem: PlanetLayerSystem;
 
-  // Shaders eliminados - ahora se usan desde PlanetLayerSystem.createMetallicSurfaceLayerMaterial
-
   constructor(layerSystem: PlanetLayerSystem, params: MetallicSurfaceLayerParams = {}) {
     this.layerSystem = layerSystem;
 
-    // Generar valores procedurales usando seed
     const seed = params.seed || Math.floor(Math.random() * 1000000);
     const rng = new SeededRandom(seed);
 
@@ -58,15 +49,13 @@ export class MetallicSurfaceLayer {
       crystalScale: params.crystalScale || rng.uniform(PROCEDURAL_RANGES.CRYSTAL_SCALE.min, PROCEDURAL_RANGES.CRYSTAL_SCALE.max),
     };
 
-    // Crear material usando el sistema de capas (como CloudBands)
     this.material = this.layerSystem.createMetallicSurfaceLayerMaterial(this.params);
 
-    // Añadir capa al sistema, pasando referencia a este objeto
     this.layerMesh = this.layerSystem.addEffectLayer(
       "metallicSurface",
       this.material,
       this.layerSystem.getNextScaleFactor(),
-      this // Pasar referencia como CloudBands
+      this
     );
   }
 
@@ -77,7 +66,7 @@ export class MetallicSurfaceLayer {
   }
 
   dispose(): void {
-    // La limpieza se maneja en PlanetLayerSystem
+
   }
 }
 
@@ -85,12 +74,10 @@ export function createMetallicSurfaceLayerFromPythonData(layerSystem: PlanetLaye
   const surface = data.surface || {};
   const baseColor = data.planet_info?.base_color || surface.base_color;
 
-  // Generar valores proceduralmente basados en seed del planeta
   const seed = globalSeed || Math.floor(Math.random() * 1000000);
-  const rng = new SeededRandom(seed + 7000); // +7000 para MetallicSurfaceLayer
+  const rng = new SeededRandom(seed + 7000);
 
-  // Usar el seed del planeta para variaciones sutiles (sin cambiar apariencia base)
-  const subtleVariation = rng.uniform(0.8, 1.2); // Variación muy sutil
+  const subtleVariation = rng.uniform(0.8, 1.2);
 
   return new MetallicSurfaceLayer(layerSystem, {
     color: baseColor ? new THREE.Color(baseColor) : new THREE.Color(0x808080),
@@ -99,8 +86,8 @@ export function createMetallicSurfaceLayerFromPythonData(layerSystem: PlanetLaye
     fragmentationIntensity: surface.fragmentation || rng.uniform(PROCEDURAL_RANGES.FRAGMENTATION_INTENSITY.min, PROCEDURAL_RANGES.FRAGMENTATION_INTENSITY.max),
     opacity: rng.uniform(PROCEDURAL_RANGES.OPACITY.min, PROCEDURAL_RANGES.OPACITY.max),
     seed,
-    noiseScale: 4.0 * subtleVariation, // Variación sutil basada en seed
+    noiseScale: 4.0 * subtleVariation,
     noiseIntensity: 0.3,
-    crystalScale: rng.uniform(PROCEDURAL_RANGES.CRYSTAL_SCALE.min, PROCEDURAL_RANGES.CRYSTAL_SCALE.max), // Tamaño de cristal único por planeta
+    crystalScale: rng.uniform(PROCEDURAL_RANGES.CRYSTAL_SCALE.min, PROCEDURAL_RANGES.CRYSTAL_SCALE.max),
   });
 }

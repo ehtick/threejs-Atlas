@@ -1,14 +1,4 @@
-/**
- * Atmosphere Glow Effect - Sistema de partículas luminosas atmosféricas
- *
- * Crea partículas brillantes que orbitan el planeta, generando un efecto
- * de resplandor atmosférico dinámico. Anteriormente llamado CloudGyros.
- *
- * Responsabilidades:
- * - AtmosphereGlow.tsx -> Partículas luminosas orbitantes (ESTE ARCHIVO)
- * - CloudBands.tsx -> Bandas horizontales de gas giants
- * - CloudGyros.tsx -> Espirales giratorias específicas
- */
+// atlas-ui/react/static/js/3DEffects/AtmosphereGlow.tsx
 
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom.tsx";
@@ -22,14 +12,13 @@ export interface AtmosphereGlowParams {
   opacity?: number;
   turbulence?: number;
   seed?: number;
-  rotationSpeed?: number; // Velocidad de rotación del sistema
-  movementAmplitude?: number; // Amplitud del movimiento individual
-  startTime?: number; // Tiempo inicial fijo para determinismo
-  timeSpeed?: number; // Velocidad del tiempo para movimiento procedural (0.1 - 3.0)
+  rotationSpeed?: number;
+  movementAmplitude?: number;
+  startTime?: number;
+  timeSpeed?: number;
   cosmicOriginTime?: number;
 }
 
-// Rangos para generación procedural
 const PROCEDURAL_RANGES = {
   PARTICLE_COUNT: { min: 25, max: 150 },
   SPEED: { min: 0.05, max: 0.5 },
@@ -38,14 +27,9 @@ const PROCEDURAL_RANGES = {
   TURBULENCE: { min: 0.1, max: 0.5 },
   ROTATION_SPEED: { min: 0.01, max: 0.05 },
   MOVEMENT_AMPLITUDE: { min: 0.005, max: 0.05 },
-  TIME_SPEED: { min: 0.1, max: 3.0 } // Rango de velocidades del tiempo
+  TIME_SPEED: { min: 0.1, max: 3.0 }
 };
 
-/**
- * Efecto de Resplandor Atmosférico (anteriormente CloudGyrosEffect)
- *
- * Crea partículas luminosas que orbitan alrededor del planeta
- */
 export class AtmosphereGlowEffect {
   private particleSystem: THREE.Points;
   private material: THREE.ShaderMaterial;
@@ -72,7 +56,6 @@ export class AtmosphereGlowEffect {
       vColor = customColor;
       vSize = size;
       
-      // Movimiento de las partículas con turbulencia
       vec3 pos = position;
       float timeWithPhase = time * speed + phase;
       
@@ -80,7 +63,6 @@ export class AtmosphereGlowEffect {
       pos.y += cos(timeWithPhase * 0.7) * (movementAmplitude * 0.5) * turbulence;
       pos.z += sin(timeWithPhase * 0.5) * (movementAmplitude * 0.8) * turbulence;
       
-      // Fade basado en la posición y tiempo
       float distanceFromCenter = length(pos.xy) / 2.0;
       vAlpha = (1.0 - distanceFromCenter) * (0.5 + 0.5 * sin(timeWithPhase * 2.0));
       
@@ -96,16 +78,13 @@ export class AtmosphereGlowEffect {
     varying float vSize;
     
     void main() {
-      // Crear forma de estela alargada
       vec2 uv = gl_PointCoord - 0.5;
       float dist = length(uv);
       
-      // Estela con forma más dinámica
       float streak = 1.0 - smoothstep(0.0, 0.5, dist);
       float elongation = 1.0 - smoothstep(0.0, 0.3, abs(uv.x));
       streak *= elongation;
       
-      // Añadir variación basada en el tamaño
       float sizeVariation = vSize > 1.5 ? 1.2 : 0.8;
       streak *= sizeVariation;
       
@@ -114,12 +93,10 @@ export class AtmosphereGlowEffect {
   `;
 
   constructor(planetRadius: number, params: AtmosphereGlowParams = {}) {
-    // Generar valores procedurales usando seed
     const seed = params.seed || Math.floor(Math.random() * 1000000);
     const rng = new SeededRandom(seed);
     
-    // Tiempo inicial determinista basado en el seed
-    this.startTime = params.startTime || (seed % 10000) / 1000; // Convertir seed a tiempo inicial
+    this.startTime = params.startTime || (seed % 10000) / 1000;
     
     this.params = {
       color: params.color || new THREE.Color(0xffffff),
@@ -152,18 +129,15 @@ export class AtmosphereGlowEffect {
 
     const color = this.params.color instanceof THREE.Color ? this.params.color : new THREE.Color(this.params.color as any);
 
-    // Usar seed consistente para partículas reproducibles
     const seed = this.params.seed || Math.floor(Math.random() * 1000000);
     const rng = new SeededRandom(seed);
 
     for (let i = 0; i < this.particleCount; i++) {
-      // Posición aleatoria en la superficie usando seed
       const pos = rng.spherePosition(planetRadius * rng.uniform(1.0, 1.1));
       positions[i * 3] = pos.x;
       positions[i * 3 + 1] = pos.y;
       positions[i * 3 + 2] = pos.z;
 
-      // Color con ligera variación usando seed
       const colorVar = rng.colorVariation({ r: color.r, g: color.g, b: color.b });
       colors[i * 3] = colorVar.r;
       colors[i * 3 + 1] = colorVar.g;
@@ -204,13 +178,11 @@ export class AtmosphereGlowEffect {
   }
 
   update(deltaTime: number): void {
-    // Calcular tiempo absoluto determinista desde el inicio con ciclo y velocidad procedural
-    const cosmicOriginTime = DEFAULT_COSMIC_ORIGIN_TIME; // No params.cosmicOriginTime available here
+    const cosmicOriginTime = DEFAULT_COSMIC_ORIGIN_TIME;
     const currentTime = getAnimatedUniverseTime(cosmicOriginTime, this.params.timeSpeed!, this.startTime);
     
     this.material.uniforms.time.value = currentTime;
 
-    // Rotación procedural del sistema de partículas usando tiempo absoluto
     this.particleSystem.rotation.y = currentTime * this.params.rotationSpeed!;
   }
 
@@ -233,15 +205,11 @@ export class AtmosphereGlowEffect {
   }
 }
 
-/**
- * Función de utilidad para crear efecto desde datos de Python
- */
 export function createAtmosphereGlowFromPythonData(planetRadius: number, atmosphereData: any, globalSeed?: number): AtmosphereGlowEffect {
   const streaksData = atmosphereData.streaks || {};
 
-  // Generar todos los valores proceduralmente basados en seed
   const seed = globalSeed || Math.floor(Math.random() * 1000000);
-  const rng = new SeededRandom(seed + 3000); // +3000 para AtmosphereGlow
+  const rng = new SeededRandom(seed + 3000);
   
   const particleCount = streaksData.count || Math.floor(rng.uniform(PROCEDURAL_RANGES.PARTICLE_COUNT.min, PROCEDURAL_RANGES.PARTICLE_COUNT.max));
   const speed = streaksData.speed || rng.uniform(PROCEDURAL_RANGES.SPEED.min, PROCEDURAL_RANGES.SPEED.max);

@@ -1,16 +1,4 @@
-/**
- * Toxic Swamp Bubbles Effect - Sistema determinístico basado en tiempo cósmico
- *
- * Cada burbuja tiene su propio ciclo de vida independiente:
- * 1. Aparición gradual desde la superficie (fade-in)
- * 2. Emergencia y crecimiento 
- * 3. Movimiento ascendente con wobble
- * 4. Explosión única al final del ciclo
- * 5. Desaparición
- *
- * Todo calculado de forma determinística usando tiempo cósmico
- */
-
+// atlas-ui/react/static/js/3DEffects/ToxicSwampBubbles.tsx
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom.tsx";
 
@@ -29,7 +17,6 @@ export interface ToxicSwampBubblesParams {
   timeSpeed?: number;
 }
 
-// Ranges for procedural generation
 const PROCEDURAL_RANGES = {
   DEFAULT: {
     BUBBLE_COUNT: { min: 8, max: 15 },
@@ -53,8 +40,8 @@ const PROCEDURAL_RANGES = {
 
 interface BubbleCycleData {
   bubbleIndex: number;
-  birthOffset: number; // Tiempo de nacimiento dentro del ciclo global
-  cycleDuration: number; // Duración total del ciclo de esta burbuja
+  birthOffset: number;
+  cycleDuration: number;
   fadeInDuration: number;
   emergeDuration: number;
   riseDuration: number;
@@ -134,23 +121,20 @@ export class ToxicSwampBubblesEffect {
   }
   
   private generateBubbleCycleData(): void {
-    // Generar datos determinísticos para cada burbuja
+
     for (let i = 0; i < this.params.bubbleCount; i++) {
       const rng = new SeededRandom(this.params.seed + i);
-      
-      // Cada burbuja tiene un offset de nacimiento único
-      const birthOffset = (i * 2.3) % 60; // Distribución en 60 segundos
-      
-      // Duraciones del ciclo de vida
+
+      const birthOffset = (i * 2.3) % 60;
+
       const fadeInDuration = rng.uniform(2, 4);
       const emergeDuration = rng.uniform(3, 5);
       const riseDuration = rng.uniform(15, 25);
       const popDuration = 0.5;
       const fadeOutDuration = 1;
       
-      const cycleDuration = fadeInDuration + emergeDuration + riseDuration + popDuration + fadeOutDuration + rng.uniform(5, 15); // Pausa entre ciclos
-      
-      // Posición inicial procedural
+      const cycleDuration = fadeInDuration + emergeDuration + riseDuration + popDuration + fadeOutDuration + rng.uniform(5, 15);
+
       const startPosition = this.getProceduralSurfacePoint(i);
       const riseDirection = startPosition.clone().sub(this.planetCenter).normalize();
       
@@ -176,35 +160,28 @@ export class ToxicSwampBubblesEffect {
   }
   
   private getProceduralSurfacePoint(bubbleIndex: number): THREE.Vector3 {
-    // Crear generador con semilla base y hacer múltiples llamadas para llegar al estado único de esta burbuja
+
     const rng = new SeededRandom(this.params.seed);
-    
-    // Avanzar el generador hasta el estado único de esta burbuja
+
     for (let i = 0; i < bubbleIndex; i++) {
-      rng.uniform(0, 1); // Consumir números aleatorios para avanzar el estado
       rng.uniform(0, 1);
-      rng.uniform(0, 1); // Tres llamadas por burbuja para mejor dispersión
+      rng.uniform(0, 1);
+      rng.uniform(0, 1);
     }
-    
-    // Método de Marsaglia para distribución uniforme en esfera unitaria
-    // Generar punto aleatorio en esfera usando coordenadas esféricas uniformes
+
     const u1 = rng.uniform(0, 1);
     const u2 = rng.uniform(0, 1);
-    
-    // Distribución uniforme en coordenadas esféricas
-    const theta = 2 * Math.PI * u1; // Ángulo azimutal [0, 2π]
-    const cosTheta = 2 * u2 - 1;    // cos(θ) uniforme en [-1, 1]
+
+    const theta = 2 * Math.PI * u1;
+    const cosTheta = 2 * u2 - 1;
     const sinTheta = Math.sqrt(1 - cosTheta * cosTheta);
-    
-    // Convertir a coordenadas cartesianas
+
     const x = sinTheta * Math.cos(theta);
     const y = cosTheta;
     const z = sinTheta * Math.sin(theta);
-    
-    // Punto en superficie unitaria
+
     const surfacePoint = new THREE.Vector3(x, y, z);
-    
-    // Pequeña variación en la profundidad (burbujas emergen desde ligeramente bajo la superficie)
+
     const depthVariation = 0.95 + 0.05 * rng.uniform(0, 1);
     const startDepth = this.planetRadius * depthVariation;
     
@@ -241,18 +218,16 @@ export class ToxicSwampBubblesEffect {
 
   private calculateBubbleState(bubble: Bubble, cosmicTime: number): void {
     const cycleData = bubble.cycleData;
-    
-    // Calcular tiempo dentro del ciclo de esta burbuja
+
     const adjustedTime = cosmicTime + cycleData.birthOffset;
     const cycleTime = adjustedTime % cycleData.cycleDuration;
-    
-    // Determinar fase actual
+
     let currentTime = 0;
     const fadeInEnd = currentTime + cycleData.fadeInDuration;
     const emergeEnd = fadeInEnd + cycleData.emergeDuration;
     const riseEnd = emergeEnd + cycleData.riseDuration;
     const popEnd = riseEnd + cycleData.popDuration;
-    const fadeOutEnd = popEnd + 1; // fadeOutDuration fijo de 1 segundo
+    const fadeOutEnd = popEnd + 1;
     
     let phase: Bubble['currentPhase'] = 'hidden';
     let opacity = 0;
@@ -260,14 +235,14 @@ export class ToxicSwampBubblesEffect {
     let position = cycleData.startPosition.clone();
     
     if (cycleTime < fadeInEnd) {
-      // FASE 1: Fade In
+
       phase = 'fadeIn';
       const progress = cycleTime / cycleData.fadeInDuration;
       opacity = this.params.opacity * progress;
       size = cycleData.maxSize * 0.1 * progress;
       
     } else if (cycleTime < emergeEnd) {
-      // FASE 2: Emergiendo
+
       phase = 'emerging';
       const progress = (cycleTime - fadeInEnd) / cycleData.emergeDuration;
       opacity = this.params.opacity;
@@ -276,24 +251,21 @@ export class ToxicSwampBubblesEffect {
         cycleData.maxSize * 0.7,
         THREE.MathUtils.smoothstep(progress, 0, 1)
       );
-      
-      // Emergencia gradual hacia la superficie
+
       const emergeFactor = THREE.MathUtils.smoothstep(progress, 0, 1);
       const surfacePosition = cycleData.riseDirection.clone().multiplyScalar(this.planetRadius).add(this.planetCenter);
       position = cycleData.startPosition.clone().lerp(surfacePosition, emergeFactor);
       
     } else if (cycleTime < riseEnd) {
-      // FASE 3: Subiendo
+
       phase = 'rising';
       const progress = (cycleTime - emergeEnd) / cycleData.riseDuration;
       opacity = this.params.opacity;
       size = THREE.MathUtils.lerp(cycleData.maxSize * 0.7, cycleData.maxSize, progress);
-      
-      // Movimiento ascendente con wobble
+
       const riseDistance = cycleData.riseSpeed * (cycleTime - emergeEnd);
       const surfacePosition = cycleData.riseDirection.clone().multiplyScalar(this.planetRadius).add(this.planetCenter);
-      
-      // Wobble orgánico
+
       const wobbleTime = (cycleTime - emergeEnd) * cycleData.wobbleSpeed;
       const wobbleX = Math.sin(wobbleTime + cycleData.bubbleIndex * 0.31) * cycleData.wobbleAmplitude;
       const wobbleY = Math.cos(wobbleTime * 1.3 + cycleData.bubbleIndex * 0.47) * cycleData.wobbleAmplitude;
@@ -305,32 +277,30 @@ export class ToxicSwampBubblesEffect {
         .add(wobble);
       
     } else if (cycleTime < popEnd) {
-      // FASE 4: Explotando
+
       phase = 'popping';
       const progress = (cycleTime - riseEnd) / cycleData.popDuration;
       opacity = this.params.opacity * (1 - progress) * 0.5;
-      size = cycleData.maxSize * (1 + progress * 1.5); // Expansión rápida
-      
-      // Mantener posición final
+      size = cycleData.maxSize * (1 + progress * 1.5);
+
       const riseDistance = cycleData.riseSpeed * cycleData.riseDuration;
       const surfacePosition = cycleData.riseDirection.clone().multiplyScalar(this.planetRadius).add(this.planetCenter);
       position = surfacePosition.clone().add(cycleData.riseDirection.clone().multiplyScalar(riseDistance));
       
     } else if (cycleTime < fadeOutEnd) {
-      // FASE 5: Fade Out
+
       phase = 'fadeOut';
       const progress = (cycleTime - popEnd) / 1;
       opacity = 0;
       size = 0;
       
     } else {
-      // Oculta hasta el próximo ciclo
+
       phase = 'hidden';
       opacity = 0;
       size = 0;
     }
-    
-    // Aplicar estado calculado
+
     bubble.currentPhase = phase;
     bubble.mesh.visible = phase !== 'hidden';
     bubble.mesh.position.copy(position);
@@ -340,8 +310,7 @@ export class ToxicSwampBubblesEffect {
 
   public update(deltaTime: number): void {
     const cosmicTime = this.getCurrentCosmicTime();
-    
-    // Actualizar cada burbuja basándose en el tiempo cósmico
+
     for (const bubble of this.bubbles) {
       this.calculateBubbleState(bubble, cosmicTime);
     }
@@ -351,8 +320,7 @@ export class ToxicSwampBubblesEffect {
     if (planetPosition) {
       this.planetCenter.copy(planetPosition);
       this.bubbleGroup.position.copy(planetPosition);
-      
-      // Recalcular posiciones con nuevo centro
+
       this.generateBubbleCycleData();
       for (let i = 0; i < this.bubbles.length; i++) {
         this.bubbles[i].cycleData = this.bubbleCycleData[i];
@@ -392,7 +360,6 @@ export class ToxicSwampBubblesEffect {
   }
 }
 
-// Factory function for creating from Python data
 export function createToxicSwampBubblesFromPythonData(
   planetRadius: number,
   surface: any,

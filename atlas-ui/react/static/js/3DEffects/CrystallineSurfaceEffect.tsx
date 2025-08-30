@@ -1,93 +1,65 @@
-/**
- * Crystalline Surface Effect - Sistema avanzado de cristales para planetas crystalline
- *
- * Implementa efectos visuales sofisticados para planetas cristalinos incluyendo:
- * - Materiales con refracción y transmisión de luz
- * - Texturas procedurales con patrones fractales
- * - Efectos de brillo interno y reflexión
- * - Mapas ambientales para reflexión espacial
- *
- * Responsabilidades:
- * - Crea formaciones cristalinas con física de luz realista
- * - Genera patrones fractales para vetas y fracturas
- * - Implementa brillo interno y efectos luminosos
- * - Se integra con el sistema de iluminación planetaria
- */
-
+// atlas-ui/react/static/js/3DEffects/CrystallineSurfaceEffect.tsx
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom.tsx";
 
 export interface CrystallineSurfaceParams {
-  crystallinePatches?: any[]; // Datos de cristales desde Python API
+  crystallinePatches?: any[];
   seed?: number;
-  density?: number; // Densidad de cristales (0.1 - 2.0)
-  baseColor?: THREE.Color | number; // Color base del cristal (cyan por defecto)
-  transmission?: number; // Transmisión de luz (0.0 - 1.0)
-  ior?: number; // Índice de refracción (1.0 - 2.4)
-  roughness?: number; // Rugosidad (0.0 - 1.0)
-  metalness?: number; // Metalicidad (0.0 - 1.0)
-  glowIntensity?: number; // Intensidad del brillo interno
-  refractionStrength?: number; // Fuerza de refracción
-  fractureIntensity?: number; // Intensidad de las fracturas
-  cosmicOriginTime?: number; // Tiempo de origen cósmico
-  timeSpeed?: number; // Velocidad de animación de brillo
+  density?: number;
+  baseColor?: THREE.Color | number;
+  transmission?: number;
+  ior?: number;
+  roughness?: number;
+  metalness?: number;
+  glowIntensity?: number;
+  refractionStrength?: number;
+  fractureIntensity?: number;
+  cosmicOriginTime?: number;
+  timeSpeed?: number;
 }
 
-// Rangos para generación procedural de cristales con reflexiones optimizadas
 const PROCEDURAL_RANGES = {
-  CRYSTAL_COUNT: { min: 100, max: 400 }, // Número de formaciones cristalinas
-  DENSITY: { min: 0.8, max: 1.8 }, // Densidad de cristales
-  SIZE: { min: 0.8, max: 1.2 }, // Tamaños de cristales variados
-  TRANSMISSION: { min: 0, max: 0 }, // Sin transmisión para mantener reflexiones
-  IOR: { min: 2.4, max: 2.1 }, // Rango de índices de refracción (vidrio a diamante)
-  ROUGHNESS: { min: 0.0, max: 0.01 }, // Rugosidad mínima para reflexiones perfectas
-  GLOW_INTENSITY: { min: 0.1, max: 2.1 }, // Brillo interno reducido para no interferir con reflexiones
-  HEIGHT: { min: 0.01, max: 0.09 }, // Altura de protuberancias cristalinas
+  CRYSTAL_COUNT: { min: 100, max: 400 },
+  DENSITY: { min: 0.8, max: 1.8 },
+  SIZE: { min: 0.8, max: 1.2 },
+  TRANSMISSION: { min: 0, max: 0 },
+  IOR: { min: 2.4, max: 2.1 },
+  ROUGHNESS: { min: 0.0, max: 0.01 },
+  GLOW_INTENSITY: { min: 0.1, max: 2.1 },
+  HEIGHT: { min: 0.01, max: 0.09 },
 };
 
-/**
- * Efecto de Superficie Cristalina
- *
- * Crea efectos avanzados de cristales con:
- * - MeshPhysicalMaterial para refracción realista
- * - Noise procedural para fracturas y vetas
- * - Cubemap starfield para reflexiones espaciales
- * - ShaderMaterial para efectos de brillo interno
- */
 export class CrystallineSurfaceEffect {
   private crystallineGroup: THREE.Group;
   private crystallineFormations: THREE.Mesh[] = [];
   private glowMeshes: THREE.Mesh[] = [];
-  private animationSpeed: number; // Solo para inner glow
+  private animationSpeed: number;
   private envMap: THREE.CubeTexture | null = null;
   private starFieldReflections: THREE.Points | null = null;
   private starFieldMaterial: THREE.ShaderMaterial | null = null;
-  private crystallineData: any[] = []; // Store crystal data for deterministic reflections
+  private crystallineData: any[] = [];
 
   constructor(
     private planetRadius: number,
     private params: CrystallineSurfaceParams = {},
     private seededRng?: SeededRandom,
-    private starField?: any // StarField effect for reflections
+    private starField?: any
   ) {
     this.crystallineGroup = new THREE.Group();
     this.crystallineGroup.name = "CrystallineSurface";
 
-    this.animationSpeed = params.timeSpeed || 0.05; // Solo para inner glow
+    this.animationSpeed = params.timeSpeed || 0.05;
 
-    // Crear cubemap estrellado para reflexiones
     this.createStarfieldCubemap();
 
     this.generateCrystallineFormations();
 
-    // Crear reflexiones de partículas del star field DESPUÉS de generar cristales
-    // Usar setTimeout para asegurar que StarField esté completamente inicializado
     if (this.starField) {
       setTimeout(() => {
         if (this.starField && this.starField.getObject3D && this.starField.getObject3D()) {
           this.createStarFieldReflections();
         } else {
-          console.warn("CrystallineSurface: StarField not ready, skipping reflections");
+
         }
       }, 0);
     }
@@ -109,15 +81,13 @@ export class CrystallineSurfaceEffect {
 
         if (!faceContext) continue;
 
-        // Fondo espacial sutil con gradiente suave
         const gradient = faceContext.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-        gradient.addColorStop(0, "#1a1a2e"); // Centro azul muy oscuro
-        gradient.addColorStop(0.5, "#16213e"); // Medio azul espacial
-        gradient.addColorStop(1, "#0f0f23"); // Borde casi negro
+        gradient.addColorStop(0, "#1a1a2e");
+        gradient.addColorStop(0.5, "#16213e");
+        gradient.addColorStop(1, "#0f0f23");
         faceContext.fillStyle = gradient;
         faceContext.fillRect(0, 0, size, size);
 
-        // Estrellas deterministas para cubemap (usar seed)
         const cubemapRng = new SeededRandom((this.params.seed || 42) + i * 1000);
         const starCount = 200 + Math.floor(cubemapRng.random() * 100);
         for (let j = 0; j < starCount; j++) {
@@ -126,16 +96,15 @@ export class CrystallineSurfaceEffect {
           const brightness = 0.3 + cubemapRng.random() * 0.4;
           const starSize = cubemapRng.random() * 2 + 0.5;
 
-          // Estrellas con tonos sutiles pero visibles
           const colorVariant = cubemapRng.random();
           if (colorVariant < 0.4) {
-            // Estrellas azuladas suaves
+
             faceContext.fillStyle = `rgba(${120 + 60 * brightness}, ${140 + 80 * brightness}, 255, ${brightness})`;
           } else if (colorVariant < 0.7) {
-            // Estrellas blancas suaves
+
             faceContext.fillStyle = `rgba(${200 + 55 * brightness}, ${200 + 55 * brightness}, ${200 + 55 * brightness}, ${brightness})`;
           } else {
-            // Estrellas cálidas suaves
+
             faceContext.fillStyle = `rgba(255, ${180 + 60 * brightness}, ${120 + 60 * brightness}, ${brightness})`;
           }
 
@@ -143,7 +112,6 @@ export class CrystallineSurfaceEffect {
           faceContext.arc(x, y, starSize, 0, Math.PI * 2);
           faceContext.fill();
 
-          // Halo sutil solo para estrellas brillantes
           if (brightness > 0.6 && cubemapRng.random() < 0.1) {
             faceContext.fillStyle = `rgba(255, 255, 255, ${brightness * 0.2})`;
             faceContext.beginPath();
@@ -155,7 +123,6 @@ export class CrystallineSurfaceEffect {
         images.push(faceCanvas);
       }
 
-      // Crear textura cubemap
       if (images.length === 6) {
         this.envMap = new THREE.CubeTexture(images);
         this.envMap.needsUpdate = true;
@@ -164,15 +131,14 @@ export class CrystallineSurfaceEffect {
         this.envMap.generateMipmaps = false;
         this.envMap.minFilter = THREE.LinearFilter;
         this.envMap.magFilter = THREE.LinearFilter;
-        console.log("CrystallineSurfaceEffect: Simple test environment map created");
+
       } else {
-        console.warn("CrystallineSurfaceEffect: Failed to create environment map");
+
       }
     } catch (error) {
-      console.error("CrystallineSurfaceEffect: Error creating cubemap:", error);
+
     }
   }
-
 
   /**
    * Generar formaciones cristalinas con materiales avanzados
@@ -194,7 +160,7 @@ export class CrystallineSurfaceEffect {
     const crystals = [];
 
     for (let i = 0; i < crystalCount; i++) {
-      // Distribución uniforme en esfera
+
       const theta = rng.random() * Math.PI * 2;
       const phi = Math.acos(rng.random() * 2 - 1);
 
@@ -203,9 +169,9 @@ export class CrystallineSurfaceEffect {
       crystals.push({
         position_3d,
         size: rng.uniform(PROCEDURAL_RANGES.SIZE.min, PROCEDURAL_RANGES.SIZE.max),
-        color: [0.0, 0.8 + rng.random() * 0.2, 1.0, 0.9], // Variaciones de cyan
+        color: [0.0, 0.8 + rng.random() * 0.2, 1.0, 0.9],
         height: rng.uniform(PROCEDURAL_RANGES.HEIGHT.min, PROCEDURAL_RANGES.HEIGHT.max),
-        sides: 6 + Math.floor(rng.random() * 6), // 6-12 lados para formas cristalinas
+        sides: 6 + Math.floor(rng.random() * 6),
         transmission: rng.uniform(PROCEDURAL_RANGES.TRANSMISSION.min, PROCEDURAL_RANGES.TRANSMISSION.max),
         ior: rng.uniform(PROCEDURAL_RANGES.IOR.min, PROCEDURAL_RANGES.IOR.max),
         roughness: rng.uniform(PROCEDURAL_RANGES.ROUGHNESS.min, PROCEDURAL_RANGES.ROUGHNESS.max),
@@ -220,27 +186,23 @@ export class CrystallineSurfaceEffect {
    * Crear formación cristalina individual con efectos avanzados
    */
   private createCrystalFormation(crystalData: any, index: number): void {
-    // Posición normalizada en la superficie de la esfera
+
     const surfaceNormal = new THREE.Vector3(crystalData.position_3d[0], crystalData.position_3d[1], crystalData.position_3d[2]).normalize();
 
-    // CREAR GEOMETRÍA CRISTALINA REALISTA que se curve siguiendo la superficie
-
     const baseRadius = crystalData.size * this.planetRadius * 0.5;
-    const crystalHeight = crystalData.height * this.planetRadius; // Usar altura real de PROCEDURAL_RANGES
+    const crystalHeight = crystalData.height * this.planetRadius;
 
-    // Crear geometría cristalina usando CylinderGeometry con pocos lados (forma cristalina)
-    const radialSegments = crystalData.sides; // Usar lados del cristal (6-12)
-    const heightSegments = 4; // Suficientes segmentos para curvar
+    const radialSegments = crystalData.sides;
+    const heightSegments = 4;
 
     const geometry = new THREE.CylinderGeometry(
-      baseRadius * 0.8, // Radio superior ligeramente menor
-      baseRadius, // Radio base
-      crystalHeight, // Altura del cristal
-      radialSegments, // Lados cristalinos
-      heightSegments // Segmentos verticales para curvatura
+      baseRadius * 0.8,
+      baseRadius,
+      crystalHeight,
+      radialSegments,
+      heightSegments
     );
 
-    // Material cristalino sin luces - solo reflexiones del environment
     const material = new THREE.ShaderMaterial({
       uniforms: {
         color: { value: new THREE.Color(crystalData.color[0], crystalData.color[1], crystalData.color[2]) },
@@ -248,7 +210,7 @@ export class CrystallineSurfaceEffect {
         roughness: { value: crystalData.roughness },
         ior: { value: crystalData.ior },
         transmission: { value: 0.2 },
-        lightPosition: { value: new THREE.Vector3(1000, 1000, 1000) }, // Para modulación día/noche
+        lightPosition: { value: new THREE.Vector3(1000, 1000, 1000) },
       },
       vertexShader: `
         varying vec3 vNormal;
@@ -281,24 +243,18 @@ export class CrystallineSurfaceEffect {
         void main() {
           vec3 normal = normalize(vWorldNormal);
           vec3 viewDir = normalize(cameraPosition - vWorldPosition);
-          
-          // MODULACIÓN DÍA/NOCHE - Solo para visibilidad, NO para iluminación
+
           vec3 lightDir = normalize(lightPosition - vWorldPosition);
           float NdotL = dot(normal, lightDir);
-          float dayNightFactor = smoothstep(-0.5, 0.2, NdotL); // Transición gradual
-          
-          // Fresnel más intenso para cristales
+          float dayNightFactor = smoothstep(-0.5, 0.2, NdotL);
+
           float NdotV = max(dot(normal, viewDir), 0.0);
           float F0 = pow((1.0 - ior) / (1.0 + ior), 2.0);
-          float fresnel = F0 + (1.0 - F0) * pow(1.0 - NdotV, 3.0); // Exponente más bajo para más reflexión
-          
-          // === REFLEXIONES CRISTALINAS MÚLTIPLES ===
-          
-          // Reflexión principal
+          float fresnel = F0 + (1.0 - F0) * pow(1.0 - NdotV, 3.0);
+
           vec3 reflectDir = reflect(-viewDir, normal);
           vec3 envReflection = textureCube(envMap, reflectDir).rgb;
-          
-          // Reflexiones adicionales con perturbación para facetas cristalinas
+
           vec3 perturbedNormal1 = normalize(normal + vec3(0.1, 0.0, 0.0));
           vec3 perturbedNormal2 = normalize(normal + vec3(0.0, 0.1, 0.0));
           vec3 reflectDir1 = reflect(-viewDir, perturbedNormal1);
@@ -306,29 +262,20 @@ export class CrystallineSurfaceEffect {
           
           vec3 envReflection1 = textureCube(envMap, reflectDir1).rgb;
           vec3 envReflection2 = textureCube(envMap, reflectDir2).rgb;
-          
-          // Combinar reflexiones múltiples (característico de cristales facetados)
+
           vec3 totalReflection = envReflection * 0.6 + envReflection1 * 0.2 + envReflection2 * 0.2;
-          totalReflection *= (2.0 - roughness); // Más intenso con menos rugosidad
-          
-          // === REFRACCIÓN CRISTALINA ===
+          totalReflection *= (2.0 - roughness);
+
           vec3 refractDir = refract(-viewDir, normal, 1.0 / ior);
           vec3 envRefraction = vec3(0.0);
           if (length(refractDir) > 0.0) {
             envRefraction = textureCube(envMap, refractDir).rgb;
           }
-          
-          // === COLOR CRISTALINO ===
-          
-          // Color base más saturado y brillante
+
           vec3 crystalColor = color * 1.2;
-          
-          // Mezclar con refracción para transmisión
+
           vec3 transmittedColor = mix(crystalColor * 0.8, envRefraction * crystalColor, transmission);
-          
-          // === EFECTOS CRISTALINOS ESPECIALES ===
-          
-          // Dispersión cromática sutil (prisma)
+
           float dispersion = 0.02;
           vec3 refractR = refract(-viewDir, normal, 1.0 / (ior - dispersion));
           vec3 refractG = refract(-viewDir, normal, 1.0 / ior);
@@ -338,31 +285,22 @@ export class CrystallineSurfaceEffect {
           if (length(refractR) > 0.0) dispersedColor.r = textureCube(envMap, refractR).r;
           if (length(refractG) > 0.0) dispersedColor.g = textureCube(envMap, refractG).g;
           if (length(refractB) > 0.0) dispersedColor.b = textureCube(envMap, refractB).b;
-          
-          // Aplicar dispersión sutil
+
           transmittedColor = mix(transmittedColor, dispersedColor * crystalColor, 0.15);
-          
-          // Brillo interno cristalino (caustics simulados)
+
           float internalGlow = pow(fresnel, 0.5) * (1.0 - roughness);
           vec3 glowColor = crystalColor * internalGlow * 0.3;
-          
-          // === COMBINACIÓN FINAL ===
-          
-          // Mezclar transmisión y reflexión usando Fresnel
+
           vec3 finalColor = mix(transmittedColor, totalReflection, fresnel);
-          
-          // Añadir brillo interno
+
           finalColor += glowColor;
-          
-          // APLICAR MODULACIÓN DÍA/NOCHE - Oscurecer en cara oculta
-          // Mantener un mínimo de visibilidad para que no desaparezcan completamente
-          float visibilityFactor = 0.15 + 0.85 * dayNightFactor; // Mínimo 15%, máximo 100%
+
+          float visibilityFactor = 0.15 + 0.85 * dayNightFactor;
           finalColor *= visibilityFactor;
-          
-          // Alpha cristalino también modulado por día/noche
+
           float alpha = mix(0.3 + transmission * 0.4, 0.85, fresnel);
           alpha = clamp(alpha, 0.3, 0.9);
-          alpha *= visibilityFactor; // Menos visible en lado oscuro
+          alpha *= visibilityFactor;
           
           gl_FragColor = vec4(finalColor, alpha);
         }
@@ -371,25 +309,20 @@ export class CrystallineSurfaceEffect {
       side: THREE.FrontSide
     });
 
-    // TÉCNICA DE AtmosphereClouds: Orientación tangente a la superficie
     const crystalPosition = surfaceNormal.clone().multiplyScalar(this.planetRadius);
     const normalFromPlanet = crystalPosition.clone().normalize();
 
-    // Crear vectores tangentes a la superficie esférica (EXACTO de AtmosphereClouds)
     const tangent1 = new THREE.Vector3();
     const tangent2 = new THREE.Vector3();
 
-    // Calcular primer vector tangente
     if (Math.abs(normalFromPlanet.y) < 0.99) {
       tangent1.crossVectors(normalFromPlanet, new THREE.Vector3(0, 1, 0)).normalize();
     } else {
       tangent1.crossVectors(normalFromPlanet, new THREE.Vector3(1, 0, 0)).normalize();
     }
 
-    // Calcular segundo vector tangente (perpendicular al primero y al normal)
     tangent2.crossVectors(normalFromPlanet, tangent1).normalize();
 
-    // Rotación aleatoria para variedad
     const randomAngle = ((index * 137.5) % 360) * (Math.PI / 180);
     const rotatedTangent1 = tangent1
       .clone()
@@ -397,39 +330,29 @@ export class CrystallineSurfaceEffect {
       .add(tangent2.clone().multiplyScalar(Math.sin(randomAngle)));
     const rotatedTangent2 = new THREE.Vector3().crossVectors(normalFromPlanet, rotatedTangent1).normalize();
 
-    // CRÍTICO: Rotar el cilindro 90 grados primero para que esté ACOSTADO
-    // El CylinderGeometry por defecto tiene altura en Y (vertical), necesitamos que esté horizontal
     const flattenMatrix = new THREE.Matrix4();
-    flattenMatrix.makeRotationX(Math.PI / 2); // Rotar 90 grados para acostar el cilindro
+    flattenMatrix.makeRotationX(Math.PI / 2);
     geometry.applyMatrix4(flattenMatrix);
 
-    // Crear matriz de rotación para que el cristal siga la superficie (EXACTO de AtmosphereClouds)
     const rotationMatrix = new THREE.Matrix4();
     rotationMatrix.makeBasis(rotatedTangent1, rotatedTangent2, normalFromPlanet);
 
-    // ORIENTAR Y CURVAR LA GEOMETRÍA CRISTALINA PARA SEGUIR LA SUPERFICIE ESFÉRICA
     const positions = geometry.attributes.position;
     const vertex = new THREE.Vector3();
 
-    // Aplicar la orientación para que el cristal siga la superficie
     geometry.applyMatrix4(rotationMatrix);
 
-    // CURVAR cada vértice del cristal para seguir la superficie esférica
     for (let i = 0; i < positions.count; i++) {
       vertex.fromBufferAttribute(positions, i);
 
-      // Convertir a coordenadas del mundo
       const worldVertex = vertex.clone().add(crystalPosition);
 
-      // Calcular la distancia desde el centro del planeta
       const distanceFromCenter = worldVertex.length();
 
-      // Proyectar sobre una superficie esférica que mantenga el grosor del cristal
       const direction = worldVertex.clone().normalize();
-      const surfaceRadius = this.planetRadius + (distanceFromCenter - this.planetRadius) * 0.5; // Mantener algo de altura
+      const surfaceRadius = this.planetRadius + (distanceFromCenter - this.planetRadius) * 0.5;
       const projectedVertex = direction.multiplyScalar(surfaceRadius);
 
-      // Volver a coordenadas locales del cristal
       const localVertex = projectedVertex.sub(crystalPosition);
 
       positions.setXYZ(i, localVertex.x, localVertex.y, localVertex.z);
@@ -438,15 +361,12 @@ export class CrystallineSurfaceEffect {
     positions.needsUpdate = true;
     geometry.computeVertexNormals();
 
-    // Añadir ruido procedural DESPUÉS de la curvatura
     this.applyProceduralNoise(geometry, crystalData.size * 0.3);
 
-    // Posicionar el cristal exactamente en la superficie (EXACTO de AtmosphereClouds)
     geometry.translate(crystalPosition.x, crystalPosition.y, crystalPosition.z);
 
     const crystalMesh = new THREE.Mesh(geometry, material);
 
-    // Crear efecto de brillo interno
     this.createInnerGlow(crystalMesh, crystalData, index);
 
     this.crystallineFormations.push(crystalMesh);
@@ -463,7 +383,6 @@ export class CrystallineSurfaceEffect {
     for (let i = 0; i < positions.count; i++) {
       vertex.fromBufferAttribute(positions, i);
 
-      // Aplicar ruido Simplex/Perlin simulado
       const noise = this.simpleNoise(vertex.x * 10, vertex.y * 10, vertex.z * 10);
       const displacement = noise * intensity * 0.02;
 
@@ -492,7 +411,6 @@ export class CrystallineSurfaceEffect {
     const starFieldObject = this.starField.getObject3D();
     if (!starFieldObject.geometry) return;
 
-    // Obtener datos de las partículas del star field
     const starPositions = starFieldObject.geometry.attributes.position;
     const starSizes = starFieldObject.geometry.attributes.size;
     const starBrightnesses = starFieldObject.geometry.attributes.brightness;
@@ -506,21 +424,16 @@ export class CrystallineSurfaceEffect {
       crystalIndex: number;
     }> = [];
 
-    // Para cada cristal, calcular qué estrellas debe reflejar basándose en su geometría DETERMINISTA
     this.crystallineData.forEach((crystalData, crystalIndex) => {
-      // Usar la posición determinista del crystal data
+
       const surfaceNormal = new THREE.Vector3(crystalData.position_3d[0], crystalData.position_3d[1], crystalData.position_3d[2]).normalize();
 
       const crystalWorldPos = surfaceNormal.clone().multiplyScalar(this.planetRadius);
       const crystalNormal = crystalWorldPos.clone().normalize();
 
-      // Generar caras deterministas basadas en los datos del cristal
       const faceNormals = this.generateDeterministicFaceNormals(crystalData, crystalIndex);
 
-      // Para cada cara del cristal, encontrar estrellas que se reflejarían
       faceNormals.forEach((faceNormal, faceIndex) => {
-        // Calcular la dirección de reflexión especular para esta cara
-        // R = I - 2 * (I · N) * N, donde I es la dirección incidente y N la normal
 
         for (let starIndex = 0; starIndex < starPositions.count; starIndex++) {
           const starX = starPositions.getX(starIndex);
@@ -529,37 +442,28 @@ export class CrystallineSurfaceEffect {
           const starBrightness = starBrightnesses.getX(starIndex);
           const starSize = starSizes.getX(starIndex);
 
-          // Solo procesar estrellas brillantes
           if (starBrightness < 0.6) continue;
 
           const starPos = new THREE.Vector3(starX, starY, starZ);
           const starDir = starPos.clone().normalize();
 
-          // Dirección incidente desde la estrella al cristal
           const incidentDir = starDir.clone().negate();
 
-          // Calcular reflexión especular: R = I - 2 * (I · N) * N
           const dotProduct = incidentDir.dot(faceNormal);
           const reflectedDir = incidentDir.clone().sub(faceNormal.clone().multiplyScalar(2 * dotProduct));
 
-          // Determinar si esta reflexión es visible desde la cámara
-          // (simplificación: usar ángulo con la normal del cristal)
           const reflectionVisibility = Math.abs(reflectedDir.dot(crystalNormal));
 
-          // Usar seed determinista para decidir si crear esta reflexión específica
           const reflectionSeed = crystalIndex * 10000 + faceIndex * 1000 + starIndex;
           const seededRng = new SeededRandom(reflectionSeed + (this.params.seed || 42));
-          const shouldCreateReflection = seededRng.random() < 0.4; // 40% probabilidad determinista
+          const shouldCreateReflection = seededRng.random() < 0.4;
 
-          // Solo crear reflexión si es suficientemente visible, significativa y pasa el test determinista
           if (reflectionVisibility > 0.3 && dotProduct < -0.1 && shouldCreateReflection) {
-            // dotProduct negativo = estrella "detrás" de la cara
-            // Calcular posición de la reflexión en la superficie del cristal
+
             const reflectionPos = crystalWorldPos.clone().add(
-              faceNormal.clone().multiplyScalar(0.001) // Ligeramente fuera de la superficie
+              faceNormal.clone().multiplyScalar(0.001)
             );
 
-            // Ajustar la reflexión basándose en la curvatura de la superficie cristalina
             const surfaceProjection = reflectionPos
               .clone()
               .normalize()
@@ -567,8 +471,8 @@ export class CrystallineSurfaceEffect {
 
             reflections.push({
               position: surfaceProjection,
-              size: starSize * 0.4 * reflectionVisibility, // Tamaño basado en visibilidad
-              brightness: starBrightness * 0.5 * reflectionVisibility, // Brillo reducido por reflexión
+              size: starSize * 0.4 * reflectionVisibility,
+              brightness: starBrightness * 0.5 * reflectionVisibility,
               crystalIndex,
             });
           }
@@ -577,11 +481,10 @@ export class CrystallineSurfaceEffect {
     });
 
     if (reflections.length === 0) {
-      console.warn("CrystallineSurface: No procedural star reflections calculated");
+
       return;
     }
 
-    // Crear geometría para las reflexiones calculadas
     const reflectionPositions = new Float32Array(reflections.length * 3);
     const reflectionSizes = new Float32Array(reflections.length);
     const reflectionBrightnesses = new Float32Array(reflections.length);
@@ -623,8 +526,7 @@ export class CrystallineSurfaceEffect {
         void main() {
           vBrightness = brightness;
           vCrystalIndex = crystalIndex;
-          
-          // Calcular influencia de la iluminación basada en la posición real
+
           vec3 worldPos = (modelMatrix * vec4(position, 1.0)).xyz;
           vec3 normal = normalize(worldPos);
           float lightDot = dot(normal, lightDirection);
@@ -645,14 +547,12 @@ export class CrystallineSurfaceEffect {
           if (dist > 0.5) discard;
           
           float alpha = (1.0 - dist * 2.0) * vBrightness * vLightInfluence;
-          alpha *= 0.8 * vLightInfluence; // Reflexiones más oscuras en el lado nocturno
-          
-          // Color cristalino con variación sutil por cristal (estático)
+          alpha *= 0.8 * vLightInfluence;
+
           vec3 baseColor = vec3(0.4, 0.8, 1.0);
           float crystalVariation = sin(vCrystalIndex * 0.7) * 0.1;
           vec3 reflectionColor = baseColor + vec3(crystalVariation, crystalVariation * 0.5, -crystalVariation * 0.3);
-          
-          // Sin parpadeo - reflexiones estáticas
+
           gl_FragColor = vec4(reflectionColor, alpha);
         }
       `,
@@ -664,7 +564,6 @@ export class CrystallineSurfaceEffect {
     this.starFieldReflections = new THREE.Points(reflectionGeometry, this.starFieldMaterial);
     this.crystallineGroup.add(this.starFieldReflections);
 
-    console.log(`CrystallineSurface: Created ${reflections.length} procedural star reflections from ${this.crystallineFormations.length} crystals`);
   }
 
   /**
@@ -674,14 +573,11 @@ export class CrystallineSurfaceEffect {
     const rng = new SeededRandom((this.params.seed || 42) + crystalIndex * 1000);
     const faceNormals: THREE.Vector3[] = [];
 
-    // Generar normales deterministas basadas en la forma cristalina
     const sides = crystalData.sides || 6;
-    const numFaces = Math.min(sides, 8); // Máximo 8 caras para reflexión
+    const numFaces = Math.min(sides, 8);
 
-    // Posición base del cristal
     const crystalNormal = new THREE.Vector3(crystalData.position_3d[0], crystalData.position_3d[1], crystalData.position_3d[2]).normalize();
 
-    // Crear vectores tangentes deterministas (igual que en createCrystalFormation)
     const tangent1 = new THREE.Vector3();
     const tangent2 = new THREE.Vector3();
 
@@ -692,12 +588,10 @@ export class CrystallineSurfaceEffect {
     }
     tangent2.crossVectors(crystalNormal, tangent1).normalize();
 
-    // Generar caras distribuidas determinísticamente alrededor del cristal
     for (let i = 0; i < numFaces; i++) {
       const angle1 = (i / numFaces) * Math.PI * 2;
-      const angle2 = rng.uniform(-Math.PI * 0.3, Math.PI * 0.3); // Variación vertical
+      const angle2 = rng.uniform(-Math.PI * 0.3, Math.PI * 0.3);
 
-      // Crear normal de cara usando los vectores tangentes
       const faceNormal = new THREE.Vector3().addScaledVector(tangent1, Math.cos(angle1)).addScaledVector(tangent2, Math.sin(angle1)).addScaledVector(crystalNormal, Math.sin(angle2)).normalize();
 
       faceNormals.push(faceNormal);
@@ -712,7 +606,6 @@ export class CrystallineSurfaceEffect {
   private createInnerGlow(parentMesh: THREE.Mesh, crystalData: any, _index: number): void {
     const glowGeometry = parentMesh.geometry.clone();
 
-    // Shader material para brillo interno
     const glowMaterial = new THREE.ShaderMaterial({
       uniforms: {
         time: { value: 0 },
@@ -739,7 +632,7 @@ export class CrystallineSurfaceEffect {
         
         void main() {
           float intensity = pow(0.4 - dot(vNormal, vPositionNormal), 2.0);
-          intensity *= (0.8 + 0.2 * sin(time * 2.0)); // Pulsación sutil
+          intensity *= (0.8 + 0.2 * sin(time * 2.0));
           
           vec3 glow = glowColor * intensity * glowIntensity;
           gl_FragColor = vec4(glow, intensity * 0.6);
@@ -753,7 +646,7 @@ export class CrystallineSurfaceEffect {
     const glowMesh = new THREE.Mesh(glowGeometry, glowMaterial);
     glowMesh.position.copy(parentMesh.position);
     glowMesh.rotation.copy(parentMesh.rotation);
-    glowMesh.scale.multiplyScalar(1.05); // Ligeramente más grande para efecto halo, pero no tanto
+    glowMesh.scale.multiplyScalar(1.05);
 
     this.glowMeshes.push(glowMesh);
     this.crystallineGroup.add(glowMesh);
@@ -766,7 +659,6 @@ export class CrystallineSurfaceEffect {
     const currentTime = Date.now();
     const elapsed = (currentTime - (this.params.cosmicOriginTime || 0)) * 0.001 * this.animationSpeed;
 
-    // Solo actualizar shaders de brillo interno (inner glow) - las reflexiones son estáticas
     this.glowMeshes.forEach((mesh) => {
       if (mesh.material instanceof THREE.ShaderMaterial) {
         mesh.material.uniforms.time.value = elapsed;
@@ -778,25 +670,22 @@ export class CrystallineSurfaceEffect {
    * Actualizar dirección de luz para seguir el sistema de iluminación
    */
   public updateLightDirection(lightDirection: THREE.Vector3): void {
-    // Actualizar luz en reflexiones de estrellas
+
     if (this.starFieldMaterial) {
       this.starFieldMaterial.uniforms.lightDirection.value.copy(lightDirection);
     }
-    
-    // Los cristales usan ShaderMaterial pero no necesitan dirección de luz
-    // Solo usan posición para modulación día/noche
+
   }
   
   /**
    * Actualizar posición de luz para modulación día/noche de los cristales
    */
   public updateLightPosition(lightPosition: THREE.Vector3): void {
-    // Actualizar posición de luz en reflexiones de estrellas
+
     if (this.starFieldMaterial) {
       this.starFieldMaterial.uniforms.lightPosition.value.copy(lightPosition);
     }
-    
-    // CRÍTICO: Actualizar posición de luz en todos los cristales para modulación día/noche
+
     this.crystallineFormations.forEach((mesh) => {
       if (mesh.material instanceof THREE.ShaderMaterial) {
         mesh.material.uniforms.lightPosition.value.copy(lightPosition);
@@ -809,10 +698,9 @@ export class CrystallineSurfaceEffect {
    * IMPORTANTE: Usa SOLO la luz del sistema planetario, no las luces por defecto de Three.js
    */
   public updateFromThreeLight(light: THREE.DirectionalLight): void {
-    // Actualizar posición de la luz (la luz del sistema planetario)
+
     this.updateLightPosition(light.position);
-    
-    // Calcular y actualizar dirección
+
     const direction = light.target.position.clone().sub(light.position).normalize();
     this.updateLightDirection(direction);
   }
@@ -823,7 +711,6 @@ export class CrystallineSurfaceEffect {
   public setStarField(starField: any): void {
     this.starField = starField;
 
-    // Limpiar reflexiones existentes si las hay
     if (this.starFieldReflections) {
       this.crystallineGroup.remove(this.starFieldReflections);
       if (this.starFieldReflections.geometry) this.starFieldReflections.geometry.dispose();
@@ -832,7 +719,6 @@ export class CrystallineSurfaceEffect {
       this.starFieldMaterial = null;
     }
 
-    // Crear nuevas reflexiones de manera determinista
     if (this.starField && this.crystallineData.length > 0) {
       this.createStarFieldReflections();
     }
@@ -895,21 +781,16 @@ export class CrystallineSurfaceEffect {
   }
 }
 
-/**
- * Función helper para crear efecto desde datos de Python
- * Los cristales tienen distribución independiente de las land_masses
- */
 export function createCrystallineSurfaceFromPythonData(planetRadius: number, surfaceData: any, seed: number, cosmicOriginTime?: number, starField?: any): CrystallineSurfaceEffect | null {
-  // Los cristales se generan de forma independiente usando generación procedural
-  // No dependen de green_patches ni land_masses
+
   return new CrystallineSurfaceEffect(
     planetRadius,
     {
-      // No pasar crystallinePatches para usar generación procedural independiente
+
       seed,
       cosmicOriginTime,
-      baseColor: new THREE.Color(0.0, 0.8, 1.0), // Cyan base
-      transmission: 0.2, // Permitir transmisión para refracción
+      baseColor: new THREE.Color(0.0, 0.8, 1.0),
+      transmission: 0.2,
       ior: 1.6,
       roughness: 0.01,
       glowIntensity: 0.3,

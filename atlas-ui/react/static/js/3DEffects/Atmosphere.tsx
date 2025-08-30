@@ -1,14 +1,4 @@
-/**
- * Atmosphere Effect - Efectos atmosféricos principales
- *
- * Este es el efecto atmosférico principal que usa Fresnel para crear
- * la atmósfera base de los planetas. Anteriormente llamado AtmosphereBrights.
- *
- * Responsabilidades:
- * - Atmosphere.tsx -> Atmósfera base con efecto Fresnel (ESTE ARCHIVO)
- * - CloudGyros.tsx -> Partículas dinámicas giratorias
- * - AtmosphericStreaks.tsx -> Estelas atmosféricas específicas
- */
+// atlas-ui/react/static/js/3DEffects/Atmosphere.tsx
 
 import * as THREE from "three";
 
@@ -20,11 +10,6 @@ export interface AtmosphereParams {
   density?: number;
 }
 
-/**
- * Efecto Atmosférico Principal
- *
- * Crea la atmósfera base del planeta usando efectos Fresnel
- */
 export class AtmosphereEffect {
   private mesh: THREE.Mesh;
   private material: THREE.ShaderMaterial;
@@ -57,12 +42,9 @@ export class AtmosphereEffect {
       vec3 normal = normalize(vNormal);
       vec3 viewDir = normalize(vViewPosition);
       
-      
       float fresnel = pow(1.0 - abs(dot(normal, viewDir)), fresnelPower);
       
-      
       vec3 color = atmosphereColor;
-      
       
       float alpha = fresnel * atmosphereOpacity;
       
@@ -136,9 +118,6 @@ export class AtmosphereEffect {
   }
 }
 
-/**
- * Función de utilidad para crear efecto desde datos de Python
- */
 export function createAtmosphereFromPythonData(planetRadius: number, atmosphereData: any): AtmosphereEffect {
   let atmosphereColor = [0.7, 0.7, 0.7, 0.15];
   let atmosphereWidth = 12;
@@ -147,7 +126,6 @@ export function createAtmosphereFromPythonData(planetRadius: number, atmosphereD
     if (atmosphereData.color && Array.isArray(atmosphereData.color)) {
       const pythonColor = atmosphereData.color;
       atmosphereColor = [pythonColor[0], pythonColor[1], pythonColor[2], (pythonColor[3] || 0.15) * 0.7];
-    } else {
     }
 
     if (atmosphereData.width) {

@@ -1,9 +1,4 @@
-/**
- * Toxic Waste Surface Render Effect
- *
- * Renderiza manchas poligonales tóxicas individuales que se mueven sobre la superficie del planeta.
- * Cada mancha es un objeto 3D separado que se anima independientemente.
- */
+// atlas-ui/react/static/js/3DEffects/ToxicWasteRender.tsx
 
 import * as THREE from "three";
 import { getAnimatedUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime.tsx";
@@ -17,27 +12,22 @@ export interface ToxicWasteRenderParams {
   toxicColor?: THREE.Color;
   debrisColor?: THREE.Color;
   seed?: number;
-  timeSpeed?: number; // Velocidad del tiempo para sincronización (0.1 - 3.0)
+  timeSpeed?: number;
   cosmicOriginTime?: number;
 }
 
-// Rangos para generación procedural
 const PROCEDURAL_RANGES = {
-  OBJECT_COUNT: { min: 16, max: 32 }, // Cantidad de objetos/figuras tóxicas
-  SPOT_SIZE: { min: 0.4, max: 1.2 }, // Tamaño de cada figura individual (rango normal)
-  SPOT_SIZE_SPECIAL: { min: 3.2, max: 4.2 }, // Tamaño especial para efecto raro (1% probabilidad)
-  MOVE_SPEED: { min: 0.01, max: 0.1 }, // Velocidad de movimiento orbital
-  INNER_ROTATION_SPEED: { min: -300.0, max: 300.0 }, // Velocidad de rotación sobre sí misma
-  PULSE_AMPLITUDE: { min: 0.1, max: 2.5 }, // Intensidad de pulsación
-  TIME_SPEED: { min: 0.1, max: 3.0 }, // Rango de velocidades del tiempo para sincronización
+  OBJECT_COUNT: { min: 16, max: 32 },
+  SPOT_SIZE: { min: 0.4, max: 1.2 },
+  SPOT_SIZE_SPECIAL: { min: 3.2, max: 4.2 },
+  MOVE_SPEED: { min: 0.01, max: 0.1 },
+  INNER_ROTATION_SPEED: { min: -300.0, max: 300.0 },
+  PULSE_AMPLITUDE: { min: 0.1, max: 2.5 },
+  TIME_SPEED: { min: 0.1, max: 3.0 },
 };
 
-// Constante para el efecto especial
-const SWITCH_EFFECT = 0.04; // 5% de probabilidad para usar el efecto especial
+const SWITCH_EFFECT = 0.04;
 
-/**
- * Material para una mancha poligonal individual
- */
 function createToxicSpotMaterial(toxicColor: THREE.Color, size: number, seed: number): THREE.ShaderMaterial {
   return new THREE.ShaderMaterial({
     uniforms: {
@@ -64,12 +54,10 @@ function createToxicSpotMaterial(toxicColor: THREE.Color, size: number, seed: nu
       uniform float uPulseAmplitude;
       varying vec2 vUv;
 
-      // Hash function
       float hash(vec2 p) {
         return fract(sin(dot(p, vec2(127.1, 311.7)) + uSeed) * 43758.5453);
       }
 
-      // Crear forma poligonal irregular
       float polygonShape(vec2 p, int vertices) {
         vec2 center = vec2(0.5);
         vec2 dir = p - center;
@@ -83,8 +71,7 @@ function createToxicSpotMaterial(toxicColor: THREE.Color, size: number, seed: nu
           if (i >= vertices) break;
           float vertexAngle = float(i) * angleStep;
           
-          // Variación procedural en cada vértice
-          float vertexHash = hash(vec2(float(i) * 17.3, uSeed));
+            float vertexHash = hash(vec2(float(i) * 17.3, uSeed));
           float vertexRadius = uSize * 0.3 * (0.7 + 0.6 * vertexHash);
           
           vec2 vertex = center + vec2(cos(vertexAngle), sin(vertexAngle)) * vertexRadius;
@@ -96,7 +83,6 @@ function createToxicSpotMaterial(toxicColor: THREE.Color, size: number, seed: nu
       }
 
       void main() {
-        // Crear polígono irregular con 5-7 vértices
         int vertices = 5 + int(hash(vec2(uSeed + 10.0, 0.0)) * 2.0);
         float polygon = polygonShape(vUv, vertices);
         
@@ -104,10 +90,8 @@ function createToxicSpotMaterial(toxicColor: THREE.Color, size: number, seed: nu
           discard;
         }
         
-        // Efecto de pulsación
         float pulse = sin(uTime * 2.0 + uSeed) * uPulseAmplitude + (1.0 - uPulseAmplitude * 0.5);
         
-        // Color final con pulsación
         vec3 finalColor = uToxicColor * pulse;
         float alpha = polygon * 0.8;
         
@@ -122,9 +106,6 @@ function createToxicSpotMaterial(toxicColor: THREE.Color, size: number, seed: nu
   });
 }
 
-/**
- * Clase para una mancha tóxica individual
- */
 class ToxicSpot {
   private mesh: THREE.Mesh;
   private material: THREE.ShaderMaterial;
@@ -140,10 +121,8 @@ class ToxicSpot {
   constructor(planetRadius: number, toxicColor: THREE.Color, seed: number, globalMoveSpeed?: number, globalInnerRotationSpeed?: number, useSpecialEffect?: boolean) {
     this.planetRadius = planetRadius;
 
-    // Cada spot tiene sus propios parámetros procedurales
     const rng = new SeededRandom(seed);
 
-    // Usar el efecto especial global que se decidió para todo el planeta
     if (useSpecialEffect) {
       this.size = rng.uniform(PROCEDURAL_RANGES.SPOT_SIZE_SPECIAL.min, PROCEDURAL_RANGES.SPOT_SIZE_SPECIAL.max);
     } else {
@@ -151,19 +130,15 @@ class ToxicSpot {
     }
     this.pulseAmplitude = rng.uniform(PROCEDURAL_RANGES.PULSE_AMPLITUDE.min, PROCEDURAL_RANGES.PULSE_AMPLITUDE.max);
 
-    // Generar velocidades individuales respetando parámetros globales
     const baseMoveSpeed = globalMoveSpeed !== undefined ? globalMoveSpeed : rng.uniform(PROCEDURAL_RANGES.MOVE_SPEED.min, PROCEDURAL_RANGES.MOVE_SPEED.max);
     const baseInnerRotationSpeed = globalInnerRotationSpeed !== undefined ? globalInnerRotationSpeed : rng.uniform(PROCEDURAL_RANGES.INNER_ROTATION_SPEED.min, PROCEDURAL_RANGES.INNER_ROTATION_SPEED.max);
 
-    // Aplicar variaciones individuales respetando los rangos base
     this.angleSpeed = rng.uniform(0.5, 1.5) * baseMoveSpeed;
     this.phiSpeed = rng.uniform(-0.3, 0.3) * baseMoveSpeed;
-    this.rotationSpeed = baseInnerRotationSpeed * rng.uniform(0.8, 1.2); // Pequeña variación individual
+    this.rotationSpeed = baseInnerRotationSpeed * rng.uniform(0.8, 1.2);
 
-    // Crear geometría plana con más segmentos para poder curvarla
     const geometry = new THREE.PlaneGeometry(this.size * 2, this.size * 2, 8, 8);
 
-    // Curvar la geometría para que siga la forma esférica del planeta
     const positions = geometry.attributes.position.array;
 
     for (let i = 0; i < positions.length; i += 3) {
@@ -171,20 +146,14 @@ class ToxicSpot {
       const y = positions[i + 1];
       const z = positions[i + 2];
 
-      // Proyectar cada vértice sobre la superficie de la esfera
-      // Crear un vector 3D del vértice actual
       const vertex = new THREE.Vector3(x, y, 0);
 
-      // Normalizar el vector y escalarlo al radio de la superficie
-      const surfaceRadius = this.planetRadius * 1.001; // Muy cerca de la superficie
+      const surfaceRadius = this.planetRadius * 1.001;
       vertex.normalize().multiplyScalar(surfaceRadius);
 
-      // Calcular la altura que debe tener este punto para seguir la curvatura esférica
-      // La altura Z debe ser la diferencia entre la superficie esférica y el plano Z=0
       const sphericalZ = Math.sqrt(Math.max(0, surfaceRadius * surfaceRadius - x * x - y * y));
       const heightOffset = sphericalZ - surfaceRadius;
 
-      // Aplicar la curvatura manteniendo el punto muy cerca de la superficie
       positions[i + 2] = heightOffset;
     }
 
@@ -195,45 +164,36 @@ class ToxicSpot {
     this.material.uniforms.uPulseAmplitude.value = this.pulseAmplitude;
     this.mesh = new THREE.Mesh(geometry, this.material);
 
-    // Posición inicial aleatoria en la superficie (determinista basada en seed)
     this.initialAngle = rng.uniform(0, Math.PI * 2);
-    this.initialPhi = rng.uniform(0.2, Math.PI - 0.2); // Evitar los polos
+    this.initialPhi = rng.uniform(0.2, Math.PI - 0.2);
   }
 
   private updatePosition(time: number): void {
-    // Calcular posición orbital basada en tiempo absoluto (move_speed)
     const currentAngle = this.initialAngle + this.angleSpeed * time;
     let currentPhi = this.initialPhi + this.phiSpeed * time;
 
-    // Mantener phi en rango válido permitiendo movimiento por toda la superficie
     currentPhi = Math.abs(currentPhi % (Math.PI * 2));
     if (currentPhi > Math.PI) {
       currentPhi = Math.PI * 2 - currentPhi;
     }
 
-    // Convertir coordenadas esféricas a cartesianas para posición en la superficie
-    const radius = this.planetRadius * 1.005; // Radio del planeta con pequeño offset
+    const radius = this.planetRadius * 1.005;
     const x = radius * Math.sin(currentPhi) * Math.cos(currentAngle);
     const y = radius * Math.cos(currentPhi);
     const z = radius * Math.sin(currentPhi) * Math.sin(currentAngle);
 
-    // Posicionar el mesh en la superficie del planeta
     this.mesh.position.set(x, y, z);
 
-    // Orientar el mesh para que mire hacia afuera desde la superficie (normal a la superficie)
     const normal = new THREE.Vector3(x, y, z).normalize();
     this.mesh.lookAt(this.mesh.position.x + normal.x, this.mesh.position.y + normal.y, this.mesh.position.z + normal.z);
 
-    // Rotación sobre sí mismo controlado por inner_rotation_speed
     const selfRotationAngle = time * this.rotationSpeed * 0.01;
     this.mesh.rotateZ(selfRotationAngle);
   }
 
   update(_deltaTime: number, time: number): void {
-    // Actualizar posición basada en tiempo absoluto
     this.updatePosition(time);
 
-    // Actualizar material
     this.material.uniforms.uTime.value = time;
   }
 
@@ -247,9 +207,6 @@ class ToxicSpot {
   }
 }
 
-/**
- * Efecto de manchas tóxicas individuales móviles
- */
 export class ToxicWasteRenderEffect {
   private spots: ToxicSpot[] = [];
   private planetRadius: number;
@@ -268,18 +225,14 @@ export class ToxicWasteRenderEffect {
   constructor(planetRadius: number, params: ToxicWasteRenderParams = {}) {
     this.planetRadius = planetRadius;
 
-    // Generar valores procedurales usando seed (igual que PulsatingCube)
     const seed = params.seed || Math.floor(Math.random() * 1000000);
     this.rng = new SeededRandom(seed);
 
-    // Decidir si usar efecto especial para TODO el planeta (1% probabilidad)
     this.useSpecialEffect = this.rng.random() < SWITCH_EFFECT;
 
-    // Tiempo inicial determinista basado en el seed (igual que PulsatingCube)
     this.startTime = (seed % 10000) / 1000;
     this.cosmicOriginTime = params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME;
 
-    // Generar parámetros procedurales globales
     this.proceduralParams = {
       objectCount: Math.floor(this.rng.uniform(PROCEDURAL_RANGES.OBJECT_COUNT.min, PROCEDURAL_RANGES.OBJECT_COUNT.max)),
       timeSpeed: params.timeSpeed || this.rng.uniform(PROCEDURAL_RANGES.TIME_SPEED.min, PROCEDURAL_RANGES.TIME_SPEED.max),
@@ -287,8 +240,7 @@ export class ToxicWasteRenderEffect {
       innerRotationSpeed: params.innerRotationSpeed,
     };
 
-    // Color tóxico procedural
-    const toxicHue = this.rng.uniform(0.7, 0.95); // Púrpura a magenta
+    const toxicHue = this.rng.uniform(0.7, 0.95);
     const toxicSaturation = this.rng.uniform(0.8, 1.0);
     const toxicBrightness = this.rng.uniform(0.5, 0.9);
     this.toxicColor = params.toxicColor || new THREE.Color().setHSL(toxicHue, toxicSaturation, toxicBrightness);
@@ -300,7 +252,6 @@ export class ToxicWasteRenderEffect {
     for (let i = 0; i < this.proceduralParams.objectCount; i++) {
       const spotSeed = this.rng.random() * 1000000;
 
-      // Color con ligera variación para cada spot
       const hueVariation = this.rng.uniform(-0.05, 0.05);
       const spotColor = this.toxicColor.clone();
       const hsl = {} as any;
@@ -313,7 +264,6 @@ export class ToxicWasteRenderEffect {
   }
 
   update(_deltaTime: number = 0.016): void {
-    // Usar tiempo animado con timeSpeed (igual que PulsatingCube)
     const currentTime = getAnimatedUniverseTime(this.cosmicOriginTime, this.proceduralParams.timeSpeed, this.startTime);
 
     this.spots.forEach((spot) => {
@@ -334,19 +284,13 @@ export class ToxicWasteRenderEffect {
   }
 }
 
-/**
- * Función de utilidad para crear el efecto desde datos de Python
- */
 export function createToxicWasteFromPythonData(planetRadius: number, surfaceData: any, globalSeed?: number, params?: Partial<ToxicWasteRenderParams>): ToxicWasteRenderEffect | null {
-  // Solo aplicar a planetas tóxicos
   if (!surfaceData || !surfaceData.type || surfaceData.type.toLowerCase() !== "toxic") {
     return null;
   }
 
   const seed = globalSeed || Math.floor(Math.random() * 1000000);
 
-  // Ahora sí pasamos parámetros específicos para controlar velocidades globalmente
-  // Si no se proporcionan, cada spot generará sus propios parámetros basados en PROCEDURAL_RANGES
   return new ToxicWasteRenderEffect(planetRadius, {
     seed: seed + 30000,
     moveSpeed: params?.moveSpeed,

@@ -1,9 +1,4 @@
-/**
- * Icy Terrain Layer - Versión que funciona como capa
- * 
- * Crea terreno helado con reflejos como capa transparente
- */
-
+// atlas-ui/react/static/js/3DEffects/IcyTerrainLayer.tsx
 import * as THREE from 'three';
 import { PlanetLayerSystem } from '../3DComponents/PlanetLayerSystem';
 import { SeededRandom } from '../Utils/SeededRandom.tsx';
@@ -14,23 +9,22 @@ export interface IcyTerrainLayerParams {
   frostDensity?: number;
   crackIntensity?: number;
   opacity?: number;
-  crystalScale?: number;        // Escala de microcristales
-  crystalDensity?: number;      // Densidad de cristales
-  crystalSharpness?: number;    // Nitidez de los destellos
-  frostPattern?: number;        // Patrón de escarcha
+  crystalScale?: number;
+  crystalDensity?: number;
+  crystalSharpness?: number;
+  frostPattern?: number;
   seed?: number;
 }
 
-// Rangos para generación procedural
 const PROCEDURAL_RANGES = {
   ICE_REFLECTIVITY: { min: 0.7, max: 0.95 },
   FROST_DENSITY: { min: 0.3, max: 0.8 },
   CRACK_INTENSITY: { min: 0.2, max: 0.7 },
   OPACITY: { min: 0.6, max: 0.9 },
-  CRYSTAL_SCALE: { min: 15.0, max: 35.0 },      // Escala de cristales
-  CRYSTAL_DENSITY: { min: 0.4, max: 0.8 },      // Densidad cristalina
-  CRYSTAL_SHARPNESS: { min: 100.0, max: 250.0 }, // Nitidez reflejos
-  FROST_PATTERN: { min: 8.0, max: 16.0 }        // Variación escarcha
+  CRYSTAL_SCALE: { min: 15.0, max: 35.0 },
+  CRYSTAL_DENSITY: { min: 0.4, max: 0.8 },
+  CRYSTAL_SHARPNESS: { min: 100.0, max: 250.0 },
+  FROST_PATTERN: { min: 8.0, max: 16.0 }
 };
 
 export class IcyTerrainLayer {
@@ -39,12 +33,9 @@ export class IcyTerrainLayer {
   private params: IcyTerrainLayerParams;
   private layerSystem: PlanetLayerSystem;
 
-  // Shaders eliminados - ahora se usan desde PlanetLayerSystem.createIcyTerrainLayerMaterial
-
   constructor(layerSystem: PlanetLayerSystem, params: IcyTerrainLayerParams = {}) {
     this.layerSystem = layerSystem;
-    
-    // Generar valores procedurales usando seed
+
     const seed = params.seed || Math.floor(Math.random() * 1000000);
     const rng = new SeededRandom(seed);
     
@@ -64,15 +55,13 @@ export class IcyTerrainLayer {
       seed
     };
 
-    // Crear material usando el sistema de capas (como MetallicSurfaceLayer)
     this.material = this.layerSystem.createIcyTerrainLayerMaterial(this.params);
-    
-    // Añadir capa al sistema, pasando referencia a este objeto
+
     this.layerMesh = this.layerSystem.addEffectLayer(
       'icyTerrain', 
       this.material, 
       this.layerSystem.getNextScaleFactor(),
-      this // Pasar referencia como MetallicSurfaceLayer
+      this
     );
   }
 
@@ -83,7 +72,7 @@ export class IcyTerrainLayer {
   }
 
   dispose(): void {
-    // La limpieza se maneja en PlanetLayerSystem
+
   }
 }
 
@@ -94,10 +83,9 @@ export function createIcyTerrainLayerFromPythonData(
 ): IcyTerrainLayer {
   const surface = data.surface || {};
   const baseColor = data.planet_info?.base_color || surface.base_color;
-  
-  // Generar valores proceduralmente basados en seed
+
   const seed = globalSeed || Math.floor(Math.random() * 1000000);
-  const rng = new SeededRandom(seed + 6000); // +6000 para IcyTerrainLayer
+  const rng = new SeededRandom(seed + 6000);
   
   return new IcyTerrainLayer(layerSystem, {
     color: baseColor ? new THREE.Color(baseColor) : new THREE.Color(0xB0E0E6),

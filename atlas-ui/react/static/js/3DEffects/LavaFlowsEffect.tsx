@@ -1,55 +1,45 @@
-/**
- * Lava Flows Effect - Efectos de lava incandescente para planetas Molten Core
- *
- * Crea flujos de lava y látigos de fuego con movimiento dinámico
- * usando colores anaranjados/rojizos similares al color base del planeta Molten Core
- */
+// atlas-ui/react/static/js/3DEffects/LavaFlowsEffect.tsx
 
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom.tsx";
 
 export interface LavaFlowsParams {
-  // Configuración de flujos principales
   flowCount?: number;
   flowLength?: number;
   flowWidth?: number;
   flowIntensity?: number;
   
-  // Configuración de movimiento
   flowSpeed?: number;
   pulseSpeed?: number;
   turbulence?: number;
-  emergenceHeight?: number; // Altura de emergencia sobre la superficie
+  emergenceHeight?: number;
   
-  // Colores del Molten Core (basados en #FF8C00)
   coreColor?: THREE.Color | number[];
   hotColor?: THREE.Color | number[];
   coolColor?: THREE.Color | number[];
   
-  // Efectos visuales
   emissiveIntensity?: number;
   glowRadius?: number;
   sparkleIntensity?: number;
   
   seed?: number;
   startTime?: number;
-  timeSpeed?: number; // Velocidad del tiempo para animación (0.1 - 2.0)
+  timeSpeed?: number;
   cosmicOriginTime?: number;
 }
 
-// Rangos para generación procedural basados en color Molten Core
 const PROCEDURAL_RANGES = {
-  FLOW_COUNT: { min: 20, max: 35 }, // MUCHOS MÁS flujos de lava para cobertura completa
-  FLOW_LENGTH: { min: 0.4, max: 1.2 }, // Flujos más largos que pueden rodear el planeta
-  FLOW_WIDTH: { min: 0.015, max: 0.08 }, // Variedad de anchuras desde finos a gruesos
-  FLOW_INTENSITY: { min: 1.5, max: 3.0 }, // Intensidad del brillo más alta
-  FLOW_SPEED: { min: 0.05, max: 0.3 }, // Velocidad más lenta que agua (lava densa)
-  PULSE_SPEED: { min: 0.5, max: 1.2 }, // Pulsación del brillo más lenta
-  TURBULENCE: { min: 0.8, max: 2.0 }, // Turbulencia más alta
-  EMISSIVE_INTENSITY: { min: 3.0, max: 5.0 }, // Intensidad emisiva muy alta
-  GLOW_RADIUS: { min: 1.1, max: 1.3 }, // Radio del resplandor
-  TIME_SPEED: { min: 0.1, max: 2.0 }, // Rango de velocidades del tiempo
-  EMERGENCE_HEIGHT: { min: 0.01, max: 0.03 }, // Altura de emergencia sobre la superficie
+  FLOW_COUNT: { min: 20, max: 35 },
+  FLOW_LENGTH: { min: 0.4, max: 1.2 },
+  FLOW_WIDTH: { min: 0.015, max: 0.08 },
+  FLOW_INTENSITY: { min: 1.5, max: 3.0 },
+  FLOW_SPEED: { min: 0.05, max: 0.3 },
+  PULSE_SPEED: { min: 0.5, max: 1.2 },
+  TURBULENCE: { min: 0.8, max: 2.0 },
+  EMISSIVE_INTENSITY: { min: 3.0, max: 5.0 },
+  GLOW_RADIUS: { min: 1.1, max: 1.3 },
+  TIME_SPEED: { min: 0.1, max: 2.0 },
+  EMERGENCE_HEIGHT: { min: 0.01, max: 0.03 },
 };
 
 export class LavaFlowsEffect {
@@ -76,43 +66,31 @@ export class LavaFlowsEffect {
       vNormal = normalize(normalMatrix * normal);
       vUv = uv;
       
-      // Posición del mundo para efectos de ruido
       vec4 worldPosition = modelMatrix * vec4(position, 1.0);
       vWorldPosition = worldPosition.xyz;
       
-      // Movimiento de lava con turbulencia
       vec3 pos = position;
       
-      // EMERGENCIA: El flujo sale y entra de la superficie basado en la posición UV
-      // Usar UV.x como progreso a lo largo del flujo (0 = inicio, 1 = fin)
       float flowProgress = vUv.x;
       
-      // Crear onda de emergencia que viaja a lo largo del flujo
       float emergenceWave = sin((flowProgress * 3.14159 * 2.0) - time * flowSpeed * 2.0);
       
-      // Combinar con patrón secundario para más variación
       emergenceWave += sin((flowProgress * 6.28318) + time * flowSpeed) * 0.3;
       
-      // Aplicar función smoothstep para transiciones suaves en los extremos
       float edgeFade = smoothstep(0.0, 0.1, flowProgress) * smoothstep(1.0, 0.9, flowProgress);
       emergenceWave *= edgeFade;
       
-      // Altura de emergencia variable (algunos flujos emergen más que otros)
       float maxEmergence = emergenceHeight * (1.0 + sin(worldPosition.x * 10.0) * 0.5);
       
-      // El flujo emerge y se sumerge periódicamente
       float emergence = emergenceWave * maxEmergence;
-      vEmergence = emergence; // Pasar a fragment shader para efectos visuales
+      vEmergence = emergence;
       
-      // Flujo principal a lo largo de la superficie con emergencia
       float flowNoise = sin(time * flowSpeed + worldPosition.x * 2.0) * 0.05;
       flowNoise += cos(time * flowSpeed * 1.3 + worldPosition.z * 1.5) * 0.03;
       
-      // Turbulencia adicional para movimiento orgánico
       float turbulentMotion = sin(time * turbulence + worldPosition.y * 3.0) * 0.02;
       turbulentMotion += cos(time * turbulence * 0.7 + length(worldPosition.xz) * 4.0) * 0.015;
       
-      // Aplicar emergencia y movimiento lateral
       pos += normal * (emergence + flowNoise + turbulentMotion);
       
       gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
@@ -137,7 +115,6 @@ export class LavaFlowsEffect {
     uniform vec3 lightDirection;
     uniform vec3 lightPosition;
     
-    // Función de ruido para textura de lava
     float random(vec2 st) {
       return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
     }
@@ -169,39 +146,29 @@ export class LavaFlowsEffect {
     }
     
     void main() {
-      // UV animado para flujo de lava
       vec2 flowUv = vUv;
-      flowUv.x += time * 0.1; // Flujo horizontal lento
-      flowUv.y += time * 0.05; // Flujo vertical muy lento
+      flowUv.x += time * 0.1;
+      flowUv.y += time * 0.05;
       
-      // Múltiples escalas de ruido para textura realista de lava
       float lavaTexture1 = fbm(flowUv * 8.0);
       float lavaTexture2 = fbm(flowUv * 16.0 + vec2(time * 0.1));
       float lavaTexture3 = fbm(flowUv * 32.0 + vec2(time * 0.2));
       
-      // Combinar texturas para efecto de lava burbujeante
       float combinedTexture = lavaTexture1 * 0.5 + lavaTexture2 * 0.3 + lavaTexture3 * 0.2;
       
-      // Pulsación de temperatura + efecto de emergencia
       float temperaturePulse = sin(time * pulseSpeed) * 0.5 + 0.5;
-      // Más caliente cuando emerge de la superficie
-      float emergenceGlow = abs(vEmergence) * 5.0; // Brillo extra al emerger
+      float emergenceGlow = abs(vEmergence) * 5.0;
       float heatIntensity = combinedTexture + temperaturePulse * 0.3 + emergenceGlow;
       
-      // Mapeo de color basado en temperatura
       vec3 finalColor;
       if (heatIntensity > 0.7) {
-        // Núcleo súper caliente - color core (#FF8C00 - naranja intenso)
         finalColor = mix(hotColor, coreColor, (heatIntensity - 0.7) / 0.3);
       } else if (heatIntensity > 0.4) {
-        // Lava caliente - transición de hot a core
         finalColor = mix(coolColor, hotColor, (heatIntensity - 0.4) / 0.3);
       } else {
-        // Lava enfriándose - color más oscuro
         finalColor = coolColor * (0.5 + heatIntensity * 0.5);
       }
       
-      // Iluminación básica primero para calcular dayNight
       vec3 lightDir;
       if (length(lightPosition) > 0.0) {
         lightDir = normalize(lightPosition - vWorldPosition);
@@ -211,27 +178,19 @@ export class LavaFlowsEffect {
       
       float lambertian = max(dot(vNormal, lightDir), 0.0);
       
-      // Calcular factor día/noche similar al sistema principal
       float dayNight = smoothstep(-0.3, 0.1, lambertian);
       
       vec3 diffuse = finalColor * (0.3 + lambertian * 0.7);
       
-      // Efecto emisivo intenso para brillar en la oscuridad
-      // ENFOQUE HÍBRIDO: Los flujos de lava brillan más cuando emergen Y en el lado iluminado
       vec3 emissive = finalColor * emissiveIntensity * (0.8 + temperaturePulse * 0.4);
       
-      // Factor de emisividad: 25% mínimo en oscuridad, 100% en luz
-      // Los flujos son ligeramente más brillantes que la superficie base
       float emissiveFactor = mix(0.25, 1.0, dayNight);
       
-      // Bonus de emergencia: cuando el flujo emerge, brilla más incluso en oscuridad
       float emergenceBonus = abs(vEmergence) * 10.0;
-      emissiveFactor = min(1.0, emissiveFactor + emergenceBonus * 0.2); // Bonus reducido también
+      emissiveFactor = min(1.0, emissiveFactor + emergenceBonus * 0.2);
       
-      // Combinar difuso y emisivo con factor híbrido
       vec3 result = diffuse + (emissive * emissiveFactor);
       
-      // Alpha basado en intensidad de calor y distancia del centro
       vec2 center = vec2(0.5);
       float distFromCenter = length(vUv - center);
       float alpha = heatIntensity * flowIntensity * (1.0 - distFromCenter * 0.3);
@@ -241,15 +200,12 @@ export class LavaFlowsEffect {
   `;
 
   constructor(planetRadius: number, params: LavaFlowsParams = {}) {
-    // Generar valores procedurales usando seed
     const seed = params.seed || Math.floor(Math.random() * 1000000);
     const rng = new SeededRandom(seed);
     
-    // Tiempo inicial determinista basado en el seed
     this.startTime = params.startTime || (seed % 10000) / 1000;
 
-    // Colores basados en Molten Core (#FF8C00 - naranja intenso)
-    const moltenCoreColor = new THREE.Color(0xFF8C00); // Color base del planeta
+    const moltenCoreColor = new THREE.Color(0xFF8C00);
     const hsl = { h: 0, s: 0, l: 0 };
     moltenCoreColor.getHSL(hsl);
 
@@ -262,13 +218,12 @@ export class LavaFlowsEffect {
       pulseSpeed: params.pulseSpeed || rng.uniform(PROCEDURAL_RANGES.PULSE_SPEED.min, PROCEDURAL_RANGES.PULSE_SPEED.max),
       turbulence: params.turbulence || rng.uniform(PROCEDURAL_RANGES.TURBULENCE.min, PROCEDURAL_RANGES.TURBULENCE.max),
       
-      // Paleta de colores incandescentes basada en Molten Core
       coreColor: params.coreColor instanceof THREE.Color ? params.coreColor : 
-        new THREE.Color().setHSL(hsl.h, 1.0, 0.6), // Naranja súper brillante
+        new THREE.Color().setHSL(hsl.h, 1.0, 0.6),
       hotColor: params.hotColor instanceof THREE.Color ? params.hotColor :
-        new THREE.Color().setHSL(hsl.h + 0.05, 0.9, 0.5), // Naranja-rojo caliente
+        new THREE.Color().setHSL(hsl.h + 0.05, 0.9, 0.5),
       coolColor: params.coolColor instanceof THREE.Color ? params.coolColor :
-        new THREE.Color().setHSL(hsl.h - 0.05, 0.8, 0.3), // Naranja más oscuro
+        new THREE.Color().setHSL(hsl.h - 0.05, 0.8, 0.3),
       
       emissiveIntensity: params.emissiveIntensity || rng.uniform(PROCEDURAL_RANGES.EMISSIVE_INTENSITY.min, PROCEDURAL_RANGES.EMISSIVE_INTENSITY.max),
       glowRadius: params.glowRadius || rng.uniform(PROCEDURAL_RANGES.GLOW_RADIUS.min, PROCEDURAL_RANGES.GLOW_RADIUS.max),
@@ -290,7 +245,6 @@ export class LavaFlowsEffect {
     const flowCount = this.params.flowCount!;
 
     for (let i = 0; i < flowCount; i++) {
-      // Posición aleatoria en la superficie del planeta
       const phi = rng.uniform(0, 2 * Math.PI);
       const cosTheta = rng.uniform(-1, 1);
       const theta = Math.acos(cosTheta);
@@ -301,11 +255,9 @@ export class LavaFlowsEffect {
         Math.cos(theta)
       );
 
-      // Crear flujo de lava como banda irregular
       const flowLength = this.params.flowLength! * rng.uniform(0.7, 1.3);
       const flowWidth = this.params.flowWidth! * rng.uniform(0.8, 1.2);
       
-      // Crear geometría del flujo usando PlaneGeometry curvada
       const segments = Math.max(16, Math.floor(flowLength * 32));
       const geometry = new THREE.PlaneGeometry(
         flowLength * planetRadius * 2,
@@ -313,7 +265,6 @@ export class LavaFlowsEffect {
         segments, 8
       );
 
-      // Sistema de coordenadas tangente para orientar el flujo
       const normal = startPosition.clone().normalize();
       const tangent1 = new THREE.Vector3();
       const tangent2 = new THREE.Vector3();
@@ -325,11 +276,9 @@ export class LavaFlowsEffect {
       }
       tangent2.crossVectors(normal, tangent1).normalize();
 
-      // Crear matriz de rotación
       const rotationMatrix = new THREE.Matrix4();
       rotationMatrix.makeBasis(tangent1, tangent2, normal);
 
-      // Curvar la geometría para seguir la superficie del planeta
       geometry.applyMatrix4(rotationMatrix);
       
       const positions = geometry.attributes.position;
@@ -340,9 +289,7 @@ export class LavaFlowsEffect {
         vertex.fromBufferAttribute(positions, j);
         const worldVertex = vertex.clone().add(surfacePosition);
         
-        // Proyectar sobre la superficie esférica con elevación variable
         const direction = worldVertex.clone().normalize();
-        // Elevación variable: algunos flujos más superficiales, otros más profundos
         const baseElevation = rng.uniform(-0.002, 0.008) * planetRadius;
         const projectedVertex = direction.multiplyScalar(planetRadius + baseElevation);
         
@@ -354,12 +301,10 @@ export class LavaFlowsEffect {
       geometry.computeVertexNormals();
       geometry.translate(surfacePosition.x, surfacePosition.y, surfacePosition.z);
 
-      // Material individual para cada flujo
       const flowMaterial = this.material.clone();
       
-      // Crear mesh del flujo
       const flowMesh = new THREE.Mesh(geometry, flowMaterial);
-      flowMesh.renderOrder = 3; // Encima de landmasses y nubes
+      flowMesh.renderOrder = 3;
       
       this.lavaFlows.push(flowMesh);
       this.lavaGroup.add(flowMesh);
@@ -386,7 +331,7 @@ export class LavaFlowsEffect {
         lightPosition: { value: new THREE.Vector3(0, 0, 0) },
       },
       transparent: true,
-      blending: THREE.AdditiveBlending, // Blending aditivo para efectos de lava brillante
+      blending: THREE.AdditiveBlending,
       depthWrite: false,
       side: THREE.FrontSide,
     });
@@ -400,18 +345,15 @@ export class LavaFlowsEffect {
   }
 
   update(deltaTime: number): void {
-    // Calcular tiempo absoluto determinista SIMPLIFICADO
     const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!;
     const currentTime = rawTime % 1000;
     
-    // Actualizar tiempo en todos los materiales de flujos
     this.lavaFlows.forEach(flow => {
       const material = flow.material as THREE.ShaderMaterial;
       material.uniforms.time.value = currentTime;
     });
   }
 
-  // Métodos para integración con sistema de luz
   updateLightPosition(position: THREE.Vector3): void {
     this.lavaFlows.forEach(flow => {
       const material = flow.material as THREE.ShaderMaterial;
@@ -452,9 +394,6 @@ export class LavaFlowsEffect {
   }
 }
 
-/**
- * Función para crear desde datos de Python
- */
 export function createLavaFlowsFromPythonData(
   planetRadius: number,
   surfaceData: any,
@@ -462,16 +401,15 @@ export function createLavaFlowsFromPythonData(
 ): LavaFlowsEffect {
   const seed = globalSeed || Math.floor(Math.random() * 1000000);
   
-  // Para planetas Molten Core, crear MUCHOS flujos procedurales intensos
   const params: LavaFlowsParams = {
-    flowCount: 28, // MUCHOS MÁS flujos para cobertura completa
-    flowLength: 0.8, // Flujos largos
-    flowWidth: 0.04, // Anchura media
-    flowIntensity: 2.5, // Alta intensidad
-    flowSpeed: 0.15, // Velocidad lenta de lava
-    turbulence: 1.5, // Turbulencia alta
-    emergenceHeight: 0.02, // Emergen bastante de la superficie
-    emissiveIntensity: 4.0, // MUY brillante
+    flowCount: 28,
+    flowLength: 0.8,
+    flowWidth: 0.04,
+    flowIntensity: 2.5,
+    flowSpeed: 0.15,
+    turbulence: 1.5,
+    emergenceHeight: 0.02,
+    emissiveIntensity: 4.0,
     seed: seed + 7000
   };
 

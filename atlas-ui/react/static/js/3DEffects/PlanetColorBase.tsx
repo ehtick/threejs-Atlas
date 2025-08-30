@@ -1,9 +1,4 @@
-/**
- * PlanetColorBase.tsx
- * 
- * Centraliza toda la lógica de colores de planetas.
- * PUNTO. Aquí va todo lo relacionado con base_color de Python.
- */
+// atlas-ui/react/static/js/3DEffects/PlanetColorBase.tsx
 
 import * as THREE from 'three';
 
@@ -14,14 +9,9 @@ export interface PlanetColorConfig {
   emissiveColor?: THREE.Color;
 }
 
-/**
- * Convierte color hex de Python a THREE.Color
- */
 export function hexToThreeColor(hexColor: string): THREE.Color {
-  // Remover # si existe
   const hex = hexColor.replace('#', '');
   
-  // Convertir a RGB normalizado (0-1)
   const r = parseInt(hex.substr(0, 2), 16) / 255;
   const g = parseInt(hex.substr(2, 2), 16) / 255;
   const b = parseInt(hex.substr(4, 2), 16) / 255;
@@ -29,25 +19,16 @@ export function hexToThreeColor(hexColor: string): THREE.Color {
   return new THREE.Color(r, g, b);
 }
 
-/**
- * Convierte array RGB de Python a THREE.Color
- */
 export function rgbArrayToThreeColor(rgbArray: number[]): THREE.Color {
   if (rgbArray.length >= 3) {
     return new THREE.Color(rgbArray[0], rgbArray[1], rgbArray[2]);
   }
   
-  // Fallback a color por defecto
   return new THREE.Color(0.5, 0.5, 0.5);
 }
 
-/**
- * Obtiene el color base del planeta desde los datos de Python
- * ESTA ES LA FUNCIÓN PRINCIPAL que deben usar todos los efectos
- */
 export function getPlanetBaseColor(pythonData: any): THREE.Color {
   
-  // Prioridad 1: ocean_color específico (para compatibilidad)
   if (pythonData.ocean_color) {
     if (typeof pythonData.ocean_color === 'string') {
       return hexToThreeColor(pythonData.ocean_color);
@@ -56,7 +37,6 @@ export function getPlanetBaseColor(pythonData: any): THREE.Color {
     }
   }
   
-  // Prioridad 2: base_color de planet_info (CORRECTO)
   if (pythonData.planet_info?.base_color) {
     if (typeof pythonData.planet_info.base_color === 'string') {
       return hexToThreeColor(pythonData.planet_info.base_color);
@@ -65,7 +45,6 @@ export function getPlanetBaseColor(pythonData: any): THREE.Color {
     }
   }
   
-  // Prioridad 3: base_color directo (por si está en el root)
   if (pythonData.base_color) {
     if (typeof pythonData.base_color === 'string') {
       return hexToThreeColor(pythonData.base_color);
@@ -74,16 +53,12 @@ export function getPlanetBaseColor(pythonData: any): THREE.Color {
     }
   }
   
-  // Prioridad 4: Por tipo de planeta (fallback seguro)
   const planetType = pythonData.planet_info?.type || pythonData.type || 'Unknown';
   const fallbackColor = getFallbackColorForPlanetType(planetType);
   
   return fallbackColor;
 }
 
-/**
- * Colores fallback por tipo de planeta (últmo recurso)
- */
 export function getFallbackColorForPlanetType(planetType: string): THREE.Color {
   const fallbackColors: Record<string, string> = {
     'Gas Giant': '#FFA500',
@@ -119,53 +94,39 @@ export function getFallbackColorForPlanetType(planetType: string): THREE.Color {
   return hexToThreeColor(hexColor);
 }
 
-/**
- * Genera colores secundarios basados en el color base
- * Para crear variaciones procedurales
- */
 export function generateSecondaryColors(baseColor: THREE.Color, seed: number = 12345): PlanetColorConfig {
-  // Generador de números pseudoaleatorios simple
   let s = seed;
   const random = () => {
     s = (s * 1664525 + 1013904223) % 4294967296;
     return s / 4294967296;
   };
   
-  // Color base
   const config: PlanetColorConfig = { baseColor: baseColor.clone() };
   
-  // Color secundario (más oscuro/más claro)
   const hsl = { h: 0, s: 0, l: 0 };
   baseColor.getHSL(hsl);
   
   config.secondaryColor = new THREE.Color().setHSL(
     hsl.h, 
-    Math.max(0, Math.min(1, hsl.s + (random() - 0.5) * 0.2)), // Variación de saturación
-    Math.max(0, Math.min(1, hsl.l + (random() - 0.5) * 0.3))  // Variación de luminosidad
+    Math.max(0, Math.min(1, hsl.s + (random() - 0.5) * 0.2)),
+    Math.max(0, Math.min(1, hsl.l + (random() - 0.5) * 0.3))
   );
   
-  // Color de acento (diferente matiz)
   config.accentColor = new THREE.Color().setHSL(
-    (hsl.h + (random() - 0.5) * 0.1) % 1, // Ligero cambio de matiz
-    Math.max(0, Math.min(1, hsl.s * (0.8 + random() * 0.4))), // Saturación variable
-    Math.max(0, Math.min(1, hsl.l * (0.6 + random() * 0.8)))  // Luminosidad variable
+    (hsl.h + (random() - 0.5) * 0.1) % 1,
+    Math.max(0, Math.min(1, hsl.s * (0.8 + random() * 0.4))),
+    Math.max(0, Math.min(1, hsl.l * (0.6 + random() * 0.8)))
   );
   
-  // Color emisivo (más brillante para efectos de glow)
   config.emissiveColor = new THREE.Color().setHSL(
     hsl.h,
-    hsl.s * 0.8, // Menos saturado
-    Math.min(1, hsl.l * 1.5) // Más brillante
+    hsl.s * 0.8,
+    Math.min(1, hsl.l * 1.5)
   );
   
   return config;
 }
 
-/**
- * DEPRECATED: Usar getPlanetBaseColor() en su lugar
- * Esta función era la que estaba en OceanWaves.tsx - YA NO USAR
- */
 export function getLegacyOceanColor(): THREE.Color {
-  console.warn('getLegacyOceanColor() is deprecated. Use getPlanetBaseColor() instead.');
   return new THREE.Color(0.1, 0.3, 0.6);
 }

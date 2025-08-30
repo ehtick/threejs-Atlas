@@ -1,33 +1,23 @@
-/**
- * Ocean Waves Effect - Sistema de océanos con ondas animadas, masas continentales y efectos marinos
- * 
- * Extraído de UniversalPlanet3D.tsx para ser completamente modular
- * y reutilizable en cualquier planeta oceánico.
- */
+// atlas-ui/react/static/js/3DEffects/OceanWaves.tsx
 
 import * as THREE from 'three';
 import { getPlanetBaseColor } from './PlanetColorBase';
 
 export interface OceanWavesParams {
-  // Configuración de ondas
   waveIntensity?: number;
   waveSpeed?: number;
   waveScale?: number;
   
-  // Configuración de masas terrestres
   landmassThreshold?: number;
   landmassColor?: THREE.Color | number[];
   
-  // Configuración de océano
   deepOceanThreshold?: number;
   deepOceanMultiplier?: number;
   
-  // Configuración de espuma
   foamThreshold?: number;
   foamColor?: THREE.Color | number[];
   foamIntensity?: number;
   
-  // Color base del océano
   oceanColor?: THREE.Color | number[];
 }
 
@@ -36,7 +26,6 @@ export class OceanWavesEffect {
   private params: OceanWavesParams;
   private oceanLayerMesh?: THREE.Mesh;
 
-  // Vertex shader
   private static readonly vertexShader = `
     varying vec3 vPosition;
     varying vec3 vNormal;
@@ -55,30 +44,24 @@ export class OceanWavesEffect {
     }
   `;
 
-  // Fragment shader con efectos oceánicos
   private static readonly fragmentShader = `
     uniform float time;
     uniform vec3 baseColor;
     
-    // Configuración de ondas
     uniform float waveIntensity;
     uniform float waveSpeed;
     uniform float waveScale;
     
-    // Configuración de masas terrestres
     uniform float landmassThreshold;
     uniform vec3 landmassColor;
     
-    // Configuración de océano profundo
     uniform float deepOceanThreshold;
     uniform float deepOceanMultiplier;
     
-    // Configuración de espuma
     uniform float foamThreshold;
     uniform vec3 foamColor;
     uniform float foamIntensity;
     
-    // Color base del océano
     uniform vec3 oceanColor;
     
     varying vec3 vPosition;
@@ -86,7 +69,6 @@ export class OceanWavesEffect {
     varying vec2 vUv;
     varying vec3 vWorldPosition;
     
-    // Función de ruido 3D
     float hash(float n) {
       return fract(sin(n) * 43758.5453123);
     }
@@ -104,7 +86,6 @@ export class OceanWavesEffect {
             mix(hash(n + 170.0), hash(n + 171.0), f.x), f.y), f.z);
     }
     
-    // Fractales de ruido para mayor complejidad
     float fractalNoise(vec3 p, int octaves) {
       float value = 0.0;
       float amplitude = 0.5;
@@ -124,53 +105,43 @@ export class OceanWavesEffect {
       vec3 pos = normalize(vPosition);
       vec3 color = oceanColor;
       
-      // Ondas animadas del agua - múltiples capas
       float waves1 = sin(pos.x * waveScale + time * waveSpeed) * sin(pos.z * waveScale + time * waveSpeed * 1.5);
       float waves2 = sin(pos.x * waveScale * 1.5 - time * waveSpeed * 1.8) * sin(pos.z * waveScale * 1.2 + time * waveSpeed * 2.2);
       float waves3 = sin(pos.x * waveScale * 2.0 + time * waveSpeed * 0.7) * sin(pos.z * waveScale * 2.5 - time * waveSpeed * 1.3);
       
-      // Combinar ondas con diferentes intensidades
       float totalWaves = (waves1 + waves2 * 0.5 + waves3 * 0.3) * waveIntensity;
       
-      // Aplicar efecto de ondas al color
       vec3 waveColor = vec3(0.0, 0.2, 0.4);
       color += waveColor * totalWaves;
       
-      // Masas continentales (áreas más altas = más claras)
       float landmass = fractalNoise(pos * 3.0, 4);
       if(landmass > landmassThreshold) {
         float landIntensity = smoothstep(landmassThreshold, 0.7, landmass);
         color = mix(color, landmassColor, landIntensity);
       }
       
-      // Fosas oceánicas profundas (más oscuras)
       float depth = fractalNoise(pos * 6.0 + vec3(time * 0.1), 3);
       if(depth < deepOceanThreshold) {
         color *= deepOceanMultiplier;
       }
       
-      // Espuma/crestas de olas
       float foam = fractalNoise(pos * 20.0 + vec3(time * 3.0), 2);
       if(foam > foamThreshold) {
         float foamMix = smoothstep(foamThreshold, 1.0, foam) * foamIntensity;
         color = mix(color, foamColor, foamMix);
       }
       
-      // Efectos de cáusticas submarinas
       float caustics = sin(pos.x * 30.0 + time * 4.0) * sin(pos.z * 25.0 + time * 3.5);
       caustics = pow(max(caustics, 0.0), 3.0);
       color += vec3(0.1, 0.3, 0.5) * caustics * 0.2;
       
-      // Reflejos de superficie
       float fresnel = pow(1.0 - abs(dot(vNormal, normalize(vWorldPosition))), 2.0);
       vec3 reflectionColor = vec3(0.8, 0.9, 1.0);
       color = mix(color, reflectionColor, fresnel * 0.3);
       
-      // Iluminación básica con efecto submarino
       vec3 lightDirection = normalize(vec3(1.0, 1.0, 1.0));
       float lighting = dot(vNormal, lightDirection) * 0.5 + 0.5;
       
-      // Atenuación de luz en agua
       float waterAttenuation = 0.7 + 0.3 * lighting;
       color *= waterAttenuation;
       
@@ -190,16 +161,13 @@ export class OceanWavesEffect {
       foamThreshold: params.foamThreshold || 0.8,
       foamColor: params.foamColor || new THREE.Color(0.9, 0.9, 1.0),
       foamIntensity: params.foamIntensity || 0.4,
-      oceanColor: params.oceanColor || new THREE.Color(0.1, 0.3, 0.6), // TODO: Usar PlanetColorBase aquí también
+      oceanColor: params.oceanColor || new THREE.Color(0.1, 0.3, 0.6),
       ...params
     };
 
     this.material = this.createMaterial();
   }
 
-  /**
-   * Crea el material shader
-   */
   private createMaterial(): THREE.ShaderMaterial {
     const landmassColor = this.params.landmassColor instanceof THREE.Color ? 
       this.params.landmassColor : new THREE.Color(this.params.landmassColor as any);
@@ -215,82 +183,53 @@ export class OceanWavesEffect {
         time: { value: 0 },
         baseColor: { value: oceanColor },
         
-        // Uniformes de ondas
         waveIntensity: { value: this.params.waveIntensity },
         waveSpeed: { value: this.params.waveSpeed },
         waveScale: { value: this.params.waveScale },
         
-        // Uniformes de masas terrestres
         landmassThreshold: { value: this.params.landmassThreshold },
         landmassColor: { value: landmassColor },
         
-        // Uniformes de océano profundo
         deepOceanThreshold: { value: this.params.deepOceanThreshold },
         deepOceanMultiplier: { value: this.params.deepOceanMultiplier },
         
-        // Uniformes de espuma
         foamThreshold: { value: this.params.foamThreshold },
         foamColor: { value: foamColor },
         foamIntensity: { value: this.params.foamIntensity },
         
-        // Color del océano
         oceanColor: { value: oceanColor }
       }
     });
   }
 
-  /**
-   * Aplica el efecto a un mesh
-   * ACTUALIZADO: NO reemplaza el material base, crea capa adicional
-   */
   apply(mesh: THREE.Mesh): void {
-    // 🚀 NO reemplazar el material base - preservar PlanetLayerSystem
-    
-    
-    // En lugar de reemplazar, crear una capa adicional
     this.createOceanLayer(mesh);
   }
 
-  /**
-   * Crea una capa oceánica separada del planeta base
-   */
   private createOceanLayer(baseMesh: THREE.Mesh): void {
     const geometry = baseMesh.geometry.clone();
     
-    // Escalar ligeramente la geometría para evitar z-fighting
     geometry.scale(1.002, 1.002, 1.002);
     
     const oceanMesh = new THREE.Mesh(geometry, this.material);
     
-    // Copiar posición y rotación del mesh base
     oceanMesh.position.copy(baseMesh.position);
     oceanMesh.rotation.copy(baseMesh.rotation);
     
-    // Añadir la capa a la escena (se hará en addToScene)
     this.oceanLayerMesh = oceanMesh;
-    
-    
   }
 
-  /**
-   * Actualiza la animación
-   */
   update(deltaTime: number, planetRotation?: number): void {
     this.material.uniforms.time.value += deltaTime;
     
-    // Sincronizar rotación con el planeta base si está disponible
     if (this.oceanLayerMesh && planetRotation !== undefined) {
       this.oceanLayerMesh.rotation.y = planetRotation;
     }
   }
 
-  /**
-   * Actualiza parámetros dinámicamente
-   */
   updateParams(newParams: Partial<OceanWavesParams>): void {
     this.params = { ...this.params, ...newParams };
     
-    // Actualizar uniformes correspondientes
     Object.keys(newParams).forEach(key => {
       const value = newParams[key as keyof OceanWavesParams];
       if (value !== undefined && this.material.uniforms[key]) {
@@ -304,31 +243,19 @@ export class OceanWavesEffect {
     });
   }
 
-  /**
-   * Añade la capa oceánica a la escena
-   */
   addToScene(scene: THREE.Scene, planetPosition?: THREE.Vector3): void {
     if (this.oceanLayerMesh) {
       if (planetPosition) {
         this.oceanLayerMesh.position.copy(planetPosition);
       }
       scene.add(this.oceanLayerMesh);
-      
-    } else {
-      console.warn('🌊 OceanWaves: No hay capa oceánica para añadir - call apply() first');
     }
   }
 
-  /**
-   * Obtiene el material para manipulación directa
-   */
   getMaterial(): THREE.ShaderMaterial {
     return this.material;
   }
 
-  /**
-   * Limpia recursos
-   */
   dispose(): void {
     this.material.dispose();
     if (this.oceanLayerMesh) {
@@ -340,14 +267,10 @@ export class OceanWavesEffect {
   }
 }
 
-// Función de utilidad para crear desde datos de Python
 export function createOceanWavesFromPythonData(pythonData: any): OceanWavesEffect {
-  // 🎨 USAR SISTEMA CENTRALIZADO DE COLORES
   const baseColor = getPlanetBaseColor(pythonData);
   const oceanColor = [baseColor.r, baseColor.g, baseColor.b];
-    
   
-  // GENERAR PARÁMETROS PROCEDIMENTALMENTE usando seeds de Python
   let waveIntensity = 0.3;
   let waveSpeed = 2.0;
   let waveScale = 8.0;
@@ -355,7 +278,6 @@ export function createOceanWavesFromPythonData(pythonData: any): OceanWavesEffec
   let deepOceanThreshold = 0.2;
   
   if (pythonData.seeds) {
-    // Usar shape_seed para generar parámetros únicos pero consistentes
     const seed = pythonData.seeds.shape_seed;
     const rng = (seed: number) => {
       let s = seed;
@@ -366,12 +288,11 @@ export function createOceanWavesFromPythonData(pythonData: any): OceanWavesEffec
     };
     
     const random = rng(seed);
-    waveIntensity = 0.2 + random() * 0.3; // 0.2 - 0.5
-    waveSpeed = 1.5 + random() * 1.5; // 1.5 - 3.0
-    waveScale = 6.0 + random() * 6.0; // 6.0 - 12.0
-    landmassThreshold = 0.25 + random() * 0.15; // 0.25 - 0.4
-    deepOceanThreshold = 0.15 + random() * 0.1; // 0.15 - 0.25
-    
+    waveIntensity = 0.2 + random() * 0.3;
+    waveSpeed = 1.5 + random() * 1.5;
+    waveScale = 6.0 + random() * 6.0;
+    landmassThreshold = 0.25 + random() * 0.15;
+    deepOceanThreshold = 0.15 + random() * 0.1;
   }
   
   const params: OceanWavesParams = {

@@ -1,15 +1,4 @@
-/**
- * Atmospheric Streaks Effect - Estelas atmosféricas específicas
- * 
- * Crea estelas blancas brillantes que aparecen en planetas metálicos 
- * y otros tipos específicos. Diferente de CloudGyros (partículas giratorias).
- * 
- * Responsabilidades:
- * - AtmosphericStreaks.tsx -> Estelas estáticas brillantes (ESTE ARCHIVO)
- * - CloudGyros.tsx -> Partículas dinámicas giratorias  
- * - Atmosphere.tsx -> Atmósfera base con efecto Fresnel
- */
-
+// atlas-ui/react/static/js/3DEffects/AtmosphericStreaks.tsx
 import * as THREE from 'three';
 import { SeededRandom } from '../Utils/SeededRandom.tsx';
 
@@ -23,11 +12,6 @@ export interface AtmosphericStreaksParams {
   seed?: number;
 }
 
-/**
- * Efecto de Estelas Atmosféricas
- * 
- * Crea estelas estáticas brillantes, principalmente para planetas metálicos
- */
 export class AtmosphericStreaksEffect {
   private particleSystem: THREE.Points;
   private material: THREE.ShaderMaterial;
@@ -38,17 +22,17 @@ export class AtmosphericStreaksEffect {
   private rng: SeededRandom;
 
   constructor(planetRadius: number, params: AtmosphericStreaksParams = {}) {
-    // Usar seed para generación determinística
+
     const seed = params.seed || Math.floor(Math.random() * 1000000);
     this.rng = new SeededRandom(seed);
     
     this.params = {
       color: params.color || [0.95, 0.95, 1.0],
-      particleCount: params.particleCount || 50, // Reducir cantidad de partículas
-      speed: params.speed || 0.5, // Reducir velocidad
-      size: params.size || 1.0, // Reducir tamaño
-      opacity: params.opacity || 0.3, // Reducir opacidad
-      brightness: params.brightness || 1.0, // Reducir brillo
+      particleCount: params.particleCount || 50,
+      speed: params.speed || 0.5,
+      size: params.size || 1.0,
+      opacity: params.opacity || 0.3,
+      brightness: params.brightness || 1.0,
       seed
     };
 
@@ -65,11 +49,10 @@ export class AtmosphericStreaksEffect {
     const speeds = new Float32Array(this.particleCount);
     const phases = new Float32Array(this.particleCount);
 
-    // Radio de la atmósfera (ligeramente más grande que el planeta)
     const atmosphereRadius = planetRadius * 1.3;
     
     for (let i = 0; i < this.particleCount; i++) {
-      // Posiciones aleatorias determinísticas en una esfera alrededor del planeta
+
       const phi = this.rng.random() * Math.PI * 2;
       const costheta = this.rng.random() * 2 - 1;
       const u = this.rng.random();
@@ -81,7 +64,6 @@ export class AtmosphericStreaksEffect {
       positions[i * 3 + 1] = r * Math.sin(theta) * Math.sin(phi);
       positions[i * 3 + 2] = r * Math.cos(theta);
 
-      // Tamaños y propiedades variadas determinísticas
       sizes[i] = this.params.size! * (0.5 + this.rng.random() * 0.5);
       speeds[i] = this.params.speed! * (0.8 + this.rng.random() * 0.4);
       phases[i] = this.rng.random() * Math.PI * 2;
@@ -102,7 +84,6 @@ export class AtmosphericStreaksEffect {
         this.params.color![2]
       );
 
-    // Shader personalizado para partículas suaves tipo estela
     const vertexShader = `
       attribute float size;
       attribute float speed;
@@ -115,15 +96,13 @@ export class AtmosphericStreaksEffect {
       
       void main() {
         vPhase = phase;
-        
-        // Animación mucho más sutil para evitar patrones de líneas
+
         vec3 animatedPosition = position;
         float animOffset = time * speed * 0.02 + phase;
         animatedPosition.y += sin(animOffset + phase) * 0.1;
         animatedPosition.x += cos(animOffset * 0.7 + phase * 1.3) * 0.05;
         animatedPosition.z += sin(animOffset * 1.1 + phase * 0.8) * 0.05;
-        
-        // Calcular opacidad basada en la distancia al centro
+
         float distanceToCenter = length(position);
         vOpacity = 1.0 - smoothstep(0.0, 30.0, distanceToCenter);
         
@@ -142,23 +121,18 @@ export class AtmosphericStreaksEffect {
       varying float vPhase;
       
       void main() {
-        // Crear una partícula circular suave
+
         vec2 center = gl_PointCoord - vec2(0.5);
         float dist = length(center);
-        
-        // Gradiente suave desde el centro
+
         float alpha = 1.0 - smoothstep(0.0, 0.5, dist);
-        
-        // Añadir un brillo extra en el centro
+
         float glow = exp(-dist * 4.0);
-        
-        // Combinar alpha con opacidad variable
+
         alpha *= vOpacity * opacity;
-        
-        // Color con brillo
+
         vec3 finalColor = color * brightness * (1.0 + glow * 2.0);
-        
-        // Añadir ligera variación de color
+
         finalColor += vec3(0.1, 0.1, 0.2) * glow;
         
         gl_FragColor = vec4(finalColor, alpha * (0.6 + 0.4 * glow));
@@ -188,11 +162,10 @@ export class AtmosphericStreaksEffect {
   }
 
   update(deltaTime: number): void {
-    // Actualizar tiempo para animación
+
     this.time += deltaTime;
     this.material.uniforms.time.value = this.time;
-    
-    // Pulsación sutil para más vida
+
     const pulsation = 0.9 + 0.1 * Math.sin(this.time * 2);
     this.material.uniforms.opacity.value = this.params.opacity! * pulsation;
   }
@@ -230,24 +203,21 @@ export class AtmosphericStreaksEffect {
   }
 }
 
-/**
- * Función de utilidad para crear efecto desde datos de Python
- */
 export function createAtmosphericStreaksFromPythonData(
   planetRadius: number, 
   atmosphereData: any,
   seed?: number
 ): AtmosphericStreaksEffect {
-  // Extraer datos de estelas desde Python (referencia: planet_type_translators.py líneas 391-403)
+
   const streaksData = atmosphereData.streaks || atmosphereData;
   
   const params: AtmosphericStreaksParams = {
-    color: streaksData.color || [0.95, 0.95, 1.0], // Blanco brillante por defecto
-    particleCount: streaksData.particleCount || 30, // Menos partículas
-    speed: streaksData.speed || 0.3, // Más lento
-    size: 0.8, // Más pequeñas
-    opacity: 0.2, // Más transparentes
-    brightness: 0.8, // Menos brillo
+    color: streaksData.color || [0.95, 0.95, 1.0],
+    particleCount: streaksData.particleCount || 30,
+    speed: streaksData.speed || 0.3,
+    size: 0.8,
+    opacity: 0.2,
+    brightness: 0.8,
     seed: seed || Math.floor(Math.random() * 1000000)
   };
 

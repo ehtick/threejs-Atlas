@@ -1,16 +1,4 @@
-/**
- * Atmosphere Clouds Effect - Sistema de nubes atmosféricas procedurales
- *
- * Crea nubes volumétricas que flotan alrededor del planeta, basado en los
- * datos de Python del sistema generate_clouds. Genera formaciones de nubes
- * realistas con movimiento y variación de densidad.
- *
- * Responsabilidades:
- * - AtmosphereClouds.tsx -> Nubes volumétricas atmosféricas (ESTE ARCHIVO)
- * - CloudBands.tsx -> Bandas horizontales de gas giants
- * - AtmosphereGlow.tsx -> Partículas luminosas orbitantes
- */
-
+// atlas-ui/react/static/js/3DEffects/AtmosphereClouds.tsx
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom.tsx";
 
@@ -21,40 +9,33 @@ export interface AtmosphereCloudsParams {
   opacity?: number;
   density?: number;
   seed?: number;
-  rotationSpeed?: number; // Velocidad de rotación del sistema
-  movementAmplitude?: number; // Amplitud del movimiento individual
-  puffiness?: number; // Factor de esponjosidad de las nubes
-  cloudsFromPython?: any[]; // Datos de nubes desde Python API
-  cosmicOriginTime?: number; // Tiempo de origen cósmico para determinismo
-  timeSpeed?: number; // Velocidad del tiempo para movimiento de nubes (0.1 - 3.0)
+  rotationSpeed?: number;
+  movementAmplitude?: number;
+  puffiness?: number;
+  cloudsFromPython?: any[];
+  cosmicOriginTime?: number;
+  timeSpeed?: number;
 }
 
-// Rangos para generación procedural basados en generate_clouds de Python
-// Ajustados para proporciones realistas del planeta y atmósfera
 const PROCEDURAL_RANGES = {
-  CLOUD_COUNT: { min: 15, max: 30 }, // Más nubes para cobertura atmosférica realista
-  SIZE: { min: 3.8, max: 5.5 }, // Variedad de tamaños con curvatura adaptativa
-  OPACITY: { min: 0.4, max: 0.9 }, // Opacidad moderada para realismo
-  DENSITY: { min: 0.5, max: 2 }, // Densidad suave para billboards
+  CLOUD_COUNT: { min: 15, max: 30 },
+  SIZE: { min: 3.8, max: 5.5 },
+  OPACITY: { min: 0.4, max: 0.9 },
+  DENSITY: { min: 0.5, max: 2 },
   ROTATION_SPEED: { min: 0.002, max: 0.008 },
   MOVEMENT_AMPLITUDE: { min: 0.003, max: 0.02 },
-  PUFFINESS: { min: 1.0, max: 1.4 }, // Moderada esponjosidad
-  TIME_SPEED: { min: 0.1, max: 3.0 } // Rango de velocidades del tiempo
+  PUFFINESS: { min: 1.0, max: 1.4 },
+  TIME_SPEED: { min: 0.1, max: 3.0 }
 };
 
-/**
- * Efecto de Nubes Atmosféricas
- *
- * Crea nubes volumétricas realistas basadas en los datos de Python generate_clouds
- */
 export class AtmosphereCloudsEffect {
   private cloudSystem: THREE.Group;
   private material: THREE.ShaderMaterial;
   private params: AtmosphereCloudsParams;
   private cloudCount: number;
   private clouds: THREE.Mesh[] = [];
-  private cosmicOriginTime: number; // Tiempo de origen cósmico para determinismo
-  private cosmicOffset: number; // Offset único por planeta
+  private cosmicOriginTime: number;
+  private cosmicOffset: number;
 
   private static readonly vertexShader = `
     varying vec3 vPosition;
@@ -69,15 +50,13 @@ export class AtmosphereCloudsEffect {
       vPosition = position;
       vNormal = normalize(normalMatrix * normal);
       vUv = uv;
-      
-      // Posición del mundo para efectos de ruido
+
       vec4 worldPosition = modelMatrix * vec4(position, 1.0);
       vWorldPosition = worldPosition.xyz;
-      
-      // Movimiento sutil de las nubes con frecuencias bajas para evitar problemas con valores grandes
+
       vec3 pos = position;
-      // Usar frecuencias muy bajas para que funcionen bien con valores grandes de tiempo
-      float slowTime = time * 0.01; // Reducir la velocidad del tiempo para el movimiento
+
+      float slowTime = time * 0.01;
       pos += sin(slowTime + worldPosition.x * 0.01) * movementAmplitude * 0.1;
       pos += cos(slowTime * 0.8 + worldPosition.z * 0.01) * movementAmplitude * 0.1;
       
@@ -97,10 +76,9 @@ export class AtmosphereCloudsEffect {
     uniform float density;
     uniform vec2 noiseOffset;
     uniform float shapeVariation;
-    uniform vec3 lightDirection; // Del sistema PlanetLayerSystem
-    uniform vec3 lightPosition; // Del sistema PlanetLayerSystem
-    
-    // Función de ruido Perlin simplificada para nubes
+    uniform vec3 lightDirection;
+    uniform vec3 lightPosition;
+
     float random(vec2 st) {
       return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
     }
@@ -133,18 +111,13 @@ export class AtmosphereCloudsEffect {
     }
     
     void main() {
-      // TÉCNICA BILLBOARD VOLUMÉTRICA CON SOFT PARTICLES
-      
-      // Distancia radial del centro para forma circular suave
+
       vec2 center = vec2(0.5);
       float distFromCenter = length(vUv - center);
-      
-      // Máscara circular con bordes súper suaves (soft particles)
+
       float circularMask = 1.0 - smoothstep(0.1, 0.5, distFromCenter);
-      
-      // Ruido volumétrico para textura de nube realista
-      // Usar velocidades de animación muy lentas para evitar saltos con valores grandes
-      float animSpeed1 = time * 0.002; // Muy lento para valores grandes
+
+      float animSpeed1 = time * 0.002;
       float animSpeed2 = time * 0.001;
       float animSpeed3 = time * 0.0005;
       
@@ -156,52 +129,39 @@ export class AtmosphereCloudsEffect {
       
       vec2 noiseUv3 = vUv * 16.0 + noiseOffset * 2.1 + vec2(animSpeed3, animSpeed3 * 0.9);
       float noise3 = fbm(noiseUv3) * 0.3;
-      
-      // Combinar múltiples octavas de ruido
+
       float cloudNoise = noise1 + noise2 + noise3;
       cloudNoise = smoothstep(0.2, 1.0, cloudNoise);
-      
-      // Aplicar máscara circular para bordes suaves
+
       float baseCloud = cloudNoise * circularMask * density;
-      
-      // Función de densidad que baja en los bordes (soft particles)
+
       float densityFalloff = pow(circularMask, 1.5);
-      
-      // Aplicar técnica de soft particles para bordes suaves
+
       float finalCloud = baseCloud * densityFalloff;
-      
-      // Gamma correction para mayor suavidad
+
       finalCloud = pow(finalCloud, 0.8);
-      
-      // Color de nube realista con variaciones naturales
+
       vec3 finalColor = cloudColor;
-      
-      // Variación de color como nubes reales (centro más blanco, bordes más grises)
+
       float colorVariation = 1.0 - distFromCenter * 0.3;
       finalColor *= colorVariation;
-      
-      // Sombreado súper sutil y realista
+
       float lightIntensity = dot(vNormal, normalize(vec3(0.8, 1.0, 0.6))) * 0.15 + 0.85;
       finalColor *= lightIntensity;
-      
-      // Transparencia con falloff natural como nubes reales
+
       float alpha = finalCloud * opacity;
-      alpha *= (1.0 - distFromCenter * 0.5); // Más transparente en los bordes
-      
-      // USAR LA LUZ REAL DEL SISTEMA PERO CON NORMAL PLANETARIA
+      alpha *= (1.0 - distFromCenter * 0.5);
+
       vec3 lightDir;
       if (length(lightPosition) > 0.0) {
         lightDir = normalize(lightPosition - vWorldPosition);
       } else {
-        lightDir = normalize(-lightDirection); // Negativo porque lightDirection apunta hacia la luz
+        lightDir = normalize(-lightDirection);
       }
-      
-      // CRÍTICO: Usar la normal planetaria, NO la normal de la superficie de la nube
-      // Para determinar qué lado del PLANETA está iluminado
-      vec3 planetNormal = normalize(vWorldPosition); // Normal desde centro del planeta
+
+      vec3 planetNormal = normalize(vWorldPosition);
       float dotNL = dot(planetNormal, lightDir);
-      
-      // Transición suave de opacidad (de 1.0 a 0.3)
+
       float lightFactor = smoothstep(-0.2, 0.2, dotNL);
       alpha *= mix(0.3, 1.0, lightFactor);
       
@@ -210,15 +170,12 @@ export class AtmosphereCloudsEffect {
   `;
 
   constructor(planetRadius: number, params: AtmosphereCloudsParams = {}) {
-    
-    // Generar valores procedurales usando seed
+
     const seed = params.seed || Math.floor(Math.random() * 1000000);
     const rng = new SeededRandom(seed);
-    
-    // Sistema de tiempo híbrido igual que CarbonTrails y FireEruption:
-    // 1. Usar cosmic_origin_time como base determinística
+
     this.cosmicOriginTime = params.cosmicOriginTime || 514080000;
-    // 2. Offset único por planeta para variación
+
     this.cosmicOffset = (seed % 3600) * 10;
     
     this.params = {
@@ -246,11 +203,9 @@ export class AtmosphereCloudsEffect {
     const baseColor = this.params.color instanceof THREE.Color ? this.params.color : new THREE.Color(this.params.color as any);
     const seed = this.params.seed || Math.floor(Math.random() * 1000000);
     const rng = new SeededRandom(seed);
-    
-    // Usar tiempo cósmico para generar offsets únicos pero deterministas
+
     const cosmicOffsetBase = this.cosmicOriginTime + this.cosmicOffset;
 
-    // Verificar si tenemos datos de Python
     const cloudsFromPython = this.params.cloudsFromPython;
 
     for (let i = 0; i < this.cloudCount; i++) {
@@ -259,88 +214,72 @@ export class AtmosphereCloudsEffect {
       let cloudSize = this.params.size! * rng.uniform(0.8, 1.2);
 
       if (cloudsFromPython && i < cloudsFromPython.length) {
-        // Usar datos reales de Python
+
         const cloudData = cloudsFromPython[i];
-        
-        // Posición desde Python - más alta para evitar Z-fighting con LandMasses
-        x = cloudData.position[0] * planetRadius * 1.05; // Altura atmosférica más alta
+
+        x = cloudData.position[0] * planetRadius * 1.05;
         y = cloudData.position[1] * planetRadius * 1.05;
         z = cloudData.position[2] * planetRadius * 1.05;
-        
-        // Color desde Python
+
         if (cloudData.color) {
           cloudColor = new THREE.Color().setRGB(cloudData.color[0], cloudData.color[1], cloudData.color[2]);
         }
-        
-        // Tamaño desde Python - más grande para visibilidad
+
         cloudSize = cloudData.radius * planetRadius * 0.8;
         
       } else {
-        // Generación procedural - DISTRIBUCIÓN ESFÉRICA UNIFORME
+
         const phi = rng.uniform(0, 2 * Math.PI);
-        const cosTheta = rng.uniform(-1, 1); // Distribución uniforme en coseno
+        const cosTheta = rng.uniform(-1, 1);
         const theta = Math.acos(cosTheta);
-        const surfaceRadius = planetRadius * rng.uniform(1.03, 1.07); // Altura variable más alta para evitar Z-fighting
+        const surfaceRadius = planetRadius * rng.uniform(1.03, 1.07);
         
         x = surfaceRadius * Math.sin(theta) * Math.cos(phi);
         y = surfaceRadius * Math.sin(theta) * Math.sin(phi);
         z = surfaceRadius * Math.cos(theta);
       }
 
-      // TÉCNICA BILLBOARD ORIENTADA AL PLANETA
       const baseRadius = cloudSize * rng.uniform(0.3, 0.8);
-      
-      // Usar PlaneGeometry con suficientes segmentos para curvar
-      const segments = Math.max(8, Math.floor(baseRadius * 15)); // Más segmentos para nubes grandes
+
+      const segments = Math.max(8, Math.floor(baseRadius * 15));
       const cloudGeometry = new THREE.PlaneGeometry(
         baseRadius * 2,
         baseRadius * 2,
         segments, segments
       );
-      
-      // ORIENTACIÓN TANGENTE A LA SUPERFICIE DEL PLANETA
+
       const cloudPosition = new THREE.Vector3(x, y, z);
       const planetCenter = new THREE.Vector3(0, 0, 0);
       const normalFromPlanet = cloudPosition.clone().normalize();
-      
-      // Crear vectores tangentes a la superficie esférica
+
       const tangent1 = new THREE.Vector3();
       const tangent2 = new THREE.Vector3();
-      
-      // Calcular primer vector tangente
+
       if (Math.abs(normalFromPlanet.y) < 0.99) {
         tangent1.crossVectors(normalFromPlanet, new THREE.Vector3(0, 1, 0)).normalize();
       } else {
         tangent1.crossVectors(normalFromPlanet, new THREE.Vector3(1, 0, 0)).normalize();
       }
-      
-      // Calcular segundo vector tangente (perpendicular al primero y al normal)
+
       tangent2.crossVectors(normalFromPlanet, tangent1).normalize();
-      
-      // Crear matriz de rotación para que la nube siga la superficie
+
       const rotationMatrix = new THREE.Matrix4();
       rotationMatrix.makeBasis(tangent1, tangent2, normalFromPlanet);
-      
-      // CURVAR LA GEOMETRÍA PARA SEGUIR LA SUPERFICIE ESFÉRICA
+
       const positions = cloudGeometry.attributes.position;
       const vertex = new THREE.Vector3();
-      const cloudRadius = Math.sqrt(x * x + y * y + z * z); // Radio atmosférico de esta nube
-      
-      // Aplicar primero la orientación
+      const cloudRadius = Math.sqrt(x * x + y * y + z * z);
+
       cloudGeometry.applyMatrix4(rotationMatrix);
-      
-      // Ahora curvar cada vértice para seguir la superficie esférica
+
       for (let i = 0; i < positions.count; i++) {
         vertex.fromBufferAttribute(positions, i);
-        
-        // Convertir a coordenadas del mundo
+
         const worldVertex = vertex.clone().add(cloudPosition);
-        
-        // Proyectar sobre la superficie esférica a la altura correcta
+
         const direction = worldVertex.clone().normalize();
         const projectedVertex = direction.multiplyScalar(cloudRadius);
-        
-        // Volver a coordenadas locales de la nube
+
         const localVertex = projectedVertex.sub(cloudPosition);
         
         positions.setXYZ(i, localVertex.x, localVertex.y, localVertex.z);
@@ -348,34 +287,27 @@ export class AtmosphereCloudsEffect {
       
       positions.needsUpdate = true;
       cloudGeometry.computeVertexNormals();
-      
-      // Posicionar la nube
+
       cloudGeometry.translate(x, y, z);
-      
-      // Crear material individual para cada nube con patrón único
+
       const cloudMaterial = this.material.clone();
       cloudMaterial.uniforms.cloudColor.value = cloudColor;
       cloudMaterial.uniforms.density.value = this.params.density! * rng.uniform(0.8, 1.2);
-      // Offset determinista basado en tiempo cósmico + variación aleatoria
-      // Esto asegura que cada planeta tenga un patrón único pero determinista
+
       cloudMaterial.uniforms.noiseOffset.value = new THREE.Vector2(
         (cosmicOffsetBase + rng.uniform(0, 100)) % 100,
         (cosmicOffsetBase + rng.uniform(0, 100)) % 100
       );
-      // Variación de forma única para cada nube
+
       cloudMaterial.uniforms.shapeVariation.value = rng.uniform(-1.0, 1.0);
-      
-      // Configurar uniformes de luz para cada nube
+
       cloudMaterial.uniforms.lightDirection.value = this.material.uniforms.lightDirection.value.clone();
       cloudMaterial.uniforms.lightPosition.value = this.material.uniforms.lightPosition.value.clone();
-      
-      // Crear mesh de nube SIGUIENDO LA SUPERFICIE
+
       const cloudMesh = new THREE.Mesh(cloudGeometry, cloudMaterial);
-      
-      // RenderOrder: 2 para que se renderice después de las masas de tierra (que tienen 1)
+
       cloudMesh.renderOrder = 2;
-      
-      // Guardar datos para nubes atmosféricas
+
       cloudMesh.userData.isAtmosphericCloud = true;
       cloudMesh.userData.planetNormal = normalFromPlanet.clone();
       
@@ -400,9 +332,9 @@ export class AtmosphereCloudsEffect {
         lightPosition: { value: new THREE.Vector3(0, 0, 0) },
       },
       transparent: true,
-      blending: THREE.NormalBlending, // Blending normal para billboards
+      blending: THREE.NormalBlending,
       depthWrite: false,
-      side: THREE.FrontSide, // FrontSide para geometría curvada
+      side: THREE.FrontSide,
     });
   }
 
@@ -414,32 +346,26 @@ export class AtmosphereCloudsEffect {
   }
 
   update(deltaTime: number, camera?: THREE.Camera): void {
-    // Calcular tiempo igual que CarbonTrails y FireEruption
+
     const currentTimeSeconds = Date.now() / 1000;
     const timeSinceCosmicOrigin = currentTimeSeconds - this.cosmicOriginTime;
     const animTime = (timeSinceCosmicOrigin + this.cosmicOffset) * this.params.timeSpeed!;
 
-    // Aplicar ventana deslizante SOLO para GPU, no para lógica
-    const windowedTime = animTime % 10000; // Para shaders
+    const windowedTime = animTime % 10000;
 
-    // Actualizar tiempo en todos los materiales de las nubes
     this.clouds.forEach(cloud => {
       const material = cloud.material as THREE.ShaderMaterial;
-      // Usar ventana deslizante para GPU manteniendo continuidad
+
       material.uniforms.time.value = windowedTime;
-      
-      // ORIENTACIÓN ATMOSFÉRICA: Las nubes ya están orientadas al planeta
-      // No necesitan lookAt dinámico porque están pre-orientadas
+
     });
 
-    // Rotación del sistema usando tiempo continuo (sin ventana para evitar saltos)
     this.cloudSystem.rotation.y = animTime * this.params.rotationSpeed!;
   }
 
   updateParams(newParams: Partial<AtmosphereCloudsParams>): void {
     this.params = { ...this.params, ...newParams };
 
-    // Actualizar parámetros en todos los materiales de las nubes
     this.clouds.forEach(cloud => {
       const material = cloud.material as THREE.ShaderMaterial;
       
@@ -453,7 +379,6 @@ export class AtmosphereCloudsEffect {
     });
   }
 
-  // MÉTODOS PARA INTEGRACIÓN CON SISTEMA DE LUZ
   updateLightPosition(position: THREE.Vector3): void {
     this.clouds.forEach(cloud => {
       const material = cloud.material as THREE.ShaderMaterial;
@@ -472,7 +397,6 @@ export class AtmosphereCloudsEffect {
     });
   }
 
-  // Método compatible con PlanetLayerSystem
   updateFromThreeLight(light: THREE.DirectionalLight): void {
     this.updateLightPosition(light.position);
     const direction = light.target.position.clone().sub(light.position).normalize();
@@ -484,40 +408,35 @@ export class AtmosphereCloudsEffect {
   }
 
   dispose(): void {
-    // Limpiar todas las nubes
+
     this.clouds.forEach(cloud => {
       cloud.geometry.dispose();
       (cloud.material as THREE.ShaderMaterial).dispose();
     });
     this.clouds = [];
-    
-    // Limpiar el sistema de nubes
+
     this.cloudSystem.clear();
   }
 }
 
-/**
- * Función de utilidad para crear efecto desde datos de Python
- */
 export function createAtmosphereCloudsFromPythonData(planetRadius: number, surfaceData: any, globalSeed?: number, cosmicOriginTime?: number): AtmosphereCloudsEffect {
-  // Los datos de nubes vienen en surface_elements.clouds (no atmosphere)
+
   const cloudsArray = surfaceData.clouds || [];
-  
-  
+
   if (cloudsArray.length === 0) {
-    // Si no hay datos de nubes de Python, generar proceduralmente
+
     const seed = globalSeed || Math.floor(Math.random() * 1000000);
     const rng = new SeededRandom(seed + 4000);
     
     const params: AtmosphereCloudsParams = {
-      color: new THREE.Color(1, 1, 1.0), // Blanco puro como nubes reales
-      cloudCount: 15, // Más nubes para cobertura realista
-      size: 0.6, // Tamaño más grande para nubes visibles
-      opacity: 0.7, // Mayor opacidad para visibilidad desde el espacio
-      density: 0.8, // Densidad moderada para transparencia natural
+      color: new THREE.Color(1, 1, 1.0),
+      cloudCount: 15,
+      size: 0.6,
+      opacity: 0.7,
+      density: 0.8,
       seed,
-      rotationSpeed: 0.005, // Rotación más lenta y realista
-      movementAmplitude: 0.02, // Movimiento sutil
+      rotationSpeed: 0.005,
+      movementAmplitude: 0.02,
       puffiness: 1.5,
       timeSpeed: rng.uniform(PROCEDURAL_RANGES.TIME_SPEED.min, PROCEDURAL_RANGES.TIME_SPEED.max),
       cosmicOriginTime: cosmicOriginTime,
@@ -526,12 +445,11 @@ export function createAtmosphereCloudsFromPythonData(planetRadius: number, surfa
     return new AtmosphereCloudsEffect(planetRadius, params);
   }
 
-  // Usar datos reales de Python
   const seed = globalSeed || Math.floor(Math.random() * 1000000);
   const rng = new SeededRandom(seed + 4000);
   
   const params: AtmosphereCloudsParams = {
-    color: new THREE.Color(0xffffff), // Color base, se aplicará por nube individual
+    color: new THREE.Color(0xffffff),
     cloudCount: cloudsArray.length,
     size: rng.uniform(PROCEDURAL_RANGES.SIZE.min, PROCEDURAL_RANGES.SIZE.max),
     opacity: rng.uniform(PROCEDURAL_RANGES.OPACITY.min, PROCEDURAL_RANGES.OPACITY.max),
@@ -542,7 +460,7 @@ export function createAtmosphereCloudsFromPythonData(planetRadius: number, surfa
     puffiness: rng.uniform(PROCEDURAL_RANGES.PUFFINESS.min, PROCEDURAL_RANGES.PUFFINESS.max),
     timeSpeed: rng.uniform(PROCEDURAL_RANGES.TIME_SPEED.min, PROCEDURAL_RANGES.TIME_SPEED.max),
     cosmicOriginTime: cosmicOriginTime,
-    cloudsFromPython: cloudsArray, // Pasar los datos de Python
+    cloudsFromPython: cloudsArray,
   };
 
   return new AtmosphereCloudsEffect(planetRadius, params);

@@ -1,8 +1,4 @@
-/**
- * Exotic Geometric Shapes Effect
- * Small rotating geometric shapes for exotic planets
- */
-
+// atlas-ui/react/static/js/3DEffects/ExoticGeometricShapes.tsx
 import * as THREE from 'three';
 import { SeededRandom } from '../Utils/SeededRandom.tsx';
 
@@ -16,7 +12,7 @@ export interface ExoticGeometricShapesParams {
     angle: number;
   }>;
   planetRadius?: number;
-  planetColor?: THREE.Color;  // Add planet base color
+  planetColor?: THREE.Color;
 }
 
 export class ExoticGeometricShapesEffect {
@@ -29,7 +25,7 @@ export class ExoticGeometricShapesEffect {
   constructor(planetRadius: number, params: ExoticGeometricShapesParams = {}) {
     this.group = new THREE.Group();
     this.planetRadius = planetRadius;
-    this.planetColor = params.planetColor || new THREE.Color(0x800080); // Default exotic purple
+    this.planetColor = params.planetColor || new THREE.Color(0x800080);
 
     if (params.shapes && params.shapes.length > 0) {
       this.createShapes(params.shapes);
@@ -40,23 +36,20 @@ export class ExoticGeometricShapesEffect {
     if (!shapesData) return;
 
     shapesData.forEach((shapeData) => {
-      // Create FLAT geometry using CircleGeometry for all shapes
-      // This creates a flat disc with N sides that lies in the XY plane
+
       const geometry = new THREE.CircleGeometry(
-        shapeData.size * this.planetRadius,  // radius
-        shapeData.sides  // number of segments (3 = triangle, 4 = square, etc.)
+        shapeData.size * this.planetRadius,
+        shapeData.sides
       );
 
-      // Use planet color but darker (multiply by 0.6-0.8)
       const darkerFactor = 0.7;
       const shapeColor = this.planetColor.clone();
       shapeColor.multiplyScalar(darkerFactor);
-      
-      // Create material with darker planet color
+
       const material = new THREE.MeshPhongMaterial({
         color: shapeColor,
         transparent: true,
-        opacity: 0.8,  // Slightly transparent
+        opacity: 0.8,
         emissive: shapeColor.clone().multiplyScalar(0.3),
         emissiveIntensity: 0.3,
         shininess: 60,
@@ -65,19 +58,15 @@ export class ExoticGeometricShapesEffect {
 
       const mesh = new THREE.Mesh(geometry, material);
 
-      // Position directly on sphere surface
-      const distance = this.planetRadius * 1.005; // Slightly above to avoid z-fighting
+      const distance = this.planetRadius * 1.005;
       mesh.position.set(
         shapeData.position_3d[0] * distance,
         shapeData.position_3d[1] * distance,
         shapeData.position_3d[2] * distance
       );
 
-      // Make the flat shape face outward from planet center
-      // CircleGeometry lies in XY plane, we need it perpendicular to the radius
-      mesh.lookAt(0, 0, 0);  // Look at planet center
-      
-      // Apply initial rotation around the surface normal (spin the shape)
+      mesh.lookAt(0, 0, 0);
+
       mesh.rotateZ(shapeData.angle);
 
       this.shapes.push(mesh);
@@ -87,7 +76,7 @@ export class ExoticGeometricShapesEffect {
   }
 
   update(deltaTime: number): void {
-    // Rotate each shape around its local Z axis (perpendicular to surface)
+
     this.shapes.forEach((shape, index) => {
       shape.rotateZ(this.rotationSpeeds[index] * deltaTime);
     });
@@ -123,8 +112,7 @@ export function createExoticGeometricShapesFromPythonData(
   seed?: number,
   planetColor?: THREE.Color
 ): ExoticGeometricShapesEffect | null {
-  
-  // Check if we have small_geometric_shapes data
+
   if (!surfaceElements.small_geometric_shapes || surfaceElements.small_geometric_shapes.length === 0) {
     return null;
   }

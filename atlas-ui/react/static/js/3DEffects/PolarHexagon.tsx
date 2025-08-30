@@ -1,16 +1,15 @@
+// atlas-ui/react/static/js/3DEffects/PolarHexagon.tsx
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom.tsx";
 import { getAnimatedUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime.tsx";
 
-// Rangos procedurales para hexágonos polares basados en observaciones de Saturno
 const PROCEDURAL_RANGES = {
-  SIZE: { min: 0.12, max: 0.2 }, // Tamaño más pequeño por defecto
-  ROTATION_SPEED: { min: 0.05, max: 0.1 }, // Rotación muy lenta como Saturno
-  OPACITY: { min: 0.15, max: 0.35 }, // Opacidad sutil
-  TIME_SPEED: { min: 0.8, max: 1.5 }, // Velocidad de tiempo
+  SIZE: { min: 0.12, max: 0.2 },
+  ROTATION_SPEED: { min: 0.05, max: 0.1 },
+  OPACITY: { min: 0.15, max: 0.35 },
+  TIME_SPEED: { min: 0.8, max: 1.5 },
 };
 
-// Shader for the polar hexagon effect with curved geometry
 const vertexShader = `
   varying vec2 vUv;
   varying vec3 vPosition;
@@ -48,7 +47,6 @@ const fragmentShader = `
   
   #define PI 3.14159265359
   
-  // Convert UV to polar coordinates
   vec2 toPolar(vec2 uv) {
     vec2 centered = uv - 0.5;
     float r = length(centered);
@@ -56,7 +54,6 @@ const fragmentShader = `
     return vec2(r, theta);
   }
   
-  // Create hexagon shape
   float hexagon(vec2 p, float radius) {
     const vec3 k = vec3(-0.866025404, 0.5, 0.577350269);
     p = abs(p);
@@ -66,10 +63,8 @@ const fragmentShader = `
   }
   
   void main() {
-    // Convert to polar coordinates centered at pole
     vec2 polar = toPolar(vUv);
     
-    // Rotate hexagon slowly
     float rotation = time * rotationSpeed;
     vec2 rotatedUV = vUv - 0.5;
     float cosR = cos(rotation);
@@ -79,36 +74,27 @@ const fragmentShader = `
       rotatedUV.x * sinR + rotatedUV.y * cosR
     );
     
-    // Create hexagon shape distance field
     float hex = hexagon(rotatedUV, hexagonRadius);
     
-    // HOLLOW HEXAGON: Only show the edges/lines
-    float lineWidth = 0.03; // Thick lines like Saturn
-    float hexagonEdge = abs(hex); // Distance to hexagon edge
+    float lineWidth = 0.03;
+    float hexagonEdge = abs(hex);
     
-    // Only render if we're close to the hexagon edge
     if (hexagonEdge > lineWidth) {
-      discard; // Not on hexagon edge, don't render
+      discard;
     }
     
-    // Only show if we're inside the hexagon area (not outside)
     if (hex > lineWidth) {
-      discard; // Outside hexagon completely
+      discard;
     }
     
-    // Calculate line intensity based on distance to edge
     float edgeIntensity = 1.0 - smoothstep(0.0, lineWidth, hexagonEdge);
     
-    // Calculate hexagon color (darker than planet)
     vec3 finalColor = planetColor * (1.0 - darkenFactor);
     
-    // Make lines more prominent
-    finalColor *= 0.6; // Darker for contrast
+    finalColor *= 0.6;
     
-    // Apply edge intensity and 25% opacity (75% transparent)
     float finalOpacity = opacity * visibility * edgeIntensity * 0.25;
     
-    // Add subtle glow for Saturn-like effect
     finalColor += vec3(0.1) * edgeIntensity;
     
     gl_FragColor = vec4(finalColor, finalOpacity);
@@ -149,14 +135,11 @@ export class PolarHexagonEffect {
   };
 
   constructor(params: PolarHexagonParams) {
-    // Generar valores procedurales usando seed
     const seed = params.seed || Math.floor(Math.random() * 1000000);
     const rng = new SeededRandom(seed);
 
-    // Tiempo inicial determinista basado en el seed
     this.startTime = params.startTime || (seed % 10000) / 1000;
 
-    // Generar parámetros procedurales
     this.proceduralParams = {
       size: rng.uniform(PROCEDURAL_RANGES.SIZE.min, PROCEDURAL_RANGES.SIZE.max),
       rotationSpeed: rng.uniform(PROCEDURAL_RANGES.ROTATION_SPEED.min, PROCEDURAL_RANGES.ROTATION_SPEED.max),
@@ -166,23 +149,20 @@ export class PolarHexagonEffect {
 
     this.params = params;
 
-    // Convert planet color to THREE.Color
     const color = new THREE.Color(params.planetColor);
 
-    // Calculate darker hexagon color
     const hexColor = color.clone();
     hexColor.multiplyScalar(1 - params.hexagonData.color_darken_factor);
 
-    // Create shader material with procedural values
     this.material = new THREE.ShaderMaterial({
       uniforms: {
         time: { value: 0 },
         planetColor: { value: color },
         hexagonColor: { value: hexColor },
         darkenFactor: { value: params.hexagonData.color_darken_factor },
-        opacity: { value: this.proceduralParams.opacity }, // Use procedural opacity
-        hexagonRadius: { value: this.proceduralParams.size }, // Use procedural size
-        rotationSpeed: { value: this.proceduralParams.rotationSpeed }, // Use procedural rotation
+        opacity: { value: this.proceduralParams.opacity },
+        hexagonRadius: { value: this.proceduralParams.size },
+        rotationSpeed: { value: this.proceduralParams.rotationSpeed },
         pole: { value: params.hexagonData.pole === "north" ? 1.0 : -1.0 },
         visibility: { value: 1.0 },
       },
@@ -194,10 +174,8 @@ export class PolarHexagonEffect {
       blending: params.hexagonData.nebula_blend ? THREE.AdditiveBlending : THREE.NormalBlending,
     });
 
-    // Create custom curved hexagon geometry
     const geometry = this.createCurvedHexagonGeometry(params.hexagonData.pole, params.hexagonData.radius);
 
-    // Create mesh
     this.mesh = new THREE.Mesh(geometry, this.material);
     this.mesh.scale.set(params.planetRadius, params.planetRadius, params.planetRadius);
 
@@ -216,31 +194,26 @@ export class PolarHexagonEffect {
     const visibleFraction = this.params.hexagonData.visible_duration_years / 
                            this.params.hexagonData.cycle_duration_years;
     
-    // Hexagon is visible for the first part of the cycle
     if (cycleProgress < visibleFraction) {
-      // Fade in and out smoothly
       const localProgress = cycleProgress / visibleFraction;
       if (localProgress < 0.1) {
-        this.material.uniforms.visibility.value = localProgress / 0.1; // Fade in
+        this.material.uniforms.visibility.value = localProgress / 0.1;
       } else if (localProgress > 0.9) {
-        this.material.uniforms.visibility.value = (1 - localProgress) / 0.1; // Fade out
+        this.material.uniforms.visibility.value = (1 - localProgress) / 0.1;
       } else {
-        this.material.uniforms.visibility.value = 1.0; // Fully visible
+        this.material.uniforms.visibility.value = 1.0;
       }
     } else {
-      this.material.uniforms.visibility.value = 0.0; // Not visible
+      this.material.uniforms.visibility.value = 0.0;
     }
   }
 
   update(deltaTime: number): void {
-    // Calcular tiempo absoluto determinista como AtmosphereClouds
-    const cosmicOriginTime = DEFAULT_COSMIC_ORIGIN_TIME; // No params.cosmicOriginTime available here
+    const cosmicOriginTime = DEFAULT_COSMIC_ORIGIN_TIME;
     const currentTime = getAnimatedUniverseTime(cosmicOriginTime, this.proceduralParams.timeSpeed, this.startTime);
 
-    // Update time uniform for rotation with deterministic time
     this.material.uniforms.time.value = currentTime;
 
-    // Update visibility based on cycle
     this.updateVisibility();
   }
 
@@ -260,35 +233,29 @@ export class PolarHexagonEffect {
   private createCurvedHexagonGeometry(pole: "north" | "south", hexRadius: number): THREE.BufferGeometry {
     const poleDirection = pole === "north" ? 1 : -1;
 
-    // Create a plane and curve it to match the polar region
-    const segments = 64; // More segments for smooth curvature
-    const size = 1.0; // Size of the plane
+    const segments = 64;
+    const size = 1.0;
 
     const geometry = new THREE.PlaneGeometry(size, size, segments, segments);
 
-    // Curve the plane to follow the sphere surface at the pole
     const positions = geometry.attributes.position;
     const vertex = new THREE.Vector3();
 
     for (let i = 0; i < positions.count; i++) {
       vertex.fromBufferAttribute(positions, i);
 
-      // Map plane coordinates to sphere coordinates
       const x = vertex.x;
-      const z = vertex.y; // Note: PlaneGeometry uses Y as the second dimension
+      const z = vertex.y;
 
-      // Calculate distance from center
       const distance = Math.sqrt(x * x + z * z);
 
       if (distance <= size / 2) {
-        // Project onto sphere surface
-        const sphereRadius = 1.02; // Slightly above planet surface
-        const angle = distance * Math.PI * 0.5; // Map distance to angle (0 to PI/2)
+        const sphereRadius = 1.02;
+        const angle = distance * Math.PI * 0.5;
 
         const sphereY = poleDirection * Math.cos(angle) * sphereRadius;
         const radialDistance = Math.sin(angle) * sphereRadius;
 
-        // Maintain relative position but project onto sphere
         if (distance > 0) {
           const normalizedX = x / distance;
           const normalizedZ = z / distance;
@@ -297,7 +264,6 @@ export class PolarHexagonEffect {
           vertex.y = sphereY;
           vertex.z = normalizedZ * radialDistance;
         } else {
-          // At center (pole)
           vertex.x = 0;
           vertex.y = poleDirection * sphereRadius;
           vertex.z = 0;
@@ -318,7 +284,6 @@ export class PolarHexagonEffect {
   }
 }
 
-// Factory function to create from Python data
 export function createPolarHexagonFromPythonData(pythonData: any, planetRadius: number): PolarHexagonEffect | null {
   const surface = pythonData.surface_elements;
 
@@ -329,7 +294,6 @@ export function createPolarHexagonFromPythonData(pythonData: any, planetRadius: 
   const baseColor = pythonData.planet_info?.base_color || "#FFFFFF";
   const currentTimeYears = pythonData.timing?.elapsed_time ? pythonData.timing.elapsed_time / (365.25 * 24 * 3600) : 0;
 
-  // Use planet seed for procedural generation
   const seed = pythonData.seeds?.planet_seed || pythonData.seeds?.shape_seed || Math.floor(Math.random() * 1000000);
 
   const params: PolarHexagonParams = {
@@ -337,8 +301,8 @@ export function createPolarHexagonFromPythonData(pythonData: any, planetRadius: 
     hexagonData: surface.polar_hexagon,
     planetRadius: planetRadius,
     currentTime: currentTimeYears,
-    seed: seed + 5000, // Offset for polar hexagon specific generation
-    startTime: (seed % 10000) / 1000, // Deterministic start time based on seed
+    seed: seed + 5000,
+    startTime: (seed % 10000) / 1000,
   };
 
   return new PolarHexagonEffect(params);

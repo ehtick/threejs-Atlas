@@ -1,9 +1,4 @@
-/**
- * Anomaly Phase Matter Effect - Materia en transición de fase
- *
- * Simula materia que existe en múltiples estados cuánticos simultáneamente,
- * creando efectos de materialización y desmaterialización constantes.
- */
+// atlas-ui/react/static/js/3DEffects/AnomalyPhaseMatter.tsx
 
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom.tsx";
@@ -17,7 +12,7 @@ export interface AnomalyPhaseMatterParams {
   seed?: number;
   timeSpeed?: number;
   phaseStates?: number;
-  startTime?: number; // Tiempo inicial fijo para determinismo
+  startTime?: number;
   cosmicOriginTime?: number;
 }
 
@@ -57,40 +52,32 @@ export class AnomalyPhaseMatterEffect {
     uniform float coherenceLevel;
     uniform float phaseStates;
     
-    // Función de transición de fase cuántica
     float phaseTransition(float state, float t) {
       float cycle = sin(t * transitionSpeed + state * 6.28 / phaseStates);
       return 0.5 + 0.5 * cycle;
     }
     
-    // Obtener posición basada en estado de fase
     vec3 getPhasePosition(vec3 basePos, float state, float t) {
       float transition = phaseTransition(state, t);
       
-      // Estado sólido (compacto)
       if (state < 1.0) {
         return basePos * (0.8 + 0.2 * transition);
       }
-      // Estado líquido (fluido)
       else if (state < 2.0) {
         vec3 flow = vec3(sin(t + basePos.x), cos(t + basePos.y), sin(t * 0.5 + basePos.z)) * 0.1;
         return basePos + flow * transition;
       }
-      // Estado gaseoso (expansivo)
       else if (state < 3.0) {
         return basePos * (1.0 + 0.5 * transition);
       }
-      // Estado plasmático (energético)
       else if (state < 4.0) {
         vec3 energy = normalize(phaseVector) * sin(t * 3.0) * 0.3;
         return basePos + energy * transition;
       }
-      // Estado cuántico (incierto)
       else if (state < 5.0) {
         vec3 uncertainty = phaseVector * sin(t * 5.0 + state) * 0.4;
         return basePos + uncertainty * transition;
       }
-      // Estado de antimateria (invertido)
       else {
         return -basePos * (0.5 + 0.5 * transition);
       }
@@ -101,35 +88,29 @@ export class AnomalyPhaseMatterEffect {
       vPhaseState = phaseState;
       vCoherence = coherenceFactor;
       
-      // Calcular posición basada en estado de fase actual
       vec3 pos = getPhasePosition(position, phaseState, time + transitionPhase);
       
-      // Coherencia cuántica - qué tan "real" es la partícula
       float coherence = coherenceFactor * coherenceLevel;
       float phaseTransitionValue = phaseTransition(phaseState, time + transitionPhase);
       
-      // Color basado en estado de fase
       if (phaseState < 1.0) {
-        vColor = vec3(0.8, 0.8, 1.0); // Azul sólido
+        vColor = vec3(0.8, 0.8, 1.0);
       } else if (phaseState < 2.0) {
-        vColor = vec3(0.3, 0.7, 1.0); // Azul líquido
+        vColor = vec3(0.3, 0.7, 1.0);
       } else if (phaseState < 3.0) {
-        vColor = vec3(0.9, 0.9, 0.6); // Amarillo gaseoso
+        vColor = vec3(0.9, 0.9, 0.6);
       } else if (phaseState < 4.0) {
-        vColor = vec3(1.0, 0.5, 0.2); // Naranja plasmático
+        vColor = vec3(1.0, 0.5, 0.2);
       } else if (phaseState < 5.0) {
-        vColor = vec3(0.7, 0.3, 1.0); // Púrpura cuántico
+        vColor = vec3(0.7, 0.3, 1.0);
       } else {
-        vColor = vec3(1.0, 0.2, 0.8); // Magenta antimateria
+        vColor = vec3(1.0, 0.2, 0.8);
       }
       
-      // Modular color con transición de fase
       vColor *= (0.7 + 0.3 * phaseTransitionValue);
       
-      // Alpha basado en coherencia y fase
       vAlpha = coherence * phaseIntensity * phaseTransitionValue;
       
-      // Efecto de materialización/desmaterialización
       float materialization = abs(sin(time * 2.0 + phaseState)) * 0.5 + 0.5;
       vAlpha *= materialization;
       
@@ -148,7 +129,6 @@ export class AnomalyPhaseMatterEffect {
     
     uniform float time;
     
-    // Función de patrón de interferencia cuántica
     float quantumInterference(vec2 uv, float phase) {
       float dist = length(uv);
       float wave = sin(dist * 15.0 + phase * 10.0 + time * 3.0);
@@ -159,61 +139,46 @@ export class AnomalyPhaseMatterEffect {
       vec2 uv = gl_PointCoord - 0.5;
       float dist = length(uv);
       
-      // Forma base de la partícula
       float particle = 1.0 - smoothstep(0.0, 0.5, dist);
       
-      // Patrones específicos por estado de fase
       if (vPhaseState < 1.0) {
-        // Sólido - forma definida
         particle = 1.0 - smoothstep(0.0, 0.3, dist);
       } else if (vPhaseState < 2.0) {
-        // Líquido - bordes suaves
         particle = 1.0 - smoothstep(0.0, 0.4, dist);
         particle *= (0.8 + 0.2 * sin(time * 2.0 + dist * 10.0));
       } else if (vPhaseState < 3.0) {
-        // Gaseoso - muy difuso
         particle = 1.0 - smoothstep(0.0, 0.5, dist);
         particle *= 0.6;
       } else if (vPhaseState < 4.0) {
-        // Plasmático - energético
         float energy = quantumInterference(uv, vPhaseState);
         particle *= energy;
       } else if (vPhaseState < 5.0) {
-        // Cuántico - interferencia
         float interference = quantumInterference(uv, vPhaseState);
         particle *= interference;
         
-        // Probabilidad cuántica
         float probability = abs(sin(time + vPhaseState));
         if (probability < 0.3) {
-          particle *= 0.2; // Baja probabilidad de existencia
+          particle *= 0.2;
         }
       } else {
-        // Antimateria - patrón invertido
         particle = smoothstep(0.2, 0.5, dist) - smoothstep(0.5, 0.8, dist);
       }
       
-      // Efecto de coherencia cuántica
       float coherenceEffect = vCoherence;
       if (coherenceEffect < 0.3) {
-        // Baja coherencia - partícula "fantasma"
         particle *= 0.4;
         
-        // Efecto de parpadeo cuántico
         float flicker = step(0.8, fract(sin(time * 10.0 + vPhaseState) * 43758.5453));
         particle *= (0.3 + 0.7 * flicker);
       }
       
-      // Modulación temporal para transiciones
       float temporal = sin(time * 4.0 + vPhaseState) * 0.2 + 0.8;
       particle *= temporal;
       
-      // Color final con efectos de fase
       vec3 finalColor = vColor;
       
-      // Destello durante transiciones de fase críticas
       if (abs(sin(time * 2.0 + vPhaseState)) > 0.9) {
-        finalColor += vec3(0.5, 0.5, 0.5); // Destello blanco
+        finalColor += vec3(0.5, 0.5, 0.5);
       }
       
       float finalAlpha = particle * vAlpha;
@@ -225,7 +190,6 @@ export class AnomalyPhaseMatterEffect {
     const seed = params.seed || Math.floor(Math.random() * 1000000);
     const rng = new SeededRandom(seed);
     
-    // Tiempo inicial determinista basado en el seed - igual que AtmosphereClouds
     this.startTime = params.startTime || (seed % 10000) / 1000;
     
     this.params = {
@@ -259,7 +223,6 @@ export class AnomalyPhaseMatterEffect {
     const rng = new SeededRandom(seed);
 
     for (let i = 0; i < this.particleCount; i++) {
-      // Distribución alrededor del planeta
       const distance = planetRadius * rng.uniform(1.1, 1.9);
       const pos = rng.spherePosition(distance);
       
@@ -267,22 +230,17 @@ export class AnomalyPhaseMatterEffect {
       positions[i * 3 + 1] = pos.y;
       positions[i * 3 + 2] = pos.z;
 
-      // Tamaño variable
       sizes[i] = rng.uniform(0.8, 2.0);
 
-      // Vector de fase para direccionalidad cuántica
       const phaseVec = rng.spherePosition(1.0);
       phaseVectors[i * 3] = phaseVec.x;
       phaseVectors[i * 3 + 1] = phaseVec.y;
       phaseVectors[i * 3 + 2] = phaseVec.z;
 
-      // Factor de coherencia cuántica
       coherenceFactors[i] = rng.uniform(0.1, 1.0);
 
-      // Estado de fase (sólido=0, líquido=1, gas=2, plasma=3, cuántico=4, antimateria=5)
       phaseStates[i] = rng.uniform(0, this.params.phaseStates!);
 
-      // Fase de transición inicial
       transitionPhases[i] = rng.uniform(0, Math.PI * 2);
     }
 
@@ -319,13 +277,11 @@ export class AnomalyPhaseMatterEffect {
   }
 
   update(): void {
-    // Calcular tiempo absoluto determinista desde el inicio con ciclo y velocidad procedural
-    const cosmicOriginTime = DEFAULT_COSMIC_ORIGIN_TIME; // No params.cosmicOriginTime available here
+    const cosmicOriginTime = DEFAULT_COSMIC_ORIGIN_TIME;
     const currentTime = getAnimatedUniverseTime(cosmicOriginTime, this.params.timeSpeed!, this.startTime);
     
     this.material.uniforms.time.value = currentTime;
     
-    // Rotación procedural determinista basada en tiempo absoluto (factores reducidos para velocidad similar)
     this.phaseSystem.rotation.x = currentTime * 0.012 * Math.cos(currentTime * 0.3);
     this.phaseSystem.rotation.y = currentTime * 0.008 * Math.sin(currentTime * 0.5);
     this.phaseSystem.rotation.z = currentTime * 0.006 * Math.cos(currentTime * 0.7);
@@ -353,7 +309,7 @@ export function createAnomalyPhaseMatterFromPythonData(planetRadius: number, ano
     timeSpeed: rng.uniform(PROCEDURAL_RANGES.TIME_SPEED.min, PROCEDURAL_RANGES.TIME_SPEED.max),
     phaseStates: Math.floor(rng.uniform(PROCEDURAL_RANGES.PHASE_STATES.min, PROCEDURAL_RANGES.PHASE_STATES.max)),
     seed,
-    startTime: (seed % 10000) / 1000, // Tiempo inicial determinista
+    startTime: (seed % 10000) / 1000,
   };
 
   return new AnomalyPhaseMatterEffect(planetRadius, params);
