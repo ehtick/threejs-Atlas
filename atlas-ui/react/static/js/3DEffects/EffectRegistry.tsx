@@ -985,6 +985,32 @@ export class EffectRegistry {
                 cloudsEffect.addToScene(scene, mesh.position);
               }
             }
+
+            // Add secondary clouds for aquifer planet atmosphere effect
+            if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
+              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
+                planetRadius,
+                surface,
+                baseColor, // Use planet's base color for secondary clouds
+                pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
+                pythonData.timing?.cosmic_origin_time
+              );
+
+              const secondaryCloudsInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "secondary_clouds",
+                effect: secondaryCloudsEffect,
+                priority: 12, // Lower priority than primary clouds but higher than other effects
+                enabled: true,
+                name: "Aquifer Secondary Clouds",
+              };
+              this.effects.set(secondaryCloudsInstance.id, secondaryCloudsInstance);
+              effects.push(secondaryCloudsInstance);
+
+              if (scene) {
+                secondaryCloudsEffect.addToScene(scene);
+              }
+            }
             break;
 
           case "nebulous":
@@ -1102,6 +1128,32 @@ export class EffectRegistry {
               };
               this.effects.set(metallicInstance.id, metallicInstance);
               effects.push(metallicInstance);
+
+              // Add secondary clouds for metallic planet atmosphere effect
+              if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
+                const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
+                  planetRadius,
+                  surface,
+                  baseColor, // Use planet's base color for secondary clouds
+                  pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
+                  pythonData.timing?.cosmic_origin_time
+                );
+
+                const secondaryCloudsInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "secondary_clouds",
+                  effect: secondaryCloudsEffect,
+                  priority: 12, // Lower priority than primary clouds but higher than other effects
+                  enabled: true,
+                  name: "Metallic Secondary Clouds",
+                };
+                this.effects.set(secondaryCloudsInstance.id, secondaryCloudsInstance);
+                effects.push(secondaryCloudsInstance);
+
+                if (scene) {
+                  secondaryCloudsEffect.addToScene(scene);
+                }
+              }
             }
             break;
 
@@ -1161,6 +1213,32 @@ export class EffectRegistry {
                 effects.push(cloudsInstance);
                 cloudsEffect.addToScene(scene, mesh.position);
               }
+
+              // Add secondary clouds for diamond planet atmosphere effect
+              if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
+                const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
+                  planetRadius,
+                  surface,
+                  baseColor, // Use planet's base color for secondary clouds
+                  pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
+                  pythonData.timing?.cosmic_origin_time
+                );
+
+                const secondaryCloudsInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "secondary_clouds",
+                  effect: secondaryCloudsEffect,
+                  priority: 12, // Lower priority than primary clouds but higher than other effects
+                  enabled: true,
+                  name: "Diamond Secondary Clouds",
+                };
+                this.effects.set(secondaryCloudsInstance.id, secondaryCloudsInstance);
+                effects.push(secondaryCloudsInstance);
+
+                if (scene) {
+                  secondaryCloudsEffect.addToScene(scene);
+                }
+              }
             }
             break;
 
@@ -1204,6 +1282,32 @@ export class EffectRegistry {
                 this.effects.set(cloudsInstance.id, cloudsInstance);
                 effects.push(cloudsInstance);
                 cloudsEffect.addToScene(scene, mesh.position);
+              }
+
+              // Add secondary clouds for rocky planet atmosphere effect
+              if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
+                const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
+                  planetRadius,
+                  surface,
+                  baseColor, // Use planet's base color for secondary clouds
+                  pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
+                  pythonData.timing?.cosmic_origin_time
+                );
+
+                const secondaryCloudsInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "secondary_clouds",
+                  effect: secondaryCloudsEffect,
+                  priority: 12, // Lower priority than primary clouds but higher than other effects
+                  enabled: true,
+                  name: "Rocky Secondary Clouds",
+                };
+                this.effects.set(secondaryCloudsInstance.id, secondaryCloudsInstance);
+                effects.push(secondaryCloudsInstance);
+
+                if (scene) {
+                  secondaryCloudsEffect.addToScene(scene);
+                }
               }
             }
             break;
@@ -1290,6 +1394,32 @@ export class EffectRegistry {
                 effects.push(icyFeaturesInstance);
                 icyFeaturesEffect.addToScene(scene, mesh.position);
               }
+
+              // Add secondary clouds for icy planet atmosphere effect
+              if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
+                const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
+                  planetRadius,
+                  surface,
+                  baseColor, // Use planet's base color for secondary clouds
+                  pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
+                  pythonData.timing?.cosmic_origin_time
+                );
+
+                const secondaryCloudsInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "secondary_clouds",
+                  effect: secondaryCloudsEffect,
+                  priority: 12, // Lower priority than primary clouds but higher than other effects
+                  enabled: true,
+                  name: "Icy Secondary Clouds",
+                };
+                this.effects.set(secondaryCloudsInstance.id, secondaryCloudsInstance);
+                effects.push(secondaryCloudsInstance);
+
+                if (scene) {
+                  secondaryCloudsEffect.addToScene(scene);
+                }
+              }
             }
             break;
 
@@ -1354,6 +1484,32 @@ export class EffectRegistry {
               this.effects.set(cloudsInstance.id, cloudsInstance);
               effects.push(cloudsInstance);
               cloudsEffect.addToScene(scene, mesh.position);
+            }
+
+            // Add secondary clouds for oceanic planet atmosphere effect
+            if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
+              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
+                planetRadius,
+                surface,
+                baseColor, // Use planet's base color for secondary clouds
+                pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
+                pythonData.timing?.cosmic_origin_time
+              );
+
+              const secondaryCloudsInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "secondary_clouds",
+                effect: secondaryCloudsEffect,
+                priority: 12, // Lower priority than primary clouds but higher than other effects
+                enabled: true,
+                name: "Oceanic Secondary Clouds",
+              };
+              this.effects.set(secondaryCloudsInstance.id, secondaryCloudsInstance);
+              effects.push(secondaryCloudsInstance);
+
+              if (scene) {
+                secondaryCloudsEffect.addToScene(scene);
+              }
             }
             break;
 
@@ -1572,6 +1728,32 @@ export class EffectRegistry {
               effects.push(riverLinesInstance);
               riverLinesEffect.addToScene(scene, mesh.position);
             }
+
+            // 4. Add secondary clouds for arid planet atmosphere effect
+            if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
+              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
+                planetRadius,
+                surface,
+                baseColor, // Use planet's base color for secondary clouds
+                pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
+                pythonData.timing?.cosmic_origin_time
+              );
+
+              const secondaryCloudsInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "secondary_clouds",
+                effect: secondaryCloudsEffect,
+                priority: 12, // Lower priority than primary clouds but higher than other effects
+                enabled: true,
+                name: "Arid Secondary Clouds",
+              };
+              this.effects.set(secondaryCloudsInstance.id, secondaryCloudsInstance);
+              effects.push(secondaryCloudsInstance);
+
+              if (scene) {
+                secondaryCloudsEffect.addToScene(scene);
+              }
+            }
             break;
 
           case "savannah":
@@ -1645,6 +1827,32 @@ export class EffectRegistry {
                 this.effects.set(savannahLandMassesInstance.id, savannahLandMassesInstance);
                 effects.push(savannahLandMassesInstance);
                 savannahLandMassesEffect.addToScene(scene, mesh.position);
+              }
+            }
+
+            // 4. Add secondary clouds for savannah planet atmosphere effect
+            if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
+              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
+                planetRadius,
+                surface,
+                baseColor, // Use planet's base color for secondary clouds
+                pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
+                pythonData.timing?.cosmic_origin_time
+              );
+
+              const secondaryCloudsInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "secondary_clouds",
+                effect: secondaryCloudsEffect,
+                priority: 12, // Lower priority than primary clouds but higher than other effects
+                enabled: true,
+                name: "Savannah Secondary Clouds",
+              };
+              this.effects.set(secondaryCloudsInstance.id, secondaryCloudsInstance);
+              effects.push(secondaryCloudsInstance);
+
+              if (scene) {
+                secondaryCloudsEffect.addToScene(scene);
               }
             }
             break;
@@ -1885,6 +2093,32 @@ export class EffectRegistry {
               effects.push(moltenCloudsInstance);
               moltenCloudsEffect.addToScene(scene, mesh.position);
             }
+
+            // 5. Add secondary clouds for molten core planet atmosphere effect
+            if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
+              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
+                planetRadius,
+                surface,
+                baseColor, // Use planet's base color for secondary clouds
+                pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
+                pythonData.timing?.cosmic_origin_time
+              );
+
+              const secondaryCloudsInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "secondary_clouds",
+                effect: secondaryCloudsEffect,
+                priority: 12, // Lower priority than primary clouds but higher than other effects
+                enabled: true,
+                name: "Molten Core Secondary Clouds",
+              };
+              this.effects.set(secondaryCloudsInstance.id, secondaryCloudsInstance);
+              effects.push(secondaryCloudsInstance);
+
+              if (scene) {
+                secondaryCloudsEffect.addToScene(scene);
+              }
+            }
             break;
 
           case "lava":
@@ -2014,6 +2248,32 @@ export class EffectRegistry {
                 lavaCloudsEffect.addToScene(scene, mesh.position);
               }
             }
+
+            // 6. Add secondary clouds for lava planet atmosphere effect
+            if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
+              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
+                planetRadius,
+                surface,
+                baseColor, // Use planet's base color for secondary clouds
+                pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
+                pythonData.timing?.cosmic_origin_time
+              );
+
+              const secondaryCloudsInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "secondary_clouds",
+                effect: secondaryCloudsEffect,
+                priority: 12, // Lower priority than primary clouds but higher than other effects
+                enabled: true,
+                name: "Lava Secondary Clouds",
+              };
+              this.effects.set(secondaryCloudsInstance.id, secondaryCloudsInstance);
+              effects.push(secondaryCloudsInstance);
+
+              if (scene) {
+                secondaryCloudsEffect.addToScene(scene);
+              }
+            }
             break;
 
           case "exotic":
@@ -2085,6 +2345,32 @@ export class EffectRegistry {
               this.effects.set(doodlesInstance.id, doodlesInstance);
               effects.push(doodlesInstance);
               doodlesEffect.addToScene(scene, mesh.position);
+            }
+
+            // 4. Add secondary clouds for exotic planet atmosphere effect
+            if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
+              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
+                planetRadius,
+                surface,
+                baseColor, // Use planet's base color for secondary clouds
+                pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
+                pythonData.timing?.cosmic_origin_time
+              );
+
+              const secondaryCloudsInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "secondary_clouds",
+                effect: secondaryCloudsEffect,
+                priority: 12, // Lower priority than primary clouds but higher than other effects
+                enabled: true,
+                name: "Exotic Secondary Clouds",
+              };
+              this.effects.set(secondaryCloudsInstance.id, secondaryCloudsInstance);
+              effects.push(secondaryCloudsInstance);
+
+              if (scene) {
+                secondaryCloudsEffect.addToScene(scene);
+              }
             }
             break;
 
@@ -2267,6 +2553,32 @@ export class EffectRegistry {
               effects.push(caveRiverLinesInstance);
               caveRiverLinesEffect.addToScene(scene, mesh.position);
             }
+
+            // 5. Add secondary clouds for cave planet atmosphere effect
+            if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
+              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
+                planetRadius,
+                surface,
+                baseColor, // Use planet's base color for secondary clouds
+                pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
+                pythonData.timing?.cosmic_origin_time
+              );
+
+              const secondaryCloudsInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "secondary_clouds",
+                effect: secondaryCloudsEffect,
+                priority: 12, // Lower priority than primary clouds but higher than other effects
+                enabled: true,
+                name: "Cave Secondary Clouds",
+              };
+              this.effects.set(secondaryCloudsInstance.id, secondaryCloudsInstance);
+              effects.push(secondaryCloudsInstance);
+
+              if (scene) {
+                secondaryCloudsEffect.addToScene(scene);
+              }
+            }
             break;
 
           case "anomaly":
@@ -2317,6 +2629,32 @@ export class EffectRegistry {
               if (atmosphereEffect) {
                 effects.push(atmosphereEffect);
                 atmosphereEffect.effect.addToScene(scene, mesh.position);
+              }
+            }
+
+            // Add secondary clouds for anomaly planet atmosphere effect
+            if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
+              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
+                planetRadius,
+                surface,
+                baseColor, // Use planet's base color for secondary clouds
+                pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
+                pythonData.timing?.cosmic_origin_time
+              );
+
+              const secondaryCloudsInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "secondary_clouds",
+                effect: secondaryCloudsEffect,
+                priority: 12, // Lower priority than primary clouds but higher than other effects
+                enabled: true,
+                name: "Anomaly Secondary Clouds",
+              };
+              this.effects.set(secondaryCloudsInstance.id, secondaryCloudsInstance);
+              effects.push(secondaryCloudsInstance);
+
+              if (scene) {
+                secondaryCloudsEffect.addToScene(scene);
               }
             }
             break;
@@ -2423,6 +2761,32 @@ export class EffectRegistry {
               effects.push(carbonTrailsInstance);
               carbonTrailsEffect.effect.addToScene(scene, mesh.position);
             }
+
+            // 5. Add secondary clouds for carbon planet atmosphere effect
+            if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
+              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
+                planetRadius,
+                surface,
+                baseColor, // Use planet's base color for secondary clouds
+                pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
+                pythonData.timing?.cosmic_origin_time
+              );
+
+              const secondaryCloudsInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "secondary_clouds",
+                effect: secondaryCloudsEffect,
+                priority: 12, // Lower priority than primary clouds but higher than other effects
+                enabled: true,
+                name: "Carbon Secondary Clouds",
+              };
+              this.effects.set(secondaryCloudsInstance.id, secondaryCloudsInstance);
+              effects.push(secondaryCloudsInstance);
+
+              if (scene) {
+                secondaryCloudsEffect.addToScene(scene);
+              }
+            }
             break;
 
           case "forest":
@@ -2507,6 +2871,32 @@ export class EffectRegistry {
                 this.effects.set(forestLandMassesInstance.id, forestLandMassesInstance);
                 effects.push(forestLandMassesInstance);
                 forestLandMassesEffect.addToScene(scene, mesh.position);
+              }
+            }
+
+            // 4. Add secondary clouds for forest planet atmosphere effect
+            if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
+              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
+                planetRadius,
+                surface,
+                baseColor, // Use planet's base color for secondary clouds
+                pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
+                pythonData.timing?.cosmic_origin_time
+              );
+
+              const secondaryCloudsInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "secondary_clouds",
+                effect: secondaryCloudsEffect,
+                priority: 12, // Lower priority than primary clouds but higher than other effects
+                enabled: true,
+                name: "Forest Secondary Clouds",
+              };
+              this.effects.set(secondaryCloudsInstance.id, secondaryCloudsInstance);
+              effects.push(secondaryCloudsInstance);
+
+              if (scene) {
+                secondaryCloudsEffect.addToScene(scene);
               }
             }
             break;
@@ -2605,6 +2995,32 @@ export class EffectRegistry {
                 this.effects.set(magmaLandMassesInstance.id, magmaLandMassesInstance);
                 effects.push(magmaLandMassesInstance);
                 magmaLandMassesEffect.addToScene(scene, mesh.position);
+              }
+            }
+
+            // 4. Add secondary clouds for magma planet atmosphere effect
+            if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
+              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
+                planetRadius,
+                surface,
+                baseColor, // Use planet's base color for secondary clouds
+                pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
+                pythonData.timing?.cosmic_origin_time
+              );
+
+              const secondaryCloudsInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "secondary_clouds",
+                effect: secondaryCloudsEffect,
+                priority: 12, // Lower priority than primary clouds but higher than other effects
+                enabled: true,
+                name: "Magma Secondary Clouds",
+              };
+              this.effects.set(secondaryCloudsInstance.id, secondaryCloudsInstance);
+              effects.push(secondaryCloudsInstance);
+
+              if (scene) {
+                secondaryCloudsEffect.addToScene(scene);
               }
             }
             break;
@@ -2802,6 +3218,32 @@ export class EffectRegistry {
               effects.push(radiationRingsInstance);
               radiationRingsEffect.effect.addToScene(scene, mesh.position);
             }
+
+            // 5. Add secondary clouds for radioactive planet atmosphere effect
+            if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
+              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
+                planetRadius,
+                surface,
+                baseColor, // Use planet's base color for secondary clouds
+                pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
+                pythonData.timing?.cosmic_origin_time
+              );
+
+              const secondaryCloudsInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "secondary_clouds",
+                effect: secondaryCloudsEffect,
+                priority: 12, // Lower priority than primary clouds but higher than other effects
+                enabled: true,
+                name: "Radioactive Secondary Clouds",
+              };
+              this.effects.set(secondaryCloudsInstance.id, secondaryCloudsInstance);
+              effects.push(secondaryCloudsInstance);
+
+              if (scene) {
+                secondaryCloudsEffect.addToScene(scene);
+              }
+            }
             break;
 
 
@@ -2874,6 +3316,32 @@ export class EffectRegistry {
               this.effects.set(superEarthWaterFeaturesInstance.id, superEarthWaterFeaturesInstance);
               effects.push(superEarthWaterFeaturesInstance);
               superEarthWaterFeaturesEffect.addToScene(scene, mesh.position);
+            }
+
+            // 4. Add secondary clouds for super earth planet atmosphere effect
+            if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
+              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
+                planetRadius,
+                surface,
+                baseColor, // Use planet's base color for secondary clouds
+                pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
+                pythonData.timing?.cosmic_origin_time
+              );
+
+              const secondaryCloudsInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "secondary_clouds",
+                effect: secondaryCloudsEffect,
+                priority: 12, // Lower priority than primary clouds but higher than other effects
+                enabled: true,
+                name: "Super Earth Secondary Clouds",
+              };
+              this.effects.set(secondaryCloudsInstance.id, secondaryCloudsInstance);
+              effects.push(secondaryCloudsInstance);
+
+              if (scene) {
+                secondaryCloudsEffect.addToScene(scene);
+              }
             }
             break;
 
@@ -2948,6 +3416,32 @@ export class EffectRegistry {
 
               this.effects.set(savannahInstance.id, savannahInstance);
               effects.push(savannahInstance);
+            }
+
+            // 4. Add secondary clouds for sub earth planet atmosphere effect
+            if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
+              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
+                planetRadius,
+                surface,
+                baseColor, // Use planet's base color for secondary clouds
+                pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
+                pythonData.timing?.cosmic_origin_time
+              );
+
+              const secondaryCloudsInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "secondary_clouds",
+                effect: secondaryCloudsEffect,
+                priority: 12, // Lower priority than primary clouds but higher than other effects
+                enabled: true,
+                name: "Sub Earth Secondary Clouds",
+              };
+              this.effects.set(secondaryCloudsInstance.id, secondaryCloudsInstance);
+              effects.push(secondaryCloudsInstance);
+
+              if (scene) {
+                secondaryCloudsEffect.addToScene(scene);
+              }
             }
             break;
 

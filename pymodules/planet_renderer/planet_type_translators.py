@@ -253,17 +253,42 @@ class PlanetTypeTranslators:
                 "seed": f"{planet_name}_crater"
             }
         
+        # Generate secondary clouds for rocky planet atmosphere effect
+        num_secondary_clouds = rng.randint(8, 15)  # Light secondary clouds for thin atmosphere
+        secondary_clouds = []
+        for i in range(num_secondary_clouds):
+            # Random spherical coordinates
+            theta = rng.uniform(0, 2 * math.pi)  # Azimuthal angle
+            phi = rng.uniform(0, math.pi)       # Polar angle
+            
+            # Convert to 3D Cartesian coordinates on unit sphere
+            x = math.sin(phi) * math.cos(theta)
+            y = math.sin(phi) * math.sin(theta)
+            z = math.cos(phi)
+            
+            cloud_radius = rng.randint(15, 28)  # Small to medium secondary clouds
+            
+            secondary_clouds.append({
+                "position": [x, y, z],  # 3D coordinates on unit sphere
+                "radius": cloud_radius / planet_radius,
+                "type": "secondary_cloud",
+                "seed": f"{planet_name}_secondary_cloud_{i}",
+                "turbulence": rng.uniform(0.8, 1.5)  # Low turbulence for thin atmosphere
+            })
+        
         return {
             "type": "rocky",
             "abstract_lands": abstract_lands,
             "mountains": mountains,
             "clouds": clouds,
             "crater": crater,
+            "secondary_clouds": secondary_clouds,
             "debug": {
                 "original_planet_radius": planet_radius,
                 "center_x": center_x, "center_y": center_y,
                 "mountain_count": num_mountains,
                 "cloud_count": num_clouds,
+                "secondary_cloud_count": num_secondary_clouds,
                 "has_crater": crater is not None
             }
         }
@@ -377,6 +402,29 @@ class PlanetTypeTranslators:
                 "seed": f"{planet_name}_cloud_{i}"
             })
         
+        # Generate secondary clouds for icy planet atmosphere effect
+        num_secondary_clouds = rng.randint(12, 20)  # Moderate secondary clouds for cold atmosphere
+        secondary_clouds = []
+        for i in range(num_secondary_clouds):
+            # Random spherical coordinates
+            theta = rng.uniform(0, 2 * math.pi)  # Azimuthal angle
+            phi = rng.uniform(0, math.pi)       # Polar angle
+            
+            # Convert to 3D Cartesian coordinates on unit sphere
+            x = math.sin(phi) * math.cos(theta)
+            y = math.sin(phi) * math.sin(theta)
+            z = math.cos(phi)
+            
+            cloud_radius = rng.randint(18, 32)  # Small to medium secondary clouds for icy atmosphere
+            
+            secondary_clouds.append({
+                "position": [x, y, z],  # 3D coordinates on unit sphere
+                "radius": cloud_radius / planet_radius,
+                "type": "secondary_cloud",
+                "seed": f"{planet_name}_secondary_cloud_{i}",
+                "turbulence": rng.uniform(0.6, 1.2)  # Low turbulence for stable cold atmosphere
+            })
+        
         return {
             "type": "icy",
             "abstract_lands": abstract_lands,
@@ -384,13 +432,15 @@ class PlanetTypeTranslators:
             "cracks": cracks,
             "ice_caps": ice_caps,
             "clouds": clouds,  # Added clouds to icy planets
+            "secondary_clouds": secondary_clouds,
             "debug": {
                 "original_planet_radius": planet_radius,
                 "center_x": center_x, "center_y": center_y,
                 "crystal_count": num_crystals,
                 "crack_count": len(cracks),
                 "ice_cap_count": num_ice_caps,
-                "cloud_count": num_clouds  # Added cloud count to debug
+                "cloud_count": num_clouds,  # Added cloud count to debug
+                "secondary_cloud_count": num_secondary_clouds
             }
         }
     
@@ -474,12 +524,39 @@ class PlanetTypeTranslators:
                 "seed": f"{planet_name}_cloud_{i}"
             })
         
+        # Generate secondary clouds for oceanic planet atmosphere effect
+        num_secondary_clouds = rng.randint(22, 32)  # Dense secondary clouds for humid oceanic atmosphere
+        secondary_clouds = []
+        for i in range(num_secondary_clouds):
+            # Random spherical coordinates
+            theta = rng.uniform(0, 2 * math.pi)  # Azimuthal angle
+            phi = rng.uniform(0, math.pi)       # Polar angle
+            
+            # Convert to 3D Cartesian coordinates on unit sphere
+            x = math.sin(phi) * math.cos(theta)
+            y = math.sin(phi) * math.sin(theta)
+            z = math.cos(phi)
+            
+            cloud_radius = rng.randint(28, 45)  # Large secondary clouds from ocean evaporation
+            
+            secondary_clouds.append({
+                "position": [x, y, z],  # 3D coordinates on unit sphere
+                "radius": cloud_radius / planet_radius,
+                "type": "secondary_cloud",
+                "seed": f"{planet_name}_secondary_cloud_{i}",
+                "turbulence": rng.uniform(2.0, 3.0)  # High turbulence from ocean weather systems
+            })
+        
         return {
             "type": "oceanic",
             "depths": {"enabled": True},
             "abstract_lands": abstract_lands,
             "green_patches": green_patches,
             "clouds": clouds,
+            "secondary_clouds": secondary_clouds,
+            "debug": {
+                "secondary_cloud_count": num_secondary_clouds
+            }
         }
     
     def translate_metallic(self, planet_radius: int, rng: random.Random, 
@@ -530,11 +607,37 @@ class PlanetTypeTranslators:
                 }
             })
         
+        # Generate secondary clouds for metallic planet atmosphere effect
+        num_secondary_clouds = rng.randint(10, 16)  # Moderate secondary clouds for industrial/metallic atmosphere
+        secondary_clouds = []
+        for i in range(num_secondary_clouds):
+            # Random spherical coordinates
+            theta = rng.uniform(0, 2 * math.pi)  # Azimuthal angle
+            phi = rng.uniform(0, math.pi)       # Polar angle
+            
+            # Convert to 3D Cartesian coordinates on unit sphere
+            x = math.sin(phi) * math.cos(theta)
+            y = math.sin(phi) * math.sin(theta)
+            z = math.cos(phi)
+            
+            cloud_radius = rng.randint(18, 30)  # Medium secondary clouds for metallic atmosphere
+            
+            secondary_clouds.append({
+                "position": [x, y, z],  # 3D coordinates on unit sphere
+                "radius": cloud_radius / planet_radius,
+                "type": "secondary_cloud",
+                "seed": f"{planet_name}_secondary_cloud_{i}",
+                "turbulence": rng.uniform(1.0, 1.8)  # Moderate turbulence for metallic atmosphere
+            })
+        
         return {
             "type": "metallic_3d",
             "effects_3d": effects_3d,
             "universal_actions": actions,
-
+            "secondary_clouds": secondary_clouds,
+            "debug": {
+                "secondary_cloud_count": num_secondary_clouds
+            }
         }
     
     # Placeholder methods for other planet types
@@ -751,11 +854,35 @@ class PlanetTypeTranslators:
                 "glow_intensity": rng.uniform(0.7, 1.0)
             })
         
+        # Generate secondary clouds for lava planet atmosphere effect
+        num_secondary_clouds = rng.randint(18, 28)  # Dense secondary clouds from volcanic activity
+        secondary_clouds = []
+        for i in range(num_secondary_clouds):
+            # Random spherical coordinates
+            theta = rng.uniform(0, 2 * math.pi)  # Azimuthal angle
+            phi = rng.uniform(0, math.pi)       # Polar angle
+            
+            # Convert to 3D Cartesian coordinates on unit sphere
+            x = math.sin(phi) * math.cos(theta)
+            y = math.sin(phi) * math.sin(theta)
+            z = math.cos(phi)
+            
+            cloud_radius = rng.randint(25, 40)  # Large secondary clouds from volcanic ash
+            
+            secondary_clouds.append({
+                "position": [x, y, z],  # 3D coordinates on unit sphere
+                "radius": cloud_radius / planet_radius,
+                "type": "secondary_cloud",
+                "seed": f"{planet_name}_secondary_cloud_{i}",
+                "turbulence": rng.uniform(2.0, 3.2)  # Very high turbulence from volcanic activity
+            })
+        
         return {
             "type": "lava",
             "clouds": clouds,  # AtmosphereClouds will use this
             "green_patches": green_patches,  # LandMasses will use this (lava-colored landmasses)
             "lava_pools": lava_pools,  # Additional lava pool features
+            "secondary_clouds": secondary_clouds,
             "surface_properties": {
                 "heat_distortion": rng.uniform(0.4, 0.8),    # Heat shimmer effects
                 "volcanic_activity": rng.uniform(0.6, 1.0),  # Volcanic eruption frequency
@@ -768,6 +895,7 @@ class PlanetTypeTranslators:
                 "cloud_count": num_clouds,
                 "landmass_count": num_landmasses,
                 "lava_pool_count": num_lava_pools,
+                "secondary_cloud_count": num_secondary_clouds,
                 "avg_landmass_size": sum([lm["size"] for lm in green_patches]) / len(green_patches) if green_patches else 0,
             }
         }
@@ -775,8 +903,36 @@ class PlanetTypeTranslators:
     def translate_arid(self, planet_radius: int, rng: random.Random, 
                       seed: int, planet_name: str) -> Dict[str, Any]:
         """Translate Arid planet elements - dry worlds with sparse atmospheres and rocky terrain"""
+        
+        # Generate secondary clouds for arid planet atmosphere effect
+        num_secondary_clouds = rng.randint(6, 12)  # Sparse secondary clouds for dry atmosphere
+        secondary_clouds = []
+        for i in range(num_secondary_clouds):
+            # Random spherical coordinates
+            theta = rng.uniform(0, 2 * math.pi)  # Azimuthal angle
+            phi = rng.uniform(0, math.pi)       # Polar angle
+            
+            # Convert to 3D Cartesian coordinates on unit sphere
+            x = math.sin(phi) * math.cos(theta)
+            y = math.sin(phi) * math.sin(theta)
+            z = math.cos(phi)
+            
+            cloud_radius = rng.randint(12, 25)  # Small secondary clouds for thin arid atmosphere
+            
+            secondary_clouds.append({
+                "position": [x, y, z],  # 3D coordinates on unit sphere
+                "radius": cloud_radius / planet_radius,
+                "type": "secondary_cloud",
+                "seed": f"{planet_name}_secondary_cloud_{i}",
+                "turbulence": rng.uniform(0.6, 1.2)  # Low turbulence for sparse atmosphere
+            })
+        
         return {
-            "type": "arid"
+            "type": "arid",
+            "secondary_clouds": secondary_clouds,
+            "debug": {
+                "secondary_cloud_count": num_secondary_clouds
+            }
         }
     
     def translate_swamp(self, planet_radius: int, rng: random.Random, 
@@ -1071,17 +1227,42 @@ class PlanetTypeTranslators:
                 "tree_density": rng.uniform(0.7, 0.95)    # High tree density for forests
             })
         
+        # Generate secondary clouds for forest planet atmosphere effect
+        num_secondary_clouds = rng.randint(16, 24)  # Dense secondary clouds for humid forest atmosphere
+        secondary_clouds = []
+        for i in range(num_secondary_clouds):
+            # Random spherical coordinates
+            theta = rng.uniform(0, 2 * math.pi)  # Azimuthal angle
+            phi = rng.uniform(0, math.pi)       # Polar angle
+            
+            # Convert to 3D Cartesian coordinates on unit sphere
+            x = math.sin(phi) * math.cos(theta)
+            y = math.sin(phi) * math.sin(theta)
+            z = math.cos(phi)
+            
+            cloud_radius = rng.randint(22, 38)  # Large secondary clouds from high humidity and transpiration
+            
+            secondary_clouds.append({
+                "position": [x, y, z],  # 3D coordinates on unit sphere
+                "radius": cloud_radius / planet_radius,
+                "type": "secondary_cloud",
+                "seed": f"{planet_name}_secondary_cloud_{i}",
+                "turbulence": rng.uniform(1.4, 2.4)  # High turbulence from vegetation transpiration
+            })
+        
         return {
             "type": "forest",
             "clouds": clouds,  # AtmosphereClouds will use this
             "green_patches": green_patches,  # LandMasses will use this (forest-colored landmasses)
             "vegetation": vegetation_patches,  # VegetationEffect will use this
+            "secondary_clouds": secondary_clouds,
             "debug": {
                 "original_planet_radius": planet_radius,
                 "center_x": center_x, "center_y": center_y,
                 "cloud_count": num_clouds,
                 "landmass_count": num_landmasses,
                 "vegetation_patch_count": num_vegetation_patches,
+                "secondary_cloud_count": num_secondary_clouds,
                 "largest_landmass_size": max([lm["size"] for lm in green_patches]) if green_patches else 0,
                 "forest_coverage": "high_density_coverage"
             }
@@ -1161,10 +1342,34 @@ class PlanetTypeTranslators:
                 "seed": f"{planet_name}_cloud_{i}"
             })
         
+        # Generate secondary clouds for savannah planet atmosphere effect
+        num_secondary_clouds = rng.randint(12, 20)  # Moderate secondary clouds for semi-arid climate
+        secondary_clouds = []
+        for i in range(num_secondary_clouds):
+            # Random spherical coordinates
+            theta = rng.uniform(0, 2 * math.pi)  # Azimuthal angle
+            phi = rng.uniform(0, math.pi)       # Polar angle
+            
+            # Convert to 3D Cartesian coordinates on unit sphere
+            x = math.sin(phi) * math.cos(theta)
+            y = math.sin(phi) * math.sin(theta)
+            z = math.cos(phi)
+            
+            cloud_radius = rng.randint(20, 35)  # Medium secondary clouds for savannah atmosphere
+            
+            secondary_clouds.append({
+                "position": [x, y, z],  # 3D coordinates on unit sphere
+                "radius": cloud_radius / planet_radius,
+                "type": "secondary_cloud",
+                "seed": f"{planet_name}_secondary_cloud_{i}",
+                "turbulence": rng.uniform(1.2, 2.2)  # Moderate turbulence for seasonal weather patterns
+            })
+        
         return {
             "type": "savannah",
             "green_patches": green_patches,  # LandMasses will use this for terrain variation
             "clouds": clouds,  # AtmosphereClouds will use this for large cloud formations
+            "secondary_clouds": secondary_clouds,
             "surface_properties": {
                 "dryness": rng.uniform(0.6, 0.8),        # Semi-arid characteristics
                 "vegetation_density": rng.uniform(0.3, 0.6),  # Sparse to moderate vegetation
@@ -1176,6 +1381,7 @@ class PlanetTypeTranslators:
                 "center_x": center_x, "center_y": center_y,
                 "cloud_count": num_clouds,
                 "terrain_patch_count": num_green_patches,
+                "secondary_cloud_count": num_secondary_clouds,
                 "largest_patch_size": max([lm["size"] for lm in green_patches]) if green_patches else 0,
                 "savannah_coverage": "mixed_terrain_coverage"
             }
@@ -1287,12 +1493,36 @@ class PlanetTypeTranslators:
                 "color_variation": rng.uniform(0.2, 0.5)  # Color depth variation
             })
         
+        # Generate secondary clouds for cave planet atmosphere effect
+        num_secondary_clouds = rng.randint(8, 16)  # Light secondary clouds for underground world
+        secondary_clouds = []
+        for i in range(num_secondary_clouds):
+            # Random spherical coordinates
+            theta = rng.uniform(0, 2 * math.pi)  # Azimuthal angle
+            phi = rng.uniform(0, math.pi)       # Polar angle
+            
+            # Convert to 3D Cartesian coordinates on unit sphere
+            x = math.sin(phi) * math.cos(theta)
+            y = math.sin(phi) * math.sin(theta)
+            z = math.cos(phi)
+            
+            cloud_radius = rng.randint(15, 28)  # Small to medium secondary clouds for cave atmosphere
+            
+            secondary_clouds.append({
+                "position": [x, y, z],  # 3D coordinates on unit sphere
+                "radius": cloud_radius / planet_radius,
+                "type": "secondary_cloud",
+                "seed": f"{planet_name}_secondary_cloud_{i}",
+                "turbulence": rng.uniform(0.8, 1.4)  # Low turbulence for stable cave atmosphere
+            })
+        
         return {
             "type": "cave",
             "atmosphere_clouds": {
                 "clouds": clouds
             },
             "green_patches": green_patches,  # Land masses in the format LandMasses expects
+            "secondary_clouds": secondary_clouds,
             "cave_holes": {
                 "holes": cave_holes,
                 "base_color": "#4a3f36",  # Dark cave brown
@@ -1478,15 +1708,40 @@ class PlanetTypeTranslators:
                 "glow_intensity": rng.uniform(0.6, 0.9)    # Radioactive glow effect
             })
         
+        # Generate secondary clouds for radioactive planet atmosphere effect
+        num_secondary_clouds = rng.randint(15, 25)  # Moderate secondary clouds for radioactive atmosphere
+        secondary_clouds = []
+        for i in range(num_secondary_clouds):
+            # Random spherical coordinates
+            theta = rng.uniform(0, 2 * math.pi)  # Azimuthal angle
+            phi = rng.uniform(0, math.pi)       # Polar angle
+            
+            # Convert to 3D Cartesian coordinates on unit sphere
+            x = math.sin(phi) * math.cos(theta)
+            y = math.sin(phi) * math.sin(theta)
+            z = math.cos(phi)
+            
+            cloud_radius = rng.randint(20, 35)  # Medium-sized secondary clouds for radioactive
+            
+            secondary_clouds.append({
+                "position": [x, y, z],  # 3D coordinates on unit sphere
+                "radius": cloud_radius / planet_radius,
+                "type": "secondary_cloud",
+                "seed": f"{planet_name}_secondary_cloud_{i}",
+                "turbulence": rng.uniform(1.5, 2.8)  # High turbulence from radiation
+            })
+        
         return {
             "type": "radioactive",
             "clouds": clouds,  # AtmosphereClouds will use this
             "green_patches": green_patches,  # LandMasses will use this (radioactive-colored patches)
+            "secondary_clouds": secondary_clouds,
             "debug": {
                 "original_planet_radius": planet_radius,
                 "center_x": center_x, "center_y": center_y,
                 "cloud_count": num_clouds,
                 "green_patch_count": num_green_patches,
+                "secondary_cloud_count": num_secondary_clouds,
                 "radiation_coverage": "high_contamination_coverage"
             }
         }
@@ -1598,11 +1853,35 @@ class PlanetTypeTranslators:
                 "glow_intensity": rng.uniform(0.8, 1.0)       # Strong glow effect
             })
         
+        # Generate secondary clouds for magma planet atmosphere effect
+        num_secondary_clouds = rng.randint(20, 30)  # Dense secondary clouds from intense volcanic activity
+        secondary_clouds = []
+        for i in range(num_secondary_clouds):
+            # Random spherical coordinates
+            theta = rng.uniform(0, 2 * math.pi)  # Azimuthal angle
+            phi = rng.uniform(0, math.pi)       # Polar angle
+            
+            # Convert to 3D Cartesian coordinates on unit sphere
+            x = math.sin(phi) * math.cos(theta)
+            y = math.sin(phi) * math.sin(theta)
+            z = math.cos(phi)
+            
+            cloud_radius = rng.randint(22, 38)  # Medium to large secondary clouds from magma emissions
+            
+            secondary_clouds.append({
+                "position": [x, y, z],  # 3D coordinates on unit sphere
+                "radius": cloud_radius / planet_radius,
+                "type": "secondary_cloud",
+                "seed": f"{planet_name}_secondary_cloud_{i}",
+                "turbulence": rng.uniform(2.5, 3.5)  # Very high turbulence from magma activity
+            })
+        
         return {
             "type": "magma",
             "clouds": clouds,  # AtmosphereClouds will use this
             "green_patches": green_patches,  # LandMasses will use this (magma-colored landmasses)
             "magma_lakes": magma_lakes,  # MagmaFlows effect will use this
+            "secondary_clouds": secondary_clouds,
             "surface_properties": {
                 "heat_distortion": rng.uniform(0.3, 0.7),    # Heat shimmer effects
                 "lava_glow": rng.uniform(0.8, 1.0),          # Strong glow from molten surface
@@ -1616,6 +1895,7 @@ class PlanetTypeTranslators:
                 "cloud_count": num_clouds,
                 "landmass_count": num_landmasses,
                 "magma_lake_count": num_magma_lakes,
+                "secondary_cloud_count": num_secondary_clouds,
                 "avg_landmass_size": sum([lm["size"] for lm in green_patches]) / len(green_patches) if green_patches else 0,
                 "magma_coverage": "high_density_molten_coverage"
             }
@@ -1658,11 +1938,36 @@ class PlanetTypeTranslators:
                 "seed": f"{planet_name}_molten_cloud_{i}"
             })
         
+        # Generate secondary clouds for molten core planet atmosphere effect
+        num_secondary_clouds = rng.randint(22, 32)  # Very dense secondary clouds from molten core emissions
+        secondary_clouds = []
+        for i in range(num_secondary_clouds):
+            # Random spherical coordinates
+            theta = rng.uniform(0, 2 * math.pi)  # Azimuthal angle
+            phi = rng.uniform(0, math.pi)       # Polar angle
+            
+            # Convert to 3D Cartesian coordinates on unit sphere
+            x = math.sin(phi) * math.cos(theta)
+            y = math.sin(phi) * math.sin(theta)
+            z = math.cos(phi)
+            
+            cloud_radius = rng.randint(30, 45)  # Large secondary clouds from intense core activity
+            
+            secondary_clouds.append({
+                "position": [x, y, z],  # 3D coordinates on unit sphere
+                "radius": cloud_radius / planet_radius,
+                "type": "secondary_cloud",
+                "seed": f"{planet_name}_secondary_cloud_{i}",
+                "turbulence": rng.uniform(3.0, 4.0)  # Extreme turbulence from molten core
+            })
+        
         return {
             "type": "molten_core",
             "clouds": clouds,
+            "secondary_clouds": secondary_clouds,
             "debug": {
                 "cloud_count": len(clouds),
+                "secondary_cloud_count": num_secondary_clouds,
                 "avg_cloud_radius": sum(c["radius"] for c in clouds) / len(clouds) if clouds else 0,
                 "planet_radius": planet_radius
             }
@@ -1784,10 +2089,34 @@ class PlanetTypeTranslators:
                 }
             }
 
+        # Generate secondary clouds for carbon planet atmosphere effect
+        num_secondary_clouds = rng.randint(14, 22)  # Moderate secondary clouds for carbon atmosphere
+        secondary_clouds = []
+        for i in range(num_secondary_clouds):
+            # Random spherical coordinates
+            theta = rng.uniform(0, 2 * math.pi)  # Azimuthal angle
+            phi = rng.uniform(0, math.pi)       # Polar angle
+            
+            # Convert to 3D Cartesian coordinates on unit sphere
+            x = math.sin(phi) * math.cos(theta)
+            y = math.sin(phi) * math.sin(theta)
+            z = math.cos(phi)
+            
+            cloud_radius = rng.randint(18, 32)  # Medium secondary clouds for carbon atmosphere
+            
+            secondary_clouds.append({
+                "position": [x, y, z],  # 3D coordinates on unit sphere
+                "radius": cloud_radius / planet_radius,
+                "type": "secondary_cloud",
+                "seed": f"{planet_name}_secondary_cloud_{i}",
+                "turbulence": rng.uniform(1.0, 1.8)  # Moderate turbulence for dusty carbon atmosphere
+            })
+
         return {
             "type": "carbon", 
             "clouds": clouds,
             "green_patches": green_patches,  # Land masses format that LandMasses effect expects
+            "secondary_clouds": secondary_clouds,
             "surface_properties": surface_properties,
             "carbon_trails_data": carbon_trails_data,  # Add carbon trails orbital data
             "debug": {
@@ -1795,6 +2124,7 @@ class PlanetTypeTranslators:
                 "center_x": center_x, "center_y": center_y,
                 "cloud_count": num_clouds,
                 "landmass_count": num_landmasses,
+                "secondary_cloud_count": num_secondary_clouds,
                 "surface_roughness": surface_properties["roughness"],
                 "mineral_spots_enabled": surface_properties["mineral_spots"],
                 "has_carbon_trails": carbon_trails_data is not None
@@ -1873,16 +2203,41 @@ class PlanetTypeTranslators:
                 "seed": f"{planet_name}_diamond_cloud_{i}"
             })
         
+        # Generate secondary clouds for diamond planet atmosphere effect
+        num_secondary_clouds = rng.randint(10, 18)  # Moderate secondary clouds for crystalline atmosphere
+        secondary_clouds = []
+        for i in range(num_secondary_clouds):
+            # Random spherical coordinates
+            theta = rng.uniform(0, 2 * math.pi)  # Azimuthal angle
+            phi = rng.uniform(0, math.pi)       # Polar angle
+            
+            # Convert to 3D Cartesian coordinates on unit sphere
+            x = math.sin(phi) * math.cos(theta)
+            y = math.sin(phi) * math.sin(theta)
+            z = math.cos(phi)
+            
+            cloud_radius = rng.randint(18, 30)  # Medium secondary clouds for diamond atmosphere
+            
+            secondary_clouds.append({
+                "position": [x, y, z],  # 3D coordinates on unit sphere
+                "radius": cloud_radius / planet_radius,
+                "type": "secondary_cloud",
+                "seed": f"{planet_name}_secondary_cloud_{i}",
+                "turbulence": rng.uniform(0.8, 1.6)  # Moderate turbulence for stable crystalline atmosphere
+            })
+        
         return {
             "type": "diamond",
             "base_color": base_color,
             "surface": surface_properties,
             "effects_3d": effects_3d,
             "clouds": clouds,
+            "secondary_clouds": secondary_clouds,
             "debug": {
                 "original_planet_radius": planet_radius,
                 "center_x": center_x, "center_y": center_y,
-                "cloud_count": num_clouds
+                "cloud_count": num_clouds,
+                "secondary_cloud_count": num_secondary_clouds
             }
         }
     
@@ -1971,15 +2326,40 @@ class PlanetTypeTranslators:
                 "continental_scale": True  # Flag for massive continental features
             })
         
+        # Generate secondary clouds for super earth planet atmosphere effect
+        num_secondary_clouds = rng.randint(18, 28)  # Dense secondary clouds for rich Earth-like atmosphere
+        secondary_clouds = []
+        for i in range(num_secondary_clouds):
+            # Random spherical coordinates
+            theta = rng.uniform(0, 2 * math.pi)  # Azimuthal angle
+            phi = rng.uniform(0, math.pi)       # Polar angle
+            
+            # Convert to 3D Cartesian coordinates on unit sphere
+            x = math.sin(phi) * math.cos(theta)
+            y = math.sin(phi) * math.sin(theta)
+            z = math.cos(phi)
+            
+            cloud_radius = rng.randint(25, 40)  # Large secondary clouds for super earth scale
+            
+            secondary_clouds.append({
+                "position": [x, y, z],  # 3D coordinates on unit sphere
+                "radius": cloud_radius / planet_radius,
+                "type": "secondary_cloud",
+                "seed": f"{planet_name}_secondary_cloud_{i}",
+                "turbulence": rng.uniform(1.5, 2.5)  # High turbulence for dynamic weather systems
+            })
+        
         return {
             "type": "super_earth",
             "clouds": clouds,  # AtmosphereClouds will use this
             "green_patches": green_patches,  # LandMasses will use this (Earth-like colored massive landmasses)
+            "secondary_clouds": secondary_clouds,
             "debug": {
                 "original_planet_radius": planet_radius,
                 "center_x": center_x, "center_y": center_y,
                 "cloud_count": num_clouds,
                 "landmass_count": num_landmasses,
+                "secondary_cloud_count": num_secondary_clouds,
                 "largest_landmass_size": max([lm["size"] for lm in green_patches]) if green_patches else 0,
                 "continental_coverage": "massive_super_continental_scale"
             }
@@ -2067,16 +2447,41 @@ class PlanetTypeTranslators:
                 "continental_scale": False  # Flag for smaller scale features
             })
         
+        # Generate secondary clouds for sub earth planet atmosphere effect
+        num_secondary_clouds = rng.randint(12, 20)  # Moderate secondary clouds for Earth-like atmosphere
+        secondary_clouds = []
+        for i in range(num_secondary_clouds):
+            # Random spherical coordinates
+            theta = rng.uniform(0, 2 * math.pi)  # Azimuthal angle
+            phi = rng.uniform(0, math.pi)       # Polar angle
+            
+            # Convert to 3D Cartesian coordinates on unit sphere
+            x = math.sin(phi) * math.cos(theta)
+            y = math.sin(phi) * math.sin(theta)
+            z = math.cos(phi)
+            
+            cloud_radius = rng.randint(20, 35)  # Medium secondary clouds for sub earth scale
+            
+            secondary_clouds.append({
+                "position": [x, y, z],  # 3D coordinates on unit sphere
+                "radius": cloud_radius / planet_radius,
+                "type": "secondary_cloud",
+                "seed": f"{planet_name}_secondary_cloud_{i}",
+                "turbulence": rng.uniform(1.2, 2.0)  # Moderate turbulence for Earth-like weather
+            })
+        
         return {
             "type": "sub_earth",
             "clouds": clouds,  # AtmosphereClouds will use this
             "green_patches": green_patches,  # LandMasses will use this
+            "secondary_clouds": secondary_clouds,
             "savannah_terrain_layer": True,  # Enable savannah terrain layer
             "debug": {
                 "original_planet_radius": planet_radius,
                 "center_x": center_x, "center_y": center_y,
                 "cloud_count": num_clouds,
                 "landmass_count": num_landmasses,
+                "secondary_cloud_count": num_secondary_clouds,
                 "largest_landmass_size": max([lm["size"] for lm in green_patches]) if green_patches else 0,
                 "continental_coverage": "small_sub_earth_scale"
             }
@@ -2378,14 +2783,39 @@ class PlanetTypeTranslators:
             ]
         }
 
+        # Generate secondary clouds for aquifer planet atmosphere effect
+        num_secondary_clouds = rng.randint(20, 30)  # Dense secondary clouds for humid water world atmosphere
+        secondary_clouds = []
+        for i in range(num_secondary_clouds):
+            # Random spherical coordinates
+            theta = rng.uniform(0, 2 * math.pi)  # Azimuthal angle
+            phi = rng.uniform(0, math.pi)       # Polar angle
+            
+            # Convert to 3D Cartesian coordinates on unit sphere
+            x = math.sin(phi) * math.cos(theta)
+            y = math.sin(phi) * math.sin(theta)
+            z = math.cos(phi)
+            
+            cloud_radius = rng.randint(25, 40)  # Large secondary clouds from high humidity
+            
+            secondary_clouds.append({
+                "position": [x, y, z],  # 3D coordinates on unit sphere
+                "radius": cloud_radius / planet_radius,
+                "type": "secondary_cloud",
+                "seed": f"{planet_name}_secondary_cloud_{i}",
+                "turbulence": rng.uniform(1.8, 2.8)  # High turbulence from water vapor dynamics
+            })
+
         return {
             "type": "aquifer",
             "clouds": clouds,
             "ocean_currents": ocean_currents,
+            "secondary_clouds": secondary_clouds,
             "debug": {
                 "original_planet_radius": planet_radius,
                 "center_x": center_x, "center_y": center_y,
                 "cloud_count": num_clouds,
+                "secondary_cloud_count": num_secondary_clouds,
                 "ocean_currents_intensity": ocean_currents["intensity"],
                 "ocean_currents_scale": ocean_currents["scale"]
             }
@@ -2485,16 +2915,41 @@ class PlanetTypeTranslators:
                 }
             }
         
+        # Generate secondary clouds for exotic planet atmosphere effect
+        num_secondary_clouds = rng.randint(15, 25)  # Moderate secondary clouds for alien atmosphere
+        secondary_clouds = []
+        for i in range(num_secondary_clouds):
+            # Random spherical coordinates
+            theta = rng.uniform(0, 2 * math.pi)  # Azimuthal angle
+            phi = rng.uniform(0, math.pi)       # Polar angle
+            
+            # Convert to 3D Cartesian coordinates on unit sphere
+            x = math.sin(phi) * math.cos(theta)
+            y = math.sin(phi) * math.sin(theta)
+            z = math.cos(phi)
+            
+            cloud_radius = rng.randint(20, 35)  # Medium secondary clouds for exotic atmosphere
+            
+            secondary_clouds.append({
+                "position": [x, y, z],  # 3D coordinates on unit sphere
+                "radius": cloud_radius / planet_radius,
+                "type": "secondary_cloud",
+                "seed": f"{planet_name}_secondary_cloud_{i}",
+                "turbulence": rng.uniform(1.8, 3.2)  # Variable turbulence for alien weather patterns
+            })
+        
         return {
             "type": "exotic",
             "clouds": clouds,
             "small_geometric_shapes": small_geometric_shapes,
             "exotic_doodles": exotic_doodles,  # Now passing orbital data like PulsatingCube
+            "secondary_clouds": secondary_clouds,
             "debug": {
                 "original_planet_radius": planet_radius,
                 "center_x": center_x, "center_y": center_y,
                 "cloud_count": num_clouds,
                 "small_shapes_count": num_small_shapes,
+                "secondary_cloud_count": num_secondary_clouds,
                 "has_exotic_doodles": exotic_doodles is not None,
                 "doodles_generated_procedurally": True
             }
@@ -2520,10 +2975,35 @@ class PlanetTypeTranslators:
                 "phase_offset_years": phase_offset_years
             }
         
+        # Generate secondary clouds for anomaly planet atmosphere effect
+        num_secondary_clouds = rng.randint(10, 18)  # Mysterious secondary clouds for anomalous atmosphere
+        secondary_clouds = []
+        for i in range(num_secondary_clouds):
+            # Random spherical coordinates
+            theta = rng.uniform(0, 2 * math.pi)  # Azimuthal angle
+            phi = rng.uniform(0, math.pi)       # Polar angle
+            
+            # Convert to 3D Cartesian coordinates on unit sphere
+            x = math.sin(phi) * math.cos(theta)
+            y = math.sin(phi) * math.sin(theta)
+            z = math.cos(phi)
+            
+            cloud_radius = rng.randint(16, 30)  # Variable secondary clouds for anomalous phenomena
+            
+            secondary_clouds.append({
+                "position": [x, y, z],  # 3D coordinates on unit sphere
+                "radius": cloud_radius / planet_radius,
+                "type": "secondary_cloud",
+                "seed": f"{planet_name}_secondary_cloud_{i}",
+                "turbulence": rng.uniform(2.0, 4.0)  # High, unpredictable turbulence for anomalous effects
+            })
+        
         return {
             "type": "anomaly",
             "pulsating_cube": pulsating_cube,
+            "secondary_clouds": secondary_clouds,
             "debug": {
-                "has_pulsating_cube": pulsating_cube is not None
+                "has_pulsating_cube": pulsating_cube is not None,
+                "secondary_cloud_count": num_secondary_clouds
             }
         }
