@@ -937,7 +937,114 @@ class PlanetTypeTranslators:
     
     def translate_swamp(self, planet_radius: int, rng: random.Random, 
                        seed: int, planet_name: str) -> Dict[str, Any]:
-        return {"type": "swamp"}
+        """Translate Swamp planet elements - humid wetlands with thick atmospheric clouds and muddy land masses"""
+        center_x, center_y = 200, 200  # Pillow center coordinates
+        
+        # Generate atmospheric clouds for swamp planets (humid, thick atmosphere)
+        num_clouds = rng.randint(12, 20)  # Dense atmospheric activity from humidity and vegetation
+        clouds = []
+        for i in range(num_clouds):
+            cloud_radius = rng.randint(25, 45)  # Large clouds from high humidity
+            max_offset = planet_radius - cloud_radius
+            cloud_x = center_x + rng.randint(-max_offset, max_offset)
+            cloud_y = center_y + rng.randint(-max_offset, max_offset)
+            
+            # Convert to normalized coordinates
+            normalized_coords = self.common_utils.normalize_coordinates(
+                cloud_x, cloud_y, center_x, center_y, planet_radius
+            )
+            
+            # Swamp clouds - misty, humid colors with greenish/grayish tints
+            swamp_cloud_colors = [
+                [0.7, 0.8, 0.6, 0.7],      # Misty green-gray
+                [0.8, 0.85, 0.75, 0.6],    # Light humid mist
+                [0.6, 0.7, 0.5, 0.8],      # Darker swamp green
+                [0.75, 0.8, 0.7, 0.65]     # Pale swamp mist
+            ]
+            
+            clouds.append({
+                "position": normalized_coords,
+                "radius": cloud_radius / planet_radius,
+                "color": rng.choice(swamp_cloud_colors),
+                "seed": f"{planet_name}_cloud_{i}"
+            })
+        
+        # Generate green patches (swampy landmasses and muddy islands)
+        num_green_patches = rng.randint(8, 16)  # Moderate number of swamp formations
+        green_patches = []
+        for i in range(num_green_patches):
+            patch_size = rng.uniform(0.15, 0.35)  # Medium to large swamp areas
+            
+            # Random spherical coordinates for 3D positioning
+            theta = rng.uniform(0, 2 * math.pi)  # Azimuthal angle
+            phi = rng.uniform(0, math.pi)       # Polar angle
+            
+            # Convert to 3D Cartesian coordinates on unit sphere
+            x = math.sin(phi) * math.cos(theta)
+            y = math.sin(phi) * math.sin(theta)
+            z = math.cos(phi)
+            
+            # Swamp colors - muddy browns, dark greens, murky colors
+            swamp_colors = [
+                [0.3, 0.4, 0.2, 0.8],      # Dark swamp green
+                [0.4, 0.3, 0.2, 0.85],     # Muddy brown
+                [0.2, 0.3, 0.2, 0.75],     # Dark murky green
+                [0.35, 0.35, 0.25, 0.8],   # Marsh brown-green
+                [0.25, 0.4, 0.3, 0.9]      # Deep swamp green
+            ]
+            
+            green_patches.append({
+                "position_3d": [x, y, z],  # 3D coordinates on unit sphere
+                "size": patch_size,
+                "color": rng.choice(swamp_colors),
+                "seed": f"{planet_name}_green_patch_{i}",
+                "sides": rng.randint(8, 14)  # Organic, irregular shapes
+            })
+        
+        # Generate secondary clouds for swamp planet atmosphere effect
+        num_secondary_clouds = rng.randint(16, 26)  # Dense secondary clouds for humid swamp atmosphere
+        secondary_clouds = []
+        for i in range(num_secondary_clouds):
+            # Random spherical coordinates
+            theta = rng.uniform(0, 2 * math.pi)  # Azimuthal angle
+            phi = rng.uniform(0, math.pi)       # Polar angle
+            
+            # Convert to 3D Cartesian coordinates on unit sphere
+            x = math.sin(phi) * math.cos(theta)
+            y = math.sin(phi) * math.sin(theta)
+            z = math.cos(phi)
+            
+            cloud_radius = rng.randint(20, 38)  # Medium to large secondary clouds from swamp humidity
+            
+            secondary_clouds.append({
+                "position": [x, y, z],  # 3D coordinates on unit sphere
+                "radius": cloud_radius / planet_radius,
+                "type": "secondary_cloud",
+                "seed": f"{planet_name}_secondary_cloud_{i}",
+                "turbulence": rng.uniform(1.6, 2.8)  # High turbulence from humid weather systems
+            })
+        
+        return {
+            "type": "swamp",
+            "clouds": clouds,  # AtmosphereClouds will use this
+            "green_patches": green_patches,  # LandMasses will use this (swampy landmasses)
+            "secondary_clouds": secondary_clouds,
+            "surface_properties": {
+                "humidity": rng.uniform(0.8, 0.95),      # Very high humidity
+                "vegetation_density": rng.uniform(0.6, 0.9),  # Dense swamp vegetation
+                "water_coverage": rng.uniform(0.3, 0.7),    # Significant water coverage
+                "mud_depth": rng.uniform(0.4, 0.8),         # Deep muddy areas
+                "mist_density": rng.uniform(0.5, 0.85)      # Thick swamp mist
+            },
+            "debug": {
+                "original_planet_radius": planet_radius,
+                "center_x": center_x, "center_y": center_y,
+                "cloud_count": num_clouds,
+                "green_patch_count": num_green_patches,
+                "secondary_cloud_count": num_secondary_clouds,
+                "swamp_coverage": "high_humidity_wetland_coverage"
+            }
+        }
     
     def translate_tundra(self, planet_radius: int, rng: random.Random, 
                         seed: int, planet_name: str) -> Dict[str, Any]:

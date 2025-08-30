@@ -3467,6 +3467,105 @@ export class EffectRegistry {
             }
             break;
 
+          case "swamp":
+            // Swamp planets: humid atmospheric clouds, swampy land masses, savannah terrain, and secondary clouds
+            
+            // 1. Add atmospheric clouds for swamp planets (humid, misty atmosphere)
+            if (surface.clouds && surface.clouds.length > 0) {
+              const swampCloudsEffect = createAtmosphereCloudsFromPythonData(
+                planetRadius,
+                surface,
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 4000,
+                pythonData.timing?.cosmic_origin_time
+              );
+
+              if (swampCloudsEffect) {
+                const swampCloudsInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "atmosphere_clouds",
+                  effect: swampCloudsEffect,
+                  priority: 15,
+                  enabled: true,
+                  name: "Swamp Humid Atmosphere",
+                };
+                this.effects.set(swampCloudsInstance.id, swampCloudsInstance);
+                effects.push(swampCloudsInstance);
+                swampCloudsEffect.addToScene(scene, mesh.position);
+              }
+            }
+
+            // 2. Add swampy land masses (muddy islands and wetland areas)
+            if (surface.green_patches && surface.green_patches.length > 0) {
+              const swampLandMassesEffect = createLandMassesFromPythonData(
+                planetRadius,
+                surface,
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 6000
+              );
+
+              if (swampLandMassesEffect) {
+                const swampLandMassesInstance: EffectInstance = {
+                  id: `effect_${this.nextId++}`,
+                  type: "land_masses",
+                  effect: swampLandMassesEffect,
+                  priority: 5,
+                  enabled: true,
+                  name: "Swamp Land Masses",
+                };
+                this.effects.set(swampLandMassesInstance.id, swampLandMassesInstance);
+                effects.push(swampLandMassesInstance);
+                swampLandMassesEffect.addToScene(scene, mesh.position);
+              }
+            }
+
+            // 3. Add savannah terrain layer for varied swamp terrain
+            if (this.layerSystem) {
+              const swampSavannahLayer = createSavannahTerrainLayerFromPythonData(
+                this.layerSystem,
+                pythonData,
+                pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed,
+                'SAVANNAH'
+              );
+
+              const swampSavannahInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "savannah_terrain_layer",
+                effect: swampSavannahLayer,
+                priority: 3, // Between land masses and clouds
+                enabled: true,
+                name: "Swamp Savannah Terrain",
+              };
+
+              this.effects.set(swampSavannahInstance.id, swampSavannahInstance);
+              effects.push(swampSavannahInstance);
+            }
+
+            // 4. Add secondary clouds for swamp planet atmosphere effect
+            if (surface.secondary_clouds && surface.secondary_clouds.length > 0) {
+              const secondaryCloudsEffect = createSecondaryCloudsFromPythonData(
+                planetRadius,
+                surface,
+                baseColor, // Use planet's base color for secondary clouds
+                pythonData.seeds?.planet_seed || Math.floor(Math.random() * 1000000),
+                pythonData.timing?.cosmic_origin_time
+              );
+
+              const secondaryCloudsInstance: EffectInstance = {
+                id: `effect_${this.nextId++}`,
+                type: "secondary_clouds",
+                effect: secondaryCloudsEffect,
+                priority: 12, // Lower priority than primary clouds but higher than other effects
+                enabled: true,
+                name: "Swamp Secondary Clouds",
+              };
+              this.effects.set(secondaryCloudsInstance.id, secondaryCloudsInstance);
+              effects.push(secondaryCloudsInstance);
+
+              if (scene) {
+                secondaryCloudsEffect.addToScene(scene);
+              }
+            }
+            break;
+
           default:
             // Verificar si es un planeta anómalo por planet_info.type
             if (pythonData.planet_info?.type?.toLowerCase() === "anomaly") {
