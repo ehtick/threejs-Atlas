@@ -3,7 +3,7 @@ import * as THREE from "three";
 import { PlanetLayerSystem } from "../3DComponents/PlanetLayerSystem";
 import { SeededRandom } from "../Utils/SeededRandom.tsx";
 
-export interface CloudBandsLayerParams {
+export interface CloudBandsLayerParams extends Record<string, unknown> {
   numBands?: number;
   bandPositions?: number[];
   bandWidths?: number[];

@@ -3,7 +3,7 @@ import * as THREE from "three";
 import { PlanetLayerSystem } from "../3DComponents/PlanetLayerSystem";
 import { SeededRandom } from "../Utils/SeededRandom.tsx";
 
-export interface AquiferWaterParams {
+export interface AquiferWaterParams extends Record<string, unknown> {
   waveHeight?: number;
   waveFrequency?: number;
   waveSpeed?: number;
@@ -89,7 +89,7 @@ export class AquiferWaterEffect {
     this.layerMesh = this.layerSystem.addEffectLayer("aquiferWater", this.material, this.layerSystem.getNextScaleFactor(), this);
   }
 
-  update(deltaTime: number): void {
+  update(_deltaTime: number): void {
     const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!;
     const currentTime = rawTime % 1000;
 
