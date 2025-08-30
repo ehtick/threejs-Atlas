@@ -42,7 +42,7 @@ const PROCEDURAL_RANGES = {
   },
   SWAMP: {
     BUBBLE_COUNT: { min: 450, max: 900 },
-    BUBBLE_SIZE: { min: 0.01, max: 0.05 },
+    BUBBLE_SIZE: { min: 0.02, max: 0.06 },
     RISE_SPEED: { min: 0.003, max: 0.008 },
     EXPANSION_RATE: { min: 0.002, max: 0.004 },
     POP_DISTANCE: { min: 0.2, max: 0.35 },
@@ -176,26 +176,39 @@ export class ToxicSwampBubblesEffect {
   }
   
   private getProceduralSurfacePoint(bubbleIndex: number): THREE.Vector3 {
-    const i = bubbleIndex;
-    const time = 0; // Posición fija por índice
+    // Crear generador con semilla base y hacer múltiples llamadas para llegar al estado único de esta burbuja
+    const rng = new SeededRandom(this.params.seed);
     
-    const theta = Math.sin(i * 0.618 + 1.26 * time * (1.03 + 0.5 * Math.cos(0.21 * i))) * Math.PI * 2;
-    const phi = Math.abs(Math.cos(i * 0.382 + 1.12 * time * Math.cos(1.22 + 0.1424 * i))) * Math.PI;
+    // Avanzar el generador hasta el estado único de esta burbuja
+    for (let i = 0; i < bubbleIndex; i++) {
+      rng.uniform(0, 1); // Consumir números aleatorios para avanzar el estado
+      rng.uniform(0, 1);
+      rng.uniform(0, 1); // Tres llamadas por burbuja para mejor dispersión
+    }
     
-    const noiseTheta = Math.sin(i * 1.32 + time * 0.1 * Math.sin((0.92 + 0.53 * i))) * 0.3;
-    const noisePhi = Math.cos(i * 2.43 + time * 0.15 * Math.cos((1.37 + 0.29 * i))) * 0.2;
+    // Método de Marsaglia para distribución uniforme en esfera unitaria
+    // Generar punto aleatorio en esfera usando coordenadas esféricas uniformes
+    const u1 = rng.uniform(0, 1);
+    const u2 = rng.uniform(0, 1);
     
-    const finalTheta = theta + noiseTheta;
-    const finalPhi = phi + noisePhi;
+    // Distribución uniforme en coordenadas esféricas
+    const theta = 2 * Math.PI * u1; // Ángulo azimutal [0, 2π]
+    const cosTheta = 2 * u2 - 1;    // cos(θ) uniforme en [-1, 1]
+    const sinTheta = Math.sqrt(1 - cosTheta * cosTheta);
     
-    const depthVariation = 0.95 + 0.05 * Math.sin(i * 0.73 + time * 0.2);
+    // Convertir a coordenadas cartesianas
+    const x = sinTheta * Math.cos(theta);
+    const y = cosTheta;
+    const z = sinTheta * Math.sin(theta);
+    
+    // Punto en superficie unitaria
+    const surfacePoint = new THREE.Vector3(x, y, z);
+    
+    // Pequeña variación en la profundidad (burbujas emergen desde ligeramente bajo la superficie)
+    const depthVariation = 0.95 + 0.05 * rng.uniform(0, 1);
     const startDepth = this.planetRadius * depthVariation;
     
-    const x = startDepth * Math.sin(finalPhi) * Math.cos(finalTheta);
-    const y = startDepth * Math.sin(finalPhi) * Math.sin(finalTheta);
-    const z = startDepth * Math.cos(finalPhi);
-    
-    return new THREE.Vector3(x, y, z).add(this.planetCenter);
+    return surfacePoint.multiplyScalar(startDepth).add(this.planetCenter);
   }
 
   private createBubbleMeshes(): void {
