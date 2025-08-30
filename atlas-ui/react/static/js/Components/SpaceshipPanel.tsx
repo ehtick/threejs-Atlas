@@ -32,6 +32,7 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
   const [spaceshipUpgrade, setSpaceshipUpgrade] = useState<SpaceshipUpgrade>({ level: 1, efficiency: 1.0, range: 300, storage: 500, multiplier: 1.0 });
   const [upgradeCost, setUpgradeCost] = useState<TravelCost>({ antimatter: 0, element115: 0, deuterium: 0 });
   const [passiveGeneration, setPassiveGeneration] = useState<any>({ antimatter: 0, element115: 0, deuterium: 0, sources: { planets: 0, systems: 0, galaxies: 0 } });
+  const [baseGeneration, setBaseGeneration] = useState<any>({ antimatter: 0, element115: 0, deuterium: 0, sources: { planets: 0, systems: 0, galaxies: 0 } });
   const [showCollectionPopup, setShowCollectionPopup] = useState<boolean>(false);
   const [isCollectionClosing, setIsCollectionClosing] = useState<boolean>(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -54,6 +55,10 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
       // Load passive generation info with limit
       const passiveInfo = SpaceshipResourceManager.getAccumulatedResourcesWithLimit();
       setPassiveGeneration(passiveInfo);
+      
+      // Load base generation rates
+      const baseGenerationInfo = SpaceshipResourceManager.calculatePassiveGeneration();
+      setBaseGeneration(baseGenerationInfo);
     }
   }, [isOpen]);
 
@@ -66,6 +71,10 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
       // Refresh accumulated resources display
       const passiveInfo = SpaceshipResourceManager.getAccumulatedResourcesWithLimit();
       setPassiveGeneration(passiveInfo);
+      
+      // Update base generation rates
+      const baseGenerationInfo = SpaceshipResourceManager.calculatePassiveGeneration();
+      setBaseGeneration(baseGenerationInfo);
     };
     
     const updateSpaceshipResources = () => {
@@ -440,15 +449,15 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
                         <div className="flex gap-2">
                           <span className="text-purple-300 flex items-center gap-0.5">
                             <AntimatterIcon size={8} color="currentColor" />
-                            +{Math.round(spaceshipUpgrade.multiplier * (passiveGeneration.sources.planets * 1.1 + passiveGeneration.sources.systems * 1))} AM
+                            +{Math.round(baseGeneration.antimatter)} AM
                           </span>
                           <span className="text-cyan-300 flex items-center gap-0.5">
                             <Element115Icon size={8} color="currentColor" />
-                            +{Math.round(spaceshipUpgrade.multiplier * (passiveGeneration.sources.planets * 1 + passiveGeneration.sources.systems * 1))} E115
+                            +{Math.round(baseGeneration.element115)} E115
                           </span>
                           <span className="text-orange-300 flex items-center gap-0.5">
                             <DeuteriumIcon size={8} color="currentColor" />
-                            +{Math.round(spaceshipUpgrade.multiplier * (passiveGeneration.sources.planets * 1.2 + passiveGeneration.sources.systems * 1))} D
+                            +{Math.round(baseGeneration.deuterium)} D
                           </span>
                         </div>
                       </div>
