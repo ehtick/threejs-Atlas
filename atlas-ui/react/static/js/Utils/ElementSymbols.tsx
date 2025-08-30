@@ -142,8 +142,7 @@ export const ELEMENT_SYMBOLS: { [key: string]: ElementInfo } = {
   
   // Special elements
   Tritium: { symbol: "T", atomicNumber: 1, category: "isotope" },
-  "Z-Divinium": { symbol: "Zd", atomicNumber: 119, category: "synthetic" },
-  Methane: { symbol: "CH₄", atomicNumber: "~", category: "compound" }
+  "Z-Divinium": { symbol: "Zd", atomicNumber: 119, category: "synthetic" }
 };
 
 // Color mapping for element categories

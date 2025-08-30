@@ -6,7 +6,6 @@ periodic_table = [
     ("Oxygen", 0.01),
     ("Carbon", 0.005),
     ("Neon", 0.001),
-    ("Methane", 0.001),
     ("Iron", 0.0005),
     ("Nitrogen", 0.0004),
     ("Silicon", 0.0003),

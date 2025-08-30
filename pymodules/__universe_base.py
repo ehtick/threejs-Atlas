@@ -411,7 +411,7 @@ class Planet:
             "Diamond": ["Carbon", "Silicon", "Nitrogen", "Oxygen"],
             "Super Earth": ["Iron", "Magnesium", "Silicon", "Oxygen"],
             "Sub Earth": ["Silicon", "Iron", "Carbon", "Oxygen"],
-            "Frozen Gas Giant": ["Hydrogen", "Helium", "Neon", "Methane"],
+            "Frozen Gas Giant": ["Hydrogen", "Helium", "Neon", "Nitrogen"],
             "Nebulous": ["Hydrogen", "Helium", "Neon", "Argon"],
             "Aquifer": ["Oxygen", "Hydrogen", "Sodium", "Chlorine"],
             "Exotic": ["Oganesson", "Livermorium", "Tennessine", "Flerovium"],

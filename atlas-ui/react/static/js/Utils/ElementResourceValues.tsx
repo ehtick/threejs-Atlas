@@ -144,7 +144,6 @@ export const ELEMENT_RESOURCE_VALUES: { [key: string]: ElementValue } = {
   Manganese: { antimatter: 1, element115: 2, deuterium: 1 },
   Nickel: { antimatter: 1, element115: 2, deuterium: 1 },
   Calcium: { antimatter: 1, element115: 2, deuterium: 1 },
-  Methane: { antimatter: 1, element115: 1, deuterium: 2 },
 
   // Very common elements (probability 0.00005-0.0005)
   Argon: { antimatter: 1, element115: 1, deuterium: 1 },
