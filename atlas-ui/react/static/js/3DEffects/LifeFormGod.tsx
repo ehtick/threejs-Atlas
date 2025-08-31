@@ -6,11 +6,11 @@ import { DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime.tsx";
 const PROCEDURAL_RANGES = {
   SACRED_SYMBOL_COUNT: { min: 12, max: 24 },
   ORBITAL_CROSS_COUNT: { min: 8, max: 16 },
-  SACRED_CIRCLE_COUNT: { min: 4, max: 8 }, // More rings for Dyson sphere effect
-  GOLDEN_PARTICLE_COUNT: { min: 800, max: 1500 },
+  SACRED_CIRCLE_COUNT: { min: 24, max: 32 }, // More rings for Dyson sphere effect
+  GOLDEN_PARTICLE_COUNT: { min: 200, max: 350 },
   DIVINE_PULSE_INTENSITY: { min: 3.0, max: 8.0 },
   ORBITAL_SPEED: { min: 0.2, max: 1.0 },
-  CROSS_SPIRAL_COUNT: { min: 1, max: 2 },
+  CROSS_SPIRAL_COUNT: { min: 3, max: 6 },
   HOLOGRAM_RING_COUNT: { min: 4, max: 8 },
   BINARY_DIGIT_COUNT: { min: 200, max: 600 },
 };
@@ -221,6 +221,8 @@ export class LifeFormGodEffect {
     this.digitalGodSphere.userData = {
       rotationSpeed: 0.002, // Slightly faster for digital feel
       planetPosition: planetPos.clone(),
+      baseRotationX: this.digitalGodSphere.rotation.x,
+      baseRotationY: this.digitalGodSphere.rotation.y,
     };
     
     this.group.add(this.digitalGodSphere);
@@ -253,7 +255,7 @@ export class LifeFormGodEffect {
         const yPos = sphereRadius * y;
         
         positions[i * 3] = x;
-        positions[i * 3 + 1] = y;
+        positions[i * 3 + 1] = yPos;
         positions[i * 3 + 2] = z;
         
         // Random binary digit (0 or 1)
@@ -269,7 +271,7 @@ export class LifeFormGodEffect {
         
         // Store orbit data
         this.binaryDigitData.push({
-          position: new THREE.Vector3(x, y, z),
+          position: new THREE.Vector3(x, yPos, z),
           velocity: new THREE.Vector3(
             (this.rng.random() - 0.5) * 0.02,
             (this.rng.random() - 0.5) * 0.02,
@@ -1399,9 +1401,9 @@ export class LifeFormGodEffect {
         }
       }
       
-      // Digital rotation - slightly faster for digital feel
-      this.digitalGodSphere.rotation.y += userData.rotationSpeed;
-      this.digitalGodSphere.rotation.x += userData.rotationSpeed * 0.3;
+      // Digital rotation - slightly faster for digital feel (use animTime for sync)
+      this.digitalGodSphere.rotation.y = userData.baseRotationY + animTime * userData.rotationSpeed;
+      this.digitalGodSphere.rotation.x = userData.baseRotationX + animTime * userData.rotationSpeed * 0.3;
       
       // Update shader uniforms for digital sphere
       const sphereMaterial = this.godSphere.material as THREE.ShaderMaterial;
