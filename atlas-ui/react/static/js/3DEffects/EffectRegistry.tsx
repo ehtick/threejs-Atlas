@@ -55,6 +55,7 @@ import { RadiationRingsEffect, createRadiationRingsFromPythonData } from "./Radi
 import { SuperEarthWaterFeaturesEffect, createSuperEarthWaterFeaturesFromPythonData } from "./SuperEarthWaterFeatures";
 import { LifeFormIntelligentLifeEffect, createLifeFormIntelligentLifeFromPythonData } from "./LifeFormIntelligentLife";
 import { LifeFormSiliconBasedLifeEffect, createLifeFormSiliconBasedLifeFromPythonData } from "./LifeFormSiliconBasedLife";
+import { LifeFormNonPhysicalEntityEffect, createLifeFormNonPhysicalEntityFromPythonData } from "./LifeFormNonPhysicalEntity";
 
 import { VisualDebug3DEffect, createVisualDebug3DFromPythonData } from "./VisualDebug3D";
 import { ENABLE_EFFECTS_LOGGING } from "../Utils/DebugConfig.tsx";
@@ -121,6 +122,7 @@ export enum EffectType {
 
   LIFE_FORM_INTELLIGENT_LIFE = "life_form_intelligent_life",
   LIFE_FORM_SILICON_BASED_LIFE = "life_form_silicon_based_life",
+  LIFE_FORM_NON_PHYSICAL_ENTITY = "life_form_non_physical_entity",
 
   TUNDRA_SNOWFLAKES = "tundra_snowflakes",
 
@@ -273,6 +275,10 @@ export class EffectRegistry {
     this.registerEffect(EffectType.LIFE_FORM_SILICON_BASED_LIFE, {
       create: (params, planetRadius) => new LifeFormSiliconBasedLifeEffect(planetRadius, params),
       fromPythonData: (data, planetRadius) => createLifeFormSiliconBasedLifeFromPythonData(planetRadius, data, data.seeds?.planet_seed),
+    });
+    this.registerEffect(EffectType.LIFE_FORM_NON_PHYSICAL_ENTITY, {
+      create: (params, planetRadius) => new LifeFormNonPhysicalEntityEffect(planetRadius, params),
+      fromPythonData: (data, planetRadius) => createLifeFormNonPhysicalEntityFromPythonData(planetRadius, data, data.seeds?.planet_seed),
     });
 
     this.registerEffect(EffectType.CRYSTAL_FORMATIONS, {
@@ -2901,6 +2907,13 @@ export class EffectRegistry {
         if (siliconLifeEffect) {
           effects.push(siliconLifeEffect);
           siliconLifeEffect.effect.addToScene(scene, mesh.position);
+        }
+      }
+      if (pythonData.original_planet_data && pythonData.original_planet_data.life_forms === "Non-Physical Entity") {
+        const nonPhysicalEntityEffect = this.createEffectFromPythonData(EffectType.LIFE_FORM_NON_PHYSICAL_ENTITY, pythonData, planetRadius, mesh, 10);
+        if (nonPhysicalEntityEffect) {
+          effects.push(nonPhysicalEntityEffect);
+          nonPhysicalEntityEffect.effect.addToScene(scene, mesh.position);
         }
       }
 
