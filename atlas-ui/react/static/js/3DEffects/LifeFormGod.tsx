@@ -4,10 +4,9 @@ import { SeededRandom } from "../Utils/SeededRandom.tsx";
 import { DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime.tsx";
 
 const PROCEDURAL_RANGES = {
-  DIVINE_RAY_COUNT: { min: 20, max: 40 },
   SACRED_SYMBOL_COUNT: { min: 12, max: 24 },
   ORBITAL_CROSS_COUNT: { min: 8, max: 16 },
-  SACRED_CIRCLE_COUNT: { min: 6, max: 12 },
+  SACRED_CIRCLE_COUNT: { min: 4, max: 8 }, // More rings for Dyson sphere effect
   GOLDEN_PARTICLE_COUNT: { min: 800, max: 1500 },
   DIVINE_PULSE_INTENSITY: { min: 3.0, max: 8.0 },
   ORBITAL_SPEED: { min: 0.2, max: 1.0 },
@@ -18,7 +17,6 @@ const PROCEDURAL_RANGES = {
 
 export interface LifeFormGodParams {
   color?: number[] | THREE.Color;
-  divineRayCount?: number;
   sacredSymbolCount?: number;
   orbitalCrossCount?: number;
   sacredCircleCount?: number;
@@ -46,7 +44,6 @@ export class LifeFormGodEffect {
     orbitalSpeed: number;
     phase: number;
   }> = [];
-  private divineRays: THREE.Mesh[] = [];
   private sacredSymbols: THREE.Mesh[] = [];
   private orbitalCrosses: THREE.Mesh[] = [];
   private crossSpirals: THREE.Mesh[] = [];
@@ -87,7 +84,6 @@ export class LifeFormGodEffect {
 
     this.params = {
       color: params.color || [1.0, 0.84, 0.0], // Divine gold
-      divineRayCount: params.divineRayCount || Math.floor(this.rng.random() * (PROCEDURAL_RANGES.DIVINE_RAY_COUNT.max - PROCEDURAL_RANGES.DIVINE_RAY_COUNT.min) + PROCEDURAL_RANGES.DIVINE_RAY_COUNT.min),
       sacredSymbolCount: params.sacredSymbolCount || Math.floor(this.rng.random() * (PROCEDURAL_RANGES.SACRED_SYMBOL_COUNT.max - PROCEDURAL_RANGES.SACRED_SYMBOL_COUNT.min) + PROCEDURAL_RANGES.SACRED_SYMBOL_COUNT.min),
       orbitalCrossCount: params.orbitalCrossCount || Math.floor(this.rng.random() * (PROCEDURAL_RANGES.ORBITAL_CROSS_COUNT.max - PROCEDURAL_RANGES.ORBITAL_CROSS_COUNT.min) + PROCEDURAL_RANGES.ORBITAL_CROSS_COUNT.min),
       sacredCircleCount: params.sacredCircleCount || Math.floor(this.rng.random() * (PROCEDURAL_RANGES.SACRED_CIRCLE_COUNT.max - PROCEDURAL_RANGES.SACRED_CIRCLE_COUNT.min) + PROCEDURAL_RANGES.SACRED_CIRCLE_COUNT.min),
@@ -105,7 +101,6 @@ export class LifeFormGodEffect {
     this.group = new THREE.Group();
     this.createDigitalGodSphere();
     this.createBinaryDigits();
-    this.createDivineRays();
     this.createSacredSymbols();
     this.createOrbitalCrosses();
     this.createCrossSpirals();
@@ -353,80 +348,6 @@ export class LifeFormGodEffect {
       pointCloud.userData = { systemIndex: system };
       this.binaryDigits.push(pointCloud);
       this.digitalGodSphere.add(pointCloud);
-    }
-  }
-
-  private createDivineRays(): void {
-    const rayCount = this.params.divineRayCount!;
-    
-    for (let i = 0; i < rayCount; i++) {
-      const rayLength = this.planetRadius * (3.0 + this.rng.random() * 2.0);
-      const rayWidth = this.planetRadius * 0.05;
-      
-      const rayGeometry = new THREE.PlaneGeometry(rayWidth, rayLength);
-      
-      const rayMaterial = new THREE.ShaderMaterial({
-        uniforms: {
-          time: { value: 0 },
-          color: { value: new THREE.Color(this.params.color![0], this.params.color![1] * 0.9, this.params.color![2] * 0.7) },
-          rayIndex: { value: i },
-        },
-        vertexShader: `
-          uniform float time;
-          uniform float rayIndex;
-          varying vec2 vUv;
-          varying float vIntensity;
-          
-          void main() {
-            vUv = uv;
-            
-            float divine = sin(time * 3.0 + rayIndex * 0.5) * 0.5 + 0.5;
-            vIntensity = divine;
-            
-            vec3 pos = position;
-            pos.y *= (1.0 + divine * 0.2);
-            
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-          }
-        `,
-        fragmentShader: `
-          uniform vec3 color;
-          uniform float time;
-          varying vec2 vUv;
-          varying float vIntensity;
-          
-          void main() {
-            float ray = 1.0 - abs(vUv.x - 0.5) * 2.0;
-            float fade = 1.0 - vUv.y;
-            
-            float divine = sin(time * 5.0 + vUv.y * 20.0) * 0.3 + 0.7;
-            float intensity = ray * fade * divine * vIntensity;
-            
-            gl_FragColor = vec4(color, intensity);
-          }
-        `,
-        transparent: true,
-        blending: THREE.AdditiveBlending,
-        side: THREE.DoubleSide,
-        depthWrite: false,
-      });
-
-      const ray = new THREE.Mesh(rayGeometry, rayMaterial);
-      
-      // Position rays - they will follow robotic face in update()
-      const angle = (i / rayCount) * Math.PI * 2;
-      
-      ray.rotation.z = angle;
-      ray.rotation.x = Math.PI / 2;
-      
-      ray.userData = {
-        rayIndex: i,
-        baseAngle: angle,
-        rotationSpeed: (this.rng.random() - 0.5) * 0.01,
-      };
-
-      this.divineRays.push(ray);
-      this.group.add(ray);
     }
   }
 
@@ -884,30 +805,45 @@ export class LifeFormGodEffect {
   private createSacredCircles(): void {
     const circleCount = this.params.sacredCircleCount!;
     
+    // Create Dyson sphere-like orbital rings
     for (let i = 0; i < circleCount; i++) {
-      const circleRadius = this.planetRadius + 0.5 + i * 1.2;
+      const baseRadius = this.planetRadius + 1.8 + (i % 5) * 0.4;
+      const ringThickness = 0.05 + (i % 3) * 0.02;
       
-      const circleGeometry = new THREE.RingGeometry(circleRadius, circleRadius + 0.1, 64, 1);
+      const circleGeometry = new THREE.RingGeometry(
+        baseRadius - ringThickness, 
+        baseRadius + ringThickness, 
+        128, 
+        4
+      );
       
       const circleMaterial = new THREE.ShaderMaterial({
         uniforms: {
           time: { value: 0 },
-          color: { value: new THREE.Color(this.params.color![0] * 1.1, this.params.color![1] * 0.9, this.params.color![2] * 1.1) },
+          color: { value: new THREE.Color(1.0, 0.8, 0.1) }, // Golden Dyson rings
           circleIndex: { value: i },
+          ringRadius: { value: baseRadius },
         },
         vertexShader: `
           uniform float time;
           uniform float circleIndex;
+          uniform float ringRadius;
           varying vec2 vUv;
-          varying float vExpansion;
+          varying vec3 vPosition;
+          varying float vEnergy;
+          varying float vDistance;
           
           void main() {
             vUv = uv;
+            vPosition = position;
+            vDistance = length(position);
             
-            float expansion = sin(time * 2.0 + circleIndex * 1.0) * 0.1 + 1.0;
-            vExpansion = expansion;
+            // Dynamic energy pulsing along the ring
+            float energy1 = sin(time * 3.0 + circleIndex * 0.8) * 0.2 + 0.8;
+            float energy2 = sin(time * 5.0 + atan(position.y, position.x) * 8.0) * 0.3 + 0.7;
+            vEnergy = energy1 * energy2;
             
-            vec3 pos = position * expansion;
+            vec3 pos = position;
             
             gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
           }
@@ -915,16 +851,37 @@ export class LifeFormGodEffect {
         fragmentShader: `
           uniform vec3 color;
           uniform float time;
+          uniform float circleIndex;
           varying vec2 vUv;
-          varying float vExpansion;
+          varying vec3 vPosition;
+          varying float vEnergy;
+          varying float vDistance;
           
           void main() {
+            // Create ring structure with energy segments
             float dist = length(vUv - 0.5);
-            float circle = smoothstep(0.45, 0.48, dist) * (1.0 - smoothstep(0.49, 0.5, dist));
+            float ring = smoothstep(0.4, 0.42, dist) * (1.0 - smoothstep(0.48, 0.5, dist));
             
-            float divine = sin(time * 4.0 + dist * 20.0) * 0.3 + 0.7;
+            // Energy segments - like Dyson sphere panels
+            float angle = atan(vUv.y - 0.5, vUv.x - 0.5);
+            float segments = sin(angle * 20.0 + time * 2.0 + circleIndex * 3.0) * 0.5 + 0.5;
+            segments = step(0.3, segments);
             
-            gl_FragColor = vec4(color, circle * divine * vExpansion);
+            // Data streams flowing along the ring
+            float dataFlow = sin(angle * 15.0 - time * 8.0) * 0.5 + 0.5;
+            dataFlow = step(0.7, dataFlow) * 0.8;
+            
+            // Holographic shimmer
+            float shimmer = sin(time * 12.0 + angle * 25.0 + dist * 30.0) * 0.3 + 0.7;
+            
+            // Combine all effects
+            float intensity = ring * (segments * 0.7 + dataFlow * 0.5 + 0.3) * shimmer * vEnergy;
+            
+            // Color variation based on ring index
+            vec3 finalColor = color;
+            finalColor += vec3(0.2, 0.3, 0.0) * sin(circleIndex * 2.0); // Slight color variation per ring
+            
+            gl_FragColor = vec4(finalColor, intensity);
           }
         `,
         transparent: true,
@@ -934,9 +891,23 @@ export class LifeFormGodEffect {
       });
 
       const circle = new THREE.Mesh(circleGeometry, circleMaterial);
+      
+      // Set up Dyson sphere orbital orientations
+      const goldenRatio = (1 + Math.sqrt(5)) / 2;
+      const fibonacci = ((i * goldenRatio) % 1) * Math.PI * 2;
+      
+      // Multiple orbital planes like a Dyson sphere
+      circle.rotation.x = fibonacci + (i * 0.3);
+      circle.rotation.y = fibonacci * 1.618 + (i * 0.4);
+      circle.rotation.z = fibonacci * 0.618 + (i * 0.2);
+      
       circle.userData = {
         circleIndex: i,
-        rotationSpeed: (this.rng.random() - 0.5) * 0.005,
+        orbitalSpeed: 0.3 + (this.rng.random() * 0.4), // Different orbital speeds
+        baseRotationX: circle.rotation.x,
+        baseRotationY: circle.rotation.y,
+        baseRotationZ: circle.rotation.z,
+        orbitalPhase: fibonacci,
       };
 
       this.sacredCircles.push(circle);
@@ -1480,31 +1451,6 @@ export class LifeFormGodEffect {
       pointCloud.geometry.attributes.position.needsUpdate = true;
     });
 
-    // Update Divine Rays emanating from the digital god sphere
-    this.divineRays.forEach((ray) => {
-      const userData = ray.userData;
-      
-      // Position rays emanating from the digital god sphere position with proper radius
-      const angle = userData.baseAngle;
-      const offsetDistance = this.planetRadius * 1.5; // Rays emanate from edge of digital sphere
-      
-      // Get current digital god sphere position
-      const spherePos = this.digitalGodSphere ? this.digitalGodSphere.position : new THREE.Vector3(0, 0, 0);
-      
-      const rayOffset = new THREE.Vector3(
-        Math.cos(angle) * offsetDistance,
-        0,
-        Math.sin(angle) * offsetDistance
-      );
-      
-      ray.position.copy(spherePos).add(rayOffset);
-      
-      ray.rotation.z = userData.baseAngle + animTime * userData.rotationSpeed;
-      
-      const material = ray.material as THREE.ShaderMaterial;
-      material.uniforms.time.value = animTime;
-    });
-
 
     // Update Sacred Symbols
     this.sacredSymbols.forEach((symbol) => {
@@ -1577,11 +1523,26 @@ export class LifeFormGodEffect {
       material.uniforms.time.value = animTime;
     });
 
-    // Update Sacred Circles
+    // Update Dyson Sphere Rings - orbital rotation around planet
     this.sacredCircles.forEach((circle) => {
       const userData = circle.userData;
-      circle.rotation.z += userData.rotationSpeed;
-
+      
+      // Create orbital rotation matrix - each ring orbits around the planet
+      const orbitalAngle = animTime * userData.orbitalSpeed * 0.1 + userData.orbitalPhase;
+      
+      // Reset to base orientation
+      circle.rotation.x = userData.baseRotationX;
+      circle.rotation.y = userData.baseRotationY;
+      circle.rotation.z = userData.baseRotationZ;
+      
+      // Apply orbital rotation around the planet's center
+      // This rotates the entire ring around the planet while maintaining its orientation
+      const orbitalMatrix = new THREE.Matrix4();
+      orbitalMatrix.makeRotationY(orbitalAngle);
+      
+      // Apply the orbital rotation to the ring
+      circle.applyMatrix4(orbitalMatrix);
+      
       const material = circle.material as THREE.ShaderMaterial;
       material.uniforms.time.value = animTime;
     });
@@ -1722,10 +1683,6 @@ export class LifeFormGodEffect {
       (pointCloud.material as THREE.Material).dispose();
     });
 
-    this.divineRays.forEach((ray) => {
-      ray.geometry.dispose();
-      (ray.material as THREE.Material).dispose();
-    });
 
     this.sacredSymbols.forEach((symbol) => {
       symbol.geometry.dispose();
@@ -1794,10 +1751,6 @@ export class LifeFormGodEffect {
         material.uniforms.color.value = color;
       }
 
-      this.divineRays.forEach((ray) => {
-        const material = ray.material as THREE.ShaderMaterial;
-        material.uniforms.color.value = new THREE.Color(color.r, color.g * 0.9, color.b * 0.7);
-      });
 
       if (this.divineLight) {
         this.divineLight.color = color;
