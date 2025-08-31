@@ -11,7 +11,7 @@ const PROCEDURAL_RANGES = {
   GOLDEN_PARTICLE_COUNT: { min: 800, max: 1500 },
   DIVINE_PULSE_INTENSITY: { min: 3.0, max: 8.0 },
   ORBITAL_SPEED: { min: 0.2, max: 1.0 },
-  CROSS_SPIRAL_COUNT: { min: 3, max: 6 },
+  CROSS_SPIRAL_COUNT: { min: 1, max: 2 },
   HOLOGRAM_RING_COUNT: { min: 4, max: 8 },
   BINARY_DIGIT_COUNT: { min: 200, max: 600 },
 };
