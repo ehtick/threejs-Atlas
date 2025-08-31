@@ -532,11 +532,11 @@ class Planet:
 
         if (
             self.planet_type == "Nebulous"
-            and self.atmosphere == "Plasma"
-            and "Moscovium" in self.elements
-            and "Z-Divinium" in self.elements
+            # and self.atmosphere == "Plasma"
+            # and "Moscovium" in self.elements
+            # and "Z-Divinium" in self.elements
         ):
-            if random.random() < 0.00001:
+            if random.random() < 0.1:
                 return "Have I just found God?"
 
         return random.choice(possible_life_forms)
