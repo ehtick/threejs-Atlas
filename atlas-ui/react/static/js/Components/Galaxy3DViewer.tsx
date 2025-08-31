@@ -193,30 +193,23 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({
       numPoints = Math.min(numSystems, 100000);
       
       for (let i = 0; i < numPoints; i++) {
+        // Proper uniform distribution on sphere surface
         const angle = rng.uniform(0, 2 * Math.PI);
-        const phi = rng.uniform(0, Math.PI);
+        const cosTheta = rng.uniform(-1, 1); // Uniform in cos(theta) for proper sphere distribution
+        const sinTheta = Math.sqrt(1 - cosTheta * cosTheta);
         
-        // More realistic elliptical distribution - mix of core and extended halo
-        let radius;
-        const coreChance = rng.random();
+        // Adjustable exponential decay with stronger falloff near center
+        const u = rng.random();
         
-        if (coreChance < 0.4) {
-          // Dense core (40% of stars)
-          radius = Math.abs(rng.gauss(maxRadius * 0.15, maxRadius * 0.08));
-        } else if (coreChance < 0.8) {
-          // Main body (40% of stars)
-          radius = Math.abs(rng.gauss(maxRadius * 0.4, maxRadius * 0.15));
-        } else {
-          // Extended halo (20% of stars)
-          radius = Math.abs(rng.gauss(maxRadius * 0.7, maxRadius * 0.2));
-        }
+        // Modified exponential with power to control density curve
+        // Higher power = stronger decay, more spread out
+        const normalizedU = Math.pow(u, 0.6); // This spreads out the distribution more
+        const radius = -Math.log(1 - normalizedU * 0.98) * maxRadius * 0.35;
         
-        // Clamp radius to reasonable bounds
-        radius = Math.min(radius, maxRadius * 0.9);
-        
-        const x = radius * Math.sin(phi) * Math.cos(angle);
-        const y = radius * Math.cos(phi) * 0.6; // Flatten slightly
-        const z = radius * Math.sin(phi) * Math.sin(angle);
+        // Convert to Cartesian coordinates with proper sphere distribution
+        const x = radius * sinTheta * Math.cos(angle);
+        const y = radius * cosTheta * 0.6; // Flatten slightly for elliptical shape
+        const z = radius * sinTheta * Math.sin(angle);
         
         positions.push(x, y, z);
         colors.push(1, 0.9, 0.7);
