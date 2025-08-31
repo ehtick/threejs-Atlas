@@ -6,7 +6,7 @@ import { DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime.tsx";
 const PROCEDURAL_RANGES = {
   SACRED_SYMBOL_COUNT: { min: 12, max: 24 },
   ORBITAL_CROSS_COUNT: { min: 8, max: 16 },
-  SACRED_CIRCLE_COUNT: { min: 24, max: 32 }, // More rings for Dyson sphere effect
+  SACRED_CIRCLE_COUNT: { min: 24, max: 32 },
   GOLDEN_PARTICLE_COUNT: { min: 200, max: 350 },
   DIVINE_PULSE_INTENSITY: { min: 3.0, max: 8.0 },
   ORBITAL_SPEED: { min: 0.2, max: 1.0 },
@@ -116,16 +116,14 @@ export class LifeFormGodEffect {
 
   private createDigitalGodSphere(): void {
     this.digitalGodSphere = new THREE.Group();
-    
-    // Create digital divine sphere that encompasses the planet perfectly - 1.33x larger than planet
+
     const sphereSize = this.planetRadius * 1.33;
-    
-    // Create main digital god sphere with digital shader
+
     const sphereGeometry = new THREE.SphereGeometry(sphereSize, 64, 64);
     const sphereMaterial = new THREE.ShaderMaterial({
       uniforms: {
         time: { value: 0 },
-        color: { value: new THREE.Color(1.0, 0.8, 0.0) }, // Divine yellow-gold color
+        color: { value: new THREE.Color(1.0, 0.8, 0.0) },
         pulseIntensity: { value: this.params.divinePulseIntensity! },
         planetRadius: { value: this.planetRadius },
       },
@@ -166,38 +164,31 @@ export class LifeFormGodEffect {
         varying float vDistanceFromCenter;
         
         void main() {
-          // Digital base color
           vec3 digitalColor = color;
           
-          // Fresnel effect for digital glow
           float fresnel = pow(1.0 - abs(dot(normalize(vNormal), vec3(0.0, 0.0, 1.0))), 2.0);
           
-          // Enhanced divine grid patterns
           float gridX = sin(vUv.x * 120.0 + time * 2.5) * 0.5 + 0.5;
           float gridY = sin(vUv.y * 100.0 + time * 2.0) * 0.5 + 0.5;
           float grid = step(0.92, gridX) + step(0.92, gridY);
-          // Add diagonal grid for more complexity
+
           float gridDiag = sin((vUv.x + vUv.y) * 90.0 + time * 1.8) * 0.5 + 0.5;
           grid += step(0.95, gridDiag) * 0.5;
           grid *= 1.0;
           
-          // Enhanced divine data streams
           float dataStream = sin(vUv.y * 70.0 - time * 6.0) * 0.5 + 0.5;
           float dataStream2 = sin(vUv.x * 60.0 + time * 4.5) * 0.5 + 0.5;
           dataStream = step(0.65, dataStream) * 0.8 + step(0.75, dataStream2) * 0.6;
           
-          // Enhanced cosmic divine waves
           float waves = sin(vDistanceFromCenter * 0.4 + time * 5.0) * 0.3 + 0.7;
           waves += sin(vDistanceFromCenter * 0.8 + time * 3.0) * 0.2;
           waves += sin(vDistanceFromCenter * 1.2 - time * 2.0) * 0.15;
           
-          // Final divine composition
           vec3 finalColor = digitalColor * waves;
-          finalColor += vec3(1.0, 0.9, 0.3) * grid; // Golden grid
-          finalColor += vec3(1.0, 0.8, 0.2) * dataStream; // Golden data streams
-          finalColor += vec3(1.0, 0.7, 0.1) * fresnel * 0.8; // Golden divine aura
+          finalColor += vec3(1.0, 0.9, 0.3) * grid;
+          finalColor += vec3(1.0, 0.8, 0.2) * dataStream; 
+          finalColor += vec3(1.0, 0.7, 0.1) * fresnel * 0.8; 
           
-          // Enhanced opacity for yellow sphere
           float distanceFade = smoothstep(planetRadius * 1.4, planetRadius * 1.0, vDistanceFromCenter);
           float alpha = (0.6 + fresnel * 0.4 + grid * 0.3 + dataStream * 0.25) * distanceFade;
           
@@ -213,83 +204,71 @@ export class LifeFormGodEffect {
     this.godSphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
     this.digitalGodSphere.add(this.godSphere);
 
-    // Position the digital god sphere exactly at planet position
     const planetPos = this.params.planetPosition || new THREE.Vector3(0, 0, 0);
     this.digitalGodSphere.position.copy(planetPos);
-    
-    // Add slow rotation for digital presence
+
     this.digitalGodSphere.userData = {
-      rotationSpeed: 0.002, // Slightly faster for digital feel
+      rotationSpeed: 0.002,
       planetPosition: planetPos.clone(),
       baseRotationX: this.digitalGodSphere.rotation.x,
       baseRotationY: this.digitalGodSphere.rotation.y,
     };
-    
+
     this.group.add(this.digitalGodSphere);
   }
 
   private createBinaryDigits(): void {
     const digitCount = this.params.binaryDigitCount || Math.floor(this.rng.random() * (PROCEDURAL_RANGES.BINARY_DIGIT_COUNT.max - PROCEDURAL_RANGES.BINARY_DIGIT_COUNT.min) + PROCEDURAL_RANGES.BINARY_DIGIT_COUNT.min);
-    const sphereRadius = this.planetRadius * 1.35; // Slightly larger than the sphere surface
-    
-    // Create binary digit systems (multiple point clouds for different movement patterns)
+    const sphereRadius = this.planetRadius * 1.35;
+
     for (let system = 0; system < 5; system++) {
       const digitsInSystem = Math.floor(digitCount / 5);
       const positions = new Float32Array(digitsInSystem * 3);
       const colors = new Float32Array(digitsInSystem * 3);
       const sizes = new Float32Array(digitsInSystem);
-      const digits = new Float32Array(digitsInSystem); // 0 or 1
-      
+      const digits = new Float32Array(digitsInSystem);
+
       for (let i = 0; i < digitsInSystem; i++) {
-        // Procedural positioning using golden ratio and Fibonacci spirals
-        const goldenAngle = Math.PI * (3.0 - Math.sqrt(5.0)); // Golden angle
+        const goldenAngle = Math.PI * (3.0 - Math.sqrt(5.0));
         const globalIndex = system * digitsInSystem + i;
-        
-        // Fibonacci spiral on sphere surface
-        const y = 1 - (globalIndex / (digitCount - 1)) * 2; // y from 1 to -1
+
+        const y = 1 - (globalIndex / (digitCount - 1)) * 2;
         const radius = Math.sqrt(1 - y * y);
         const theta = goldenAngle * globalIndex;
-        
+
         const x = sphereRadius * Math.cos(theta) * radius;
         const z = sphereRadius * Math.sin(theta) * radius;
         const yPos = sphereRadius * y;
-        
+
         positions[i * 3] = x;
         positions[i * 3 + 1] = yPos;
         positions[i * 3 + 2] = z;
-        
-        // Random binary digit (0 or 1)
+
         const digit = Math.floor(this.rng.random() * 2);
         digits[i] = digit;
-        
-        // Color based on digit - Both white for visibility
-        colors[i * 3] = 1.0;     // R (white for both)
-        colors[i * 3 + 1] = 1.0; // G 
-        colors[i * 3 + 2] = 1.0; // B
-        
+
+        colors[i * 3] = 1.0;
+        colors[i * 3 + 1] = 1.0;
+        colors[i * 3 + 2] = 1.0;
+
         sizes[i] = this.planetRadius * (0.06 + this.rng.random() * 0.04);
-        
-        // Store orbit data
+
         this.binaryDigitData.push({
           position: new THREE.Vector3(x, yPos, z),
-          velocity: new THREE.Vector3(
-            (this.rng.random() - 0.5) * 0.02,
-            (this.rng.random() - 0.5) * 0.02,
-            (this.rng.random() - 0.5) * 0.02
-          ),
+          velocity: new THREE.Vector3((this.rng.random() - 0.5) * 0.02, (this.rng.random() - 0.5) * 0.02, (this.rng.random() - 0.5) * 0.02),
           digit: digit,
           scale: sizes[i],
           orbitalSpeed: 0.5 + this.rng.random() * 0.5,
-          phase: this.rng.random() * Math.PI * 2
+          phase: this.rng.random() * Math.PI * 2,
         });
       }
-      
+
       const geometry = new THREE.BufferGeometry();
-      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-      geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-      geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
-      geometry.setAttribute('digit', new THREE.BufferAttribute(digits, 1));
-      
+      geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+      geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+      geometry.setAttribute("size", new THREE.BufferAttribute(sizes, 1));
+      geometry.setAttribute("digit", new THREE.BufferAttribute(digits, 1));
+
       const material = new THREE.ShaderMaterial({
         uniforms: {
           time: { value: 0 },
@@ -311,7 +290,7 @@ export class LifeFormGodEffect {
             float distanceFade = 1.0 / (1.0 + length(mvPosition.xyz) * 0.01);
             
             float pulse = sin(time * 4.0 + position.x * 0.15 + position.y * 0.15 + digit * 3.14) * 0.4 + 0.6;
-            // More dramatic Matrix-style flickering
+
             float matrixFlicker = step(0.95, sin(time * 20.0 + position.x * 50.0 + position.y * 30.0));
             vAlpha = (pulse + matrixFlicker * 0.8) * distanceFade;
             
@@ -328,14 +307,11 @@ export class LifeFormGodEffect {
           void main() {
             vec4 texColor = texture2D(digitTexture, gl_PointCoord);
             
-            // Use different parts of texture for 0 and 1
             vec2 coord = gl_PointCoord;
-            coord.y = 1.0 - coord.y; // Flip Y to fix upside-down digits
+            coord.y = 1.0 - coord.y; 
             if (vDigit < 0.5) {
-              // 0 - use left half of texture
               coord.x *= 0.5;
             } else {
-              // 1 - use right half of texture
               coord.x = coord.x * 0.5 + 0.5;
             }
             
@@ -350,7 +326,7 @@ export class LifeFormGodEffect {
         depthWrite: false,
         vertexColors: true,
       });
-      
+
       const pointCloud = new THREE.Points(geometry, material);
       pointCloud.userData = { systemIndex: system };
       this.binaryDigits.push(pointCloud);
@@ -358,10 +334,9 @@ export class LifeFormGodEffect {
     }
   }
 
-
   private createSacredSymbols(): void {
     const symbolCount = this.params.sacredSymbolCount!;
-    
+
     for (let i = 0; i < symbolCount; i++) {
       const distance = this.planetRadius + 2.0 + this.rng.random() * 1.5;
       const inclination = this.rng.random() * Math.PI;
@@ -370,15 +345,12 @@ export class LifeFormGodEffect {
 
       const position = this.calculateOrbitalPosition(distance, inclination, longitudeOfAscendingNode, initialAngle);
 
-      // Create different sacred symbols - simplified to avoid geometry merge issues
       const symbolType = Math.floor(this.rng.random() * 2);
       let symbolGeometry: THREE.BufferGeometry;
-      
+
       if (symbolType === 0) {
-        // Star
         symbolGeometry = this.createStarGeometry();
       } else {
-        // Eye of Providence (Triangle)
         symbolGeometry = new THREE.ConeGeometry(this.planetRadius * 0.08, this.planetRadius * 0.12, 3);
       }
 
@@ -432,7 +404,7 @@ export class LifeFormGodEffect {
       const symbol = new THREE.Mesh(symbolGeometry, symbolMaterial);
       symbol.position.set(position.x, position.y, position.z);
       symbol.lookAt(0, 0, 0);
-      
+
       symbol.userData = {
         distance: distance,
         inclination: inclination,
@@ -451,74 +423,65 @@ export class LifeFormGodEffect {
   private createCrossGeometry(): THREE.BufferGeometry {
     const size = this.planetRadius * 0.1;
     const thickness = size * 0.2;
-    
-    // Vertical bar
+
     const verticalGeometry = new THREE.BoxGeometry(thickness, size, thickness);
-    // Horizontal bar - create a copy and translate it
     const horizontalGeometry = new THREE.BoxGeometry(size * 0.6, thickness, thickness);
     const horizontalGeometry2 = horizontalGeometry.clone();
     horizontalGeometry2.translate(0, size * 0.2, 0);
-    
-    // Merge geometries manually
+
     const positions1 = verticalGeometry.attributes.position.array;
     const positions2 = horizontalGeometry2.attributes.position.array;
-    
+
     const totalVertices = positions1.length + positions2.length;
     const mergedPositions = new Float32Array(totalVertices);
     mergedPositions.set(positions1, 0);
     mergedPositions.set(positions2, positions1.length);
-    
+
     const mergedGeometry = new THREE.BufferGeometry();
-    mergedGeometry.setAttribute('position', new THREE.BufferAttribute(mergedPositions, 3));
+    mergedGeometry.setAttribute("position", new THREE.BufferAttribute(mergedPositions, 3));
     mergedGeometry.computeVertexNormals();
-    
+
     return mergedGeometry;
   }
 
   private createEnhancedCrossGeometry(): THREE.BufferGeometry {
     const size = this.planetRadius * 0.15;
     const thickness = size * 0.15;
-    
-    // Create a more detailed cross with beveled edges
+
     const verticalGeometry = new THREE.BoxGeometry(thickness, size, thickness);
     const horizontalGeometry = new THREE.BoxGeometry(size * 0.7, thickness, thickness);
     const horizontalGeometry2 = horizontalGeometry.clone();
     horizontalGeometry2.translate(0, size * 0.15, 0);
-    
-    // Add decorative spheres at the ends
+
     const sphereGeometry = new THREE.SphereGeometry(thickness * 0.8, 8, 8);
     const topSphere = sphereGeometry.clone();
     const bottomSphere = sphereGeometry.clone();
     const leftSphere = sphereGeometry.clone();
     const rightSphere = sphereGeometry.clone();
-    
+
     topSphere.translate(0, size * 0.4, 0);
     bottomSphere.translate(0, -size * 0.4, 0);
     leftSphere.translate(-size * 0.25, size * 0.15, 0);
     rightSphere.translate(size * 0.25, size * 0.15, 0);
-    
-    // Merge all geometries
-    const geometries = [
-      verticalGeometry, horizontalGeometry2, 
-      topSphere, bottomSphere, leftSphere, rightSphere
-    ];
-    
+
+    const geometries = [verticalGeometry, horizontalGeometry2, topSphere, bottomSphere, leftSphere, rightSphere];
+
     let totalVertices = 0;
-    geometries.forEach(geo => totalVertices += geo.attributes.position.count * 3);
-    
+    geometries.forEach((geo) => (totalVertices += geo.attributes.position.count * 3));
+
     const mergedPositions = new Float32Array(totalVertices);
     let offset = 0;
-    
-    geometries.forEach(geo => {
+
+    geometries.forEach((geo) => {
       const positions = geo.attributes.position.array;
       mergedPositions.set(positions, offset);
       offset += positions.length;
     });
-    
+
     const mergedGeometry = new THREE.BufferGeometry();
-    mergedGeometry.setAttribute('position', new THREE.BufferAttribute(mergedPositions, 3));
+    mergedGeometry.setAttribute("position", new THREE.BufferAttribute(mergedPositions, 3));
     mergedGeometry.computeVertexNormals();
-    
+
     return mergedGeometry;
   }
 
@@ -526,43 +489,42 @@ export class LifeFormGodEffect {
     const outerRadius = this.planetRadius * 0.08;
     const innerRadius = outerRadius * 0.4;
     const points = 5;
-    
+
     const vertices = [];
-    
+
     for (let i = 0; i < points * 2; i++) {
       const angle = (i / (points * 2)) * Math.PI * 2;
       const radius = i % 2 === 0 ? outerRadius : innerRadius;
       vertices.push(Math.cos(angle) * radius, Math.sin(angle) * radius, 0);
     }
-    
+
     const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-    
+    geometry.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
+
     const indices = [];
     for (let i = 0; i < points * 2 - 2; i++) {
       indices.push(0, i + 1, i + 2);
     }
     indices.push(0, points * 2 - 1, 1);
-    
+
     geometry.setIndex(indices);
     geometry.computeVertexNormals();
-    
+
     return geometry;
   }
 
   private createOrbitalCrosses(): void {
     const crossCount = this.params.orbitalCrossCount!;
-    
+
     for (let i = 0; i < crossCount; i++) {
-      // Procedural positioning with golden ratio and Fibonacci spirals
       const goldenAngle = Math.PI * (3.0 - Math.sqrt(5.0));
-      const distance = this.planetRadius + 1.5 + (i * i * 0.3) + this.rng.random() * 0.5;
-      const inclination = Math.acos(1 - 2 * (i + this.rng.random()) / crossCount);
+      const distance = this.planetRadius + 1.5 + i * i * 0.3 + this.rng.random() * 0.5;
+      const inclination = Math.acos(1 - (2 * (i + this.rng.random())) / crossCount);
       const longitudeOfAscendingNode = i * goldenAngle + this.rng.random() * 0.5;
       const initialAngle = this.rng.random() * Math.PI * 2;
 
       const crossGeometry = this.createEnhancedCrossGeometry();
-      
+
       const crossMaterial = new THREE.ShaderMaterial({
         uniforms: {
           time: { value: 0 },
@@ -604,7 +566,6 @@ export class LifeFormGodEffect {
             float divine = sin(time * 8.0 + vPosition.x * 5.0) * sin(time * 6.0 + vPosition.y * 3.0) * 0.3 + 0.7;
             float sacred = sin(time * 10.0 + crossIndex * 2.0) * 0.2 + 0.8;
             
-            // Add holographic shimmer effect
             float fresnel = pow(1.0 - abs(dot(vNormal, vec3(0.0, 0.0, 1.0))), 2.0);
             float shimmer = sin(time * 15.0 + vPosition.x * 20.0 + vPosition.y * 15.0) * 0.5 + 0.5;
             
@@ -621,12 +582,11 @@ export class LifeFormGodEffect {
       });
 
       const cross = new THREE.Mesh(crossGeometry, crossMaterial);
-      
-      // Procedural rotation based on golden ratio
+
       const rotationPhaseX = i * goldenAngle;
       const rotationPhaseY = i * goldenAngle * 1.618;
       const rotationPhaseZ = i * goldenAngle * 0.618;
-      
+
       cross.userData = {
         distance: distance,
         inclination: inclination,
@@ -649,22 +609,22 @@ export class LifeFormGodEffect {
 
   private createCrossSpirals(): void {
     const spiralCount = this.params.crossSpiralCount!;
-    
+
     for (let s = 0; s < spiralCount; s++) {
       const crossesInSpiral = 12 + s * 6;
       const spiralRadius = this.planetRadius + 2.0 + s * 1.5;
       const spiralHeight = this.planetRadius * 2.0;
-      
+
       for (let i = 0; i < crossesInSpiral; i++) {
         const t = i / crossesInSpiral;
-        const angle = t * Math.PI * 6; // Multiple rotations
+        const angle = t * Math.PI * 6;
         const height = (t - 0.5) * spiralHeight;
         const currentRadius = spiralRadius * (1.0 + Math.sin(t * Math.PI * 3) * 0.2);
-        
+
         const x = Math.cos(angle) * currentRadius;
         const z = Math.sin(angle) * currentRadius;
         const y = height;
-        
+
         const crossGeometry = this.createEnhancedCrossGeometry();
         const crossMaterial = new THREE.ShaderMaterial({
           uniforms: {
@@ -716,11 +676,11 @@ export class LifeFormGodEffect {
           side: THREE.DoubleSide,
           depthWrite: false,
         });
-        
+
         const cross = new THREE.Mesh(crossGeometry, crossMaterial);
         cross.position.set(x, y, z);
         cross.lookAt(0, 0, 0);
-        
+
         cross.userData = {
           spiralIndex: s,
           crossIndex: i,
@@ -729,7 +689,7 @@ export class LifeFormGodEffect {
           height: height,
           rotationSpeed: (this.rng.random() - 0.5) * 0.03,
         };
-        
+
         this.crossSpirals.push(cross);
         this.group.add(cross);
       }
@@ -738,11 +698,11 @@ export class LifeFormGodEffect {
 
   private createHologramRings(): void {
     const ringCount = this.params.hologramRingCount!;
-    
+
     for (let i = 0; i < ringCount; i++) {
       const ringRadius = this.planetRadius + 1.0 + i * 0.8;
       const ringGeometry = new THREE.RingGeometry(ringRadius, ringRadius + 0.02, 128, 1);
-      
+
       const ringMaterial = new THREE.ShaderMaterial({
         uniforms: {
           time: { value: 0 },
@@ -792,18 +752,18 @@ export class LifeFormGodEffect {
         side: THREE.DoubleSide,
         depthWrite: false,
       });
-      
+
       const ring = new THREE.Mesh(ringGeometry, ringMaterial);
-      ring.rotation.x = Math.PI / 2 + (i * 0.2);
+      ring.rotation.x = Math.PI / 2 + i * 0.2;
       ring.rotation.y = i * 0.3;
-      
+
       ring.userData = {
         ringIndex: i,
         baseRotationX: ring.rotation.x,
         baseRotationY: ring.rotation.y,
         rotationSpeed: (this.rng.random() - 0.5) * 0.01,
       };
-      
+
       this.hologramRings.push(ring);
       this.group.add(ring);
     }
@@ -811,23 +771,17 @@ export class LifeFormGodEffect {
 
   private createSacredCircles(): void {
     const circleCount = this.params.sacredCircleCount!;
-    
-    // Create Dyson sphere-like orbital rings
+
     for (let i = 0; i < circleCount; i++) {
       const baseRadius = this.planetRadius + 1.8 + (i % 5) * 0.4;
       const ringThickness = 0.05 + (i % 3) * 0.02;
-      
-      const circleGeometry = new THREE.RingGeometry(
-        baseRadius - ringThickness, 
-        baseRadius + ringThickness, 
-        128, 
-        4
-      );
-      
+
+      const circleGeometry = new THREE.RingGeometry(baseRadius - ringThickness, baseRadius + ringThickness, 128, 4);
+
       const circleMaterial = new THREE.ShaderMaterial({
         uniforms: {
           time: { value: 0 },
-          color: { value: new THREE.Color(1.0, 0.8, 0.1) }, // Golden Dyson rings
+          color: { value: new THREE.Color(1.0, 0.8, 0.1) },
           circleIndex: { value: i },
           ringRadius: { value: baseRadius },
         },
@@ -845,7 +799,6 @@ export class LifeFormGodEffect {
             vPosition = position;
             vDistance = length(position);
             
-            // Dynamic energy pulsing along the ring
             float energy1 = sin(time * 3.0 + circleIndex * 0.8) * 0.2 + 0.8;
             float energy2 = sin(time * 5.0 + atan(position.y, position.x) * 8.0) * 0.3 + 0.7;
             vEnergy = energy1 * energy2;
@@ -865,28 +818,22 @@ export class LifeFormGodEffect {
           varying float vDistance;
           
           void main() {
-            // Create ring structure with energy segments
             float dist = length(vUv - 0.5);
             float ring = smoothstep(0.4, 0.42, dist) * (1.0 - smoothstep(0.48, 0.5, dist));
             
-            // Energy segments - like Dyson sphere panels
             float angle = atan(vUv.y - 0.5, vUv.x - 0.5);
             float segments = sin(angle * 20.0 + time * 2.0 + circleIndex * 3.0) * 0.5 + 0.5;
             segments = step(0.3, segments);
             
-            // Data streams flowing along the ring
             float dataFlow = sin(angle * 15.0 - time * 8.0) * 0.5 + 0.5;
             dataFlow = step(0.7, dataFlow) * 0.8;
             
-            // Holographic shimmer
             float shimmer = sin(time * 12.0 + angle * 25.0 + dist * 30.0) * 0.3 + 0.7;
             
-            // Combine all effects
             float intensity = ring * (segments * 0.7 + dataFlow * 0.5 + 0.3) * shimmer * vEnergy;
             
-            // Color variation based on ring index
             vec3 finalColor = color;
-            finalColor += vec3(0.2, 0.3, 0.0) * sin(circleIndex * 2.0); // Slight color variation per ring
+            finalColor += vec3(0.2, 0.3, 0.0) * sin(circleIndex * 2.0); 
             
             gl_FragColor = vec4(finalColor, intensity);
           }
@@ -898,19 +845,17 @@ export class LifeFormGodEffect {
       });
 
       const circle = new THREE.Mesh(circleGeometry, circleMaterial);
-      
-      // Set up Dyson sphere orbital orientations
+
       const goldenRatio = (1 + Math.sqrt(5)) / 2;
       const fibonacci = ((i * goldenRatio) % 1) * Math.PI * 2;
-      
-      // Multiple orbital planes like a Dyson sphere
-      circle.rotation.x = fibonacci + (i * 0.3);
-      circle.rotation.y = fibonacci * 1.618 + (i * 0.4);
-      circle.rotation.z = fibonacci * 0.618 + (i * 0.2);
-      
+
+      circle.rotation.x = fibonacci + i * 0.3;
+      circle.rotation.y = fibonacci * 1.618 + i * 0.4;
+      circle.rotation.z = fibonacci * 0.618 + i * 0.2;
+
       circle.userData = {
         circleIndex: i,
-        orbitalSpeed: 0.3 + (this.rng.random() * 0.4), // Different orbital speeds
+        orbitalSpeed: 0.3 + this.rng.random() * 0.4,
         baseRotationX: circle.rotation.x,
         baseRotationY: circle.rotation.y,
         baseRotationZ: circle.rotation.z,
@@ -946,12 +891,11 @@ export class LifeFormGodEffect {
       });
 
       const position = this.calculateOrbitalPosition(distance, inclination, longitudeOfAscendingNode, initialAngle);
-      
+
       positions[i * 3] = position.x;
       positions[i * 3 + 1] = position.y + this.rng.random() * 2.0;
       positions[i * 3 + 2] = position.z;
 
-      // Golden particles
       colors[i * 3] = 1.0;
       colors[i * 3 + 1] = 0.84 + this.rng.random() * 0.16;
       colors[i * 3 + 2] = 0.0 + this.rng.random() * 0.3;
@@ -960,9 +904,9 @@ export class LifeFormGodEffect {
     }
 
     const particleGeometry = new THREE.BufferGeometry();
-    particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    particleGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    particleGeometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+    particleGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    particleGeometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    particleGeometry.setAttribute("size", new THREE.BufferAttribute(sizes, 1));
 
     const particleMaterial = new THREE.ShaderMaterial({
       uniforms: {
@@ -1032,12 +976,11 @@ export class LifeFormGodEffect {
       });
 
       const position = this.calculateOrbitalPosition(distance, inclination, longitudeOfAscendingNode, initialAngle);
-      
+
       positions[i * 3] = position.x;
       positions[i * 3 + 1] = position.y;
       positions[i * 3 + 2] = position.z;
 
-      // Divine white-gold particles
       colors[i * 3] = 1.0;
       colors[i * 3 + 1] = 1.0;
       colors[i * 3 + 2] = 0.8 + this.rng.random() * 0.2;
@@ -1046,9 +989,9 @@ export class LifeFormGodEffect {
     }
 
     const particleGeometry = new THREE.BufferGeometry();
-    particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    particleGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    particleGeometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+    particleGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    particleGeometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    particleGeometry.setAttribute("size", new THREE.BufferAttribute(sizes, 1));
 
     const particleMaterial = new THREE.ShaderMaterial({
       uniforms: {
@@ -1098,11 +1041,11 @@ export class LifeFormGodEffect {
 
   private createEnergyWaves(): void {
     const waveCount = 6;
-    
+
     for (let i = 0; i < waveCount; i++) {
       const waveRadius = this.planetRadius + 3.0 + i * 1.0;
       const waveGeometry = new THREE.SphereGeometry(waveRadius, 64, 32);
-      
+
       const waveMaterial = new THREE.ShaderMaterial({
         uniforms: {
           time: { value: 0 },
@@ -1149,13 +1092,13 @@ export class LifeFormGodEffect {
         side: THREE.BackSide,
         depthWrite: false,
       });
-      
+
       const wave = new THREE.Mesh(waveGeometry, waveMaterial);
       wave.userData = {
         waveIndex: i,
         rotationSpeed: (this.rng.random() - 0.5) * 0.005,
       };
-      
+
       this.energyWaves.push(wave);
       this.group.add(wave);
     }
@@ -1163,22 +1106,18 @@ export class LifeFormGodEffect {
 
   private createHolyLights(): void {
     const lightCount = 8;
-    
+
     for (let i = 0; i < lightCount; i++) {
       const angle = (i / lightCount) * Math.PI * 2;
       const distance = this.planetRadius + 2.0;
       const height = (this.rng.random() - 0.5) * this.planetRadius;
-      
+
       const x = Math.cos(angle) * distance;
       const z = Math.sin(angle) * distance;
       const y = height;
-      
-      const light = new THREE.PointLight(
-        new THREE.Color(1.0, 0.9, 0.7),
-        1.5,
-        this.planetRadius * 8.0
-      );
-      
+
+      const light = new THREE.PointLight(new THREE.Color(1.0, 0.9, 0.7), 1.5, this.planetRadius * 8.0);
+
       light.position.set(x, y, z);
       light.userData = {
         lightIndex: i,
@@ -1189,30 +1128,28 @@ export class LifeFormGodEffect {
         distance: distance,
         orbitalSpeed: 0.1 + this.rng.random() * 0.2,
       };
-      
+
       this.holyLights.push(light);
       this.group.add(light);
     }
   }
 
   private createDivineParticleTexture(): THREE.Texture {
-    const canvas = document.createElement('canvas');
+    const canvas = document.createElement("canvas");
     canvas.width = 64;
     canvas.height = 64;
-    const context = canvas.getContext('2d')!;
-    
-    // Create divine star texture
+    const context = canvas.getContext("2d")!;
+
     const gradient = context.createRadialGradient(32, 32, 0, 32, 32, 32);
-    gradient.addColorStop(0, 'rgba(255, 215, 0, 1)');
-    gradient.addColorStop(0.3, 'rgba(255, 255, 100, 0.8)');
-    gradient.addColorStop(0.7, 'rgba(255, 200, 50, 0.4)');
-    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    
+    gradient.addColorStop(0, "rgba(255, 215, 0, 1)");
+    gradient.addColorStop(0.3, "rgba(255, 255, 100, 0.8)");
+    gradient.addColorStop(0.7, "rgba(255, 200, 50, 0.4)");
+    gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
+
     context.fillStyle = gradient;
     context.fillRect(0, 0, 64, 64);
-    
-    // Add cross pattern
-    context.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+
+    context.strokeStyle = "rgba(255, 255, 255, 0.8)";
     context.lineWidth = 2;
     context.beginPath();
     context.moveTo(32, 16);
@@ -1220,98 +1157,88 @@ export class LifeFormGodEffect {
     context.moveTo(16, 32);
     context.lineTo(48, 32);
     context.stroke();
-    
+
     const texture = new THREE.CanvasTexture(canvas);
     return texture;
   }
 
   private createDivineStarTexture(): THREE.Texture {
-    const canvas = document.createElement('canvas');
+    const canvas = document.createElement("canvas");
     canvas.width = 128;
     canvas.height = 128;
-    const context = canvas.getContext('2d')!;
-    
-    // Create divine star with multiple layers
-    const centerX = 64, centerY = 64, radius = 60;
-    
-    // Outer glow
+    const context = canvas.getContext("2d")!;
+
+    const centerX = 64,
+      centerY = 64,
+      radius = 60;
+
     const outerGradient = context.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
-    outerGradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
-    outerGradient.addColorStop(0.2, 'rgba(255, 255, 200, 0.9)');
-    outerGradient.addColorStop(0.5, 'rgba(200, 200, 255, 0.6)');
-    outerGradient.addColorStop(0.8, 'rgba(100, 150, 255, 0.3)');
-    outerGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    
+    outerGradient.addColorStop(0, "rgba(255, 255, 255, 1)");
+    outerGradient.addColorStop(0.2, "rgba(255, 255, 200, 0.9)");
+    outerGradient.addColorStop(0.5, "rgba(200, 200, 255, 0.6)");
+    outerGradient.addColorStop(0.8, "rgba(100, 150, 255, 0.3)");
+    outerGradient.addColorStop(1, "rgba(0, 0, 0, 0)");
+
     context.fillStyle = outerGradient;
     context.fillRect(0, 0, 128, 128);
-    
-    // Star rays
-    context.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+
+    context.strokeStyle = "rgba(255, 255, 255, 0.8)";
     context.lineWidth = 3;
     for (let i = 0; i < 8; i++) {
       const angle = (i / 8) * Math.PI * 2;
       const startR = 10;
       const endR = 55;
-      
+
       context.beginPath();
       context.moveTo(centerX + Math.cos(angle) * startR, centerY + Math.sin(angle) * startR);
       context.lineTo(centerX + Math.cos(angle) * endR, centerY + Math.sin(angle) * endR);
       context.stroke();
     }
-    
-    // Inner core
+
     const innerGradient = context.createRadialGradient(centerX, centerY, 0, centerX, centerY, 20);
-    innerGradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
-    innerGradient.addColorStop(0.5, 'rgba(255, 255, 200, 0.8)');
-    innerGradient.addColorStop(1, 'rgba(255, 200, 100, 0.4)');
-    
+    innerGradient.addColorStop(0, "rgba(255, 255, 255, 1)");
+    innerGradient.addColorStop(0.5, "rgba(255, 255, 200, 0.8)");
+    innerGradient.addColorStop(1, "rgba(255, 200, 100, 0.4)");
+
     context.fillStyle = innerGradient;
     context.beginPath();
     context.arc(centerX, centerY, 20, 0, Math.PI * 2);
     context.fill();
-    
+
     const texture = new THREE.CanvasTexture(canvas);
     return texture;
   }
 
   private createBinaryDigitTexture(): THREE.Texture {
-    const canvas = document.createElement('canvas');
+    const canvas = document.createElement("canvas");
     canvas.width = 128;
     canvas.height = 64;
-    const context = canvas.getContext('2d')!;
-    
-    // Clear canvas
-    context.fillStyle = 'rgba(0, 0, 0, 0)';
+    const context = canvas.getContext("2d")!;
+
+    context.fillStyle = "rgba(0, 0, 0, 0)";
     context.fillRect(0, 0, 128, 64);
-    
-    // Create "0" on the left half
-    context.fillStyle = 'rgba(255, 255, 255, 1)';
-    context.font = 'bold 48px monospace';
-    context.textAlign = 'center';
-    context.textBaseline = 'middle';
-    context.fillText('0', 32, 32);
-    
-    // Create "1" on the right half
-    context.fillText('1', 96, 32);
-    
-    // Add Matrix-style glow effect
-    context.shadowColor = '#ffffff';
+
+    context.fillStyle = "rgba(255, 255, 255, 1)";
+    context.font = "bold 48px monospace";
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    context.fillText("0", 32, 32);
+
+    context.fillText("1", 96, 32);
+
+    context.shadowColor = "#ffffff";
     context.shadowBlur = 8;
-    context.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    context.fillText('0', 32, 32);
-    context.fillText('1', 96, 32);
-    
+    context.fillStyle = "rgba(255, 255, 255, 0.9)";
+    context.fillText("0", 32, 32);
+    context.fillText("1", 96, 32);
+
     const texture = new THREE.CanvasTexture(canvas);
     texture.needsUpdate = true;
     return texture;
   }
 
   private createSpaceDistortion(): void {
-    const distortionGeometry = new THREE.SphereGeometry(
-      this.planetRadius + 5.0,
-      64,
-      32
-    );
+    const distortionGeometry = new THREE.SphereGeometry(this.planetRadius + 5.0, 64, 32);
 
     const distortionMaterial = new THREE.ShaderMaterial({
       uniforms: {
@@ -1359,11 +1286,7 @@ export class LifeFormGodEffect {
   }
 
   private createDivineLight(): void {
-    this.divineLight = new THREE.PointLight(
-      new THREE.Color(this.params.color![0], this.params.color![1], this.params.color![2]),
-      2.0,
-      this.planetRadius * 10.0
-    );
+    this.divineLight = new THREE.PointLight(new THREE.Color(this.params.color![0], this.params.color![1], this.params.color![2]), 2.0, this.planetRadius * 10.0);
     this.divineLight.position.set(0, this.planetRadius * 1.5, 0);
     this.group.add(this.divineLight);
   }
@@ -1389,77 +1312,64 @@ export class LifeFormGodEffect {
     const timeSinceCosmicOrigin = currentTimeSeconds - (this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME);
     const animTime = timeSinceCosmicOrigin + this.cosmicOffset;
 
-    // Update Digital God Sphere
     if (this.digitalGodSphere) {
       const userData = this.digitalGodSphere.userData;
-      
-      // Keep digital god sphere position synced with planet position if updated
+
       if (this.params.planetPosition && userData.planetPosition) {
         if (!this.params.planetPosition.equals(userData.planetPosition)) {
           this.digitalGodSphere.position.copy(this.params.planetPosition);
           userData.planetPosition.copy(this.params.planetPosition);
         }
       }
-      
-      // Digital rotation - slightly faster for digital feel (use animTime for sync)
+
       this.digitalGodSphere.rotation.y = userData.baseRotationY + animTime * userData.rotationSpeed;
       this.digitalGodSphere.rotation.x = userData.baseRotationX + animTime * userData.rotationSpeed * 0.3;
-      
-      // Update shader uniforms for digital sphere
+
       const sphereMaterial = this.godSphere.material as THREE.ShaderMaterial;
       sphereMaterial.uniforms.time.value = animTime;
-      
-      // Subtle digital breathing effect for the entire god sphere
+
       const digitalBreath = Math.sin(animTime * 1.2) * 0.015 + 1.0;
       this.digitalGodSphere.scale.setScalar(digitalBreath);
     }
 
-    // Update Binary Digits with procedural movement
     this.binaryDigits.forEach((pointCloud) => {
       const material = pointCloud.material as THREE.ShaderMaterial;
       material.uniforms.time.value = animTime;
-      
+
       const positions = pointCloud.geometry.attributes.position.array as Float32Array;
       const systemIndex = pointCloud.userData.systemIndex;
-      
+
       for (let i = 0; i < positions.length / 3; i++) {
         const dataIndex = systemIndex * Math.floor(this.binaryDigits[0].geometry.attributes.position.count) + i;
         if (dataIndex < this.binaryDigitData.length) {
           const digitData = this.binaryDigitData[dataIndex];
-          
-          // Procedural movement based on sphere surface flow
+
           const time = animTime * digitData.orbitalSpeed;
           const phase = digitData.phase;
-          
-          // Create flowing movement on sphere surface
+
           const sphereRadius = this.planetRadius * 1.35;
-          
-          // Original position as a base
+
           const basePos = digitData.position.clone().normalize();
-          
-          // Add orbital movement around sphere
+
           const orbitalMatrix = new THREE.Matrix4();
           orbitalMatrix.makeRotationY(time * 0.5 + phase);
           orbitalMatrix.multiply(new THREE.Matrix4().makeRotationX(time * 0.3 + phase * 0.7));
-          
+
           const finalPos = basePos.clone();
           finalPos.applyMatrix4(orbitalMatrix);
           finalPos.multiplyScalar(sphereRadius);
-          
-          // Add some random drift
+
           finalPos.add(digitData.velocity.clone().multiplyScalar(Math.sin(time + phase)));
-          
+
           positions[i * 3] = finalPos.x;
           positions[i * 3 + 1] = finalPos.y;
           positions[i * 3 + 2] = finalPos.z;
         }
       }
-      
+
       pointCloud.geometry.attributes.position.needsUpdate = true;
     });
 
-
-    // Update Sacred Symbols
     this.sacredSymbols.forEach((symbol) => {
       const userData = symbol.userData;
       const currentAngle = userData.initialAngle + animTime * userData.orbitalSpeed * 0.05;
@@ -1474,7 +1384,6 @@ export class LifeFormGodEffect {
       material.uniforms.time.value = animTime;
     });
 
-    // Update Orbital Crosses with enhanced procedural rotation
     this.orbitalCrosses.forEach((cross) => {
       const userData = cross.userData;
       const currentAngle = userData.initialAngle + animTime * userData.orbitalSpeed * 0.08;
@@ -1482,12 +1391,10 @@ export class LifeFormGodEffect {
       const position = this.calculateOrbitalPosition(userData.distance, userData.inclination, userData.longitudeOfAscendingNode, currentAngle);
       cross.position.set(position.x, position.y, position.z);
 
-      // Procedural rotation based on golden ratio and time
       cross.rotation.x = userData.rotationPhaseX + animTime * userData.rotationSpeedX;
       cross.rotation.y = userData.rotationPhaseY + animTime * userData.rotationSpeedY;
       cross.rotation.z = userData.rotationPhaseZ + animTime * userData.rotationSpeedZ;
 
-      // Add divine oscillation
       const divineOscillation = Math.sin(animTime * 3.0 + userData.crossIndex) * 0.3;
       cross.rotation.x += divineOscillation;
       cross.rotation.y += divineOscillation * 1.618;
@@ -1497,64 +1404,54 @@ export class LifeFormGodEffect {
       material.uniforms.time.value = animTime;
     });
 
-    // Update Cross Spirals
     this.crossSpirals.forEach((cross) => {
       const userData = cross.userData;
-      
-      // Spiral rotation and movement
+
       const spiralTime = animTime * 0.5;
       const newAngle = userData.angle + spiralTime;
       const oscillation = Math.sin(spiralTime * 2.0 + userData.crossIndex * 0.1) * 0.3;
-      
+
       const x = Math.cos(newAngle) * userData.spiralRadius * (1.0 + oscillation);
       const z = Math.sin(newAngle) * userData.spiralRadius * (1.0 + oscillation);
       const y = userData.height + Math.sin(spiralTime * 3.0 + userData.crossIndex) * 0.5;
-      
+
       cross.position.set(x, y, z);
       cross.lookAt(0, 0, 0);
       cross.rotation.z += userData.rotationSpeed;
-      
+
       const material = cross.material as THREE.ShaderMaterial;
       material.uniforms.time.value = animTime;
     });
 
-    // Update Hologram Rings
     this.hologramRings.forEach((ring) => {
       const userData = ring.userData;
-      
+
       ring.rotation.x = userData.baseRotationX + animTime * userData.rotationSpeed;
       ring.rotation.y = userData.baseRotationY + animTime * userData.rotationSpeed * 0.7;
       ring.rotation.z += userData.rotationSpeed * 0.5;
-      
+
       const material = ring.material as THREE.ShaderMaterial;
       material.uniforms.time.value = animTime;
     });
 
-    // Update Dyson Sphere Rings - orbital rotation around planet
     this.sacredCircles.forEach((circle) => {
       const userData = circle.userData;
-      
-      // Create orbital rotation matrix - each ring orbits around the planet
+
       const orbitalAngle = animTime * userData.orbitalSpeed * 0.1 + userData.orbitalPhase;
-      
-      // Reset to base orientation
+
       circle.rotation.x = userData.baseRotationX;
       circle.rotation.y = userData.baseRotationY;
       circle.rotation.z = userData.baseRotationZ;
-      
-      // Apply orbital rotation around the planet's center
-      // This rotates the entire ring around the planet while maintaining its orientation
+
       const orbitalMatrix = new THREE.Matrix4();
       orbitalMatrix.makeRotationY(orbitalAngle);
-      
-      // Apply the orbital rotation to the ring
+
       circle.applyMatrix4(orbitalMatrix);
-      
+
       const material = circle.material as THREE.ShaderMaterial;
       material.uniforms.time.value = animTime;
     });
 
-    // Update Golden Particles
     if (this.goldenParticles) {
       const particleMaterial = this.goldenParticles.material as THREE.ShaderMaterial;
       particleMaterial.uniforms.time.value = animTime;
@@ -1563,17 +1460,11 @@ export class LifeFormGodEffect {
       for (let i = 0; i < positions.length / 3; i++) {
         const orbitData = this.particleOrbitData[i];
         const currentAngle = orbitData.initialAngle + animTime * orbitData.orbitalSpeed * 0.03;
-        
-        const position = this.calculateOrbitalPosition(
-          orbitData.distance,
-          orbitData.inclination,
-          orbitData.longitudeOfAscendingNode,
-          currentAngle
-        );
 
-        // Divine falling effect
+        const position = this.calculateOrbitalPosition(orbitData.distance, orbitData.inclination, orbitData.longitudeOfAscendingNode, currentAngle);
+
         const fallOffset = Math.sin(animTime * orbitData.fallSpeed + i * 0.1) * 0.5;
-        
+
         positions[i * 3] = position.x;
         positions[i * 3 + 1] = position.y + fallOffset;
         positions[i * 3 + 2] = position.z;
@@ -1581,7 +1472,6 @@ export class LifeFormGodEffect {
       this.goldenParticles.geometry.attributes.position.needsUpdate = true;
     }
 
-    // Update Divine Particles
     if (this.divineParticles) {
       const particleMaterial = this.divineParticles.material as THREE.ShaderMaterial;
       particleMaterial.uniforms.time.value = animTime;
@@ -1590,18 +1480,12 @@ export class LifeFormGodEffect {
       for (let i = 0; i < positions.length / 3; i++) {
         const orbitData = this.divineParticleOrbitData[i];
         const currentAngle = orbitData.initialAngle + animTime * orbitData.orbitalSpeed * 0.05;
-        
-        const position = this.calculateOrbitalPosition(
-          orbitData.distance,
-          orbitData.inclination,
-          orbitData.longitudeOfAscendingNode,
-          currentAngle
-        );
 
-        // Divine floating effect with phase
+        const position = this.calculateOrbitalPosition(orbitData.distance, orbitData.inclination, orbitData.longitudeOfAscendingNode, currentAngle);
+
         const floatOffset = Math.sin(animTime * 2.0 + orbitData.phase) * 1.0;
         const spiralOffset = Math.sin(animTime * 1.0 + i * 0.1) * 0.3;
-        
+
         positions[i * 3] = position.x + spiralOffset;
         positions[i * 3 + 1] = position.y + floatOffset;
         positions[i * 3 + 2] = position.z + spiralOffset;
@@ -1609,51 +1493,44 @@ export class LifeFormGodEffect {
       this.divineParticles.geometry.attributes.position.needsUpdate = true;
     }
 
-    // Update Energy Waves
     this.energyWaves.forEach((wave) => {
       const userData = wave.userData;
-      
+
       wave.rotation.x += userData.rotationSpeed;
       wave.rotation.y += userData.rotationSpeed * 1.3;
       wave.rotation.z += userData.rotationSpeed * 0.7;
-      
+
       const material = wave.material as THREE.ShaderMaterial;
       material.uniforms.time.value = animTime;
-      
-      // Pulsating effect
+
       const pulse = Math.sin(animTime * 2.0 + userData.waveIndex * 0.5) * 0.1 + 1.0;
       wave.scale.setScalar(pulse);
     });
 
-    // Update Holy Lights
     this.holyLights.forEach((light) => {
       const userData = light.userData;
-      
-      // Orbital movement
+
       const currentAngle = userData.angle + animTime * userData.orbitalSpeed * 0.1;
       const heightOscillation = Math.sin(animTime * 1.5 + userData.lightIndex) * userData.distance * 0.5;
-      
+
       const x = Math.cos(currentAngle) * userData.distance;
       const z = Math.sin(currentAngle) * userData.distance;
       const y = userData.baseY + heightOscillation;
-      
+
       light.position.set(x, y, z);
-      
-      // Intensity pulsing
+
       const intensity = Math.sin(animTime * 4.0 + userData.lightIndex * 0.8) * 0.8 + 1.2;
       light.intensity = intensity;
     });
 
-    // Update Space Distortion
     if (this.spaceDistortion) {
       const distortionMaterial = this.spaceDistortion.material as THREE.ShaderMaterial;
       distortionMaterial.uniforms.time.value = animTime;
-      
+
       this.spaceDistortion.rotation.x += 0.001;
       this.spaceDistortion.rotation.y += 0.0015;
     }
 
-    // Update Divine Light
     if (this.divineLight) {
       const divineIntensity = Math.sin(animTime * 2.0) * 0.5 + 1.5;
       this.divineLight.intensity = divineIntensity;
@@ -1677,19 +1554,16 @@ export class LifeFormGodEffect {
 
   public dispose(): void {
     if (this.digitalGodSphere) {
-      // Dispose digital god sphere components
       if (this.godSphere) {
         this.godSphere.geometry.dispose();
         (this.godSphere.material as THREE.Material).dispose();
       }
     }
 
-    // Dispose binary digits
     this.binaryDigits.forEach((pointCloud) => {
       pointCloud.geometry.dispose();
       (pointCloud.material as THREE.Material).dispose();
     });
-
 
     this.sacredSymbols.forEach((symbol) => {
       symbol.geometry.dispose();
@@ -1731,9 +1605,7 @@ export class LifeFormGodEffect {
       (wave.material as THREE.Material).dispose();
     });
 
-    this.holyLights.forEach(() => {
-      // Point lights don't need geometry disposal
-    });
+    this.holyLights.forEach(() => {});
 
     if (this.spaceDistortion) {
       this.spaceDistortion.geometry.dispose();
@@ -1758,7 +1630,6 @@ export class LifeFormGodEffect {
         material.uniforms.color.value = color;
       }
 
-
       if (this.divineLight) {
         this.divineLight.color = color;
       }
@@ -1767,8 +1638,7 @@ export class LifeFormGodEffect {
 
   public updatePlanetPosition(planetPosition: THREE.Vector3): void {
     this.params.planetPosition = planetPosition;
-    
-    // Immediately update digital god sphere position to match planet
+
     if (this.digitalGodSphere) {
       this.digitalGodSphere.position.copy(planetPosition);
       if (this.digitalGodSphere.userData.planetPosition) {
