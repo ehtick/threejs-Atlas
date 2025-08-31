@@ -29,6 +29,7 @@ interface PlanetVisualizationProps {
 
 const PlanetVisualization: React.FC<PlanetVisualizationProps> = ({ planetUrl, planet, cosmicOriginTime, initialAngleRotation }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const decelerateRef = useRef(false);
   const [stargateText, setStargateText] = useState("Aligning Stargate...");
   const [isAnimating, setIsAnimating] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -48,7 +49,6 @@ const PlanetVisualization: React.FC<PlanetVisualizationProps> = ({ planetUrl, pl
     const maxCanvasSize = 800;
     let animationId: number;
     let speed = 0.5;
-    let decelerate = false;
 
     function resizeCanvas() {
       const container = canvas?.parentElement;
@@ -106,11 +106,11 @@ const PlanetVisualization: React.FC<PlanetVisualizationProps> = ({ planetUrl, pl
         ctx.fill();
       });
 
-      if (!decelerate && speed < 60) {
+      if (!decelerateRef.current && speed < 60) {
         speed += 1;
       }
 
-      if (decelerate && speed > 2) {
+      if (decelerateRef.current && speed > 2) {
         speed -= 2;
       }
 
@@ -134,7 +134,8 @@ const PlanetVisualization: React.FC<PlanetVisualizationProps> = ({ planetUrl, pl
     setTimeout(() => {
       setImageLoaded(true);
       setCanvasHidden(true);
-    }, 1500);
+      decelerateRef.current = true;
+    }, 800);
   }, []);
 
   useEffect(() => {

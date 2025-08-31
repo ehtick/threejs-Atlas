@@ -11,6 +11,7 @@ interface SystemVisualizationProps {
 const SystemVisualization: React.FC<SystemVisualizationProps> = ({ systemUrl, imageUrl }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
+  const decelerateRef = useRef(false);
   const [stargateText, setStargateText] = useState("Aligning Stargate...");
   const [isAnimating, setIsAnimating] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -57,7 +58,6 @@ const SystemVisualization: React.FC<SystemVisualizationProps> = ({ systemUrl, im
     const maxCanvasSize = 800;
     let animationId: number;
     let speed = 0.5;
-    let decelerate = false;
 
     function resizeCanvas() {
       const container = canvas?.parentElement;
@@ -115,11 +115,11 @@ const SystemVisualization: React.FC<SystemVisualizationProps> = ({ systemUrl, im
         ctx.fill();
       });
 
-      if (!decelerate && speed < 60) {
+      if (!decelerateRef.current && speed < 60) {
         speed += 1;
       }
 
-      if (decelerate && speed > 2) {
+      if (decelerateRef.current && speed > 2) {
         speed -= 2;
       }
 
@@ -148,6 +148,7 @@ const SystemVisualization: React.FC<SystemVisualizationProps> = ({ systemUrl, im
           imageRef.current.src = imageUrl;
           setImageLoaded(true);
           setCanvasHidden(true);
+          decelerateRef.current = true;
         }
       };
 
@@ -155,7 +156,8 @@ const SystemVisualization: React.FC<SystemVisualizationProps> = ({ systemUrl, im
         setTimeout(() => {
           setImageLoaded(true);
           setCanvasHidden(true);
-        }, 1500);
+          decelerateRef.current = true;
+        }, 800);
       };
 
       highResImg.src = imageUrl;
@@ -163,7 +165,8 @@ const SystemVisualization: React.FC<SystemVisualizationProps> = ({ systemUrl, im
       setTimeout(() => {
         setImageLoaded(true);
         setCanvasHidden(true);
-      }, 1500);
+        decelerateRef.current = true;
+      }, 800);
     }
   }, [imageUrl]);
 
