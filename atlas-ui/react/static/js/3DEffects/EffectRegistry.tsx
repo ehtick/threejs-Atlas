@@ -53,6 +53,7 @@ import { FireEruptionEffect, createFireEruptionFromPythonData } from "./FireErup
 import { CarbonTrailsEffect, createCarbonTrailsFromPythonData } from "./CarbonTrails";
 import { RadiationRingsEffect, createRadiationRingsFromPythonData } from "./RadiationRings";
 import { SuperEarthWaterFeaturesEffect, createSuperEarthWaterFeaturesFromPythonData } from "./SuperEarthWaterFeatures";
+import { LifeFormIntelligentLifeEffect, createLifeFormIntelligentLifeFromPythonData } from "./LifeFormIntelligentLife";
 
 import { VisualDebug3DEffect, createVisualDebug3DFromPythonData } from "./VisualDebug3D";
 import { ENABLE_EFFECTS_LOGGING } from "../Utils/DebugConfig.tsx";
@@ -116,6 +117,8 @@ export enum EffectType {
   CITY_LIGHTS = "city_lights",
   BIOLUMINESCENCE = "bioluminescence",
   THERMAL_EMISSIONS = "thermal_emissions",
+
+  LIFE_FORM_INTELLIGENT_LIFE = "life_form_intelligent_life",
 
   TUNDRA_SNOWFLAKES = "tundra_snowflakes",
 
@@ -258,6 +261,11 @@ export class EffectRegistry {
     this.registerEffect(EffectType.RADIATION_RINGS, {
       create: (params, planetRadius) => new RadiationRingsEffect(planetRadius, params),
       fromPythonData: (data, planetRadius) => createRadiationRingsFromPythonData(planetRadius, data, data.seeds?.planet_seed),
+    });
+
+    this.registerEffect(EffectType.LIFE_FORM_INTELLIGENT_LIFE, {
+      create: (params, planetRadius) => new LifeFormIntelligentLifeEffect(planetRadius, params),
+      fromPythonData: (data, planetRadius) => createLifeFormIntelligentLifeFromPythonData(planetRadius, data, data.seeds?.planet_seed),
     });
 
     this.registerEffect(EffectType.CRYSTAL_FORMATIONS, {
@@ -2869,6 +2877,15 @@ export class EffectRegistry {
         if (fragmentationEffect) {
           effects.push(fragmentationEffect);
           fragmentationEffect.effect.addToScene(scene, mesh.position);
+        }
+      }
+
+      // Life Forms Processing
+      if (pythonData.original_planet_data && pythonData.original_planet_data.life_forms === "Intelligent Life") {
+        const intelligentLifeEffect = this.createEffectFromPythonData(EffectType.LIFE_FORM_INTELLIGENT_LIFE, pythonData, planetRadius, mesh, 10);
+        if (intelligentLifeEffect) {
+          effects.push(intelligentLifeEffect);
+          intelligentLifeEffect.effect.addToScene(scene, mesh.position);
         }
       }
 
