@@ -146,10 +146,10 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, ga
             setIsFullscreen(true);
             setIsEntering(true);
           }}
-          className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-lg border border-white/20 hover:border-white/40 transition-all duration-200 backdrop-blur-sm"
-          title="Expand Galaxy View"
+          className="absolute top-2 right-2 p-2 bg-black/60 hover:bg-black/80 border border-white/30 rounded-lg transition-all duration-200 backdrop-blur-sm shadow-lg z-10"
+          title="Expand to fullscreen"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
           </svg>
         </button>
@@ -185,22 +185,24 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, ga
                   <h2 className="text-xs font-medium text-white">Galaxy View</h2>
                 </div>
                 <div className="hidden sm:block">
-                  <h2 className="text-lg font-bold text-white">Galaxy Visualization - {galaxyType}</h2>
+                  <div>
+                    <h2 className="text-lg font-bold text-white">Galaxy Visualization</h2>
+                    <div className="text-sm text-gray-400">Type: {galaxyType} • Systems: {numSystems.toLocaleString()}</div>
+                  </div>
                 </div>
-                
-                <button
-                  onClick={handleCloseFullscreen}
-                  className="p-2 bg-black/60 hover:bg-black/80 border border-white/30 rounded-lg transition-all duration-200 flex items-center gap-1 backdrop-blur-sm shadow-lg"
-                  title="Exit fullscreen"
+
+                <button 
+                  onClick={handleCloseFullscreen} 
+                  className="p-0.5 sm:p-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded transition-colors duration-200 text-red-400 hover:text-red-300" 
+                  title="Close"
                 >
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3 h-3 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
-                  <span className="hidden sm:inline text-xs text-white">Close</span>
                 </button>
               </div>
 
-              <div className="flex-1 relative">
+              <div className="flex-1 border border-white/20 rounded-lg bg-black/20 overflow-hidden min-h-0">
                 <Galaxy3DViewerFullscreen 
                   galaxyType={galaxyType} 
                   numSystems={numSystems} 
@@ -210,8 +212,8 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, ga
                 />
               </div>
 
-              <div className="text-xs text-gray-400 text-center mt-2">
-                <div className="hidden sm:block">Mouse: Rotate • Scroll: Zoom • ESC: Close</div>
+              <div className="mt-2 sm:mt-4 text-center text-xs sm:text-sm text-gray-400">
+                <div className="hidden sm:block">Scroll: Zoom • Drag: Rotate View • ESC: Close</div>
                 <div className="sm:hidden">Pinch: Zoom • Drag: Rotate • ESC: Close</div>
               </div>
             </div>
