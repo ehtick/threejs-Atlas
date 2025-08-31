@@ -4,6 +4,7 @@ import { getVisitedPlanets, markPlanetAsVisited } from "../Utils/VisitHistory.ts
 
 interface Planet {
   name: string;
+  planet_type: string;
 }
 
 interface PlanetsListProps {
@@ -14,6 +15,40 @@ interface PlanetsListProps {
 
 const PlanetsList: React.FC<PlanetsListProps> = ({ planets, coordinates, systemIndex }) => {
   const [visitedPlanets, setVisitedPlanets] = useState<Set<string>>(new Set());
+
+  const getPlanetColor = (planetType: string): string => {
+    const fallbackColors: Record<string, string> = {
+      "Gas Giant": "#FFA500",
+      Anomaly: "#FFFFFF",
+      Rocky: "#808080",
+      Icy: "#ADD8E6",
+      Oceanic: "#0000FF",
+      Desert: "#FFD700",
+      Lava: "#FF0000",
+      Arid: "#800000",
+      Swamp: "#008000",
+      Tundra: "#F0F8FF",
+      Forest: "#006400",
+      Savannah: "#F4A460",
+      Cave: "#D1D1D1",
+      Crystalline: "#00FFFF",
+      Metallic: "#C0C0C0",
+      Toxic: "#800080",
+      Radioactive: "#00FF00",
+      Magma: "#FF4500",
+      "Molten Core": "#FF8C00",
+      Carbon: "#090909",
+      Diamond: "#87CEFA",
+      "Super Earth": "#90EE90",
+      "Sub Earth": "#006400",
+      "Frozen Gas Giant": "#ADD8E6",
+      Nebulous: "#FFC0CB",
+      Aquifer: "#00FFFF",
+      Exotic: "#FF00FF",
+    };
+
+    return fallbackColors[planetType] || "#FFFFFF";
+  };
 
   useEffect(() => {
     const loadHistoricalData = () => {
@@ -48,8 +83,10 @@ const PlanetsList: React.FC<PlanetsListProps> = ({ planets, coordinates, systemI
     <div className="bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 shadow-2xl p-4 sm:p-6">
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
         {planets.map((planet) => (
-          <div key={planet.name} className="relative bg-white/10 rounded-lg border border-white/20 hover:bg-white/20 hover:border-white/40 transition-all duration-300 group">
+          <div key={planet.name} className="relative bg-white/10 rounded-lg border border-white/20 hover:bg-white/20 hover:border-white/40 transition-all duration-300 group overflow-hidden">
             {visitedPlanets.has(planet.name.toLowerCase()) && <div className="absolute top-1 right-1 bg-green-500/20 border border-green-500/50 text-green-400 text-[10px] px-1.5 py-0.5 rounded z-10">VISITED</div>}
+
+            <div className="absolute -top-3 -left-3 w-8 h-8 rounded-full border border-white/40 shadow-sm z-20 animate-pulse" style={{ backgroundColor: getPlanetColor(planet.planet_type) }}></div>
 
             <button onClick={() => handlePlanetClick(planet.name)} className="w-full text-left block p-2 sm:p-3 text-gray-200 hover:text-white transition-colors duration-300 rounded-lg">
               <div className="text-center">
