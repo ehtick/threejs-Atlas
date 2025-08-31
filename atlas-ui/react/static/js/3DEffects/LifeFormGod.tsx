@@ -13,7 +13,7 @@ const PROCEDURAL_RANGES = {
   ORBITAL_SPEED: { min: 0.2, max: 1.0 },
   CROSS_SPIRAL_COUNT: { min: 3, max: 6 },
   HOLOGRAM_RING_COUNT: { min: 4, max: 8 },
-  BINARY_DIGIT_COUNT: { min: 2000, max: 2500 },
+  BINARY_DIGIT_COUNT: { min: 200, max: 600 },
 };
 
 export interface LifeFormGodParams {
@@ -328,6 +328,7 @@ export class LifeFormGodEffect {
             
             // Use different parts of texture for 0 and 1
             vec2 coord = gl_PointCoord;
+            coord.y = 1.0 - coord.y; // Flip Y to fix upside-down digits
             if (vDigit < 0.5) {
               // 0 - use left half of texture
               coord.x *= 0.5;
