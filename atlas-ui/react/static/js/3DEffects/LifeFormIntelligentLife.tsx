@@ -5,8 +5,8 @@ import { DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime.tsx";
 
 const PROCEDURAL_RANGES = {
   SATELLITE_COUNT: { min: 1, max: 10 },
-  SATELLITE_DISTANCE: { min: 1, max: 1 },
-  ORBITAL_SPEED: { min: 0.2, max: 1.2 },
+  SATELLITE_DISTANCE: { min: 0.8, max: 1.2 },
+  ORBITAL_SPEED: { min: 0.4, max: 1.0 },
 };
 
 export interface LifeFormIntelligentLifeParams {
@@ -21,10 +21,13 @@ export interface LifeFormIntelligentLifeParams {
 export class LifeFormIntelligentLifeEffect {
   private group: THREE.Group;
   private satellites: THREE.Mesh[] = [];
+  private trails: THREE.Line[] = [];
+  private trailPositions: THREE.Vector3[][] = [];
   private params: LifeFormIntelligentLifeParams;
   private rng: SeededRandom;
   private planetRadius: number;
   private cosmicOffset: number;
+  private readonly TRAIL_LENGTH = 15;
 
   constructor(planetRadius: number, params: LifeFormIntelligentLifeParams = {}) {
     this.planetRadius = planetRadius;
@@ -82,7 +85,59 @@ export class LifeFormIntelligentLifeEffect {
 
       this.satellites.push(satellite);
       this.group.add(satellite);
+
+      // Create trail for this satellite
+      this.createTrail(i);
     }
+  }
+
+  private createTrail(satelliteIndex: number): void {
+    // Initialize trail positions array
+    const trailPositions = [];
+    const trailOpacities = [];
+    
+    for (let i = 0; i < this.TRAIL_LENGTH; i++) {
+      trailPositions.push(new THREE.Vector3(0, 0, 0));
+      // Create opacity gradient: full opacity at satellite (i=0), fading to 0 at the end
+      const opacity = (this.TRAIL_LENGTH - i) / this.TRAIL_LENGTH;
+      trailOpacities.push(opacity);
+    }
+    this.trailPositions[satelliteIndex] = trailPositions;
+
+    // Create trail geometry with opacity attributes
+    const geometry = new THREE.BufferGeometry().setFromPoints(trailPositions);
+    geometry.setAttribute('opacity', new THREE.Float32BufferAttribute(trailOpacities, 1));
+    
+    // Create trail material with shader for gradient opacity
+    const material = new THREE.ShaderMaterial({
+      uniforms: {
+        color: { value: new THREE.Color(this.params.color![0], this.params.color![1], this.params.color![2]) },
+      },
+      vertexShader: `
+        attribute float opacity;
+        varying float vOpacity;
+        
+        void main() {
+          vOpacity = opacity;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 color;
+        varying float vOpacity;
+        
+        void main() {
+          gl_FragColor = vec4(color, vOpacity);
+        }
+      `,
+      transparent: true,
+      depthWrite: false,
+    });
+
+    const trail = new THREE.Line(geometry, material);
+    trail.renderOrder = 998; // Behind satellites
+    this.trails.push(trail);
+    this.group.add(trail);
   }
 
   private calculateOrbitalPosition(distance: number, inclination: number, longitudeOfAscendingNode: number, angle: number): THREE.Vector3 {
@@ -111,8 +166,8 @@ export class LifeFormIntelligentLifeEffect {
     const timeSinceCosmicOrigin = currentTimeSeconds - (this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME);
     const animTime = (timeSinceCosmicOrigin + this.cosmicOffset) * (this.params.orbitalSpeed || 1.0);
 
-    // Update satellites orbital motion
-    this.satellites.forEach((satellite) => {
+    // Update satellites orbital motion and trails
+    this.satellites.forEach((satellite, index) => {
       const userData = satellite.userData;
       const currentAngle = userData.initialAngle + animTime * userData.orbitalSpeed * 0.1;
       
@@ -126,7 +181,45 @@ export class LifeFormIntelligentLifeEffect {
       
       satellite.position.set(position.x, position.y, position.z);
       satellite.rotation.y = currentAngle;
+
+      // Update trail with interpolation for smooth trails even at low speeds
+      this.updateTrailWithInterpolation(index);
     });
+  }
+
+  private updateTrailWithInterpolation(satelliteIndex: number): void {
+    const trailPositions = this.trailPositions[satelliteIndex];
+    const satellite = this.satellites[satelliteIndex];
+    const userData = satellite.userData;
+    
+    // Generate trail based on orbital trajectory, not time-dependent movement
+    // This ensures trails are always visible regardless of orbital speed
+    const currentTimeSeconds = Date.now() / 1000;
+    const timeSinceCosmicOrigin = currentTimeSeconds - (this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME);
+    const animTime = (timeSinceCosmicOrigin + this.cosmicOffset) * (this.params.orbitalSpeed || 1.0);
+    const currentAngle = userData.initialAngle + animTime * userData.orbitalSpeed * 0.1;
+    
+    // Calculate trail positions going backwards in the orbital path
+    for (let i = 0; i < this.TRAIL_LENGTH; i++) {
+      // Each trail point represents a position further back in the orbit
+      const trailAngleOffset = (i * 0.05); // Adjust this value to control trail density
+      const trailAngle = currentAngle - trailAngleOffset;
+      
+      const trailPosition = this.calculateOrbitalPosition(
+        userData.distance,
+        userData.inclination,
+        userData.longitudeOfAscendingNode,
+        trailAngle
+      );
+      
+      trailPositions[i].copy(trailPosition);
+    }
+    
+    // Update trail geometry
+    const trail = this.trails[satelliteIndex];
+    const geometry = trail.geometry as THREE.BufferGeometry;
+    geometry.setFromPoints(trailPositions);
+    geometry.attributes.position.needsUpdate = true;
   }
 
   public getObject3D(): THREE.Object3D {
@@ -150,6 +243,11 @@ export class LifeFormIntelligentLifeEffect {
       (satellite.material as THREE.Material).dispose();
     });
 
+    this.trails.forEach((trail) => {
+      trail.geometry.dispose();
+      (trail.material as THREE.Material).dispose();
+    });
+
     this.group.clear();
   }
 
@@ -165,6 +263,11 @@ export class LifeFormIntelligentLifeEffect {
       
       this.satellites.forEach((satellite) => {
         (satellite.material as THREE.MeshBasicMaterial).color = color;
+      });
+
+      this.trails.forEach((trail) => {
+        const material = trail.material as THREE.ShaderMaterial;
+        material.uniforms.color.value = color;
       });
     }
   }
