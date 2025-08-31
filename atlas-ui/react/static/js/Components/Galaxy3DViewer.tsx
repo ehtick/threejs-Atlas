@@ -606,20 +606,24 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({
         blackHolePositions.push({x, y, z});
       }
       
-      // Filter stars based on distance to black holes
-      const filteredPositions: number[] = [];
-      const filteredColors: number[] = [];
-      const filteredSizes: number[] = [];
-      const absorptionRadius = 16; // Slightly increased for smaller but more absorptive black holes
+      // Process stars with black hole effects (spaghettification)
+      const processedPositions: number[] = [];
+      const processedColors: number[] = [];
+      const processedSizes: number[] = [];
+      const stretchedLinePositions: number[] = [];
+      const stretchedLineColors: number[] = [];
+      const eventHorizonRadius = 2; // Complete absorption - smaller for more visible effect
+      const tidalRadius = 25; // Spaghettification zone - much larger to catch more stars
       
       for (let i = 0; i < positions.length; i += 3) {
         const starX = positions[i];
         const starY = positions[i + 1];
         const starZ = positions[i + 2];
         
-        let tooClose = false;
+        let closestDistance = Infinity;
+        let closestBlackHole = null;
         
-        // Check distance to all black holes
+        // Find closest black hole
         for (const bh of blackHolePositions) {
           const distance = Math.sqrt(
             Math.pow(starX - bh.x, 2) + 
@@ -627,24 +631,78 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({
             Math.pow(starZ - bh.z, 2)
           );
           
-          if (distance < absorptionRadius) {
-            tooClose = true;
-            break;
+          if (distance < closestDistance) {
+            closestDistance = distance;
+            closestBlackHole = bh;
           }
         }
         
-        // Only keep stars that are far enough from black holes
-        if (!tooClose) {
-          filteredPositions.push(starX, starY, starZ);
-          filteredColors.push(colors[i], colors[i + 1], colors[i + 2]);
-          filteredSizes.push(sizes[i / 3]);
+        // Apply black hole effects based on distance
+        if (closestDistance < eventHorizonRadius) {
+          // Event horizon: star is completely absorbed, skip it
+          continue;
+        } else if (closestDistance < tidalRadius && closestBlackHole) {
+          // Tidal zone: create stretched line effect (spaghettification)
+          const tidalStrength = 1 - (closestDistance - eventHorizonRadius) / (tidalRadius - eventHorizonRadius);
+          
+          // Calculate direction vector from star to black hole
+          const dirX = closestBlackHole.x - starX;
+          const dirY = closestBlackHole.y - starY;
+          const dirZ = closestBlackHole.z - starZ;
+          const dirLength = Math.sqrt(dirX*dirX + dirY*dirY + dirZ*dirZ);
+          
+          // Normalize direction
+          const normalizedDirX = dirX / dirLength;
+          const normalizedDirY = dirY / dirLength;
+          const normalizedDirZ = dirZ / dirLength;
+          
+          // Calculate stretch length - stronger closer to black hole
+          const stretchLength = tidalStrength * 6; // Length of the stretched star
+          
+          // Start and end points of the stretched star
+          const startX = starX;
+          const startY = starY;
+          const startZ = starZ;
+          
+          const endX = startX + normalizedDirX * stretchLength;
+          const endY = startY + normalizedDirY * stretchLength;
+          const endZ = startZ + normalizedDirZ * stretchLength;
+          
+          // Create line geometry for stretched effect
+          stretchedLinePositions.push(startX, startY, startZ);
+          stretchedLinePositions.push(endX, endY, endZ);
+          
+          // Color with opacity based on distance - closer = more transparent/redder
+          const opacity = 1 - tidalStrength * 0.7; // More transparent closer to BH
+          const redshift = tidalStrength * 1.5;
+          const originalR = colors[i];
+          const originalG = colors[i + 1];
+          const originalB = colors[i + 2];
+          
+          const stretchedR = Math.min(originalR + redshift, 2.0);
+          const stretchedG = Math.max(originalG * (1 - redshift * 0.6), 0.1);
+          const stretchedB = Math.max(originalB * (1 - redshift * 0.8), 0.1);
+          
+          // Add colors for both ends of the line (start and end)
+          stretchedLineColors.push(stretchedR * opacity, stretchedG * opacity, stretchedB * opacity);
+          stretchedLineColors.push(stretchedR * opacity * 0.3, stretchedG * opacity * 0.3, stretchedB * opacity * 0.3); // Dimmer at the end
+          
+          // Also add a small point at the original position for reference
+          processedPositions.push(starX, starY, starZ);
+          processedColors.push(stretchedR, stretchedG, stretchedB);
+          processedSizes.push(Math.max(sizes[i / 3] * (1 - tidalStrength * 0.5), 0.3));
+        } else {
+          // Normal zone: no black hole effects
+          processedPositions.push(starX, starY, starZ);
+          processedColors.push(colors[i], colors[i + 1], colors[i + 2]);
+          processedSizes.push(sizes[i / 3]);
         }
       }
       
-      // Set up star attributes with filtered data
-      starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(filteredPositions, 3));
-      starsGeometry.setAttribute('color', new THREE.Float32BufferAttribute(filteredColors, 3));
-      starsGeometry.setAttribute('size', new THREE.Float32BufferAttribute(filteredSizes, 1));
+      // Set up star attributes with processed data (including spaghettification effects)
+      starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(processedPositions, 3));
+      starsGeometry.setAttribute('color', new THREE.Float32BufferAttribute(processedColors, 3));
+      starsGeometry.setAttribute('size', new THREE.Float32BufferAttribute(processedSizes, 1));
 
       // Create circular star material using a custom shader
       const starMaterial = new THREE.ShaderMaterial({
@@ -685,6 +743,24 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({
 
       const stars = new THREE.Points(starsGeometry, starMaterial);
       galaxyGroup.add(stars);
+      
+      // Create stretched star lines (spaghettification effect)
+      if (stretchedLinePositions.length > 0) {
+        const stretchedGeometry = new THREE.BufferGeometry();
+        stretchedGeometry.setAttribute('position', new THREE.Float32BufferAttribute(stretchedLinePositions, 3));
+        stretchedGeometry.setAttribute('color', new THREE.Float32BufferAttribute(stretchedLineColors, 3));
+        
+        const stretchedMaterial = new THREE.LineBasicMaterial({
+          vertexColors: true,
+          transparent: true,
+          opacity: 0.8,
+          linewidth: 2,
+          blending: THREE.AdditiveBlending,
+        });
+        
+        const stretchedLines = new THREE.LineSegments(stretchedGeometry, stretchedMaterial);
+        galaxyGroup.add(stretchedLines);
+      }
     } else {
       // For Singularity Void, still create the stars but with the original material
       starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
