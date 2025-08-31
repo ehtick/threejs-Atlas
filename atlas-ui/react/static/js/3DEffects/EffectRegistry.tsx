@@ -2977,30 +2977,18 @@ export class EffectRegistry {
     }
   }
 
-  /**
-   * Obtiene un efecto por ID
-   */
   getEffect(id: string): EffectInstance | null {
     return this.effects.get(id) || null;
   }
 
-  /**
-   * Obtiene todos los efectos de un tipo
-   */
   getEffectsByType(type: string): EffectInstance[] {
     return Array.from(this.effects.values()).filter((effect) => effect.type === type);
   }
 
-  /**
-   * Obtiene todos los efectos activos
-   */
   getAllEffects(): EffectInstance[] {
     return Array.from(this.effects.values());
   }
 
-  /**
-   * Habilita/deshabilita un efecto
-   */
   toggleEffect(id: string, enabled?: boolean): void {
     const effectInstance = this.effects.get(id);
     if (effectInstance) {
@@ -3015,16 +3003,13 @@ export class EffectRegistry {
         }
       }
 
-      // Special handling for CaveSurfaceHoles - restore original material when disabled
       if (effectInstance.type === "cave_surface_holes" && effect) {
         if (effectInstance.enabled) {
-          // Re-apply the shader when enabled
           if (effect.applyToPlanetSystem && this.layerSystem) {
-            const baseColor = this.baseColor || new THREE.Color(0xD1D1D1);
+            const baseColor = this.baseColor || new THREE.Color(0xd1d1d1);
             effect.applyToPlanetSystem(this.layerSystem, baseColor);
           }
         } else {
-          // Restore original material when disabled
           if (effect.planetSystem && effect.planetSystem.restoreOriginalMaterial) {
             effect.planetSystem.restoreOriginalMaterial();
           }
@@ -3057,9 +3042,6 @@ export class EffectRegistry {
     }
   }
 
-  /**
-   * Actualiza todos los efectos activos
-   */
   updateAllEffects(deltaTime: number, planetRotation?: number, camera?: THREE.Camera): void {
     if (this.layerSystem) {
       this.layerSystem.update(deltaTime, planetRotation);
@@ -3078,9 +3060,6 @@ export class EffectRegistry {
     }
   }
 
-  /**
-   * Actualiza la luz de todos los efectos (incluyendo PlanetLayerSystem)
-   */
   updateLightForAllEffects(light: THREE.DirectionalLight): void {
     if (this.layerSystem) {
       this.layerSystem.updateFromThreeLight(light);
@@ -3095,9 +3074,6 @@ export class EffectRegistry {
     }
   }
 
-  /**
-   * Elimina un efecto
-   */
   removeEffect(id: string): void {
     const instance = this.effects.get(id);
     if (instance) {
@@ -3108,9 +3084,6 @@ export class EffectRegistry {
     }
   }
 
-  /**
-   * Limpia todos los efectos
-   */
   clearAllEffects(): void {
     if (this.layerSystem) {
       this.layerSystem.dispose();
@@ -3127,9 +3100,6 @@ export class EffectRegistry {
     this.nextId = 1;
   }
 
-  /**
-   * Obtiene estadísticas del registro
-   */
   getStats(): { registeredTypes: number; activeEffects: number; enabledEffects: number } {
     const activeEffects = Array.from(this.effects.values());
     return {
@@ -3139,9 +3109,6 @@ export class EffectRegistry {
     };
   }
 
-  /**
-   * Lista todos los tipos de efectos disponibles
-   */
   getAvailableEffectTypes(): string[] {
     return Array.from(this.creators.keys());
   }
