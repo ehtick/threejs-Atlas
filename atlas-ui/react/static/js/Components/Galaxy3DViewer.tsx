@@ -195,7 +195,24 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({
       for (let i = 0; i < numPoints; i++) {
         const angle = rng.uniform(0, 2 * Math.PI);
         const phi = rng.uniform(0, Math.PI);
-        const radius = rng.gauss(maxRadius / 4, maxRadius / 8);
+        
+        // More realistic elliptical distribution - mix of core and extended halo
+        let radius;
+        const coreChance = rng.random();
+        
+        if (coreChance < 0.4) {
+          // Dense core (40% of stars)
+          radius = Math.abs(rng.gauss(maxRadius * 0.15, maxRadius * 0.08));
+        } else if (coreChance < 0.8) {
+          // Main body (40% of stars)
+          radius = Math.abs(rng.gauss(maxRadius * 0.4, maxRadius * 0.15));
+        } else {
+          // Extended halo (20% of stars)
+          radius = Math.abs(rng.gauss(maxRadius * 0.7, maxRadius * 0.2));
+        }
+        
+        // Clamp radius to reasonable bounds
+        radius = Math.min(radius, maxRadius * 0.9);
         
         const x = radius * Math.sin(phi) * Math.cos(angle);
         const y = radius * Math.cos(phi) * 0.6; // Flatten slightly
