@@ -656,24 +656,39 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({
           const normalizedDirY = dirY / dirLength;
           const normalizedDirZ = dirZ / dirLength;
           
-          // Calculate stretch length - stronger closer to black hole
-          const stretchLength = tidalStrength * 6; // Length of the stretched star
+          // Create curved orbital trajectory instead of straight line
+          const stretchLength = tidalStrength * 8; // Length of the orbital trajectory
           
-          // Start and end points of the stretched star
-          const startX = starX;
-          const startY = starY;
-          const startZ = starZ;
+          // Calculate orbital curve based on star's position relative to black hole
+          const orbitalAngle = Math.atan2(starZ - closestBlackHole.z, starX - closestBlackHole.x);
+          const curvature = tidalStrength * 0.8; // More curve = closer to BH
           
-          const endX = startX + normalizedDirX * stretchLength;
-          const endY = startY + normalizedDirY * stretchLength;
-          const endZ = startZ + normalizedDirZ * stretchLength;
+          // Create curved trajectory points (spiral inward)
+          const numCurvePoints = 8; // Number of points for smooth curve
+          for (let j = 0; j < numCurvePoints - 1; j++) {
+            const t = j / (numCurvePoints - 1); // 0 to 1
+            const nextT = (j + 1) / (numCurvePoints - 1);
+            
+            // Current point on curve
+            const currentRadius = closestDistance * (1 - t * curvature * 0.7); // Spiral inward
+            const currentAngle = orbitalAngle + t * curvature * 1.5; // Curve around BH
+            const currentX = closestBlackHole.x + currentRadius * Math.cos(currentAngle);
+            const currentY = starY + (closestBlackHole.y - starY) * t * 0.3; // Slight Y movement
+            const currentZ = closestBlackHole.z + currentRadius * Math.sin(currentAngle);
+            
+            // Next point on curve
+            const nextRadius = closestDistance * (1 - nextT * curvature * 0.7);
+            const nextAngle = orbitalAngle + nextT * curvature * 1.5;
+            const nextX = closestBlackHole.x + nextRadius * Math.cos(nextAngle);
+            const nextY = starY + (closestBlackHole.y - starY) * nextT * 0.3;
+            const nextZ = closestBlackHole.z + nextRadius * Math.sin(nextAngle);
+            
+            // Add line segment
+            stretchedLinePositions.push(currentX, currentY, currentZ);
+            stretchedLinePositions.push(nextX, nextY, nextZ);
+          }
           
-          // Create line geometry for stretched effect
-          stretchedLinePositions.push(startX, startY, startZ);
-          stretchedLinePositions.push(endX, endY, endZ);
-          
-          // Color with opacity based on distance - closer = more transparent/redder
-          const opacity = 1 - tidalStrength * 0.7; // More transparent closer to BH
+          // Color the orbital curve - getting redder and dimmer toward the black hole
           const redshift = tidalStrength * 1.5;
           const originalR = colors[i];
           const originalG = colors[i + 1];
@@ -683,9 +698,33 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({
           const stretchedG = Math.max(originalG * (1 - redshift * 0.6), 0.1);
           const stretchedB = Math.max(originalB * (1 - redshift * 0.8), 0.1);
           
-          // Add colors for both ends of the line (start and end)
-          stretchedLineColors.push(stretchedR * opacity, stretchedG * opacity, stretchedB * opacity);
-          stretchedLineColors.push(stretchedR * opacity * 0.3, stretchedG * opacity * 0.3, stretchedB * opacity * 0.3); // Dimmer at the end
+          // Add colors for each segment of the orbital curve
+          for (let j = 0; j < numCurvePoints - 1; j++) {
+            const t = j / (numCurvePoints - 1);
+            const nextT = (j + 1) / (numCurvePoints - 1);
+            
+            // Opacity decreases along the curve toward the black hole
+            const currentOpacity = 1 - t * tidalStrength * 0.6;
+            const nextOpacity = 1 - nextT * tidalStrength * 0.6;
+            
+            // Colors get redder along the trajectory
+            const currentRedshift = redshift * (0.5 + t * 0.5);
+            const nextRedshift = redshift * (0.5 + nextT * 0.5);
+            
+            // Current point color
+            stretchedLineColors.push(
+              Math.min(stretchedR + currentRedshift * 0.3, 2.0) * currentOpacity,
+              Math.max(stretchedG * (1 - currentRedshift * 0.2), 0.1) * currentOpacity,
+              Math.max(stretchedB * (1 - currentRedshift * 0.4), 0.1) * currentOpacity
+            );
+            
+            // Next point color (redder and dimmer)
+            stretchedLineColors.push(
+              Math.min(stretchedR + nextRedshift * 0.3, 2.0) * nextOpacity,
+              Math.max(stretchedG * (1 - nextRedshift * 0.2), 0.1) * nextOpacity,
+              Math.max(stretchedB * (1 - nextRedshift * 0.4), 0.1) * nextOpacity
+            );
+          }
           
           // Also add a small point at the original position for reference
           processedPositions.push(starX, starY, starZ);
