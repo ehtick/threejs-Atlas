@@ -5,8 +5,8 @@ import { DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime.tsx";
 
 const PROCEDURAL_RANGES = {
   SATELLITE_COUNT: { min: 1, max: 10 },
-  SATELLITE_DISTANCE: { min: 2, max: 2 },
-  ORBITAL_SPEED: { min: 2.2, max: 4.8 },
+  SATELLITE_DISTANCE: { min: 1, max: 1 },
+  ORBITAL_SPEED: { min: 0.2, max: 1.2 },
 };
 
 export interface LifeFormIntelligentLifeParams {
@@ -52,7 +52,7 @@ export class LifeFormIntelligentLifeEffect {
     const baseDistance = this.planetRadius + this.params.satelliteDistance!;
 
     for (let i = 0; i < satelliteCount; i++) {
-      const distance = baseDistance + this.rng.random() * 5 - 2.5;
+      const distance = baseDistance;
       
       // Generate random orbital plane (inclination and orientation)
       const inclination = this.rng.random() * Math.PI; // 0 to 180 degrees
