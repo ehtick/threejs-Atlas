@@ -67,9 +67,9 @@ export class LifeFormConsciousGasEffect {
 
     for (let i = 0; i < layerCount; i++) {
       const layerRadius = this.planetRadius + 0.1 + i * 0.15;
-      
+
       const cloudGeometry = new THREE.SphereGeometry(layerRadius, 32, 16);
-      
+
       const cloudMaterial = new THREE.ShaderMaterial({
         uniforms: {
           time: { value: 0 },
@@ -155,9 +155,9 @@ export class LifeFormConsciousGasEffect {
     for (let i = 0; i < beltCount; i++) {
       const beltRadius = this.planetRadius + 0.3 + i * 0.4;
       const beltHeight = this.planetRadius * 0.15;
-      
+
       const beltGeometry = new THREE.CylinderGeometry(beltRadius, beltRadius, beltHeight, 64, 8, true);
-      
+
       const beltMaterial = new THREE.ShaderMaterial({
         uniforms: {
           time: { value: 0 },
@@ -213,9 +213,21 @@ export class LifeFormConsciousGasEffect {
       });
 
       const belt = new THREE.Mesh(beltGeometry, beltMaterial);
-      belt.rotation.x = Math.PI / 2 + (this.rng.random() - 0.5) * 0.3;
+
+      const inclination = this.rng.random() * Math.PI * 0.4 + Math.PI * 0.3;
+      const longitudeOfAscendingNode = this.rng.random() * Math.PI * 2;
+      const tiltAngle = (this.rng.random() - 0.5) * 0.3;
+
+      belt.rotation.x = Math.PI / 2 + tiltAngle;
+      belt.rotation.y = longitudeOfAscendingNode;
+      belt.rotation.z = inclination;
+
       belt.userData = {
         beltIndex: i,
+        inclination: inclination,
+        longitudeOfAscendingNode: longitudeOfAscendingNode,
+        tiltAngle: tiltAngle,
+        orbitalSpeed: this.rng.random() * 0.3 + 0.1,
         rotationSpeed: (this.rng.random() - 0.5) * 0.02,
       };
 
@@ -235,11 +247,7 @@ export class LifeFormConsciousGasEffect {
 
       const position = this.calculateOrbitalPosition(distance, inclination, longitudeOfAscendingNode, initialAngle);
 
-      const swirlGeometry = new THREE.SphereGeometry(
-        this.planetRadius * (0.08 + this.rng.random() * 0.06),
-        16,
-        12
-      );
+      const swirlGeometry = new THREE.SphereGeometry(this.planetRadius * (0.08 + this.rng.random() * 0.06), 16, 12);
 
       const swirlMaterial = new THREE.ShaderMaterial({
         uniforms: {
@@ -296,7 +304,7 @@ export class LifeFormConsciousGasEffect {
 
       const swirl = new THREE.Mesh(swirlGeometry, swirlMaterial);
       swirl.position.set(position.x, position.y, position.z);
-      
+
       swirl.userData = {
         distance: distance,
         inclination: inclination,
@@ -322,11 +330,7 @@ export class LifeFormConsciousGasEffect {
 
       const position = this.calculateOrbitalPosition(distance, inclination, longitudeOfAscendingNode, initialAngle);
 
-      const pulseGeometry = new THREE.SphereGeometry(
-        this.planetRadius * 0.04,
-        8,
-        6
-      );
+      const pulseGeometry = new THREE.SphereGeometry(this.planetRadius * 0.04, 8, 6);
 
       const pulseMaterial = new THREE.ShaderMaterial({
         uniforms: {
@@ -368,7 +372,7 @@ export class LifeFormConsciousGasEffect {
 
       const pulse = new THREE.Mesh(pulseGeometry, pulseMaterial);
       pulse.position.set(position.x, position.y, position.z);
-      
+
       pulse.userData = {
         distance: distance,
         inclination: inclination,
@@ -406,19 +410,23 @@ export class LifeFormConsciousGasEffect {
 
     this.cloudLayers.forEach((layer) => {
       const userData = layer.userData;
-      
+
       layer.rotation.y += userData.rotationSpeed;
       layer.rotation.z += userData.rotationSpeed * 0.7;
-      
+
       const material = layer.material as THREE.ShaderMaterial;
       material.uniforms.time.value = animTime;
     });
 
     this.atmosphericBelts.forEach((belt) => {
       const userData = belt.userData;
-      
-      belt.rotation.z += userData.rotationSpeed;
-      
+
+      const currentLongitude = userData.longitudeOfAscendingNode + animTime * userData.orbitalSpeed * 0.1;
+
+      belt.rotation.x = Math.PI / 2 + userData.tiltAngle + Math.sin(animTime * 0.5 + userData.beltIndex) * 0.1;
+      belt.rotation.y = currentLongitude;
+      belt.rotation.z = userData.inclination + Math.cos(animTime * 0.3 + userData.beltIndex) * 0.05;
+
       const material = belt.material as THREE.ShaderMaterial;
       material.uniforms.time.value = animTime;
     });

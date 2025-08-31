@@ -226,6 +226,10 @@ export class SavannahTerrainLayer {
     }
   }
 
+  getObject3D(): THREE.Mesh | undefined {
+    return this.layerMesh;
+  }
+
   dispose(): void {}
 }
 
