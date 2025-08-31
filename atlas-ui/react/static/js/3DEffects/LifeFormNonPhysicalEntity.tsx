@@ -11,7 +11,7 @@ const PROCEDURAL_RANGES = {
   ORBITAL_SPEED: { min: 0.2, max: 0.8 },
   PORTAL_COUNT: { min: 21, max: 60 },
   ENERGY_BEAM_COUNT: { min: 2, max: 8 },
-  PARTICLE_COUNT: { min: 20, max: 80 },
+  PARTICLE_COUNT: { min: 201, max: 801 },
 };
 
 export interface LifeFormNonPhysicalEntityParams {
@@ -35,6 +35,13 @@ export class LifeFormNonPhysicalEntityEffect {
   private dimensionalPortals: THREE.Mesh[] = [];
   private energyBeams: THREE.Line[] = [];
   private energyParticles: THREE.Points;
+  private particleOrbitData: Array<{
+    distance: number;
+    inclination: number;
+    longitudeOfAscendingNode: number;
+    initialAngle: number;
+    orbitalSpeed: number;
+  }> = [];
   private spaceDistortion: THREE.Mesh;
   private params: LifeFormNonPhysicalEntityParams;
   private rng: SeededRandom;
@@ -393,9 +400,18 @@ export class LifeFormNonPhysicalEntityEffect {
       const distance = this.planetRadius + this.params.ringDistance! + this.rng.random() * 2.0;
       const inclination = this.rng.random() * Math.PI;
       const longitudeOfAscendingNode = this.rng.random() * Math.PI * 2;
-      const angle = this.rng.random() * Math.PI * 2;
+      const initialAngle = this.rng.random() * Math.PI * 2;
+      const orbitalSpeed = this.rng.random() * 0.5 + 0.2;
 
-      const position = this.calculateOrbitalPosition(distance, inclination, longitudeOfAscendingNode, angle);
+      this.particleOrbitData.push({
+        distance,
+        inclination,
+        longitudeOfAscendingNode,
+        initialAngle,
+        orbitalSpeed,
+      });
+
+      const position = this.calculateOrbitalPosition(distance, inclination, longitudeOfAscendingNode, initialAngle);
 
       positions[i * 3] = position.x;
       positions[i * 3 + 1] = position.y;
@@ -647,14 +663,14 @@ export class LifeFormNonPhysicalEntityEffect {
 
       const positions = this.energyParticles.geometry.attributes.position.array as Float32Array;
       for (let i = 0; i < positions.length / 3; i++) {
-        const x = positions[i * 3];
-        const y = positions[i * 3 + 1];
-        const z = positions[i * 3 + 2];
+        const orbitData = this.particleOrbitData[i];
+        const currentAngle = orbitData.initialAngle + animTime * orbitData.orbitalSpeed * 0.08;
 
-        const drift = Math.sin(animTime * 0.5 + i * 0.1) * 0.02;
-        positions[i * 3] = x + drift;
-        positions[i * 3 + 1] = y + drift * 0.5;
-        positions[i * 3 + 2] = z + drift * 0.3;
+        const position = this.calculateOrbitalPosition(orbitData.distance, orbitData.inclination, orbitData.longitudeOfAscendingNode, currentAngle);
+
+        positions[i * 3] = position.x;
+        positions[i * 3 + 1] = position.y;
+        positions[i * 3 + 2] = position.z;
       }
       this.energyParticles.geometry.attributes.position.needsUpdate = true;
     }
