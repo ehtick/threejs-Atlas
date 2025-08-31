@@ -851,7 +851,7 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({
       
       diskRings.forEach((ring, index) => {
         const ringGeometry = new THREE.RingGeometry(ring.innerRadius, ring.outerRadius, 32);
-        const ringMaterial = new THREE.MeshBasicMaterial({
+        const ringMaterial = new THREE.MeshStandardMaterial({
           color: ring.color,
           transparent: true,
           opacity: ring.opacity,
@@ -878,7 +878,7 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({
     // Add pulsars
     for (let i = 0; i < pulsars; i++) {
       const pulsarGeometry = new THREE.SphereGeometry(1.5, 8, 8);
-      const pulsarMaterial = new THREE.MeshBasicMaterial({
+      const pulsarMaterial = new THREE.MeshStandardMaterial({
         color: 0xffff00,
         emissive: 0xffff00,
         emissiveIntensity: 1,
