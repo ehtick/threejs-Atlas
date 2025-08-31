@@ -612,7 +612,7 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({ planets, star
               </div>
 
               <div className="flex-1 border border-white/20 rounded-lg bg-black/20 overflow-hidden min-h-0">
-                <SolarSystem3DViewerFullscreen planets={planets} stars={stars} systemName={systemName} cosmicOriginTime={cosmicOriginTime} currentTime={realCurrentTime - cosmicOriginTime + sliderTimeOffset} onTimeOffsetChange={(delta) => setSliderTimeOffset((prev) => prev + delta)} />
+                <SolarSystem3DViewerFullscreen planets={systemData?.planets || planets} stars={systemData?.stars || stars} systemName={systemName} cosmicOriginTime={cosmicOriginTime} currentTime={realCurrentTime - cosmicOriginTime + sliderTimeOffset} onTimeOffsetChange={(delta) => setSliderTimeOffset((prev) => prev + delta)} />
               </div>
 
               <div className="mt-2 sm:mt-4 text-center text-xs sm:text-sm text-gray-400">
