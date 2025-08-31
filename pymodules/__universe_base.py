@@ -523,7 +523,7 @@ class Planet:
             return "Non-Physical Entity"
 
         if self.atmosphere in ["Methane", "Ammonia"]:
-            if random.random() < 0.00001:
+            if random.random() < 0.1:
                 return "Conscious Gas"
 
         if self.planet_type in ["Metallic", "Crystalline"]:
