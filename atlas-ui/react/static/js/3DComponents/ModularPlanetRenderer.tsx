@@ -729,9 +729,12 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
   };
 
   const clearActiveEffects = () => {
-    effectRegistry.clearAllEffects();
+    // Only clear effects belonging to this specific instance, not all global effects
     activeEffectsRef.current.forEach((effect) => {
       try {
+        // Remove this specific effect from the global registry
+        effectRegistry.removeEffect(effect.id);
+        
         if (effect.effect.dispose) {
           effect.effect.dispose();
         }
