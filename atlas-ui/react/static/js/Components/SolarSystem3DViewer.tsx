@@ -515,7 +515,7 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({ planets, star
   return (
     <>
       <div className="flex flex-col items-center w-full">
-        <div className="text-xs text-gray-300 mb-2">Solar System Simulation</div>
+        <div className="text-xs text-gray-300 mb-2">Solar System Perspective</div>
 
         <div className="relative w-full">
           <div ref={mountRef} className="w-full border border-white/20 rounded bg-black/20" style={{ height: "auto" }} />
