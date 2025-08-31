@@ -165,6 +165,7 @@ export class EffectRegistry {
   private effects: Map<string, EffectInstance> = new Map();
   private nextId: number = 1;
   private layerSystem?: PlanetLayerSystem;
+  private baseColor?: THREE.Color;
 
   private constructor() {
     this.registerDefaultEffects();
@@ -493,6 +494,7 @@ export class EffectRegistry {
 
     try {
       const baseColor = getPlanetBaseColor(pythonData);
+      this.baseColor = baseColor;
 
       if (existingLayerSystem) {
         this.layerSystem = existingLayerSystem;
