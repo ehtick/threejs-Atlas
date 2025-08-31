@@ -80,12 +80,12 @@ const GalaxyLayout: React.FC<GalaxyLayoutProps> = ({ galaxy, systems, galaxy_url
               <div className="order-1 lg:order-1">
                 <GalaxyVisualization 
                   galaxyUrl={galaxy_url} 
-                  imageUrl={image_url} 
                   galaxyType={galaxy.galaxy_type}
                   numSystems={galaxy.num_systems}
                   blackHoles={galaxy.black_holes}
                   pulsars={galaxy.pulsars}
                   quasars={galaxy.quasars}
+                  galaxyName={formatGalaxyName(galaxy.name)}
                 />
               </div>
 

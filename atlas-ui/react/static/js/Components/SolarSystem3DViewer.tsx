@@ -520,6 +520,12 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({ planets, star
         <div className="relative w-full">
           <div ref={mountRef} className="w-full border border-white/20 rounded bg-black/20" style={{ height: "auto" }} />
 
+          {!loadingAPI && !apiError && systemName && (
+            <div className="absolute bottom-0 left-0 p-2 text-white bg-black bg-opacity-50 max-w-xs rounded-tr-lg">
+              <h3 className="text-xs font-bold">{systemName}</h3>
+            </div>
+          )}
+
           <button
             onClick={() => {
               setIsFullscreen(true);

@@ -10,6 +10,7 @@ interface Galaxy3DViewerFullscreenProps {
   pulsars: number;
   quasars: number;
   seed?: number;
+  galaxyName?: string;
 }
 
 const Galaxy3DViewerFullscreen: React.FC<Galaxy3DViewerFullscreenProps> = ({ 
@@ -18,7 +19,8 @@ const Galaxy3DViewerFullscreen: React.FC<Galaxy3DViewerFullscreenProps> = ({
   blackHoles, 
   pulsars, 
   quasars, 
-  seed = 12345 
+  seed = 12345,
+  galaxyName
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -957,7 +959,16 @@ const Galaxy3DViewerFullscreen: React.FC<Galaxy3DViewerFullscreenProps> = ({
     };
   }, [galaxyType, numSystems, blackHoles, pulsars, quasars, seed]);
 
-  return <div ref={mountRef} className="w-full h-full" />;
+  return (
+    <div className="relative w-full h-full">
+      <div ref={mountRef} className="w-full h-full" />
+      {galaxyName && (
+        <div className="absolute bottom-0 left-0 p-2 text-white bg-black bg-opacity-50 max-w-xs rounded-tr-lg">
+          <h3 className="text-xs font-bold">{galaxyName}</h3>
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default Galaxy3DViewerFullscreen;

@@ -11,9 +11,10 @@ interface GalaxyVisualizationProps {
   blackHoles?: number;
   pulsars?: number;
   quasars?: number;
+  galaxyName?: string;
 }
 
-const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, galaxyType = "Spiral", numSystems = 10000, blackHoles = 5, pulsars = 10, quasars = 3 }) => {
+const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, galaxyType = "Spiral", numSystems = 10000, blackHoles = 5, pulsars = 10, quasars = 3, galaxyName }) => {
   const [stargateText, setStargateText] = useState("Aligning Stargate...");
   const [isAnimating, setIsAnimating] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -144,6 +145,7 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, ga
           blackHoles={blackHoles} 
           pulsars={pulsars} 
           quasars={quasars} 
+          galaxyName={galaxyName}
           onExpandClick={() => {
             setIsFullscreen(true);
             setIsEntering(true);
@@ -205,6 +207,7 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, ga
                   blackHoles={blackHoles} 
                   pulsars={pulsars} 
                   quasars={quasars} 
+                  galaxyName={galaxyName}
                 />
               </div>
 

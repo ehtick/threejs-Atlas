@@ -465,6 +465,12 @@ const SolarSystem3DViewerLeft: React.FC<SolarSystem3DViewerLeftProps> = ({ plane
         <div className="relative w-full h-full">
           <div ref={mountRef} className="w-full h-full border border-white/20 rounded bg-black/20" />
 
+          {!loadingAPI && !apiError && systemName && (
+            <div className="absolute bottom-0 left-0 p-2 text-white bg-black bg-opacity-50 max-w-xs rounded-tr-lg">
+              <h3 className="text-xs font-bold">{formatName(systemName)}</h3>
+            </div>
+          )}
+
           <button
             onClick={() => {
               setIsFullscreen(true);

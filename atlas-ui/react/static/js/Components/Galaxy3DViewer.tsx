@@ -11,9 +11,10 @@ interface Galaxy3DViewerProps {
   quasars: number;
   seed?: number;
   onExpandClick?: () => void;
+  galaxyName?: string;
 }
 
-const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems, blackHoles, pulsars, quasars, seed = 12345, onExpandClick }) => {
+const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems, blackHoles, pulsars, quasars, seed = 12345, onExpandClick, galaxyName }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -1056,6 +1057,12 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
 
       <div className={`absolute inset-0 w-full h-full transition-all duration-500 ${sceneLoaded ? "opacity-100 blur-0" : "opacity-0 blur-[25px]"}`}>
         <div ref={mountRef} className="w-full h-full border border-white/20 rounded bg-black/20" />
+
+        {sceneLoaded && galaxyName && (
+          <div className="absolute bottom-0 left-0 p-2 text-white bg-black bg-opacity-50 max-w-xs rounded-tr-lg">
+            <h3 className="text-xs font-bold">{galaxyName}</h3>
+          </div>
+        )}
 
         {sceneLoaded && onExpandClick && (
           <button onClick={onExpandClick} className="absolute top-2 right-2 p-2 bg-black/60 hover:bg-black/80 border border-white/30 rounded-lg transition-all duration-200 backdrop-blur-sm shadow-lg z-10" title="Expand to fullscreen">
