@@ -1,6 +1,8 @@
 // atlas-ui/react/static/js/Components/GalaxyVisualization.tsx
 import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import Galaxy3DViewer from "./Galaxy3DViewer.tsx";
+import Galaxy3DViewerFullscreen from "./Galaxy3DViewerFullscreen.tsx";
 
 interface GalaxyVisualizationProps {
   galaxyUrl: string;
@@ -14,6 +16,9 @@ interface GalaxyVisualizationProps {
 const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, galaxyType = "Spiral", numSystems = 10000, blackHoles = 5, pulsars = 10, quasars = 3 }) => {
   const [stargateText, setStargateText] = useState("Aligning Stargate...");
   const [isAnimating, setIsAnimating] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+  const [isEntering, setIsEntering] = useState(false);
 
   useEffect(() => {
     const animationShown = sessionStorage.getItem("stargateAnimationShown");
@@ -103,6 +108,29 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, ga
     };
   }, []);
 
+  const handleCloseFullscreen = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsFullscreen(false);
+      setIsClosing(false);
+    }, 300);
+  };
+
+  useEffect(() => {
+    document.addEventListener("galaxy-close-fullscreen", handleCloseFullscreen);
+
+    return () => {
+      document.removeEventListener("galaxy-close-fullscreen", handleCloseFullscreen);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isEntering) {
+      const timer = setTimeout(() => setIsEntering(false), 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isEntering]);
+
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between mb-3">
@@ -111,6 +139,20 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, ga
 
       <div className="relative w-full max-w-80 sm:max-w-96 aspect-square mx-auto bg-black/50 flex justify-center items-center rounded-xl overflow-hidden border-2 border-blue-400/30 mb-4">
         <Galaxy3DViewer galaxyType={galaxyType} numSystems={numSystems} blackHoles={blackHoles} pulsars={pulsars} quasars={quasars} />
+        
+        {/* Expand button */}
+        <button
+          onClick={() => {
+            setIsFullscreen(true);
+            setIsEntering(true);
+          }}
+          className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-lg border border-white/20 hover:border-white/40 transition-all duration-200 backdrop-blur-sm"
+          title="Expand Galaxy View"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+          </svg>
+        </button>
       </div>
 
       <div className="text-center mt-auto">
@@ -133,6 +175,49 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, ga
 
         <div className="mt-2 text-xs text-gray-500 text-center">Gateway to the stars</div>
       </div>
+
+      {isFullscreen &&
+        createPortal(
+          <div className={`fixed inset-0 z-50 bg-black/95 backdrop-blur-xl transition-all duration-300 ${isClosing ? "opacity-0 scale-95" : isEntering ? "opacity-0 scale-95" : "opacity-100 scale-100"}`}>
+            <div className={`w-full h-full flex flex-col p-1 sm:p-2 transition-all duration-300 delay-75 ${isClosing ? "opacity-0 translate-y-4" : isEntering ? "opacity-0 translate-y-4" : "opacity-100 translate-y-0"}`}>
+              <div className="flex items-center justify-between mb-2 sm:mb-4">
+                <div className="block sm:hidden">
+                  <h2 className="text-xs font-medium text-white">Galaxy View</h2>
+                </div>
+                <div className="hidden sm:block">
+                  <h2 className="text-lg font-bold text-white">Galaxy Visualization - {galaxyType}</h2>
+                </div>
+                
+                <button
+                  onClick={handleCloseFullscreen}
+                  className="p-2 bg-black/60 hover:bg-black/80 border border-white/30 rounded-lg transition-all duration-200 flex items-center gap-1 backdrop-blur-sm shadow-lg"
+                  title="Exit fullscreen"
+                >
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  <span className="hidden sm:inline text-xs text-white">Close</span>
+                </button>
+              </div>
+
+              <div className="flex-1 relative">
+                <Galaxy3DViewerFullscreen 
+                  galaxyType={galaxyType} 
+                  numSystems={numSystems} 
+                  blackHoles={blackHoles} 
+                  pulsars={pulsars} 
+                  quasars={quasars} 
+                />
+              </div>
+
+              <div className="text-xs text-gray-400 text-center mt-2">
+                <div className="hidden sm:block">Mouse: Rotate • Scroll: Zoom • ESC: Close</div>
+                <div className="sm:hidden">Pinch: Zoom • Drag: Rotate • ESC: Close</div>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 };
