@@ -13,7 +13,7 @@ const PROCEDURAL_RANGES = {
   ORBITAL_SPEED: { min: 0.2, max: 1.0 },
   CROSS_SPIRAL_COUNT: { min: 3, max: 6 },
   HOLOGRAM_RING_COUNT: { min: 4, max: 8 },
-  BINARY_DIGIT_COUNT: { min: 1200, max: 1500 },
+  BINARY_DIGIT_COUNT: { min: 2000, max: 2500 },
 };
 
 export interface LifeFormGodParams {
@@ -130,7 +130,7 @@ export class LifeFormGodEffect {
     const sphereMaterial = new THREE.ShaderMaterial({
       uniforms: {
         time: { value: 0 },
-        color: { value: new THREE.Color(0.0, 1.0, 1.0) }, // Digital cyan color
+        color: { value: new THREE.Color(1.0, 0.8, 0.0) }, // Divine yellow-gold color
         pulseIntensity: { value: this.params.divinePulseIntensity! },
         planetRadius: { value: this.planetRadius },
       },
@@ -177,28 +177,34 @@ export class LifeFormGodEffect {
           // Fresnel effect for digital glow
           float fresnel = pow(1.0 - abs(dot(normalize(vNormal), vec3(0.0, 0.0, 1.0))), 2.0);
           
-          // Digital grid patterns
-          float gridX = sin(vUv.x * 100.0 + time * 2.0) * 0.5 + 0.5;
-          float gridY = sin(vUv.y * 80.0 + time * 1.5) * 0.5 + 0.5;
-          float grid = step(0.95, gridX) + step(0.95, gridY);
-          grid *= 0.8;
+          // Enhanced divine grid patterns
+          float gridX = sin(vUv.x * 120.0 + time * 2.5) * 0.5 + 0.5;
+          float gridY = sin(vUv.y * 100.0 + time * 2.0) * 0.5 + 0.5;
+          float grid = step(0.92, gridX) + step(0.92, gridY);
+          // Add diagonal grid for more complexity
+          float gridDiag = sin((vUv.x + vUv.y) * 90.0 + time * 1.8) * 0.5 + 0.5;
+          grid += step(0.95, gridDiag) * 0.5;
+          grid *= 1.0;
           
-          // Digital data streams
-          float dataStream = sin(vUv.y * 50.0 - time * 5.0) * 0.5 + 0.5;
-          dataStream = step(0.7, dataStream) * 0.6;
+          // Enhanced divine data streams
+          float dataStream = sin(vUv.y * 70.0 - time * 6.0) * 0.5 + 0.5;
+          float dataStream2 = sin(vUv.x * 60.0 + time * 4.5) * 0.5 + 0.5;
+          dataStream = step(0.65, dataStream) * 0.8 + step(0.75, dataStream2) * 0.6;
           
-          // Cosmic digital waves
-          float waves = sin(vDistanceFromCenter * 0.3 + time * 4.0) * 0.4 + 0.6;
+          // Enhanced cosmic divine waves
+          float waves = sin(vDistanceFromCenter * 0.4 + time * 5.0) * 0.3 + 0.7;
+          waves += sin(vDistanceFromCenter * 0.8 + time * 3.0) * 0.2;
+          waves += sin(vDistanceFromCenter * 1.2 - time * 2.0) * 0.15;
           
-          // Final digital composition
+          // Final divine composition
           vec3 finalColor = digitalColor * waves;
-          finalColor += vec3(0.0, 1.0, 1.0) * grid; // Digital grid
-          finalColor += vec3(0.5, 1.0, 1.0) * dataStream; // Data streams
-          finalColor += vec3(0.3, 0.8, 1.0) * fresnel * 0.6; // Digital aura
+          finalColor += vec3(1.0, 0.9, 0.3) * grid; // Golden grid
+          finalColor += vec3(1.0, 0.8, 0.2) * dataStream; // Golden data streams
+          finalColor += vec3(1.0, 0.7, 0.1) * fresnel * 0.8; // Golden divine aura
           
-          // Digital transparency
+          // Enhanced opacity for yellow sphere
           float distanceFade = smoothstep(planetRadius * 1.4, planetRadius * 1.0, vDistanceFromCenter);
-          float alpha = (0.15 + fresnel * 0.25 + grid * 0.2 + dataStream * 0.15) * distanceFade;
+          float alpha = (0.6 + fresnel * 0.4 + grid * 0.3 + dataStream * 0.25) * distanceFade;
           
           gl_FragColor = vec4(finalColor * vPulse, alpha);
         }
@@ -254,18 +260,12 @@ export class LifeFormGodEffect {
         const digit = Math.floor(this.rng.random() * 2);
         digits[i] = digit;
         
-        // Color based on digit
-        if (digit === 1) {
-          colors[i * 3] = 0.0;     // R
-          colors[i * 3 + 1] = 1.0; // G (green for 1)
-          colors[i * 3 + 2] = 0.5; // B
-        } else {
-          colors[i * 3] = 0.0;     // R  
-          colors[i * 3 + 1] = 0.5; // G
-          colors[i * 3 + 2] = 1.0; // B (blue for 0)
-        }
+        // Color based on digit - Both white for visibility
+        colors[i * 3] = 1.0;     // R (white for both)
+        colors[i * 3 + 1] = 1.0; // G 
+        colors[i * 3 + 2] = 1.0; // B
         
-        sizes[i] = this.planetRadius * (0.03 + this.rng.random() * 0.02);
+        sizes[i] = this.planetRadius * (0.06 + this.rng.random() * 0.04);
         
         // Store orbit data
         this.binaryDigitData.push({
@@ -308,10 +308,12 @@ export class LifeFormGodEffect {
             vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
             float distanceFade = 1.0 / (1.0 + length(mvPosition.xyz) * 0.01);
             
-            float pulse = sin(time * 3.0 + position.x * 0.1 + position.y * 0.1 + digit * 3.14) * 0.3 + 0.7;
-            vAlpha = pulse * distanceFade;
+            float pulse = sin(time * 4.0 + position.x * 0.15 + position.y * 0.15 + digit * 3.14) * 0.4 + 0.6;
+            // More dramatic Matrix-style flickering
+            float matrixFlicker = step(0.95, sin(time * 20.0 + position.x * 50.0 + position.y * 30.0));
+            vAlpha = (pulse + matrixFlicker * 0.8) * distanceFade;
             
-            gl_PointSize = size * (300.0 / -mvPosition.z) * (1.0 + pulse * 0.3);
+            gl_PointSize = size * (400.0 / -mvPosition.z) * (1.0 + pulse * 0.5 + matrixFlicker * 0.3);
             gl_Position = projectionMatrix * mvPosition;
           }
         `,
@@ -1313,10 +1315,10 @@ export class LifeFormGodEffect {
     // Create "1" on the right half
     context.fillText('1', 96, 32);
     
-    // Add glow effect
-    context.shadowColor = '#00ffff';
-    context.shadowBlur = 10;
-    context.fillStyle = 'rgba(0, 255, 255, 0.8)';
+    // Add Matrix-style glow effect
+    context.shadowColor = '#ffffff';
+    context.shadowBlur = 8;
+    context.fillStyle = 'rgba(255, 255, 255, 0.9)';
     context.fillText('0', 32, 32);
     context.fillText('1', 96, 32);
     
