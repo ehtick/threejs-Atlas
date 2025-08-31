@@ -8,7 +8,7 @@ const PROCEDURAL_RANGES = {
   CRYSTAL_DISTANCE: { min: 1.2, max: 2.5 },
   ORBITAL_SPEED: { min: 1.1, max: 4.6 },
   DEBRIS_COUNT: { min: 15, max: 35 },
-  CONNECTION_PROBABILITY: 0.4, 
+  CONNECTION_PROBABILITY: 0.4,
 };
 
 export interface LifeFormSiliconBasedLifeParams {
@@ -38,7 +38,7 @@ export class LifeFormSiliconBasedLifeEffect {
     this.rng = new SeededRandom(seed);
 
     this.params = {
-      color: params.color || [0.3, 0.8, 1.0], // Crystalline blue-cyan
+      color: params.color || [0.3, 0.8, 1.0],
       crystalCount: params.crystalCount || Math.floor(this.rng.random() * (PROCEDURAL_RANGES.CRYSTAL_COUNT.max - PROCEDURAL_RANGES.CRYSTAL_COUNT.min) + PROCEDURAL_RANGES.CRYSTAL_COUNT.min),
       crystalDistance: params.crystalDistance || this.rng.random() * (PROCEDURAL_RANGES.CRYSTAL_DISTANCE.max - PROCEDURAL_RANGES.CRYSTAL_DISTANCE.min) + PROCEDURAL_RANGES.CRYSTAL_DISTANCE.min,
       orbitalSpeed: params.orbitalSpeed || this.rng.random() * (PROCEDURAL_RANGES.ORBITAL_SPEED.max - PROCEDURAL_RANGES.ORBITAL_SPEED.min) + PROCEDURAL_RANGES.ORBITAL_SPEED.min,
@@ -62,17 +62,14 @@ export class LifeFormSiliconBasedLifeEffect {
     for (let i = 0; i < crystalCount; i++) {
       const distance = baseDistance + this.rng.random() * 1.0 - 0.5;
 
-      // Generate random orbital parameters
       const inclination = this.rng.random() * Math.PI;
       const longitudeOfAscendingNode = this.rng.random() * Math.PI * 2;
       const initialAngle = this.rng.random() * Math.PI * 2;
 
       const position = this.calculateOrbitalPosition(distance, inclination, longitudeOfAscendingNode, initialAngle);
 
-      // Create strange crystalline geometry
       const geometry = this.createCrystalGeometry();
 
-      // Crystalline material with inner glow
       const material = new THREE.MeshBasicMaterial({
         color: new THREE.Color(this.params.color![0], this.params.color![1], this.params.color![2]),
         transparent: true,
@@ -83,7 +80,6 @@ export class LifeFormSiliconBasedLifeEffect {
       const crystal = new THREE.Mesh(geometry, material);
       crystal.position.set(position.x, position.y, position.z);
 
-      // Procedural rotation for each crystal
       crystal.rotation.set(this.rng.random() * Math.PI * 2, this.rng.random() * Math.PI * 2, this.rng.random() * Math.PI * 2);
 
       crystal.userData = {
@@ -102,28 +98,23 @@ export class LifeFormSiliconBasedLifeEffect {
   }
 
   private createCrystalGeometry(): THREE.BufferGeometry {
-    // Create irregular crystal shapes - mix of different geometries
     const shapeType = Math.floor(this.rng.random() * 4);
     const scale = this.planetRadius * (0.04 + this.rng.random() * 0.03);
 
     switch (shapeType) {
       case 0:
-        // Elongated diamond crystal
         const diamondGeometry = new THREE.ConeGeometry(scale * 0.6, scale * 2, 6);
         return diamondGeometry;
 
       case 1:
-        // Irregular dodecahedron
         const dodecaGeometry = new THREE.DodecahedronGeometry(scale, 0);
         return dodecaGeometry;
 
       case 2:
-        // Sharp tetrahedron cluster
         const tetraGeometry = new THREE.TetrahedronGeometry(scale * 1.2, 0);
         return tetraGeometry;
 
       case 3:
-        // Complex crystal formation
         const icosaGeometry = new THREE.IcosahedronGeometry(scale, 1);
         return icosaGeometry;
 
@@ -139,14 +130,12 @@ export class LifeFormSiliconBasedLifeEffect {
     for (let i = 0; i < debrisCount; i++) {
       const distance = debrisDistance + this.rng.random() * 2.0 - 1.0;
 
-      // Random spherical coordinates
       const inclination = this.rng.random() * Math.PI;
       const longitudeOfAscendingNode = this.rng.random() * Math.PI * 2;
       const initialAngle = this.rng.random() * Math.PI * 2;
 
       const position = this.calculateOrbitalPosition(distance, inclination, longitudeOfAscendingNode, initialAngle);
 
-      // Small irregular debris pieces
       const geometry = new THREE.TetrahedronGeometry(this.planetRadius * 0.006, 0);
       const material = new THREE.MeshBasicMaterial({
         color: new THREE.Color(this.params.color![0] * 0.7, this.params.color![1] * 0.7, this.params.color![2] * 0.9),
@@ -172,7 +161,6 @@ export class LifeFormSiliconBasedLifeEffect {
   }
 
   private createConnections(): void {
-    // Create energy beams connecting nearby crystals
     for (let i = 0; i < this.crystals.length; i++) {
       for (let j = i + 1; j < this.crystals.length; j++) {
         if (this.rng.random() < PROCEDURAL_RANGES.CONNECTION_PROBABILITY) {
@@ -183,7 +171,6 @@ export class LifeFormSiliconBasedLifeEffect {
 
           const geometry = new THREE.BufferGeometry().setFromPoints(points);
 
-          // Energy beam material
           const material = new THREE.ShaderMaterial({
             uniforms: {
               time: { value: 0 },
@@ -246,7 +233,6 @@ export class LifeFormSiliconBasedLifeEffect {
     const timeSinceCosmicOrigin = currentTimeSeconds - (this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME);
     const animTime = (timeSinceCosmicOrigin + this.cosmicOffset) * (this.params.orbitalSpeed || 1.0);
 
-    // Update crystal positions and rotations
     this.crystals.forEach((crystal) => {
       const userData = crystal.userData;
       const currentAngle = userData.initialAngle + animTime * userData.orbitalSpeed * 0.1;
@@ -255,17 +241,14 @@ export class LifeFormSiliconBasedLifeEffect {
 
       crystal.position.set(position.x, position.y, position.z);
 
-      // Continuous rotation for crystalline effect
       crystal.rotation.x += userData.rotationSpeed;
       crystal.rotation.y += userData.rotationSpeed * 0.7;
       crystal.rotation.z += userData.rotationSpeed * 1.3;
 
-      // Subtle pulsing scale
       const pulse = Math.sin(animTime * 2 + userData.initialAngle) * 0.1 + 1;
       crystal.scale.setScalar(userData.originalScale * pulse);
     });
 
-    // Update debris field
     this.debris.forEach((debrisPiece) => {
       const userData = debrisPiece.userData;
       const currentAngle = userData.initialAngle + animTime * userData.orbitalSpeed * 0.15;
@@ -277,7 +260,6 @@ export class LifeFormSiliconBasedLifeEffect {
       debrisPiece.rotation.y += userData.rotationSpeed * 0.8;
     });
 
-    // Update connection lines
     this.connections.forEach((connection) => {
       const userData = connection.userData;
       const crystal1 = this.crystals[userData.crystal1Index];
@@ -288,7 +270,6 @@ export class LifeFormSiliconBasedLifeEffect {
       geometry.setFromPoints(points);
       geometry.attributes.position.needsUpdate = true;
 
-      // Update shader time for animated beam effect
       const material = connection.material as THREE.ShaderMaterial;
       material.uniforms.time.value = animTime;
     });
