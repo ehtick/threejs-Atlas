@@ -1069,7 +1069,6 @@ export class PlanetLayerSystem {
   }
 
   applyHoleShader(holeShader: THREE.ShaderMaterial): void {
-    // Store the original material before applying the hole shader
     if (!this.originalBaseMaterial) {
       this.originalBaseMaterial = this.baseMaterial.clone();
     }
@@ -1087,7 +1086,7 @@ export class PlanetLayerSystem {
       if (this.baseMaterial) {
         this.baseMaterial.dispose();
       }
-      
+
       this.baseMaterial = this.originalBaseMaterial.clone();
       this.baseMesh.material = this.baseMaterial;
     }

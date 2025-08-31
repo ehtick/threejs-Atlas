@@ -734,7 +734,7 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
       try {
         // Remove this specific effect from the global registry
         effectRegistry.removeEffect(effect.id);
-        
+
         if (effect.effect.dispose) {
           effect.effect.dispose();
         }

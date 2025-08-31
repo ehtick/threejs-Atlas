@@ -25,7 +25,6 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
   const [sceneLoaded, setSceneLoaded] = useState(false);
   const [canvasHidden, setCanvasHidden] = useState(false);
 
-  // Seeded random number generator
   class SeededRandom {
     private seed: number;
 
@@ -56,7 +55,6 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
     }
   }
 
-  // Starfield loading animation
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -159,24 +157,20 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
     const containerHeight = container.clientHeight;
     const size = Math.min(containerWidth, containerHeight);
 
-    // Setup scene
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x000011);
     sceneRef.current = scene;
 
-    // Setup camera
     const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 10000);
     camera.position.set(0, 200, 400);
     camera.lookAt(0, 0, 0);
 
-    // Setup renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(size, size);
     renderer.setClearColor(0x000011, 1);
     rendererRef.current = renderer;
     container.appendChild(renderer.domElement);
 
-    // Setup controls
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
@@ -189,16 +183,13 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
     controls.target.set(0, 0, 0);
     controlsRef.current = controls;
 
-    // Create galaxy group
     const galaxyGroup = new THREE.Group();
     galaxyGroupRef.current = galaxyGroup;
     scene.add(galaxyGroup);
 
-    // Setup random generator
     const rng = new SeededRandom(seed);
     const rotationAngle = rng.uniform(0, 2 * Math.PI);
 
-    // Create stars based on galaxy type
     const starsGeometry = new THREE.BufferGeometry();
     const positions: number[] = [];
     const colors: number[] = [];
@@ -208,7 +199,6 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
     let numPoints = numSystems;
 
     if (galaxyType === "Spiral") {
-      // Limit points for performance
       numPoints = Math.min(numSystems, 50000);
 
       const numArms = 4;
@@ -217,7 +207,6 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
       const armTightness = 0.5;
       const coreDensity = 0.1;
 
-      // Core stars
       for (let i = 0; i < numPoints * coreDensity; i++) {
         const angle = rng.uniform(0, 2 * Math.PI);
         const radius = rng.gauss(maxRadius * 0.1, maxRadius * 0.05);
@@ -229,29 +218,26 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
         positions.push(x, height, z);
         colors.push(1, 1, 1);
 
-        // Procedural star size variation based on position and seed
-        const starSeed = seed + i * 1337; // Unique seed per star
+        const starSeed = seed + i * 1337;
         const sizeRng = new SeededRandom(starSeed);
-        const baseSizeVariation = sizeRng.gauss(1, 0.3); // Most stars are medium size
-        const isGiant = sizeRng.random() < 0.05; // 5% chance of giant stars
-        const isDwarf = sizeRng.random() < 0.3; // 30% chance of dwarf stars
+        const baseSizeVariation = sizeRng.gauss(1, 0.3); 
+        const isGiant = sizeRng.random() < 0.05; 
+        const isDwarf = sizeRng.random() < 0.3;
 
         let finalSize = Math.max(0.3, baseSizeVariation);
-        if (isGiant) finalSize *= 3 + sizeRng.uniform(0, 2); // Giant stars
-        if (isDwarf) finalSize *= 0.5 + sizeRng.uniform(0, 0.3); // Dwarf stars
+        if (isGiant) finalSize *= 3 + sizeRng.uniform(0, 2); 
+        if (isDwarf) finalSize *= 0.5 + sizeRng.uniform(0, 0.3); 
 
-        // Core stars are generally larger and brighter
         if (radius < maxRadius * 0.2) {
           finalSize *= 1.8 + sizeRng.uniform(0, 0.7);
-          colors[colors.length - 3] = 1.2; // Slightly brighter
+          colors[colors.length - 3] = 1.2; 
           colors[colors.length - 2] = 1.1;
           colors[colors.length - 1] = 0.9;
         }
 
-        sizes.push(Math.min(finalSize * 1.5, 12)); // Increased base size and cap
+        sizes.push(Math.min(finalSize * 1.5, 12)); 
       }
 
-      // Spiral arms
       for (let i = 0; i < numPoints; i++) {
         const theta = armTightness * Math.sqrt(i / numPoints) * 2 * Math.PI;
         const armAngle = (i % numArms) * armOffset;
@@ -264,65 +250,56 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
         positions.push(x, y, z);
         colors.push(1, 1, 0.8);
 
-        // Procedural star size variation for spiral arms
         const starSeed = seed + i * 1337;
         const sizeRng = new SeededRandom(starSeed);
-        const baseSizeVariation = sizeRng.gauss(0.8, 0.25); // Slightly smaller than core
-        const isGiant = sizeRng.random() < 0.03; // 3% chance of giant stars in arms
-        const isDwarf = sizeRng.random() < 0.4; // 40% chance of dwarf stars
+        const baseSizeVariation = sizeRng.gauss(0.8, 0.25); 
+        const isGiant = sizeRng.random() < 0.03; 
+        const isDwarf = sizeRng.random() < 0.4;
 
         let finalSize = Math.max(0.2, baseSizeVariation);
         if (isGiant) finalSize *= 2.5 + sizeRng.uniform(0, 1.5);
         if (isDwarf) finalSize *= 0.4 + sizeRng.uniform(0, 0.2);
 
-        // Outer arm stars are smaller
         if (radius > maxRadius * 0.7) finalSize *= 0.8;
 
-        sizes.push(Math.min(finalSize * 1.3, 8)); // Increased spiral arm star size
+        sizes.push(Math.min(finalSize * 1.3, 8)); 
       }
     } else if (galaxyType === "Elliptical") {
       numPoints = Math.min(numSystems, 100000);
 
       for (let i = 0; i < numPoints; i++) {
-        // Proper uniform distribution on sphere surface
         const angle = rng.uniform(0, 2 * Math.PI);
-        const cosTheta = rng.uniform(-1, 1); // Uniform in cos(theta) for proper sphere distribution
+        const cosTheta = rng.uniform(-1, 1); 
         const sinTheta = Math.sqrt(1 - cosTheta * cosTheta);
 
-        // Adjustable exponential decay with stronger falloff near center
         const u = rng.random();
 
-        // Modified exponential with power to control density curve
-        // Higher power = stronger decay, more spread out
-        const normalizedU = Math.pow(u, 0.6); // This spreads out the distribution more
+        const normalizedU = Math.pow(u, 0.6); 
         const radius = -Math.log(1 - normalizedU * 0.98) * maxRadius * 0.35;
 
-        // Convert to Cartesian coordinates with proper sphere distribution
         const x = radius * sinTheta * Math.cos(angle);
-        const y = radius * cosTheta * 0.6; // Flatten slightly for elliptical shape
+        const y = radius * cosTheta * 0.6; 
         const z = radius * sinTheta * Math.sin(angle);
 
         positions.push(x, y, z);
         colors.push(1, 0.9, 0.7);
 
-        // Procedural star size variation for elliptical galaxy
         const starSeed = seed + i * 1337;
         const sizeRng = new SeededRandom(starSeed);
-        const baseSizeVariation = sizeRng.gauss(0.6, 0.2); // Smaller stars overall
-        const isGiant = sizeRng.random() < 0.08; // 8% chance of giant stars (more old giants)
-        const isDwarf = sizeRng.random() < 0.25; // 25% chance of dwarf stars
+        const baseSizeVariation = sizeRng.gauss(0.6, 0.2); 
+        const isGiant = sizeRng.random() < 0.08; 
+        const isDwarf = sizeRng.random() < 0.25; 
 
         let finalSize = Math.max(0.2, baseSizeVariation);
-        if (isGiant) finalSize *= 2 + sizeRng.uniform(0, 1); // Red giants
+        if (isGiant) finalSize *= 2 + sizeRng.uniform(0, 1); 
         if (isDwarf) finalSize *= 0.6 + sizeRng.uniform(0, 0.2);
 
-        // Central stars are larger (old massive stars)
         const distanceFromCenter = Math.sqrt(x * x + y * y + z * z);
         if (distanceFromCenter < maxRadius * 0.3) {
           finalSize *= 1.5 + sizeRng.uniform(0, 0.5);
         }
 
-        sizes.push(Math.min(finalSize * 1.4, 7)); // Increased elliptical galaxy star size
+        sizes.push(Math.min(finalSize * 1.4, 7)); 
       }
     } else if (galaxyType === "Dwarf") {
       numPoints = Math.min(numSystems / 100, 10000);
@@ -339,37 +316,32 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
         positions.push(x, y, z);
         colors.push(0.8, 0.8, 1);
 
-        // Procedural star size variation for dwarf galaxy
         const starSeed = seed + i * 1337;
         const sizeRng = new SeededRandom(starSeed);
-        const baseSizeVariation = sizeRng.gauss(0.7, 0.3); // More variation in small galaxy
-        const isGiant = sizeRng.random() < 0.02; // 2% chance of giant stars (rare)
-        const isDwarf = sizeRng.random() < 0.6; // 60% chance of dwarf stars
+        const baseSizeVariation = sizeRng.gauss(0.7, 0.3); 
+        const isGiant = sizeRng.random() < 0.02; 
+        const isDwarf = sizeRng.random() < 0.6;
 
         let finalSize = Math.max(0.3, baseSizeVariation);
         if (isGiant) finalSize *= 2.5 + sizeRng.uniform(0, 1);
         if (isDwarf) finalSize *= 0.5 + sizeRng.uniform(0, 0.3);
 
-        sizes.push(Math.min(finalSize * 1.2, 5)); // Increased dwarf galaxy star size
+        sizes.push(Math.min(finalSize * 1.2, 5)); 
       }
     } else if (galaxyType === "Singularity Void") {
-      // Create distorted space effect with psychedelic shader
       numPoints = 10000;
 
-      // Swirling void particles in a double helix pattern
       for (let i = 0; i < numPoints; i++) {
         const t = i / numPoints;
         const angle = t * 30 * Math.PI;
         const radius = maxRadius * (1 - t * 0.8) + rng.uniform(-10, 10);
         const height = (t - 0.5) * 300 + Math.sin(angle * 0.5) * 20;
 
-        // Double helix pattern
         const x = radius * Math.cos(angle) + Math.sin(t * 20) * 10;
         const z = radius * Math.sin(angle) + Math.cos(t * 20) * 10;
 
         positions.push(x, height, z);
 
-        // Rainbow distorted colors based on position
         const hue = (t + Math.sin(angle * 0.1)) % 1;
         const color = new THREE.Color();
         color.setHSL(hue, 1, 0.5 + Math.sin(t * 10) * 0.3);
@@ -377,12 +349,9 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
         sizes.push(rng.uniform(0.3, 2) * (1 + Math.sin(t * 50) * 0.5));
       }
 
-      // Add psychedelic shader wrapped around sphere
-      // Create multiple sphere layers for depth
       const createPsychedelicSphere = (radius: number, opacity: number, speed: number = 1) => {
         const sphereGeometry = new THREE.SphereGeometry(radius, 64, 64);
 
-        // Monjori-inspired shader adapted for spherical coordinates
         const vertexShader = `
           varying vec2 vUv;
           varying vec3 vPosition;
@@ -403,7 +372,6 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
           uniform float speed;
           
           void main() {
-            // Use spherical coordinates for better wrapping
             float theta = atan(vPosition.z, vPosition.x);
             float phi = acos(vPosition.y / length(vPosition));
             vec2 p = vec2(theta / 3.14159, phi / 3.14159);
@@ -435,14 +403,11 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
             vec3 color = vec3(f * i / 1.6, i / 2.0 + d / 13.0, i) * d * p.x + 
                          vec3(i / 1.3 + d / 8.0, i / 2.0 + d / 18.0, i) * d * (1.0 - p.x);
             
-            // Add depth-based color variation
             float depth = dot(vNormal, vec3(0.0, 0.0, 1.0));
             color *= 0.7 + depth * 0.3;
             
-            // Add purple/violet tint for void effect
             color = mix(color, vec3(0.5, 0.0, 1.0), 0.3);
             
-            // Edge glow effect
             float edgeFactor = pow(1.0 - abs(dot(vNormal, vec3(0.0, 0.0, 1.0))), 2.0);
             color += vec3(0.5, 0.0, 1.0) * edgeFactor * 0.5;
             
