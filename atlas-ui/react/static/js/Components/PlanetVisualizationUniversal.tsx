@@ -145,10 +145,13 @@ const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> 
   }, []);
 
   useEffect(() => {
+    // Start loading 3D scene immediately
+    setImageLoaded(true);
+    
+    // Hide canvas after animation
     setTimeout(() => {
-      setImageLoaded(true);
       setCanvasHidden(true);
-    }, 1500);
+    }, 800);
   }, []);
 
   useEffect(() => {
@@ -219,11 +222,11 @@ const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> 
 
       </div>
 
-      <div className="relative w-full max-w-80 sm:max-w-96 aspect-square mx-auto bg-black/50 flex justify-center items-center rounded-xl overflow-hidden border-2 border-blue-400/30 mb-4">
+      <div className="relative w-full max-w-80 sm:max-w-96 aspect-square mx-auto bg-black flex justify-center items-center rounded-xl overflow-hidden border-2 border-blue-400/30 mb-4">
         <canvas ref={canvasRef} className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[2500ms] ${canvasHidden ? "opacity-0" : "opacity-100"}`} style={{ filter: canvasHidden ? "blur(50px)" : "none" }} />
 
         {imageLoaded && planet && (
-          <div className={`absolute inset-0 w-full h-full transition-all duration-500 ${imageLoaded ? "opacity-100 blur-0" : "opacity-0 blur-[25px]"}`}>
+          <div className={`absolute inset-0 w-full h-full transition-all duration-500 ${imageLoaded && canvasHidden ? "opacity-100 blur-0" : "opacity-0 blur-[25px]"}`}>
             <ModularPlanetRendererWrapper
               planetName={planet.name}
               containerClassName="w-full h-full"
