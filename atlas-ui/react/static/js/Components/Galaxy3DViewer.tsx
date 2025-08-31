@@ -612,8 +612,8 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({
       const processedSizes: number[] = [];
       const stretchedLinePositions: number[] = [];
       const stretchedLineColors: number[] = [];
-      const eventHorizonRadius = 2; // Complete absorption - smaller for more visible effect
-      const tidalRadius = 25; // Spaghettification zone - much larger to catch more stars
+      const eventHorizonRadius = 0.4; // Complete absorption - very small for realistic effect
+      const tidalRadius = eventHorizonRadius * 25; // Spaghettification zone proportional to event horizon
       
       for (let i = 0; i < positions.length; i += 3) {
         const starX = positions[i];
