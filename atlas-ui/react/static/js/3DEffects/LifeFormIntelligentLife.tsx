@@ -5,7 +5,7 @@ import { DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime.tsx";
 
 const PROCEDURAL_RANGES = {
   SATELLITE_COUNT: { min: 1, max: 10 },
-  SATELLITE_DISTANCE: { min: 2, max: 4 },
+  SATELLITE_DISTANCE: { min: 2, max: 2 },
   ORBITAL_SPEED: { min: 2.2, max: 4.8 },
 };
 
@@ -52,12 +52,15 @@ export class LifeFormIntelligentLifeEffect {
     const baseDistance = this.planetRadius + this.params.satelliteDistance!;
 
     for (let i = 0; i < satelliteCount; i++) {
-      const angle = (i / satelliteCount) * Math.PI * 2 + this.rng.random() * 0.5;
-      const distance = baseDistance + this.rng.random() * 10 - 5;
-      const height = (this.rng.random() - 0.5) * this.planetRadius * 0.2;
-
-      const x = Math.cos(angle) * distance;
-      const z = Math.sin(angle) * distance;
+      const distance = baseDistance + this.rng.random() * 5 - 2.5;
+      
+      // Generate random orbital plane (inclination and orientation)
+      const inclination = this.rng.random() * Math.PI; // 0 to 180 degrees
+      const longitudeOfAscendingNode = this.rng.random() * Math.PI * 2; // 0 to 360 degrees
+      const initialAngle = this.rng.random() * Math.PI * 2; // Starting position in orbit
+      
+      // Calculate initial position
+      const position = this.calculateOrbitalPosition(distance, inclination, longitudeOfAscendingNode, initialAngle);
 
       // Create satellite geometry - larger, more visible octahedron
       const geometry = new THREE.OctahedronGeometry(this.planetRadius * 0.025, 0);
@@ -68,17 +71,37 @@ export class LifeFormIntelligentLifeEffect {
       });
 
       const satellite = new THREE.Mesh(geometry, material);
-      satellite.position.set(x, height, z);
+      satellite.position.set(position.x, position.y, position.z);
       satellite.userData = {
-        originalAngle: angle,
         distance: distance,
-        height: height,
+        inclination: inclination,
+        longitudeOfAscendingNode: longitudeOfAscendingNode,
+        initialAngle: initialAngle,
         orbitalSpeed: this.rng.random() * 0.5 + 0.5,
       };
 
       this.satellites.push(satellite);
       this.group.add(satellite);
     }
+  }
+
+  private calculateOrbitalPosition(distance: number, inclination: number, longitudeOfAscendingNode: number, angle: number): THREE.Vector3 {
+    // Calculate position in the orbital plane
+    const x_orbital = distance * Math.cos(angle);
+    const y_orbital = distance * Math.sin(angle);
+    const z_orbital = 0;
+
+    // Apply inclination rotation (rotation around X axis)
+    const x_inclined = x_orbital;
+    const y_inclined = y_orbital * Math.cos(inclination) - z_orbital * Math.sin(inclination);
+    const z_inclined = y_orbital * Math.sin(inclination) + z_orbital * Math.cos(inclination);
+
+    // Apply longitude of ascending node rotation (rotation around Z axis)
+    const x_final = x_inclined * Math.cos(longitudeOfAscendingNode) - y_inclined * Math.sin(longitudeOfAscendingNode);
+    const y_final = x_inclined * Math.sin(longitudeOfAscendingNode) + y_inclined * Math.cos(longitudeOfAscendingNode);
+    const z_final = z_inclined;
+
+    return new THREE.Vector3(x_final, y_final, z_final);
   }
 
 
@@ -91,13 +114,18 @@ export class LifeFormIntelligentLifeEffect {
     // Update satellites orbital motion
     this.satellites.forEach((satellite) => {
       const userData = satellite.userData;
-      const newAngle = userData.originalAngle + animTime * userData.orbitalSpeed * 0.1;
+      const currentAngle = userData.initialAngle + animTime * userData.orbitalSpeed * 0.1;
       
-      const x = Math.cos(newAngle) * userData.distance;
-      const z = Math.sin(newAngle) * userData.distance;
+      // Calculate new position using orbital mechanics
+      const position = this.calculateOrbitalPosition(
+        userData.distance,
+        userData.inclination,
+        userData.longitudeOfAscendingNode,
+        currentAngle
+      );
       
-      satellite.position.set(x, userData.height, z);
-      satellite.rotation.y = newAngle;
+      satellite.position.set(position.x, position.y, position.z);
+      satellite.rotation.y = currentAngle;
     });
   }
 
