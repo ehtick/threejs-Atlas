@@ -14,6 +14,7 @@ export interface LayerEffect {
 export class PlanetLayerSystem {
   private baseMesh: THREE.Mesh;
   private baseMaterial: THREE.ShaderMaterial;
+  private originalBaseMaterial?: THREE.ShaderMaterial;
   private effectLayers: LayerEffect[] = [];
   private scene?: THREE.Scene;
   private planetRadius: number;
@@ -1068,12 +1069,28 @@ export class PlanetLayerSystem {
   }
 
   applyHoleShader(holeShader: THREE.ShaderMaterial): void {
+    // Store the original material before applying the hole shader
+    if (!this.originalBaseMaterial) {
+      this.originalBaseMaterial = this.baseMaterial.clone();
+    }
+
     if (this.baseMaterial) {
       this.baseMaterial.dispose();
     }
 
     this.baseMaterial = holeShader;
     this.baseMesh.material = holeShader;
+  }
+
+  restoreOriginalMaterial(): void {
+    if (this.originalBaseMaterial) {
+      if (this.baseMaterial) {
+        this.baseMaterial.dispose();
+      }
+      
+      this.baseMaterial = this.originalBaseMaterial.clone();
+      this.baseMesh.material = this.baseMaterial;
+    }
   }
 
   createGenericLayerMaterial(vertexShader: string, fragmentShader: string, uniforms: { [uniform: string]: THREE.IUniform<any> }, transparent: boolean = true, blending: THREE.Blending = THREE.NormalBlending): THREE.ShaderMaterial {

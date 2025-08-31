@@ -2944,6 +2944,22 @@ export class EffectRegistry {
         }
       }
 
+      // Special handling for CaveSurfaceHoles - restore original material when disabled
+      if (effectInstance.type === "cave_surface_holes" && effect) {
+        if (effectInstance.enabled) {
+          // Re-apply the shader when enabled
+          if (effect.applyToPlanetSystem && this.layerSystem) {
+            const baseColor = this.baseColor || new THREE.Color(0xD1D1D1);
+            effect.applyToPlanetSystem(this.layerSystem, baseColor);
+          }
+        } else {
+          // Restore original material when disabled
+          if (effect.planetSystem && effect.planetSystem.restoreOriginalMaterial) {
+            effect.planetSystem.restoreOriginalMaterial();
+          }
+        }
+      }
+
       if (this.layerSystem) {
         const layerMeshes = this.layerSystem.getLayerMeshes();
 

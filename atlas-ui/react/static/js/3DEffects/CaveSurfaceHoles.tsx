@@ -290,11 +290,31 @@ export class CaveSurfaceHolesEffect {
 
   applyToPlanetSystem(planetSystem: any, baseColor: THREE.Color): void {
     const holeShader = this.createPlanetHoleShader(baseColor);
+    
+    // Copy lighting uniforms from the original planet material to match its lighting
+    if (planetSystem.baseMaterial && planetSystem.baseMaterial.uniforms) {
+      const originalUniforms = planetSystem.baseMaterial.uniforms;
+      if (originalUniforms.lightDirection) {
+        holeShader.uniforms.lightDirection.value.copy(originalUniforms.lightDirection.value);
+      }
+      if (originalUniforms.lightPosition) {
+        holeShader.uniforms.lightPosition.value.copy(originalUniforms.lightPosition.value);
+      }
+      if (originalUniforms.ambientStrength) {
+        holeShader.uniforms.ambientStrength.value = originalUniforms.ambientStrength.value;
+      }
+      if (originalUniforms.lightIntensity) {
+        holeShader.uniforms.lightIntensity.value = originalUniforms.lightIntensity.value;
+      }
+    }
+    
     planetSystem.applyHoleShader(holeShader);
     this.planetShader = holeShader;
+    this.planetSystem = planetSystem;
   }
 
   private planetShader?: THREE.ShaderMaterial;
+  private planetSystem?: any;
 
   removeFromScene(scene: THREE.Scene): void {
     scene.remove(this.group);
