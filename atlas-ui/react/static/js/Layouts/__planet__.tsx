@@ -1,16 +1,17 @@
 // atlas-ui/react/static/js/Layouts/__planet__.tsx
-import React, { useState, useEffect } from 'react';
-import Header from '../Components/Header.tsx';
-import PlanetInfo from '../Components/PlanetInfo.tsx';
-import PlanetVisualization from '../Components/PlanetVisualization.tsx';
-import PlanetVisualizationUniversal from '../Components/PlanetVisualizationUniversal.tsx';
-import PlanetNavigation from '../Components/PlanetNavigation.tsx';
-import VersionFooter from '../Components/VersionFooter.tsx';
-import SpaceshipPanel from '../Components/SpaceshipPanel.tsx';
-import TreasureChest from '../Components/TreasureChest.tsx';
-import FuelBars from '../Components/FuelBars.tsx';
-import { markPlanetAsVisited, markSystemAsVisited } from '../Utils/VisitHistory.tsx';
-import { debugConfig } from '../Utils/DebugConfig.tsx';
+import React, { useState, useEffect } from "react";
+import Header from "../Components/Header.tsx";
+import PlanetInfo from "../Components/PlanetInfo.tsx";
+import PlanetVisualization from "../Components/PlanetVisualization.tsx";
+import PlanetVisualizationUniversal from "../Components/PlanetVisualizationUniversal.tsx";
+import PlanetNavigation from "../Components/PlanetNavigation.tsx";
+import VersionFooter from "../Components/VersionFooter.tsx";
+import SpaceshipPanel from "../Components/SpaceshipPanel.tsx";
+import TreasureChest from "../Components/TreasureChest.tsx";
+import FuelBars from "../Components/FuelBars.tsx";
+import { markPlanetAsVisited, markSystemAsVisited } from "../Utils/VisitHistory.tsx";
+import { debugConfig } from "../Utils/DebugConfig.tsx";
+import { useAtlasKeySequence } from "../Hooks/useAtlasKeySequence.tsx";
 
 interface Planet {
   name: string;
@@ -55,201 +56,114 @@ interface PlanetLayoutProps {
   initial_angle_rotation: number;
 }
 
-const PlanetLayout: React.FC<PlanetLayoutProps> = ({
-  planet,
-  system,
-  galaxy,
-  planet_url,
-  version,
-  image_url,
-  cosmic_origin_time,
-  initial_angle_rotation
-}) => {
-  const [coordinates] = useState<string>(galaxy.coordinates.join(','));
+const PlanetLayout: React.FC<PlanetLayoutProps> = ({ planet, system, galaxy, planet_url, version, image_url, cosmic_origin_time, initial_angle_rotation }) => {
+  const [coordinates] = useState<string>(galaxy.coordinates.join(","));
   const [effects, setEffects] = useState<any[]>([]);
   const [effectsControlEnabled, setEffectsControlEnabled] = useState(debugConfig.ENABLE_EFFECTS_CONTROL);
-  
+
+  useAtlasKeySequence();
+
   const handleEffectsCreated = (newEffects: any[]) => {
     setEffects(newEffects);
   };
-  
+
   const handleToggleEffect = (effectId: string, enabled: boolean) => {
-    setEffects(prev => 
-      prev.map(e => e.id === effectId ? { ...e, enabled } : e)
-    );
+    setEffects((prev) => prev.map((e) => (e.id === effectId ? { ...e, enabled } : e)));
   };
 
   useEffect(() => {
-    document.body.setAttribute('data-coordinates', coordinates);
-    document.body.setAttribute('data-system-index', system.index.toString());
-    document.body.setAttribute('data-planet-name', planet.name.toLowerCase());
-    
+    document.body.setAttribute("data-coordinates", coordinates);
+    document.body.setAttribute("data-system-index", system.index.toString());
+    document.body.setAttribute("data-planet-name", planet.name.toLowerCase());
+
     markPlanetAsVisited(coordinates, system.index, planet.name, system.planets || []);
     markSystemAsVisited(coordinates, system.index);
   }, [coordinates, system.index, planet.name]);
 
-  // Listen for debug config changes
   useEffect(() => {
     const handleConfigChange = () => {
       setEffectsControlEnabled(debugConfig.ENABLE_EFFECTS_CONTROL);
     };
-    
+
     debugConfig.addListener(handleConfigChange);
-    
+
     return () => {
       debugConfig.removeListener(handleConfigChange);
     };
   }, []);
 
-  // ATLAS keyboard sequence listener
-  useEffect(() => {
-    let sequence = '';
-    let timeoutId: NodeJS.Timeout;
-
-    const handleKeyPress = (event: KeyboardEvent) => {
-      // Only capture letter keys
-      if (event.key.match(/^[a-zA-Z]$/)) {
-        sequence += event.key.toUpperCase();
-        
-        // Clear timeout if it exists
-        if (timeoutId) {
-          clearTimeout(timeoutId);
-        }
-        
-        // Set timeout to clear sequence after 2 seconds
-        timeoutId = setTimeout(() => {
-          sequence = '';
-        }, 2000);
-        
-        // Check if sequence ends with ATLAS
-        if (sequence.includes('ATLAS')) {
-          debugConfig.enableEffectsControl();
-          sequence = '';
-          if (timeoutId) {
-            clearTimeout(timeoutId);
-          }
-        }
-        
-        // Keep sequence length reasonable
-        if (sequence.length > 10) {
-          sequence = sequence.slice(-10);
-        }
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyPress);
-    
-    return () => {
-      document.removeEventListener('keydown', handleKeyPress);
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    };
-  }, []);
-
   const formatPlanetName = (name: string) => {
-    return name.replace(/_/g, ' ');
+    return name.replace(/_/g, " ");
   };
 
   const formatSystemName = (name: string) => {
-    return name.replace(/_/g, ' ');
+    return name.replace(/_/g, " ");
   };
 
   const formatGalaxyName = (name: string) => {
-    return name.replace(/_/g, ' ');
+    return name.replace(/_/g, " ");
   };
 
   return (
     <div className="w-full h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white overflow-auto">
-      <div className="absolute inset-0 opacity-20" style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-      }}></div>
-      
+      <div
+        className="absolute inset-0 opacity-20"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+        }}
+      ></div>
+
       <FuelBars />
-      
+
       <div className="relative z-10 pt-1">
         <Header />
-        
+
         <div className="w-full px-2 sm:px-4 lg:px-6 py-4 sm:py-8">
-          
           <div className="text-center mb-8">
             <div className="flex items-center justify-center gap-4 mb-4">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                Planet '{formatPlanetName(planet.name)}'
-              </h1>
-              
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">Planet '{formatPlanetName(planet.name)}'</h1>
             </div>
-            
+
             <p className="text-lg sm:text-xl text-gray-300">
               in System '{formatSystemName(system.name)}' - Galaxy '{formatGalaxyName(galaxy.name)}'
             </p>
-            <p className="text-sm sm:text-base text-gray-400">
-              Coordinates {galaxy.coordinates.join(', ')}
-            </p>
-            
+            <p className="text-sm sm:text-base text-gray-400">Coordinates {galaxy.coordinates.join(", ")}</p>
           </div>
 
-          <PlanetNavigation 
-            currentPlanet={planet.name} 
-            system={system} 
-            galaxy={galaxy}
-            systemPlanets={system.planets || []}
-          />
+          <PlanetNavigation currentPlanet={planet.name} system={system} galaxy={galaxy} systemPlanets={system.planets || []} />
 
           <div className="bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 mb-8 shadow-2xl p-4 sm:p-6">
             <div className="flex flex-col lg:grid lg:grid-cols-[400px_1fr] gap-6 lg:gap-8 relative">
-              
               <div className="order-1 lg:order-1">
-                <PlanetVisualizationUniversal 
-                  planetUrl={planet_url} 
-                  imageUrl={image_url} 
-                  planet={planet} 
-                  cosmicOriginTime={cosmic_origin_time}
-                  initialAngleRotation={initial_angle_rotation}
-                  onEffectsCreated={handleEffectsCreated}
-                  effects={effects}
-                  onToggleEffect={handleToggleEffect}
-                />
+                <PlanetVisualizationUniversal planetUrl={planet_url} planet={planet} cosmicOriginTime={cosmic_origin_time} initialAngleRotation={initial_angle_rotation} onEffectsCreated={handleEffectsCreated} effects={effects} onToggleEffect={handleToggleEffect} />
               </div>
-              
+
               <div className="hidden lg:block absolute left-[416px] top-0 bottom-0 w-1 rounded-full bg-white/10 -translate-x-1.5"></div>
-              
+
               <div className="order-2 lg:order-2">
-                <PlanetInfo 
-                  planet={planet} 
-                  system={system} 
-                  galaxy={galaxy} 
-                  cosmicOriginTime={cosmic_origin_time}
-                  initialAngleRotation={initial_angle_rotation}
-                  effects={effectsControlEnabled ? effects : undefined}
-                  onToggleEffect={effectsControlEnabled ? handleToggleEffect : undefined}
-                />
+                <PlanetInfo planet={planet} system={system} galaxy={galaxy} cosmicOriginTime={cosmic_origin_time} initialAngleRotation={initial_angle_rotation} effects={effectsControlEnabled ? effects : undefined} onToggleEffect={effectsControlEnabled ? handleToggleEffect : undefined} />
               </div>
-              
             </div>
           </div>
 
           <div className="bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 mb-8 shadow-2xl p-4 sm:p-6 text-center">
-            <button 
-              onClick={() => window.location.href = `/system/${system.index}`}
-              className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-gray-600 via-gray-700 to-gray-600 hover:from-gray-700 hover:via-gray-800 hover:to-gray-700 text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg backdrop-blur-sm"
-            >
+            <button onClick={() => (window.location.href = `/system/${system.index}`)} className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-gray-600 via-gray-700 to-gray-600 hover:from-gray-700 hover:via-gray-800 hover:to-gray-700 text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg backdrop-blur-sm">
               <span className="text-base sm:text-lg">← Back to System '{formatSystemName(system.name)}'</span>
             </button>
           </div>
         </div>
-        
+
         <VersionFooter version={version} />
       </div>
-      
+
       <TreasureChest />
       <SpaceshipPanel
         currentLocation={{
-          type: 'planet',
+          type: "planet",
           name: planet.name,
-          coordinates: galaxy.coordinates.join(','),
+          coordinates: galaxy.coordinates.join(","),
           systemIndex: system.index,
-          planetName: planet.name
+          planetName: planet.name,
         }}
       />
     </div>

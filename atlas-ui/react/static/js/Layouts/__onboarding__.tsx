@@ -49,12 +49,10 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({ version }) => {
   };
 
   const handleAnimationComplete = () => {
-
     setAnimationState("redirecting");
     setAnimationType(null);
 
     setTimeout(() => {
-
       const form = document.createElement("form");
       form.method = "POST";
       form.action = "/onboarding";
