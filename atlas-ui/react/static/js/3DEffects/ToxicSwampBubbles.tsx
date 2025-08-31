@@ -336,6 +336,10 @@ export class ToxicSwampBubblesEffect {
     return this.bubbleGroup.visible;
   }
 
+  public getObject3D(): THREE.Group {
+    return this.bubbleGroup;
+  }
+
   public getBubbleCount(): number {
     return this.bubbles.filter((b) => b.currentPhase !== "hidden").length;
   }
