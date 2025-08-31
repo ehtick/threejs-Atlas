@@ -143,14 +143,14 @@ export class SpaceshipResourceManager {
     savedLocations.forEach((location: any) => {
       if (location.type === "planet") {
         sources.planets++;
-        totalGeneration.antimatter += 0.1;
+        totalGeneration.antimatter += 0.07;
         totalGeneration.element115 += 0.05;
-        totalGeneration.deuterium += 0.1;
+        totalGeneration.deuterium += 0.08;
       } else if (location.type === "system") {
         sources.systems++;
-        totalGeneration.antimatter += 1;
-        totalGeneration.element115 += 1;
-        totalGeneration.deuterium += 1;
+        totalGeneration.antimatter += 0.02;
+        totalGeneration.element115 += 0.02;
+        totalGeneration.deuterium += 0.02;
       }
     });
     totalGeneration.antimatter = totalGeneration.antimatter * upgrade.multiplier;
