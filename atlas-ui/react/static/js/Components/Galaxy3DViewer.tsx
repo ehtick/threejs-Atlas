@@ -187,47 +187,209 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({
         sizes.push(rng.uniform(0.5, 2));
       }
     } else if (galaxyType === "Singularity Void") {
-      // Create distorted space effect
-      numPoints = 5000;
+      // Create distorted space effect with psychedelic shader
+      numPoints = 10000;
       
-      // Swirling void particles
+      // Swirling void particles in a double helix pattern
       for (let i = 0; i < numPoints; i++) {
         const t = i / numPoints;
-        const angle = t * 20 * Math.PI;
-        const radius = maxRadius * (1 - t) + rng.uniform(-20, 20);
-        const height = (t - 0.5) * 200 + rng.uniform(-10, 10);
+        const angle = t * 30 * Math.PI;
+        const radius = maxRadius * (1 - t * 0.8) + rng.uniform(-10, 10);
+        const height = (t - 0.5) * 300 + Math.sin(angle * 0.5) * 20;
         
-        const x = radius * Math.cos(angle);
-        const z = radius * Math.sin(angle);
+        // Double helix pattern
+        const x = radius * Math.cos(angle) + Math.sin(t * 20) * 10;
+        const z = radius * Math.sin(angle) + Math.cos(t * 20) * 10;
         
         positions.push(x, height, z);
         
-        // Distorted colors
-        const r = rng.uniform(0.5, 1);
-        const g = rng.uniform(0, 0.5);
-        const b = rng.uniform(0.5, 1);
-        colors.push(r, g, b);
-        sizes.push(rng.uniform(0.5, 3));
+        // Rainbow distorted colors based on position
+        const hue = (t + Math.sin(angle * 0.1)) % 1;
+        const color = new THREE.Color();
+        color.setHSL(hue, 1, 0.5 + Math.sin(t * 10) * 0.3);
+        colors.push(color.r, color.g, color.b);
+        sizes.push(rng.uniform(0.3, 2) * (1 + Math.sin(t * 50) * 0.5));
       }
       
-      // Add glitch effect geometry
+      // Add psychedelic shader wrapped around sphere
+      // Create multiple sphere layers for depth
+      const createPsychedelicSphere = (radius: number, opacity: number, speed: number = 1) => {
+        const sphereGeometry = new THREE.SphereGeometry(radius, 64, 64);
+        
+        // Monjori-inspired shader adapted for spherical coordinates
+        const vertexShader = `
+          varying vec2 vUv;
+          varying vec3 vPosition;
+          varying vec3 vNormal;
+          void main() {
+            vUv = uv;
+            vPosition = position;
+            vNormal = normalize(normalMatrix * normal);
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `;
+        
+        const fragmentShader = `
+          varying vec2 vUv;
+          varying vec3 vPosition;
+          varying vec3 vNormal;
+          uniform float time;
+          uniform float speed;
+          
+          void main() {
+            // Use spherical coordinates for better wrapping
+            float theta = atan(vPosition.z, vPosition.x);
+            float phi = acos(vPosition.y / length(vPosition));
+            vec2 p = vec2(theta / 3.14159, phi / 3.14159);
+            
+            float a = time * 40.0 * speed;
+            float d, e, f, g = 1.0 / 40.0, h, i, r, q;
+            
+            e = 400.0 * (p.x * 0.5 + 0.5);
+            f = 400.0 * (p.y * 0.5 + 0.5);
+            i = 200.0 + sin(e * g + a / 150.0) * 20.0;
+            d = 200.0 + cos(f * g / 2.0) * 18.0 + cos(e * g) * 7.0;
+            r = sqrt(pow(abs(i - e), 2.0) + pow(abs(d - f), 2.0));
+            q = f / r;
+            e = (r * cos(q)) - a / 2.0;
+            f = (r * sin(q)) - a / 2.0;
+            d = sin(e * g) * 176.0 + sin(e * g) * 164.0 + r;
+            h = ((f + d) + a / 2.0) * g;
+            i = cos(h + r * p.x / 1.3) * (e + e + a) + cos(q * g * 6.0) * (r + h / 3.0);
+            h = sin(f * g) * 144.0 - sin(e * g) * 212.0 * p.x;
+            h = (h + (f - e) * q + sin(r - (a + h) / 7.0) * 10.0 + i / 4.0) * g;
+            i += cos(h * 2.3 * sin(a / 350.0 - q)) * 184.0 * sin(q - (r * 4.3 + a / 12.0) * g) + tan(r * g + h) * 184.0 * cos(r * g + h);
+            i = mod(i / 5.6, 256.0) / 64.0;
+            if (i < 0.0) i += 4.0;
+            if (i >= 2.0) i = 4.0 - i;
+            d = r / 350.0;
+            d += sin(d * d * 8.0) * 0.52;
+            f = (sin(a * g) + 1.0) / 2.0;
+            
+            vec3 color = vec3(f * i / 1.6, i / 2.0 + d / 13.0, i) * d * p.x + 
+                         vec3(i / 1.3 + d / 8.0, i / 2.0 + d / 18.0, i) * d * (1.0 - p.x);
+            
+            // Add depth-based color variation
+            float depth = dot(vNormal, vec3(0.0, 0.0, 1.0));
+            color *= 0.7 + depth * 0.3;
+            
+            // Add purple/violet tint for void effect
+            color = mix(color, vec3(0.5, 0.0, 1.0), 0.3);
+            
+            // Edge glow effect
+            float edgeFactor = pow(1.0 - abs(dot(vNormal, vec3(0.0, 0.0, 1.0))), 2.0);
+            color += vec3(0.5, 0.0, 1.0) * edgeFactor * 0.5;
+            
+            gl_FragColor = vec4(color, ${opacity});
+          }
+        `;
+        
+        const shaderMaterial = new THREE.ShaderMaterial({
+          uniforms: {
+            time: { value: 0 },
+            speed: { value: speed }
+          },
+          vertexShader: vertexShader,
+          fragmentShader: fragmentShader,
+          transparent: true,
+          blending: THREE.AdditiveBlending,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+        });
+        
+        const sphere = new THREE.Mesh(sphereGeometry, shaderMaterial);
+        (sphere as any).isSingularityShader = true;
+        (sphere as any).shaderSpeed = speed;
+        return sphere;
+      };
+      
+      // Create multiple concentric psychedelic spheres
+      const outerSphere = createPsychedelicSphere(250, 0.3, 1);
+      galaxyGroup.add(outerSphere);
+      
+      const middleSphere = createPsychedelicSphere(180, 0.4, -0.7);
+      galaxyGroup.add(middleSphere);
+      
+      const innerSphere = createPsychedelicSphere(120, 0.5, 1.5);
+      galaxyGroup.add(innerSphere);
+      
+      // Add an inverted sphere for inner view
+      const invertedSphere = createPsychedelicSphere(300, 0.2, 0.5);
+      invertedSphere.scale.set(-1, 1, 1); // Invert to see from inside
+      galaxyGroup.add(invertedSphere);
+      
+      // Add gravitational lensing distortion sphere
+      const lensGeometry = new THREE.SphereGeometry(350, 32, 32);
+      const lensMaterial = new THREE.ShaderMaterial({
+        uniforms: {
+          time: { value: 0 }
+        },
+        vertexShader: `
+          varying vec3 vPosition;
+          varying vec3 vNormal;
+          uniform float time;
+          void main() {
+            vPosition = position;
+            vNormal = normalize(normalMatrix * normal);
+            
+            // Distort vertices for gravitational lensing effect
+            vec3 distortedPosition = position;
+            float distortion = sin(time * 0.5 + length(position) * 0.01) * 5.0;
+            distortedPosition += normal * distortion;
+            
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(distortedPosition, 1.0);
+          }
+        `,
+        fragmentShader: `
+          varying vec3 vPosition;
+          varying vec3 vNormal;
+          uniform float time;
+          
+          void main() {
+            // Create a subtle distortion effect
+            float fresnel = pow(1.0 - abs(dot(vNormal, vec3(0.0, 0.0, 1.0))), 3.0);
+            float wave = sin(time * 2.0 + length(vPosition) * 0.05) * 0.5 + 0.5;
+            
+            vec3 color = vec3(0.1, 0.0, 0.3) * fresnel * wave;
+            float alpha = fresnel * 0.1 * wave;
+            
+            gl_FragColor = vec4(color, alpha);
+          }
+        `,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        side: THREE.BackSide,
+        depthWrite: false,
+      });
+      
+      const lensSphere = new THREE.Mesh(lensGeometry, lensMaterial);
+      (lensSphere as any).isSingularityShader = true;
+      (lensSphere as any).shaderSpeed = 0.3;
+      galaxyGroup.add(lensSphere);
+      
+      // Add glitch effect geometry with more chaos
       const glitchGeometry = new THREE.BufferGeometry();
       const glitchPositions: number[] = [];
       const glitchColors: number[] = [];
       
-      for (let i = 0; i < 500; i++) {
+      for (let i = 0; i < 1000; i++) {
         const x = rng.uniform(-maxRadius, maxRadius);
         const y = rng.uniform(-maxRadius/2, maxRadius/2);
         const z = rng.uniform(-maxRadius, maxRadius);
         
-        // Create line segments
-        glitchPositions.push(x, y, z);
-        glitchPositions.push(x + rng.uniform(-30, 30), y + rng.uniform(-10, 10), z + rng.uniform(-30, 30));
+        // Create chaotic line segments
+        const offsetX = rng.uniform(-50, 50);
+        const offsetY = rng.uniform(-30, 30);
+        const offsetZ = rng.uniform(-50, 50);
         
+        glitchPositions.push(x, y, z);
+        glitchPositions.push(x + offsetX, y + offsetY, z + offsetZ);
+        
+        const hue = rng.random();
         const color = new THREE.Color();
-        color.setHSL(rng.random(), 1, 0.5);
+        color.setHSL(hue, 1, 0.6);
         glitchColors.push(color.r, color.g, color.b);
-        glitchColors.push(color.r, color.g, color.b);
+        glitchColors.push(color.r * 0.5, color.g * 0.5, color.b * 0.5);
       }
       
       glitchGeometry.setAttribute('position', new THREE.Float32BufferAttribute(glitchPositions, 3));
@@ -236,37 +398,123 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({
       const glitchMaterial = new THREE.LineBasicMaterial({
         vertexColors: true,
         transparent: true,
-        opacity: 0.3,
+        opacity: 0.4,
         blending: THREE.AdditiveBlending,
       });
       
       const glitchLines = new THREE.LineSegments(glitchGeometry, glitchMaterial);
+      (glitchLines as any).isGlitchLines = true;
       galaxyGroup.add(glitchLines);
       
-      // Central void
-      const voidGeometry = new THREE.SphereGeometry(30, 32, 32);
-      const voidMaterial = new THREE.MeshBasicMaterial({
+      // Central black hole with event horizon
+      const blackHoleGroup = new THREE.Group();
+      
+      // Event horizon (black sphere)
+      const eventHorizonGeometry = new THREE.SphereGeometry(20, 32, 32);
+      const eventHorizonMaterial = new THREE.MeshBasicMaterial({
         color: 0x000000,
         transparent: true,
-        opacity: 0.9,
+        opacity: 0.95,
       });
-      const voidMesh = new THREE.Mesh(voidGeometry, voidMaterial);
-      galaxyGroup.add(voidMesh);
+      const eventHorizon = new THREE.Mesh(eventHorizonGeometry, eventHorizonMaterial);
+      blackHoleGroup.add(eventHorizon);
       
-      // Void distortion rings
-      for (let i = 0; i < 5; i++) {
-        const ringGeometry = new THREE.TorusGeometry(40 + i * 15, 2, 8, 64);
+      // Accretion disk with animated shader
+      const diskGeometry = new THREE.RingGeometry(25, 80, 64);
+      const diskMaterial = new THREE.ShaderMaterial({
+        uniforms: {
+          time: { value: 0 },
+          innerRadius: { value: 25 },
+          outerRadius: { value: 80 }
+        },
+        vertexShader: `
+          varying vec2 vUv;
+          varying float vRadius;
+          void main() {
+            vUv = uv;
+            vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+            vRadius = length(worldPosition.xy);
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform float time;
+          uniform float innerRadius;
+          uniform float outerRadius;
+          varying vec2 vUv;
+          varying float vRadius;
+          
+          void main() {
+            float normalizedRadius = (vRadius - innerRadius) / (outerRadius - innerRadius);
+            float angle = atan(vUv.y - 0.5, vUv.x - 0.5);
+            
+            // Swirling pattern
+            float swirl = sin(angle * 5.0 - time * 2.0 + normalizedRadius * 10.0) * 0.5 + 0.5;
+            float intensity = 1.0 - normalizedRadius;
+            
+            // Colors from hot (inner) to cold (outer)
+            vec3 hotColor = vec3(1.0, 0.5, 0.0); // Orange
+            vec3 coldColor = vec3(0.0, 0.3, 1.0); // Blue
+            vec3 color = mix(coldColor, hotColor, intensity);
+            
+            // Add swirl variation
+            color *= (0.7 + swirl * 0.3);
+            
+            // Fade out at edges
+            float alpha = intensity * 0.8;
+            
+            gl_FragColor = vec4(color, alpha);
+          }
+        `,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        side: THREE.DoubleSide,
+      });
+      
+      const accretionDisk = new THREE.Mesh(diskGeometry, diskMaterial);
+      accretionDisk.rotation.x = Math.PI / 2;
+      (accretionDisk as any).isAccretionDisk = true;
+      blackHoleGroup.add(accretionDisk);
+      
+      // Gravitational lensing effect (distortion rings)
+      for (let i = 0; i < 8; i++) {
+        const ringRadius = 30 + i * 20;
+        const ringGeometry = new THREE.TorusGeometry(ringRadius, 1 + i * 0.5, 8, 64);
         const ringMaterial = new THREE.MeshBasicMaterial({
-          color: new THREE.Color().setHSL(0.8, 1, 0.5),
+          color: new THREE.Color().setHSL((0.7 + i * 0.05) % 1, 1, 0.5),
           transparent: true,
-          opacity: 0.3 - i * 0.05,
+          opacity: 0.3 - i * 0.03,
           wireframe: true,
         });
         const ring = new THREE.Mesh(ringGeometry, ringMaterial);
         ring.rotation.x = rng.uniform(0, Math.PI);
         ring.rotation.y = rng.uniform(0, Math.PI);
-        galaxyGroup.add(ring);
+        (ring as any).isDistortionRing = true;
+        (ring as any).rotationSpeed = rng.uniform(0.001, 0.005) * (i % 2 === 0 ? 1 : -1);
+        blackHoleGroup.add(ring);
       }
+      
+      galaxyGroup.add(blackHoleGroup);
+      
+      // Add energy jets
+      const jetGeometry = new THREE.ConeGeometry(5, 100, 8);
+      const jetMaterial = new THREE.MeshBasicMaterial({
+        color: 0xff00ff,
+        transparent: true,
+        opacity: 0.6,
+        emissive: 0xff00ff,
+        emissiveIntensity: 1,
+        blending: THREE.AdditiveBlending,
+      });
+      
+      const jet1 = new THREE.Mesh(jetGeometry, jetMaterial);
+      jet1.position.y = 50;
+      galaxyGroup.add(jet1);
+      
+      const jet2 = new THREE.Mesh(jetGeometry, jetMaterial);
+      jet2.position.y = -50;
+      jet2.rotation.z = Math.PI;
+      galaxyGroup.add(jet2);
     }
 
     // Set up star attributes
@@ -398,17 +646,75 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({
     // Animation loop
     const animate = () => {
       animationIdRef.current = requestAnimationFrame(animate);
+      const time = performance.now() / 1000;
 
       // Rotate galaxy slowly
       if (galaxyGroupRef.current) {
         galaxyGroupRef.current.rotation.y += 0.001;
       }
 
-      // Animate pulsars
+      // Animate various elements
       galaxyGroup.children.forEach((child) => {
+        // Animate pulsars
         if ((child as any).isPulsar) {
           const pulseSpeed = (child as any).pulseSpeed || 1;
           child.scale.setScalar(1 + Math.sin(Date.now() * 0.001 * pulseSpeed) * 0.3);
+        }
+        
+        // Animate singularity void shader
+        if ((child as any).isSingularityShader && child instanceof THREE.Mesh) {
+          const material = child.material as THREE.ShaderMaterial;
+          if (material.uniforms && material.uniforms.time) {
+            material.uniforms.time.value = time;
+          }
+          // Add subtle rotation to spherical shaders
+          const shaderSpeed = (child as any).shaderSpeed || 1;
+          child.rotation.y += 0.001 * shaderSpeed;
+          child.rotation.x += 0.0005 * shaderSpeed;
+        }
+        
+        // Animate accretion disk
+        if ((child as any).isAccretionDisk && child instanceof THREE.Mesh) {
+          const material = child.material as THREE.ShaderMaterial;
+          if (material.uniforms && material.uniforms.time) {
+            material.uniforms.time.value = time;
+          }
+          child.rotation.z += 0.002;
+        }
+        
+        // Animate distortion rings
+        if ((child as any).isDistortionRing) {
+          const rotSpeed = (child as any).rotationSpeed || 0.001;
+          child.rotation.x += rotSpeed;
+          child.rotation.y += rotSpeed * 0.7;
+          child.scale.setScalar(1 + Math.sin(time * 2) * 0.1);
+        }
+        
+        // Animate glitch lines
+        if ((child as any).isGlitchLines && child instanceof THREE.LineSegments) {
+          const material = child.material as THREE.LineBasicMaterial;
+          material.opacity = 0.2 + Math.sin(time * 3) * 0.2;
+          child.rotation.z += 0.0005;
+        }
+        
+        // Recursively check children (for black hole group)
+        if (child instanceof THREE.Group) {
+          child.children.forEach((subchild) => {
+            if ((subchild as any).isAccretionDisk && subchild instanceof THREE.Mesh) {
+              const material = subchild.material as THREE.ShaderMaterial;
+              if (material.uniforms && material.uniforms.time) {
+                material.uniforms.time.value = time;
+              }
+              subchild.rotation.z += 0.002;
+            }
+            
+            if ((subchild as any).isDistortionRing) {
+              const rotSpeed = (subchild as any).rotationSpeed || 0.001;
+              subchild.rotation.x += rotSpeed;
+              subchild.rotation.y += rotSpeed * 0.7;
+              subchild.scale.setScalar(1 + Math.sin(time * 2) * 0.1);
+            }
+          });
         }
       });
 
