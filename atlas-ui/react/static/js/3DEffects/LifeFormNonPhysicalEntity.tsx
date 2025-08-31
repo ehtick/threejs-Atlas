@@ -6,9 +6,12 @@ import { DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime.tsx";
 const PROCEDURAL_RANGES = {
   RING_COUNT: { min: 3, max: 8 },
   RING_DISTANCE: { min: 1.5, max: 3.5 },
-  WAVE_COUNT: { min: 5, max: 15 },
-  WAVE_AMPLITUDE: { min: 0.3, max: 0.8 },
+  WAVE_COUNT: { min: 51, max: 151 },
+  WAVE_AMPLITUDE: { min: 0.1, max: 0.2 },
   ORBITAL_SPEED: { min: 0.2, max: 0.8 },
+  PORTAL_COUNT: { min: 21, max: 60 },
+  ENERGY_BEAM_COUNT: { min: 2, max: 8 },
+  PARTICLE_COUNT: { min: 20, max: 80 },
 };
 
 export interface LifeFormNonPhysicalEntityParams {
@@ -18,6 +21,9 @@ export interface LifeFormNonPhysicalEntityParams {
   waveCount?: number;
   waveAmplitude?: number;
   orbitalSpeed?: number;
+  portalCount?: number;
+  energyBeamCount?: number;
+  particleCount?: number;
   seed?: number;
   cosmicOriginTime?: number;
 }
@@ -26,6 +32,10 @@ export class LifeFormNonPhysicalEntityEffect {
   private group: THREE.Group;
   private plasmaRings: THREE.Mesh[] = [];
   private energyWaves: THREE.Mesh[] = [];
+  private dimensionalPortals: THREE.Mesh[] = [];
+  private energyBeams: THREE.Line[] = [];
+  private energyParticles: THREE.Points;
+  private spaceDistortion: THREE.Mesh;
   private params: LifeFormNonPhysicalEntityParams;
   private rng: SeededRandom;
   private planetRadius: number;
@@ -44,6 +54,9 @@ export class LifeFormNonPhysicalEntityEffect {
       waveCount: params.waveCount || Math.floor(this.rng.random() * (PROCEDURAL_RANGES.WAVE_COUNT.max - PROCEDURAL_RANGES.WAVE_COUNT.min) + PROCEDURAL_RANGES.WAVE_COUNT.min),
       waveAmplitude: params.waveAmplitude || this.rng.random() * (PROCEDURAL_RANGES.WAVE_AMPLITUDE.max - PROCEDURAL_RANGES.WAVE_AMPLITUDE.min) + PROCEDURAL_RANGES.WAVE_AMPLITUDE.min,
       orbitalSpeed: params.orbitalSpeed || this.rng.random() * (PROCEDURAL_RANGES.ORBITAL_SPEED.max - PROCEDURAL_RANGES.ORBITAL_SPEED.min) + PROCEDURAL_RANGES.ORBITAL_SPEED.min,
+      portalCount: params.portalCount || Math.floor(this.rng.random() * (PROCEDURAL_RANGES.PORTAL_COUNT.max - PROCEDURAL_RANGES.PORTAL_COUNT.min) + PROCEDURAL_RANGES.PORTAL_COUNT.min),
+      energyBeamCount: params.energyBeamCount || Math.floor(this.rng.random() * (PROCEDURAL_RANGES.ENERGY_BEAM_COUNT.max - PROCEDURAL_RANGES.ENERGY_BEAM_COUNT.min) + PROCEDURAL_RANGES.ENERGY_BEAM_COUNT.min),
+      particleCount: params.particleCount || Math.floor(this.rng.random() * (PROCEDURAL_RANGES.PARTICLE_COUNT.max - PROCEDURAL_RANGES.PARTICLE_COUNT.min) + PROCEDURAL_RANGES.PARTICLE_COUNT.min),
       cosmicOriginTime: params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME,
       seed,
     };
@@ -53,6 +66,10 @@ export class LifeFormNonPhysicalEntityEffect {
     this.group = new THREE.Group();
     this.createPlasmaRings();
     this.createEnergyWaves();
+    this.createDimensionalPortals();
+    this.createEnergyBeams();
+    this.createEnergyParticles();
+    this.createSpaceDistortion();
   }
 
   private createPlasmaRings(): void {
@@ -61,17 +78,12 @@ export class LifeFormNonPhysicalEntityEffect {
 
     for (let i = 0; i < ringCount; i++) {
       const distance = baseDistance + i * 0.8;
-      
+
       const inclination = this.rng.random() * Math.PI * 0.5;
       const longitudeOfAscendingNode = this.rng.random() * Math.PI * 2;
       const tiltAngle = (this.rng.random() - 0.5) * Math.PI * 0.3;
 
-      const ringGeometry = new THREE.RingGeometry(
-        this.planetRadius * 0.15 + i * 0.05,
-        this.planetRadius * 0.25 + i * 0.05,
-        32,
-        1
-      );
+      const ringGeometry = new THREE.TorusGeometry(this.planetRadius * 0.2 + i * 0.1, this.planetRadius * 0.03, 8, 32);
 
       const ringMaterial = new THREE.ShaderMaterial({
         uniforms: {
@@ -107,11 +119,10 @@ export class LifeFormNonPhysicalEntityEffect {
           varying float vIntensity;
           
           void main() {
-            float dist = length(vUv - 0.5);
-            float ring = smoothstep(0.3, 0.35, dist) * (1.0 - smoothstep(0.45, 0.5, dist));
+            float plasma = sin(vUv.x * 15.0 + time * 3.0) * sin(vUv.y * 10.0 + time * 2.0) * 0.5 + 0.5;
+            float energy = sin(time * 4.0 + vUv.x * 8.0) * 0.3 + 0.7;
             
-            float plasma = sin(dist * 20.0 + time * 3.0) * 0.5 + 0.5;
-            float finalIntensity = ring * plasma * vIntensity;
+            float finalIntensity = plasma * energy * vIntensity;
             
             gl_FragColor = vec4(color, finalIntensity * opacity);
           }
@@ -123,7 +134,7 @@ export class LifeFormNonPhysicalEntityEffect {
       });
 
       const ring = new THREE.Mesh(ringGeometry, ringMaterial);
-      
+
       ring.rotation.set(inclination, 0, tiltAngle);
       ring.userData = {
         distance: distance,
@@ -141,22 +152,18 @@ export class LifeFormNonPhysicalEntityEffect {
 
   private createEnergyWaves(): void {
     const waveCount = this.params.waveCount!;
-    const waveDistance = this.planetRadius + this.params.ringDistance! + 1.0;
+    const waveDistance = this.planetRadius + this.params.ringDistance! + 0.5;
 
     for (let i = 0; i < waveCount; i++) {
-      const distance = waveDistance + this.rng.random() * 2.0;
-      
+      const distance = waveDistance + this.rng.random() * 1.0;
+
       const inclination = this.rng.random() * Math.PI;
       const longitudeOfAscendingNode = this.rng.random() * Math.PI * 2;
       const initialAngle = this.rng.random() * Math.PI * 2;
 
       const position = this.calculateOrbitalPosition(distance, inclination, longitudeOfAscendingNode, initialAngle);
 
-      const waveGeometry = new THREE.SphereGeometry(
-        this.planetRadius * 0.08 + this.rng.random() * 0.04,
-        16,
-        8
-      );
+      const waveGeometry = new THREE.SphereGeometry(this.planetRadius * 0.08 + this.rng.random() * 0.04, 16, 8);
 
       const waveMaterial = new THREE.ShaderMaterial({
         uniforms: {
@@ -206,7 +213,7 @@ export class LifeFormNonPhysicalEntityEffect {
 
       const wave = new THREE.Mesh(waveGeometry, waveMaterial);
       wave.position.set(position.x, position.y, position.z);
-      
+
       wave.userData = {
         distance: distance,
         inclination: inclination,
@@ -219,6 +226,337 @@ export class LifeFormNonPhysicalEntityEffect {
       this.energyWaves.push(wave);
       this.group.add(wave);
     }
+  }
+
+  private createDimensionalPortals(): void {
+    const portalCount = this.params.portalCount!;
+    const portalDistance = this.planetRadius + this.params.ringDistance! + 1.2;
+
+    for (let i = 0; i < portalCount; i++) {
+      const distance = portalDistance + this.rng.random() * 0.8;
+
+      const inclination = this.rng.random() * Math.PI;
+      const longitudeOfAscendingNode = this.rng.random() * Math.PI * 2;
+      const initialAngle = this.rng.random() * Math.PI * 2;
+
+      const position = this.calculateOrbitalPosition(distance, inclination, longitudeOfAscendingNode, initialAngle);
+
+      const portalGeometry = new THREE.RingGeometry(this.planetRadius * 0.12, this.planetRadius * 0.18, 16, 1);
+
+      const portalMaterial = new THREE.ShaderMaterial({
+        uniforms: {
+          time: { value: 0 },
+          color: { value: new THREE.Color(0.8, 0.4, 1.0) },
+          portalIndex: { value: i },
+          activation: { value: 0.0 },
+        },
+        vertexShader: `
+          uniform float time;
+          uniform float portalIndex;
+          uniform float activation;
+          varying vec2 vUv;
+          varying float vActivation;
+          
+          void main() {
+            vUv = uv;
+            vActivation = activation;
+            
+            vec3 pos = position;
+            float ripple = sin(time * 4.0 + portalIndex * 2.0) * 0.05 * activation;
+            pos += normal * ripple;
+            
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform vec3 color;
+          uniform float time;
+          uniform float portalIndex;
+          varying vec2 vUv;
+          varying float vActivation;
+          
+          void main() {
+            vec2 center = vUv - 0.5;
+            float dist = length(center);
+            
+            float portal = smoothstep(0.35, 0.4, dist) * (1.0 - smoothstep(0.45, 0.5, dist));
+            
+            float spiral = sin(atan(center.y, center.x) * 8.0 + time * 6.0 + dist * 20.0) * 0.5 + 0.5;
+            float vortex = sin(time * 10.0 + portalIndex * 3.0) * 0.3 + 0.7;
+            
+            float intensity = portal * spiral * vortex * vActivation;
+            
+            vec3 portalColor = mix(color, vec3(1.0, 0.8, 0.9), spiral * 0.3);
+            gl_FragColor = vec4(portalColor, intensity);
+          }
+        `,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      });
+
+      const portal = new THREE.Mesh(portalGeometry, portalMaterial);
+      portal.position.set(position.x, position.y, position.z);
+      portal.lookAt(0, 0, 0);
+
+      portal.userData = {
+        distance: distance,
+        inclination: inclination,
+        longitudeOfAscendingNode: longitudeOfAscendingNode,
+        initialAngle: initialAngle,
+        orbitalSpeed: this.rng.random() * 0.3 + 0.1,
+        portalIndex: i,
+        activationPhase: this.rng.random() * Math.PI * 2,
+      };
+
+      this.dimensionalPortals.push(portal);
+      this.group.add(portal);
+    }
+  }
+
+  private createEnergyBeams(): void {
+    const beamCount = this.params.energyBeamCount!;
+
+    for (let i = 0; i < beamCount; i++) {
+      const startDistance = this.planetRadius + 0.2;
+      const endDistance = this.planetRadius + 0.4 + this.rng.random() * 0.3;
+
+      const inclination = this.rng.random() * Math.PI;
+      const longitudeOfAscendingNode = this.rng.random() * Math.PI * 2;
+      const startAngle = this.rng.random() * Math.PI * 2;
+      const endAngle = startAngle + (this.rng.random() - 0.5) * Math.PI;
+
+      const startPos = this.calculateOrbitalPosition(startDistance, inclination, longitudeOfAscendingNode, startAngle);
+      const endPos = this.calculateOrbitalPosition(endDistance, inclination, longitudeOfAscendingNode, endAngle);
+
+      const curvePoints = this.createCurvedBeamPath(startPos, endPos, startDistance, endDistance);
+      const geometry = new THREE.BufferGeometry().setFromPoints(curvePoints);
+
+      const beamMaterial = new THREE.ShaderMaterial({
+        uniforms: {
+          time: { value: 0 },
+          color: { value: new THREE.Color(0.3, 0.8, 1.0) },
+          beamIndex: { value: i },
+          intensity: { value: 0.0 },
+        },
+        vertexShader: `
+          uniform float time;
+          uniform float beamIndex;
+          uniform float intensity;
+          varying float vIntensity;
+          
+          void main() {
+            vIntensity = intensity;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform vec3 color;
+          uniform float time;
+          varying float vIntensity;
+          
+          void main() {
+            float glow = sin(time * 8.0) * 0.3 + 0.7;
+            gl_FragColor = vec4(color, vIntensity * glow);
+          }
+        `,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      });
+
+      const beam = new THREE.Line(geometry, beamMaterial);
+      beam.userData = {
+        startDistance,
+        endDistance,
+        inclination,
+        longitudeOfAscendingNode,
+        startAngle,
+        endAngle,
+        beamIndex: i,
+        activationPhase: this.rng.random() * Math.PI * 2,
+      };
+
+      this.energyBeams.push(beam);
+      this.group.add(beam);
+    }
+  }
+
+  private createEnergyParticles(): void {
+    const particleCount = this.params.particleCount!;
+    const positions = new Float32Array(particleCount * 3);
+    const colors = new Float32Array(particleCount * 3);
+    const sizes = new Float32Array(particleCount);
+
+    for (let i = 0; i < particleCount; i++) {
+      const distance = this.planetRadius + this.params.ringDistance! + this.rng.random() * 2.0;
+      const inclination = this.rng.random() * Math.PI;
+      const longitudeOfAscendingNode = this.rng.random() * Math.PI * 2;
+      const angle = this.rng.random() * Math.PI * 2;
+
+      const position = this.calculateOrbitalPosition(distance, inclination, longitudeOfAscendingNode, angle);
+
+      positions[i * 3] = position.x;
+      positions[i * 3 + 1] = position.y;
+      positions[i * 3 + 2] = position.z;
+
+      const colorVariation = this.rng.random() * 0.3;
+      colors[i * 3] = 0.2 + colorVariation;
+      colors[i * 3 + 1] = 0.6 + colorVariation;
+      colors[i * 3 + 2] = 1.0;
+
+      sizes[i] = this.planetRadius * (0.02 + this.rng.random() * 0.03);
+    }
+
+    const particleGeometry = new THREE.BufferGeometry();
+    particleGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    particleGeometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    particleGeometry.setAttribute("size", new THREE.BufferAttribute(sizes, 1));
+
+    const particleMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        time: { value: 0 },
+        particleTexture: { value: this.createParticleTexture() },
+      },
+      vertexShader: `
+        attribute float size;
+        uniform float time;
+        varying vec3 vColor;
+        varying float vAlpha;
+        
+        void main() {
+          vColor = color;
+          
+          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+          float distanceFade = 1.0 / (1.0 + length(mvPosition.xyz) * 0.1);
+          
+          vAlpha = sin(time * 2.0 + position.x * 0.1) * 0.3 + 0.7;
+          vAlpha *= distanceFade;
+          
+          gl_PointSize = size * (300.0 / -mvPosition.z);
+          gl_Position = projectionMatrix * mvPosition;
+        }
+      `,
+      fragmentShader: `
+        uniform sampler2D particleTexture;
+        varying vec3 vColor;
+        varying float vAlpha;
+        
+        void main() {
+          vec4 texColor = texture2D(particleTexture, gl_PointCoord);
+          gl_FragColor = vec4(vColor * texColor.rgb, texColor.a * vAlpha);
+        }
+      `,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      vertexColors: true,
+    });
+
+    this.energyParticles = new THREE.Points(particleGeometry, particleMaterial);
+    this.group.add(this.energyParticles);
+  }
+
+  private createParticleTexture(): THREE.Texture {
+    const canvas = document.createElement("canvas");
+    canvas.width = 32;
+    canvas.height = 32;
+    const context = canvas.getContext("2d")!;
+
+    const gradient = context.createRadialGradient(16, 16, 0, 16, 16, 16);
+    gradient.addColorStop(0, "rgba(255, 255, 255, 1)");
+    gradient.addColorStop(0.4, "rgba(100, 200, 255, 0.8)");
+    gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
+
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, 32, 32);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    return texture;
+  }
+
+  private createCurvedBeamPath(startPos: THREE.Vector3, endPos: THREE.Vector3, startDistance: number, endDistance: number): THREE.Vector3[] {
+    const points: THREE.Vector3[] = [];
+    const segments = 15;
+
+    const startSpherical = new THREE.Spherical().setFromVector3(startPos);
+    const endSpherical = new THREE.Spherical().setFromVector3(endPos);
+
+    for (let i = 0; i <= segments; i++) {
+      const t = i / segments;
+
+      const phi = THREE.MathUtils.lerp(startSpherical.phi, endSpherical.phi, t);
+      let theta = THREE.MathUtils.lerp(startSpherical.theta, endSpherical.theta, t);
+
+      const thetaDiff = endSpherical.theta - startSpherical.theta;
+      if (Math.abs(thetaDiff) > Math.PI) {
+        if (thetaDiff > 0) {
+          theta = THREE.MathUtils.lerp(startSpherical.theta, endSpherical.theta - 2 * Math.PI, t);
+        } else {
+          theta = THREE.MathUtils.lerp(startSpherical.theta, endSpherical.theta + 2 * Math.PI, t);
+        }
+      }
+
+      const radius = THREE.MathUtils.lerp(startDistance, endDistance, t);
+
+      const elevatedRadius = radius;
+
+      const sphericalPoint = new THREE.Spherical(elevatedRadius, phi, theta);
+      const cartesianPoint = new THREE.Vector3().setFromSpherical(sphericalPoint);
+
+      points.push(cartesianPoint);
+    }
+
+    return points;
+  }
+
+  private createSpaceDistortion(): void {
+    const distortionGeometry = new THREE.SphereGeometry(this.planetRadius + this.params.ringDistance! + 1.5, 32, 16);
+
+    const distortionMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        time: { value: 0 },
+        color: { value: new THREE.Color(0.1, 0.3, 0.6) },
+      },
+      vertexShader: `
+        uniform float time;
+        varying vec3 vNormal;
+        varying vec3 vPosition;
+        
+        void main() {
+          vNormal = normalize(normalMatrix * normal);
+          vPosition = position;
+          
+          vec3 pos = position;
+          float distortion = sin(pos.x * 2.0 + time) * sin(pos.y * 2.0 + time * 1.3) * sin(pos.z * 2.0 + time * 0.7);
+          pos += normal * distortion * 0.1;
+          
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 color;
+        uniform float time;
+        varying vec3 vNormal;
+        varying vec3 vPosition;
+        
+        void main() {
+          float fresnel = pow(1.0 - abs(dot(vNormal, vec3(0.0, 0.0, 1.0))), 3.0);
+          float distortionPattern = sin(vPosition.x * 5.0 + time * 2.0) * sin(vPosition.y * 5.0 + time * 1.5) * 0.5 + 0.5;
+          
+          float alpha = fresnel * distortionPattern * 0.15;
+          gl_FragColor = vec4(color, alpha);
+        }
+      `,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      side: THREE.BackSide,
+      depthWrite: false,
+    });
+
+    this.spaceDistortion = new THREE.Mesh(distortionGeometry, distortionMaterial);
+    this.group.add(this.spaceDistortion);
   }
 
   private calculateOrbitalPosition(distance: number, inclination: number, longitudeOfAscendingNode: number, angle: number): THREE.Vector3 {
@@ -245,10 +583,10 @@ export class LifeFormNonPhysicalEntityEffect {
     this.plasmaRings.forEach((ring) => {
       const userData = ring.userData;
       const currentAngle = userData.longitudeOfAscendingNode + animTime * userData.orbitalSpeed * 0.05;
-      
+
       ring.rotation.y = currentAngle;
       ring.rotation.z = userData.tiltAngle + Math.sin(animTime * 0.5 + userData.ringIndex) * 0.2;
-      
+
       const material = ring.material as THREE.ShaderMaterial;
       material.uniforms.time.value = animTime;
     });
@@ -267,6 +605,67 @@ export class LifeFormNonPhysicalEntityEffect {
       const material = wave.material as THREE.ShaderMaterial;
       material.uniforms.time.value = animTime;
     });
+
+    this.dimensionalPortals.forEach((portal) => {
+      const userData = portal.userData;
+      const currentAngle = userData.initialAngle + animTime * userData.orbitalSpeed * 0.08;
+
+      const position = this.calculateOrbitalPosition(userData.distance, userData.inclination, userData.longitudeOfAscendingNode, currentAngle);
+      portal.position.set(position.x, position.y, position.z);
+      portal.lookAt(0, 0, 0);
+
+      const activation = (Math.sin(animTime * 1.5 + userData.activationPhase) + 1.0) * 0.5;
+
+      const material = portal.material as THREE.ShaderMaterial;
+      material.uniforms.time.value = animTime;
+      material.uniforms.activation.value = activation;
+    });
+
+    this.energyBeams.forEach((beam) => {
+      const userData = beam.userData;
+      const currentStartAngle = userData.startAngle + animTime * 0.1;
+      const currentEndAngle = userData.endAngle + animTime * 0.15;
+
+      const startPos = this.calculateOrbitalPosition(userData.startDistance, userData.inclination, userData.longitudeOfAscendingNode, currentStartAngle);
+      const endPos = this.calculateOrbitalPosition(userData.endDistance, userData.inclination, userData.longitudeOfAscendingNode, currentEndAngle);
+
+      const curvePoints = this.createCurvedBeamPath(startPos, endPos, userData.startDistance, userData.endDistance);
+      const geometry = beam.geometry as THREE.BufferGeometry;
+      geometry.setFromPoints(curvePoints);
+      geometry.attributes.position.needsUpdate = true;
+
+      const intensity = (Math.sin(animTime * 3.0 + userData.activationPhase) + 1.0) * 0.5;
+
+      const material = beam.material as THREE.ShaderMaterial;
+      material.uniforms.time.value = animTime;
+      material.uniforms.intensity.value = intensity;
+    });
+
+    if (this.energyParticles) {
+      const particleMaterial = this.energyParticles.material as THREE.ShaderMaterial;
+      particleMaterial.uniforms.time.value = animTime;
+
+      const positions = this.energyParticles.geometry.attributes.position.array as Float32Array;
+      for (let i = 0; i < positions.length / 3; i++) {
+        const x = positions[i * 3];
+        const y = positions[i * 3 + 1];
+        const z = positions[i * 3 + 2];
+
+        const drift = Math.sin(animTime * 0.5 + i * 0.1) * 0.02;
+        positions[i * 3] = x + drift;
+        positions[i * 3 + 1] = y + drift * 0.5;
+        positions[i * 3 + 2] = z + drift * 0.3;
+      }
+      this.energyParticles.geometry.attributes.position.needsUpdate = true;
+    }
+
+    if (this.spaceDistortion) {
+      const distortionMaterial = this.spaceDistortion.material as THREE.ShaderMaterial;
+      distortionMaterial.uniforms.time.value = animTime;
+
+      this.spaceDistortion.rotation.x += 0.002;
+      this.spaceDistortion.rotation.y += 0.003;
+    }
   }
 
   public getObject3D(): THREE.Object3D {
@@ -294,6 +693,26 @@ export class LifeFormNonPhysicalEntityEffect {
       wave.geometry.dispose();
       (wave.material as THREE.Material).dispose();
     });
+
+    this.dimensionalPortals.forEach((portal) => {
+      portal.geometry.dispose();
+      (portal.material as THREE.Material).dispose();
+    });
+
+    this.energyBeams.forEach((beam) => {
+      beam.geometry.dispose();
+      (beam.material as THREE.Material).dispose();
+    });
+
+    if (this.energyParticles) {
+      this.energyParticles.geometry.dispose();
+      (this.energyParticles.material as THREE.Material).dispose();
+    }
+
+    if (this.spaceDistortion) {
+      this.spaceDistortion.geometry.dispose();
+      (this.spaceDistortion.material as THREE.Material).dispose();
+    }
 
     this.group.clear();
   }
