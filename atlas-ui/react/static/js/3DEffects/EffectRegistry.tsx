@@ -1986,7 +1986,6 @@ export class EffectRegistry {
               caveSurfaceHolesEffect.addToScene(scene, mesh.position);
 
               if (this.layerSystem) {
-                const baseColor = new THREE.Color(0x8b4513);
                 caveSurfaceHolesEffect.applyToPlanetSystem(this.layerSystem, baseColor);
               }
             }
