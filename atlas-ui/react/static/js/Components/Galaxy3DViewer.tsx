@@ -573,7 +573,7 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({
       
       // Add energy jets
       const jetGeometry = new THREE.ConeGeometry(5, 100, 8);
-      const jetMaterial = new THREE.MeshBasicMaterial({
+      const jetMaterial = new THREE.MeshStandardMaterial({
         color: 0xff00ff,
         transparent: true,
         opacity: 0.6,
@@ -904,7 +904,7 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({
       
       // Central bright core
       const coreGeometry = new THREE.SphereGeometry(2, 16, 16);
-      const coreMaterial = new THREE.MeshBasicMaterial({
+      const coreMaterial = new THREE.MeshStandardMaterial({
         color: 0xffffff,
         emissive: 0xffffff,
         emissiveIntensity: 2,
@@ -914,7 +914,7 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({
       
       // Jets
       const jetGeometry = new THREE.ConeGeometry(1, 20, 8);
-      const jetMaterial = new THREE.MeshBasicMaterial({
+      const jetMaterial = new THREE.MeshStandardMaterial({
         color: 0xff0000,
         transparent: true,
         opacity: 0.6,
