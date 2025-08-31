@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galaxy 3D Viewer Demo</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: white;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 30px;
+        }
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+        .galaxy-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+        .galaxy-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #a78bfa;
+        }
+        .galaxy-info {
+            font-size: 14px;
+            color: #cbd5e1;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        .viewer-placeholder {
+            width: 100%;
+            height: 400px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(59, 130, 246, 0.3);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            font-size: 14px;
+        }
+        .instructions {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 30px;
+        }
+        .instructions h2 {
+            margin-top: 0;
+            color: #60a5fa;
+        }
+        .instructions ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .instructions li {
+            margin: 5px 0;
+        }
+        .comparison-section {
+            margin-top: 40px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+        }
+        .comparison-title {
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #e879f9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Galaxy 3D Viewer Demonstration</h1>
+        
+        <div class="instructions">
+            <h2>📋 Implementation Status</h2>
+            <p>The Galaxy 3D Viewer component has been successfully created with the following features:</p>
+            <ul>
+                <li>✅ Support for 4 galaxy types: DWARF, ELLIPTICAL, SPIRAL, and SINGULARITY VOID</li>
+                <li>✅ 3D rendering using Three.js with realistic star distributions</li>
+                <li>✅ Black holes with accretion disks</li>
+                <li>✅ Pulsars with pulsing animations</li>
+                <li>✅ Quasars with jets</li>
+                <li>✅ Seeded random generation for consistency</li>
+                <li>✅ 2D/3D view toggle in the main interface</li>
+                <li>✅ Image overlay for comparing 2D and 3D visualizations</li>
+            </ul>
+        </div>
+
+        <div class="comparison-section">
+            <div class="comparison-title">Galaxy Types Visualization</div>
+            
+            <div class="demo-grid">
+                <div class="galaxy-card">
+                    <div class="galaxy-title">🌀 Spiral Galaxy</div>
+                    <div class="galaxy-info">
+                        <strong>Characteristics:</strong><br>
+                        • 4 spiral arms with star formation<br>
+                        • Dense galactic core<br>
+                        • Up to 50,000 rendered stars<br>
+                        • Realistic arm tightness and spread
+                    </div>
+                    <div class="viewer-placeholder">
+                        Galaxy3DViewer Component<br>
+                        Type: Spiral<br>
+                        Interactive 3D View
+                    </div>
+                </div>
+
+                <div class="galaxy-card">
+                    <div class="galaxy-title">⭕ Elliptical Galaxy</div>
+                    <div class="galaxy-info">
+                        <strong>Characteristics:</strong><br>
+                        • Spheroidal distribution<br>
+                        • Gaussian density distribution<br>
+                        • Up to 100,000 rendered stars<br>
+                        • Slightly flattened shape
+                    </div>
+                    <div class="viewer-placeholder">
+                        Galaxy3DViewer Component<br>
+                        Type: Elliptical<br>
+                        Interactive 3D View
+                    </div>
+                </div>
+
+                <div class="galaxy-card">
+                    <div class="galaxy-title">🔵 Dwarf Galaxy</div>
+                    <div class="galaxy-info">
+                        <strong>Characteristics:</strong><br>
+                        • Smaller, irregular structure<br>
+                        • Lower star density<br>
+                        • Scattered distribution<br>
+                        • Blue-tinted stars
+                    </div>
+                    <div class="viewer-placeholder">
+                        Galaxy3DViewer Component<br>
+                        Type: Dwarf<br>
+                        Interactive 3D View
+                    </div>
+                </div>
+
+                <div class="galaxy-card">
+                    <div class="galaxy-title">🌌 Singularity Void</div>
+                    <div class="galaxy-info">
+                        <strong>Characteristics:</strong><br>
+                        • Swirling void particles<br>
+                        • Glitch effects and distortions<br>
+                        • Central black void<br>
+                        • Distortion rings
+                    </div>
+                    <div class="viewer-placeholder">
+                        Galaxy3DViewer Component<br>
+                        Type: Singularity Void<br>
+                        Interactive 3D View
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="instructions" style="margin-top: 40px;">
+            <h2>🎮 Controls</h2>
+            <ul>
+                <li><strong>Mouse Drag:</strong> Rotate the view</li>
+                <li><strong>Scroll:</strong> Zoom in/out</li>
+                <li><strong>Auto-rotate:</strong> Enabled by default</li>
+                <li><strong>2D/3D Toggle:</strong> Switch between visualization modes</li>
+                <li><strong>Show 2D Button:</strong> Display reference image overlay</li>
+            </ul>
+        </div>
+
+        <div class="instructions">
+            <h2>🔄 Integration</h2>
+            <p>The Galaxy3DViewer component is now integrated into the GalaxyVisualization component. Users can:</p>
+            <ul>
+                <li>Toggle between 2D and 3D views using the buttons in the header</li>
+                <li>View the 2D reference image as an overlay in 3D mode</li>
+                <li>See galaxy statistics (systems, black holes, pulsars, quasars)</li>
+                <li>Interact with the 3D scene using mouse controls</li>
+            </ul>
+            <p><strong>Location:</strong> <code>/atlas-ui/react/static/js/Components/Galaxy3DViewer.tsx</code></p>
+        </div>
+    </div>
+</body>
+</html>

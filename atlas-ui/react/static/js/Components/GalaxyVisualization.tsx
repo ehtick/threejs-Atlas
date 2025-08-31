@@ -2,19 +2,34 @@
 import React, { useEffect, useRef, useState } from "react";
 import Zoom from "react-medium-image-zoom";
 import "react-medium-image-zoom/dist/styles.css";
+import Galaxy3DViewer from "./Galaxy3DViewer.tsx";
 
 interface GalaxyVisualizationProps {
   galaxyUrl: string;
   imageUrl?: string;
+  galaxyType?: string;
+  numSystems?: number;
+  blackHoles?: number;
+  pulsars?: number;
+  quasars?: number;
 }
 
-const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, imageUrl }) => {
+const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ 
+  galaxyUrl, 
+  imageUrl,
+  galaxyType = "Spiral",
+  numSystems = 10000,
+  blackHoles = 5,
+  pulsars = 10,
+  quasars = 3,
+}) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const [stargateText, setStargateText] = useState("Aligning Stargate...");
   const [isAnimating, setIsAnimating] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [canvasHidden, setCanvasHidden] = useState(false);
+  const [viewMode, setViewMode] = useState<"2d" | "3d">("3d");
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -229,12 +244,47 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, im
 
   return (
     <div className="h-full flex flex-col">
-      <h3 className="text-lg sm:text-xl font-bold text-white mb-3">Galaxy Visualization</h3>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-lg sm:text-xl font-bold text-white">Galaxy Visualization</h3>
+        <div className="flex gap-1">
+          <button
+            onClick={() => setViewMode("3d")}
+            className={`px-3 py-1 text-xs rounded-l-lg border transition-all ${
+              viewMode === "3d"
+                ? "bg-blue-500/30 border-blue-400 text-blue-300"
+                : "bg-white/10 border-white/20 text-gray-400 hover:bg-white/20"
+            }`}
+          >
+            3D View
+          </button>
+          <button
+            onClick={() => setViewMode("2d")}
+            className={`px-3 py-1 text-xs rounded-r-lg border transition-all ${
+              viewMode === "2d"
+                ? "bg-blue-500/30 border-blue-400 text-blue-300"
+                : "bg-white/10 border-white/20 text-gray-400 hover:bg-white/20"
+            }`}
+          >
+            2D View
+          </button>
+        </div>
+      </div>
 
       <div className="relative w-full max-w-80 sm:max-w-96 aspect-square mx-auto bg-black/50 flex justify-center items-center rounded-xl overflow-hidden border-2 border-blue-400/30 mb-4">
-        <canvas ref={canvasRef} className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[2500ms] ${canvasHidden ? "opacity-0" : "opacity-100"}`} style={{ filter: canvasHidden ? "blur(50px)" : "none" }} />
+        {viewMode === "3d" ? (
+          <Galaxy3DViewer
+            galaxyType={galaxyType}
+            numSystems={numSystems}
+            blackHoles={blackHoles}
+            pulsars={pulsars}
+            quasars={quasars}
+            imageUrl={imageUrl}
+          />
+        ) : (
+          <>
+            <canvas ref={canvasRef} className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[2500ms] ${canvasHidden ? "opacity-0" : "opacity-100"}`} style={{ filter: canvasHidden ? "blur(50px)" : "none" }} />
 
-        <div className={`absolute inset-0 w-full h-full transition-all duration-500 ${imageLoaded ? "opacity-100 blur-0" : "opacity-0 blur-[25px]"}`}>
+            <div className={`absolute inset-0 w-full h-full transition-all duration-500 ${imageLoaded ? "opacity-100 blur-0" : "opacity-0 blur-[25px]"}`}>
           {imageLoaded && imageUrl ? (
             <div className="w-full h-full flex items-center justify-center">
               <Zoom zoomMargin={20} classDialog="backdrop-blur-3xl">
@@ -255,7 +305,9 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, im
           ) : (
             <img ref={imageRef} className="w-full h-full object-cover" src="/static/images/placeholder-min.jpg" alt="Galaxy visualization" />
           )}
-        </div>
+            </div>
+          </>
+        )}
       </div>
 
       <div className="text-center mt-auto">
