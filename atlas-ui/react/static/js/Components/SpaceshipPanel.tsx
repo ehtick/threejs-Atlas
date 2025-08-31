@@ -416,16 +416,16 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
                     ) : (
                       <div>
                         <div className="flex items-center justify-between text-[10px] mb-1">
-                          <span className="text-purple-300">Generating/min:</span>
+                          <span className="text-purple-300">Generating/hour:</span>
                           <div className="flex gap-2">
                             <span className="text-purple-300 flex items-center gap-0.5">
-                              <AntimatterIcon size={8} color="currentColor" />+{Math.round(baseGeneration.antimatter)} AM
+                              <AntimatterIcon size={8} color="currentColor" />+{Math.round(baseGeneration.antimatter * 60)} AM
                             </span>
                             <span className="text-cyan-300 flex items-center gap-0.5">
-                              <Element115Icon size={8} color="currentColor" />+{Math.round(baseGeneration.element115)} E115
+                              <Element115Icon size={8} color="currentColor" />+{Math.round(baseGeneration.element115 * 60)} E115
                             </span>
                             <span className="text-orange-300 flex items-center gap-0.5">
-                              <DeuteriumIcon size={8} color="currentColor" />+{Math.round(baseGeneration.deuterium)} D
+                              <DeuteriumIcon size={8} color="currentColor" />+{Math.round(baseGeneration.deuterium * 60)} D
                             </span>
                           </div>
                         </div>
@@ -434,13 +434,13 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
                           <span className="text-gray-400">Ready to collect:</span>
                           <div className="flex gap-2">
                             <span className="text-purple-300 flex items-center gap-0.5">
-                              <AntimatterIcon size={8} color="currentColor" />+{passiveGeneration.antimatter} AM
+                              <AntimatterIcon size={8} color="currentColor" />+{Math.round(passiveGeneration.antimatter)} AM
                             </span>
                             <span className="text-cyan-300 flex items-center gap-0.5">
-                              <Element115Icon size={8} color="currentColor" />+{passiveGeneration.element115} E115
+                              <Element115Icon size={8} color="currentColor" />+{Math.round(passiveGeneration.element115)} E115
                             </span>
                             <span className="text-orange-300 flex items-center gap-0.5">
-                              <DeuteriumIcon size={8} color="currentColor" />+{passiveGeneration.deuterium} D
+                              <DeuteriumIcon size={8} color="currentColor" />+{Math.round(passiveGeneration.deuterium)} D
                             </span>
                           </div>
                         </div>
@@ -527,19 +527,19 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
                   <div className="grid grid-cols-3 gap-2 text-xs">
                     <div className="text-center">
                       <div className={`font-bold flex items-center justify-center gap-1 ${passiveGeneration.antimatter > 0 ? "text-purple-300" : "text-gray-500"}`}>
-                        <AntimatterIcon size={12} color="currentColor" />+{passiveGeneration.antimatter}
+                        <AntimatterIcon size={12} color="currentColor" />+{Math.round(passiveGeneration.antimatter)}
                       </div>
                       <div className="text-gray-500">Antimatter</div>
                     </div>
                     <div className="text-center">
                       <div className={`font-bold flex items-center justify-center gap-1 ${passiveGeneration.element115 > 0 ? "text-cyan-300" : "text-gray-500"}`}>
-                        <Element115Icon size={12} color="currentColor" />+{passiveGeneration.element115}
+                        <Element115Icon size={12} color="currentColor" />+{Math.round(passiveGeneration.element115)}
                       </div>
                       <div className="text-gray-500">Element 115</div>
                     </div>
                     <div className="text-center">
                       <div className={`font-bold flex items-center justify-center gap-1 ${passiveGeneration.deuterium > 0 ? "text-orange-300" : "text-gray-500"}`}>
-                        <DeuteriumIcon size={12} color="currentColor" />+{passiveGeneration.deuterium}
+                        <DeuteriumIcon size={12} color="currentColor" />+{Math.round(passiveGeneration.deuterium)}
                       </div>
                       <div className="text-gray-500">Deuterium</div>
                     </div>
@@ -557,9 +557,9 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
                   <button
                     onClick={() => {
                       SpaceshipResourceManager.addResources({
-                        antimatter: passiveGeneration.antimatter,
-                        element115: passiveGeneration.element115,
-                        deuterium: passiveGeneration.deuterium,
+                        antimatter: Math.round(passiveGeneration.antimatter),
+                        element115: Math.round(passiveGeneration.element115),
+                        deuterium: Math.round(passiveGeneration.deuterium),
                       });
 
                       SpaceshipResourceManager.showPassiveGenerationNotification(passiveGeneration);

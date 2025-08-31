@@ -143,9 +143,9 @@ export class SpaceshipResourceManager {
     savedLocations.forEach((location: any) => {
       if (location.type === "planet") {
         sources.planets++;
-        totalGeneration.antimatter += 0.3;
-        totalGeneration.element115 += 0.2;
-        totalGeneration.deuterium += 0.3;
+        totalGeneration.antimatter += 0.1;
+        totalGeneration.element115 += 0.05;
+        totalGeneration.deuterium += 0.1;
       } else if (location.type === "system") {
         sources.systems++;
         totalGeneration.antimatter += 1;
@@ -153,9 +153,9 @@ export class SpaceshipResourceManager {
         totalGeneration.deuterium += 1;
       }
     });
-    totalGeneration.antimatter = Math.floor(totalGeneration.antimatter * upgrade.multiplier);
-    totalGeneration.element115 = Math.floor(totalGeneration.element115 * upgrade.multiplier);
-    totalGeneration.deuterium = Math.floor(totalGeneration.deuterium * upgrade.multiplier);
+    totalGeneration.antimatter = totalGeneration.antimatter * upgrade.multiplier;
+    totalGeneration.element115 = totalGeneration.element115 * upgrade.multiplier;
+    totalGeneration.deuterium = totalGeneration.deuterium * upgrade.multiplier;
 
     return {
       ...totalGeneration,
@@ -169,9 +169,9 @@ export class SpaceshipResourceManager {
 
       if (generation.antimatter > 0 || generation.element115 > 0 || generation.deuterium > 0) {
         this.addResources({
-          antimatter: generation.antimatter,
-          element115: generation.element115,
-          deuterium: generation.deuterium,
+          antimatter: Math.round(generation.antimatter),
+          element115: Math.round(generation.element115),
+          deuterium: Math.round(generation.deuterium),
         });
 
         this.showPassiveGenerationNotification(generation);
@@ -262,7 +262,7 @@ export class SpaceshipResourceManager {
     const amRoot = createRoot(amSpan);
     amRoot.render(
       <>
-        <AntimatterIcon size={12} color="currentColor" />+{generation.antimatter} AM
+        <AntimatterIcon size={12} color="currentColor" />+{Math.round(generation.antimatter)} AM
       </>
     );
 
@@ -271,7 +271,7 @@ export class SpaceshipResourceManager {
     const e115Root = createRoot(e115Span);
     e115Root.render(
       <>
-        <Element115Icon size={12} color="currentColor" />+{generation.element115} E115
+        <Element115Icon size={12} color="currentColor" />+{Math.round(generation.element115)} E115
       </>
     );
 
@@ -280,7 +280,7 @@ export class SpaceshipResourceManager {
     const deuteriumRoot = createRoot(deuteriumSpan);
     deuteriumRoot.render(
       <>
-        <DeuteriumIcon size={12} color="currentColor" />+{generation.deuterium} D
+        <DeuteriumIcon size={12} color="currentColor" />+{Math.round(generation.deuterium)} D
       </>
     );
 

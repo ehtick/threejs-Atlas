@@ -115,9 +115,9 @@ export class UnifiedSpaceshipStorage {
   static getResources(): { antimatter: number; element115: number; deuterium: number } {
     const data = this.getData();
     return {
-      antimatter: data.r.a,
-      element115: data.r.e,
-      deuterium: data.r.d,
+      antimatter: Math.round(data.r.a),
+      element115: Math.round(data.r.e),
+      deuterium: Math.round(data.r.d),
     };
   }
 
@@ -135,9 +135,9 @@ export class UnifiedSpaceshipStorage {
     const data = this.getData();
     const upgrade = data.u;
 
-    data.r.a = Math.min(data.r.a + toAdd.antimatter, upgrade.st);
-    data.r.e = Math.min(data.r.e + toAdd.element115, upgrade.st);
-    data.r.d = Math.min(data.r.d + toAdd.deuterium, upgrade.st);
+    data.r.a = Math.round(Math.min(data.r.a + toAdd.antimatter, upgrade.st));
+    data.r.e = Math.round(Math.min(data.r.e + toAdd.element115, upgrade.st));
+    data.r.d = Math.round(Math.min(data.r.d + toAdd.deuterium, upgrade.st));
     if (data.s) {
       data.s.tr = data.s.tr || { a: 0, e: 0, d: 0 };
       data.s.tr.a += toAdd.antimatter;
