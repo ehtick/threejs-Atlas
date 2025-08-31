@@ -138,21 +138,17 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, ga
       </div>
 
       <div className="relative w-full max-w-80 sm:max-w-96 aspect-square mx-auto bg-black/50 flex justify-center items-center rounded-xl overflow-hidden border-2 border-blue-400/30 mb-4">
-        <Galaxy3DViewer galaxyType={galaxyType} numSystems={numSystems} blackHoles={blackHoles} pulsars={pulsars} quasars={quasars} />
-        
-        {/* Expand button */}
-        <button
-          onClick={() => {
+        <Galaxy3DViewer 
+          galaxyType={galaxyType} 
+          numSystems={numSystems} 
+          blackHoles={blackHoles} 
+          pulsars={pulsars} 
+          quasars={quasars} 
+          onExpandClick={() => {
             setIsFullscreen(true);
             setIsEntering(true);
           }}
-          className="absolute top-2 right-2 p-2 bg-black/60 hover:bg-black/80 border border-white/30 rounded-lg transition-all duration-200 backdrop-blur-sm shadow-lg z-10"
-          title="Expand to fullscreen"
-        >
-          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-          </svg>
-        </button>
+        />
       </div>
 
       <div className="text-center mt-auto">

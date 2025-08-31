@@ -10,9 +10,10 @@ interface Galaxy3DViewerProps {
   pulsars: number;
   quasars: number;
   seed?: number;
+  onExpandClick?: () => void;
 }
 
-const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems, blackHoles, pulsars, quasars, seed = 12345 }) => {
+const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems, blackHoles, pulsars, quasars, seed = 12345, onExpandClick }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -1158,6 +1159,19 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
       {/* 3D Scene container */}
       <div className={`absolute inset-0 w-full h-full transition-all duration-500 ${sceneLoaded ? "opacity-100 blur-0" : "opacity-0 blur-[25px]"}`}>
         <div ref={mountRef} className="w-full h-full border border-white/20 rounded bg-black/20" />
+        
+        {/* Expand button - only visible when scene is loaded and onExpandClick is provided */}
+        {sceneLoaded && onExpandClick && (
+          <button
+            onClick={onExpandClick}
+            className="absolute top-2 right-2 p-2 bg-black/60 hover:bg-black/80 border border-white/30 rounded-lg transition-all duration-200 backdrop-blur-sm shadow-lg z-10"
+            title="Expand to fullscreen"
+          >
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+            </svg>
+          </button>
+        )}
       </div>
     </div>
   );
