@@ -26,15 +26,20 @@ export interface LifeFormGodParams {
   orbitalSpeed?: number;
   crossSpiralCount?: number;
   hologramRingCount?: number;
+  mousePosition?: THREE.Vector2;
   seed?: number;
   cosmicOriginTime?: number;
 }
 
 export class LifeFormGodEffect {
   private group: THREE.Group;
-  private goldenTriangle: THREE.Mesh;
+  private roboticFace: THREE.Group;
+  private faceHead: THREE.Mesh;
+  private leftEye: THREE.Mesh;
+  private rightEye: THREE.Mesh;
+  private mouth: THREE.Mesh;
+  private faceDetails: THREE.Mesh[] = [];
   private divineRays: THREE.Mesh[] = [];
-  private sacredHalo: THREE.Mesh;
   private sacredSymbols: THREE.Mesh[] = [];
   private orbitalCrosses: THREE.Mesh[] = [];
   private crossSpirals: THREE.Mesh[] = [];
@@ -91,9 +96,8 @@ export class LifeFormGodEffect {
     this.cosmicOffset = (seed % 100) * 0.1;
 
     this.group = new THREE.Group();
-    this.createGoldenTriangle();
+    this.createRoboticFace();
     this.createDivineRays();
-    this.createSacredHalo();
     this.createSacredSymbols();
     this.createOrbitalCrosses();
     this.createCrossSpirals();
@@ -107,16 +111,18 @@ export class LifeFormGodEffect {
     this.createHolyLights();
   }
 
-  private createGoldenTriangle(): void {
-    const triangleSize = this.planetRadius * 0.8;
+  private createRoboticFace(): void {
+    this.roboticFace = new THREE.Group();
     
-    // Create triangle geometry
-    const triangleGeometry = new THREE.ConeGeometry(triangleSize, triangleSize * 1.5, 3);
+    const faceSize = this.planetRadius * 0.6;
     
-    const triangleMaterial = new THREE.ShaderMaterial({
+    // Create main head (sphere with metallic shader)
+    const headGeometry = new THREE.SphereGeometry(faceSize, 32, 32);
+    const headMaterial = new THREE.ShaderMaterial({
       uniforms: {
         time: { value: 0 },
-        color: { value: new THREE.Color(this.params.color![0], this.params.color![1], this.params.color![2]) },
+        color: { value: new THREE.Color(0.8, 0.9, 1.0) },
+        mousePos: { value: new THREE.Vector2(0, 0) },
         pulseIntensity: { value: this.params.divinePulseIntensity! },
       },
       vertexShader: `
@@ -124,16 +130,19 @@ export class LifeFormGodEffect {
         uniform float pulseIntensity;
         varying vec3 vPosition;
         varying vec3 vNormal;
+        varying vec2 vUv;
         varying float vPulse;
         
         void main() {
           vPosition = position;
           vNormal = normalize(normalMatrix * normal);
+          vUv = uv;
           
-          float pulse = sin(time * 2.0) * 0.3 + 1.0;
+          float pulse = sin(time * 1.5) * 0.1 + 1.0;
           vPulse = pulse;
           
           vec3 pos = position * pulse;
+          pos += normal * sin(time * 3.0 + position.x * 5.0 + position.y * 3.0) * 0.01;
           
           gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
         }
@@ -143,49 +152,147 @@ export class LifeFormGodEffect {
         uniform float time;
         varying vec3 vPosition;
         varying vec3 vNormal;
+        varying vec2 vUv;
         varying float vPulse;
         
         void main() {
-          float divine = sin(time * 4.0 + vPosition.y * 0.5) * 0.3 + 0.7;
-          float sacred = sin(vPosition.x * 10.0 + time * 3.0) * sin(vPosition.z * 8.0 + time * 2.0) * 0.2 + 0.8;
+          // Metallic surface effect
+          float fresnel = pow(1.0 - abs(dot(vNormal, vec3(0.0, 0.0, 1.0))), 2.0);
           
-          vec3 divineGold = color * divine * sacred * vPulse;
-          float alpha = 0.9;
+          // Circuit patterns
+          float circuitPattern = sin(vUv.x * 30.0 + time) * sin(vUv.y * 25.0 + time * 0.7);
+          circuitPattern = step(0.7, circuitPattern) * 0.3;
           
-          gl_FragColor = vec4(divineGold, alpha);
+          // Glowing lines
+          float lines = abs(sin(vUv.x * 20.0 + time * 2.0)) + abs(sin(vUv.y * 15.0 + time * 1.5));
+          lines = smoothstep(1.8, 1.9, lines) * 0.5;
+          
+          vec3 finalColor = color * (0.7 + fresnel * 0.3);
+          finalColor += vec3(0.3, 0.7, 1.0) * circuitPattern;
+          finalColor += vec3(0.0, 1.0, 1.0) * lines;
+          
+          float alpha = 0.95 + fresnel * 0.05;
+          gl_FragColor = vec4(finalColor * vPulse, alpha);
         }
       `,
       transparent: true,
-      blending: THREE.AdditiveBlending,
       side: THREE.DoubleSide,
       depthWrite: false,
     });
 
-    this.goldenTriangle = new THREE.Mesh(triangleGeometry, triangleMaterial);
+    this.faceHead = new THREE.Mesh(headGeometry, headMaterial);
+    this.roboticFace.add(this.faceHead);
+
+    // Create left eye
+    const eyeGeometry = new THREE.SphereGeometry(faceSize * 0.15, 16, 16);
+    const eyeMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        time: { value: 0 },
+        color: { value: new THREE.Color(0.0, 1.0, 1.0) },
+        mousePos: { value: new THREE.Vector2(0, 0) },
+      },
+      vertexShader: `
+        uniform float time;
+        uniform vec2 mousePos;
+        varying vec3 vPosition;
+        varying vec3 vNormal;
+        
+        void main() {
+          vPosition = position;
+          vNormal = normalize(normalMatrix * normal);
+          
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 color;
+        uniform float time;
+        uniform vec2 mousePos;
+        varying vec3 vPosition;
+        varying vec3 vNormal;
+        
+        void main() {
+          float glow = pow(1.0 - abs(dot(vNormal, vec3(0.0, 0.0, 1.0))), 3.0);
+          float pulse = sin(time * 4.0) * 0.3 + 0.7;
+          
+          // Scanning effect
+          float scan = sin(time * 8.0 + vPosition.y * 10.0) * 0.5 + 0.5;
+          
+          vec3 finalColor = color * (pulse + glow * 0.5);
+          finalColor += vec3(1.0, 1.0, 1.0) * scan * 0.3;
+          
+          float alpha = glow * pulse * (0.8 + scan * 0.2);
+          gl_FragColor = vec4(finalColor, alpha);
+        }
+      `,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+
+    this.leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+    this.leftEye.position.set(-faceSize * 0.3, faceSize * 0.2, faceSize * 0.7);
+    this.roboticFace.add(this.leftEye);
+
+    // Create right eye
+    this.rightEye = new THREE.Mesh(eyeGeometry.clone(), eyeMaterial.clone());
+    this.rightEye.position.set(faceSize * 0.3, faceSize * 0.2, faceSize * 0.7);
+    this.roboticFace.add(this.rightEye);
+
+    // Create mouth (glowing line)
+    const mouthGeometry = new THREE.BoxGeometry(faceSize * 0.4, faceSize * 0.05, faceSize * 0.05);
+    const mouthMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        time: { value: 0 },
+        color: { value: new THREE.Color(1.0, 0.5, 0.0) },
+      },
+      vertexShader: `
+        uniform float time;
+        varying vec3 vPosition;
+        
+        void main() {
+          vPosition = position;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 color;
+        uniform float time;
+        varying vec3 vPosition;
+        
+        void main() {
+          float intensity = sin(time * 6.0 + vPosition.x * 10.0) * 0.4 + 0.6;
+          gl_FragColor = vec4(color * intensity, 0.9);
+        }
+      `,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+
+    this.mouth = new THREE.Mesh(mouthGeometry, mouthMaterial);
+    this.mouth.position.set(0, -faceSize * 0.3, faceSize * 0.6);
+    this.roboticFace.add(this.mouth);
+
+    // Add position and orbital data
+    const faceDistance = this.planetRadius + 1.8;
+    const faceInclination = this.rng.random() * Math.PI * 0.2 + Math.PI * 0.4;
+    const faceLongitude = this.rng.random() * Math.PI * 2;
+    const faceInitialAngle = this.rng.random() * Math.PI * 2;
     
-    // Add orbital parameters for procedural movement
-    const triangleDistance = this.planetRadius + 1.8;
-    const triangleInclination = this.rng.random() * Math.PI * 0.3 + Math.PI * 0.35; // Keep it more upright
-    const triangleLongitude = this.rng.random() * Math.PI * 2;
-    const triangleInitialAngle = this.rng.random() * Math.PI * 2;
+    const initialPosition = this.calculateOrbitalPosition(faceDistance, faceInclination, faceLongitude, faceInitialAngle);
+    this.roboticFace.position.copy(initialPosition);
     
-    // Calculate initial position
-    const initialPosition = this.calculateOrbitalPosition(triangleDistance, triangleInclination, triangleLongitude, triangleInitialAngle);
-    this.goldenTriangle.position.copy(initialPosition);
-    this.goldenTriangle.lookAt(0, 0, 0);
-    this.goldenTriangle.rotation.x += Math.PI;
-    
-    // Store orbital data
-    this.goldenTriangle.userData = {
-      distance: triangleDistance,
-      inclination: triangleInclination,
-      longitudeOfAscendingNode: triangleLongitude,
-      initialAngle: triangleInitialAngle,
-      orbitalSpeed: 0.15 + this.rng.random() * 0.1,
-      rotationSpeed: 0.005,
+    this.roboticFace.userData = {
+      distance: faceDistance,
+      inclination: faceInclination,
+      longitudeOfAscendingNode: faceLongitude,
+      initialAngle: faceInitialAngle,
+      orbitalSpeed: 0.1 + this.rng.random() * 0.05,
+      rotationSpeed: 0.003,
     };
     
-    this.group.add(this.goldenTriangle);
+    this.group.add(this.roboticFace);
   }
 
   private createDivineRays(): void {
@@ -245,7 +352,7 @@ export class LifeFormGodEffect {
 
       const ray = new THREE.Mesh(rayGeometry, rayMaterial);
       
-      // Position rays - they will follow triangle in update()
+      // Position rays - they will follow robotic face in update()
       const angle = (i / rayCount) * Math.PI * 2;
       
       ray.rotation.z = angle;
@@ -262,60 +369,6 @@ export class LifeFormGodEffect {
     }
   }
 
-  private createSacredHalo(): void {
-    const haloRadius = this.planetRadius * 1.2;
-    const haloGeometry = new THREE.RingGeometry(haloRadius * 0.8, haloRadius, 64, 1);
-    
-    const haloMaterial = new THREE.ShaderMaterial({
-      uniforms: {
-        time: { value: 0 },
-        color: { value: new THREE.Color(this.params.color![0] * 1.2, this.params.color![1], this.params.color![2] * 0.8) },
-      },
-      vertexShader: `
-        uniform float time;
-        varying vec2 vUv;
-        varying float vHoliness;
-        
-        void main() {
-          vUv = uv;
-          
-          float holiness = sin(time * 2.0) * 0.2 + 1.0;
-          vHoliness = holiness;
-          
-          vec3 pos = position;
-          pos.z += sin(time * 3.0 + atan(pos.y, pos.x) * 8.0) * 0.05;
-          
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-        }
-      `,
-      fragmentShader: `
-        uniform vec3 color;
-        uniform float time;
-        varying vec2 vUv;
-        varying float vHoliness;
-        
-        void main() {
-          float dist = length(vUv - 0.5);
-          float halo = smoothstep(0.35, 0.4, dist) * (1.0 - smoothstep(0.45, 0.5, dist));
-          
-          float sacred = sin(dist * 30.0 + time * 4.0) * 0.3 + 0.7;
-          float divine = sin(time * 6.0) * 0.2 + 0.8;
-          
-          float intensity = halo * sacred * divine * vHoliness;
-          
-          gl_FragColor = vec4(color, intensity);
-        }
-      `,
-      transparent: true,
-      blending: THREE.AdditiveBlending,
-      side: THREE.DoubleSide,
-      depthWrite: false,
-    });
-
-    this.sacredHalo = new THREE.Mesh(haloGeometry, haloMaterial);
-    this.sacredHalo.rotation.x = Math.PI / 2;
-    this.group.add(this.sacredHalo);
-  }
 
   private createSacredSymbols(): void {
     const symbolCount = this.params.sacredSymbolCount!;
@@ -1265,9 +1318,9 @@ export class LifeFormGodEffect {
     const timeSinceCosmicOrigin = currentTimeSeconds - (this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME);
     const animTime = timeSinceCosmicOrigin + this.cosmicOffset;
 
-    // Update Golden Triangle
-    if (this.goldenTriangle) {
-      const userData = this.goldenTriangle.userData;
+    // Update Robotic Face
+    if (this.roboticFace) {
+      const userData = this.roboticFace.userData;
       const currentAngle = userData.initialAngle + animTime * userData.orbitalSpeed * 0.03;
 
       // Update orbital position
@@ -1277,28 +1330,50 @@ export class LifeFormGodEffect {
         userData.longitudeOfAscendingNode,
         currentAngle
       );
-      this.goldenTriangle.position.copy(position);
-      this.goldenTriangle.lookAt(0, 0, 0);
-      this.goldenTriangle.rotation.x += Math.PI;
-
-      // Divine rotation
-      this.goldenTriangle.rotation.y += userData.rotationSpeed;
+      this.roboticFace.position.copy(position);
       
-      const material = this.goldenTriangle.material as THREE.ShaderMaterial;
-      material.uniforms.time.value = animTime;
+      // Make face look towards the camera/mouse position
+      this.roboticFace.lookAt(0, 0, 0);
+      
+      // Add subtle rotation for dynamism
+      this.roboticFace.rotation.y += userData.rotationSpeed;
+      
+      // Update shader uniforms for head
+      const headMaterial = this.faceHead.material as THREE.ShaderMaterial;
+      headMaterial.uniforms.time.value = animTime;
+      if (this.params.mousePosition) {
+        headMaterial.uniforms.mousePos.value = this.params.mousePosition;
+      }
+      
+      // Update eyes
+      const leftEyeMaterial = this.leftEye.material as THREE.ShaderMaterial;
+      leftEyeMaterial.uniforms.time.value = animTime;
+      if (this.params.mousePosition) {
+        leftEyeMaterial.uniforms.mousePos.value = this.params.mousePosition;
+      }
+      
+      const rightEyeMaterial = this.rightEye.material as THREE.ShaderMaterial;
+      rightEyeMaterial.uniforms.time.value = animTime;
+      if (this.params.mousePosition) {
+        rightEyeMaterial.uniforms.mousePos.value = this.params.mousePosition;
+      }
+      
+      // Update mouth
+      const mouthMaterial = this.mouth.material as THREE.ShaderMaterial;
+      mouthMaterial.uniforms.time.value = animTime;
       
       // Divine breathing effect
-      const divineBreath = Math.sin(animTime * 1.5) * 0.1 + 1.0;
-      this.goldenTriangle.scale.setScalar(divineBreath);
+      const divineBreath = Math.sin(animTime * 1.5) * 0.05 + 1.0;
+      this.roboticFace.scale.setScalar(divineBreath);
     }
 
     // Update Divine Rays
     this.divineRays.forEach((ray) => {
       const userData = ray.userData;
       
-      // Position rays emanating from triangle's current position
-      if (this.goldenTriangle) {
-        const trianglePos = this.goldenTriangle.position;
+      // Position rays emanating from robotic face's current position
+      if (this.roboticFace) {
+        const facePos = this.roboticFace.position;
         const angle = userData.baseAngle;
         const offsetDistance = this.planetRadius * 0.3;
         
@@ -1308,7 +1383,7 @@ export class LifeFormGodEffect {
           Math.sin(angle) * offsetDistance
         );
         
-        ray.position.copy(trianglePos).add(rayOffset);
+        ray.position.copy(facePos).add(rayOffset);
       }
       
       ray.rotation.z = userData.baseAngle + animTime * userData.rotationSpeed;
@@ -1317,14 +1392,6 @@ export class LifeFormGodEffect {
       material.uniforms.time.value = animTime;
     });
 
-    // Update Sacred Halo
-    if (this.sacredHalo && this.goldenTriangle) {
-      // Follow triangle position
-      this.sacredHalo.position.copy(this.goldenTriangle.position);
-      this.sacredHalo.rotation.z += 0.01;
-      const material = this.sacredHalo.material as THREE.ShaderMaterial;
-      material.uniforms.time.value = animTime;
-    }
 
     // Update Sacred Symbols
     this.sacredSymbols.forEach((symbol) => {
@@ -1528,20 +1595,34 @@ export class LifeFormGodEffect {
   }
 
   public dispose(): void {
-    if (this.goldenTriangle) {
-      this.goldenTriangle.geometry.dispose();
-      (this.goldenTriangle.material as THREE.Material).dispose();
+    if (this.roboticFace) {
+      // Dispose robotic face components
+      if (this.faceHead) {
+        this.faceHead.geometry.dispose();
+        (this.faceHead.material as THREE.Material).dispose();
+      }
+      if (this.leftEye) {
+        this.leftEye.geometry.dispose();
+        (this.leftEye.material as THREE.Material).dispose();
+      }
+      if (this.rightEye) {
+        this.rightEye.geometry.dispose();
+        (this.rightEye.material as THREE.Material).dispose();
+      }
+      if (this.mouth) {
+        this.mouth.geometry.dispose();
+        (this.mouth.material as THREE.Material).dispose();
+      }
+      this.faceDetails.forEach((detail) => {
+        detail.geometry.dispose();
+        (detail.material as THREE.Material).dispose();
+      });
     }
 
     this.divineRays.forEach((ray) => {
       ray.geometry.dispose();
       (ray.material as THREE.Material).dispose();
     });
-
-    if (this.sacredHalo) {
-      this.sacredHalo.geometry.dispose();
-      (this.sacredHalo.material as THREE.Material).dispose();
-    }
 
     this.sacredSymbols.forEach((symbol) => {
       symbol.geometry.dispose();
@@ -1605,8 +1686,8 @@ export class LifeFormGodEffect {
     if (newParams.color) {
       const color = new THREE.Color(newParams.color[0], newParams.color[1], newParams.color[2]);
 
-      if (this.goldenTriangle) {
-        const material = this.goldenTriangle.material as THREE.ShaderMaterial;
+      if (this.faceHead) {
+        const material = this.faceHead.material as THREE.ShaderMaterial;
         material.uniforms.color.value = color;
       }
 
@@ -1615,13 +1696,24 @@ export class LifeFormGodEffect {
         material.uniforms.color.value = new THREE.Color(color.r, color.g * 0.9, color.b * 0.7);
       });
 
-      if (this.sacredHalo) {
-        const material = this.sacredHalo.material as THREE.ShaderMaterial;
-        material.uniforms.color.value = new THREE.Color(color.r * 1.2, color.g, color.b * 0.8);
-      }
-
       if (this.divineLight) {
         this.divineLight.color = color;
+      }
+    }
+
+    // Update mouse position if provided
+    if (newParams.mousePosition !== undefined) {
+      if (this.faceHead) {
+        const headMaterial = this.faceHead.material as THREE.ShaderMaterial;
+        headMaterial.uniforms.mousePos.value = newParams.mousePosition;
+      }
+      if (this.leftEye) {
+        const leftEyeMaterial = this.leftEye.material as THREE.ShaderMaterial;
+        leftEyeMaterial.uniforms.mousePos.value = newParams.mousePosition;
+      }
+      if (this.rightEye) {
+        const rightEyeMaterial = this.rightEye.material as THREE.ShaderMaterial;
+        rightEyeMaterial.uniforms.mousePos.value = newParams.mousePosition;
       }
     }
   }
