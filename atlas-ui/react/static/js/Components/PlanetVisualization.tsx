@@ -47,7 +47,6 @@ const PlanetVisualization: React.FC<PlanetVisualizationProps> = ({ planetUrl, pl
     }, 300);
   };
 
-
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -225,12 +224,10 @@ const PlanetVisualization: React.FC<PlanetVisualizationProps> = ({ planetUrl, pl
     }
   }, [isEntering]);
 
-
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-medium text-white">{planet?.name || "Planet"}</h3>
-
       </div>
 
       <div className="relative w-full max-w-80 sm:max-w-96 aspect-square mx-auto bg-black/50 flex justify-center items-center rounded-xl overflow-hidden border-2 border-blue-400/30 mb-4">
@@ -261,8 +258,7 @@ const PlanetVisualization: React.FC<PlanetVisualizationProps> = ({ planetUrl, pl
               cosmicOriginTime={cosmicOriginTime}
               initialAngleRotation={initialAngleRotation}
             />
-            
-            {/* Expand button - only visible when planet is loaded */}
+
             <button
               onClick={() => {
                 setIsFullscreen(true);
@@ -277,8 +273,6 @@ const PlanetVisualization: React.FC<PlanetVisualizationProps> = ({ planetUrl, pl
             </button>
           </div>
         )}
-
-
       </div>
 
       <div className="text-center mt-auto">
@@ -299,12 +293,11 @@ const PlanetVisualization: React.FC<PlanetVisualizationProps> = ({ planetUrl, pl
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         </a>
 
-        <div className="mt-2 text-xs text-gray-500 text-center">
-          Gateway to the stars
-        </div>
+        <div className="mt-2 text-xs text-gray-500 text-center">Gateway to the stars</div>
       </div>
 
-      {isFullscreen && planet &&
+      {isFullscreen &&
+        planet &&
         createPortal(
           <div className={`fixed inset-0 z-50 bg-black/95 backdrop-blur-xl transition-all duration-300 ${isClosing ? "opacity-0 scale-95" : isEntering ? "opacity-0 scale-95" : "opacity-100 scale-100"}`}>
             <div className={`w-full h-full flex flex-col p-1 sm:p-2 transition-all duration-300 delay-75 ${isClosing ? "opacity-0 translate-y-4" : isEntering ? "opacity-0 translate-y-4" : "opacity-100 translate-y-0"}`}>
@@ -315,15 +308,13 @@ const PlanetVisualization: React.FC<PlanetVisualizationProps> = ({ planetUrl, pl
                 <div className="hidden sm:block">
                   <div>
                     <h2 className="text-lg font-bold text-white">Planet Visualization</h2>
-                    <div className="text-sm text-gray-400">Name: {planet.name} • Type: {planet.planet_type}</div>
+                    <div className="text-sm text-gray-400">
+                      Name: {planet.name} • Type: {planet.planet_type}
+                    </div>
                   </div>
                 </div>
 
-                <button 
-                  onClick={handleCloseFullscreen} 
-                  className="p-0.5 sm:p-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded transition-colors duration-200 text-red-400 hover:text-red-300" 
-                  title="Close"
-                >
+                <button onClick={handleCloseFullscreen} className="p-0.5 sm:p-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded transition-colors duration-200 text-red-400 hover:text-red-300" title="Close">
                   <svg className="w-3 h-3 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>

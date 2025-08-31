@@ -138,7 +138,7 @@ const SystemVisualizationUniversal: React.FC<SystemVisualizationUniversalProps> 
   useEffect(() => {
     // Start loading 3D scene immediately
     setImageLoaded(true);
-    
+
     // Hide canvas after animation
     setTimeout(() => {
       setCanvasHidden(true);
@@ -216,12 +216,7 @@ const SystemVisualizationUniversal: React.FC<SystemVisualizationUniversalProps> 
 
         {imageLoaded && system && (
           <div className={`absolute inset-0 w-full h-full transition-all duration-500 ${imageLoaded && canvasHidden ? "opacity-100 blur-0" : "opacity-0 blur-[25px]"}`}>
-            <SolarSystem3DViewerLeft
-              planets={system.planets}
-              stars={system.stars}
-              systemName={system.name}
-              cosmicOriginTime={cosmicOriginTime || 0}
-            />
+            <SolarSystem3DViewerLeft planets={system.planets} stars={system.stars} systemName={system.name} cosmicOriginTime={cosmicOriginTime || 0} />
           </div>
         )}
       </div>
@@ -244,9 +239,7 @@ const SystemVisualizationUniversal: React.FC<SystemVisualizationUniversalProps> 
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         </a>
 
-        <div className="mt-2 text-xs text-gray-500 text-center">
-          Gateway to the stars
-        </div>
+        <div className="mt-2 text-xs text-gray-500 text-center">Gateway to the stars</div>
       </div>
     </div>
   );

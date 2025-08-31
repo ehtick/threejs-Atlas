@@ -175,13 +175,12 @@ const SolarSystem3DViewerLeft: React.FC<SolarSystem3DViewerLeftProps> = ({ plane
     scene.background = new THREE.Color(0x000011);
     sceneRef.current = scene;
 
-    // Square aspect ratio
     const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 10000);
     camera.position.set(0, 300, 0);
     camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(size, size); // Square size
+    renderer.setSize(size, size);
     renderer.setClearColor(0x000011, 1);
     rendererRef.current = renderer;
     container.appendChild(renderer.domElement);
@@ -333,7 +332,6 @@ const SolarSystem3DViewerLeft: React.FC<SolarSystem3DViewerLeftProps> = ({ plane
       (planetMesh as any).semiMajorAxis = semiMajorAxis;
       (planetMesh as any).semiMinorAxis = semiMinorAxis;
 
-      // Skip planet labels in compact view - only show in fullscreen
       planetLabelsRef.current.push(null as any);
     });
 
@@ -344,7 +342,6 @@ const SolarSystem3DViewerLeft: React.FC<SolarSystem3DViewerLeftProps> = ({ plane
     pointLight.position.set(0, 0, 0);
     scene.add(pointLight);
 
-    // Setup OrbitControls
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
@@ -402,11 +399,8 @@ const SolarSystem3DViewerLeft: React.FC<SolarSystem3DViewerLeftProps> = ({ plane
         const rotationPeriodSeconds = planet.rotation_period_seconds;
         const angleVelocityRotation = (2 * Math.PI) / rotationPeriodSeconds;
         planetMesh.rotation.y = (currentTimeRef.current * angleVelocityRotation) % (2 * Math.PI);
-
-        // No planet labels in compact view
       });
 
-      // Update controls
       if (controlsRef.current) {
         controlsRef.current.update();
       }
@@ -545,14 +539,7 @@ const SolarSystem3DViewerLeft: React.FC<SolarSystem3DViewerLeftProps> = ({ plane
               </div>
 
               <div className="flex-1 border border-white/20 rounded-lg bg-black/20 overflow-hidden min-h-0">
-                <SolarSystem3DViewerFullscreen 
-                  planets={systemData?.planets || planets} 
-                  stars={systemData?.stars || stars} 
-                  systemName={systemName} 
-                  cosmicOriginTime={cosmicOriginTime} 
-                  currentTime={realCurrentTime - cosmicOriginTime + sliderTimeOffset} 
-                  onTimeOffsetChange={(delta) => setSliderTimeOffset((prev) => prev + delta)} 
-                />
+                <SolarSystem3DViewerFullscreen planets={systemData?.planets || planets} stars={systemData?.stars || stars} systemName={systemName} cosmicOriginTime={cosmicOriginTime} currentTime={realCurrentTime - cosmicOriginTime + sliderTimeOffset} onTimeOffsetChange={(delta) => setSliderTimeOffset((prev) => prev + delta)} />
               </div>
 
               <div className="mt-2 sm:mt-4 text-center text-xs sm:text-sm text-gray-400">

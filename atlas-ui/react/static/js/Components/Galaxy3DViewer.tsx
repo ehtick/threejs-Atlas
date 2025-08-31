@@ -220,22 +220,22 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
 
         const starSeed = seed + i * 1337;
         const sizeRng = new SeededRandom(starSeed);
-        const baseSizeVariation = sizeRng.gauss(1, 0.3); 
-        const isGiant = sizeRng.random() < 0.05; 
+        const baseSizeVariation = sizeRng.gauss(1, 0.3);
+        const isGiant = sizeRng.random() < 0.05;
         const isDwarf = sizeRng.random() < 0.3;
 
         let finalSize = Math.max(0.3, baseSizeVariation);
-        if (isGiant) finalSize *= 3 + sizeRng.uniform(0, 2); 
-        if (isDwarf) finalSize *= 0.5 + sizeRng.uniform(0, 0.3); 
+        if (isGiant) finalSize *= 3 + sizeRng.uniform(0, 2);
+        if (isDwarf) finalSize *= 0.5 + sizeRng.uniform(0, 0.3);
 
         if (radius < maxRadius * 0.2) {
           finalSize *= 1.8 + sizeRng.uniform(0, 0.7);
-          colors[colors.length - 3] = 1.2; 
+          colors[colors.length - 3] = 1.2;
           colors[colors.length - 2] = 1.1;
           colors[colors.length - 1] = 0.9;
         }
 
-        sizes.push(Math.min(finalSize * 1.5, 12)); 
+        sizes.push(Math.min(finalSize * 1.5, 12));
       }
 
       for (let i = 0; i < numPoints; i++) {
@@ -252,8 +252,8 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
 
         const starSeed = seed + i * 1337;
         const sizeRng = new SeededRandom(starSeed);
-        const baseSizeVariation = sizeRng.gauss(0.8, 0.25); 
-        const isGiant = sizeRng.random() < 0.03; 
+        const baseSizeVariation = sizeRng.gauss(0.8, 0.25);
+        const isGiant = sizeRng.random() < 0.03;
         const isDwarf = sizeRng.random() < 0.4;
 
         let finalSize = Math.max(0.2, baseSizeVariation);
@@ -262,23 +262,23 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
 
         if (radius > maxRadius * 0.7) finalSize *= 0.8;
 
-        sizes.push(Math.min(finalSize * 1.3, 8)); 
+        sizes.push(Math.min(finalSize * 1.3, 8));
       }
     } else if (galaxyType === "Elliptical") {
       numPoints = Math.min(numSystems, 100000);
 
       for (let i = 0; i < numPoints; i++) {
         const angle = rng.uniform(0, 2 * Math.PI);
-        const cosTheta = rng.uniform(-1, 1); 
+        const cosTheta = rng.uniform(-1, 1);
         const sinTheta = Math.sqrt(1 - cosTheta * cosTheta);
 
         const u = rng.random();
 
-        const normalizedU = Math.pow(u, 0.6); 
+        const normalizedU = Math.pow(u, 0.6);
         const radius = -Math.log(1 - normalizedU * 0.98) * maxRadius * 0.35;
 
         const x = radius * sinTheta * Math.cos(angle);
-        const y = radius * cosTheta * 0.6; 
+        const y = radius * cosTheta * 0.6;
         const z = radius * sinTheta * Math.sin(angle);
 
         positions.push(x, y, z);
@@ -286,12 +286,12 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
 
         const starSeed = seed + i * 1337;
         const sizeRng = new SeededRandom(starSeed);
-        const baseSizeVariation = sizeRng.gauss(0.6, 0.2); 
-        const isGiant = sizeRng.random() < 0.08; 
-        const isDwarf = sizeRng.random() < 0.25; 
+        const baseSizeVariation = sizeRng.gauss(0.6, 0.2);
+        const isGiant = sizeRng.random() < 0.08;
+        const isDwarf = sizeRng.random() < 0.25;
 
         let finalSize = Math.max(0.2, baseSizeVariation);
-        if (isGiant) finalSize *= 2 + sizeRng.uniform(0, 1); 
+        if (isGiant) finalSize *= 2 + sizeRng.uniform(0, 1);
         if (isDwarf) finalSize *= 0.6 + sizeRng.uniform(0, 0.2);
 
         const distanceFromCenter = Math.sqrt(x * x + y * y + z * z);
@@ -299,7 +299,7 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
           finalSize *= 1.5 + sizeRng.uniform(0, 0.5);
         }
 
-        sizes.push(Math.min(finalSize * 1.4, 7)); 
+        sizes.push(Math.min(finalSize * 1.4, 7));
       }
     } else if (galaxyType === "Dwarf") {
       numPoints = Math.min(numSystems / 100, 10000);
@@ -318,15 +318,15 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
 
         const starSeed = seed + i * 1337;
         const sizeRng = new SeededRandom(starSeed);
-        const baseSizeVariation = sizeRng.gauss(0.7, 0.3); 
-        const isGiant = sizeRng.random() < 0.02; 
+        const baseSizeVariation = sizeRng.gauss(0.7, 0.3);
+        const isGiant = sizeRng.random() < 0.02;
         const isDwarf = sizeRng.random() < 0.6;
 
         let finalSize = Math.max(0.3, baseSizeVariation);
         if (isGiant) finalSize *= 2.5 + sizeRng.uniform(0, 1);
         if (isDwarf) finalSize *= 0.5 + sizeRng.uniform(0, 0.3);
 
-        sizes.push(Math.min(finalSize * 1.2, 5)); 
+        sizes.push(Math.min(finalSize * 1.2, 5));
       }
     } else if (galaxyType === "Singularity Void") {
       numPoints = 10000;
@@ -370,15 +370,15 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
           varying vec3 vNormal;
           uniform float time;
           uniform float speed;
-          
+
           void main() {
             float theta = atan(vPosition.z, vPosition.x);
             float phi = acos(vPosition.y / length(vPosition));
             vec2 p = vec2(theta / 3.14159, phi / 3.14159);
-            
+
             float a = time * 40.0 * speed;
             float d, e, f, g = 1.0 / 40.0, h, i, r, q;
-            
+
             e = 400.0 * (p.x * 0.5 + 0.5);
             f = 400.0 * (p.y * 0.5 + 0.5);
             i = 200.0 + sin(e * g + a / 150.0) * 20.0;
@@ -399,18 +399,18 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
             d = r / 350.0;
             d += sin(d * d * 8.0) * 0.52;
             f = (sin(a * g) + 1.0) / 2.0;
-            
-            vec3 color = vec3(f * i / 1.6, i / 2.0 + d / 13.0, i) * d * p.x + 
+
+            vec3 color = vec3(f * i / 1.6, i / 2.0 + d / 13.0, i) * d * p.x +
                          vec3(i / 1.3 + d / 8.0, i / 2.0 + d / 18.0, i) * d * (1.0 - p.x);
-            
+
             float depth = dot(vNormal, vec3(0.0, 0.0, 1.0));
             color *= 0.7 + depth * 0.3;
-            
+
             color = mix(color, vec3(0.5, 0.0, 1.0), 0.3);
-            
+
             float edgeFactor = pow(1.0 - abs(dot(vNormal, vec3(0.0, 0.0, 1.0))), 2.0);
             color += vec3(0.5, 0.0, 1.0) * edgeFactor * 0.5;
-            
+
             gl_FragColor = vec4(color, ${opacity});
           }
         `;
@@ -434,7 +434,6 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
         return sphere;
       };
 
-      // Create multiple concentric psychedelic spheres
       const outerSphere = createPsychedelicSphere(250, 0.3, 1);
       galaxyGroup.add(outerSphere);
 
@@ -444,12 +443,10 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
       const innerSphere = createPsychedelicSphere(120, 0.5, 1.5);
       galaxyGroup.add(innerSphere);
 
-      // Add an inverted sphere for inner view
       const invertedSphere = createPsychedelicSphere(300, 0.2, 0.5);
-      invertedSphere.scale.set(-1, 1, 1); // Invert to see from inside
+      invertedSphere.scale.set(-1, 1, 1);
       galaxyGroup.add(invertedSphere);
 
-      // Add gravitational lensing distortion sphere
       const lensGeometry = new THREE.SphereGeometry(350, 32, 32);
       const lensMaterial = new THREE.ShaderMaterial({
         uniforms: {
@@ -462,12 +459,12 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
           void main() {
             vPosition = position;
             vNormal = normalize(normalMatrix * normal);
-            
-            // Distort vertices for gravitational lensing effect
+
+
             vec3 distortedPosition = position;
             float distortion = sin(time * 0.5 + length(position) * 0.01) * 5.0;
             distortedPosition += normal * distortion;
-            
+
             gl_Position = projectionMatrix * modelViewMatrix * vec4(distortedPosition, 1.0);
           }
         `,
@@ -475,15 +472,15 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
           varying vec3 vPosition;
           varying vec3 vNormal;
           uniform float time;
-          
+
           void main() {
-            // Create a subtle distortion effect
+
             float fresnel = pow(1.0 - abs(dot(vNormal, vec3(0.0, 0.0, 1.0))), 3.0);
             float wave = sin(time * 2.0 + length(vPosition) * 0.05) * 0.5 + 0.5;
-            
+
             vec3 color = vec3(0.1, 0.0, 0.3) * fresnel * wave;
             float alpha = fresnel * 0.1 * wave;
-            
+
             gl_FragColor = vec4(color, alpha);
           }
         `,
@@ -498,7 +495,6 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
       (lensSphere as any).shaderSpeed = 0.3;
       galaxyGroup.add(lensSphere);
 
-      // Add glitch effect geometry with more chaos
       const glitchGeometry = new THREE.BufferGeometry();
       const glitchPositions: number[] = [];
       const glitchColors: number[] = [];
@@ -508,7 +504,6 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
         const y = rng.uniform(-maxRadius / 2, maxRadius / 2);
         const z = rng.uniform(-maxRadius, maxRadius);
 
-        // Create chaotic line segments
         const offsetX = rng.uniform(-50, 50);
         const offsetY = rng.uniform(-30, 30);
         const offsetZ = rng.uniform(-50, 50);
@@ -537,10 +532,8 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
       (glitchLines as any).isGlitchLines = true;
       galaxyGroup.add(glitchLines);
 
-      // Central black hole with event horizon
       const blackHoleGroup = new THREE.Group();
 
-      // Event horizon (black sphere)
       const eventHorizonGeometry = new THREE.SphereGeometry(20, 32, 32);
       const eventHorizonMaterial = new THREE.MeshBasicMaterial({
         color: 0x000000,
@@ -550,7 +543,6 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
       const eventHorizon = new THREE.Mesh(eventHorizonGeometry, eventHorizonMaterial);
       blackHoleGroup.add(eventHorizon);
 
-      // Accretion disk with animated shader
       const diskGeometry = new THREE.RingGeometry(25, 80, 64);
       const diskMaterial = new THREE.ShaderMaterial({
         uniforms: {
@@ -574,26 +566,26 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
           uniform float outerRadius;
           varying vec2 vUv;
           varying float vRadius;
-          
+
           void main() {
             float normalizedRadius = (vRadius - innerRadius) / (outerRadius - innerRadius);
             float angle = atan(vUv.y - 0.5, vUv.x - 0.5);
-            
-            // Swirling pattern
+
+
             float swirl = sin(angle * 5.0 - time * 2.0 + normalizedRadius * 10.0) * 0.5 + 0.5;
             float intensity = 1.0 - normalizedRadius;
-            
-            // Colors from hot (inner) to cold (outer)
-            vec3 hotColor = vec3(1.0, 0.5, 0.0); // Orange
-            vec3 coldColor = vec3(0.0, 0.3, 1.0); // Blue
+
+
+            vec3 hotColor = vec3(1.0, 0.5, 0.0);
+            vec3 coldColor = vec3(0.0, 0.3, 1.0);
             vec3 color = mix(coldColor, hotColor, intensity);
-            
-            // Add swirl variation
+
+
             color *= (0.7 + swirl * 0.3);
-            
-            // Fade out at edges
+
+
             float alpha = intensity * 0.8;
-            
+
             gl_FragColor = vec4(color, alpha);
           }
         `,
@@ -607,7 +599,6 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
       (accretionDisk as any).isAccretionDisk = true;
       blackHoleGroup.add(accretionDisk);
 
-      // Gravitational lensing effect (distortion rings)
       for (let i = 0; i < 8; i++) {
         const ringRadius = 30 + i * 20;
         const ringGeometry = new THREE.TorusGeometry(ringRadius, 1 + i * 0.5, 8, 64);
@@ -627,7 +618,6 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
 
       galaxyGroup.add(blackHoleGroup);
 
-      // Add energy jets
       const jetGeometry = new THREE.ConeGeometry(5, 100, 8);
       const jetMaterial = new THREE.MeshStandardMaterial({
         color: 0xff00ff,
@@ -648,13 +638,10 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
       galaxyGroup.add(jet2);
     }
 
-    // Only create normal stars for non-Singularity Void galaxies
     if (galaxyType !== "Singularity Void") {
-      // Filter out stars too close to black holes (absorption effect)
       const blackHolePositions: Array<{ x: number; y: number; z: number }> = [];
 
-      // First, generate black hole positions (same as the ones we'll create later)
-      const bhRng = new SeededRandom(seed + 999); // Consistent with actual black hole positions
+      const bhRng = new SeededRandom(seed + 999);
       for (let i = 0; i < blackHoles; i++) {
         const x = bhRng.uniform(-50, 50);
         const y = bhRng.uniform(-20, 20);
@@ -662,14 +649,13 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
         blackHolePositions.push({ x, y, z });
       }
 
-      // Process stars with black hole effects (spaghettification)
       const processedPositions: number[] = [];
       const processedColors: number[] = [];
       const processedSizes: number[] = [];
       const stretchedLinePositions: number[] = [];
       const stretchedLineColors: number[] = [];
-      const eventHorizonRadius = 0.4; // Complete absorption - very small for realistic effect
-      const tidalRadius = eventHorizonRadius * 25; // Spaghettification zone proportional to event horizon
+      const eventHorizonRadius = 0.4;
+      const tidalRadius = eventHorizonRadius * 25;
 
       for (let i = 0; i < positions.length; i += 3) {
         const starX = positions[i];
@@ -679,7 +665,6 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
         let closestDistance = Infinity;
         let closestBlackHole = null;
 
-        // Find closest black hole
         for (const bh of blackHolePositions) {
           const distance = Math.sqrt(Math.pow(starX - bh.x, 2) + Math.pow(starY - bh.y, 2) + Math.pow(starZ - bh.z, 2));
 
@@ -689,58 +674,46 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
           }
         }
 
-        // Apply black hole effects based on distance
         if (closestDistance < eventHorizonRadius) {
-          // Event horizon: star is completely absorbed, skip it
           continue;
         } else if (closestDistance < tidalRadius && closestBlackHole) {
-          // Tidal zone: create stretched line effect (spaghettification)
           const tidalStrength = 1 - (closestDistance - eventHorizonRadius) / (tidalRadius - eventHorizonRadius);
 
-          // Calculate direction vector from star to black hole
           const dirX = closestBlackHole.x - starX;
           const dirY = closestBlackHole.y - starY;
           const dirZ = closestBlackHole.z - starZ;
           const dirLength = Math.sqrt(dirX * dirX + dirY * dirY + dirZ * dirZ);
 
-          // Normalize direction
           const normalizedDirX = dirX / dirLength;
           const normalizedDirY = dirY / dirLength;
           const normalizedDirZ = dirZ / dirLength;
 
-          // Create curved orbital trajectory instead of straight line
-          const stretchLength = tidalStrength * 8; // Length of the orbital trajectory
+          const stretchLength = tidalStrength * 8;
 
-          // Calculate orbital curve based on star's position relative to black hole
           const orbitalAngle = Math.atan2(starZ - closestBlackHole.z, starX - closestBlackHole.x);
-          const curvature = tidalStrength * 0.8; // More curve = closer to BH
+          const curvature = tidalStrength * 0.8;
 
-          // Create curved trajectory points (spiral inward)
-          const numCurvePoints = 8; // Number of points for smooth curve
+          const numCurvePoints = 8;
           for (let j = 0; j < numCurvePoints - 1; j++) {
-            const t = j / (numCurvePoints - 1); // 0 to 1
+            const t = j / (numCurvePoints - 1);
             const nextT = (j + 1) / (numCurvePoints - 1);
 
-            // Current point on curve
-            const currentRadius = closestDistance * (1 - t * curvature * 0.7); // Spiral inward
-            const currentAngle = orbitalAngle + t * curvature * 1.5; // Curve around BH
+            const currentRadius = closestDistance * (1 - t * curvature * 0.7);
+            const currentAngle = orbitalAngle + t * curvature * 1.5;
             const currentX = closestBlackHole.x + currentRadius * Math.cos(currentAngle);
-            const currentY = starY + (closestBlackHole.y - starY) * t * 0.3; // Slight Y movement
+            const currentY = starY + (closestBlackHole.y - starY) * t * 0.3;
             const currentZ = closestBlackHole.z + currentRadius * Math.sin(currentAngle);
 
-            // Next point on curve
             const nextRadius = closestDistance * (1 - nextT * curvature * 0.7);
             const nextAngle = orbitalAngle + nextT * curvature * 1.5;
             const nextX = closestBlackHole.x + nextRadius * Math.cos(nextAngle);
             const nextY = starY + (closestBlackHole.y - starY) * nextT * 0.3;
             const nextZ = closestBlackHole.z + nextRadius * Math.sin(nextAngle);
 
-            // Add line segment
             stretchedLinePositions.push(currentX, currentY, currentZ);
             stretchedLinePositions.push(nextX, nextY, nextZ);
           }
 
-          // Color the orbital curve - getting redder and dimmer toward the black hole
           const redshift = tidalStrength * 1.5;
           const originalR = colors[i];
           const originalG = colors[i + 1];
@@ -750,44 +723,35 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
           const stretchedG = Math.max(originalG * (1 - redshift * 0.6), 0.1);
           const stretchedB = Math.max(originalB * (1 - redshift * 0.8), 0.1);
 
-          // Add colors for each segment of the orbital curve
           for (let j = 0; j < numCurvePoints - 1; j++) {
             const t = j / (numCurvePoints - 1);
             const nextT = (j + 1) / (numCurvePoints - 1);
 
-            // Opacity decreases along the curve toward the black hole
             const currentOpacity = 1 - t * tidalStrength * 0.6;
             const nextOpacity = 1 - nextT * tidalStrength * 0.6;
 
-            // Colors get redder along the trajectory
             const currentRedshift = redshift * (0.5 + t * 0.5);
             const nextRedshift = redshift * (0.5 + nextT * 0.5);
 
-            // Current point color
             stretchedLineColors.push(Math.min(stretchedR + currentRedshift * 0.3, 2.0) * currentOpacity, Math.max(stretchedG * (1 - currentRedshift * 0.2), 0.1) * currentOpacity, Math.max(stretchedB * (1 - currentRedshift * 0.4), 0.1) * currentOpacity);
 
-            // Next point color (redder and dimmer)
             stretchedLineColors.push(Math.min(stretchedR + nextRedshift * 0.3, 2.0) * nextOpacity, Math.max(stretchedG * (1 - nextRedshift * 0.2), 0.1) * nextOpacity, Math.max(stretchedB * (1 - nextRedshift * 0.4), 0.1) * nextOpacity);
           }
 
-          // Also add a small point at the original position for reference
           processedPositions.push(starX, starY, starZ);
           processedColors.push(stretchedR, stretchedG, stretchedB);
           processedSizes.push(Math.max(sizes[i / 3] * (1 - tidalStrength * 0.5), 0.3));
         } else {
-          // Normal zone: no black hole effects
           processedPositions.push(starX, starY, starZ);
           processedColors.push(colors[i], colors[i + 1], colors[i + 2]);
           processedSizes.push(sizes[i / 3]);
         }
       }
 
-      // Set up star attributes with processed data (including spaghettification effects)
       starsGeometry.setAttribute("position", new THREE.Float32BufferAttribute(processedPositions, 3));
       starsGeometry.setAttribute("color", new THREE.Float32BufferAttribute(processedColors, 3));
       starsGeometry.setAttribute("size", new THREE.Float32BufferAttribute(processedSizes, 1));
 
-      // Create circular star material using a custom shader
       const starMaterial = new THREE.ShaderMaterial({
         uniforms: {},
         vertexShader: `
@@ -803,18 +767,18 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
         fragmentShader: `
           varying vec3 vColor;
           void main() {
-            // Create circular points instead of squares
+
             vec2 center = gl_PointCoord - vec2(0.5);
             float distanceFromCenter = length(center);
-            
+
             if (distanceFromCenter > 0.5) {
               discard;
             }
-            
-            // Add soft falloff for better appearance
+
+
             float alpha = 1.0 - (distanceFromCenter / 0.5);
             alpha = pow(alpha, 2.0);
-            
+
             gl_FragColor = vec4(vColor, alpha * 0.8);
           }
         `,
@@ -827,7 +791,6 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
       const stars = new THREE.Points(starsGeometry, starMaterial);
       galaxyGroup.add(stars);
 
-      // Create stretched star lines (spaghettification effect)
       if (stretchedLinePositions.length > 0) {
         const stretchedGeometry = new THREE.BufferGeometry();
         stretchedGeometry.setAttribute("position", new THREE.Float32BufferAttribute(stretchedLinePositions, 3));
@@ -845,7 +808,6 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
         galaxyGroup.add(stretchedLines);
       }
     } else {
-      // For Singularity Void, still create the stars but with the original material
       starsGeometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
       starsGeometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
       starsGeometry.setAttribute("size", new THREE.Float32BufferAttribute(sizes, 1));
@@ -863,9 +825,7 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
       galaxyGroup.add(stars);
     }
 
-    // Add black holes
-    // Use the same positions as in the absorption filter for consistency
-    const bhRng = new SeededRandom(seed + 999); // Consistent black hole positioning
+    const bhRng = new SeededRandom(seed + 999);
     for (let i = 0; i < blackHoles; i++) {
       const blackHoleGroup = new THREE.Group();
 
@@ -873,7 +833,6 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
       const y = bhRng.uniform(-20, 20);
       const z = bhRng.uniform(-50, 50);
 
-      // Black hole sphere (smaller and more realistic)
       const bhGeometry = new THREE.SphereGeometry(1.5, 16, 16);
       const bhMaterial = new THREE.MeshBasicMaterial({
         color: 0x000000,
@@ -883,13 +842,12 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
       const bhMesh = new THREE.Mesh(bhGeometry, bhMaterial);
       blackHoleGroup.add(bhMesh);
 
-      // Realistic thin accretion disk with multiple concentric rings
       const diskRings = [
-        { innerRadius: 2, outerRadius: 2.3, color: 0xffffff, opacity: 0.8, emissive: 0xffffcc }, // Hottest - white/yellow
-        { innerRadius: 2.3, outerRadius: 2.7, color: 0xffaa00, opacity: 0.7, emissive: 0xff8800 }, // Orange
-        { innerRadius: 2.7, outerRadius: 3.2, color: 0xff4400, opacity: 0.6, emissive: 0xff2200 }, // Red-orange
-        { innerRadius: 3.2, outerRadius: 4, color: 0xaa0000, opacity: 0.5, emissive: 0x660000 }, // Red
-        { innerRadius: 4, outerRadius: 5, color: 0x440000, opacity: 0.3, emissive: 0x220000 }, // Dark red
+        { innerRadius: 2, outerRadius: 2.3, color: 0xffffff, opacity: 0.8, emissive: 0xffffcc },
+        { innerRadius: 2.3, outerRadius: 2.7, color: 0xffaa00, opacity: 0.7, emissive: 0xff8800 },
+        { innerRadius: 2.7, outerRadius: 3.2, color: 0xff4400, opacity: 0.6, emissive: 0xff2200 },
+        { innerRadius: 3.2, outerRadius: 4, color: 0xaa0000, opacity: 0.5, emissive: 0x660000 },
+        { innerRadius: 4, outerRadius: 5, color: 0x440000, opacity: 0.3, emissive: 0x220000 },
       ];
 
       diskRings.forEach((ring, index) => {
@@ -904,12 +862,11 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
         });
 
         const ringMesh = new THREE.Mesh(ringGeometry, ringMaterial);
-        ringMesh.rotation.x = Math.PI / 2; // Rotate to be horizontal
-        ringMesh.rotation.z = rng.uniform(0, Math.PI * 2); // Random rotation for variety
+        ringMesh.rotation.x = Math.PI / 2;
+        ringMesh.rotation.z = rng.uniform(0, Math.PI * 2);
 
-        // Add slight animation data for rotation
         (ringMesh as any).isAccretionRing = true;
-        (ringMesh as any).rotationSpeed = 0.002 + index * 0.0005; // Inner rings rotate faster
+        (ringMesh as any).rotationSpeed = 0.002 + index * 0.0005;
 
         blackHoleGroup.add(ringMesh);
       });
@@ -918,7 +875,6 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
       galaxyGroup.add(blackHoleGroup);
     }
 
-    // Add pulsars
     for (let i = 0; i < pulsars; i++) {
       const pulsarGeometry = new THREE.SphereGeometry(1.5, 8, 8);
       const pulsarMaterial = new THREE.MeshStandardMaterial({
@@ -930,18 +886,15 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
 
       pulsar.position.set(rng.uniform(-maxRadius, maxRadius), rng.uniform(-maxRadius / 4, maxRadius / 4), rng.uniform(-maxRadius, maxRadius));
 
-      // Add pulsing animation data
       (pulsar as any).isPulsar = true;
       (pulsar as any).pulseSpeed = rng.uniform(1, 3);
 
       galaxyGroup.add(pulsar);
     }
 
-    // Add quasars
     for (let i = 0; i < quasars; i++) {
       const quasarGroup = new THREE.Group();
 
-      // Central bright core
       const coreGeometry = new THREE.SphereGeometry(2, 16, 16);
       const coreMaterial = new THREE.MeshStandardMaterial({
         color: 0xffffff,
@@ -951,7 +904,6 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
       const core = new THREE.Mesh(coreGeometry, coreMaterial);
       quasarGroup.add(core);
 
-      // Jets
       const jetGeometry = new THREE.ConeGeometry(1, 20, 8);
       const jetMaterial = new THREE.MeshStandardMaterial({
         color: 0xff0000,
@@ -975,7 +927,6 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
       galaxyGroup.add(quasarGroup);
     }
 
-    // Add lighting
     const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
     scene.add(ambientLight);
 
@@ -983,37 +934,31 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
     pointLight.position.set(0, 100, 0);
     scene.add(pointLight);
 
-    // Animation loop
     const animate = () => {
       animationIdRef.current = requestAnimationFrame(animate);
       const time = performance.now() / 1000;
 
-      // Rotate galaxy slowly
       if (galaxyGroupRef.current) {
         galaxyGroupRef.current.rotation.y += 0.001;
       }
 
-      // Animate various elements
       galaxyGroup.children.forEach((child) => {
-        // Animate pulsars
         if ((child as any).isPulsar) {
           const pulseSpeed = (child as any).pulseSpeed || 1;
           child.scale.setScalar(1 + Math.sin(Date.now() * 0.001 * pulseSpeed) * 0.3);
         }
 
-        // Animate singularity void shader
         if ((child as any).isSingularityShader && child instanceof THREE.Mesh) {
           const material = child.material as THREE.ShaderMaterial;
           if (material.uniforms && material.uniforms.time) {
             material.uniforms.time.value = time;
           }
-          // Add subtle rotation to spherical shaders
+
           const shaderSpeed = (child as any).shaderSpeed || 1;
           child.rotation.y += 0.001 * shaderSpeed;
           child.rotation.x += 0.0005 * shaderSpeed;
         }
 
-        // Animate accretion disk
         if ((child as any).isAccretionDisk && child instanceof THREE.Mesh) {
           const material = child.material as THREE.ShaderMaterial;
           if (material.uniforms && material.uniforms.time) {
@@ -1022,7 +967,6 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
           child.rotation.z += 0.002;
         }
 
-        // Animate distortion rings
         if ((child as any).isDistortionRing) {
           const rotSpeed = (child as any).rotationSpeed || 0.001;
           child.rotation.x += rotSpeed;
@@ -1030,14 +974,12 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
           child.scale.setScalar(1 + Math.sin(time * 2) * 0.1);
         }
 
-        // Animate glitch lines
         if ((child as any).isGlitchLines && child instanceof THREE.LineSegments) {
           const material = child.material as THREE.LineBasicMaterial;
           material.opacity = 0.2 + Math.sin(time * 3) * 0.2;
           child.rotation.z += 0.0005;
         }
 
-        // Recursively check children (for black hole group)
         if (child instanceof THREE.Group) {
           child.children.forEach((subchild) => {
             if ((subchild as any).isAccretionDisk && subchild instanceof THREE.Mesh) {
@@ -1048,7 +990,6 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
               subchild.rotation.z += 0.002;
             }
 
-            // Animate accretion rings
             if ((subchild as any).isAccretionRing && subchild instanceof THREE.Mesh) {
               const rotSpeed = (subchild as any).rotationSpeed || 0.002;
               subchild.rotation.z += rotSpeed;
@@ -1064,7 +1005,6 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
         }
       });
 
-      // Update controls
       if (controlsRef.current) {
         controlsRef.current.update();
       }
@@ -1074,14 +1014,12 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
 
     animate();
 
-    // Mark scene as loaded after a small delay to ensure everything is rendered
     setTimeout(() => {
       setSceneLoaded(true);
       setCanvasHidden(true);
-      decelerateRef.current = true; // Start decelerating the starfield animation
+      decelerateRef.current = true;
     }, 800);
 
-    // Handle resize
     const handleResize = () => {
       if (!mountRef.current || !renderer) return;
       const container = mountRef.current;
@@ -1114,24 +1052,13 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
 
   return (
     <div className="relative w-full h-full bg-black rounded">
-      {/* Loading starfield animation */}
-      <canvas 
-        ref={canvasRef} 
-        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[2500ms] ${canvasHidden ? "opacity-0" : "opacity-100"}`} 
-        style={{ filter: canvasHidden ? "blur(50px)" : "none" }} 
-      />
+      <canvas ref={canvasRef} className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[2500ms] ${canvasHidden ? "opacity-0" : "opacity-100"}`} style={{ filter: canvasHidden ? "blur(50px)" : "none" }} />
 
-      {/* 3D Scene container */}
       <div className={`absolute inset-0 w-full h-full transition-all duration-500 ${sceneLoaded ? "opacity-100 blur-0" : "opacity-0 blur-[25px]"}`}>
         <div ref={mountRef} className="w-full h-full border border-white/20 rounded bg-black/20" />
-        
-        {/* Expand button - only visible when scene is loaded and onExpandClick is provided */}
+
         {sceneLoaded && onExpandClick && (
-          <button
-            onClick={onExpandClick}
-            className="absolute top-2 right-2 p-2 bg-black/60 hover:bg-black/80 border border-white/30 rounded-lg transition-all duration-200 backdrop-blur-sm shadow-lg z-10"
-            title="Expand to fullscreen"
-          >
+          <button onClick={onExpandClick} className="absolute top-2 right-2 p-2 bg-black/60 hover:bg-black/80 border border-white/30 rounded-lg transition-all duration-200 backdrop-blur-sm shadow-lg z-10" title="Expand to fullscreen">
             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
             </svg>

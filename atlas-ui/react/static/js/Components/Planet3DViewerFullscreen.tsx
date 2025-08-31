@@ -33,7 +33,6 @@ const Planet3DViewerFullscreen: React.FC<Planet3DViewerFullscreenProps> = ({
   initialAngleRotation,
   onEffectsCreated 
 }) => {
-  // Handle keyboard events for fullscreen controls
   const handleKeyDown = (event: KeyboardEvent) => {
     if (event.key === "Escape") {
       document.dispatchEvent(new CustomEvent("planet-close-fullscreen"));
@@ -53,10 +52,9 @@ const Planet3DViewerFullscreen: React.FC<Planet3DViewerFullscreenProps> = ({
       <ModularPlanetRendererWrapper
         planetName={planet.name}
         containerClassName="w-full h-full"
-        autoRotate={false} // Keep same as original
+        autoRotate={false}
         enableControls={true}
-        showDebugInfo={false} // Hide debug info in fullscreen for cleaner look
-        // Only pass onEffectsCreated if it's provided (which it shouldn't be)
+        showDebugInfo={false}
         {...(onEffectsCreated && { onEffectsCreated })}
         planetData={{
           name: planet.name,
