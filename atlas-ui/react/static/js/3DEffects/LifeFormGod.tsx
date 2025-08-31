@@ -27,6 +27,7 @@ export interface LifeFormGodParams {
   crossSpiralCount?: number;
   hologramRingCount?: number;
   mousePosition?: THREE.Vector2;
+  planetPosition?: THREE.Vector3;
   seed?: number;
   cosmicOriginTime?: number;
 }
@@ -114,35 +115,41 @@ export class LifeFormGodEffect {
   private createRoboticFace(): void {
     this.roboticFace = new THREE.Group();
     
-    const faceSize = this.planetRadius * 0.6;
+    // Create divine sphere that encompasses the planet perfectly - 1.33x larger than planet
+    const faceSize = this.planetRadius * 1.33;
     
-    // Create main head (sphere with metallic shader)
-    const headGeometry = new THREE.SphereGeometry(faceSize, 32, 32);
+    // Create main divine head (giant sphere with golden divine shader)
+    const headGeometry = new THREE.SphereGeometry(faceSize, 64, 64);
     const headMaterial = new THREE.ShaderMaterial({
       uniforms: {
         time: { value: 0 },
-        color: { value: new THREE.Color(0.8, 0.9, 1.0) },
+        color: { value: new THREE.Color(1.0, 0.84, 0.2) }, // Divine golden color
         mousePos: { value: new THREE.Vector2(0, 0) },
         pulseIntensity: { value: this.params.divinePulseIntensity! },
+        planetRadius: { value: this.planetRadius },
       },
       vertexShader: `
         uniform float time;
         uniform float pulseIntensity;
+        uniform float planetRadius;
         varying vec3 vPosition;
         varying vec3 vNormal;
         varying vec2 vUv;
         varying float vPulse;
+        varying float vDistanceFromCenter;
         
         void main() {
           vPosition = position;
           vNormal = normalize(normalMatrix * normal);
           vUv = uv;
+          vDistanceFromCenter = length(position);
           
-          float pulse = sin(time * 1.5) * 0.1 + 1.0;
-          vPulse = pulse;
+          float pulse = sin(time * 1.0) * 0.05 + 1.0;
+          vPulse = pulse * pulseIntensity;
           
           vec3 pos = position * pulse;
-          pos += normal * sin(time * 3.0 + position.x * 5.0 + position.y * 3.0) * 0.01;
+          // Divine energy waves
+          pos += normal * sin(time * 2.0 + length(position) * 0.2) * 0.03;
           
           gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
         }
@@ -150,28 +157,45 @@ export class LifeFormGodEffect {
       fragmentShader: `
         uniform vec3 color;
         uniform float time;
+        uniform vec2 mousePos;
+        uniform float planetRadius;
         varying vec3 vPosition;
         varying vec3 vNormal;
         varying vec2 vUv;
         varying float vPulse;
+        varying float vDistanceFromCenter;
         
         void main() {
-          // Metallic surface effect
-          float fresnel = pow(1.0 - abs(dot(vNormal, vec3(0.0, 0.0, 1.0))), 2.0);
+          // Divine golden base
+          vec3 divineGold = color;
           
-          // Circuit patterns
-          float circuitPattern = sin(vUv.x * 30.0 + time) * sin(vUv.y * 25.0 + time * 0.7);
-          circuitPattern = step(0.7, circuitPattern) * 0.3;
+          // Fresnel effect for godly glow
+          float fresnel = pow(1.0 - abs(dot(normalize(vNormal), vec3(0.0, 0.0, 1.0))), 3.0);
           
-          // Glowing lines
-          float lines = abs(sin(vUv.x * 20.0 + time * 2.0)) + abs(sin(vUv.y * 15.0 + time * 1.5));
-          lines = smoothstep(1.8, 1.9, lines) * 0.5;
+          // Sacred geometric patterns
+          float phi = 1.618033988749; // Golden ratio
+          float pattern = sin(vUv.x * 40.0 * phi + time) * sin(vUv.y * 30.0 / phi + time * 0.8);
+          pattern = step(0.6, pattern) * 0.4;
           
-          vec3 finalColor = color * (0.7 + fresnel * 0.3);
-          finalColor += vec3(0.3, 0.7, 1.0) * circuitPattern;
-          finalColor += vec3(0.0, 1.0, 1.0) * lines;
+          // Divine energy circuits
+          float circuitX = abs(sin(vUv.x * 25.0 + time * 2.0));
+          float circuitY = abs(sin(vUv.y * 20.0 + time * 1.7));
+          float circuits = smoothstep(0.85, 0.95, circuitX) + smoothstep(0.85, 0.95, circuitY);
+          circuits *= 0.6;
           
-          float alpha = 0.95 + fresnel * 0.05;
+          // Cosmic energy waves
+          float waves = sin(vDistanceFromCenter * 0.5 + time * 3.0) * 0.3 + 0.7;
+          
+          // Final divine composition
+          vec3 finalColor = divineGold * waves;
+          finalColor += vec3(1.0, 1.0, 0.7) * pattern; // Golden highlights
+          finalColor += vec3(1.0, 0.8, 0.4) * circuits; // Divine circuits
+          finalColor += vec3(1.0, 0.9, 0.6) * fresnel * 0.8; // Divine aura
+          
+          // Divine transparency - adjust for new 1.33x size
+          float distanceFade = smoothstep(planetRadius * 1.4, planetRadius * 1.1, vDistanceFromCenter);
+          float alpha = (0.2 + fresnel * 0.3 + pattern * 0.15 + circuits * 0.2) * distanceFade;
+          
           gl_FragColor = vec4(finalColor * vPulse, alpha);
         }
       `,
@@ -183,23 +207,26 @@ export class LifeFormGodEffect {
     this.faceHead = new THREE.Mesh(headGeometry, headMaterial);
     this.roboticFace.add(this.faceHead);
 
-    // Create left eye
-    const eyeGeometry = new THREE.SphereGeometry(faceSize * 0.15, 16, 16);
+    // Create divine left eye (much larger for god-like presence)
+    const eyeGeometry = new THREE.SphereGeometry(faceSize * 0.08, 32, 32);
     const eyeMaterial = new THREE.ShaderMaterial({
       uniforms: {
         time: { value: 0 },
-        color: { value: new THREE.Color(0.0, 1.0, 1.0) },
+        color: { value: new THREE.Color(1.0, 0.9, 0.3) }, // Golden divine color
         mousePos: { value: new THREE.Vector2(0, 0) },
+        eyePosition: { value: new THREE.Vector3(-1, 0, 0) }, // Left eye
       },
       vertexShader: `
         uniform float time;
         uniform vec2 mousePos;
         varying vec3 vPosition;
         varying vec3 vNormal;
+        varying vec2 vUv;
         
         void main() {
           vPosition = position;
           vNormal = normalize(normalMatrix * normal);
+          vUv = uv;
           
           gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }
@@ -208,20 +235,40 @@ export class LifeFormGodEffect {
         uniform vec3 color;
         uniform float time;
         uniform vec2 mousePos;
+        uniform vec3 eyePosition;
         varying vec3 vPosition;
         varying vec3 vNormal;
+        varying vec2 vUv;
         
         void main() {
-          float glow = pow(1.0 - abs(dot(vNormal, vec3(0.0, 0.0, 1.0))), 3.0);
-          float pulse = sin(time * 4.0) * 0.3 + 0.7;
+          // Divine iris pattern
+          vec2 center = vec2(0.5, 0.5);
+          float distFromCenter = length(vUv - center);
           
-          // Scanning effect
-          float scan = sin(time * 8.0 + vPosition.y * 10.0) * 0.5 + 0.5;
+          // Mouse tracking - make pupil follow mouse
+          vec2 mouseInfluence = mousePos * 0.1;
+          vec2 pupilCenter = center + mouseInfluence;
+          float pupilDist = length(vUv - pupilCenter);
           
-          vec3 finalColor = color * (pulse + glow * 0.5);
-          finalColor += vec3(1.0, 1.0, 1.0) * scan * 0.3;
+          // Pupil (dark center)
+          float pupil = 1.0 - smoothstep(0.1, 0.15, pupilDist);
           
-          float alpha = glow * pulse * (0.8 + scan * 0.2);
+          // Iris (divine golden patterns)
+          float iris = smoothstep(0.15, 0.4, distFromCenter) * (1.0 - smoothstep(0.4, 0.5, distFromCenter));
+          float irisPattern = sin(distFromCenter * 30.0 + time * 3.0) * sin(atan(vUv.y - center.y, vUv.x - center.x) * 12.0) * 0.5 + 0.5;
+          iris *= irisPattern;
+          
+          // Divine glow
+          float glow = pow(1.0 - abs(dot(vNormal, vec3(0.0, 0.0, 1.0))), 4.0);
+          
+          // Scanning divine light
+          float scan = sin(time * 6.0 + vUv.y * 20.0) * 0.3 + 0.7;
+          
+          vec3 finalColor = color * (iris * 0.8 + glow);
+          finalColor += vec3(1.0, 1.0, 0.8) * scan * 0.4;
+          finalColor *= (1.0 - pupil * 0.9); // Darken pupil
+          
+          float alpha = (iris * 0.9 + glow * 0.6 + pupil * 0.3) * scan;
           gl_FragColor = vec4(finalColor, alpha);
         }
       `,
@@ -231,27 +278,31 @@ export class LifeFormGodEffect {
     });
 
     this.leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-    this.leftEye.position.set(-faceSize * 0.3, faceSize * 0.2, faceSize * 0.7);
+    this.leftEye.position.set(-faceSize * 0.25, faceSize * 0.15, -faceSize * 0.92);
     this.roboticFace.add(this.leftEye);
 
-    // Create right eye
-    this.rightEye = new THREE.Mesh(eyeGeometry.clone(), eyeMaterial.clone());
-    this.rightEye.position.set(faceSize * 0.3, faceSize * 0.2, faceSize * 0.7);
+    // Create divine right eye
+    const rightEyeMaterial = eyeMaterial.clone();
+    rightEyeMaterial.uniforms.eyePosition.value = new THREE.Vector3(1, 0, 0); // Right eye
+    this.rightEye = new THREE.Mesh(eyeGeometry.clone(), rightEyeMaterial);
+    this.rightEye.position.set(faceSize * 0.25, faceSize * 0.15, -faceSize * 0.92);
     this.roboticFace.add(this.rightEye);
 
-    // Create mouth (glowing line)
-    const mouthGeometry = new THREE.BoxGeometry(faceSize * 0.4, faceSize * 0.05, faceSize * 0.05);
+    // Create divine mouth (sacred geometric pattern)
+    const mouthGeometry = new THREE.PlaneGeometry(faceSize * 0.25, faceSize * 0.08);
     const mouthMaterial = new THREE.ShaderMaterial({
       uniforms: {
         time: { value: 0 },
-        color: { value: new THREE.Color(1.0, 0.5, 0.0) },
+        color: { value: new THREE.Color(1.0, 0.8, 0.3) }, // Divine golden
       },
       vertexShader: `
         uniform float time;
         varying vec3 vPosition;
+        varying vec2 vUv;
         
         void main() {
           vPosition = position;
+          vUv = uv;
           gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }
       `,
@@ -259,10 +310,27 @@ export class LifeFormGodEffect {
         uniform vec3 color;
         uniform float time;
         varying vec3 vPosition;
+        varying vec2 vUv;
         
         void main() {
-          float intensity = sin(time * 6.0 + vPosition.x * 10.0) * 0.4 + 0.6;
-          gl_FragColor = vec4(color * intensity, 0.9);
+          // Divine mouth pattern
+          float mouth = smoothstep(0.3, 0.4, vUv.y) * (1.0 - smoothstep(0.6, 0.7, vUv.y));
+          
+          // Sacred symmetry
+          float symmetry = sin(vUv.x * 3.14159) * 0.5 + 0.5;
+          mouth *= symmetry;
+          
+          // Divine energy pulse
+          float pulse = sin(time * 4.0 + vUv.x * 6.0) * 0.3 + 0.7;
+          
+          // Sacred geometric lines
+          float lines = abs(sin(vUv.x * 20.0 + time * 3.0)) * 0.5;
+          lines = smoothstep(0.45, 0.5, lines);
+          
+          vec3 finalColor = color * (mouth * pulse + lines * 0.3);
+          float alpha = mouth * pulse * 0.8 + lines * 0.4;
+          
+          gl_FragColor = vec4(finalColor, alpha);
         }
       `,
       transparent: true,
@@ -271,25 +339,17 @@ export class LifeFormGodEffect {
     });
 
     this.mouth = new THREE.Mesh(mouthGeometry, mouthMaterial);
-    this.mouth.position.set(0, -faceSize * 0.3, faceSize * 0.6);
+    this.mouth.position.set(0, -faceSize * 0.3, -faceSize * 0.92);
     this.roboticFace.add(this.mouth);
 
-    // Add position and orbital data
-    const faceDistance = this.planetRadius + 1.8;
-    const faceInclination = this.rng.random() * Math.PI * 0.2 + Math.PI * 0.4;
-    const faceLongitude = this.rng.random() * Math.PI * 2;
-    const faceInitialAngle = this.rng.random() * Math.PI * 2;
+    // Position the divine face exactly at planet position
+    const planetPos = this.params.planetPosition || new THREE.Vector3(0, 0, 0);
+    this.roboticFace.position.copy(planetPos);
     
-    const initialPosition = this.calculateOrbitalPosition(faceDistance, faceInclination, faceLongitude, faceInitialAngle);
-    this.roboticFace.position.copy(initialPosition);
-    
+    // Add slow rotation for divine presence
     this.roboticFace.userData = {
-      distance: faceDistance,
-      inclination: faceInclination,
-      longitudeOfAscendingNode: faceLongitude,
-      initialAngle: faceInitialAngle,
-      orbitalSpeed: 0.1 + this.rng.random() * 0.05,
-      rotationSpeed: 0.003,
+      rotationSpeed: 0.001, // Very slow divine rotation
+      planetPosition: planetPos.clone(),
     };
     
     this.group.add(this.roboticFace);
@@ -1318,34 +1378,29 @@ export class LifeFormGodEffect {
     const timeSinceCosmicOrigin = currentTimeSeconds - (this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME);
     const animTime = timeSinceCosmicOrigin + this.cosmicOffset;
 
-    // Update Robotic Face
+    // Update Divine Robotic God Face
     if (this.roboticFace) {
       const userData = this.roboticFace.userData;
-      const currentAngle = userData.initialAngle + animTime * userData.orbitalSpeed * 0.03;
-
-      // Update orbital position
-      const position = this.calculateOrbitalPosition(
-        userData.distance,
-        userData.inclination,
-        userData.longitudeOfAscendingNode,
-        currentAngle
-      );
-      this.roboticFace.position.copy(position);
       
-      // Make face look towards the camera/mouse position
-      this.roboticFace.lookAt(0, 0, 0);
+      // Keep divine face position synced with planet position if updated
+      if (this.params.planetPosition && userData.planetPosition) {
+        if (!this.params.planetPosition.equals(userData.planetPosition)) {
+          this.roboticFace.position.copy(this.params.planetPosition);
+          userData.planetPosition.copy(this.params.planetPosition);
+        }
+      }
       
-      // Add subtle rotation for dynamism
+      // Divine rotation - very slow and majestic
       this.roboticFace.rotation.y += userData.rotationSpeed;
       
-      // Update shader uniforms for head
+      // Update shader uniforms for divine head
       const headMaterial = this.faceHead.material as THREE.ShaderMaterial;
       headMaterial.uniforms.time.value = animTime;
       if (this.params.mousePosition) {
         headMaterial.uniforms.mousePos.value = this.params.mousePosition;
       }
       
-      // Update eyes
+      // Update divine eyes with mouse tracking
       const leftEyeMaterial = this.leftEye.material as THREE.ShaderMaterial;
       leftEyeMaterial.uniforms.time.value = animTime;
       if (this.params.mousePosition) {
@@ -1358,33 +1413,33 @@ export class LifeFormGodEffect {
         rightEyeMaterial.uniforms.mousePos.value = this.params.mousePosition;
       }
       
-      // Update mouth
+      // Update divine mouth
       const mouthMaterial = this.mouth.material as THREE.ShaderMaterial;
       mouthMaterial.uniforms.time.value = animTime;
       
-      // Divine breathing effect
-      const divineBreath = Math.sin(animTime * 1.5) * 0.05 + 1.0;
+      // Subtle divine breathing effect for the entire god sphere
+      const divineBreath = Math.sin(animTime * 0.8) * 0.02 + 1.0;
       this.roboticFace.scale.setScalar(divineBreath);
     }
 
-    // Update Divine Rays
+    // Update Divine Rays emanating from the divine god sphere
     this.divineRays.forEach((ray) => {
       const userData = ray.userData;
       
-      // Position rays emanating from robotic face's current position
-      if (this.roboticFace) {
-        const facePos = this.roboticFace.position;
-        const angle = userData.baseAngle;
-        const offsetDistance = this.planetRadius * 0.3;
-        
-        const rayOffset = new THREE.Vector3(
-          Math.cos(angle) * offsetDistance,
-          0,
-          Math.sin(angle) * offsetDistance
-        );
-        
-        ray.position.copy(facePos).add(rayOffset);
-      }
+      // Position rays emanating from the divine face position with proper radius
+      const angle = userData.baseAngle;
+      const offsetDistance = this.planetRadius * 1.5; // Rays emanate from edge of divine sphere
+      
+      // Get current divine face position
+      const facePos = this.roboticFace ? this.roboticFace.position : new THREE.Vector3(0, 0, 0);
+      
+      const rayOffset = new THREE.Vector3(
+        Math.cos(angle) * offsetDistance,
+        0,
+        Math.sin(angle) * offsetDistance
+      );
+      
+      ray.position.copy(facePos).add(rayOffset);
       
       ray.rotation.z = userData.baseAngle + animTime * userData.rotationSpeed;
       
@@ -1714,6 +1769,36 @@ export class LifeFormGodEffect {
       if (this.rightEye) {
         const rightEyeMaterial = this.rightEye.material as THREE.ShaderMaterial;
         rightEyeMaterial.uniforms.mousePos.value = newParams.mousePosition;
+      }
+    }
+  }
+
+  public updateMousePosition(mousePosition: THREE.Vector2): void {
+    this.params.mousePosition = mousePosition;
+    
+    // Immediately update all materials with mouse position
+    if (this.faceHead) {
+      const headMaterial = this.faceHead.material as THREE.ShaderMaterial;
+      headMaterial.uniforms.mousePos.value = mousePosition;
+    }
+    if (this.leftEye) {
+      const leftEyeMaterial = this.leftEye.material as THREE.ShaderMaterial;
+      leftEyeMaterial.uniforms.mousePos.value = mousePosition;
+    }
+    if (this.rightEye) {
+      const rightEyeMaterial = this.rightEye.material as THREE.ShaderMaterial;
+      rightEyeMaterial.uniforms.mousePos.value = mousePosition;
+    }
+  }
+
+  public updatePlanetPosition(planetPosition: THREE.Vector3): void {
+    this.params.planetPosition = planetPosition;
+    
+    // Immediately update divine face position to match planet
+    if (this.roboticFace) {
+      this.roboticFace.position.copy(planetPosition);
+      if (this.roboticFace.userData.planetPosition) {
+        this.roboticFace.userData.planetPosition.copy(planetPosition);
       }
     }
   }
