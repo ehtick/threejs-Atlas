@@ -56,16 +56,13 @@ export class LifeFormIntelligentLifeEffect {
 
     for (let i = 0; i < satelliteCount; i++) {
       const distance = baseDistance;
-      
-      // Generate random orbital plane (inclination and orientation)
-      const inclination = this.rng.random() * Math.PI; // 0 to 180 degrees
-      const longitudeOfAscendingNode = this.rng.random() * Math.PI * 2; // 0 to 360 degrees
-      const initialAngle = this.rng.random() * Math.PI * 2; // Starting position in orbit
-      
-      // Calculate initial position
+
+      const inclination = this.rng.random() * Math.PI;
+      const longitudeOfAscendingNode = this.rng.random() * Math.PI * 2;
+      const initialAngle = this.rng.random() * Math.PI * 2;
+
       const position = this.calculateOrbitalPosition(distance, inclination, longitudeOfAscendingNode, initialAngle);
 
-      // Create satellite geometry - larger, more visible octahedron
       const geometry = new THREE.OctahedronGeometry(this.planetRadius * 0.025, 0);
       const material = new THREE.MeshBasicMaterial({
         color: new THREE.Color(this.params.color![0], this.params.color![1], this.params.color![2]),
@@ -86,29 +83,24 @@ export class LifeFormIntelligentLifeEffect {
       this.satellites.push(satellite);
       this.group.add(satellite);
 
-      // Create trail for this satellite
       this.createTrail(i);
     }
   }
 
   private createTrail(satelliteIndex: number): void {
-    // Initialize trail positions array
     const trailPositions = [];
     const trailOpacities = [];
-    
+
     for (let i = 0; i < this.TRAIL_LENGTH; i++) {
       trailPositions.push(new THREE.Vector3(0, 0, 0));
-      // Create opacity gradient: full opacity at satellite (i=0), fading to 0 at the end
       const opacity = (this.TRAIL_LENGTH - i) / this.TRAIL_LENGTH;
       trailOpacities.push(opacity);
     }
     this.trailPositions[satelliteIndex] = trailPositions;
 
-    // Create trail geometry with opacity attributes
     const geometry = new THREE.BufferGeometry().setFromPoints(trailPositions);
-    geometry.setAttribute('opacity', new THREE.Float32BufferAttribute(trailOpacities, 1));
-    
-    // Create trail material with shader for gradient opacity
+    geometry.setAttribute("opacity", new THREE.Float32BufferAttribute(trailOpacities, 1));
+
     const material = new THREE.ShaderMaterial({
       uniforms: {
         color: { value: new THREE.Color(this.params.color![0], this.params.color![1], this.params.color![2]) },
@@ -135,23 +127,20 @@ export class LifeFormIntelligentLifeEffect {
     });
 
     const trail = new THREE.Line(geometry, material);
-    trail.renderOrder = 998; // Behind satellites
+    trail.renderOrder = 998;
     this.trails.push(trail);
     this.group.add(trail);
   }
 
   private calculateOrbitalPosition(distance: number, inclination: number, longitudeOfAscendingNode: number, angle: number): THREE.Vector3 {
-    // Calculate position in the orbital plane
     const x_orbital = distance * Math.cos(angle);
     const y_orbital = distance * Math.sin(angle);
     const z_orbital = 0;
 
-    // Apply inclination rotation (rotation around X axis)
     const x_inclined = x_orbital;
     const y_inclined = y_orbital * Math.cos(inclination) - z_orbital * Math.sin(inclination);
     const z_inclined = y_orbital * Math.sin(inclination) + z_orbital * Math.cos(inclination);
 
-    // Apply longitude of ascending node rotation (rotation around Z axis)
     const x_final = x_inclined * Math.cos(longitudeOfAscendingNode) - y_inclined * Math.sin(longitudeOfAscendingNode);
     const y_final = x_inclined * Math.sin(longitudeOfAscendingNode) + y_inclined * Math.cos(longitudeOfAscendingNode);
     const z_final = z_inclined;
@@ -159,30 +148,20 @@ export class LifeFormIntelligentLifeEffect {
     return new THREE.Vector3(x_final, y_final, z_final);
   }
 
-
-
   public update(_deltaTime?: number): void {
     const currentTimeSeconds = Date.now() / 1000;
     const timeSinceCosmicOrigin = currentTimeSeconds - (this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME);
     const animTime = (timeSinceCosmicOrigin + this.cosmicOffset) * (this.params.orbitalSpeed || 1.0);
 
-    // Update satellites orbital motion and trails
     this.satellites.forEach((satellite, index) => {
       const userData = satellite.userData;
       const currentAngle = userData.initialAngle + animTime * userData.orbitalSpeed * 0.1;
-      
-      // Calculate new position using orbital mechanics
-      const position = this.calculateOrbitalPosition(
-        userData.distance,
-        userData.inclination,
-        userData.longitudeOfAscendingNode,
-        currentAngle
-      );
-      
+
+      const position = this.calculateOrbitalPosition(userData.distance, userData.inclination, userData.longitudeOfAscendingNode, currentAngle);
+
       satellite.position.set(position.x, position.y, position.z);
       satellite.rotation.y = currentAngle;
 
-      // Update trail with interpolation for smooth trails even at low speeds
       this.updateTrailWithInterpolation(index);
     });
   }
@@ -191,31 +170,21 @@ export class LifeFormIntelligentLifeEffect {
     const trailPositions = this.trailPositions[satelliteIndex];
     const satellite = this.satellites[satelliteIndex];
     const userData = satellite.userData;
-    
-    // Generate trail based on orbital trajectory, not time-dependent movement
-    // This ensures trails are always visible regardless of orbital speed
+
     const currentTimeSeconds = Date.now() / 1000;
     const timeSinceCosmicOrigin = currentTimeSeconds - (this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME);
     const animTime = (timeSinceCosmicOrigin + this.cosmicOffset) * (this.params.orbitalSpeed || 1.0);
     const currentAngle = userData.initialAngle + animTime * userData.orbitalSpeed * 0.1;
-    
-    // Calculate trail positions going backwards in the orbital path
+
     for (let i = 0; i < this.TRAIL_LENGTH; i++) {
-      // Each trail point represents a position further back in the orbit
-      const trailAngleOffset = (i * 0.05); // Adjust this value to control trail density
+      const trailAngleOffset = i * 0.05;
       const trailAngle = currentAngle - trailAngleOffset;
-      
-      const trailPosition = this.calculateOrbitalPosition(
-        userData.distance,
-        userData.inclination,
-        userData.longitudeOfAscendingNode,
-        trailAngle
-      );
-      
+
+      const trailPosition = this.calculateOrbitalPosition(userData.distance, userData.inclination, userData.longitudeOfAscendingNode, trailAngle);
+
       trailPositions[i].copy(trailPosition);
     }
-    
-    // Update trail geometry
+
     const trail = this.trails[satelliteIndex];
     const geometry = trail.geometry as THREE.BufferGeometry;
     geometry.setFromPoints(trailPositions);
@@ -260,7 +229,7 @@ export class LifeFormIntelligentLifeEffect {
 
     if (newParams.color) {
       const color = new THREE.Color(newParams.color[0], newParams.color[1], newParams.color[2]);
-      
+
       this.satellites.forEach((satellite) => {
         (satellite.material as THREE.MeshBasicMaterial).color = color;
       });
