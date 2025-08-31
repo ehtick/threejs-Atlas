@@ -2,6 +2,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import SolarSystem3DViewerFullscreen from "./SolarSystem3DViewerFullscreen.tsx";
 
 interface Planet {
@@ -39,6 +40,7 @@ const SolarSystem3DViewerLeft: React.FC<SolarSystem3DViewerLeftProps> = ({ plane
   const planetsRef = useRef<THREE.Mesh[]>([]);
   const orbitsRef = useRef<THREE.Line[]>([]);
   const planetLabelsRef = useRef<THREE.Sprite[]>([]);
+  const controlsRef = useRef<OrbitControls | null>(null);
   const currentTimeRef = useRef<number>(0);
 
   const realCurrentTime = Math.floor(Date.now() / 1000);
@@ -342,45 +344,18 @@ const SolarSystem3DViewerLeft: React.FC<SolarSystem3DViewerLeftProps> = ({ plane
     pointLight.position.set(0, 0, 0);
     scene.add(pointLight);
 
-    let isMouseDown = false;
-    let mouseX = 0;
-    let mouseY = 0;
-    let autoRotate = false;
-
-    const handleMouseDown = (event: MouseEvent) => {
-      isMouseDown = true;
-      autoRotate = false;
-      mouseX = event.clientX;
-      mouseY = event.clientY;
-    };
-
-    const handleMouseMove = (event: MouseEvent) => {
-      if (!isMouseDown) return;
-
-      const deltaX = event.clientX - mouseX;
-      const deltaY = event.clientY - mouseY;
-
-      const spherical = new THREE.Spherical();
-      spherical.setFromVector3(camera.position);
-
-      spherical.theta -= deltaX * 0.01;
-      spherical.phi += deltaY * 0.01;
-
-      spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));
-
-      camera.position.setFromSpherical(spherical);
-      camera.lookAt(0, 0, 0);
-
-      mouseX = event.clientX;
-      mouseY = event.clientY;
-    };
-
-    const handleMouseUp = () => {
-      isMouseDown = false;
-      setTimeout(() => {
-        if (!isMouseDown) autoRotate = true;
-      }, 3000);
-    };
+    // Setup OrbitControls
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.minDistance = 50;
+    controls.maxDistance = 800;
+    controls.autoRotate = false;
+    controls.autoRotateSpeed = 0.5;
+    controls.enablePan = true;
+    controls.enableZoom = true;
+    controls.target.set(0, 0, 0);
+    controlsRef.current = controls;
 
     const handleKeyWheel = (event: WheelEvent) => {
       if (event.ctrlKey) {
@@ -404,22 +379,7 @@ const SolarSystem3DViewerLeft: React.FC<SolarSystem3DViewerLeftProps> = ({ plane
     };
 
     const canvas = renderer.domElement;
-    canvas.style.cursor = "grab";
     canvas.style.borderRadius = "8px";
-
-    canvas.addEventListener("mousedown", (e) => {
-      canvas.style.cursor = "grabbing";
-      handleMouseDown(e);
-    });
-    canvas.addEventListener("mousemove", handleMouseMove);
-    canvas.addEventListener("mouseup", () => {
-      canvas.style.cursor = "grab";
-      handleMouseUp();
-    });
-    canvas.addEventListener("mouseleave", () => {
-      canvas.style.cursor = "grab";
-      handleMouseUp();
-    });
     canvas.addEventListener("wheel", handleKeyWheel);
 
     const animate = () => {
@@ -446,6 +406,11 @@ const SolarSystem3DViewerLeft: React.FC<SolarSystem3DViewerLeftProps> = ({ plane
         // No planet labels in compact view
       });
 
+      // Update controls
+      if (controlsRef.current) {
+        controlsRef.current.update();
+      }
+
       renderer.render(scene, camera);
     };
 
@@ -464,12 +429,11 @@ const SolarSystem3DViewerLeft: React.FC<SolarSystem3DViewerLeftProps> = ({ plane
 
     return () => {
       window.removeEventListener("resize", handleResize);
-
-      canvas.removeEventListener("mousedown", handleMouseDown);
-      canvas.removeEventListener("mousemove", handleMouseMove);
-      canvas.removeEventListener("mouseup", handleMouseUp);
-      canvas.removeEventListener("mouseleave", handleMouseUp);
       canvas.removeEventListener("wheel", handleKeyWheel);
+
+      if (controlsRef.current) {
+        controlsRef.current.dispose();
+      }
 
       if (animationIdRef.current) {
         cancelAnimationFrame(animationIdRef.current);
