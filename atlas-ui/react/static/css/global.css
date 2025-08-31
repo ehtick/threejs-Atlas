@@ -110,7 +110,7 @@ html.nprogress-busy * {
   width: 100px;
   height: 100%;
   box-shadow: 0 0 10px #6366f1, 0 0 5px #6366f1;
-  opacity: 1.0;
+  opacity: 1;
   transform: rotate(3deg) translate(0px, -4px);
 }
 
@@ -157,20 +157,20 @@ html.nprogress-busy * {
 
 /* FuelBars animations */
 @keyframes shimmer {
-  0% { 
-    transform: translateX(-100%); 
+  0% {
+    transform: translateX(-100%);
   }
-  100% { 
-    transform: translateX(100%); 
+  100% {
+    transform: translateX(100%);
   }
 }
 
 @keyframes spin-slow {
-  from { 
-    transform: rotate(0deg); 
+  from {
+    transform: rotate(0deg);
   }
-  to { 
-    transform: rotate(360deg); 
+  to {
+    transform: rotate(360deg);
   }
 }
 
@@ -184,78 +184,81 @@ html.nprogress-busy * {
 
 /* MiningIndicator animations */
 @keyframes drill-hammer {
-  0%, 100% { 
-    transform: translateY(0px) rotate(-5deg); 
+  0%,
+  100% {
+    transform: translateY(0px) rotate(-5deg);
   }
-  25% { 
-    transform: translateY(-3px) rotate(5deg); 
+  25% {
+    transform: translateY(-3px) rotate(5deg);
   }
-  50% { 
-    transform: translateY(-1px) rotate(-3deg); 
+  50% {
+    transform: translateY(-1px) rotate(-3deg);
   }
-  75% { 
-    transform: translateY(-2px) rotate(3deg); 
+  75% {
+    transform: translateY(-2px) rotate(3deg);
   }
 }
 
 @keyframes auto-mining {
-  0%, 100% { 
-    transform: scale(1); 
-    opacity: 1; 
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
   }
-  50% { 
-    transform: scale(1.05); 
-    opacity: 0.9; 
+  50% {
+    transform: scale(1.05);
+    opacity: 0.9;
   }
 }
 
 @keyframes processing-dots {
-  0%, 100% { 
-    opacity: 0.3; 
+  0%,
+  100% {
+    opacity: 0.3;
   }
-  50% { 
-    opacity: 1; 
+  50% {
+    opacity: 1;
   }
 }
 
 /* SpaceshipPanel animations */
 @keyframes fadeIn {
-  from { 
-    opacity: 0; 
+  from {
+    opacity: 0;
   }
-  to { 
-    opacity: 1; 
+  to {
+    opacity: 1;
   }
 }
 
 @keyframes fadeOut {
-  from { 
-    opacity: 1; 
+  from {
+    opacity: 1;
   }
-  to { 
-    opacity: 0; 
+  to {
+    opacity: 0;
   }
 }
 
 @keyframes slideUp {
-  from { 
-    opacity: 0; 
-    transform: translateY(20px); 
+  from {
+    opacity: 0;
+    transform: translateY(20px);
   }
-  to { 
-    opacity: 1; 
-    transform: translateY(0); 
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
 @keyframes slideDown {
-  from { 
-    opacity: 1; 
-    transform: translateY(0); 
+  from {
+    opacity: 1;
+    transform: translateY(0);
   }
-  to { 
-    opacity: 0; 
-    transform: translateY(20px); 
+  to {
+    opacity: 0;
+    transform: translateY(20px);
   }
 }
 
@@ -299,29 +302,29 @@ html.nprogress-busy * {
 }
 
 @keyframes popAndFadeOut {
-  0% { 
-    opacity: 1; 
-    transform: scale(1); 
+  0% {
+    opacity: 1;
+    transform: scale(1);
   }
-  20% { 
-    opacity: 1; 
-    transform: scale(1.2) rotate(10deg); 
+  20% {
+    opacity: 1;
+    transform: scale(1.2) rotate(10deg);
   }
-  40% { 
-    opacity: 1; 
-    transform: scale(1.1) rotate(-5deg); 
+  40% {
+    opacity: 1;
+    transform: scale(1.1) rotate(-5deg);
   }
-  60% { 
-    opacity: 1; 
-    transform: scale(1.05) rotate(2deg); 
+  60% {
+    opacity: 1;
+    transform: scale(1.05) rotate(2deg);
   }
-  80% { 
-    opacity: 0.7; 
-    transform: scale(1) rotate(0deg); 
+  80% {
+    opacity: 0.7;
+    transform: scale(1) rotate(0deg);
   }
-  100% { 
-    opacity: 0; 
-    transform: scale(0.8); 
+  100% {
+    opacity: 0;
+    transform: scale(0.8);
   }
 }
 

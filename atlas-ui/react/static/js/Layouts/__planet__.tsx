@@ -10,7 +10,7 @@ import SpaceshipPanel from '../Components/SpaceshipPanel.tsx';
 import TreasureChest from '../Components/TreasureChest.tsx';
 import FuelBars from '../Components/FuelBars.tsx';
 import { markPlanetAsVisited, markSystemAsVisited } from '../Utils/VisitHistory.tsx';
-import { ENABLE_EFFECTS_CONTROL } from '../Utils/DebugConfig.tsx';
+import { debugConfig } from '../Utils/DebugConfig.tsx';
 
 interface Planet {
   name: string;
@@ -67,6 +67,7 @@ const PlanetLayout: React.FC<PlanetLayoutProps> = ({
 }) => {
   const [coordinates] = useState<string>(galaxy.coordinates.join(','));
   const [effects, setEffects] = useState<any[]>([]);
+  const [effectsControlEnabled, setEffectsControlEnabled] = useState(debugConfig.ENABLE_EFFECTS_CONTROL);
   
   const handleEffectsCreated = (newEffects: any[]) => {
     setEffects(newEffects);
@@ -86,6 +87,65 @@ const PlanetLayout: React.FC<PlanetLayoutProps> = ({
     markPlanetAsVisited(coordinates, system.index, planet.name, system.planets || []);
     markSystemAsVisited(coordinates, system.index);
   }, [coordinates, system.index, planet.name]);
+
+  // Listen for debug config changes
+  useEffect(() => {
+    const handleConfigChange = () => {
+      setEffectsControlEnabled(debugConfig.ENABLE_EFFECTS_CONTROL);
+    };
+    
+    debugConfig.addListener(handleConfigChange);
+    
+    return () => {
+      debugConfig.removeListener(handleConfigChange);
+    };
+  }, []);
+
+  // ATLAS keyboard sequence listener
+  useEffect(() => {
+    let sequence = '';
+    let timeoutId: NodeJS.Timeout;
+
+    const handleKeyPress = (event: KeyboardEvent) => {
+      // Only capture letter keys
+      if (event.key.match(/^[a-zA-Z]$/)) {
+        sequence += event.key.toUpperCase();
+        
+        // Clear timeout if it exists
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
+        
+        // Set timeout to clear sequence after 2 seconds
+        timeoutId = setTimeout(() => {
+          sequence = '';
+        }, 2000);
+        
+        // Check if sequence ends with ATLAS
+        if (sequence.includes('ATLAS')) {
+          debugConfig.enableEffectsControl();
+          sequence = '';
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+          }
+        }
+        
+        // Keep sequence length reasonable
+        if (sequence.length > 10) {
+          sequence = sequence.slice(-10);
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyPress);
+    
+    return () => {
+      document.removeEventListener('keydown', handleKeyPress);
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, []);
 
   const formatPlanetName = (name: string) => {
     return name.replace(/_/g, ' ');
@@ -161,8 +221,8 @@ const PlanetLayout: React.FC<PlanetLayoutProps> = ({
                   galaxy={galaxy} 
                   cosmicOriginTime={cosmic_origin_time}
                   initialAngleRotation={initial_angle_rotation}
-                  effects={ENABLE_EFFECTS_CONTROL ? effects : undefined}
-                  onToggleEffect={ENABLE_EFFECTS_CONTROL ? handleToggleEffect : undefined}
+                  effects={effectsControlEnabled ? effects : undefined}
+                  onToggleEffect={effectsControlEnabled ? handleToggleEffect : undefined}
                 />
               </div>
               
