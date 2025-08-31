@@ -221,9 +221,11 @@ export class ToxicWasteRenderEffect {
   private toxicColor: THREE.Color;
   private cosmicOriginTime: number;
   private useSpecialEffect: boolean;
+  private group: THREE.Group;
 
   constructor(planetRadius: number, params: ToxicWasteRenderParams = {}) {
     this.planetRadius = planetRadius;
+    this.group = new THREE.Group();
 
     const seed = params.seed || Math.floor(Math.random() * 1000000);
     this.rng = new SeededRandom(seed);
@@ -260,6 +262,7 @@ export class ToxicWasteRenderEffect {
 
       const spot = new ToxicSpot(this.planetRadius, spotColor, spotSeed, this.proceduralParams.moveSpeed, this.proceduralParams.innerRotationSpeed, this.useSpecialEffect);
       this.spots.push(spot);
+      this.group.add(spot.getMesh());
     }
   }
 
@@ -272,15 +275,20 @@ export class ToxicWasteRenderEffect {
   }
 
   addToScene(scene: THREE.Scene, position: THREE.Vector3): void {
-    this.spots.forEach((spot) => {
-      spot.getMesh().position.add(position);
-      scene.add(spot.getMesh());
-    });
+    this.group.position.copy(position);
+    scene.add(this.group);
+  }
+
+  getObject3D(): THREE.Group {
+    return this.group;
   }
 
   dispose(): void {
     this.spots.forEach((spot) => spot.dispose());
     this.spots = [];
+    if (this.group.parent) {
+      this.group.parent.remove(this.group);
+    }
   }
 }
 
