@@ -54,6 +54,7 @@ import { CarbonTrailsEffect, createCarbonTrailsFromPythonData } from "./CarbonTr
 import { RadiationRingsEffect, createRadiationRingsFromPythonData } from "./RadiationRings";
 import { SuperEarthWaterFeaturesEffect, createSuperEarthWaterFeaturesFromPythonData } from "./SuperEarthWaterFeatures";
 import { LifeFormIntelligentLifeEffect, createLifeFormIntelligentLifeFromPythonData } from "./LifeFormIntelligentLife";
+import { LifeFormSiliconBasedLifeEffect, createLifeFormSiliconBasedLifeFromPythonData } from "./LifeFormSiliconBasedLife";
 
 import { VisualDebug3DEffect, createVisualDebug3DFromPythonData } from "./VisualDebug3D";
 import { ENABLE_EFFECTS_LOGGING } from "../Utils/DebugConfig.tsx";
@@ -119,6 +120,7 @@ export enum EffectType {
   THERMAL_EMISSIONS = "thermal_emissions",
 
   LIFE_FORM_INTELLIGENT_LIFE = "life_form_intelligent_life",
+  LIFE_FORM_SILICON_BASED_LIFE = "life_form_silicon_based_life",
 
   TUNDRA_SNOWFLAKES = "tundra_snowflakes",
 
@@ -266,6 +268,11 @@ export class EffectRegistry {
     this.registerEffect(EffectType.LIFE_FORM_INTELLIGENT_LIFE, {
       create: (params, planetRadius) => new LifeFormIntelligentLifeEffect(planetRadius, params),
       fromPythonData: (data, planetRadius) => createLifeFormIntelligentLifeFromPythonData(planetRadius, data, data.seeds?.planet_seed),
+    });
+
+    this.registerEffect(EffectType.LIFE_FORM_SILICON_BASED_LIFE, {
+      create: (params, planetRadius) => new LifeFormSiliconBasedLifeEffect(planetRadius, params),
+      fromPythonData: (data, planetRadius) => createLifeFormSiliconBasedLifeFromPythonData(planetRadius, data, data.seeds?.planet_seed),
     });
 
     this.registerEffect(EffectType.CRYSTAL_FORMATIONS, {
@@ -2886,6 +2893,14 @@ export class EffectRegistry {
         if (intelligentLifeEffect) {
           effects.push(intelligentLifeEffect);
           intelligentLifeEffect.effect.addToScene(scene, mesh.position);
+        }
+      }
+
+      if (pythonData.original_planet_data && pythonData.original_planet_data.life_forms === "Silicon-Based Life") {
+        const siliconLifeEffect = this.createEffectFromPythonData(EffectType.LIFE_FORM_SILICON_BASED_LIFE, pythonData, planetRadius, mesh, 10);
+        if (siliconLifeEffect) {
+          effects.push(siliconLifeEffect);
+          siliconLifeEffect.effect.addToScene(scene, mesh.position);
         }
       }
 
