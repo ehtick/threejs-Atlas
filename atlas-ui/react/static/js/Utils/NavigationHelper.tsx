@@ -1,4 +1,4 @@
-import React from 'react';
+// atlas-ui/react/static/js/Utils/NavigationHelper.tsx
 import { UnifiedSpaceshipStorage } from "./UnifiedSpaceshipStorage.tsx";
 import { TravelCost } from "./SpaceshipTypes.tsx";
 
@@ -19,13 +19,9 @@ export class NavigationHelper {
     const dx = Math.abs(to[0] - from[0]);
     const dy = Math.abs(to[1] - from[1]);
     const dz = Math.abs(to[2] - from[2]);
-    
-    // Improved distance calculation - more forgiving
-    // Scale by coordinate system size and make more reasonable
-    const rawDistance = Math.sqrt(dx*dx + dy*dy + dz*dz);
-    
-    // Scale to a reasonable range (0-50 LY for typical jumps)
-    // Coordinates like 1000000 to 2000000 should be ~10-20 LY
+
+    const rawDistance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
     return Math.floor(rawDistance / 100000);
   }
 
@@ -46,29 +42,22 @@ export class NavigationHelper {
     };
   }
 
-  static checkNavigationResources(
-    from: number[],
-    to: number[],
-    locationType: "galaxy" | "system" | "planet"
-  ): NavigationCheckResult {
+  static checkNavigationResources(from: number[], to: number[], locationType: "galaxy" | "system" | "planet"): NavigationCheckResult {
     const distance = this.calculateDistance(from, to);
     const cost = this.calculateTravelCost(distance, locationType);
     const resources = UnifiedSpaceshipStorage.getResources();
     const upgrade = UnifiedSpaceshipStorage.getUpgrade();
-    
+
     const actualCost = {
       antimatter: Math.floor(cost.antimatter / upgrade.efficiency),
       element115: Math.floor(cost.element115 / upgrade.efficiency),
       deuterium: Math.floor(cost.deuterium / upgrade.efficiency),
     };
 
-    const canAfford = 
-      resources.antimatter >= actualCost.antimatter &&
-      resources.element115 >= actualCost.element115 &&
-      resources.deuterium >= actualCost.deuterium;
-    
+    const canAfford = resources.antimatter >= actualCost.antimatter && resources.element115 >= actualCost.element115 && resources.deuterium >= actualCost.deuterium;
+
     const withinRange = distance <= upgrade.range;
-    
+
     const result: NavigationCheckResult = {
       canTravel: canAfford && withinRange,
       cost,
@@ -90,20 +79,14 @@ export class NavigationHelper {
     return result;
   }
 
-  static performNavigation(
-    coordinates: { x: number; y: number; z: number },
-    currentCoordinates: number[],
-    locationType: "galaxy" | "system" | "planet"
-  ): boolean {
+  static performNavigation(coordinates: { x: number; y: number; z: number }, currentCoordinates: number[], locationType: "galaxy" | "system" | "planet"): boolean {
     const to = [coordinates.x, coordinates.y, coordinates.z];
     const check = this.checkNavigationResources(currentCoordinates, to, locationType);
-    
+
     if (check.canTravel) {
-      // Consume resources
       const consumed = UnifiedSpaceshipStorage.consumeResources(check.cost);
-      
+
       if (consumed) {
-        // Create and submit form
         const form = document.createElement("form");
         form.method = "POST";
         form.action = "/navigate";
@@ -121,13 +104,13 @@ export class NavigationHelper {
         return true;
       }
     }
-    
+
     return false;
   }
 
   static showNavigationError(check: NavigationCheckResult): void {
     let message = "Cannot travel: ";
-    
+
     if (check.exceedsRange) {
       message += "Destination exceeds ship range. Upgrade your ship to travel further.";
     } else if (check.missingResources) {
@@ -143,13 +126,10 @@ export class NavigationHelper {
       }
       message += `Insufficient resources. Need: ${missing.join(", ")}`;
     }
-    
-    // Create a toast notification with animation using DOM manipulation
+
     const toast = document.createElement("div");
-    toast.className = "fixed top-4 right-4 z-50 bg-red-900/90 text-white px-4 py-3 rounded-lg shadow-lg border border-red-500/50";
-    toast.style.animation = "slideInRight 0.3s ease-out";
-    
-    // Create toast content using DOM manipulation instead of innerHTML
+    toast.className = "fixed top-4 right-4 z-50 bg-red-900/90 text-white px-4 py-3 rounded-lg shadow-lg border border-red-500/50 animate-slideInRight";
+
     const container = document.createElement("div");
     container.className = "flex items-center space-x-2";
 
@@ -164,40 +144,11 @@ export class NavigationHelper {
     container.appendChild(warningSpan);
     container.appendChild(messageSpan);
     toast.appendChild(container);
-    
-    // Add CSS animation if not already present
-    if (!document.getElementById("navigation-toast-styles")) {
-      const style = document.createElement("style");
-      style.id = "navigation-toast-styles";
-      style.textContent = `
-        @keyframes slideInRight {
-          from {
-            transform: translateX(100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateX(0);
-            opacity: 1;
-          }
-        }
-        @keyframes slideOutRight {
-          from {
-            transform: translateX(0);
-            opacity: 1;
-          }
-          to {
-            transform: translateX(100%);
-            opacity: 0;
-          }
-        }
-      `;
-      document.head.appendChild(style);
-    }
-    
+
     document.body.appendChild(toast);
-    
+
     setTimeout(() => {
-      toast.style.animation = "slideOutRight 0.3s ease-in forwards";
+      toast.className = toast.className.replace("animate-slideInRight", "animate-slideOutRight");
       setTimeout(() => {
         toast.remove();
       }, 300);

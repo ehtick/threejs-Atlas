@@ -1,10 +1,9 @@
-import React from 'react';
-// Utility functions for managing visit history
-import { OptimizedAtlasStorage } from './OptimizedStorage.tsx';
+// atlas-ui/react/static/js/Utils/VisitHistory.tsx
+import { OptimizedAtlasStorage } from "./OptimizedStorage.tsx";
 
 export interface VisitedData {
   [coordinates: string]: {
-    [systemIndex: string]: string[]; // Array of planet names (lowercase)
+    [systemIndex: string]: string[];
   };
 }
 
@@ -42,32 +41,29 @@ export const isSystemVisited = (coordinates: string, systemIndex: number): boole
   return OptimizedAtlasStorage.isSystemVisited(coordinates, systemIndex);
 };
 
-export const getSystemVisitStatus = (coordinates: string, systemIndex: number, totalPlanets: number, systemPlanets?: any[]): 'none' | 'partial' | 'complete' => {
+export const getSystemVisitStatus = (coordinates: string, systemIndex: number, totalPlanets: number, systemPlanets?: any[]): "none" | "partial" | "complete" => {
   if (!isSystemVisited(coordinates, systemIndex)) {
-    return 'none';
+    return "none";
   }
-  
-  // If we have systemPlanets data, use the full function
+
   if (systemPlanets) {
     if (isSystemFullyVisited(coordinates, systemIndex, totalPlanets, systemPlanets)) {
-      return 'complete';
+      return "complete";
     } else {
-      return 'partial';
+      return "partial";
     }
   } else {
-    // Fallback: use the optimized count method
     const visitedCount = OptimizedAtlasStorage.getVisitedPlanetCount(coordinates, systemIndex);
     if (visitedCount >= totalPlanets && totalPlanets > 0) {
-      return 'complete';
+      return "complete";
     } else if (visitedCount > 0) {
-      return 'partial';
+      return "partial";
     } else {
-      return 'partial'; // System is visited but no specific planets tracked
+      return "partial";
     }
   }
 };
 
-// Storage statistics utility
 export const getStorageStats = () => {
   return OptimizedAtlasStorage.getStorageStats();
 };

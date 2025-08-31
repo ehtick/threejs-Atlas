@@ -1,6 +1,6 @@
-import React from 'react';
+// atlas-ui/react/static/js/Utils/ResourceEventManager.tsx
 
-export type ResourceEventType = 'resources_updated' | 'mining_completed';
+export type ResourceEventType = "resources_updated" | "mining_completed";
 
 export interface ResourceEvent {
   type: ResourceEventType;
@@ -14,10 +14,9 @@ export class ResourceEventManager {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, []);
     }
-    
+
     this.listeners.get(event)!.push(callback);
-    
-    // Return unsubscribe function
+
     return () => {
       const callbacks = this.listeners.get(event);
       if (callbacks) {
@@ -32,11 +31,11 @@ export class ResourceEventManager {
   static emit(event: ResourceEventType, data?: any): void {
     const callbacks = this.listeners.get(event);
     if (callbacks) {
-      callbacks.forEach(callback => {
+      callbacks.forEach((callback) => {
         try {
           callback(data);
         } catch (error) {
-          console.warn('Error in resource event callback:', error);
+          console.warn("Error in resource event callback:", error);
         }
       });
     }

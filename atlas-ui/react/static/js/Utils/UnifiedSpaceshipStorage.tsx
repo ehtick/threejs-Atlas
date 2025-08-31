@@ -1,77 +1,60 @@
-import React from 'react';
-// Unified and optimized spaceship storage system
-// All spaceship-related data in a single, compressed localStorage key
+// atlas-ui/react/static/js/Utils/UnifiedSpaceshipStorage.tsx
+
+import React from "react";
 import { getItem, setItem, removeItem } from "./b64.tsx";
 
 export interface SpaceshipData {
-  // Resources (compressed)
   r: {
-    a: number;  // antimatter
-    e: number;  // element115
-    d: number;  // deuterium
+    a: number;
+    e: number;
+    d: number;
   };
-  
-  // Ship upgrade
   u: {
-    l: number;  // level
-    ef: number; // efficiency
-    rn: number; // range  
-    st: number; // storage
-    m: number; // multiplier
+    l: number;
+    ef: number;
+    rn: number;
+    st: number;
+    m: number;
   };
-  
-  // Collections (locationId -> timestamp)
   c: { [locationId: string]: number };
-  
-  // Timestamps
   t: {
-    lp?: number; // last passive generation
-    ld?: number; // last daily generation
-    lc?: number; // last collection day
+    lp?: number;
+    ld?: number;
+    lc?: number;
   };
-  
-  // Stats
   s?: {
-    tc?: number; // total collections
-    tr?: { a: number; e: number; d: number }; // total resources collected
-    tt?: number; // total travels
-    cs?: number; // collection streak (consecutive days)
-    dc?: number; // daily collections today
-    // Daily collections by type
-    dcp?: number; // daily collections planets
-    dcs?: number; // daily collections systems  
-    dcg?: number; // daily collections galaxies
-    lcd?: string; // last collection date (for daily reset)
+    tc?: number;
+    tr?: { a: number; e: number; d: number };
+    tt?: number;
+    cs?: number;
+    dc?: number;
+    dcp?: number;
+    dcs?: number;
+    dcg?: number;
+    lcd?: string;
   };
 }
 
 export class UnifiedSpaceshipStorage {
-  private static readonly STORAGE_KEY = '_atlasSpaceShip';
+  private static readonly STORAGE_KEY = "_atlasSpaceShip";
   private static readonly COLLECTION_COOLDOWNS = {
-    planet: 15 * 60 * 1000,    // 15 minutes - faster for engagement
-    system: 45 * 60 * 1000,    // 45 minutes - reduced for better flow
-    galaxy: 8 * 60 * 60 * 1000 // 8 hours - valuable rewards require patience
+    planet: 15 * 60 * 1000,
+    system: 45 * 60 * 1000,
+    galaxy: 8 * 60 * 60 * 1000,
   };
-  
-  // Daily collection limits by location type
   private static readonly DAILY_COLLECTION_LIMITS = {
-    planet: Infinity, // No limit for planets
-    system: 15,       // 15 systems per day
-    galaxy: 5         // 5 galaxies per day
+    planet: Infinity,
+    system: 15,
+    galaxy: 5,
   };
-  
-  private static readonly PASSIVE_INTERVAL = 1 * 60 * 1000; // 1 minute for immediate feedback
-  
-  // Default initial state - generous starting resources
+  private static readonly PASSIVE_INTERVAL = 1 * 60 * 1000;
   private static readonly DEFAULT_DATA: SpaceshipData = {
-    r: { a: 300, e: 200, d: 250 }, // Abundant starting resources for immediate engagement
-    u: { l: 1, ef: 1.0, rn: 500, st: 1000, m: 1.0 }, // Better starting stats
+    r: { a: 300, e: 200, d: 250 },
+    u: { l: 1, ef: 1.0, rn: 500, st: 1000, m: 1.0 },
     c: {},
     t: {},
-    s: { tc: 0, tr: { a: 0, e: 0, d: 0 }, tt: 0, cs: 0, dc: 0, dcp: 0, dcs: 0, dcg: 0, lcd: new Date().toDateString() }
+    s: { tc: 0, tr: { a: 0, e: 0, d: 0 }, tt: 0, cs: 0, dc: 0, dcp: 0, dcs: 0, dcg: 0, lcd: new Date().toDateString() },
   };
-  
-  // Get all spaceship data
   static getData(): SpaceshipData {
     try {
       const stored = getItem(this.STORAGE_KEY);
@@ -79,140 +62,114 @@ export class UnifiedSpaceshipStorage {
         this.saveData(this.DEFAULT_DATA);
         return { ...this.DEFAULT_DATA };
       }
-      
+
       const compactData = JSON.parse(stored);
-      
-      // Expand compact data back to full format
       const data = this.expandData(compactData);
-      
-      // Ensure all required fields exist
       return {
         r: data.r || { ...this.DEFAULT_DATA.r },
         u: data.u || { ...this.DEFAULT_DATA.u },
         c: data.c || {},
         t: data.t || {},
-        s: data.s || { ...this.DEFAULT_DATA.s }
+        s: data.s || { ...this.DEFAULT_DATA.s },
       };
     } catch (error) {
-      console.error('Error reading spaceship data:', error);
+      console.error("Error reading spaceship data:", error);
       return { ...this.DEFAULT_DATA };
     }
   }
-  
-  // Save all spaceship data
+
   private static saveData(data: SpaceshipData): void {
     try {
-      // Cleanup old collections (older than 24 hours)
       const now = Date.now();
       const cutoff = now - 24 * 60 * 60 * 1000;
-      
-      Object.keys(data.c).forEach(key => {
+
+      Object.keys(data.c).forEach((key) => {
         if (data.c[key] < cutoff) {
           delete data.c[key];
         }
       });
-      
-      // Limit collections to 500 most recent
+
       const collectionKeys = Object.keys(data.c);
       if (collectionKeys.length > 500) {
         const sorted = collectionKeys.sort((a, b) => data.c[a] - data.c[b]);
         const toRemove = sorted.slice(0, sorted.length - 500);
-        toRemove.forEach(key => delete data.c[key]);
+        toRemove.forEach((key) => delete data.c[key]);
       }
-      
-      // Compact the data before saving to reduce storage size
+
       const compactData = this.compactData(data);
       setItem(this.STORAGE_KEY, JSON.stringify(compactData));
     } catch (error) {
-      console.error('Error saving spaceship data:', error);
-      
-      // If storage is full, try emergency cleanup
-      if (error.name === 'QuotaExceededError') {
+      console.error("Error saving spaceship data:", error);
+      if (error.name === "QuotaExceededError") {
         this.performEmergencyCleanup();
       }
     }
   }
-  
+
   private static performEmergencyCleanup(): void {
     const data = this.getData();
-    // Keep only resources and upgrades, clear collections and stats
     data.c = {};
     data.s = { tc: 0, tr: { a: 0, e: 0, d: 0 }, tt: 0 };
     this.saveData(data);
   }
-  
-  // Resource management
   static getResources(): { antimatter: number; element115: number; deuterium: number } {
     const data = this.getData();
     return {
       antimatter: data.r.a,
       element115: data.r.e,
-      deuterium: data.r.d
+      deuterium: data.r.d,
     };
   }
-  
+
   static setResources(resources: { antimatter: number; element115: number; deuterium: number }): void {
     const data = this.getData();
     const upgrade = data.u;
-    
-    // Apply storage limits
     data.r.a = Math.min(Math.max(0, resources.antimatter), upgrade.st);
     data.r.e = Math.min(Math.max(0, resources.element115), upgrade.st);
     data.r.d = Math.min(Math.max(0, resources.deuterium), upgrade.st);
-    
+
     this.saveData(data);
   }
-  
+
   static addResources(toAdd: { antimatter: number; element115: number; deuterium: number }): void {
     const data = this.getData();
     const upgrade = data.u;
-    
+
     data.r.a = Math.min(data.r.a + toAdd.antimatter, upgrade.st);
     data.r.e = Math.min(data.r.e + toAdd.element115, upgrade.st);
     data.r.d = Math.min(data.r.d + toAdd.deuterium, upgrade.st);
-    
-    // Update stats
     if (data.s) {
       data.s.tr = data.s.tr || { a: 0, e: 0, d: 0 };
       data.s.tr.a += toAdd.antimatter;
       data.s.tr.e += toAdd.element115;
       data.s.tr.d += toAdd.deuterium;
     }
-    
+
     this.saveData(data);
   }
-  
+
   static consumeResources(cost: { antimatter: number; element115: number; deuterium: number }): boolean {
     const data = this.getData();
-    
-    // Apply efficiency
     const actualCost = {
       antimatter: Math.floor(cost.antimatter / data.u.ef),
       element115: Math.floor(cost.element115 / data.u.ef),
-      deuterium: Math.floor(cost.deuterium / data.u.ef)
+      deuterium: Math.floor(cost.deuterium / data.u.ef),
     };
-    
-    if (data.r.a >= actualCost.antimatter &&
-        data.r.e >= actualCost.element115 &&
-        data.r.d >= actualCost.deuterium) {
-      
+
+    if (data.r.a >= actualCost.antimatter && data.r.e >= actualCost.element115 && data.r.d >= actualCost.deuterium) {
       data.r.a -= actualCost.antimatter;
       data.r.e -= actualCost.element115;
       data.r.d -= actualCost.deuterium;
-      
-      // Update travel stats
       if (data.s) {
         data.s.tt = (data.s.tt || 0) + 1;
       }
-      
+
       this.saveData(data);
       return true;
     }
-    
+
     return false;
   }
-  
-  // Upgrade management
   static getUpgrade(): {
     level: number;
     efficiency: number;
@@ -226,222 +183,181 @@ export class UnifiedSpaceshipStorage {
       efficiency: data.u.ef,
       range: data.u.rn,
       storage: data.u.st,
-      multiplier: data.u.m
+      multiplier: data.u.m,
     };
   }
-  
+
   static upgradeShip(cost: { antimatter: number; element115: number; deuterium: number }): boolean {
     const data = this.getData();
-    
-    // Maximum level cap
     const MAX_LEVEL = 100;
     if (data.u.l >= MAX_LEVEL) {
-      return false; // Already at max level
+      return false;
     }
-    
-    // Check if can afford
-    if (data.r.a >= cost.antimatter &&
-        data.r.e >= cost.element115 &&
-        data.r.d >= cost.deuterium) {
-      
-      // Consume resources
+    if (data.r.a >= cost.antimatter && data.r.e >= cost.element115 && data.r.d >= cost.deuterium) {
       data.r.a -= cost.antimatter;
       data.r.e -= cost.element115;
       data.r.d -= cost.deuterium;
-      
-      // Apply upgrade
       data.u.l += 1;
-      
-      // Generous improvements with smooth progression
       let efficiency = Math.min(4.0, 1 + (data.u.l - 1) * 0.2); // Higher cap, faster growth
-      
-      // Range with generous scaling
-      let range = data.u.l <= 25 
-        ? 500 + (data.u.l - 1) * 200 // Better base and growth
-        : 500 + 25 * 200 + Math.floor(Math.log(data.u.l - 25 + 1) * 800);
+
+      let range =
+        data.u.l <= 25
+          ? 500 + (data.u.l - 1) * 200 // Better base and growth
+          : 500 + 25 * 200 + Math.floor(Math.log(data.u.l - 25 + 1) * 800);
       range = Math.min(range, 25000); // Higher cap for exploration
-      
-      // Storage with generous scaling
-      let storage = data.u.l <= 20
-        ? 1000 + (data.u.l - 1) * 400 // Much better base and growth
-        : 1000 + 20 * 400 + Math.floor(Math.log(data.u.l - 20 + 1) * 1200);
+
+      let storage =
+        data.u.l <= 20
+          ? 1000 + (data.u.l - 1) * 400 // Much better base and growth
+          : 1000 + 20 * 400 + Math.floor(Math.log(data.u.l - 20 + 1) * 1200);
       storage = Math.min(storage, 50000); // Double the cap
-      
-      // Simple, smooth multiplier progression - always increases, never decreases
+
       let multiplier = 1.0 + (data.u.l - 1) * 0.242; // Calculated to reach exactly 25x at level 100
-      
-      // No milestone bonuses - all stats progress smoothly and predictably
-      
+
       data.u.ef = Math.min(6.0, efficiency); // Higher efficiency cap
       data.u.rn = Math.floor(range);
       data.u.st = Math.floor(storage);
       data.u.m = Math.min(25.0, multiplier); // New 25x multiplier cap
-      
+
       this.saveData(data);
       return true;
     }
-    
+
     return false;
   }
-  
-  // Helper to extract location type from locationId
+
   private static getLocationTypeFromId(locationId: string): "planet" | "system" | "galaxy" {
     if (locationId.startsWith("planet_")) return "planet";
     if (locationId.startsWith("system_")) return "system";
     if (locationId.startsWith("galaxy_")) return "galaxy";
-    return "planet"; // default fallback
+    return "planet";
   }
-  
-  // Helper to get cooldown for location type
   private static getCooldownForLocation(locationId: string): number {
     const locationType = this.getLocationTypeFromId(locationId);
     return this.COLLECTION_COOLDOWNS[locationType];
   }
-  
-  // Check if we can collect from a location type based on daily limits
+
   private static canCollectFromLocationType(locationType: "planet" | "system" | "galaxy", data?: SpaceshipData): boolean {
     if (!data) data = this.getData();
-    
+
     const today = new Date().toDateString();
-    
-    // Reset daily counters if it's a new day
+
     if (data.s && data.s.lcd !== today) {
       data.s.dcp = 0;
-      data.s.dcs = 0; 
+      data.s.dcs = 0;
       data.s.dcg = 0;
       data.s.lcd = today;
       this.saveData(data);
     }
-    
+
     if (!data.s) return true;
-    
+
     const limit = this.DAILY_COLLECTION_LIMITS[locationType];
     if (limit === Infinity) return true;
-    
-    const currentCount = locationType === 'planet' ? (data.s.dcp || 0) :
-                        locationType === 'system' ? (data.s.dcs || 0) :
-                        (data.s.dcg || 0);
-    
+
+    const currentCount = locationType === "planet" ? data.s.dcp || 0 : locationType === "system" ? data.s.dcs || 0 : data.s.dcg || 0;
+
     return currentCount < limit;
   }
 
-  // Collection management
   static canCollectFromLocation(locationId: string): boolean {
     const data = this.getData();
     const lastCollected = data.c[locationId];
-    
-    // Check cooldown first
+
     if (lastCollected) {
       const now = Date.now();
       const cooldown = this.getCooldownForLocation(locationId);
-      if ((now - lastCollected) < cooldown) {
-        return false; // Still on cooldown
+      if (now - lastCollected < cooldown) {
+        return false;
       }
     }
-    
-    // Check daily limits
+
     const locationType = this.getLocationTypeFromId(locationId);
     return this.canCollectFromLocationType(locationType, data);
   }
-  
+
   static getTimeUntilNextCollection(locationId: string): number {
     const data = this.getData();
     const lastCollected = data.c[locationId];
-    
+
     if (!lastCollected) return 0;
-    
+
     const now = Date.now();
     const cooldown = this.getCooldownForLocation(locationId);
     const remaining = cooldown - (now - lastCollected);
-    return remaining > 0 ? remaining / (1000 * 60 * 60) : 0; // Return in hours
+    return remaining > 0 ? remaining / (1000 * 60 * 60) : 0;
   }
-  
+
   static markLocationCollected(locationId: string): void {
     const data = this.getData();
     data.c[locationId] = Date.now();
-    
-    // Update daily collection counters by type
+
     const locationType = this.getLocationTypeFromId(locationId);
     this.updateDailyCollectionCounters(data, locationType);
-    
-    // Update collection stats and streaks
+
     this.updateCollectionStreaks(data);
-    
+
     this.saveData(data);
   }
-  
-  // Helper to update daily collection counters by type
+
   private static updateDailyCollectionCounters(data: SpaceshipData, locationType: "planet" | "system" | "galaxy"): void {
     const today = new Date().toDateString();
-    
+
     if (!data.s) {
       data.s = { tc: 0, tr: { a: 0, e: 0, d: 0 }, tt: 0, cs: 0, dc: 0, dcp: 0, dcs: 0, dcg: 0, lcd: today };
     }
-    
-    // Reset counters if it's a new day
+
     if (data.s.lcd !== today) {
       data.s.dcp = 0;
       data.s.dcs = 0;
       data.s.dcg = 0;
       data.s.lcd = today;
     }
-    
-    // Increment the appropriate counter
-    if (locationType === 'planet') {
+
+    if (locationType === "planet") {
       data.s.dcp = (data.s.dcp || 0) + 1;
-    } else if (locationType === 'system') {
+    } else if (locationType === "system") {
       data.s.dcs = (data.s.dcs || 0) + 1;
-    } else if (locationType === 'galaxy') {
+    } else if (locationType === "galaxy") {
       data.s.dcg = (data.s.dcg || 0) + 1;
     }
   }
-  
-  // Helper to update collection streaks
+
   private static updateCollectionStreaks(data: SpaceshipData): void {
     const now = Date.now();
     const today = new Date(now).toDateString();
     const lastCollectionDay = data.t.lc ? new Date(data.t.lc).toDateString() : null;
-    
+
     if (!data.s) {
       data.s = { tc: 0, tr: { a: 0, e: 0, d: 0 }, tt: 0, cs: 0, dc: 0 };
     }
-    
-    // Update total collections
+
     data.s.tc = (data.s.tc || 0) + 1;
-    
-    // Check if this is the first collection today
+
     if (today !== lastCollectionDay) {
-      // New day collection
-      const oldLastCollectionTime = data.t.lc; // Save the old timestamp before updating
+      const oldLastCollectionTime = data.t.lc;
       data.t.lc = now;
-      
+
       if (lastCollectionDay && oldLastCollectionTime) {
         const lastDate = new Date(oldLastCollectionTime);
         const todayDate = new Date(now);
         const daysDifference = Math.floor((todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
-        
+
         if (daysDifference === 1) {
-          // Consecutive day - increase streak
           data.s.cs = (data.s.cs || 0) + 1;
         } else if (daysDifference > 1) {
-          // Streak broken - reset to 1
           data.s.cs = 1;
         }
-        // daysDifference === 0 means same day, no streak update needed
       } else {
-        // First ever collection
         data.s.cs = 1;
       }
-      
-      // Reset daily collection count
+
       data.s.dc = 1;
     } else {
-      // Same day collection
       data.s.dc = (data.s.dc || 0) + 1;
     }
   }
-  
-  // Get current collection streak info
+
   static getCollectionStreakInfo(): {
     currentStreak: number;
     dailyCollections: number;
@@ -450,80 +366,68 @@ export class UnifiedSpaceshipStorage {
     const data = this.getData();
     const currentStreak = data.s?.cs || 0;
     const dailyCollections = data.s?.dc || 0;
-    
-    // Calculate streak multiplier (25% bonus after 3+ consecutive days)
+
     const streakMultiplier = currentStreak >= 3 ? 1.25 : 1.0;
-    
+
     return {
       currentStreak,
       dailyCollections,
-      streakMultiplier
+      streakMultiplier,
     };
   }
-  
+
   static getCollectionCount(locationId: string): number {
-    // For simplicity, we'll track this separately or estimate based on history
-    // This is a simplified version - could be enhanced with more tracking
     const data = this.getData();
-    const collections = Object.keys(data.c).filter(key => key.startsWith(locationId.split('_')[0]));
+    const collections = Object.keys(data.c).filter((key) => key.startsWith(locationId.split("_")[0]));
     return collections.length;
   }
-  
-  // Passive generation
+
   static shouldProcessPassive(): boolean {
     const data = this.getData();
     const now = Date.now();
     const lastPassive = data.t.lp || 0;
-    
-    return (now - lastPassive) >= this.PASSIVE_INTERVAL;
+
+    return now - lastPassive >= this.PASSIVE_INTERVAL;
   }
-  
+
   static markPassiveProcessed(): void {
     const data = this.getData();
     data.t.lp = Date.now();
     this.saveData(data);
   }
-  
-  // Stats
+
   static getStats(): {
     totalCollections: number;
     totalResourcesCollected: { antimatter: number; element115: number; deuterium: number };
     totalTravels: number;
   } {
     const data = this.getData();
+    const rawResources = data.s?.tr || { a: 0, e: 0, d: 0 };
+
     return {
       totalCollections: data.s?.tc || 0,
-      totalResourcesCollected: data.s?.tr || { antimatter: 0, element115: 0, deuterium: 0 },
-      totalTravels: data.s?.tt || 0
+      totalResourcesCollected: {
+        antimatter: rawResources.a || 0,
+        element115: rawResources.e || 0,
+        deuterium: rawResources.d || 0,
+      },
+      totalTravels: data.s?.tt || 0,
     };
   }
-  
-  // Migration from old storage
+
   static migrateFromOldStorage(): void {
     try {
-      // Migrate from old localStorage keys
-      const oldKeys = [
-        'atlas_ship_resources',
-        'atlas_ship_upgrades',
-        'atlas_resource_collections',
-        '_atlasSpaceShip_collections',
-        '_atlasSpaceShip_lastPassive',
-        'atlas_last_resource_generation',
-        'atlas_last_passive_generation'
-      ];
-      
-      // Check if we need to migrate
+      const oldKeys = ["atlas_ship_resources", "atlas_ship_upgrades", "atlas_resource_collections", "_atlasSpaceShip_collections", "_atlasSpaceShip_lastPassive", "atlas_last_resource_generation", "atlas_last_passive_generation"];
+
       const currentData = getItem(this.STORAGE_KEY);
-      if (currentData) return; // Already migrated
-      
-      // Try to migrate old data
-      const oldResources = localStorage.getItem('atlas_ship_resources');
-      const oldUpgrades = localStorage.getItem('atlas_ship_upgrades');
-      const oldCollections = localStorage.getItem('atlas_resource_collections') || 
-                            localStorage.getItem('_atlasSpaceShip_collections');
-      
+      if (currentData) return;
+
+      const oldResources = localStorage.getItem("atlas_ship_resources");
+      const oldUpgrades = localStorage.getItem("atlas_ship_upgrades");
+      const oldCollections = localStorage.getItem("atlas_resource_collections") || localStorage.getItem("_atlasSpaceShip_collections");
+
       const newData: SpaceshipData = { ...this.DEFAULT_DATA };
-      
+
       if (oldResources) {
         try {
           const resources = JSON.parse(oldResources);
@@ -532,7 +436,7 @@ export class UnifiedSpaceshipStorage {
           newData.r.d = resources.deuterium || 125;
         } catch (e) {}
       }
-      
+
       if (oldUpgrades) {
         try {
           const upgrade = JSON.parse(oldUpgrades);
@@ -543,91 +447,74 @@ export class UnifiedSpaceshipStorage {
           newData.u.m = upgrade.multiplier || upgrade.passiveGeneration || 1.0;
         } catch (e) {}
       }
-      
+
       if (oldCollections) {
         try {
           const collections = JSON.parse(oldCollections);
-          Object.keys(collections).forEach(key => {
+          Object.keys(collections).forEach((key) => {
             if (collections[key].lastCollected) {
               newData.c[collections[key].id] = collections[key].lastCollected;
             }
           });
         } catch (e) {}
       }
-      
-      // Save migrated data
+
       this.saveData(newData);
-      
-      // Clean up old keys
-      oldKeys.forEach(key => {
+
+      oldKeys.forEach((key) => {
         try {
-          localStorage.removeItem(key); // Keep legacy cleanup
+          localStorage.removeItem(key);
         } catch (e) {}
       });
-      
-      console.log('Successfully migrated to unified spaceship storage');
+
+      console.log("Successfully migrated to unified spaceship storage");
     } catch (error) {
-      console.error('Error during migration:', error);
+      console.error("Error during migration:", error);
     }
   }
-  
-  // Reset (for debugging/testing)
+
   static reset(): void {
     removeItem(this.STORAGE_KEY);
   }
-  
-  // Get storage size
+
   static getStorageSize(): number {
-    const data = getItem(this.STORAGE_KEY) || '{}';
+    const data = getItem(this.STORAGE_KEY) || "{}";
     return data.length;
   }
 
-  // Compact data for storage efficiency (like atlasArchive optimization)
   private static compactData(data: SpaceshipData): any {
-    // Keep timestamps absolute to avoid recalculation issues
-    // The space savings from relative timestamps isn't worth the bugs
     const compactData: any = {
-      r: data.r, // Resources stay the same
-      u: data.u, // Upgrades stay the same  
-      c: data.c, // Keep collections with absolute timestamps
-      s: data.s, // Stats stay the same
-      t: data.t // Keep timestamps uncompressed for simplicity
+      r: data.r,
+      u: data.u,
+      c: data.c,
+      s: data.s,
+      t: data.t,
     };
 
     return compactData;
   }
 
-  // Expand compact data after loading (like atlasArchive optimization)  
   private static expandData(compactData: any): SpaceshipData {
     const now = Date.now();
     const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
-    
-    // Handle legacy data - migrate from relative to absolute timestamps
+
     const expandedCollections: { [key: string]: number } = {};
     if (compactData.c) {
-      Object.keys(compactData.c).forEach(key => {
+      Object.keys(compactData.c).forEach((key) => {
         const value = compactData.c[key];
-        
-        // Check if this is a valid Unix timestamp in milliseconds
-        // Valid timestamps should be between 2020 and 2030 (in milliseconds)
+
         const MIN_VALID_TIMESTAMP = 1577836800000; // Jan 1, 2020
         const MAX_VALID_TIMESTAMP = 1893456000000; // Jan 1, 2030
-        
+
         if (value === 0) {
-          // Special case: 0 means corrupted data from old version
-          // Set it to 24 hours ago so the location is immediately available
           const migratedTimestamp = now - TWENTY_FOUR_HOURS;
           expandedCollections[key] = migratedTimestamp;
         } else if (value >= MIN_VALID_TIMESTAMP && value <= MAX_VALID_TIMESTAMP) {
-          // This is already a valid absolute timestamp
           expandedCollections[key] = value;
         } else if (value > 0 && value < 86400 * 30) {
-          // If value is less than 30 days in seconds, it's likely a relative timestamp
-          // Convert from seconds ago to absolute timestamp
-          const converted = now - (value * 1000);
+          const converted = now - value * 1000;
           expandedCollections[key] = converted;
         } else {
-          // Invalid or corrupted data - set to 24 hours ago
           expandedCollections[key] = now - TWENTY_FOUR_HOURS;
         }
       });
@@ -638,22 +525,20 @@ export class UnifiedSpaceshipStorage {
       u: compactData.u || { l: 1, ef: 1.0, rn: 500, st: 1000, m: 1.0 }, // Match new defaults
       c: expandedCollections,
       t: compactData.t || {}, // Use timestamps directly (uncompressed)
-      s: compactData.s || { tc: 0, tr: { a: 0, e: 0, d: 0 }, tt: 0, cs: 0, dc: 0, dcp: 0, dcs: 0, dcg: 0, lcd: new Date().toDateString() }
+      s: compactData.s || { tc: 0, tr: { a: 0, e: 0, d: 0 }, tt: 0, cs: 0, dc: 0, dcp: 0, dcs: 0, dcg: 0, lcd: new Date().toDateString() },
     };
 
     return expandedData;
   }
-  
-  // Public method to clean corrupted collection timestamps
   static cleanCorruptedTimestamps(): void {
     const data = this.getData();
     const now = Date.now();
     const MIN_VALID_TIMESTAMP = 1577836800000; // Jan 1, 2020
     const MAX_VALID_TIMESTAMP = 1893456000000; // Jan 1, 2030
     const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
-    
+
     let cleaned = false;
-    Object.keys(data.c).forEach(key => {
+    Object.keys(data.c).forEach((key) => {
       const value = data.c[key];
       if (value === 0) {
         data.c[key] = now - TWENTY_FOUR_HOURS;
@@ -663,13 +548,11 @@ export class UnifiedSpaceshipStorage {
         cleaned = true;
       }
     });
-    
+
     if (cleaned) {
       this.saveData(data);
     }
   }
-  
-  // Get daily collection information
   static getDailyCollectionInfo(): {
     planets: { used: number; limit: number; unlimited: boolean };
     systems: { used: number; limit: number; unlimited: boolean };
@@ -677,14 +560,12 @@ export class UnifiedSpaceshipStorage {
   } {
     const data = this.getData();
     const today = new Date().toDateString();
-    
-    // Initialize stats if missing
+
     if (!data.s) {
       data.s = { tc: 0, tr: { a: 0, e: 0, d: 0 }, tt: 0, cs: 0, dc: 0, dcp: 0, dcs: 0, dcg: 0, lcd: today };
       this.saveData(data);
     }
-    
-    // Reset counters if it's a new day
+
     if (data.s.lcd !== today) {
       data.s.dcp = 0;
       data.s.dcs = 0;
@@ -692,23 +573,23 @@ export class UnifiedSpaceshipStorage {
       data.s.lcd = today;
       this.saveData(data);
     }
-    
+
     return {
       planets: {
         used: data.s.dcp || 0,
         limit: this.DAILY_COLLECTION_LIMITS.planet,
-        unlimited: this.DAILY_COLLECTION_LIMITS.planet === Infinity
+        unlimited: this.DAILY_COLLECTION_LIMITS.planet === Infinity,
       },
       systems: {
         used: data.s.dcs || 0,
         limit: this.DAILY_COLLECTION_LIMITS.system,
-        unlimited: this.DAILY_COLLECTION_LIMITS.system === Infinity
+        unlimited: this.DAILY_COLLECTION_LIMITS.system === Infinity,
       },
       galaxies: {
         used: data.s.dcg || 0,
         limit: this.DAILY_COLLECTION_LIMITS.galaxy,
-        unlimited: this.DAILY_COLLECTION_LIMITS.galaxy === Infinity
-      }
+        unlimited: this.DAILY_COLLECTION_LIMITS.galaxy === Infinity,
+      },
     };
   }
 }

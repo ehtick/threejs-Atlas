@@ -1,6 +1,4 @@
-import React from 'react';
-
-// Shared types for spaceship system
+// atlas-ui/react/static/js/Utils/SpaceshipTypes.tsx
 export interface ShipResource {
   antimatter: number;
   element115: number;
@@ -9,10 +7,10 @@ export interface ShipResource {
 
 export interface ShipUpgrade {
   level: number;
-  efficiency: number; // Reduces travel costs
-  range: number; // Maximum travel distance
-  storage: number; // Maximum resource capacity
-  multiplier: number; // Resource multiplier for passive income and mining
+  efficiency: number;
+  range: number;
+  storage: number;
+  multiplier: number;
 }
 
 export interface TravelCost {

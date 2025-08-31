@@ -1,6 +1,7 @@
-import React from 'react';
+// atlas-ui/react/static/js/Utils/ElementSymbols.tsx
 
-// Element symbols for periodic table visualization
+import React from "react";
+
 export interface ElementInfo {
   symbol: string;
   atomicNumber: number | string;
@@ -18,7 +19,7 @@ export const ELEMENT_SYMBOLS: { [key: string]: ElementInfo } = {
   Oxygen: { symbol: "O", atomicNumber: 8, category: "nonmetal" },
   Fluorine: { symbol: "F", atomicNumber: 9, category: "halogen" },
   Neon: { symbol: "Ne", atomicNumber: 10, category: "noble-gas" },
-  
+
   Sodium: { symbol: "Na", atomicNumber: 11, category: "alkali-metal" },
   Magnesium: { symbol: "Mg", atomicNumber: 12, category: "alkaline-earth" },
   Aluminum: { symbol: "Al", atomicNumber: 13, category: "post-transition" },
@@ -27,7 +28,7 @@ export const ELEMENT_SYMBOLS: { [key: string]: ElementInfo } = {
   Sulfur: { symbol: "S", atomicNumber: 16, category: "nonmetal" },
   Chlorine: { symbol: "Cl", atomicNumber: 17, category: "halogen" },
   Argon: { symbol: "Ar", atomicNumber: 18, category: "noble-gas" },
-  
+
   Potassium: { symbol: "K", atomicNumber: 19, category: "alkali-metal" },
   Calcium: { symbol: "Ca", atomicNumber: 20, category: "alkaline-earth" },
   Scandium: { symbol: "Sc", atomicNumber: 21, category: "transition-metal" },
@@ -46,7 +47,7 @@ export const ELEMENT_SYMBOLS: { [key: string]: ElementInfo } = {
   Selenium: { symbol: "Se", atomicNumber: 34, category: "nonmetal" },
   Bromine: { symbol: "Br", atomicNumber: 35, category: "halogen" },
   Krypton: { symbol: "Kr", atomicNumber: 36, category: "noble-gas" },
-  
+
   Rubidium: { symbol: "Rb", atomicNumber: 37, category: "alkali-metal" },
   Strontium: { symbol: "Sr", atomicNumber: 38, category: "alkaline-earth" },
   Yttrium: { symbol: "Y", atomicNumber: 39, category: "transition-metal" },
@@ -65,11 +66,10 @@ export const ELEMENT_SYMBOLS: { [key: string]: ElementInfo } = {
   Tellurium: { symbol: "Te", atomicNumber: 52, category: "metalloid" },
   Iodine: { symbol: "I", atomicNumber: 53, category: "halogen" },
   Xenon: { symbol: "Xe", atomicNumber: 54, category: "noble-gas" },
-  
+
   Cesium: { symbol: "Cs", atomicNumber: 55, category: "alkali-metal" },
   Barium: { symbol: "Ba", atomicNumber: 56, category: "alkaline-earth" },
-  
-  // Lanthanides
+
   Lanthanum: { symbol: "La", atomicNumber: 57, category: "lanthanide" },
   Cerium: { symbol: "Ce", atomicNumber: 58, category: "lanthanide" },
   Praseodymium: { symbol: "Pr", atomicNumber: 59, category: "lanthanide" },
@@ -85,8 +85,7 @@ export const ELEMENT_SYMBOLS: { [key: string]: ElementInfo } = {
   Thulium: { symbol: "Tm", atomicNumber: 69, category: "lanthanide" },
   Ytterbium: { symbol: "Yb", atomicNumber: 70, category: "lanthanide" },
   Lutetium: { symbol: "Lu", atomicNumber: 71, category: "lanthanide" },
-  
-  // Transition metals continued
+
   Hafnium: { symbol: "Hf", atomicNumber: 72, category: "transition-metal" },
   Tantalum: { symbol: "Ta", atomicNumber: 73, category: "transition-metal" },
   Tungsten: { symbol: "W", atomicNumber: 74, category: "transition-metal" },
@@ -102,11 +101,10 @@ export const ELEMENT_SYMBOLS: { [key: string]: ElementInfo } = {
   Polonium: { symbol: "Po", atomicNumber: 84, category: "post-transition" },
   Astatine: { symbol: "At", atomicNumber: 85, category: "halogen" },
   Radon: { symbol: "Rn", atomicNumber: 86, category: "noble-gas" },
-  
+
   Francium: { symbol: "Fr", atomicNumber: 87, category: "alkali-metal" },
   Radium: { symbol: "Ra", atomicNumber: 88, category: "alkaline-earth" },
-  
-  // Actinides
+
   Actinium: { symbol: "Ac", atomicNumber: 89, category: "actinide" },
   Thorium: { symbol: "Th", atomicNumber: 90, category: "actinide" },
   Protactinium: { symbol: "Pa", atomicNumber: 91, category: "actinide" },
@@ -122,8 +120,7 @@ export const ELEMENT_SYMBOLS: { [key: string]: ElementInfo } = {
   Mendelevium: { symbol: "Md", atomicNumber: 101, category: "actinide" },
   Nobelium: { symbol: "No", atomicNumber: 102, category: "actinide" },
   Lawrencium: { symbol: "Lr", atomicNumber: 103, category: "actinide" },
-  
-  // Super heavy elements
+
   Rutherfordium: { symbol: "Rf", atomicNumber: 104, category: "transition-metal" },
   Dubnium: { symbol: "Db", atomicNumber: 105, category: "transition-metal" },
   Seaborgium: { symbol: "Sg", atomicNumber: 106, category: "transition-metal" },
@@ -139,30 +136,27 @@ export const ELEMENT_SYMBOLS: { [key: string]: ElementInfo } = {
   Livermorium: { symbol: "Lv", atomicNumber: 116, category: "post-transition" },
   Tennessine: { symbol: "Ts", atomicNumber: 117, category: "halogen" },
   Oganesson: { symbol: "Og", atomicNumber: 118, category: "noble-gas" },
-  
-  // Special elements
+
   Tritium: { symbol: "T", atomicNumber: 1, category: "isotope" },
-  "Z-Divinium": { symbol: "Zd", atomicNumber: 119, category: "synthetic" }
+  "Z-Divinium": { symbol: "Zd", atomicNumber: 119, category: "synthetic" },
 };
 
-// Color mapping for element categories
 export const ELEMENT_CATEGORY_COLORS = {
-  "nonmetal": "bg-blue-500/20 border-blue-500/50 text-blue-300",
+  nonmetal: "bg-blue-500/20 border-blue-500/50 text-blue-300",
   "noble-gas": "bg-purple-500/20 border-purple-500/50 text-purple-300",
   "alkali-metal": "bg-red-500/20 border-red-500/50 text-red-300",
   "alkaline-earth": "bg-orange-500/20 border-orange-500/50 text-orange-300",
   "transition-metal": "bg-yellow-500/20 border-yellow-500/50 text-yellow-300",
   "post-transition": "bg-green-500/20 border-green-500/50 text-green-300",
-  "metalloid": "bg-cyan-500/20 border-cyan-500/50 text-cyan-300",
-  "halogen": "bg-pink-500/20 border-pink-500/50 text-pink-300",
-  "lanthanide": "bg-indigo-500/20 border-indigo-500/50 text-indigo-300",
-  "actinide": "bg-red-600/20 border-red-600/50 text-red-400",
-  "isotope": "bg-emerald-500/20 border-emerald-500/50 text-emerald-300",
-  "synthetic": "bg-violet-500/20 border-violet-500/50 text-violet-300",
-  "compound": "bg-teal-500/20 border-teal-500/50 text-teal-300"
+  metalloid: "bg-cyan-500/20 border-cyan-500/50 text-cyan-300",
+  halogen: "bg-pink-500/20 border-pink-500/50 text-pink-300",
+  lanthanide: "bg-indigo-500/20 border-indigo-500/50 text-indigo-300",
+  actinide: "bg-red-600/20 border-red-600/50 text-red-400",
+  isotope: "bg-emerald-500/20 border-emerald-500/50 text-emerald-300",
+  synthetic: "bg-violet-500/20 border-violet-500/50 text-violet-300",
+  compound: "bg-teal-500/20 border-teal-500/50 text-teal-300",
 };
 
-// Get rarity-based colors for element tiles
 export const getRarityColor = (rarityTier: string): string => {
   switch (rarityTier) {
     case "Exception":
