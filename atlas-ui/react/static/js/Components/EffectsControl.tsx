@@ -27,7 +27,6 @@ const EffectsControl: React.FC<EffectsControlProps> = ({ effects, onToggleEffect
   };
 
   const formatEffectName = (type: string): string => {
-    // Nombres específicos para efectos conocidos
     const effectNames: Record<string, string> = {
       crystalline_surface: "Crystalline Surface",
       fire_eruption: "Fire Eruption",

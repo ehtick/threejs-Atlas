@@ -1,7 +1,5 @@
 // atlas-ui/react/static/js/Components/PlanetVisualization.tsx
 import React, { useEffect, useRef, useState } from "react";
-import Zoom from "react-medium-image-zoom";
-import "react-medium-image-zoom/dist/styles.css";
 import { ModularPlanetRenderer } from "../3DComponents/ModularPlanetRenderer";
 
 interface Planet {
@@ -24,51 +22,18 @@ interface Planet {
 
 interface PlanetVisualizationProps {
   planetUrl: string;
-  imageUrl?: string;
   planet?: Planet;
   cosmicOriginTime?: number;
   initialAngleRotation?: number;
 }
 
-const PlanetVisualization: React.FC<PlanetVisualizationProps> = ({ planetUrl, imageUrl, planet, cosmicOriginTime, initialAngleRotation }) => {
+const PlanetVisualization: React.FC<PlanetVisualizationProps> = ({ planetUrl, planet, cosmicOriginTime, initialAngleRotation }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const imageRef = useRef<HTMLImageElement>(null);
   const [stargateText, setStargateText] = useState("Aligning Stargate...");
   const [isAnimating, setIsAnimating] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [canvasHidden, setCanvasHidden] = useState(false);
-  const [view3D, setView3D] = useState(true);
-  const [enable3D, setEnable3D] = useState(true);
-  const [renderingData, setRenderingData] = useState<any>(null);
-  const [renderingError, setRenderingError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const style = document.createElement("style");
-    style.textContent = `
-      [data-rmiz-modal-overlay="visible"] {
-        background-color: rgba(0, 0, 0, 0.8) !important;
-        backdrop-filter: blur(20px) !important;
-        -webkit-backdrop-filter: blur(20px) !important;
-        transition: backdrop-filter 0.3s ease-in-out !important;
-      }
-      
-      [data-rmiz-modal-img] {
-        border-radius: 1rem !important;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8) !important;
-      }
-      
-      [data-rmiz-modal-overlay="hidden"] {
-        backdrop-filter: blur(0px) !important;
-        -webkit-backdrop-filter: blur(0px) !important;
-        transition: backdrop-filter 0.3s ease-in-out !important;
-      }
-    `;
-    document.head.appendChild(style);
-
-    return () => {
-      document.head.removeChild(style);
-    };
-  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -166,32 +131,11 @@ const PlanetVisualization: React.FC<PlanetVisualizationProps> = ({ planetUrl, im
   }, []);
 
   useEffect(() => {
-    if (imageUrl && !view3D) {
-      const highResImg = new Image();
-
-      highResImg.onload = () => {
-        if (imageRef.current) {
-          imageRef.current.src = imageUrl;
-          setImageLoaded(true);
-          setCanvasHidden(true);
-        }
-      };
-
-      highResImg.onerror = () => {
-        setTimeout(() => {
-          setImageLoaded(true);
-          setCanvasHidden(true);
-        }, 1500);
-      };
-
-      highResImg.src = imageUrl;
-    } else if (view3D || !imageUrl) {
-      setTimeout(() => {
-        setImageLoaded(true);
-        setCanvasHidden(true);
-      }, 1500);
-    }
-  }, [imageUrl, view3D]);
+    setTimeout(() => {
+      setImageLoaded(true);
+      setCanvasHidden(true);
+    }, 1500);
+  }, []);
 
   useEffect(() => {
     const animationShown = sessionStorage.getItem("stargateAnimationShown");
@@ -253,32 +197,18 @@ const PlanetVisualization: React.FC<PlanetVisualizationProps> = ({ planetUrl, im
     animate();
   }, []);
 
-  const toggleView = () => {
-    setView3D(!view3D);
-    if (!view3D) {
-      setImageLoaded(true);
-      setCanvasHidden(true);
-    }
-  };
 
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-lg sm:text-xl font-bold text-white">Planet Visualization</h3>
+        <h3 className="text-sm font-medium text-white">{planet?.name || "Planet"}</h3>
 
-        {enable3D && planet && (
-          <div className="flex items-center gap-2">
-            <button onClick={toggleView} className={`px-3 py-1 text-xs font-medium rounded-full transition-all duration-300 ${view3D ? "bg-blue-500 text-white shadow-lg shadow-blue-500/25" : "bg-gray-600 text-gray-200 hover:bg-gray-500"}`}>
-              {view3D ? "2D View" : "3D View"}
-            </button>
-          </div>
-        )}
       </div>
 
       <div className="relative w-full max-w-80 sm:max-w-96 aspect-square mx-auto bg-black/50 flex justify-center items-center rounded-xl overflow-hidden border-2 border-blue-400/30 mb-4">
         <canvas ref={canvasRef} className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[2500ms] ${canvasHidden ? "opacity-0" : "opacity-100"}`} style={{ filter: canvasHidden ? "blur(50px)" : "none" }} />
 
-        {view3D && imageLoaded && planet && (
+        {imageLoaded && planet && (
           <div className={`absolute inset-0 w-full h-full transition-all duration-500 ${imageLoaded ? "opacity-100 blur-0" : "opacity-0 blur-[25px]"}`}>
             <ModularPlanetRenderer
               planetName={planet.name}
@@ -302,42 +232,11 @@ const PlanetVisualization: React.FC<PlanetVisualizationProps> = ({ planetUrl, im
               }}
               cosmicOriginTime={cosmicOriginTime}
               initialAngleRotation={initialAngleRotation}
-              onDataLoaded={(data) => {
-                setRenderingData(data);
-              }}
-              onError={(errorMessage) => {
-                setRenderingError(errorMessage);
-              }}
             />
           </div>
         )}
 
-        {!view3D && (
-          <div className={`absolute inset-0 w-full h-full transition-all duration-500 ${imageLoaded ? "opacity-100 blur-0" : "opacity-0 blur-[25px]"}`}>
-            {imageLoaded && imageUrl ? (
-              <div className="w-full h-full flex items-center justify-center">
-                <Zoom zoomMargin={20} classDialog="backdrop-blur-3xl">
-                  <img
-                    ref={imageRef}
-                    className="max-w-full max-h-full object-contain rounded-xl shadow-2xl shadow-blue-500/20"
-                    src={imageUrl}
-                    alt="Planet visualization"
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "contain",
-                      backgroundColor: "transparent",
-                    }}
-                  />
-                </Zoom>
-              </div>
-            ) : (
-              <img ref={imageRef} className="w-full h-full object-cover" src="/static/images/placeholder-min.jpg" alt="Planet visualization" />
-            )}
-          </div>
-        )}
 
-        {enable3D && planet && <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-xs">{view3D ? "🌍 3D" : "🖼️ 2D"}</div>}
       </div>
 
       <div className="text-center mt-auto">
@@ -360,14 +259,6 @@ const PlanetVisualization: React.FC<PlanetVisualizationProps> = ({ planetUrl, im
 
         <div className="mt-2 text-xs text-gray-500 text-center">
           Gateway to the stars
-          {view3D && renderingData && (
-            <div className="ml-2 text-blue-400 mt-1">
-              • {renderingData.planet_info?.type} Planet
-              {renderingData.atmosphere && <span className="text-purple-400"> • Atmosphere</span>}
-              {renderingData.rings?.has_rings && <span className="text-yellow-400"> • Rings</span>}
-            </div>
-          )}
-          {view3D && renderingError && <div className="ml-2 text-red-400 mt-1">• Rendering Error</div>}
         </div>
       </div>
     </div>

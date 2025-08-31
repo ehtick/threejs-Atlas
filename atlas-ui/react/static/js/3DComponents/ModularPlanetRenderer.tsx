@@ -997,11 +997,8 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
       )}
 
       {renderingData && !loading && (
-        <div className="absolute bottom-0 left-0 p-4 text-white bg-black bg-opacity-50 max-w-xs">
-          <h3 className="text-lg font-bold">{renderingData.planet_info.name}</h3>
-          <p className="text-sm opacity-80">{renderingData.planet_info.type}</p>
-          <p className="text-xs mt-1 opacity-60">{effects.length} effects active</p>
-          {renderingData.surface_elements?.description && <p className="text-xs mt-2 opacity-60">{renderingData.surface_elements.description.appearance}</p>}
+        <div className="absolute bottom-0 left-0 p-2 text-white bg-black bg-opacity-50 max-w-xs rounded-tr-lg">
+          <h3 className="text-xs font-bold">{renderingData.planet_info.name}</h3>
         </div>
       )}
 
