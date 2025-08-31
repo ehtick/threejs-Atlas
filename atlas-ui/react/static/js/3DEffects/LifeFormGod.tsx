@@ -13,7 +13,7 @@ const PROCEDURAL_RANGES = {
   ORBITAL_SPEED: { min: 0.2, max: 1.0 },
   CROSS_SPIRAL_COUNT: { min: 3, max: 6 },
   HOLOGRAM_RING_COUNT: { min: 4, max: 8 },
-  BINARY_DIGIT_COUNT: { min: 200, max: 500 },
+  BINARY_DIGIT_COUNT: { min: 1200, max: 1500 },
 };
 
 export interface LifeFormGodParams {
