@@ -239,13 +239,18 @@ export class LifeFormGodEffect {
       const digits = new Float32Array(digitsInSystem); // 0 or 1
       
       for (let i = 0; i < digitsInSystem; i++) {
-        // Generate random position on sphere surface
-        const theta = this.rng.random() * Math.PI * 2; // Horizontal angle
-        const phi = Math.acos(2 * this.rng.random() - 1); // Vertical angle (uniform distribution)
+        // Procedural positioning using golden ratio and Fibonacci spirals
+        const goldenAngle = Math.PI * (3.0 - Math.sqrt(5.0)); // Golden angle
+        const globalIndex = system * digitsInSystem + i;
         
-        const x = sphereRadius * Math.sin(phi) * Math.cos(theta);
-        const y = sphereRadius * Math.sin(phi) * Math.sin(theta);
-        const z = sphereRadius * Math.cos(phi);
+        // Fibonacci spiral on sphere surface
+        const y = 1 - (globalIndex / (digitCount - 1)) * 2; // y from 1 to -1
+        const radius = Math.sqrt(1 - y * y);
+        const theta = goldenAngle * globalIndex;
+        
+        const x = sphereRadius * Math.cos(theta) * radius;
+        const z = sphereRadius * Math.sin(theta) * radius;
+        const yPos = sphereRadius * y;
         
         positions[i * 3] = x;
         positions[i * 3 + 1] = y;
