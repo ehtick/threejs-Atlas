@@ -104,6 +104,9 @@
             <ul>
                 <li>✅ Support for 4 galaxy types: DWARF, ELLIPTICAL, SPIRAL, and SINGULARITY VOID</li>
                 <li>✅ 3D rendering using Three.js with realistic star distributions</li>
+                <li>✅ <strong>Procedural star size variation</strong> based on seed and position</li>
+                <li>✅ <strong>Circular stars</strong> using custom shaders (no more squares!)</li>
+                <li>✅ <strong>Black hole absorption effect</strong> - stars within 30 units are absorbed</li>
                 <li>✅ Black holes with accretion disks</li>
                 <li>✅ Pulsars with pulsing animations</li>
                 <li>✅ Quasars with jets</li>
@@ -122,9 +125,12 @@
                     <div class="galaxy-info">
                         <strong>Characteristics:</strong><br>
                         • 4 spiral arms with star formation<br>
-                        • Dense galactic core<br>
+                        • Dense galactic core with larger, brighter stars<br>
                         • Up to 50,000 rendered stars<br>
-                        • Realistic arm tightness and spread
+                        • Realistic arm tightness and spread<br>
+                        • <strong>3% giant stars in arms, 40% dwarf stars</strong><br>
+                        • <strong>Stars absorbed within 30 units of black holes</strong><br>
+                        • <strong>Circular stars with soft falloff</strong>
                     </div>
                     <div class="viewer-placeholder">
                         Galaxy3DViewer Component<br>
@@ -140,7 +146,10 @@
                         • Spheroidal distribution<br>
                         • Gaussian density distribution<br>
                         • Up to 100,000 rendered stars<br>
-                        • Slightly flattened shape
+                        • Slightly flattened shape<br>
+                        • <strong>8% red giant stars, 25% dwarf stars</strong><br>
+                        • <strong>Central stars 30% larger (old massive stars)</strong><br>
+                        • <strong>Black hole absorption effect</strong>
                     </div>
                     <div class="viewer-placeholder">
                         Galaxy3DViewer Component<br>
@@ -156,7 +165,10 @@
                         • Smaller, irregular structure<br>
                         • Lower star density<br>
                         • Scattered distribution<br>
-                        • Blue-tinted stars
+                        • Blue-tinted stars<br>
+                        • <strong>2% giant stars (rare), 60% dwarf stars</strong><br>
+                        • <strong>High size variation in small galaxy</strong><br>
+                        • <strong>Smaller size cap (4 units max)</strong>
                     </div>
                     <div class="viewer-placeholder">
                         Galaxy3DViewer Component<br>

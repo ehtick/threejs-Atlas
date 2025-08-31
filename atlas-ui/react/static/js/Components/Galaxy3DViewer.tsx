@@ -137,7 +137,27 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({
         
         positions.push(x, height, z);
         colors.push(1, 1, 1);
-        sizes.push(rng.uniform(0.5, 2));
+        
+        // Procedural star size variation based on position and seed
+        const starSeed = seed + i * 1337; // Unique seed per star
+        const sizeRng = new SeededRandom(starSeed);
+        const baseSizeVariation = sizeRng.gauss(1, 0.3); // Most stars are medium size
+        const isGiant = sizeRng.random() < 0.05; // 5% chance of giant stars
+        const isDwarf = sizeRng.random() < 0.3; // 30% chance of dwarf stars
+        
+        let finalSize = Math.max(0.3, baseSizeVariation);
+        if (isGiant) finalSize *= 3 + sizeRng.uniform(0, 2); // Giant stars
+        if (isDwarf) finalSize *= 0.5 + sizeRng.uniform(0, 0.3); // Dwarf stars
+        
+        // Core stars are generally larger and brighter
+        if (radius < maxRadius * 0.2) {
+          finalSize *= 1.8 + sizeRng.uniform(0, 0.7);
+          colors[colors.length - 3] = 1.2; // Slightly brighter
+          colors[colors.length - 2] = 1.1;
+          colors[colors.length - 1] = 0.9;
+        }
+        
+        sizes.push(Math.min(finalSize * 1.5, 12)); // Increased base size and cap
       }
 
       // Spiral arms
@@ -152,7 +172,22 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({
         
         positions.push(x, y, z);
         colors.push(1, 1, 0.8);
-        sizes.push(rng.uniform(0.5, 1.5));
+        
+        // Procedural star size variation for spiral arms
+        const starSeed = seed + i * 1337;
+        const sizeRng = new SeededRandom(starSeed);
+        const baseSizeVariation = sizeRng.gauss(0.8, 0.25); // Slightly smaller than core
+        const isGiant = sizeRng.random() < 0.03; // 3% chance of giant stars in arms
+        const isDwarf = sizeRng.random() < 0.4; // 40% chance of dwarf stars
+        
+        let finalSize = Math.max(0.2, baseSizeVariation);
+        if (isGiant) finalSize *= 2.5 + sizeRng.uniform(0, 1.5);
+        if (isDwarf) finalSize *= 0.4 + sizeRng.uniform(0, 0.2);
+        
+        // Outer arm stars are smaller
+        if (radius > maxRadius * 0.7) finalSize *= 0.8;
+        
+        sizes.push(Math.min(finalSize * 1.3, 8)); // Increased spiral arm star size
       }
     } else if (galaxyType === "Elliptical") {
       numPoints = Math.min(numSystems, 100000);
@@ -168,7 +203,25 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({
         
         positions.push(x, y, z);
         colors.push(1, 0.9, 0.7);
-        sizes.push(rng.uniform(0.3, 1));
+        
+        // Procedural star size variation for elliptical galaxy
+        const starSeed = seed + i * 1337;
+        const sizeRng = new SeededRandom(starSeed);
+        const baseSizeVariation = sizeRng.gauss(0.6, 0.2); // Smaller stars overall
+        const isGiant = sizeRng.random() < 0.08; // 8% chance of giant stars (more old giants)
+        const isDwarf = sizeRng.random() < 0.25; // 25% chance of dwarf stars
+        
+        let finalSize = Math.max(0.2, baseSizeVariation);
+        if (isGiant) finalSize *= 2 + sizeRng.uniform(0, 1); // Red giants
+        if (isDwarf) finalSize *= 0.6 + sizeRng.uniform(0, 0.2);
+        
+        // Central stars are larger (old massive stars)
+        const distanceFromCenter = Math.sqrt(x*x + y*y + z*z);
+        if (distanceFromCenter < maxRadius * 0.3) {
+          finalSize *= 1.5 + sizeRng.uniform(0, 0.5);
+        }
+        
+        sizes.push(Math.min(finalSize * 1.4, 7)); // Increased elliptical galaxy star size
       }
     } else if (galaxyType === "Dwarf") {
       numPoints = Math.min(numSystems / 100, 10000);
@@ -184,7 +237,19 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({
         
         positions.push(x, y, z);
         colors.push(0.8, 0.8, 1);
-        sizes.push(rng.uniform(0.5, 2));
+        
+        // Procedural star size variation for dwarf galaxy
+        const starSeed = seed + i * 1337;
+        const sizeRng = new SeededRandom(starSeed);
+        const baseSizeVariation = sizeRng.gauss(0.7, 0.3); // More variation in small galaxy
+        const isGiant = sizeRng.random() < 0.02; // 2% chance of giant stars (rare)
+        const isDwarf = sizeRng.random() < 0.6; // 60% chance of dwarf stars
+        
+        let finalSize = Math.max(0.3, baseSizeVariation);
+        if (isGiant) finalSize *= 2.5 + sizeRng.uniform(0, 1);
+        if (isDwarf) finalSize *= 0.5 + sizeRng.uniform(0, 0.3);
+        
+        sizes.push(Math.min(finalSize * 1.2, 5)); // Increased dwarf galaxy star size
       }
     } else if (galaxyType === "Singularity Void") {
       // Create distorted space effect with psychedelic shader
@@ -517,34 +582,130 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({
       galaxyGroup.add(jet2);
     }
 
-    // Set up star attributes
-    starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    starsGeometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-    starsGeometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
+    // Only create normal stars for non-Singularity Void galaxies
+    if (galaxyType !== "Singularity Void") {
+      // Filter out stars too close to black holes (absorption effect)
+      const blackHolePositions: Array<{x: number, y: number, z: number}> = [];
+      
+      // First, generate black hole positions (same as the ones we'll create later)
+      const bhRng = new SeededRandom(seed + 999); // Consistent with actual black hole positions
+      for (let i = 0; i < blackHoles; i++) {
+        const x = bhRng.uniform(-50, 50);
+        const y = bhRng.uniform(-20, 20);
+        const z = bhRng.uniform(-50, 50);
+        blackHolePositions.push({x, y, z});
+      }
+      
+      // Filter stars based on distance to black holes
+      const filteredPositions: number[] = [];
+      const filteredColors: number[] = [];
+      const filteredSizes: number[] = [];
+      const absorptionRadius = 16; // Slightly increased for smaller but more absorptive black holes
+      
+      for (let i = 0; i < positions.length; i += 3) {
+        const starX = positions[i];
+        const starY = positions[i + 1];
+        const starZ = positions[i + 2];
+        
+        let tooClose = false;
+        
+        // Check distance to all black holes
+        for (const bh of blackHolePositions) {
+          const distance = Math.sqrt(
+            Math.pow(starX - bh.x, 2) + 
+            Math.pow(starY - bh.y, 2) + 
+            Math.pow(starZ - bh.z, 2)
+          );
+          
+          if (distance < absorptionRadius) {
+            tooClose = true;
+            break;
+          }
+        }
+        
+        // Only keep stars that are far enough from black holes
+        if (!tooClose) {
+          filteredPositions.push(starX, starY, starZ);
+          filteredColors.push(colors[i], colors[i + 1], colors[i + 2]);
+          filteredSizes.push(sizes[i / 3]);
+        }
+      }
+      
+      // Set up star attributes with filtered data
+      starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(filteredPositions, 3));
+      starsGeometry.setAttribute('color', new THREE.Float32BufferAttribute(filteredColors, 3));
+      starsGeometry.setAttribute('size', new THREE.Float32BufferAttribute(filteredSizes, 1));
 
-    // Create star material
-    const starMaterial = new THREE.PointsMaterial({
-      size: 2,
-      vertexColors: true,
-      transparent: true,
-      opacity: 0.8,
-      blending: THREE.AdditiveBlending,
-      sizeAttenuation: true,
-    });
+      // Create circular star material using a custom shader
+      const starMaterial = new THREE.ShaderMaterial({
+        uniforms: {},
+        vertexShader: `
+          attribute float size;
+          varying vec3 vColor;
+          void main() {
+            vColor = color;
+            vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+            gl_PointSize = size * (400.0 / -mvPosition.z);
+            gl_Position = projectionMatrix * mvPosition;
+          }
+        `,
+        fragmentShader: `
+          varying vec3 vColor;
+          void main() {
+            // Create circular points instead of squares
+            vec2 center = gl_PointCoord - vec2(0.5);
+            float distanceFromCenter = length(center);
+            
+            if (distanceFromCenter > 0.5) {
+              discard;
+            }
+            
+            // Add soft falloff for better appearance
+            float alpha = 1.0 - (distanceFromCenter / 0.5);
+            alpha = pow(alpha, 2.0);
+            
+            gl_FragColor = vec4(vColor, alpha * 0.8);
+          }
+        `,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        vertexColors: true,
+        depthWrite: false,
+      });
 
-    const stars = new THREE.Points(starsGeometry, starMaterial);
-    galaxyGroup.add(stars);
+      const stars = new THREE.Points(starsGeometry, starMaterial);
+      galaxyGroup.add(stars);
+    } else {
+      // For Singularity Void, still create the stars but with the original material
+      starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      starsGeometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+      starsGeometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
+
+      const starMaterial = new THREE.PointsMaterial({
+        size: 2,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.8,
+        blending: THREE.AdditiveBlending,
+        sizeAttenuation: true,
+      });
+
+      const stars = new THREE.Points(starsGeometry, starMaterial);
+      galaxyGroup.add(stars);
+    }
 
     // Add black holes
+    // Use the same positions as in the absorption filter for consistency
+    const bhRng = new SeededRandom(seed + 999); // Consistent black hole positioning
     for (let i = 0; i < blackHoles; i++) {
       const blackHoleGroup = new THREE.Group();
       
-      const x = rng.uniform(-30, 30);
-      const y = rng.uniform(-10, 10);
-      const z = rng.uniform(-30, 30);
+      const x = bhRng.uniform(-50, 50);
+      const y = bhRng.uniform(-20, 20);
+      const z = bhRng.uniform(-50, 50);
       
-      // Black hole sphere
-      const bhGeometry = new THREE.SphereGeometry(3, 16, 16);
+      // Black hole sphere (smaller and more realistic)
+      const bhGeometry = new THREE.SphereGeometry(1.5, 16, 16);
       const bhMaterial = new THREE.MeshBasicMaterial({
         color: 0x000000,
         transparent: true,
@@ -553,18 +714,37 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({
       const bhMesh = new THREE.Mesh(bhGeometry, bhMaterial);
       blackHoleGroup.add(bhMesh);
       
-      // Accretion disk
-      const diskGeometry = new THREE.TorusGeometry(8, 2, 8, 32);
-      const diskMaterial = new THREE.MeshBasicMaterial({
-        color: 0x00ffff,
-        transparent: true,
-        opacity: 0.6,
-        emissive: 0x00ffff,
-        emissiveIntensity: 0.5,
+      
+      // Realistic thin accretion disk with multiple concentric rings
+      const diskRings = [
+        { innerRadius: 2, outerRadius: 2.3, color: 0xffffff, opacity: 0.8, emissive: 0xffffcc }, // Hottest - white/yellow
+        { innerRadius: 2.3, outerRadius: 2.7, color: 0xffaa00, opacity: 0.7, emissive: 0xff8800 }, // Orange
+        { innerRadius: 2.7, outerRadius: 3.2, color: 0xff4400, opacity: 0.6, emissive: 0xff2200 }, // Red-orange
+        { innerRadius: 3.2, outerRadius: 4, color: 0xaa0000, opacity: 0.5, emissive: 0x660000 }, // Red
+        { innerRadius: 4, outerRadius: 5, color: 0x440000, opacity: 0.3, emissive: 0x220000 }, // Dark red
+      ];
+      
+      diskRings.forEach((ring, index) => {
+        const ringGeometry = new THREE.RingGeometry(ring.innerRadius, ring.outerRadius, 32);
+        const ringMaterial = new THREE.MeshBasicMaterial({
+          color: ring.color,
+          transparent: true,
+          opacity: ring.opacity,
+          emissive: ring.emissive,
+          emissiveIntensity: 0.3,
+          side: THREE.DoubleSide,
+        });
+        
+        const ringMesh = new THREE.Mesh(ringGeometry, ringMaterial);
+        ringMesh.rotation.x = Math.PI / 2; // Rotate to be horizontal
+        ringMesh.rotation.z = rng.uniform(0, Math.PI * 2); // Random rotation for variety
+        
+        // Add slight animation data for rotation
+        (ringMesh as any).isAccretionRing = true;
+        (ringMesh as any).rotationSpeed = 0.002 + index * 0.0005; // Inner rings rotate faster
+        
+        blackHoleGroup.add(ringMesh);
       });
-      const disk = new THREE.Mesh(diskGeometry, diskMaterial);
-      disk.rotation.x = Math.PI / 2;
-      blackHoleGroup.add(disk);
       
       blackHoleGroup.position.set(x, y, z);
       galaxyGroup.add(blackHoleGroup);
@@ -706,6 +886,12 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({
                 material.uniforms.time.value = time;
               }
               subchild.rotation.z += 0.002;
+            }
+            
+            // Animate accretion rings
+            if ((subchild as any).isAccretionRing && subchild instanceof THREE.Mesh) {
+              const rotSpeed = (subchild as any).rotationSpeed || 0.002;
+              subchild.rotation.z += rotSpeed;
             }
             
             if ((subchild as any).isDistortionRing) {
