@@ -19,7 +19,7 @@
 
 ---
 
-<p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/public/_new_01_welcome.png" width="400"></p>
+<p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/public/_new_01_welcome.png" width="800"></p>
 
 ## About The Atlas
 
@@ -36,16 +36,16 @@ Explore _The Atlas_ live at Koyeb.com (and free, so it might be a bit slow):
 
 ## Screenshots
 
-<p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/public/_new_02_galaxy_preview.png" width="400"></p>
-<p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/public/_new_03_dwarf_galaxy.png" width="400"></p>
-<p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/public/_new_04_metallic_planet.png" width="400"></p>
-<p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/public/_new_05_toxic_planet.png" width="400"></p>
-<p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/public/_new_06_super_earth_planet.png" width="400"></p>
-<p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/public/_new_07_anomaly_cube.png" width="400"></p>
-<p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/public/_new_08_fullscreen_diamond_planet.png" width="400"></p>
-<p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/public/_new_09_fullscreen_carbon_planet.png" width="400"></p>
-<p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/public/_new_10_fullscreen_system_time_navigation.png" width="400"></p>
-<p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/public/_new_11_fullscreen_galaxy_elliptical_preview.png" width="400"></p>
+<p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/public/_new_02_galaxy_preview.png" width="800"></p>
+<p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/public/_new_03_dwarf_galaxy.png" width="800"></p>
+<p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/public/_new_04_metallic_planet.png" width="800"></p>
+<p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/public/_new_05_toxic_planet.png" width="800"></p>
+<p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/public/_new_06_super_earth_planet.png" width="800"></p>
+<p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/public/_new_07_anomaly_cube.png" width="800"></p>
+<p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/public/_new_08_fullscreen_diamond_planet.png" width="800"></p>
+<p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/public/_new_09_fullscreen_carbon_planet.png" width="800"></p>
+<p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/public/_new_10_fullscreen_system_time_navigation.png" width="800"></p>
+<p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/public/_new_11_fullscreen_galaxy_elliptical_preview.png" width="800"></p>
 
 ---
 
