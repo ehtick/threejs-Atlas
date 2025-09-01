@@ -31,7 +31,7 @@ const LinkedInIcon = () => (
 
 const VersionFooter: React.FC<VersionFooterProps> = ({ version }) => {
   return (
-    <footer className="bg-black/30 backdrop-blur-md border-t border-white/10 mt-8 sm:mt-16 py-6 sm:py-8 w-full">
+    <footer className="group bg-black/30 backdrop-blur-md border-t border-white/10 mt-8 sm:mt-16 py-6 sm:py-8 w-full">
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col space-y-6">
           <div className="flex flex-col lg:flex-row items-center justify-between space-y-4 lg:space-y-0">
@@ -75,7 +75,7 @@ const VersionFooter: React.FC<VersionFooterProps> = ({ version }) => {
             </div>
           </div>
 
-          <div className="border-t border-white/5 bg-black/50 rounded-lg p-2 sm:p-3">
+          <div className="transition-all duration-300 opacity-0 max-h-0 overflow-hidden group-hover:opacity-100 group-hover:max-h-32 border-t border-white/5 bg-black/50 rounded-lg group-hover:p-3 group-hover:mt-4">
             <div className="text-[10px] text-gray-500 text-center leading-relaxed">
               Built using{" "}
               <a href="https://github.com/BansheeTech/vite_fusion" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors duration-200 font-medium">
