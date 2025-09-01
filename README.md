@@ -8,7 +8,7 @@
 <div align="center">
 
 <a href="https://the-atlas.koyeb.app/">
-  <img src="https://img.shields.io/badge/Live%20Demo-Click%20Here%20(Slow)-blue?style=for-the-badge" alt="Live Demo">
+  <img src="https://img.shields.io/badge/Live%20Demo-Click%20Here%20-blue?style=for-the-badge" alt="Live Demo">
 </a>
 <br>
 <a href="https://hub.docker.com/r/bansheetech/atlas">
@@ -19,9 +19,33 @@
 
 ---
 
+<p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/public/_new_01_welcome.png" width="400"></p>
+
 ## About The Atlas
 
 **The Atlas** is a procedural generation engine designed to create vast, complex galaxies and universes. Built with advanced algorithms and inspired by real astrophysical phenomena, _The Atlas_ offers an unparalleled toolset for generating realistic and immersive cosmic environments. It draws inspiration from the team behind _No Man's Sky_ and pushes the boundaries of space simulation.
+
+---
+
+## Demo
+
+Explore _The Atlas_ live at Koyeb.com (and free, so it might be a bit slow):
+[The Atlas Demo live on Koyeb.com](https://the-atlas.koyeb.app/)
+
+---
+
+## Screenshots
+
+<p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/public/_new_02_galaxy_preview.png" width="400"></p>
+<p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/public/_new_03_dwarf_galaxy.png" width="400"></p>
+<p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/public/_new_04_metallic_planet.png" width="400"></p>
+<p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/public/_new_05_toxic_planet.png" width="400"></p>
+<p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/public/_new_06_super_earth_planet.png" width="400"></p>
+<p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/public/_new_07_anomaly_cube.png" width="400"></p>
+<p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/public/_new_08_fullscreen_diamond_planet.png" width="400"></p>
+<p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/public/_new_09_fullscreen_carbon_planet.png" width="400"></p>
+<p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/public/_new_10_fullscreen_system_time_navigation.png" width="400"></p>
+<p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/public/_new_11_fullscreen_galaxy_elliptical_preview.png" width="400"></p>
 
 ---
 
@@ -112,27 +136,6 @@ To get started with _The Atlas_:
 3. Open your browser and navigate to `localhost` to select your Universe through the Atlas Initialization Protocol and explore your universe.
 
 Alternatively, you can install all dependencies by running: `pip install -r requirements.txt`.
-
----
-
-## Demo
-
-Explore _The Atlas_ live at Koyeb.com (and free, so it might be a bit slow):
-[The Atlas Demo live on Koyeb.com](https://the-atlas.koyeb.app/)
-
----
-
-## Screenshots
-
-### Galaxy Screenshots
-
-<p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/public/galaxy.png" width="400"></p>
-<p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/public/galaxy-systems.png" width="400"></p>
-
-### Solar Systems Screenshots
-
-<p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/public/system.png" width="400"></p>
-<p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/public/planets-system.png" width="400"></p>
 
 ---
 
