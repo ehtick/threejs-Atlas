@@ -345,7 +345,10 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
           bigBangMaterial.opacity = 0;
         }
 
-        // LANZAMIENTO PROGRESIVO - Las estrellas salen una a una
+        // LANZAMIENTO PROGRESIVO - Las estrellas se expanden junto con el cubo
+        const cubeScale = elapsed < explosionDuration ? explosionPhase * 0.1 : 
+          0.1 + (1 - 0.1) * Math.pow(Math.min((elapsed - explosionDuration) / 2, 1), 0.7);
+        
         for (let i = 0; i < maxGalaxies; i++) {
           const data = galaxyData[i];
           const launchTime = data.launchTime;
@@ -359,9 +362,10 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
             const progress = Math.min(travelTime * speed, 1);
             const smoothProgress = Math.pow(progress, 0.8);
             
-            galaxyPositions[i * 3] = data.x * smoothProgress;
-            galaxyPositions[i * 3 + 1] = data.y * smoothProgress;
-            galaxyPositions[i * 3 + 2] = data.z * smoothProgress;
+            // Las galaxias se escalan junto con el cubo del universo
+            galaxyPositions[i * 3] = data.x * smoothProgress * cubeScale;
+            galaxyPositions[i * 3 + 1] = data.y * smoothProgress * cubeScale;
+            galaxyPositions[i * 3 + 2] = data.z * smoothProgress * cubeScale;
           } else {
             // Aún no ha salido, permanece en el centro
             galaxyPositions[i * 3] = 0;
@@ -373,11 +377,63 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
         galaxyGeometry.attributes.position.needsUpdate = true;
         galaxyMaterial.opacity = Math.min(elapsed * 0.8, 1);
 
-        // UNIVERSE CUBE - Rotación más pronunciada
-        const rotationSpeed = elapsed * 0.1;
-        universeCube.rotation.x = Math.sin(rotationSpeed * 0.7) * 0.3;
-        universeCube.rotation.y = rotationSpeed * 0.8;
-        universeCube.rotation.z = Math.cos(rotationSpeed * 0.5) * 0.25;
+        // UNIVERSE CUBE - Empujado por la explosión con física realista
+        if (elapsed < explosionDuration * 0.3) {
+          // Fase inicial: cubo invisible, comprimido por la presión
+          universeCube.scale.setScalar(0.01);
+          universeCube.rotation.x = 0;
+          universeCube.rotation.y = 0;
+          universeCube.rotation.z = 0;
+        } else if (elapsed < explosionDuration) {
+          // Fase de expansión explosiva: la energía empuja el cubo hacia fuera
+          const expansionPhase = (explosionPhase - 0.3) / 0.7; // Solo cuenta después del 30%
+          
+          // Crecimiento violento y no lineal - como una verdadera explosión
+          const explosiveGrowth = Math.pow(expansionPhase, 0.3) * 0.8; // Crecimiento exponencial
+          
+          // Shake violento del cubo por la fuerza
+          const shakeIntensity = (1 - expansionPhase) * 0.5;
+          const shake = {
+            x: (Math.random() - 0.5) * shakeIntensity,
+            y: (Math.random() - 0.5) * shakeIntensity,
+            z: (Math.random() - 0.5) * shakeIntensity
+          };
+          
+          universeCube.scale.setScalar(explosiveGrowth);
+          universeCube.position.set(shake.x, shake.y, shake.z);
+          
+          // Rotación caótica por la fuerza de la explosión
+          universeCube.rotation.x = elapsed * (3 + Math.sin(elapsed * 20) * 2);
+          universeCube.rotation.y = elapsed * (4 + Math.cos(elapsed * 15) * 3);
+          universeCube.rotation.z = elapsed * (2 + Math.sin(elapsed * 25) * 1);
+          
+        } else {
+          // Post explosión: el cubo se estabiliza y continúa expandiéndose por inercia
+          const postExplosionTime = elapsed - explosionDuration;
+          
+          // Estabilizar posición
+          const stabilizationTime = 0.8;
+          if (postExplosionTime < stabilizationTime) {
+            const stabilizationProgress = postExplosionTime / stabilizationTime;
+            const dampening = 1 - Math.pow(stabilizationProgress, 2);
+            universeCube.position.multiplyScalar(dampening);
+          } else {
+            universeCube.position.set(0, 0, 0);
+          }
+          
+          // Crecimiento por inercia de la explosión
+          const inertiaGrowth = 0.8 + Math.pow(Math.min(postExplosionTime / 3, 1), 0.5) * 0.2;
+          universeCube.scale.setScalar(inertiaGrowth);
+          
+          // La rotación gradualmente se acelera después de estabilizarse
+          const rotationStabilization = Math.min(postExplosionTime / 1, 1);
+          const stableSpeed = 0.1 + (postExplosionTime * 0.2); // Acelera con el tiempo
+          
+          const rotationSpeed = elapsed * stableSpeed * rotationStabilization;
+          universeCube.rotation.x = Math.sin(rotationSpeed * 0.7) * 0.3;
+          universeCube.rotation.y = rotationSpeed * 0.8;
+          universeCube.rotation.z = Math.cos(rotationSpeed * 0.5) * 0.25;
+        }
 
         // Las galaxias ROTAN CON el cubo
         galaxies.rotation.copy(universeCube.rotation);
