@@ -459,6 +459,52 @@ const SolarSystem3DViewerLeft: React.FC<SolarSystem3DViewerLeftProps> = ({ plane
     const originalWidth = renderer.domElement.width;
     const originalHeight = renderer.domElement.height;
 
+    // Calculate scale factor for point sizes
+    const scaleFactor = 3840 / originalWidth;
+
+    // Store original point/sprite sizes and scale them up
+    const scaledObjects: any[] = [];
+    scene.traverse((object: any) => {
+      // Scale point materials
+      if (object.isPoints && object.material) {
+        const mat = object.material;
+        if (mat.size !== undefined) {
+          scaledObjects.push({ material: mat, originalSize: mat.size });
+          mat.size = mat.size * scaleFactor * 1;
+        }
+        // Scale size attributes directly
+        if (object.geometry && object.geometry.attributes.size) {
+          const sizeAttribute = object.geometry.attributes.size;
+          const originalSizes = sizeAttribute.array.slice();
+          scaledObjects.push({ 
+            geometry: object.geometry, 
+            originalSizeArray: originalSizes 
+          });
+          
+          for (let i = 0; i < sizeAttribute.array.length; i++) {
+            sizeAttribute.array[i] *= scaleFactor * 1;
+          }
+          sizeAttribute.needsUpdate = true;
+        }
+      }
+      // Scale sprites (planet labels)
+      if (object.isSprite) {
+        scaledObjects.push({ 
+          object: object, 
+          originalScale: object.scale.clone() 
+        });
+        object.scale.multiplyScalar(scaleFactor * 1);
+      }
+      // Scale line widths
+      if (object.isLine && object.material) {
+        const mat = object.material;
+        if (mat.linewidth !== undefined) {
+          scaledObjects.push({ material: mat, originalLinewidth: mat.linewidth });
+          mat.linewidth = mat.linewidth * scaleFactor * 1;
+        }
+      }
+    });
+
     // Set high resolution (4K)
     const width = 3840;
     const height = 3840;
@@ -479,6 +525,20 @@ const SolarSystem3DViewerLeft: React.FC<SolarSystem3DViewerLeftProps> = ({ plane
         link.click();
         URL.revokeObjectURL(url);
       }
+
+      // Restore original sizes
+      scaledObjects.forEach(({ material, object, originalSize, originalScale, originalLinewidth, geometry, originalSizeArray }) => {
+        if (originalSize !== undefined) material.size = originalSize;
+        if (originalScale !== undefined) object.scale.copy(originalScale);
+        if (originalLinewidth !== undefined) material.linewidth = originalLinewidth;
+        if (geometry && originalSizeArray) {
+          const sizeAttribute = geometry.attributes.size;
+          for (let i = 0; i < originalSizeArray.length; i++) {
+            sizeAttribute.array[i] = originalSizeArray[i];
+          }
+          sizeAttribute.needsUpdate = true;
+        }
+      });
 
       // Restore original size
       renderer.setSize(originalWidth, originalHeight);

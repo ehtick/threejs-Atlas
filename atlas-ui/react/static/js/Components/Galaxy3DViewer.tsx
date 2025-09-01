@@ -1065,6 +1065,41 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
     const originalWidth = renderer.domElement.width;
     const originalHeight = renderer.domElement.height;
 
+    // Calculate scale factor for point sizes
+    const scaleFactor = 3840 / originalWidth;
+
+    // Store original point sizes and scale them up
+    const pointMaterials: any[] = [];
+    scene.traverse((object: any) => {
+      if (object.isPoints && object.material) {
+        const mat = object.material;
+        if (mat.size !== undefined) {
+          pointMaterials.push({ material: mat, originalSize: mat.size });
+          mat.size = mat.size * scaleFactor * 1; // Scale points proportionally
+        }
+        // For shader materials with size attribute
+        if (mat.uniforms && mat.uniforms.scale) {
+          pointMaterials.push({ material: mat, originalScale: mat.uniforms.scale.value });
+          mat.uniforms.scale.value = mat.uniforms.scale.value * scaleFactor * 1;
+        }
+        // Scale size attributes directly
+        if (object.geometry && object.geometry.attributes.size) {
+          const sizeAttribute = object.geometry.attributes.size;
+          const originalSizes = sizeAttribute.array.slice(); // Copy original sizes
+          pointMaterials.push({ 
+            geometry: object.geometry, 
+            originalSizeArray: originalSizes 
+          });
+          
+          // Scale all size values
+          for (let i = 0; i < sizeAttribute.array.length; i++) {
+            sizeAttribute.array[i] *= scaleFactor * 1;
+          }
+          sizeAttribute.needsUpdate = true;
+        }
+      }
+    });
+
     // Set high resolution (4K)
     const width = 3840;
     const height = 3840;
@@ -1085,6 +1120,19 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
         link.click();
         URL.revokeObjectURL(url);
       }
+
+      // Restore original point sizes
+      pointMaterials.forEach(({ material, originalSize, originalScale, geometry, originalSizeArray }) => {
+        if (originalSize !== undefined) material.size = originalSize;
+        if (originalScale !== undefined) material.uniforms.scale.value = originalScale;
+        if (geometry && originalSizeArray) {
+          const sizeAttribute = geometry.attributes.size;
+          for (let i = 0; i < originalSizeArray.length; i++) {
+            sizeAttribute.array[i] = originalSizeArray[i];
+          }
+          sizeAttribute.needsUpdate = true;
+        }
+      });
 
       // Restore original size
       renderer.setSize(originalWidth, originalHeight);

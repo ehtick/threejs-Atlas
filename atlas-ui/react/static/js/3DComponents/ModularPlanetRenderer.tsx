@@ -131,6 +131,63 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
       const originalWidth = renderer.domElement.width;
       const originalHeight = renderer.domElement.height;
 
+      // Calculate scale factor for effects and particles
+      const scaleFactor = 3840 / originalWidth;
+
+      // Store original sizes and scale up particles/effects
+      const scaledObjects: any[] = [];
+      scene.traverse((object: any) => {
+        // Scale point materials (particles, stars, etc.)
+        if (object.isPoints && object.material) {
+          const mat = object.material;
+          if (mat.size !== undefined) {
+            scaledObjects.push({ material: mat, originalSize: mat.size });
+            mat.size = mat.size * scaleFactor * 1;
+          }
+          // For shader materials
+          if (mat.uniforms) {
+            if (mat.uniforms.size) {
+              scaledObjects.push({ material: mat, uniform: 'size', originalValue: mat.uniforms.size.value });
+              mat.uniforms.size.value = mat.uniforms.size.value * scaleFactor * 1;
+            }
+            if (mat.uniforms.scale) {
+              scaledObjects.push({ material: mat, uniform: 'scale', originalValue: mat.uniforms.scale.value });
+              mat.uniforms.scale.value = mat.uniforms.scale.value * scaleFactor * 1;
+            }
+          }
+          // Scale size attributes directly
+          if (object.geometry && object.geometry.attributes.size) {
+            const sizeAttribute = object.geometry.attributes.size;
+            const originalSizes = sizeAttribute.array.slice();
+            scaledObjects.push({ 
+              geometry: object.geometry, 
+              originalSizeArray: originalSizes 
+            });
+            
+            for (let i = 0; i < sizeAttribute.array.length; i++) {
+              sizeAttribute.array[i] *= scaleFactor * 1;
+            }
+            sizeAttribute.needsUpdate = true;
+          }
+        }
+        // Scale sprites and text
+        if (object.isSprite) {
+          scaledObjects.push({ 
+            object: object, 
+            originalScale: object.scale.clone() 
+          });
+          object.scale.multiplyScalar(scaleFactor * 1);
+        }
+        // Scale line materials
+        if (object.isLine && object.material) {
+          const mat = object.material;
+          if (mat.linewidth !== undefined) {
+            scaledObjects.push({ material: mat, originalLinewidth: mat.linewidth });
+            mat.linewidth = mat.linewidth * scaleFactor * 1;
+          }
+        }
+      });
+
       // Set high resolution (4K)
       const highResWidth = 3840;
       const highResHeight = 3840;
@@ -151,6 +208,21 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
           link.click();
           URL.revokeObjectURL(url);
         }
+
+        // Restore original sizes
+        scaledObjects.forEach(({ material, object, originalSize, originalScale, originalLinewidth, uniform, originalValue, geometry, originalSizeArray }) => {
+          if (originalSize !== undefined) material.size = originalSize;
+          if (originalScale !== undefined) object.scale.copy(originalScale);
+          if (originalLinewidth !== undefined) material.linewidth = originalLinewidth;
+          if (uniform && originalValue !== undefined) material.uniforms[uniform].value = originalValue;
+          if (geometry && originalSizeArray) {
+            const sizeAttribute = geometry.attributes.size;
+            for (let i = 0; i < originalSizeArray.length; i++) {
+              sizeAttribute.array[i] = originalSizeArray[i];
+            }
+            sizeAttribute.needsUpdate = true;
+          }
+        });
 
         // Restore original size
         renderer.setSize(originalWidth, originalHeight);
