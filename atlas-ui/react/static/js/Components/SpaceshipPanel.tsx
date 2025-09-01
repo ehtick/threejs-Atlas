@@ -4,6 +4,7 @@ import { getStorageStats } from "../Utils/VisitHistory.tsx";
 import { LocationBookmarks, SavedLocation } from "../Utils/LocationBookmarks.tsx";
 import { DailyChallengesManager, DailyChallenges } from "../Utils/DailyChallenges.tsx";
 import { SpaceshipResourceManager, SpaceshipResource, SpaceshipUpgrade, TravelCost } from "../Utils/SpaceshipResources.tsx";
+import { UnifiedSpaceshipStorage } from "../Utils/UnifiedSpaceshipStorage.tsx";
 import { ResourceEventManager } from "../Utils/ResourceEventManager.tsx";
 import { getItem, setItem } from "../Utils/b64.tsx";
 import ProgressBar from "./ProgressBar.tsx";
@@ -36,6 +37,7 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
   const [baseGeneration, setBaseGeneration] = useState<any>({ antimatter: 0, element115: 0, deuterium: 0, sources: { planets: 0, systems: 0, galaxies: 0 } });
   const [showCollectionPopup, setShowCollectionPopup] = useState<boolean>(false);
   const [isCollectionClosing, setIsCollectionClosing] = useState<boolean>(false);
+  const [, forceUpdate] = useState({});
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -79,11 +81,20 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
 
     const unsubscribeResources = ResourceEventManager.subscribe("resources_updated", updateSpaceshipResources);
 
+    // Update mining cooldown progress bars every 30 seconds when on saved tab
+    let cooldownInterval: NodeJS.Timeout | null = null;
+    if (activeTab === "saved") {
+      cooldownInterval = setInterval(() => {
+        forceUpdate({});
+      }, 30000);
+    }
+
     return () => {
       clearInterval(interval);
+      if (cooldownInterval) clearInterval(cooldownInterval);
       unsubscribeResources();
     };
-  }, [isOpen]);
+  }, [isOpen, activeTab]);
 
   const handleClose = () => {
     setIsClosing(true);
@@ -465,38 +476,121 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
                         <div className="text-gray-500 text-[10px]">Use the 📍 button to save locations</div>
                       </div>
                     ) : (
-                      savedLocations.map((location) => (
-                        <div key={location.id} className="bg-white/5 hover:bg-white/10 rounded p-1.5 border border-white/10 hover:border-white/20 transition-all duration-200 group">
-                          <div className="flex items-center justify-between">
-                            <a href={location.stargateUrl} className="flex-1 min-w-0 hover:text-blue-300 transition-colors duration-200" title={`Navigate to ${formatLocationName(location.name)}`}>
-                              <div className="flex items-center space-x-1">
-                                <div className="text-[8px]">
-                                  {location.type === "galaxy" && "🌌"}
-                                  {location.type === "system" && "⭐"}
-                                  {location.type === "planet" && "🪐"}
-                                </div>
-                                <div className="text-white text-[10px] font-medium truncate">{formatLocationName(location.name)}</div>
-                                <div className="text-gray-500 text-[8px] shrink-0">
-                                  {(() => {
-                                    try {
-                                      const date = new Date(location.timestamp);
-                                      return isNaN(date.getTime()) ? "N/A" : date.toLocaleDateString();
-                                    } catch (e) {
-                                      return "N/A";
-                                    }
-                                  })()}
+                      savedLocations.map((location) => {
+                        const getLocationIdFromUrl = (url: string, type: string) => {
+                          try {
+                            const parts = url.split("/stargate/")[1];
+                            if (!parts) return "";
+
+                            const decoded = atob(parts.replace(/-/g, "+").replace(/_/g, "/"));
+                            const params = new URLSearchParams(decoded);
+                            const coords = params.get("coordinates");
+                            const system = params.get("system");
+                            const planet = params.get("planet");
+
+                            if (!coords) return "";
+
+                            if (type === "galaxy") {
+                              return `galaxy_${coords}`;
+                            } else if (type === "system" && system) {
+                              return `system_${coords}_${system}`;
+                            } else if (type === "planet" && system && planet) {
+                              return `planet_${coords}_${system}_${planet}`;
+                            }
+                            return "";
+                          } catch (e) {
+                            return "";
+                          }
+                        };
+
+                        const locationId = getLocationIdFromUrl(location.stargateUrl, location.type);
+                        const canCollect = locationId ? UnifiedSpaceshipStorage.canCollectFromLocation(locationId) : true;
+                        const timeRemaining = locationId ? UnifiedSpaceshipStorage.getTimeUntilNextCollection(locationId) : 0;
+
+                        const cooldowns = {
+                          planet: 15 * 60 * 1000,
+                          system: 45 * 60 * 1000,
+                          galaxy: 8 * 60 * 60 * 1000,
+                        };
+
+                        const maxCooldown = cooldowns[location.type] || cooldowns.planet;
+                        const timeRemainingMs = timeRemaining * 60 * 60 * 1000;
+                        const progress = maxCooldown - timeRemainingMs;
+                        const progressPercent = Math.max(0, Math.min(100, (progress / maxCooldown) * 100));
+
+                        const formatTimeRemaining = (hours: number) => {
+                          if (hours <= 0) return "Ready";
+                          const totalMinutes = Math.floor(hours * 60);
+                          const h = Math.floor(totalMinutes / 60);
+                          const m = totalMinutes % 60;
+                          if (h > 0) {
+                            return `${h}h ${m}m`;
+                          }
+                          return `${m}m`;
+                        };
+
+                        return (
+                          <a key={location.id} href={location.stargateUrl} className="block bg-white/5 hover:bg-white/10 rounded p-1.5 border border-white/10 hover:border-white/20 transition-all duration-200 hover:text-blue-300" title={`Navigate to ${formatLocationName(location.name)}`}>
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center space-x-1">
+                                  <div className="text-[8px]">
+                                    {location.type === "galaxy" && "🌌"}
+                                    {location.type === "system" && "⭐"}
+                                    {location.type === "planet" && "🪐"}
+                                  </div>
+                                  <div className="text-white text-[10px] font-medium truncate">{formatLocationName(location.name)}</div>
+                                  <div className="text-gray-500 text-[8px] shrink-0">
+                                    {(() => {
+                                      try {
+                                        const date = new Date(location.timestamp);
+                                        return isNaN(date.getTime()) ? "N/A" : date.toLocaleDateString();
+                                      } catch (e) {
+                                        return "N/A";
+                                      }
+                                    })()}
+                                  </div>
                                 </div>
                               </div>
-                            </a>
 
-                            <button onClick={(e) => handleRemoveLocation(e, location.id)} className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-400 transition-all duration-200 ml-1" title="Remove location">
-                              <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
-                          </div>
-                        </div>
-                      ))
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleRemoveLocation(e, location.id);
+                                }}
+                                className="text-gray-400 hover:text-red-400 transition-all duration-200 ml-1 p-0.5"
+                                title="Remove location"
+                              >
+                                <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            </div>
+
+                            {/* Mining cooldown progress bar */}
+                            {!canCollect && timeRemaining > 0 && (
+                              <div className="mt-1">
+                                <div className="flex items-center justify-between mb-0.5">
+                                  <span className="text-[8px] text-gray-400">Manual mining cooldown</span>
+                                  <span className="text-[8px] text-orange-400">{formatTimeRemaining(timeRemaining)}</span>
+                                </div>
+                                <div className="w-full bg-gray-800/50 rounded-full h-1 overflow-hidden">
+                                  <div className="h-full bg-gradient-to-r from-orange-500 to-yellow-500 rounded-full transition-all duration-300" style={{ width: `${progressPercent}%` }} />
+                                </div>
+                              </div>
+                            )}
+
+                            {canCollect && locationId && (
+                              <div className="mt-1">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[8px] text-green-400">✓ Ready to mine</span>
+                                </div>
+                              </div>
+                            )}
+                          </a>
+                        );
+                      })
                     )}
                   </div>
                 </div>

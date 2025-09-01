@@ -1,7 +1,7 @@
 # Changelog
 
 
-## [2.4.22] - 2025-09-01
+## [2.4.23] - 2025-09-01
 
 - Everything is in 3D now using ThreeJS, from galaxies, systems and planets, expect bugs. Added passive clicker gamification stuff, people found it boring so it's not anymore. Game progress stored and compressed on base64 on Local Storage, to save your game copy the values and keys. Added abstract. Semantic Kernel integration (using your api keys) will be published next year then after more investigation. Done for now on vacation time, back to HomeDock OS again. See you guys!
 
