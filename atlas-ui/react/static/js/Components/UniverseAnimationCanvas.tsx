@@ -1,6 +1,10 @@
 // atlas-ui/react/static/js/Components/UniverseAnimationCanvas.tsx
 import React, { useRef, useEffect, useState } from "react";
 import * as THREE from "three";
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
+import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
 
 interface UniverseAnimationCanvasProps {
   animationType: "core" | "multiverse" | "processing" | null;
@@ -12,6 +16,7 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const composerRef = useRef<EffectComposer | null>(null);
   const animationIdRef = useRef<number | null>(null);
   const [isVisible, setIsVisible] = useState(false);
 
@@ -40,6 +45,84 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
     return texture;
   };
 
+  // Chromatic Aberration Shader
+  const ChromaticAberrationShader = {
+    uniforms: {
+      tDiffuse: { value: null },
+      distortion: { value: 0.0 },
+      time: { value: 0.0 }
+    },
+    vertexShader: `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+      }
+    `,
+    fragmentShader: `
+      uniform sampler2D tDiffuse;
+      uniform float distortion;
+      uniform float time;
+      varying vec2 vUv;
+      
+      void main() {
+        vec2 center = vec2(0.5, 0.5);
+        vec2 direction = vUv - center;
+        float distance = length(direction);
+        
+        float aberration = distortion * distance;
+        
+        vec2 redOffset = direction * aberration * 1.5;
+        vec2 greenOffset = direction * aberration;
+        vec2 blueOffset = direction * aberration * 0.5;
+        
+        float red = texture2D(tDiffuse, vUv + redOffset).r;
+        float green = texture2D(tDiffuse, vUv + greenOffset).g;
+        float blue = texture2D(tDiffuse, vUv + blueOffset).b;
+        
+        gl_FragColor = vec4(red, green, blue, 1.0);
+      }
+    `
+  };
+
+  // Time Distortion Shader
+  const TimeDistortionShader = {
+    uniforms: {
+      tDiffuse: { value: null },
+      distortionAmount: { value: 0.0 },
+      time: { value: 0.0 }
+    },
+    vertexShader: `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+      }
+    `,
+    fragmentShader: `
+      uniform sampler2D tDiffuse;
+      uniform float distortionAmount;
+      uniform float time;
+      varying vec2 vUv;
+      
+      void main() {
+        vec2 center = vec2(0.5, 0.5);
+        vec2 uv = vUv;
+        
+        // Radial distortion
+        vec2 direction = uv - center;
+        float distance = length(direction);
+        
+        float waveDistortion = sin(distance * 20.0 + time * 10.0) * distortionAmount * 0.02;
+        float radialDistortion = distance * distortionAmount * 0.1;
+        
+        uv += direction * (waveDistortion + radialDistortion);
+        
+        gl_FragColor = texture2D(tDiffuse, uv);
+      }
+    `
+  };
+
   const initScene = () => {
     if (!mountRef.current) {
       return;
@@ -61,6 +144,30 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
       renderer.setSize(window.innerWidth, window.innerHeight);
       mountRef.current.appendChild(renderer.domElement);
       rendererRef.current = renderer;
+
+      // Setup post-processing
+      const composer = new EffectComposer(renderer);
+      const renderPass = new RenderPass(scene, camera);
+      composer.addPass(renderPass);
+
+      // Bloom effect
+      const bloomPass = new UnrealBloomPass(
+        new THREE.Vector2(window.innerWidth, window.innerHeight),
+        0.3, // strength (reduced)
+        0.6, // radius (reduced)
+        0.3  // threshold (higher = less bloom)
+      );
+      composer.addPass(bloomPass);
+
+      // Time distortion effect
+      const timeDistortionPass = new ShaderPass(TimeDistortionShader);
+      composer.addPass(timeDistortionPass);
+
+      // Chromatic aberration effect
+      const chromaticAberrationPass = new ShaderPass(ChromaticAberrationShader);
+      composer.addPass(chromaticAberrationPass);
+
+      composerRef.current = composer;
 
       // Crear cubo con líneas gruesas usando tubos
       const createThickCubeEdges = (size: number, thickness: number) => {
@@ -292,9 +399,47 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
         const totalDuration = 8;
         const explosionDuration = 1.5; // Duración de la explosión épica
         
+        // Get post-processing passes for effects
+        const composer = composerRef.current;
+        const bloomPass = composer?.passes[1] as UnrealBloomPass;
+        const timeDistortionPass = composer?.passes[2] as ShaderPass;
+        const chromaticAberrationPass = composer?.passes[3] as ShaderPass;
+        
         // EXPLOSIÓN ÉPICA - Múltiples efectos simultáneos
         const explosionPhase = Math.min(elapsed / explosionDuration, 1);
         const isExploding = elapsed < explosionDuration;
+        
+        // Update post-processing effects based on explosion
+        if (bloomPass && timeDistortionPass && chromaticAberrationPass) {
+          if (isExploding) {
+            // Intense effects during explosion
+            const effectIntensity = Math.sin(explosionPhase * Math.PI);
+            
+            // Bloom gets stronger during explosion (further reduced)
+            bloomPass.strength = 0.2 + effectIntensity * 0.4;
+            bloomPass.radius = 0.5 + effectIntensity * 0.1;
+            
+            // Time distortion peaks at mid-explosion
+            timeDistortionPass.uniforms.distortionAmount.value = effectIntensity * 0.8;
+            timeDistortionPass.uniforms.time.value = elapsed;
+            
+            // Chromatic aberration increases with explosion intensity
+            chromaticAberrationPass.uniforms.distortion.value = effectIntensity * 0.15;
+            chromaticAberrationPass.uniforms.time.value = elapsed;
+          } else {
+            // Gentle effects post-explosion
+            const postIntensity = Math.max(0, 1 - (elapsed - explosionDuration) / 2);
+            
+            bloomPass.strength = 0.3 + postIntensity * 0.4;
+            bloomPass.radius = 0.6 + postIntensity * 0.1;
+            
+            timeDistortionPass.uniforms.distortionAmount.value = postIntensity * 0.1;
+            timeDistortionPass.uniforms.time.value = elapsed;
+            
+            chromaticAberrationPass.uniforms.distortion.value = postIntensity * 0.03;
+            chromaticAberrationPass.uniforms.time.value = elapsed;
+          }
+        }
         
         if (isExploding) {
           // Solo intensificar el núcleo - sin flash separado
@@ -402,10 +547,10 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
           universeCube.scale.setScalar(explosiveGrowth);
           universeCube.position.set(shake.x, shake.y, shake.z);
           
-          // Rotación caótica por la fuerza de la explosión
-          universeCube.rotation.x = elapsed * (3 + Math.sin(elapsed * 20) * 2);
-          universeCube.rotation.y = elapsed * (4 + Math.cos(elapsed * 15) * 3);
-          universeCube.rotation.z = elapsed * (2 + Math.sin(elapsed * 25) * 1);
+          // Rotación caótica por la fuerza de la explosión (reducida a la mitad)
+          universeCube.rotation.x = elapsed * (1.5 + Math.sin(elapsed * 20) * 1);
+          universeCube.rotation.y = elapsed * (2 + Math.cos(elapsed * 15) * 1.5);
+          universeCube.rotation.z = elapsed * (1 + Math.sin(elapsed * 25) * 0.5);
           
         } else {
           // Post explosión: el cubo se estabiliza y continúa expandiéndose por inercia
@@ -462,7 +607,12 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
         // Siempre mirar hacia el centro del cubo
         camera.lookAt(0, 0, 0);
 
-        renderer.render(scene, camera);
+        // Render with post-processing
+        if (composerRef.current) {
+          composerRef.current.render();
+        } else {
+          renderer.render(scene, camera);
+        }
 
         if (elapsed > totalDuration && onAnimationComplete) {
           onAnimationComplete();
