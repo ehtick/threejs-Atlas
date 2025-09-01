@@ -3,6 +3,8 @@ import React, { useRef, useEffect, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import DownloadIcon from "../Icons/DownloadIcon";
+import { addQRToScreenshot } from "./QRGenerator";
+import { addCopyrightWatermark } from "./CopyrightWatermark";
 
 interface Galaxy3DViewerProps {
   galaxyType: string;
@@ -26,6 +28,7 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
   const decelerateRef = useRef(false);
   const [sceneLoaded, setSceneLoaded] = useState(false);
   const [canvasHidden, setCanvasHidden] = useState(false);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
 
   class SeededRandom {
@@ -173,6 +176,9 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
     renderer.setSize(size, size);
     renderer.setClearColor(0x000011, 1);
     rendererRef.current = renderer;
+    
+    // Add transition class to canvas for blur effect
+    renderer.domElement.className = 'transition-all duration-300';
     container.appendChild(renderer.domElement);
 
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -1054,9 +1060,20 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
     };
   }, [galaxyType, numSystems, blackHoles, pulsars, quasars, seed]);
 
-  const handleDownloadScreenshot = () => {
-    if (!rendererRef.current || !sceneRef.current || !cameraRef.current) return;
 
+  const handleDownloadScreenshot = () => {
+    if (!rendererRef.current || !sceneRef.current || !cameraRef.current || isGeneratingImage) return;
+
+    setIsGeneratingImage(true);
+    
+    // Apply blur to canvas and disable controls
+    if (rendererRef.current.domElement) {
+      rendererRef.current.domElement.style.filter = 'blur(15px)';
+    }
+    if (controlsRef.current) {
+      controlsRef.current.enabled = false;
+    }
+    
     const renderer = rendererRef.current;
     const scene = sceneRef.current;
     const camera = cameraRef.current;
@@ -1121,21 +1138,15 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
         
         if (ctx) {
           const img = new Image();
-          img.onload = () => {
+          img.onload = async () => {
             // Draw the original image
             ctx.drawImage(img, 0, 0);
             
             // Add copyright watermark
-            const currentYear = new Date().getFullYear();
-            const copyrightText = `Copyright Banshee - 2023-${currentYear}`;
+            addCopyrightWatermark(ctx, { imageWidth: width, imageHeight: height });
             
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-            ctx.font = `${Math.floor(width / 80)}px Arial`; // Responsive font size
-            ctx.textAlign = 'left';
-            ctx.textBaseline = 'bottom';
-            
-            const margin = Math.floor(width / 100); // Responsive margin
-            ctx.fillText(copyrightText, margin, height - margin);
+            // Add QR code with logo
+            await addQRToScreenshot(ctx, width, height, window.location.href);
             
             // Download the watermarked image
             tempCanvas.toBlob((watermarkedBlob) => {
@@ -1172,6 +1183,15 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
       renderer.setSize(originalWidth, originalHeight);
       camera.aspect = 1;
       camera.updateProjectionMatrix();
+      
+      // Remove blur from canvas, re-enable controls and reset generating state
+      if (rendererRef.current?.domElement) {
+        rendererRef.current.domElement.style.filter = 'none';
+      }
+      if (controlsRef.current) {
+        controlsRef.current.enabled = true;
+      }
+      setIsGeneratingImage(false);
     }, 'image/png', 1.0);
   };
 
@@ -1192,16 +1212,30 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
           <div className="absolute top-2 right-2 flex gap-2 z-10">
             <button 
               onClick={handleDownloadScreenshot} 
-              className="p-2 bg-black/60 hover:bg-black/80 border border-white/30 rounded-lg transition-all duration-200 backdrop-blur-sm shadow-lg" 
-              title="Download screenshot"
+              disabled={isGeneratingImage}
+              className={`p-2 border border-white/30 rounded-lg transition-all duration-200 backdrop-blur-sm shadow-lg ${
+                isGeneratingImage 
+                  ? 'bg-black/40 cursor-not-allowed opacity-50' 
+                  : 'bg-black/60 hover:bg-black/80'
+              }`}
+              title={isGeneratingImage ? "Generating image..." : "Download screenshot"}
             >
-              <DownloadIcon className="w-4 h-4 text-white" />
+              {isGeneratingImage ? (
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <DownloadIcon className="w-4 h-4 text-white" />
+              )}
             </button>
             {onExpandClick && (
               <button 
                 onClick={onExpandClick} 
-                className="p-2 bg-black/60 hover:bg-black/80 border border-white/30 rounded-lg transition-all duration-200 backdrop-blur-sm shadow-lg" 
-                title="Expand to fullscreen"
+                disabled={isGeneratingImage}
+                className={`p-2 border border-white/30 rounded-lg transition-all duration-200 backdrop-blur-sm shadow-lg ${
+                  isGeneratingImage 
+                    ? 'bg-black/40 cursor-not-allowed opacity-50' 
+                    : 'bg-black/60 hover:bg-black/80'
+                }`}
+                title={isGeneratingImage ? "Please wait..." : "Expand to fullscreen"}
               >
                 <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />

@@ -63,7 +63,7 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
   }
 }
 
-export const ModularPlanetRendererWrapper = forwardRef<{ captureScreenshot: () => void }, ModularPlanetRendererProps>((props, ref) => {
+export const ModularPlanetRendererWrapper = forwardRef<{ captureScreenshot: () => void; isGeneratingImage: boolean }, ModularPlanetRendererProps>((props, ref) => {
   return (
     <ErrorBoundary>
       <ModularPlanetRenderer ref={ref} {...props} />

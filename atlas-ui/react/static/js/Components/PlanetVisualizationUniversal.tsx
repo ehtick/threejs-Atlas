@@ -38,7 +38,7 @@ interface PlanetVisualizationUniversalProps {
 
 const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> = ({ planetUrl, planet, cosmicOriginTime, initialAngleRotation, onEffectsCreated, effects, onToggleEffect }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const planetRendererRef = useRef<{ captureScreenshot: () => void } | null>(null);
+  const planetRendererRef = useRef<{ captureScreenshot: () => void; isGeneratingImage: boolean } | null>(null);
   const [stargateText, setStargateText] = useState("Aligning Stargate...");
   const [isAnimating, setIsAnimating] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -46,6 +46,7 @@ const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [isEntering, setIsEntering] = useState(false);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
 
   const handleCloseFullscreen = () => {
     setIsClosing(true);
@@ -241,6 +242,17 @@ const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> 
     }
   }, [isEntering]);
 
+  // Track the generating state from the planet renderer
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (planetRendererRef.current) {
+        setIsGeneratingImage(planetRendererRef.current.isGeneratingImage);
+      }
+    }, 100);
+    
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between mb-3">
@@ -285,22 +297,38 @@ const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> 
                 <button
                   onClick={() => {
                     // Take screenshot using the exposed method
-                    if (planetRendererRef.current) {
+                    if (planetRendererRef.current && !isGeneratingImage) {
                       planetRendererRef.current.captureScreenshot();
                     }
                   }}
-                  className="p-2 bg-black/60 hover:bg-black/80 border border-white/30 rounded-lg transition-all duration-200 backdrop-blur-sm shadow-lg"
-                  title="Download screenshot"
+                  disabled={isGeneratingImage}
+                  className={`p-2 border border-white/30 rounded-lg transition-all duration-200 backdrop-blur-sm shadow-lg ${
+                    isGeneratingImage 
+                      ? 'bg-black/40 cursor-not-allowed opacity-50' 
+                      : 'bg-black/60 hover:bg-black/80'
+                  }`}
+                  title={isGeneratingImage ? "Generating image..." : "Download screenshot"}
                 >
-                  <DownloadIcon className="w-4 h-4 text-white" />
+                  {isGeneratingImage ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <DownloadIcon className="w-4 h-4 text-white" />
+                  )}
                 </button>
                 <button
                   onClick={() => {
-                    setIsFullscreen(true);
-                    setIsEntering(true);
+                    if (!isGeneratingImage) {
+                      setIsFullscreen(true);
+                      setIsEntering(true);
+                    }
                   }}
-                  className="p-2 bg-black/60 hover:bg-black/80 border border-white/30 rounded-lg transition-all duration-200 backdrop-blur-sm shadow-lg"
-                  title="Expand to fullscreen"
+                  disabled={isGeneratingImage}
+                  className={`p-2 border border-white/30 rounded-lg transition-all duration-200 backdrop-blur-sm shadow-lg ${
+                    isGeneratingImage 
+                      ? 'bg-black/40 cursor-not-allowed opacity-50' 
+                      : 'bg-black/60 hover:bg-black/80'
+                  }`}
+                  title={isGeneratingImage ? "Please wait..." : "Expand to fullscreen"}
                 >
                   <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />

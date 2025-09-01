@@ -3,6 +3,8 @@
 import React, { useEffect, useRef, useState, useCallback, useImperativeHandle, forwardRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import { addQRToScreenshot } from "../Components/QRGenerator";
+import { addCopyrightWatermark } from "../Components/CopyrightWatermark";
 
 import { effectRegistry, EffectInstance } from "../3DEffects/EffectRegistry";
 import { createPlanetEffectConfig, EffectsLogger } from "../3DEffects";
@@ -118,10 +120,22 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
   const planetLayerSystemRef = useRef<PlanetLayerSystem | null>(null);
   const toxicPostProcessingRef = useRef<ToxicPostProcessingEffect | null>(null);
 
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+
   // Expose screenshot method
   useImperativeHandle(ref, () => ({
     captureScreenshot: () => {
-      if (!rendererRef.current || !sceneRef.current || !cameraRef.current) return;
+      if (!rendererRef.current || !sceneRef.current || !cameraRef.current || isGeneratingImage) return;
+      
+      setIsGeneratingImage(true);
+      
+      // Apply blur to canvas and disable controls
+      if (rendererRef.current.domElement) {
+        rendererRef.current.domElement.style.filter = 'blur(15px)';
+      }
+      if (controlsRef.current) {
+        controlsRef.current.enabled = false;
+      }
 
       const renderer = rendererRef.current;
       const scene = sceneRef.current;
@@ -209,21 +223,15 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
           
           if (ctx) {
             const img = new Image();
-            img.onload = () => {
+            img.onload = async () => {
               // Draw the original image
               ctx.drawImage(img, 0, 0);
               
               // Add copyright watermark
-              const currentYear = new Date().getFullYear();
-              const copyrightText = `Copyright Banshee - 2023-${currentYear}`;
+              addCopyrightWatermark(ctx, { imageWidth: highResWidth, imageHeight: highResHeight });
               
-              ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-              ctx.font = `${Math.floor(highResWidth / 80)}px Arial`; // Responsive font size
-              ctx.textAlign = 'left';
-              ctx.textBaseline = 'bottom';
-              
-              const margin = Math.floor(highResWidth / 100); // Responsive margin
-              ctx.fillText(copyrightText, margin, highResHeight - margin);
+              // Add QR code with logo
+              await addQRToScreenshot(ctx, highResWidth, highResHeight, window.location.href);
               
               // Download the watermarked image
               tempCanvas.toBlob((watermarkedBlob) => {
@@ -262,9 +270,20 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
         renderer.setSize(originalWidth, originalHeight);
         camera.aspect = originalWidth / originalHeight;
         camera.updateProjectionMatrix();
+        
+        // Remove blur from canvas, re-enable controls and reset generating state
+        if (rendererRef.current?.domElement) {
+          rendererRef.current.domElement.style.filter = 'none';
+        }
+        if (controlsRef.current) {
+          controlsRef.current.enabled = true;
+        }
+        setIsGeneratingImage(false);
       }, 'image/png', 1.0);
-    }
+    },
+    isGeneratingImage
   }));
+
 
   const realCurrentTime = Math.floor(Date.now() / 1000);
   const [timeOffset, setTimeOffset] = useState(0);
@@ -415,6 +434,9 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.2;
       renderer.outputColorSpace = THREE.SRGBColorSpace;
+      
+      // Add transition class to canvas for blur effect
+      renderer.domElement.className = 'transition-all duration-300';
 
       mountRef.current.appendChild(renderer.domElement);
       rendererRef.current = renderer;
