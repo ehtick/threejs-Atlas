@@ -8,4 +8,4 @@ RUN = "PROD"
 VERSION = "2.4.22"
 VERSION_HASH = hashlib.sha256(VERSION.encode("utf-8")).hexdigest()
 MAX_PILLOW_WORKERS = 4
-VISUAL_DEBUG = True
+VISUAL_DEBUG = False
