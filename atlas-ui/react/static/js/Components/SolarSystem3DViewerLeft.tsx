@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import SolarSystem3DViewerFullscreen from "./SolarSystem3DViewerFullscreen.tsx";
+import DownloadIcon from "../Icons/DownloadIcon";
 
 interface Planet {
   name: string;
@@ -42,6 +43,7 @@ const SolarSystem3DViewerLeft: React.FC<SolarSystem3DViewerLeftProps> = ({ plane
   const planetLabelsRef = useRef<THREE.Sprite[]>([]);
   const controlsRef = useRef<OrbitControls | null>(null);
   const currentTimeRef = useRef<number>(0);
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
 
   const realCurrentTime = Math.floor(Date.now() / 1000);
   const [timeOffset, setTimeOffset] = useState(0);
@@ -178,6 +180,7 @@ const SolarSystem3DViewerLeft: React.FC<SolarSystem3DViewerLeftProps> = ({ plane
     const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 10000);
     camera.position.set(0, 300, 0);
     camera.lookAt(0, 0, 0);
+    cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(size, size);
@@ -445,6 +448,45 @@ const SolarSystem3DViewerLeft: React.FC<SolarSystem3DViewerLeftProps> = ({ plane
     };
   }, [planets, stars, cosmicOriginTime, systemData, timeOffset]);
 
+  const handleDownloadScreenshot = () => {
+    if (!rendererRef.current || !sceneRef.current || !cameraRef.current) return;
+
+    const renderer = rendererRef.current;
+    const scene = sceneRef.current;
+    const camera = cameraRef.current;
+
+    // Store original size
+    const originalWidth = renderer.domElement.width;
+    const originalHeight = renderer.domElement.height;
+
+    // Set high resolution (4K)
+    const width = 3840;
+    const height = 3840;
+    renderer.setSize(width, height);
+    camera.aspect = 1;
+    camera.updateProjectionMatrix();
+
+    // Render at high resolution
+    renderer.render(scene, camera);
+
+    // Get the image
+    renderer.domElement.toBlob((blob) => {
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `system_${systemName}_${Date.now()}.png`;
+        link.click();
+        URL.revokeObjectURL(url);
+      }
+
+      // Restore original size
+      renderer.setSize(originalWidth, originalHeight);
+      camera.aspect = 1;
+      camera.updateProjectionMatrix();
+    }, 'image/png', 1.0);
+  };
+
   const formatTime = (seconds: number) => {
     const years = Math.floor(seconds / (365.25 * 24 * 3600));
     const days = Math.floor((seconds % (365.25 * 24 * 3600)) / (24 * 3600));
@@ -471,18 +513,27 @@ const SolarSystem3DViewerLeft: React.FC<SolarSystem3DViewerLeftProps> = ({ plane
             </div>
           )}
 
-          <button
-            onClick={() => {
-              setIsFullscreen(true);
-              setIsEntering(true);
-            }}
-            className="absolute top-2 right-2 p-2 bg-black/60 hover:bg-black/80 border border-white/30 rounded-lg transition-all duration-200 backdrop-blur-sm shadow-lg z-10"
-            title="Expand to fullscreen"
-          >
-            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-            </svg>
-          </button>
+          <div className="absolute top-2 right-2 flex gap-2 z-10">
+            <button
+              onClick={handleDownloadScreenshot}
+              className="p-2 bg-black/60 hover:bg-black/80 border border-white/30 rounded-lg transition-all duration-200 backdrop-blur-sm shadow-lg"
+              title="Download screenshot"
+            >
+              <DownloadIcon className="w-4 h-4 text-white" />
+            </button>
+            <button
+              onClick={() => {
+                setIsFullscreen(true);
+                setIsEntering(true);
+              }}
+              className="p-2 bg-black/60 hover:bg-black/80 border border-white/30 rounded-lg transition-all duration-200 backdrop-blur-sm shadow-lg"
+              title="Expand to fullscreen"
+            >
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 

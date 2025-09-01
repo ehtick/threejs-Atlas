@@ -2,6 +2,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import DownloadIcon from "../Icons/DownloadIcon";
 
 interface Galaxy3DViewerProps {
   galaxyType: string;
@@ -25,6 +26,7 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
   const decelerateRef = useRef(false);
   const [sceneLoaded, setSceneLoaded] = useState(false);
   const [canvasHidden, setCanvasHidden] = useState(false);
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
 
   class SeededRandom {
     private seed: number;
@@ -165,6 +167,7 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
     const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 10000);
     camera.position.set(0, 200, 400);
     camera.lookAt(0, 0, 0);
+    cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(size, size);
@@ -1051,6 +1054,45 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
     };
   }, [galaxyType, numSystems, blackHoles, pulsars, quasars, seed]);
 
+  const handleDownloadScreenshot = () => {
+    if (!rendererRef.current || !sceneRef.current || !cameraRef.current) return;
+
+    const renderer = rendererRef.current;
+    const scene = sceneRef.current;
+    const camera = cameraRef.current;
+
+    // Store original size
+    const originalWidth = renderer.domElement.width;
+    const originalHeight = renderer.domElement.height;
+
+    // Set high resolution (4K)
+    const width = 3840;
+    const height = 3840;
+    renderer.setSize(width, height);
+    camera.aspect = 1;
+    camera.updateProjectionMatrix();
+
+    // Render at high resolution
+    renderer.render(scene, camera);
+
+    // Get the image
+    renderer.domElement.toBlob((blob) => {
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `galaxy_${galaxyName || galaxyType}_${Date.now()}.png`;
+        link.click();
+        URL.revokeObjectURL(url);
+      }
+
+      // Restore original size
+      renderer.setSize(originalWidth, originalHeight);
+      camera.aspect = 1;
+      camera.updateProjectionMatrix();
+    }, 'image/png', 1.0);
+  };
+
   return (
     <div className="relative w-full h-full bg-black rounded">
       <canvas ref={canvasRef} className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[2500ms] ${canvasHidden ? "opacity-0" : "opacity-100"}`} style={{ filter: canvasHidden ? "blur(50px)" : "none" }} />
@@ -1064,12 +1106,27 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
           </div>
         )}
 
-        {sceneLoaded && onExpandClick && (
-          <button onClick={onExpandClick} className="absolute top-2 right-2 p-2 bg-black/60 hover:bg-black/80 border border-white/30 rounded-lg transition-all duration-200 backdrop-blur-sm shadow-lg z-10" title="Expand to fullscreen">
-            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-            </svg>
-          </button>
+        {sceneLoaded && (
+          <div className="absolute top-2 right-2 flex gap-2 z-10">
+            <button 
+              onClick={handleDownloadScreenshot} 
+              className="p-2 bg-black/60 hover:bg-black/80 border border-white/30 rounded-lg transition-all duration-200 backdrop-blur-sm shadow-lg" 
+              title="Download screenshot"
+            >
+              <DownloadIcon className="w-4 h-4 text-white" />
+            </button>
+            {onExpandClick && (
+              <button 
+                onClick={onExpandClick} 
+                className="p-2 bg-black/60 hover:bg-black/80 border border-white/30 rounded-lg transition-all duration-200 backdrop-blur-sm shadow-lg" 
+                title="Expand to fullscreen"
+              >
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                </svg>
+              </button>
+            )}
+          </div>
         )}
       </div>
     </div>

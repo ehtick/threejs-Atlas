@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { ModularPlanetRendererWrapper } from "../3DComponents/ModularPlanetRendererWrapper";
 import { effectRegistry } from "../3DEffects/EffectRegistry";
 import Planet3DViewerFullscreen from "./Planet3DViewerFullscreen.tsx";
+import DownloadIcon from "../Icons/DownloadIcon";
 
 interface Planet {
   name: string;
@@ -37,6 +38,7 @@ interface PlanetVisualizationUniversalProps {
 
 const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> = ({ planetUrl, planet, cosmicOriginTime, initialAngleRotation, onEffectsCreated, effects, onToggleEffect }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const planetRendererRef = useRef<{ captureScreenshot: () => void } | null>(null);
   const [stargateText, setStargateText] = useState("Aligning Stargate...");
   const [isAnimating, setIsAnimating] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -249,8 +251,9 @@ const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> 
         <canvas ref={canvasRef} className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[2500ms] ${canvasHidden ? "opacity-0" : "opacity-100"}`} style={{ filter: canvasHidden ? "blur(50px)" : "none" }} />
 
         {imageLoaded && planet && (
-          <div className={`absolute inset-0 w-full h-full transition-all duration-500 ${imageLoaded && canvasHidden ? "opacity-100 blur-0" : "opacity-0 blur-[25px]"}`}>
+          <div className={`planet-renderer-container absolute inset-0 w-full h-full transition-all duration-500 ${imageLoaded && canvasHidden ? "opacity-100 blur-0" : "opacity-0 blur-[25px]"}`}>
             <ModularPlanetRendererWrapper
+              ref={planetRendererRef}
               planetName={planet.name}
               containerClassName="w-full h-full"
               autoRotate={false}
@@ -278,18 +281,32 @@ const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> 
             />
 
             {canvasHidden && (
-              <button
-                onClick={() => {
-                  setIsFullscreen(true);
-                  setIsEntering(true);
-                }}
-                className="absolute top-2 right-2 p-2 bg-black/60 hover:bg-black/80 border border-white/30 rounded-lg transition-all duration-200 backdrop-blur-sm shadow-lg z-10"
-                title="Expand to fullscreen"
-              >
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-                </svg>
-              </button>
+              <div className="absolute top-2 right-2 flex gap-2 z-10">
+                <button
+                  onClick={() => {
+                    // Take screenshot using the exposed method
+                    if (planetRendererRef.current) {
+                      planetRendererRef.current.captureScreenshot();
+                    }
+                  }}
+                  className="p-2 bg-black/60 hover:bg-black/80 border border-white/30 rounded-lg transition-all duration-200 backdrop-blur-sm shadow-lg"
+                  title="Download screenshot"
+                >
+                  <DownloadIcon className="w-4 h-4 text-white" />
+                </button>
+                <button
+                  onClick={() => {
+                    setIsFullscreen(true);
+                    setIsEntering(true);
+                  }}
+                  className="p-2 bg-black/60 hover:bg-black/80 border border-white/30 rounded-lg transition-all duration-200 backdrop-blur-sm shadow-lg"
+                  title="Expand to fullscreen"
+                >
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                  </svg>
+                </button>
+              </div>
             )}
           </div>
         )}

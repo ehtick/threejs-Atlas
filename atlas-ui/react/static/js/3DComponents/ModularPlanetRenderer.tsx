@@ -1,6 +1,6 @@
 // atlas-ui/react/static/js/3DComponents/ModularPlanetRenderer.tsx
 
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback, useImperativeHandle, forwardRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
@@ -88,7 +88,7 @@ interface RendererStats {
   renderTime: number;
 }
 
-export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ planetName, containerClassName = "", width = 800, height = 600, autoRotate = true, enableControls = true, showDebugInfo = false, planetData, cosmicOriginTime, initialAngleRotation, onDataLoaded, onEffectsCreated, onError }) => {
+export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void }, ModularPlanetRendererProps>(({ planetName, containerClassName = "", width = 800, height = 600, autoRotate = true, enableControls = true, showDebugInfo = false, planetData, cosmicOriginTime, initialAngleRotation, onDataLoaded, onEffectsCreated, onError }, ref) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -117,6 +117,48 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const planetLayerSystemRef = useRef<PlanetLayerSystem | null>(null);
   const toxicPostProcessingRef = useRef<ToxicPostProcessingEffect | null>(null);
+
+  // Expose screenshot method
+  useImperativeHandle(ref, () => ({
+    captureScreenshot: () => {
+      if (!rendererRef.current || !sceneRef.current || !cameraRef.current) return;
+
+      const renderer = rendererRef.current;
+      const scene = sceneRef.current;
+      const camera = cameraRef.current;
+
+      // Store original size
+      const originalWidth = renderer.domElement.width;
+      const originalHeight = renderer.domElement.height;
+
+      // Set high resolution (4K)
+      const highResWidth = 3840;
+      const highResHeight = 3840;
+      renderer.setSize(highResWidth, highResHeight);
+      camera.aspect = 1;
+      camera.updateProjectionMatrix();
+
+      // Render at high resolution
+      renderer.render(scene, camera);
+
+      // Get the image
+      renderer.domElement.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `planet_${planetName}_${Date.now()}.png`;
+          link.click();
+          URL.revokeObjectURL(url);
+        }
+
+        // Restore original size
+        renderer.setSize(originalWidth, originalHeight);
+        camera.aspect = originalWidth / originalHeight;
+        camera.updateProjectionMatrix();
+      }, 'image/png', 1.0);
+    }
+  }));
 
   const realCurrentTime = Math.floor(Date.now() / 1000);
   const [timeOffset, setTimeOffset] = useState(0);
@@ -1024,12 +1066,12 @@ export const ModularPlanetRenderer: React.FC<ModularPlanetRendererProps> = ({ pl
       )}
     </div>
   );
-};
+});
 
 export const ExampleModularPlanet: React.FC<{ planetName?: string }> = ({ planetName = "metallic_test_planet" }) => {
   return (
     <div className="w-full h-screen bg-gray-900">
-      <ModularPlanetRenderer planetName={planetName} containerClassName="w-full h-full" autoRotate={true} enableControls={true} showDebugInfo={true} onDataLoaded={(data) => {}} onEffectsCreated={(effects) => {}} onError={(error) => {}} />
+      <ModularPlanetRenderer ref={null} planetName={planetName} containerClassName="w-full h-full" autoRotate={true} enableControls={true} showDebugInfo={true} onDataLoaded={(data) => {}} onEffectsCreated={(effects) => {}} onError={(error) => {}} />
     </div>
   );
 };
