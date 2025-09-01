@@ -345,7 +345,7 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
       galaxyGeometry.setAttribute("size", new THREE.BufferAttribute(galaxySizes, 1));
 
       const galaxyMaterial = new THREE.PointsMaterial({
-        size: 0.1,
+        size: 0.1, // Más grandes (era 0.1)
         vertexColors: true,
         blending: THREE.AdditiveBlending,
         transparent: true,
@@ -535,7 +535,7 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
         }
         
         galaxyGeometry.attributes.position.needsUpdate = true;
-        galaxyMaterial.opacity = Math.min(elapsed * 0.8, 1);
+        galaxyMaterial.opacity = Math.min(elapsed * 1.2, 1); // Más opacas más rápido
 
         // UNIVERSE CUBE - Empujado por la explosión con física realista
         if (elapsed < explosionDuration * 0.3) {
