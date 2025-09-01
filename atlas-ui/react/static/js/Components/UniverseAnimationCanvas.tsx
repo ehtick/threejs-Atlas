@@ -50,7 +50,7 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
     uniforms: {
       tDiffuse: { value: null },
       distortion: { value: 0.0 },
-      time: { value: 0.0 }
+      time: { value: 0.0 },
     },
     vertexShader: `
       varying vec2 vUv;
@@ -82,7 +82,7 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
         
         gl_FragColor = vec4(red, green, blue, 1.0);
       }
-    `
+    `,
   };
 
   // Time Distortion Shader
@@ -90,7 +90,7 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
     uniforms: {
       tDiffuse: { value: null },
       distortionAmount: { value: 0.0 },
-      time: { value: 0.0 }
+      time: { value: 0.0 },
     },
     vertexShader: `
       varying vec2 vUv;
@@ -120,7 +120,7 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
         
         gl_FragColor = texture2D(tDiffuse, uv);
       }
-    `
+    `,
   };
 
   const initScene = () => {
@@ -155,7 +155,7 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
         new THREE.Vector2(window.innerWidth, window.innerHeight),
         0.3, // strength (reduced)
         0.6, // radius (reduced)
-        0.3  // threshold (higher = less bloom)
+        0.3 // threshold (higher = less bloom)
       );
       composer.addPass(bloomPass);
 
@@ -181,20 +181,56 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
         // Definir las 12 aristas del cubo
         const edges = [
           // Cara frontal
-          [[-size/2, -size/2, size/2], [size/2, -size/2, size/2]],
-          [[size/2, -size/2, size/2], [size/2, size/2, size/2]],
-          [[size/2, size/2, size/2], [-size/2, size/2, size/2]],
-          [[-size/2, size/2, size/2], [-size/2, -size/2, size/2]],
+          [
+            [-size / 2, -size / 2, size / 2],
+            [size / 2, -size / 2, size / 2],
+          ],
+          [
+            [size / 2, -size / 2, size / 2],
+            [size / 2, size / 2, size / 2],
+          ],
+          [
+            [size / 2, size / 2, size / 2],
+            [-size / 2, size / 2, size / 2],
+          ],
+          [
+            [-size / 2, size / 2, size / 2],
+            [-size / 2, -size / 2, size / 2],
+          ],
           // Cara trasera
-          [[-size/2, -size/2, -size/2], [size/2, -size/2, -size/2]],
-          [[size/2, -size/2, -size/2], [size/2, size/2, -size/2]],
-          [[size/2, size/2, -size/2], [-size/2, size/2, -size/2]],
-          [[-size/2, size/2, -size/2], [-size/2, -size/2, -size/2]],
+          [
+            [-size / 2, -size / 2, -size / 2],
+            [size / 2, -size / 2, -size / 2],
+          ],
+          [
+            [size / 2, -size / 2, -size / 2],
+            [size / 2, size / 2, -size / 2],
+          ],
+          [
+            [size / 2, size / 2, -size / 2],
+            [-size / 2, size / 2, -size / 2],
+          ],
+          [
+            [-size / 2, size / 2, -size / 2],
+            [-size / 2, -size / 2, -size / 2],
+          ],
           // Conexiones entre caras
-          [[-size/2, -size/2, -size/2], [-size/2, -size/2, size/2]],
-          [[size/2, -size/2, -size/2], [size/2, -size/2, size/2]],
-          [[size/2, size/2, -size/2], [size/2, size/2, size/2]],
-          [[-size/2, size/2, -size/2], [-size/2, size/2, size/2]],
+          [
+            [-size / 2, -size / 2, -size / 2],
+            [-size / 2, -size / 2, size / 2],
+          ],
+          [
+            [size / 2, -size / 2, -size / 2],
+            [size / 2, -size / 2, size / 2],
+          ],
+          [
+            [size / 2, size / 2, -size / 2],
+            [size / 2, size / 2, size / 2],
+          ],
+          [
+            [-size / 2, size / 2, -size / 2],
+            [-size / 2, size / 2, size / 2],
+          ],
         ];
 
         edges.forEach(([start, end]) => {
@@ -222,7 +258,7 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
 
       // Cubo duplicado para el efecto de anclaje - exactamente igual al original
       const anchorCube = createThickCubeEdges(10, 0.05);
-      anchorCube.children.forEach(edge => {
+      anchorCube.children.forEach((edge) => {
         const originalMaterial = (universeCube.children[0] as THREE.Mesh).material as THREE.MeshBasicMaterial;
         (edge as THREE.Mesh).material = new THREE.MeshBasicMaterial({
           color: originalMaterial.color.clone(),
@@ -266,12 +302,14 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
 
       // Ordenar galaxias por distancia final para un lanzamiento progresivo
       const galaxyData = [];
-      
+
       for (let i = 0; i < maxGalaxies; i++) {
         // Generar posición final aleatoria
         const attempts = 3 + Math.floor(Math.random() * 3);
         let minDistance = Infinity;
-        let bestX = 0, bestY = 0, bestZ = 0;
+        let bestX = 0,
+          bestY = 0,
+          bestZ = 0;
 
         for (let attempt = 0; attempt < attempts; attempt++) {
           const tempX = (Math.random() - 0.5) * 10;
@@ -290,22 +328,22 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
         }
 
         const distance = Math.sqrt(bestX * bestX + bestY * bestY + bestZ * bestZ);
-        
+
         galaxyData.push({
           index: i,
           x: bestX,
-          y: bestY,  
+          y: bestY,
           z: bestZ,
           distance: distance,
           launchTime: Math.random() * 3, // Tiempo aleatorio de lanzamiento entre 0-3s
-          speed: distance > 0 ? (2 + Math.random() * 3) / distance : 1 // Velocidad inversamente proporcional a la distancia
+          speed: distance > 0 ? (2 + Math.random() * 3) / distance : 1, // Velocidad inversamente proporcional a la distancia
         });
       }
 
       // Inicializar arrays
       for (let i = 0; i < maxGalaxies; i++) {
         const data = galaxyData[i];
-        
+
         // Todas empiezan en el centro
         galaxyPositions[i * 3] = 0;
         galaxyPositions[i * 3 + 1] = 0;
@@ -331,7 +369,7 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
         // Colores más intensos basados en distancia
         const intensity = Math.random() * 0.8 + 0.4;
         const distanceRatio = Math.min(data.distance / 5, 1);
-        
+
         galaxyColors[i * 3] = intensity * (0.2 + distanceRatio * 0.8);
         galaxyColors[i * 3 + 1] = intensity * (0.5 + distanceRatio * 0.5);
         galaxyColors[i * 3 + 2] = intensity * (0.8 + distanceRatio * 0.2);
@@ -376,11 +414,10 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
         scene.add(wave);
       }
 
-
       // Partículas explosivas
       const explosionParticles = [];
       const particleCount = 200;
-      
+
       for (let i = 0; i < particleCount; i++) {
         const particle = new THREE.Mesh(
           new THREE.BoxGeometry(0.1, 0.1, 0.1),
@@ -391,98 +428,90 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
             blending: THREE.AdditiveBlending,
           })
         );
-        
+
         particle.userData = {
-          direction: new THREE.Vector3(
-            (Math.random() - 0.5) * 2,
-            (Math.random() - 0.5) * 2,
-            (Math.random() - 0.5) * 2
-          ).normalize(),
+          direction: new THREE.Vector3((Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2).normalize(),
           speed: Math.random() * 10 + 5,
-          life: Math.random() * 2 + 1
+          life: Math.random() * 2 + 1,
         };
-        
+
         explosionParticles.push(particle);
         scene.add(particle);
       }
 
-
       let startTime = Date.now();
       const animate = () => {
         const elapsed = (Date.now() - startTime) / 1000;
-        
+
         const totalDuration = 8;
         const explosionDuration = 1.5; // Duración de la explosión épica
-        
+
         // Get post-processing passes for effects
         const composer = composerRef.current;
         const bloomPass = composer?.passes[1] as UnrealBloomPass;
         const timeDistortionPass = composer?.passes[2] as ShaderPass;
         const chromaticAberrationPass = composer?.passes[3] as ShaderPass;
-        
+
         // EXPLOSIÓN ÉPICA - Múltiples efectos simultáneos
         const explosionPhase = Math.min(elapsed / explosionDuration, 1);
         const isExploding = elapsed < explosionDuration;
-        
+
         // Update post-processing effects based on explosion
         if (bloomPass && timeDistortionPass && chromaticAberrationPass) {
           if (isExploding) {
             // Intense effects during explosion
             const effectIntensity = Math.sin(explosionPhase * Math.PI);
-            
+
             // Bloom gets stronger during explosion (further reduced)
             bloomPass.strength = 0.2 + effectIntensity * 0.4;
             bloomPass.radius = 0.5 + effectIntensity * 0.1;
-            
+
             // Time distortion peaks at mid-explosion (even more intense)
             timeDistortionPass.uniforms.distortionAmount.value = effectIntensity * 2.5;
             timeDistortionPass.uniforms.time.value = elapsed;
-            
+
             // Chromatic aberration increases with explosion intensity (even more intense)
             chromaticAberrationPass.uniforms.distortion.value = effectIntensity * 0.4;
             chromaticAberrationPass.uniforms.time.value = elapsed;
           } else {
             // Gentle effects post-explosion
             const postIntensity = Math.max(0, 1 - (elapsed - explosionDuration) / 2);
-            
+
             bloomPass.strength = 0.3 + postIntensity * 0.4;
             bloomPass.radius = 0.6 + postIntensity * 0.1;
-            
+
             timeDistortionPass.uniforms.distortionAmount.value = postIntensity * 0.1;
             timeDistortionPass.uniforms.time.value = elapsed;
-            
+
             chromaticAberrationPass.uniforms.distortion.value = postIntensity * 0.03;
             chromaticAberrationPass.uniforms.time.value = elapsed;
           }
         }
-        
+
         if (isExploding) {
           // Solo intensificar el núcleo - sin flash separado
-          const flashIntensity = explosionPhase < 0.2 ? 
-            Math.sin(explosionPhase * Math.PI * 10) * 0.5 + 1 : 
-            Math.max(0, 1 - explosionPhase * 2);
-          
+          const flashIntensity = explosionPhase < 0.2 ? Math.sin(explosionPhase * Math.PI * 10) * 0.5 + 1 : Math.max(0, 1 - explosionPhase * 2);
+
           // ONDAS DE CHOQUE MÚLTIPLES
           shockwaves.forEach((wave, index) => {
             const waveDelay = index * 0.08;
             const waveProgress = Math.max(0, explosionPhase - waveDelay);
-            
+
             if (waveProgress > 0) {
               const scale = waveProgress * (40 + index * 8);
               wave.scale.setScalar(scale);
-              wave.material.opacity = Math.max(0, (1.2 - index * 0.1) - waveProgress * 0.8);
+              wave.material.opacity = Math.max(0, 1.2 - index * 0.1 - waveProgress * 0.8);
             }
           });
 
-
           // PARTÍCULAS EXPLOSIVAS
-          explosionParticles.forEach(particle => {
+          explosionParticles.forEach((particle) => {
             const particleLife = explosionPhase * particle.userData.life;
             if (particleLife > 0) {
               const distance = particleLife * particle.userData.speed;
               const pos = particle.userData.direction.clone().multiplyScalar(distance);
               particle.position.copy(pos);
-              
+
               particle.material.opacity = Math.max(0, 1 - particleLife / particle.userData.life);
               particle.rotation.x += 0.2;
               particle.rotation.y += 0.15;
@@ -491,11 +520,11 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
           });
 
           // SHAKE VIOLENTO DE CÁMARA - Se aplica más tarde
-          
+
           // FOV DISTORTION EXTREMA
           camera.fov = 75 + Math.sin(explosionPhase * Math.PI) * 40;
           camera.updateProjectionMatrix();
-          
+
           // NÚCLEO CENTRAL EXPLOSIVO - El verdadero centro de la explosión
           const coreExplosionIntensity = Math.sin(elapsed * 80) * 0.5 + 1;
           bigBangMaterial.size = 15 + coreExplosionIntensity * 20 * (1 - explosionPhase);
@@ -503,11 +532,11 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
         } else {
           // Post-explosión - núcleo desaparece
           bigBangMaterial.opacity = 0;
-          
+
           // DESVANECIMIENTO DE ONDAS DE CHOQUE post-explosión
           const postExplosionTime = elapsed - explosionDuration;
           const shockwaveFadeTime = 2.0; // Se desvanecen en 2 segundos después de la explosión
-          
+
           if (postExplosionTime < shockwaveFadeTime) {
             const fadeProgress = postExplosionTime / shockwaveFadeTime;
             shockwaves.forEach((wave, index) => {
@@ -516,29 +545,28 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
             });
           } else {
             // Completamente invisibles después del tiempo de desvanecimiento
-            shockwaves.forEach(wave => {
+            shockwaves.forEach((wave) => {
               wave.material.opacity = 0;
             });
           }
         }
 
         // LANZAMIENTO PROGRESIVO - Las estrellas se expanden junto con el cubo
-        const cubeScale = elapsed < explosionDuration ? explosionPhase * 0.1 : 
-          0.1 + (1 - 0.1) * Math.pow(Math.min((elapsed - explosionDuration) / 2, 1), 0.7);
-        
+        const cubeScale = elapsed < explosionDuration ? explosionPhase * 0.1 : 0.1 + (1 - 0.1) * Math.pow(Math.min((elapsed - explosionDuration) / 2, 1), 0.7);
+
         for (let i = 0; i < maxGalaxies; i++) {
           const data = galaxyData[i];
           const launchTime = data.launchTime;
           const speed = data.speed;
-          
+
           if (elapsed > launchTime) {
             // Tiempo desde que esta estrella empezó a moverse
             const travelTime = elapsed - launchTime;
-            
+
             // Distancia que ha viajado (con aceleración inicial)
             const progress = Math.min(travelTime * speed, 1);
             const smoothProgress = Math.pow(progress, 0.8);
-            
+
             // Las galaxias se escalan junto con el cubo del universo
             galaxyPositions[i * 3] = data.x * smoothProgress * cubeScale;
             galaxyPositions[i * 3 + 1] = data.y * smoothProgress * cubeScale;
@@ -550,7 +578,7 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
             galaxyPositions[i * 3 + 2] = 0;
           }
         }
-        
+
         galaxyGeometry.attributes.position.needsUpdate = true;
         galaxyMaterial.opacity = Math.min(elapsed * 1.2, 1); // Más opacas más rápido
 
@@ -564,30 +592,29 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
         } else if (elapsed < explosionDuration) {
           // Fase de expansión explosiva: la energía empuja el cubo hacia fuera
           const expansionPhase = (explosionPhase - 0.3) / 0.7; // Solo cuenta después del 30%
-          
+
           // Crecimiento violento y no lineal - como una verdadera explosión
           const explosiveGrowth = Math.pow(expansionPhase, 0.3) * 0.8; // Crecimiento exponencial
-          
+
           // Shake violento del cubo por la fuerza
           const shakeIntensity = (1 - expansionPhase) * 0.5;
           const shake = {
             x: (Math.random() - 0.5) * shakeIntensity,
             y: (Math.random() - 0.5) * shakeIntensity,
-            z: (Math.random() - 0.5) * shakeIntensity
+            z: (Math.random() - 0.5) * shakeIntensity,
           };
-          
+
           universeCube.scale.setScalar(explosiveGrowth);
           universeCube.position.set(shake.x, shake.y, shake.z);
-          
+
           // Rotación caótica por la fuerza de la explosión (reducida a la mitad)
           universeCube.rotation.x = elapsed * (1.5 + Math.sin(elapsed * 20) * 1);
           universeCube.rotation.y = elapsed * (2 + Math.cos(elapsed * 15) * 1.5);
           universeCube.rotation.z = elapsed * (1 + Math.sin(elapsed * 25) * 0.5);
-          
         } else {
           // Post explosión: el cubo se estabiliza y continúa expandiéndose por inercia
           const postExplosionTime = elapsed - explosionDuration;
-          
+
           // Estabilizar posición
           const stabilizationTime = 0.8;
           if (postExplosionTime < stabilizationTime) {
@@ -597,15 +624,15 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
           } else {
             universeCube.position.set(0, 0, 0);
           }
-          
+
           // Crecimiento por inercia de la explosión
           const inertiaGrowth = 0.8 + Math.pow(Math.min(postExplosionTime / 3, 1), 0.5) * 0.2;
           universeCube.scale.setScalar(inertiaGrowth);
-          
+
           // La rotación gradualmente se acelera después de estabilizarse - el doble de rápido
           const rotationStabilization = Math.min(postExplosionTime / 1, 1);
-          const stableSpeed = 0.2 + (postExplosionTime * 0.7); // Acelera el doble de rápido
-          
+          const stableSpeed = 0.2 + postExplosionTime * 0.7; // Acelera el doble de rápido
+
           const rotationSpeed = elapsed * stableSpeed * rotationStabilization;
           universeCube.rotation.x = Math.sin(rotationSpeed * 0.7) * 0.3;
           universeCube.rotation.y = rotationSpeed * 0.8;
@@ -619,30 +646,30 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
         // Mantener exactamente en la misma posición y rotación SIEMPRE
         anchorCube.position.set(0, 0, 0); // Siempre centrado en el origen
         anchorCube.rotation.copy(universeCube.rotation);
-        
+
         if (!isExploding) {
           const postExplosionTime = elapsed - explosionDuration;
           if (postExplosionTime > 0) {
             // Aparece y se expande súper rápido
             const scale = 1 + postExplosionTime * 50; // Crece 35 unidades por segundo
             anchorCube.scale.setScalar(scale);
-            
+
             // Opacidad que se desvanece más rápido
             const opacity = Math.max(0, 0.9 - postExplosionTime * 0.4);
-            anchorCube.children.forEach(edge => {
+            anchorCube.children.forEach((edge) => {
               const material = (edge as THREE.Mesh).material as THREE.MeshBasicMaterial;
               material.opacity = opacity;
             });
           } else {
             // Antes de aparecer, mantener oculto
-            anchorCube.children.forEach(edge => {
+            anchorCube.children.forEach((edge) => {
               const material = (edge as THREE.Mesh).material as THREE.MeshBasicMaterial;
               material.opacity = 0;
             });
           }
         } else {
           // Durante explosión, mantener oculto
-          anchorCube.children.forEach(edge => {
+          anchorCube.children.forEach((edge) => {
             const material = (edge as THREE.Mesh).material as THREE.MeshBasicMaterial;
             material.opacity = 0;
           });
@@ -650,24 +677,24 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
 
         // CAMERA MOVEMENT - Se acerca gradualmente después de la explosión
         let baseCameraDistance = 8;
-        
+
         // Después de la explosión, acercarse gradualmente al centro
         if (!isExploding) {
           const postExplosionTime = elapsed - explosionDuration;
           const approachSpeed = 0.8; // Velocidad de acercamiento
           baseCameraDistance = Math.max(2, 8 - postExplosionTime * approachSpeed); // Se acerca hasta distancia 2
         }
-        
+
         const cameraDistance = baseCameraDistance + Math.sin(elapsed * 0.3) * 1; // Oscilación más sutil
 
         // Cámara girando alrededor del cubo
         const cameraAngle = elapsed * 0.15;
         const cameraHeight = Math.sin(elapsed * 0.08) * 2; // Altura más sutil
-        
+
         let finalCameraX = Math.cos(cameraAngle) * cameraDistance;
         let finalCameraY = cameraHeight;
         let finalCameraZ = Math.sin(cameraAngle) * cameraDistance;
-        
+
         // Aplicar shake durante la explosión
         if (isExploding) {
           const shakeIntensity = Math.sin(explosionPhase * Math.PI) * 0.8;
@@ -675,9 +702,9 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
           finalCameraY += (Math.random() - 0.5) * shakeIntensity;
           finalCameraZ += (Math.random() - 0.5) * shakeIntensity;
         }
-        
+
         camera.position.set(finalCameraX, finalCameraY, finalCameraZ);
-        
+
         // Siempre mirar hacia el centro del cubo
         camera.lookAt(0, 0, 0);
 
