@@ -90,7 +90,7 @@ def index():
     if not config.is_initialized or universe is None:
         if not RunAtlasProtocol():
             return redirect(url_for("onboarding"))
-    return render_template("index.html", version=VERSION, versionHash=VERSION_HASH)
+    return render_template("index.html", version=VERSION, versionHash=VERSION_HASH, run_mode=RUN)
 
 
 @app.route("/onboarding", methods=["GET", "POST"])
@@ -104,7 +104,7 @@ def onboarding():
         if config.setup_universe(universe_type):
             return redirect(url_for("index"))
 
-    return render_template("onboarding.html", version=VERSION, versionHash=VERSION_HASH)
+    return render_template("onboarding.html", version=VERSION, versionHash=VERSION_HASH, run_mode=RUN)
 
 
 @app.route("/navigate", methods=["POST"])
@@ -127,7 +127,7 @@ def navigate():
         session["system"] = None
         return redirect(url_for("view_galaxy"))
     except Exception as e:
-        return render_template("error.html", message=f"An error occurred: {str(e)}")
+        return render_template("error.html", message=f"An error occurred: {str(e)}", run_mode=RUN)
 
 
 @app.route("/galaxy", defaults={"page": 1})
@@ -172,12 +172,13 @@ def view_galaxy(page):
             finish=finish,
             version=VERSION,
             versionHash=VERSION_HASH,
+            run_mode=RUN,
         )
     except ValueError as ve:
-        return render_template("error.html", message=str(ve))
+        return render_template("error.html", message=str(ve), run_mode=RUN)
     except Exception as e:
         return render_template(
-            "error.html", message=f"An unexpected error occurred: {str(e)}"
+            "error.html", message=f"An unexpected error occurred: {str(e)}", run_mode=RUN
         )
 
 
@@ -266,11 +267,12 @@ def view_system(system_index):
             system_url=system_url,
             version=VERSION,
             versionHash=VERSION_HASH,
+            run_mode=RUN,
             page=page,
             cosmic_origin_time=config.cosmic_origin_time,
         )
     except ValueError as e:
-        return render_template("error.html", message=str(e))
+        return render_template("error.html", message=str(e), run_mode=RUN)
 
 
 @app.route("/system_blob")
@@ -336,7 +338,7 @@ def view_planet(planet_name):
             return render_template(
                 "planet.html",
                 planet=planet,
-                planet_index=planet_index,  # Pass the planet index to template
+                planet_index=planet_index,
                 system=current_system,
                 galaxy=current_galaxy,
                 image_url=image_url,
@@ -344,6 +346,7 @@ def view_planet(planet_name):
                 planet_url=planet_url,
                 version=VERSION,
                 versionHash=VERSION_HASH,
+                run_mode=RUN,
                 cosmic_origin_time=config.cosmic_origin_time,
                 initial_angle_rotation=planet.initial_angle_rotation,
             )

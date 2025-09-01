@@ -1,18 +1,21 @@
 <!-- React Refresh Preamble for Vite + Flask Integration -->
-<!-- This partial ensures React Hot Module Replacement works correctly -->
 <script>
-  // React Refresh Preamble - Initialize globals IMMEDIATELY (synchronous)
-  window.$RefreshReg$ = function() {};
-  window.$RefreshSig$ = function() { return function(type) { return type; }; };
+  window.$RefreshReg$ = function () {};
+  window.$RefreshSig$ = function () {
+    return function (type) {
+      return type;
+    };
+  };
   window.__vite_plugin_react_preamble_installed__ = true;
 </script>
 
+{% if run_mode == 'DEV' %}
 <script type="module">
-  // Try to load actual React Refresh runtime asynchronously
   try {
-    const RefreshRuntime = await import('http://localhost:5173/@react-refresh');
+    const RefreshRuntime = await import("http://localhost:5173/@react-refresh");
     RefreshRuntime.injectIntoGlobalHook(window);
   } catch (error) {
-    console.warn('React Refresh runtime not available (probably production)');
+    console.warn("React Refresh runtime not available");
   }
 </script>
+{% endif %}
