@@ -419,12 +419,12 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
             bloomPass.strength = 0.2 + effectIntensity * 0.4;
             bloomPass.radius = 0.5 + effectIntensity * 0.1;
             
-            // Time distortion peaks at mid-explosion
-            timeDistortionPass.uniforms.distortionAmount.value = effectIntensity * 0.8;
+            // Time distortion peaks at mid-explosion (even more intense)
+            timeDistortionPass.uniforms.distortionAmount.value = effectIntensity * 2.5;
             timeDistortionPass.uniforms.time.value = elapsed;
             
-            // Chromatic aberration increases with explosion intensity
-            chromaticAberrationPass.uniforms.distortion.value = effectIntensity * 0.15;
+            // Chromatic aberration increases with explosion intensity (even more intense)
+            chromaticAberrationPass.uniforms.distortion.value = effectIntensity * 0.4;
             chromaticAberrationPass.uniforms.time.value = elapsed;
           } else {
             // Gentle effects post-explosion
