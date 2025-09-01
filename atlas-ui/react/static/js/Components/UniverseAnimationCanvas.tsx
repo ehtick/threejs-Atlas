@@ -585,9 +585,9 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
           const inertiaGrowth = 0.8 + Math.pow(Math.min(postExplosionTime / 3, 1), 0.5) * 0.2;
           universeCube.scale.setScalar(inertiaGrowth);
           
-          // La rotación gradualmente se acelera después de estabilizarse
+          // La rotación gradualmente se acelera después de estabilizarse - el doble de rápido
           const rotationStabilization = Math.min(postExplosionTime / 1, 1);
-          const stableSpeed = 0.1 + (postExplosionTime * 0.2); // Acelera con el tiempo
+          const stableSpeed = 0.2 + (postExplosionTime * 0.7); // Acelera el doble de rápido
           
           const rotationSpeed = elapsed * stableSpeed * rotationStabilization;
           universeCube.rotation.x = Math.sin(rotationSpeed * 0.7) * 0.3;
