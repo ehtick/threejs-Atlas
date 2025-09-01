@@ -220,6 +220,21 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
       const universeCube = createThickCubeEdges(10, 0.05);
       scene.add(universeCube);
 
+      // Cubo duplicado para el efecto de anclaje - exactamente igual al original
+      const anchorCube = createThickCubeEdges(10, 0.05);
+      anchorCube.children.forEach(edge => {
+        const originalMaterial = (universeCube.children[0] as THREE.Mesh).material as THREE.MeshBasicMaterial;
+        (edge as THREE.Mesh).material = new THREE.MeshBasicMaterial({
+          color: originalMaterial.color.clone(),
+          transparent: true,
+          opacity: 0,
+          blending: THREE.AdditiveBlending,
+        });
+      });
+      // Asegurar que está en la misma posición exacta
+      anchorCube.position.copy(universeCube.position);
+      scene.add(anchorCube);
+
       const bigBangPositions = new Float32Array([0, 0, 0]);
       const bigBangColors = new Float32Array([1, 1, 1]);
       const bigBangSizes = new Float32Array([10]);
@@ -582,6 +597,39 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
 
         // Las galaxias ROTAN CON el cubo
         galaxies.rotation.copy(universeCube.rotation);
+
+        // ANCHOR CUBE SIMPLE - Siempre sincronizado con el original
+        // Mantener exactamente en la misma posición y rotación SIEMPRE
+        anchorCube.position.set(0, 0, 0); // Siempre centrado en el origen
+        anchorCube.rotation.copy(universeCube.rotation);
+        
+        if (!isExploding) {
+          const postExplosionTime = elapsed - explosionDuration;
+          if (postExplosionTime > 0) {
+            // Aparece y se expande súper rápido
+            const scale = 1 + postExplosionTime * 50; // Crece 35 unidades por segundo
+            anchorCube.scale.setScalar(scale);
+            
+            // Opacidad que se desvanece más rápido
+            const opacity = Math.max(0, 0.9 - postExplosionTime * 0.4);
+            anchorCube.children.forEach(edge => {
+              const material = (edge as THREE.Mesh).material as THREE.MeshBasicMaterial;
+              material.opacity = opacity;
+            });
+          } else {
+            // Antes de aparecer, mantener oculto
+            anchorCube.children.forEach(edge => {
+              const material = (edge as THREE.Mesh).material as THREE.MeshBasicMaterial;
+              material.opacity = 0;
+            });
+          }
+        } else {
+          // Durante explosión, mantener oculto
+          anchorCube.children.forEach(edge => {
+            const material = (edge as THREE.Mesh).material as THREE.MeshBasicMaterial;
+            material.opacity = 0;
+          });
+        }
 
         // CAMERA MOVEMENT - Mantenerse cerca pero girando alrededor
         const cameraDistance = 8 + Math.sin(elapsed * 0.3) * 2;
