@@ -503,6 +503,23 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
         } else {
           // Post-explosión - núcleo desaparece
           bigBangMaterial.opacity = 0;
+          
+          // DESVANECIMIENTO DE ONDAS DE CHOQUE post-explosión
+          const postExplosionTime = elapsed - explosionDuration;
+          const shockwaveFadeTime = 2.0; // Se desvanecen en 2 segundos después de la explosión
+          
+          if (postExplosionTime < shockwaveFadeTime) {
+            const fadeProgress = postExplosionTime / shockwaveFadeTime;
+            shockwaves.forEach((wave, index) => {
+              // Mantener el último tamaño pero reducir opacidad
+              wave.material.opacity = Math.max(0, (0.3 - index * 0.05) * (1 - fadeProgress));
+            });
+          } else {
+            // Completamente invisibles después del tiempo de desvanecimiento
+            shockwaves.forEach(wave => {
+              wave.material.opacity = 0;
+            });
+          }
         }
 
         // LANZAMIENTO PROGRESIVO - Las estrellas se expanden junto con el cubo
