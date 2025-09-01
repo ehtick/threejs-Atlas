@@ -648,12 +648,21 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
           });
         }
 
-        // CAMERA MOVEMENT - Mantenerse cerca pero girando alrededor
-        const cameraDistance = 8 + Math.sin(elapsed * 0.3) * 2;
+        // CAMERA MOVEMENT - Se acerca gradualmente después de la explosión
+        let baseCameraDistance = 8;
+        
+        // Después de la explosión, acercarse gradualmente al centro
+        if (!isExploding) {
+          const postExplosionTime = elapsed - explosionDuration;
+          const approachSpeed = 0.8; // Velocidad de acercamiento
+          baseCameraDistance = Math.max(2, 8 - postExplosionTime * approachSpeed); // Se acerca hasta distancia 2
+        }
+        
+        const cameraDistance = baseCameraDistance + Math.sin(elapsed * 0.3) * 1; // Oscilación más sutil
 
         // Cámara girando alrededor del cubo
         const cameraAngle = elapsed * 0.15;
-        const cameraHeight = Math.sin(elapsed * 0.08) * 3;
+        const cameraHeight = Math.sin(elapsed * 0.08) * 2; // Altura más sutil
         
         let finalCameraX = Math.cos(cameraAngle) * cameraDistance;
         let finalCameraY = cameraHeight;
