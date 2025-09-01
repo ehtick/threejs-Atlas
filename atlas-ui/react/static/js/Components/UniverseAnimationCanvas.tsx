@@ -62,15 +62,55 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
       mountRef.current.appendChild(renderer.domElement);
       rendererRef.current = renderer;
 
-      const cubeGeometry = new THREE.BoxGeometry(10, 10, 10);
-      const cubeEdges = new THREE.EdgesGeometry(cubeGeometry);
-      const cubeMaterial = new THREE.LineBasicMaterial({
-        color: 0xffffff,
-        transparent: true,
-        opacity: 0.8,
-        linewidth: 5,
-      });
-      const universeCube = new THREE.LineSegments(cubeEdges, cubeMaterial);
+      // Crear cubo con líneas gruesas usando tubos
+      const createThickCubeEdges = (size: number, thickness: number) => {
+        const group = new THREE.Group();
+        const material = new THREE.MeshBasicMaterial({
+          color: 0xffffff,
+          transparent: true,
+          opacity: 0.8,
+        });
+
+        // Definir las 12 aristas del cubo
+        const edges = [
+          // Cara frontal
+          [[-size/2, -size/2, size/2], [size/2, -size/2, size/2]],
+          [[size/2, -size/2, size/2], [size/2, size/2, size/2]],
+          [[size/2, size/2, size/2], [-size/2, size/2, size/2]],
+          [[-size/2, size/2, size/2], [-size/2, -size/2, size/2]],
+          // Cara trasera
+          [[-size/2, -size/2, -size/2], [size/2, -size/2, -size/2]],
+          [[size/2, -size/2, -size/2], [size/2, size/2, -size/2]],
+          [[size/2, size/2, -size/2], [-size/2, size/2, -size/2]],
+          [[-size/2, size/2, -size/2], [-size/2, -size/2, -size/2]],
+          // Conexiones entre caras
+          [[-size/2, -size/2, -size/2], [-size/2, -size/2, size/2]],
+          [[size/2, -size/2, -size/2], [size/2, -size/2, size/2]],
+          [[size/2, size/2, -size/2], [size/2, size/2, size/2]],
+          [[-size/2, size/2, -size/2], [-size/2, size/2, size/2]],
+        ];
+
+        edges.forEach(([start, end]) => {
+          const startVec = new THREE.Vector3(start[0], start[1], start[2]);
+          const endVec = new THREE.Vector3(end[0], end[1], end[2]);
+          const direction = endVec.clone().sub(startVec);
+          const length = direction.length();
+
+          const geometry = new THREE.CylinderGeometry(thickness, thickness, length, 8);
+          const cylinder = new THREE.Mesh(geometry, material);
+
+          // Posicionar y orientar el cilindro
+          cylinder.position.copy(startVec.clone().add(endVec).multiplyScalar(0.5));
+          cylinder.lookAt(endVec);
+          cylinder.rotateX(Math.PI / 2);
+
+          group.add(cylinder);
+        });
+
+        return group;
+      };
+
+      const universeCube = createThickCubeEdges(10, 0.05);
       scene.add(universeCube);
 
       const bigBangPositions = new Float32Array([0, 0, 0]);
