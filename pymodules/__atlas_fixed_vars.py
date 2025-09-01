@@ -3,7 +3,7 @@
 import hashlib
 
 
-PORT = 50000
+PORT = 5000
 RUN = "PROD"
 VERSION = "2.4.22"
 VERSION_HASH = hashlib.sha256(VERSION.encode("utf-8")).hexdigest()
