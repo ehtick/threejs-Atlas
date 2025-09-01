@@ -1110,15 +1110,49 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
     // Render at high resolution
     renderer.render(scene, camera);
 
-    // Get the image
+    // Get the image and add watermark
     renderer.domElement.toBlob((blob) => {
       if (blob) {
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `galaxy_${galaxyName || galaxyType}_${Date.now()}.png`;
-        link.click();
-        URL.revokeObjectURL(url);
+        // Create temporary canvas to add watermark
+        const tempCanvas = document.createElement('canvas');
+        const ctx = tempCanvas.getContext('2d');
+        tempCanvas.width = width;
+        tempCanvas.height = height;
+        
+        if (ctx) {
+          const img = new Image();
+          img.onload = () => {
+            // Draw the original image
+            ctx.drawImage(img, 0, 0);
+            
+            // Add copyright watermark
+            const currentYear = new Date().getFullYear();
+            const copyrightText = `Copyright Banshee - 2023-${currentYear}`;
+            
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.font = `${Math.floor(width / 80)}px Arial`; // Responsive font size
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'bottom';
+            
+            const margin = Math.floor(width / 100); // Responsive margin
+            ctx.fillText(copyrightText, margin, height - margin);
+            
+            // Download the watermarked image
+            tempCanvas.toBlob((watermarkedBlob) => {
+              if (watermarkedBlob) {
+                const url = URL.createObjectURL(watermarkedBlob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `galaxy_${galaxyName || galaxyType}_${Date.now()}.png`;
+                link.click();
+                URL.revokeObjectURL(url);
+              }
+            }, 'image/png', 1.0);
+          };
+          
+          const url = URL.createObjectURL(blob);
+          img.src = url;
+        }
       }
 
       // Restore original point sizes
