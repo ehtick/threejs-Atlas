@@ -239,11 +239,14 @@ export class ExoticDoodlesEffect {
     const curve = new THREE.EllipseCurve(0, 0, doodle.size * this.planetRadius, doodle.size * this.planetRadius * 0.7, 0, Math.PI * 1.5, false, 0);
 
     const points = curve.getPoints(50);
-    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+
+    const path = new THREE.CatmullRomCurve3(points.map((p) => new THREE.Vector3(p.x, p.y, 0)));
+    const tubeRadius = this.planetRadius * 0.012;
+    const geometry = new THREE.TubeGeometry(path, 50, tubeRadius, 8, false);
 
     const material = this.createLitMaterial(doodle.color[0], doodle.color[1]);
 
-    const arc = new THREE.Line(geometry, material);
+    const arc = new THREE.Mesh(geometry, material);
     group.add(arc);
 
     return group;
@@ -279,10 +282,12 @@ export class ExoticDoodlesEffect {
 
       points.push(points[0]);
 
-      const geometry = new THREE.BufferGeometry().setFromPoints(points);
+      const path = new THREE.CatmullRomCurve3(points);
+      const tubeRadius = this.planetRadius * 0.012;
+      const geometry = new THREE.TubeGeometry(path, points.length, tubeRadius, 8, true);
       const material = this.createLitMaterial(doodle.color[0], doodle.color[1]);
 
-      const line = new THREE.Line(geometry, material);
+      const line = new THREE.Mesh(geometry, material);
       group.add(line);
     }
 
@@ -315,11 +320,15 @@ export class ExoticDoodlesEffect {
         currentY = Math.max(-maxSize, Math.min(maxSize, currentY));
       }
 
-      const geometry = new THREE.BufferGeometry().setFromPoints(points);
-      const material = this.createLitMaterial(doodle.color[0], doodle.color[1]);
+      if (points.length > 1) {
+        const path = new THREE.CatmullRomCurve3(points);
+        const tubeRadius = this.planetRadius * 0.012;
+        const geometry = new THREE.TubeGeometry(path, points.length * 2, tubeRadius, 8, false);
+        const material = this.createLitMaterial(doodle.color[0], doodle.color[1]);
 
-      const line = new THREE.Line(geometry, material);
-      group.add(line);
+        const line = new THREE.Mesh(geometry, material);
+        group.add(line);
+      }
     }
 
     return group;
@@ -438,9 +447,6 @@ export class ExoticDoodlesEffect {
     });
   }
 
-  /**
-   * Calcular factor de visibilidad basado en datos orbitales (como PulsatingCube)
-   */
   private calculateOrbitalVisibility(): number {
     if (!this.orbitalData || !this.orbitalData.enabled) {
       return 1.0;
@@ -567,9 +573,6 @@ export class ExoticDoodlesEffect {
     return t * t * (3 - 2 * t);
   }
 
-  /**
-   * Debug method to log current orbital status and time until next appearance
-   */
   private logOrbitalStatus(): void {
     if (!this.orbitalData || !this.orbitalData.enabled) {
       return;
@@ -624,7 +627,7 @@ export class ExoticDoodlesEffect {
 
     this.doodles.forEach((doodle) => {
       doodle.traverse((child) => {
-        if (child instanceof THREE.Line && child.material instanceof THREE.ShaderMaterial) {
+        if ((child instanceof THREE.Line || child instanceof THREE.Mesh) && child.material instanceof THREE.ShaderMaterial) {
           if (child.material.uniforms.lightDirection) {
             child.material.uniforms.lightDirection.value.copy(this.lightDirection);
           }
@@ -654,12 +657,7 @@ export class ExoticDoodlesEffect {
   dispose(): void {
     this.doodles.forEach((doodle) => {
       doodle.traverse((child) => {
-        if (child instanceof THREE.Mesh) {
-          child.geometry.dispose();
-          if (child.material instanceof THREE.Material) {
-            child.material.dispose();
-          }
-        } else if (child instanceof THREE.Line) {
+        if (child instanceof THREE.Mesh || child instanceof THREE.Line) {
           child.geometry.dispose();
           if (child.material instanceof THREE.Material) {
             child.material.dispose();
