@@ -28,11 +28,11 @@ const PROCEDURAL_RANGES = {
 };
 
 export class PlanetRaysEffect {
-  private rays: THREE.Line[];
+  private rays: THREE.Mesh[];
   private group: THREE.Group;
   private params: PlanetRaysParams;
   private startTime: number;
-  private rayMaterials: THREE.LineBasicMaterial[];
+  private rayMaterials: THREE.MeshBasicMaterial[];
   private rayData: Array<{
     startPos: THREE.Vector3;
     endPos: THREE.Vector3;
@@ -105,7 +105,9 @@ export class PlanetRaysEffect {
         points.push(pos);
       }
 
-      const geometry = new THREE.BufferGeometry().setFromPoints(points);
+      const path = new THREE.CatmullRomCurve3(points);
+      const tubeRadius = planetRadius * this.params.rayThickness! * 0.08;
+      const geometry = new THREE.TubeGeometry(path, segments * 2, tubeRadius, 8, false);
 
       const baseHue = 200 + rng.uniform(-30, 30);
       const saturation = 0.8 + rng.uniform(-0.2, 0.2);
@@ -119,15 +121,15 @@ export class PlanetRaysEffect {
       color.g = Math.min(1.0, color.g + rng.uniform(-colorShift, colorShift));
       color.b = Math.min(1.0, color.b + rng.uniform(-colorShift, colorShift));
 
-      const material = new THREE.LineBasicMaterial({
+      const material = new THREE.MeshBasicMaterial({
         color: color,
         transparent: true,
         opacity: 0,
-        linewidth: this.params.rayThickness! * 100,
         blending: THREE.AdditiveBlending,
+        side: THREE.DoubleSide,
       });
 
-      const ray = new THREE.Line(geometry, material);
+      const ray = new THREE.Mesh(geometry, material);
 
       this.rayData.push({
         startPos: startPos,
@@ -173,7 +175,9 @@ export class PlanetRaysEffect {
         points.push(pos);
       }
 
-      const geometry = new THREE.BufferGeometry().setFromPoints(points);
+      const path = new THREE.CatmullRomCurve3(points);
+      const tubeRadius = planetRadius * this.params.rayThickness! * 0.04;
+      const geometry = new THREE.TubeGeometry(path, segments * 2, tubeRadius, 6, false);
 
       const baseHue = 200 + rng.uniform(-30, 30);
       const saturation = 0.6 + rng.uniform(-0.2, 0.2);
@@ -187,15 +191,15 @@ export class PlanetRaysEffect {
       color.g = Math.min(1.0, color.g + rng.uniform(-colorShift, colorShift));
       color.b = Math.min(1.0, color.b + rng.uniform(-colorShift, colorShift));
 
-      const material = new THREE.LineBasicMaterial({
+      const material = new THREE.MeshBasicMaterial({
         color: color,
         transparent: true,
         opacity: 0,
-        linewidth: this.params.rayThickness! * 50,
         blending: THREE.AdditiveBlending,
+        side: THREE.DoubleSide,
       });
 
-      const ray = new THREE.Line(geometry, material);
+      const ray = new THREE.Mesh(geometry, material);
 
       this.rayData.push({
         startPos: startPos,
