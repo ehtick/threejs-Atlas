@@ -466,7 +466,7 @@ export class PulsatingCubeEffect {
 
     this.particleMaterial = new THREE.PointsMaterial({
       color: new THREE.Color(1, 1, 1),
-      size: this.planetRadius * 0.015,
+      size: this.planetRadius * 0.008,
       transparent: true,
       opacity: 0,
       blending: THREE.AdditiveBlending,
@@ -474,6 +474,8 @@ export class PulsatingCubeEffect {
       sizeAttenuation: true,
       vertexColors: false,
     });
+
+    (this.particleMaterial as any).isPulsatingCubeParticle = true;
 
     this.particleSystem = new THREE.Points(this.particleGeometry, this.particleMaterial);
     this.particleSystem.renderOrder = 998;

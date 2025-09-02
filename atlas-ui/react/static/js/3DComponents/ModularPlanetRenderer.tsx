@@ -149,16 +149,21 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
           const mat = object.material;
           if (mat.size !== undefined) {
             scaledObjects.push({ material: mat, originalSize: mat.size });
-            mat.size = mat.size * scaleFactor * 1;
+            const isPulsatingCubeParticle = (mat as any).isPulsatingCubeParticle === true;
+            const particleScaleFactor = isPulsatingCubeParticle ? scaleFactor * 0.3 : scaleFactor * 1;
+            mat.size = mat.size * particleScaleFactor;
           }
           if (mat.uniforms) {
+            const isPulsatingCubeParticle = (mat as any).isPulsatingCubeParticle === true;
+            const particleScaleFactor = isPulsatingCubeParticle ? scaleFactor * 0.3 : scaleFactor * 1;
+
             if (mat.uniforms.size) {
               scaledObjects.push({ material: mat, uniform: "size", originalValue: mat.uniforms.size.value });
-              mat.uniforms.size.value = mat.uniforms.size.value * scaleFactor * 1;
+              mat.uniforms.size.value = mat.uniforms.size.value * particleScaleFactor;
             }
             if (mat.uniforms.scale) {
               scaledObjects.push({ material: mat, uniform: "scale", originalValue: mat.uniforms.scale.value });
-              mat.uniforms.scale.value = mat.uniforms.scale.value * scaleFactor * 1;
+              mat.uniforms.scale.value = mat.uniforms.scale.value * particleScaleFactor;
             }
           }
           if (object.geometry && object.geometry.attributes.size) {
@@ -169,8 +174,12 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
               originalSizeArray: originalSizes,
             });
 
+            // Use same detection logic for geometry attributes
+            const isPulsatingCubeParticle = (mat as any).isPulsatingCubeParticle === true;
+            const particleScaleFactor = isPulsatingCubeParticle ? scaleFactor * 0.3 : scaleFactor * 1;
+
             for (let i = 0; i < sizeAttribute.array.length; i++) {
-              sizeAttribute.array[i] *= scaleFactor * 1;
+              sizeAttribute.array[i] *= particleScaleFactor;
             }
             sizeAttribute.needsUpdate = true;
           }
@@ -1138,7 +1147,6 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
 
       <div ref={mountRef} className="w-full h-full" style={{ minHeight: "300px", aspectRatio: "1" }} />
 
-      {/* Exporting overlay - positioned above scene but below other UI */}
       <ExportingOverlay isVisible={isGeneratingImage} />
 
       {loading && (
