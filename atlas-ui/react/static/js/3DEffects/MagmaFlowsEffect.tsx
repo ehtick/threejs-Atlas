@@ -228,7 +228,7 @@ export class MagmaFlowsEffect {
   `;
 
   constructor(planetRadius: number, params: MagmaFlowsParams = {}) {
-    const seed = params.seed || Math.floor(Math.random() * 1000000);
+    const seed = params.seed || 123456789;
     this.cosmicOriginTime = params.cosmicOriginTime || 514080000;
     this.cosmicOffset = (seed % 3600) * 10;
 
@@ -250,7 +250,7 @@ export class MagmaFlowsEffect {
   }
 
   private generateMagmaFlows(planetRadius: number): void {
-    const seed = this.params.seed || Math.floor(Math.random() * 1000000);
+    const seed = this.params.seed || 123456789;
     const rng = new SeededRandom(seed);
 
     const magmaLakes = this.params.magmaLakes;
@@ -356,14 +356,16 @@ export class MagmaFlowsEffect {
   }
 
   private createMagmaLakeGeometry(radius: number, rng: SeededRandom, planetRadius: number, centerPosition: THREE.Vector3, shapeParams?: any): THREE.BufferGeometry {
-    const segments = Math.max(24, Math.floor(radius * 60));
+    const baseSegments = Math.floor(radius * 60);
+    const segmentVariation = Math.floor(rng.uniform(-4, 4));
+    const segments = Math.max(24, baseSegments + segmentVariation);
 
     const shape = shapeParams || {
-      complexity: 5,
-      irregularity: 0.4,
-      elongation: 1.0,
-      rotation: 0,
-      seed: 0,
+      complexity: Math.floor(rng.uniform(PROCEDURAL_RANGES.SHAPE_COMPLEXITY.min, PROCEDURAL_RANGES.SHAPE_COMPLEXITY.max)),
+      irregularity: rng.uniform(PROCEDURAL_RANGES.SHAPE_IRREGULARITY.min, PROCEDURAL_RANGES.SHAPE_IRREGULARITY.max),
+      elongation: rng.uniform(0.6, 1.5),
+      rotation: rng.uniform(0, Math.PI * 2),
+      seed: Math.floor(rng.uniform(0, 1000000)),
     };
 
     const shapeRng = new SeededRandom(shape.seed);
@@ -377,6 +379,23 @@ export class MagmaFlowsEffect {
 
     let vertexIndex = 0;
     const vertexGrid: (number | null)[][] = [];
+
+    const noisePhases = {
+      noiseScale: 10.0 + shapeRng.uniform(-2.0, 2.0),
+      noise1: shapeRng.uniform(0, Math.PI * 2),
+      noise2: shapeRng.uniform(0, Math.PI * 2),
+      noise3: shapeRng.uniform(0, Math.PI * 2),
+      flowDirection: shapeRng.uniform(0, Math.PI * 2),
+      channel1: shapeRng.uniform(0, Math.PI * 2),
+      channel2: shapeRng.uniform(0, Math.PI * 2),
+      edge1: shapeRng.uniform(0, Math.PI * 2),
+      edge2: shapeRng.uniform(0, Math.PI * 2),
+      edge3: shapeRng.uniform(0, Math.PI * 2),
+      edge4: shapeRng.uniform(0, Math.PI * 2),
+      edge5: shapeRng.uniform(0, Math.PI * 2),
+      finger: shapeRng.uniform(0, Math.PI * 2),
+      perp: shapeRng.uniform(0, Math.PI * 2),
+    };
 
     const getOrganicRadius = (angle: number): number => {
       let r = 1.0;
@@ -452,16 +471,15 @@ export class MagmaFlowsEffect {
           const centerDistance = distance;
           const flowHeight = (1.0 - centerDistance) * 0.003;
 
-          const noiseScale = 10.0;
-          const noise1 = Math.sin(localTheta * noiseScale + localPhi * 3.0) * 0.0008;
-          const noise2 = Math.cos(localTheta * 7.0 + localPhi * noiseScale) * 0.0005;
-          const noise3 = Math.sin(localTheta * 15.0) * Math.cos(localPhi * 12.0) * 0.0003;
+          const noise1 = Math.sin(localTheta * noisePhases.noiseScale + localPhi * 3.0 + noisePhases.noise1) * 0.0008;
+          const noise2 = Math.cos(localTheta * 7.0 + localPhi * noisePhases.noiseScale + noisePhases.noise2) * 0.0005;
+          const noise3 = Math.sin(localTheta * 15.0 + noisePhases.noise3) * Math.cos(localPhi * 12.0) * 0.0003;
 
-          const flowDirectionNoise = Math.sin(localPhi * 4.0) * 0.0004;
+          const flowDirectionNoise = Math.sin(localPhi * 4.0 + noisePhases.flowDirection) * 0.0004;
 
           heightVariation = flowHeight + noise1 + noise2 + noise3 + flowDirectionNoise;
 
-          const channelPattern = Math.sin(localTheta * 6.0) * Math.sin(localPhi * 8.0);
+          const channelPattern = Math.sin(localTheta * 6.0 + noisePhases.channel1) * Math.sin(localPhi * 8.0 + noisePhases.channel2);
           if (channelPattern > 0.3 && distance > 0.3) {
             heightVariation += 0.0012;
           }
@@ -483,11 +501,11 @@ export class MagmaFlowsEffect {
           if (distance > edgeThreshold) {
             const currentAngle = Math.atan2(v, u);
 
-            const baseNoise = Math.sin(currentAngle * 6) * 0.04 + Math.sin(currentAngle * 3) * 0.06;
-            const detailNoise = Math.sin(currentAngle * 15) * 0.02 + Math.sin(currentAngle * 22) * 0.015;
-            const flowNoise = Math.sin(currentAngle * 4 + localTheta * 8) * 0.03;
+            const baseNoise = Math.sin(currentAngle * 6 + noisePhases.edge1) * 0.04 + Math.sin(currentAngle * 3 + noisePhases.edge2) * 0.06;
+            const detailNoise = Math.sin(currentAngle * 15 + noisePhases.edge3) * 0.02 + Math.sin(currentAngle * 22 + noisePhases.edge4) * 0.015;
+            const flowNoise = Math.sin(currentAngle * 4 + localTheta * 8 + noisePhases.edge5) * 0.03;
 
-            const fingerPattern = Math.sin(currentAngle * 12) * 0.5 + 0.5;
+            const fingerPattern = Math.sin(currentAngle * 12 + noisePhases.finger) * 0.5 + 0.5;
             const fingerNoise = fingerPattern > 0.7 ? shapeRng.uniform(0.15, 0.25) : 0;
 
             const distanceFactor = Math.pow((distance - edgeThreshold) / (maxRadius - edgeThreshold), 2);
@@ -508,7 +526,7 @@ export class MagmaFlowsEffect {
             const radialOffset = Math.cos(currentAngle) * irregularityFactor * planetRadius;
             const tangentialOffset = Math.sin(currentAngle) * irregularityFactor * planetRadius;
 
-            const perpVariation = Math.sin(currentAngle * 7 + localTheta * 12) * irregularityFactor * 0.3;
+            const perpVariation = Math.sin(currentAngle * 7 + localTheta * 12 + noisePhases.perp) * irregularityFactor * 0.3;
 
             const tangentOffset = tangent1
               .clone()
@@ -619,7 +637,7 @@ export function createMagmaFlowsFromPythonData(planetRadius: number, surfaceData
     return null;
   }
 
-  const seed = globalSeed || Math.floor(Math.random() * 1000000);
+  const seed = globalSeed || 123456789;
   const rng = new SeededRandom(seed + 9000);
 
   const params: MagmaFlowsParams = {
