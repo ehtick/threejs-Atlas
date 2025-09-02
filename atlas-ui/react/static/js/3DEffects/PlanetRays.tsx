@@ -176,7 +176,7 @@ export class PlanetRaysEffect {
       }
 
       const path = new THREE.CatmullRomCurve3(points);
-      const tubeRadius = planetRadius * this.params.rayThickness! * 0.04;
+      const tubeRadius = planetRadius * this.params.rayThickness! * 0.03;
       const geometry = new THREE.TubeGeometry(path, segments * 2, tubeRadius, 6, false);
 
       const baseHue = 200 + rng.uniform(-30, 30);
