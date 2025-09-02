@@ -241,7 +241,7 @@ export class ExoticDoodlesEffect {
     const points = curve.getPoints(50);
 
     const path = new THREE.CatmullRomCurve3(points.map((p) => new THREE.Vector3(p.x, p.y, 0)));
-    const tubeRadius = this.planetRadius * 0.012;
+    const tubeRadius = this.planetRadius * 0.004;
     const geometry = new THREE.TubeGeometry(path, 50, tubeRadius, 8, false);
 
     const material = this.createLitMaterial(doodle.color[0], doodle.color[1]);
@@ -283,7 +283,7 @@ export class ExoticDoodlesEffect {
       points.push(points[0]);
 
       const path = new THREE.CatmullRomCurve3(points);
-      const tubeRadius = this.planetRadius * 0.012;
+      const tubeRadius = this.planetRadius * 0.004;
       const geometry = new THREE.TubeGeometry(path, points.length, tubeRadius, 8, true);
       const material = this.createLitMaterial(doodle.color[0], doodle.color[1]);
 
@@ -322,7 +322,7 @@ export class ExoticDoodlesEffect {
 
       if (points.length > 1) {
         const path = new THREE.CatmullRomCurve3(points);
-        const tubeRadius = this.planetRadius * 0.012;
+        const tubeRadius = this.planetRadius * 0.004;
         const geometry = new THREE.TubeGeometry(path, points.length * 2, tubeRadius, 8, false);
         const material = this.createLitMaterial(doodle.color[0], doodle.color[1]);
 
