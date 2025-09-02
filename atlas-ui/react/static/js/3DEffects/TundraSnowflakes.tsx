@@ -16,8 +16,8 @@ export interface TundraSnowflakesParams {
 export class TundraSnowflakesEffect {
   private snowflakeGroup: THREE.Group;
   private planetRadius: number;
-  private materials: THREE.LineBasicMaterial[] = [];
-  private particleSystems: THREE.Line[] = [];
+  private materials: THREE.MeshBasicMaterial[] = [];
+  private particleSystems: THREE.Mesh[] = [];
   private trailPositions: Float32Array[] = [];
   private trailColors: Float32Array[] = [];
   private globalWindDirection: number;
@@ -146,37 +146,63 @@ export class TundraSnowflakesEffect {
       const startZ = vertices[baseIndex + 2];
 
       const positions = new Float32Array(this.trailLength * 3);
+      const points: THREE.Vector3[] = [];
+
       for (let i = 0; i < this.trailLength; i++) {
         const offsetScale = i * 0.1;
-        positions[i * 3] = startX + this.rng.uniform(-1, 1) * offsetScale * this.planetRadius * 0.01;
-        positions[i * 3 + 1] = startY + this.rng.uniform(-1, 1) * offsetScale * this.planetRadius * 0.01;
-        positions[i * 3 + 2] = startZ + this.rng.uniform(-1, 1) * offsetScale * this.planetRadius * 0.01;
+        const x = startX + this.rng.uniform(-1, 1) * offsetScale * this.planetRadius * 0.01;
+        const y = startY + this.rng.uniform(-1, 1) * offsetScale * this.planetRadius * 0.01;
+        const z = startZ + this.rng.uniform(-1, 1) * offsetScale * this.planetRadius * 0.01;
+
+        positions[i * 3] = x;
+        positions[i * 3 + 1] = y;
+        positions[i * 3 + 2] = z;
+        points.push(new THREE.Vector3(x, y, z));
       }
 
-      const geometry = new THREE.BufferGeometry();
-      geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-      geometry.setAttribute("color", new THREE.BufferAttribute(new Float32Array(trailColors), 3));
+      const curve = new THREE.CatmullRomCurve3(points, false);
 
-      const material = new THREE.LineBasicMaterial({
+      const tubeRadius = this.planetRadius * 0.003;
+      const radialSegments = 3;
+      const tubularSegments = Math.max(8, this.trailLength - 1);
+
+      const geometry = new THREE.TubeGeometry(curve, tubularSegments, tubeRadius, radialSegments, false);
+
+      const colors = new Float32Array(geometry.attributes.position.count * 3);
+      const uvArray = geometry.attributes.uv.array as Float32Array;
+
+      for (let i = 0; i < colors.length / 3; i++) {
+        const uvX = uvArray[i * 2];
+        const intensity = Math.pow(1 - uvX, 1.5);
+        colors[i * 3] = intensity;
+        colors[i * 3 + 1] = intensity;
+        colors[i * 3 + 2] = intensity;
+      }
+
+      geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+
+      const material = new THREE.MeshBasicMaterial({
         vertexColors: true,
         transparent: true,
         opacity: this.particleOpacity,
         blending: THREE.NormalBlending,
         depthTest: true,
-        linewidth: 3,
       });
 
-      const line = new THREE.Line(geometry, material);
+      const mesh = new THREE.Mesh(geometry, material);
 
       this.materials.push(material);
-      this.particleSystems.push(line);
+      this.particleSystems.push(mesh);
       this.trailPositions.push(positions);
       this.trailColors.push(new Float32Array(trailColors));
 
-      (line as any).rnd = this.rng.uniform(0, 1);
-      (line as any).particleIndex = particleIndex;
+      (mesh as any).rnd = this.rng.uniform(0, 1);
+      (mesh as any).particleIndex = particleIndex;
+      (mesh as any).tubeRadius = tubeRadius;
+      (mesh as any).tubularSegments = tubularSegments;
+      (mesh as any).radialSegments = radialSegments;
 
-      this.snowflakeGroup.add(line);
+      this.snowflakeGroup.add(mesh);
     }
   }
 
@@ -201,28 +227,50 @@ export class TundraSnowflakesEffect {
 
     this.snowflakeGroup.visible = true;
 
-    this.particleSystems.forEach((line, index) => {
-      const positionAttribute = line.geometry.getAttribute("position") as THREE.BufferAttribute;
-      const positions = positionAttribute.array as Float32Array;
-      const rnd = (line as any).rnd;
-      const particleIndex = (line as any).particleIndex;
+    this.particleSystems.forEach((mesh, index) => {
+      const rnd = (mesh as any).rnd;
+      const particleIndex = (mesh as any).particleIndex;
+      const tubeRadius = (mesh as any).tubeRadius;
+      const tubularSegments = (mesh as any).tubularSegments;
+      const radialSegments = (mesh as any).radialSegments;
 
       const newPos = this.calculateTrailPath(currentTime, particleIndex, rnd);
+      const trailPositions = this.trailPositions[index];
 
       for (let i = this.trailLength - 1; i > 0; i--) {
         const currentIndex = i * 3;
         const previousIndex = (i - 1) * 3;
 
-        positions[currentIndex] = positions[previousIndex];
-        positions[currentIndex + 1] = positions[previousIndex + 1];
-        positions[currentIndex + 2] = positions[previousIndex + 2];
+        trailPositions[currentIndex] = trailPositions[previousIndex];
+        trailPositions[currentIndex + 1] = trailPositions[previousIndex + 1];
+        trailPositions[currentIndex + 2] = trailPositions[previousIndex + 2];
       }
 
-      positions[0] = newPos.x;
-      positions[1] = newPos.y;
-      positions[2] = newPos.z;
+      trailPositions[0] = newPos.x;
+      trailPositions[1] = newPos.y;
+      trailPositions[2] = newPos.z;
 
-      positionAttribute.needsUpdate = true;
+      const points: THREE.Vector3[] = [];
+      for (let i = 0; i < this.trailLength; i++) {
+        points.push(new THREE.Vector3(trailPositions[i * 3], trailPositions[i * 3 + 1], trailPositions[i * 3 + 2]));
+      }
+
+      const newCurve = new THREE.CatmullRomCurve3(points, false);
+      mesh.geometry.dispose();
+      mesh.geometry = new THREE.TubeGeometry(newCurve, tubularSegments, tubeRadius, radialSegments, false);
+
+      const colors = new Float32Array(mesh.geometry.attributes.position.count * 3);
+      const uvArray = mesh.geometry.attributes.uv.array as Float32Array;
+
+      for (let i = 0; i < colors.length / 3; i++) {
+        const uvX = uvArray[i * 2];
+        const intensity = Math.pow(1 - uvX, 1.5);
+        colors[i * 3] = intensity;
+        colors[i * 3 + 1] = intensity;
+        colors[i * 3 + 2] = intensity;
+      }
+
+      mesh.geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
 
       const realTime = Date.now() / 1000;
       const gustCycle = this.gustCycles[index];
@@ -238,7 +286,7 @@ export class TundraSnowflakesEffect {
         gustIntensity = (1 - gustProgress) / 0.3;
       }
 
-      const headPos = new THREE.Vector3(positions[0], positions[1], positions[2]);
+      const headPos = new THREE.Vector3(trailPositions[0], trailPositions[1], trailPositions[2]);
       const theta = Math.atan2(headPos.z, headPos.x);
       const normalizedTheta = theta < 0 ? theta + Math.PI * 2 : theta;
       const zone = this.gustZones[index];
@@ -290,7 +338,7 @@ export class TundraSnowflakesEffect {
 
   dispose(): void {
     this.materials.forEach((material) => material.dispose());
-    this.particleSystems.forEach((line) => line.geometry.dispose());
+    this.particleSystems.forEach((mesh) => mesh.geometry.dispose());
     this.materials = [];
     this.particleSystems = [];
     this.trailPositions = [];
