@@ -49,10 +49,8 @@ register_vite_assets(
     logger=None
 )
 
-# Register complete location data API
 register_location_api(app)
 
-# Register planet renderer API
 register_planet_renderer_api(app)
 
 universe = None
@@ -239,7 +237,6 @@ def view_system(system_index):
             "Stars": star_summary,
         }
 
-        # Check if JSON is requested
         if request.headers.get('Accept') == 'application/json':
             planets_list = []
             for planet in current_system.planets.values():
@@ -314,7 +311,6 @@ def view_planet(planet_name):
 
     for planet_index, planet in current_system.planets.items():
         if planet.name.lower() == planet_name:
-            # 🚀 NEW: Store planet_index in session for API access
             session["planet"] = planet_index
             
             image_url = url_for("planet_blob", planet_name=planet_name)
@@ -459,20 +455,33 @@ def send_static_files(filename):
     return send_from_directory("static", filename)
 
 
+@app.route("/api/universe/config")
+def get_universe_config():
+    try:
+        if not config.is_initialized:
+            if not config.initialize():
+                return jsonify({"error": "Config not initialized"})
+        
+        return jsonify({
+            "success": True,
+            "config_seed": config.seed,
+            "cosmic_origin_time": config.cosmic_origin_time
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
 if __name__ == "__main__":
 
-    # Manejar debug de planetas
     if "--debug" in sys.argv:
         from pymodules.__atlas_debug_flag import AtlasDebugger
         
-        # Buscar el argumento después de --debug
         debug_index = sys.argv.index("--debug")
         if debug_index + 1 < len(sys.argv):
             stargate_url = sys.argv[debug_index + 1]
             
             debugger = AtlasDebugger()
             
-            # Verificar si también se solicita JSON export
             if "--json" in sys.argv:
                 output_file = debugger.export_to_json(stargate_url)
                 print(f"💾 Debug data exported to: {output_file}")
