@@ -33,7 +33,7 @@ export class LifeFormNonPhysicalEntityEffect {
   private plasmaRings: THREE.Mesh[] = [];
   private energyWaves: THREE.Mesh[] = [];
   private dimensionalPortals: THREE.Mesh[] = [];
-  private energyBeams: THREE.Line[] = [];
+  private energyBeams: THREE.Mesh[] = [];
   private energyParticles: THREE.Points;
   private particleOrbitData: Array<{
     distance: number;
@@ -338,7 +338,13 @@ export class LifeFormNonPhysicalEntityEffect {
       const endPos = this.calculateOrbitalPosition(endDistance, inclination, longitudeOfAscendingNode, endAngle);
 
       const curvePoints = this.createCurvedBeamPath(startPos, endPos, startDistance, endDistance);
-      const geometry = new THREE.BufferGeometry().setFromPoints(curvePoints);
+      const curve = new THREE.CatmullRomCurve3(curvePoints);
+
+      const tubeRadius = this.planetRadius * 0.015;
+      const radialSegments = 6;
+      const tubularSegments = Math.max(20, curvePoints.length * 2);
+
+      const geometry = new THREE.TubeGeometry(curve, tubularSegments, tubeRadius, radialSegments, false);
 
       const beamMaterial = new THREE.ShaderMaterial({
         uniforms: {
@@ -351,9 +357,11 @@ export class LifeFormNonPhysicalEntityEffect {
           uniform float time;
           uniform float beamIndex;
           uniform float intensity;
+          varying vec2 vUv;
           varying float vIntensity;
           
           void main() {
+            vUv = uv;
             vIntensity = intensity;
             gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
           }
@@ -361,11 +369,18 @@ export class LifeFormNonPhysicalEntityEffect {
         fragmentShader: `
           uniform vec3 color;
           uniform float time;
+          varying vec2 vUv;
           varying float vIntensity;
           
           void main() {
-            float glow = sin(time * 8.0) * 0.3 + 0.7;
-            gl_FragColor = vec4(color, vIntensity * glow);
+            float centerDistance = abs(vUv.y - 0.5) * 2.0;
+            float tubeFalloff = 1.0 - smoothstep(0.0, 1.0, centerDistance);
+            
+            float glow = sin(time * 8.0 + vUv.x * 10.0) * 0.3 + 0.7;
+            float energy = sin(time * 6.0 - vUv.x * 15.0) * 0.2 + 0.8;
+            
+            float finalIntensity = tubeFalloff * glow * energy * vIntensity;
+            gl_FragColor = vec4(color, finalIntensity);
           }
         `,
         transparent: true,
@@ -373,7 +388,7 @@ export class LifeFormNonPhysicalEntityEffect {
         depthWrite: false,
       });
 
-      const beam = new THREE.Line(geometry, beamMaterial);
+      const beam = new THREE.Mesh(geometry, beamMaterial);
       beam.userData = {
         startDistance,
         endDistance,
@@ -383,6 +398,10 @@ export class LifeFormNonPhysicalEntityEffect {
         endAngle,
         beamIndex: i,
         activationPhase: this.rng.random() * Math.PI * 2,
+        curve: curve,
+        tubeRadius: tubeRadius,
+        tubularSegments: tubularSegments,
+        radialSegments: radialSegments,
       };
 
       this.energyBeams.push(beam);
@@ -422,7 +441,7 @@ export class LifeFormNonPhysicalEntityEffect {
       colors[i * 3 + 1] = 0.6 + colorVariation;
       colors[i * 3 + 2] = 1.0;
 
-      sizes[i] = this.planetRadius * (0.02 + this.rng.random() * 0.03);
+      sizes[i] = this.planetRadius * (0.035 + this.rng.random() * 0.045);
     }
 
     const particleGeometry = new THREE.BufferGeometry();
@@ -450,7 +469,7 @@ export class LifeFormNonPhysicalEntityEffect {
           vAlpha = sin(time * 2.0 + position.x * 0.1) * 0.3 + 0.7;
           vAlpha *= distanceFade;
           
-          gl_PointSize = size * (300.0 / -mvPosition.z);
+          gl_PointSize = size * (400.0 / -mvPosition.z) * 1.5; // Factor de escala mejorado para 4K
           gl_Position = projectionMatrix * mvPosition;
         }
       `,
@@ -646,9 +665,10 @@ export class LifeFormNonPhysicalEntityEffect {
       const endPos = this.calculateOrbitalPosition(userData.endDistance, userData.inclination, userData.longitudeOfAscendingNode, currentEndAngle);
 
       const curvePoints = this.createCurvedBeamPath(startPos, endPos, userData.startDistance, userData.endDistance);
-      const geometry = beam.geometry as THREE.BufferGeometry;
-      geometry.setFromPoints(curvePoints);
-      geometry.attributes.position.needsUpdate = true;
+      const newCurve = new THREE.CatmullRomCurve3(curvePoints);
+
+      beam.geometry.dispose();
+      beam.geometry = new THREE.TubeGeometry(newCurve, userData.tubularSegments, userData.tubeRadius, userData.radialSegments, false);
 
       const intensity = (Math.sin(animTime * 3.0 + userData.activationPhase) + 1.0) * 0.5;
 
