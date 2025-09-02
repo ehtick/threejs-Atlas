@@ -13,15 +13,7 @@ interface Galaxy3DViewerFullscreenProps {
   galaxyName?: string;
 }
 
-const Galaxy3DViewerFullscreen: React.FC<Galaxy3DViewerFullscreenProps> = ({ 
-  galaxyType, 
-  numSystems, 
-  blackHoles, 
-  pulsars, 
-  quasars, 
-  seed = 12345,
-  galaxyName
-}) => {
+const Galaxy3DViewerFullscreen: React.FC<Galaxy3DViewerFullscreenProps> = ({ galaxyType, numSystems, blackHoles, pulsars, quasars, seed = 12345, galaxyName }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -211,7 +203,22 @@ const Galaxy3DViewerFullscreen: React.FC<Galaxy3DViewerFullscreenProps> = ({
         sizes.push(Math.min(finalSize * 1.4, 7));
       }
     } else if (galaxyType === "Dwarf") {
-      numPoints = Math.min(numSystems / 100, 10000);
+      let scaleFactor: number;
+
+      if (numSystems <= 1500) {
+        scaleFactor = 1;
+      } else if (numSystems <= 5000) {
+        const progress = (numSystems - 1500) / (5000 - 1500);
+        scaleFactor = 1 + progress * 9;
+      } else if (numSystems <= 15000) {
+        const progress = (numSystems - 5000) / (15000 - 5000);
+        scaleFactor = 10 + progress * 40;
+      } else {
+        const progress = Math.min((numSystems - 15000) / (50000 - 15000), 1);
+        scaleFactor = 50 + progress * 50;
+      }
+
+      numPoints = Math.min(Math.floor(numSystems / scaleFactor), 10000);
 
       for (let i = 0; i < numPoints; i++) {
         const angle = rng.uniform(0, 2 * Math.PI);
