@@ -25,7 +25,7 @@ export class LifeFormSiliconBasedLifeEffect {
   private group: THREE.Group;
   private crystals: THREE.Mesh[] = [];
   private debris: THREE.Mesh[] = [];
-  private connections: THREE.Line[] = [];
+  private connections: THREE.Mesh[] = [];
   private params: LifeFormSiliconBasedLifeParams;
   private rng: SeededRandom;
   private planetRadius: number;
@@ -168,8 +168,13 @@ export class LifeFormSiliconBasedLifeEffect {
           const crystal2 = this.crystals[j];
 
           const points = [crystal1.position.clone(), crystal2.position.clone()];
+          const curve = new THREE.CatmullRomCurve3(points);
 
-          const geometry = new THREE.BufferGeometry().setFromPoints(points);
+          const tubeRadius = this.planetRadius * 0.01;
+          const radialSegments = 4;
+          const tubularSegments = 8;
+
+          const geometry = new THREE.TubeGeometry(curve, tubularSegments, tubeRadius, radialSegments, false);
 
           const material = new THREE.ShaderMaterial({
             uniforms: {
@@ -179,9 +184,11 @@ export class LifeFormSiliconBasedLifeEffect {
             },
             vertexShader: `
               uniform float time;
+              varying vec2 vUv;
               varying float vIntensity;
               
               void main() {
+                vUv = uv;
                 vIntensity = sin(time * 3.0 + position.x * 10.0) * 0.5 + 0.5;
                 gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
               }
@@ -189,10 +196,14 @@ export class LifeFormSiliconBasedLifeEffect {
             fragmentShader: `
               uniform vec3 color;
               uniform float opacity;
+              varying vec2 vUv;
               varying float vIntensity;
               
               void main() {
-                float finalOpacity = opacity * vIntensity;
+                float centerDistance = abs(vUv.y - 0.5) * 2.0;
+                float tubeFalloff = 1.0 - smoothstep(0.0, 1.0, centerDistance);
+                
+                float finalOpacity = opacity * vIntensity * tubeFalloff;
                 gl_FragColor = vec4(color, finalOpacity);
               }
             `,
@@ -201,9 +212,15 @@ export class LifeFormSiliconBasedLifeEffect {
             depthWrite: false,
           });
 
-          const connection = new THREE.Line(geometry, material);
+          const connection = new THREE.Mesh(geometry, material);
           connection.renderOrder = 997;
-          connection.userData = { crystal1Index: i, crystal2Index: j };
+          connection.userData = {
+            crystal1Index: i,
+            crystal2Index: j,
+            tubeRadius: tubeRadius,
+            tubularSegments: tubularSegments,
+            radialSegments: radialSegments,
+          };
 
           this.connections.push(connection);
           this.group.add(connection);
@@ -266,9 +283,11 @@ export class LifeFormSiliconBasedLifeEffect {
       const crystal2 = this.crystals[userData.crystal2Index];
 
       const points = [crystal1.position, crystal2.position];
-      const geometry = connection.geometry as THREE.BufferGeometry;
-      geometry.setFromPoints(points);
-      geometry.attributes.position.needsUpdate = true;
+      const newCurve = new THREE.CatmullRomCurve3(points);
+
+      // Recrear la geometría del tubo con las nuevas posiciones
+      connection.geometry.dispose();
+      connection.geometry = new THREE.TubeGeometry(newCurve, userData.tubularSegments, userData.tubeRadius, userData.radialSegments, false);
 
       const material = connection.material as THREE.ShaderMaterial;
       material.uniforms.time.value = animTime;
