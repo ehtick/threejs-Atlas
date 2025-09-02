@@ -57,6 +57,7 @@ import { LifeFormIntelligentLifeEffect, createLifeFormIntelligentLifeFromPythonD
 import { LifeFormSiliconBasedLifeEffect, createLifeFormSiliconBasedLifeFromPythonData } from "./LifeFormSiliconBasedLife";
 import { LifeFormNonPhysicalEntityEffect, createLifeFormNonPhysicalEntityFromPythonData } from "./LifeFormNonPhysicalEntity";
 import { LifeFormConsciousGasEffect, createLifeFormConsciousGasFromPythonData } from "./LifeFormConsciousGas";
+import { LifeFormRoboticEntitiesEffect, createLifeFormRoboticEntitiesFromPythonData } from "./LifeFormRoboticEntities";
 import { LifeFormGodEffect, createLifeFormGodFromPythonData } from "./LifeFormGod";
 
 import { VisualDebug3DEffect, createVisualDebug3DFromPythonData } from "./VisualDebug3D";
@@ -126,6 +127,7 @@ export enum EffectType {
   LIFE_FORM_SILICON_BASED_LIFE = "life_form_silicon_based_life",
   LIFE_FORM_NON_PHYSICAL_ENTITY = "life_form_non_physical_entity",
   LIFE_FORM_CONSCIOUS_GAS = "life_form_conscious_gas",
+  LIFE_FORM_ROBOTIC_ENTITIES = "life_form_robotic_entities",
   LIFE_FORM_GOD = "life_form_god",
 
   TUNDRA_SNOWFLAKES = "tundra_snowflakes",
@@ -288,6 +290,10 @@ export class EffectRegistry {
     this.registerEffect(EffectType.LIFE_FORM_CONSCIOUS_GAS, {
       create: (params, planetRadius) => new LifeFormConsciousGasEffect(planetRadius, params),
       fromPythonData: (data, planetRadius) => createLifeFormConsciousGasFromPythonData(planetRadius, data, data.seeds?.planet_seed),
+    });
+    this.registerEffect(EffectType.LIFE_FORM_ROBOTIC_ENTITIES, {
+      create: (params, planetRadius) => new LifeFormRoboticEntitiesEffect(planetRadius, params),
+      fromPythonData: (data, planetRadius) => createLifeFormRoboticEntitiesFromPythonData(planetRadius, data, data.seeds?.planet_seed),
     });
     this.registerEffect(EffectType.LIFE_FORM_GOD, {
       create: (params, planetRadius) => new LifeFormGodEffect(planetRadius, params),
@@ -2935,6 +2941,13 @@ export class EffectRegistry {
         if (consciousGasEffect) {
           effects.push(consciousGasEffect);
           consciousGasEffect.effect.addToScene(scene, mesh.position);
+        }
+      }
+      if (pythonData.original_planet_data && pythonData.original_planet_data.life_forms === "Robotic Entities") {
+        const roboticEntitiesEffect = this.createEffectFromPythonData(EffectType.LIFE_FORM_ROBOTIC_ENTITIES, pythonData, planetRadius, mesh, 10);
+        if (roboticEntitiesEffect) {
+          effects.push(roboticEntitiesEffect);
+          roboticEntitiesEffect.effect.addToScene(scene, mesh.position);
         }
       }
       if (pythonData.original_planet_data && pythonData.original_planet_data.life_forms === "Have I just found God?") {
