@@ -26,7 +26,7 @@ export interface RadiationRingsParams {
 
 export class RadiationRingsEffect {
   private group: THREE.Group;
-  private concentricRings: THREE.Line[] = [];
+  private concentricRings: THREE.Mesh[] = [];
   private params: RadiationRingsParams;
   private rng: SeededRandom;
   private planetRadius: number;
@@ -64,10 +64,10 @@ export class RadiationRingsEffect {
       const t = i / (ringCount - 1);
       const ringRadius = this.planetRadius * 1.02 + (maxRingRadius - this.planetRadius * 1.02) * Math.pow(t, 0.8);
 
-      const segments = 128;
+      const segments = 64;
       const points = [];
 
-      for (let j = 0; j <= segments; j++) {
+      for (let j = 0; j < segments; j++) {
         const angle = (j / segments) * Math.PI * 2;
         const x = Math.cos(angle) * ringRadius;
         const z = Math.sin(angle) * ringRadius;
@@ -78,14 +78,25 @@ export class RadiationRingsEffect {
         points.push(new THREE.Vector3(x, y, z));
       }
 
-      const geometry = new THREE.BufferGeometry().setFromPoints(points);
+      const curve = new THREE.CatmullRomCurve3(points, true);
 
-      const phases = new Float32Array(segments + 1);
-      const distances = new Float32Array(segments + 1);
-      const randomOffsets = new Float32Array(segments + 1);
+      const tubeRadius = this.planetRadius * 0.006;
+      const radialSegments = 4;
+      const tubularSegments = segments;
 
-      for (let j = 0; j <= segments; j++) {
-        phases[j] = i * 0.6 + (j / segments) * Math.PI * 4;
+      const geometry = new THREE.TubeGeometry(curve, tubularSegments, tubeRadius, radialSegments, true);
+
+      const positions = geometry.attributes.position.array;
+      const uvs = geometry.attributes.uv.array;
+      const vertexCount = positions.length / 3;
+
+      const phases = new Float32Array(vertexCount);
+      const distances = new Float32Array(vertexCount);
+      const randomOffsets = new Float32Array(vertexCount);
+
+      for (let j = 0; j < vertexCount; j++) {
+        const uvX = uvs[j * 2];
+        phases[j] = i * 0.6 + uvX * Math.PI * 4;
         distances[j] = (ringRadius - this.planetRadius * 1.02) / (maxRingRadius - this.planetRadius * 1.02);
         randomOffsets[j] = ((i * 7 + j * 3) % 100) / 100.0;
       }
@@ -122,10 +133,12 @@ export class RadiationRingsEffect {
           uniform float ringIndex;
           uniform float totalRings;
           
+          varying vec2 vUv;
           varying float vIntensity;
           varying float vDistance;
           
           void main() {
+            vUv = uv;
             vDistance = distance;
 
             float wave1 = sin(phase + time * expansionSpeed) * 0.5 + 0.5;
@@ -156,14 +169,17 @@ export class RadiationRingsEffect {
           uniform float time;
           uniform float expansionSpeed;
           
+          varying vec2 vUv;
           varying float vIntensity;
           varying float vDistance;
           
           void main() {
+            float centerDistance = abs(vUv.y - 0.5) * 2.0;
+            float tubeFalloff = 1.0 - smoothstep(0.0, 1.0, centerDistance);
 
             float fragmentPulse = sin(time * expansionSpeed * 1.5) * 0.1 + 0.9;
 
-            float finalIntensity = vIntensity * glowIntensity * fragmentPulse;
+            float finalIntensity = vIntensity * glowIntensity * fragmentPulse * tubeFalloff;
 
             vec3 finalColor = color;
 
@@ -180,7 +196,7 @@ export class RadiationRingsEffect {
         `,
       });
 
-      const ring = new THREE.Line(geometry, material);
+      const ring = new THREE.Mesh(geometry, material);
       ring.renderOrder = 1000 + i;
       this.concentricRings.push(ring);
       this.group.add(ring);
