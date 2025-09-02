@@ -142,6 +142,25 @@ export const addQRToScreenshot = async (ctx: CanvasRenderingContext2D, imageWidt
       }
     }
 
+    // Replace localhost URL with Koyeb production URL for QR codes, only for The Core Continuum (preshared seed and cosmic origin time)
+    if (url.startsWith("http://localhost/")) {
+      try {
+        const response = await fetch("/api/universe/config");
+        const data = await response.json();
+        const CORE_CONTINUUM_SEED_DECIMAL = 45156749731585371360938718175484539659389209313560548011495000289036640085049n;
+        const CORE_CONTINUUM_SEED_SCIENTIFIC = 4.515674973158537e76;
+
+        const configSeed = data.config_seed;
+        const isCoreContinuum = configSeed === CORE_CONTINUUM_SEED_SCIENTIFIC || configSeed === CORE_CONTINUUM_SEED_DECIMAL || BigInt(configSeed) === CORE_CONTINUUM_SEED_DECIMAL;
+
+        if (isCoreContinuum) {
+          url = url.replace("http://localhost/", "https://the-atlas.koyeb.app/");
+        }
+      } catch (error) {
+        console.warn("Failed to check config seed:", error);
+      }
+    }
+
     const qrSize = Math.floor(imageWidth / 8);
     const qrCanvas = await createQRWithLogo({ url, size: qrSize });
 
