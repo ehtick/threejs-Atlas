@@ -5,6 +5,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import DownloadIcon from "../Icons/DownloadIcon";
 import { addQRToScreenshot } from "./QRGenerator";
 import { addCopyrightWatermark } from "./CopyrightWatermark";
+import ExportingOverlay from "./ExportingOverlay";
 
 interface Galaxy3DViewerProps {
   galaxyType: string;
@@ -176,9 +177,9 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
     renderer.setSize(size, size);
     renderer.setClearColor(0x000011, 1);
     rendererRef.current = renderer;
-    
-    // Add transition class to canvas for blur effect
-    renderer.domElement.className = 'transition-all duration-300';
+
+    // Add basic styling to canvas
+    renderer.domElement.className = "";
     container.appendChild(renderer.domElement);
 
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -1060,55 +1061,44 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
     };
   }, [galaxyType, numSystems, blackHoles, pulsars, quasars, seed]);
 
-
   const handleDownloadScreenshot = () => {
     if (!rendererRef.current || !sceneRef.current || !cameraRef.current || isGeneratingImage) return;
 
     setIsGeneratingImage(true);
-    
-    // Apply blur to canvas and disable controls
-    if (rendererRef.current.domElement) {
-      rendererRef.current.domElement.style.filter = 'blur(15px)';
-    }
+
     if (controlsRef.current) {
       controlsRef.current.enabled = false;
     }
-    
+
     const renderer = rendererRef.current;
     const scene = sceneRef.current;
     const camera = cameraRef.current;
 
-    // Store original size
     const originalWidth = renderer.domElement.width;
     const originalHeight = renderer.domElement.height;
 
-    // Calculate scale factor for point sizes
     const scaleFactor = 3840 / originalWidth;
 
-    // Store original point sizes and scale them up
     const pointMaterials: any[] = [];
     scene.traverse((object: any) => {
       if (object.isPoints && object.material) {
         const mat = object.material;
         if (mat.size !== undefined) {
           pointMaterials.push({ material: mat, originalSize: mat.size });
-          mat.size = mat.size * scaleFactor * 1; // Scale points proportionally
+          mat.size = mat.size * scaleFactor * 1;
         }
-        // For shader materials with size attribute
         if (mat.uniforms && mat.uniforms.scale) {
           pointMaterials.push({ material: mat, originalScale: mat.uniforms.scale.value });
           mat.uniforms.scale.value = mat.uniforms.scale.value * scaleFactor * 1;
         }
-        // Scale size attributes directly
         if (object.geometry && object.geometry.attributes.size) {
           const sizeAttribute = object.geometry.attributes.size;
-          const originalSizes = sizeAttribute.array.slice(); // Copy original sizes
-          pointMaterials.push({ 
-            geometry: object.geometry, 
-            originalSizeArray: originalSizes 
+          const originalSizes = sizeAttribute.array.slice();
+          pointMaterials.push({
+            geometry: object.geometry,
+            originalSizeArray: originalSizes,
           });
-          
-          // Scale all size values
+
           for (let i = 0; i < sizeAttribute.array.length; i++) {
             sizeAttribute.array[i] *= scaleFactor * 1;
           }
@@ -1117,82 +1107,76 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
       }
     });
 
-    // Set high resolution (4K)
     const width = 3840;
     const height = 3840;
     renderer.setSize(width, height);
     camera.aspect = 1;
     camera.updateProjectionMatrix();
 
-    // Render at high resolution
     renderer.render(scene, camera);
 
-    // Get the image and add watermark
-    renderer.domElement.toBlob((blob) => {
-      if (blob) {
-        // Create temporary canvas to add watermark
-        const tempCanvas = document.createElement('canvas');
-        const ctx = tempCanvas.getContext('2d');
-        tempCanvas.width = width;
-        tempCanvas.height = height;
-        
-        if (ctx) {
-          const img = new Image();
-          img.onload = async () => {
-            // Draw the original image
-            ctx.drawImage(img, 0, 0);
-            
-            // Add copyright watermark
-            addCopyrightWatermark(ctx, { imageWidth: width, imageHeight: height });
-            
-            // Add QR code with logo
-            await addQRToScreenshot(ctx, width, height, window.location.href);
-            
-            // Download the watermarked image
-            tempCanvas.toBlob((watermarkedBlob) => {
-              if (watermarkedBlob) {
-                const url = URL.createObjectURL(watermarkedBlob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `galaxy_${galaxyName || galaxyType}_${Date.now()}.png`;
-                link.click();
-                URL.revokeObjectURL(url);
-              }
-            }, 'image/png', 1.0);
-          };
-          
-          const url = URL.createObjectURL(blob);
-          img.src = url;
-        }
-      }
+    renderer.domElement.toBlob(
+      (blob) => {
+        if (blob) {
+          const tempCanvas = document.createElement("canvas");
+          const ctx = tempCanvas.getContext("2d");
+          tempCanvas.width = width;
+          tempCanvas.height = height;
 
-      // Restore original point sizes
-      pointMaterials.forEach(({ material, originalSize, originalScale, geometry, originalSizeArray }) => {
-        if (originalSize !== undefined) material.size = originalSize;
-        if (originalScale !== undefined) material.uniforms.scale.value = originalScale;
-        if (geometry && originalSizeArray) {
-          const sizeAttribute = geometry.attributes.size;
-          for (let i = 0; i < originalSizeArray.length; i++) {
-            sizeAttribute.array[i] = originalSizeArray[i];
+          if (ctx) {
+            const img = new Image();
+            img.onload = async () => {
+              ctx.drawImage(img, 0, 0);
+
+              addCopyrightWatermark(ctx, { imageWidth: width, imageHeight: height });
+
+              await addQRToScreenshot(ctx, width, height, window.location.href);
+
+              tempCanvas.toBlob(
+                (watermarkedBlob) => {
+                  if (watermarkedBlob) {
+                    const url = URL.createObjectURL(watermarkedBlob);
+                    const link = document.createElement("a");
+                    link.href = url;
+                    link.download = `galaxy_${galaxyName || galaxyType}_${Date.now()}.png`;
+                    link.click();
+                    URL.revokeObjectURL(url);
+                  }
+                },
+                "image/png",
+                1.0
+              );
+            };
+
+            const url = URL.createObjectURL(blob);
+            img.src = url;
           }
-          sizeAttribute.needsUpdate = true;
         }
-      });
 
-      // Restore original size
-      renderer.setSize(originalWidth, originalHeight);
-      camera.aspect = 1;
-      camera.updateProjectionMatrix();
-      
-      // Remove blur from canvas, re-enable controls and reset generating state
-      if (rendererRef.current?.domElement) {
-        rendererRef.current.domElement.style.filter = 'none';
-      }
-      if (controlsRef.current) {
-        controlsRef.current.enabled = true;
-      }
-      setIsGeneratingImage(false);
-    }, 'image/png', 1.0);
+        pointMaterials.forEach(({ material, originalSize, originalScale, geometry, originalSizeArray }) => {
+          if (originalSize !== undefined) material.size = originalSize;
+          if (originalScale !== undefined) material.uniforms.scale.value = originalScale;
+          if (geometry && originalSizeArray) {
+            const sizeAttribute = geometry.attributes.size;
+            for (let i = 0; i < originalSizeArray.length; i++) {
+              sizeAttribute.array[i] = originalSizeArray[i];
+            }
+            sizeAttribute.needsUpdate = true;
+          }
+        });
+
+        renderer.setSize(originalWidth, originalHeight);
+        camera.aspect = 1;
+        camera.updateProjectionMatrix();
+
+        if (controlsRef.current) {
+          controlsRef.current.enabled = true;
+        }
+        setIsGeneratingImage(false);
+      },
+      "image/png",
+      1.0
+    );
   };
 
   return (
@@ -1202,6 +1186,8 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
       <div className={`absolute inset-0 w-full h-full transition-all duration-500 ${sceneLoaded ? "opacity-100 blur-0" : "opacity-0 blur-[25px]"}`}>
         <div ref={mountRef} className="w-full h-full border border-white/20 rounded bg-black/20" />
 
+        <ExportingOverlay isVisible={isGeneratingImage} />
+
         {sceneLoaded && galaxyName && (
           <div className="absolute bottom-0 left-0 p-2 text-white bg-black bg-opacity-50 max-w-xs rounded-tr-lg">
             <h3 className="text-xs font-bold">{galaxyName}</h3>
@@ -1210,33 +1196,11 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
 
         {sceneLoaded && (
           <div className="absolute top-2 right-2 flex gap-2 z-10">
-            <button 
-              onClick={handleDownloadScreenshot} 
-              disabled={isGeneratingImage}
-              className={`p-2 border border-white/30 rounded-lg transition-all duration-200 backdrop-blur-sm shadow-lg ${
-                isGeneratingImage 
-                  ? 'bg-black/40 cursor-not-allowed opacity-50' 
-                  : 'bg-black/60 hover:bg-black/80'
-              }`}
-              title={isGeneratingImage ? "Generating image..." : "Download screenshot"}
-            >
-              {isGeneratingImage ? (
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <DownloadIcon className="w-4 h-4 text-white" />
-              )}
+            <button onClick={handleDownloadScreenshot} disabled={isGeneratingImage} className={`p-2 border border-white/30 rounded-lg transition-all duration-200 backdrop-blur-sm shadow-lg ${isGeneratingImage ? "bg-black/40 cursor-not-allowed opacity-50" : "bg-black/60 hover:bg-black/80"}`} title={isGeneratingImage ? "Generating image..." : "Download 4K screenshot"}>
+              {isGeneratingImage ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <DownloadIcon className="w-4 h-4 text-white" />}
             </button>
             {onExpandClick && (
-              <button 
-                onClick={onExpandClick} 
-                disabled={isGeneratingImage}
-                className={`p-2 border border-white/30 rounded-lg transition-all duration-200 backdrop-blur-sm shadow-lg ${
-                  isGeneratingImage 
-                    ? 'bg-black/40 cursor-not-allowed opacity-50' 
-                    : 'bg-black/60 hover:bg-black/80'
-                }`}
-                title={isGeneratingImage ? "Please wait..." : "Expand to fullscreen"}
-              >
+              <button onClick={onExpandClick} disabled={isGeneratingImage} className={`p-2 border border-white/30 rounded-lg transition-all duration-200 backdrop-blur-sm shadow-lg ${isGeneratingImage ? "bg-black/40 cursor-not-allowed opacity-50" : "bg-black/60 hover:bg-black/80"}`} title={isGeneratingImage ? "Please wait..." : "Expand to fullscreen"}>
                 <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
                 </svg>

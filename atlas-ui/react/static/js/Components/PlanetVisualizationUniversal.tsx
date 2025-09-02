@@ -5,6 +5,7 @@ import { ModularPlanetRendererWrapper } from "../3DComponents/ModularPlanetRende
 import { effectRegistry } from "../3DEffects/EffectRegistry";
 import Planet3DViewerFullscreen from "./Planet3DViewerFullscreen.tsx";
 import DownloadIcon from "../Icons/DownloadIcon";
+import ExportingOverlay from "./ExportingOverlay";
 
 interface Planet {
   name: string;
@@ -242,16 +243,18 @@ const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> 
     }
   }, [isEntering]);
 
-  // Track the generating state from the planet renderer
   useEffect(() => {
     const interval = setInterval(() => {
-      if (planetRendererRef.current) {
-        setIsGeneratingImage(planetRendererRef.current.isGeneratingImage);
+      if (planetRendererRef.current && isGeneratingImage) {
+        const rendererState = planetRendererRef.current.isGeneratingImage;
+        if (!rendererState && isGeneratingImage) {
+          setIsGeneratingImage(false);
+        }
       }
-    }, 100);
-    
+    }, 50);
+
     return () => clearInterval(interval);
-  }, []);
+  }, [isGeneratingImage]);
 
   return (
     <div className="h-full flex flex-col">
@@ -292,28 +295,22 @@ const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> 
               initialAngleRotation={initialAngleRotation}
             />
 
+            <ExportingOverlay isVisible={isGeneratingImage} />
+
             {canvasHidden && (
               <div className="absolute top-2 right-2 flex gap-2 z-10">
                 <button
                   onClick={() => {
-                    // Take screenshot using the exposed method
                     if (planetRendererRef.current && !isGeneratingImage) {
+                      setIsGeneratingImage(true); // Set immediately for instant animation
                       planetRendererRef.current.captureScreenshot();
                     }
                   }}
                   disabled={isGeneratingImage}
-                  className={`p-2 border border-white/30 rounded-lg transition-all duration-200 backdrop-blur-sm shadow-lg ${
-                    isGeneratingImage 
-                      ? 'bg-black/40 cursor-not-allowed opacity-50' 
-                      : 'bg-black/60 hover:bg-black/80'
-                  }`}
-                  title={isGeneratingImage ? "Generating image..." : "Download screenshot"}
+                  className={`p-2 border border-white/30 rounded-lg transition-all duration-200 backdrop-blur-sm shadow-lg ${isGeneratingImage ? "bg-black/40 cursor-not-allowed opacity-50" : "bg-black/60 hover:bg-black/80"}`}
+                  title={isGeneratingImage ? "Generating image..." : "Download 4K screenshot"}
                 >
-                  {isGeneratingImage ? (
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  ) : (
-                    <DownloadIcon className="w-4 h-4 text-white" />
-                  )}
+                  {isGeneratingImage ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <DownloadIcon className="w-4 h-4 text-white" />}
                 </button>
                 <button
                   onClick={() => {
@@ -323,11 +320,7 @@ const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> 
                     }
                   }}
                   disabled={isGeneratingImage}
-                  className={`p-2 border border-white/30 rounded-lg transition-all duration-200 backdrop-blur-sm shadow-lg ${
-                    isGeneratingImage 
-                      ? 'bg-black/40 cursor-not-allowed opacity-50' 
-                      : 'bg-black/60 hover:bg-black/80'
-                  }`}
+                  className={`p-2 border border-white/30 rounded-lg transition-all duration-200 backdrop-blur-sm shadow-lg ${isGeneratingImage ? "bg-black/40 cursor-not-allowed opacity-50" : "bg-black/60 hover:bg-black/80"}`}
                   title={isGeneratingImage ? "Please wait..." : "Expand to fullscreen"}
                 >
                   <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">

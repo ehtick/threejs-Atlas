@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { addQRToScreenshot } from "../Components/QRGenerator";
 import { addCopyrightWatermark } from "../Components/CopyrightWatermark";
+import ExportingOverlay from "../Components/ExportingOverlay";
 
 import { effectRegistry, EffectInstance } from "../3DEffects/EffectRegistry";
 import { createPlanetEffectConfig, EffectsLogger } from "../3DEffects";
@@ -122,17 +123,12 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
 
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
 
-  // Expose screenshot method
   useImperativeHandle(ref, () => ({
     captureScreenshot: () => {
       if (!rendererRef.current || !sceneRef.current || !cameraRef.current || isGeneratingImage) return;
-      
+
       setIsGeneratingImage(true);
-      
-      // Apply blur to canvas and disable controls
-      if (rendererRef.current.domElement) {
-        rendererRef.current.domElement.style.filter = 'blur(15px)';
-      }
+
       if (controlsRef.current) {
         controlsRef.current.enabled = false;
       }
@@ -141,58 +137,50 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
       const scene = sceneRef.current;
       const camera = cameraRef.current;
 
-      // Store original size
       const originalWidth = renderer.domElement.width;
       const originalHeight = renderer.domElement.height;
 
-      // Calculate scale factor for effects and particles
       const scaleFactor = 3840 / originalWidth;
 
-      // Store original sizes and scale up particles/effects
       const scaledObjects: any[] = [];
       scene.traverse((object: any) => {
-        // Scale point materials (particles, stars, etc.)
         if (object.isPoints && object.material) {
           const mat = object.material;
           if (mat.size !== undefined) {
             scaledObjects.push({ material: mat, originalSize: mat.size });
             mat.size = mat.size * scaleFactor * 1;
           }
-          // For shader materials
           if (mat.uniforms) {
             if (mat.uniforms.size) {
-              scaledObjects.push({ material: mat, uniform: 'size', originalValue: mat.uniforms.size.value });
+              scaledObjects.push({ material: mat, uniform: "size", originalValue: mat.uniforms.size.value });
               mat.uniforms.size.value = mat.uniforms.size.value * scaleFactor * 1;
             }
             if (mat.uniforms.scale) {
-              scaledObjects.push({ material: mat, uniform: 'scale', originalValue: mat.uniforms.scale.value });
+              scaledObjects.push({ material: mat, uniform: "scale", originalValue: mat.uniforms.scale.value });
               mat.uniforms.scale.value = mat.uniforms.scale.value * scaleFactor * 1;
             }
           }
-          // Scale size attributes directly
           if (object.geometry && object.geometry.attributes.size) {
             const sizeAttribute = object.geometry.attributes.size;
             const originalSizes = sizeAttribute.array.slice();
-            scaledObjects.push({ 
-              geometry: object.geometry, 
-              originalSizeArray: originalSizes 
+            scaledObjects.push({
+              geometry: object.geometry,
+              originalSizeArray: originalSizes,
             });
-            
+
             for (let i = 0; i < sizeAttribute.array.length; i++) {
               sizeAttribute.array[i] *= scaleFactor * 1;
             }
             sizeAttribute.needsUpdate = true;
           }
         }
-        // Scale sprites and text
         if (object.isSprite) {
-          scaledObjects.push({ 
-            object: object, 
-            originalScale: object.scale.clone() 
+          scaledObjects.push({
+            object: object,
+            originalScale: object.scale.clone(),
           });
           object.scale.multiplyScalar(scaleFactor * 1);
         }
-        // Scale line materials
         if (object.isLine && object.material) {
           const mat = object.material;
           if (mat.linewidth !== undefined) {
@@ -202,88 +190,81 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
         }
       });
 
-      // Set high resolution (4K)
       const highResWidth = 3840;
       const highResHeight = 3840;
       renderer.setSize(highResWidth, highResHeight);
       camera.aspect = 1;
       camera.updateProjectionMatrix();
 
-      // Render at high resolution
       renderer.render(scene, camera);
 
-      // Get the image and add watermark
-      renderer.domElement.toBlob((blob) => {
-        if (blob) {
-          // Create temporary canvas to add watermark
-          const tempCanvas = document.createElement('canvas');
-          const ctx = tempCanvas.getContext('2d');
-          tempCanvas.width = highResWidth;
-          tempCanvas.height = highResHeight;
-          
-          if (ctx) {
-            const img = new Image();
-            img.onload = async () => {
-              // Draw the original image
-              ctx.drawImage(img, 0, 0);
-              
-              // Add copyright watermark
-              addCopyrightWatermark(ctx, { imageWidth: highResWidth, imageHeight: highResHeight });
-              
-              // Add QR code with logo
-              await addQRToScreenshot(ctx, highResWidth, highResHeight, window.location.href);
-              
-              // Download the watermarked image
-              tempCanvas.toBlob((watermarkedBlob) => {
-                if (watermarkedBlob) {
-                  const url = URL.createObjectURL(watermarkedBlob);
-                  const link = document.createElement('a');
-                  link.href = url;
-                  link.download = `planet_${planetName}_${Date.now()}.png`;
-                  link.click();
-                  URL.revokeObjectURL(url);
-                }
-              }, 'image/png', 1.0);
-            };
-            
-            const url = URL.createObjectURL(blob);
-            img.src = url;
-          }
-        }
+      renderer.domElement.toBlob(
+        (blob) => {
+          if (blob) {
+            const tempCanvas = document.createElement("canvas");
+            const ctx = tempCanvas.getContext("2d");
+            tempCanvas.width = highResWidth;
+            tempCanvas.height = highResHeight;
 
-        // Restore original sizes
-        scaledObjects.forEach(({ material, object, originalSize, originalScale, originalLinewidth, uniform, originalValue, geometry, originalSizeArray }) => {
-          if (originalSize !== undefined) material.size = originalSize;
-          if (originalScale !== undefined) object.scale.copy(originalScale);
-          if (originalLinewidth !== undefined) material.linewidth = originalLinewidth;
-          if (uniform && originalValue !== undefined) material.uniforms[uniform].value = originalValue;
-          if (geometry && originalSizeArray) {
-            const sizeAttribute = geometry.attributes.size;
-            for (let i = 0; i < originalSizeArray.length; i++) {
-              sizeAttribute.array[i] = originalSizeArray[i];
+            if (ctx) {
+              const img = new Image();
+              img.onload = async () => {
+                ctx.drawImage(img, 0, 0);
+
+                addCopyrightWatermark(ctx, { imageWidth: highResWidth, imageHeight: highResHeight });
+
+                await addQRToScreenshot(ctx, highResWidth, highResHeight, window.location.href);
+
+                tempCanvas.toBlob(
+                  (watermarkedBlob) => {
+                    if (watermarkedBlob) {
+                      const url = URL.createObjectURL(watermarkedBlob);
+                      const link = document.createElement("a");
+                      link.href = url;
+                      link.download = `planet_${planetName}_${Date.now()}.png`;
+                      link.click();
+                      URL.revokeObjectURL(url);
+                    }
+                  },
+                  "image/png",
+                  1.0
+                );
+              };
+
+              const url = URL.createObjectURL(blob);
+              img.src = url;
             }
-            sizeAttribute.needsUpdate = true;
           }
-        });
 
-        // Restore original size
-        renderer.setSize(originalWidth, originalHeight);
-        camera.aspect = originalWidth / originalHeight;
-        camera.updateProjectionMatrix();
-        
-        // Remove blur from canvas, re-enable controls and reset generating state
-        if (rendererRef.current?.domElement) {
-          rendererRef.current.domElement.style.filter = 'none';
-        }
-        if (controlsRef.current) {
-          controlsRef.current.enabled = true;
-        }
-        setIsGeneratingImage(false);
-      }, 'image/png', 1.0);
+          scaledObjects.forEach(({ material, object, originalSize, originalScale, originalLinewidth, uniform, originalValue, geometry, originalSizeArray }) => {
+            if (originalSize !== undefined) material.size = originalSize;
+            if (originalScale !== undefined) object.scale.copy(originalScale);
+            if (originalLinewidth !== undefined) material.linewidth = originalLinewidth;
+            if (uniform && originalValue !== undefined) material.uniforms[uniform].value = originalValue;
+            if (geometry && originalSizeArray) {
+              const sizeAttribute = geometry.attributes.size;
+              for (let i = 0; i < originalSizeArray.length; i++) {
+                sizeAttribute.array[i] = originalSizeArray[i];
+              }
+              sizeAttribute.needsUpdate = true;
+            }
+          });
+
+          renderer.setSize(originalWidth, originalHeight);
+          camera.aspect = originalWidth / originalHeight;
+          camera.updateProjectionMatrix();
+
+          if (controlsRef.current) {
+            controlsRef.current.enabled = true;
+          }
+          setIsGeneratingImage(false);
+        },
+        "image/png",
+        1.0
+      );
     },
-    isGeneratingImage
+    isGeneratingImage,
   }));
-
 
   const realCurrentTime = Math.floor(Date.now() / 1000);
   const [timeOffset, setTimeOffset] = useState(0);
@@ -335,7 +316,7 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
             NORMALIZED_PLANET_RADIUS,
             {
               planet_type: "toxic",
-              toxic_intensity: 0.8, // Valor procedural basado en datos del planeta
+              toxic_intensity: 0.8,
               atmosphere_thickness: 0.6,
             },
             planetData.seeds?.planet_seed
@@ -434,9 +415,8 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.2;
       renderer.outputColorSpace = THREE.SRGBColorSpace;
-      
-      // Add transition class to canvas for blur effect
-      renderer.domElement.className = 'transition-all duration-300';
+
+      renderer.domElement.className = "";
 
       mountRef.current.appendChild(renderer.domElement);
       rendererRef.current = renderer;
@@ -899,10 +879,8 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
   };
 
   const clearActiveEffects = () => {
-    // Only clear effects belonging to this specific instance, not all global effects
     activeEffectsRef.current.forEach((effect) => {
       try {
-        // Remove this specific effect from the global registry
         effectRegistry.removeEffect(effect.id);
 
         if (effect.effect.dispose) {
@@ -1153,6 +1131,9 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
       {showDebugInfo && renderingData && <DebugPlanetData planetData={renderingData} showInPage={true} showInConsole={true} />}
 
       <div ref={mountRef} className="w-full h-full" style={{ minHeight: "300px", aspectRatio: "1" }} />
+
+      {/* Exporting overlay - positioned above scene but below other UI */}
+      <ExportingOverlay isVisible={isGeneratingImage} />
 
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">

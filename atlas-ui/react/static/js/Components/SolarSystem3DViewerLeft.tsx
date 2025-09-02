@@ -7,6 +7,7 @@ import SolarSystem3DViewerFullscreen from "./SolarSystem3DViewerFullscreen.tsx";
 import DownloadIcon from "../Icons/DownloadIcon";
 import { addQRToScreenshot } from "./QRGenerator";
 import { addCopyrightWatermark } from "./CopyrightWatermark";
+import ExportingOverlay from "./ExportingOverlay";
 
 interface Planet {
   name: string;
@@ -189,9 +190,9 @@ const SolarSystem3DViewerLeft: React.FC<SolarSystem3DViewerLeftProps> = ({ plane
     renderer.setSize(size, size);
     renderer.setClearColor(0x000011, 1);
     rendererRef.current = renderer;
-    
-    // Add transition class to canvas for blur effect
-    renderer.domElement.className = 'transition-all duration-300';
+
+    // Add basic styling to canvas
+    renderer.domElement.className = "";
     container.appendChild(renderer.domElement);
 
     const planetColors: { [key: string]: string } = {
@@ -454,65 +455,53 @@ const SolarSystem3DViewerLeft: React.FC<SolarSystem3DViewerLeftProps> = ({ plane
     };
   }, [planets, stars, cosmicOriginTime, systemData, timeOffset]);
 
-
   const handleDownloadScreenshot = () => {
     if (!rendererRef.current || !sceneRef.current || !cameraRef.current || isGeneratingImage) return;
 
     setIsGeneratingImage(true);
-    
-    // Apply blur to canvas and disable controls
-    if (rendererRef.current.domElement) {
-      rendererRef.current.domElement.style.filter = 'blur(15px)';
-    }
+
     if (controlsRef.current) {
       controlsRef.current.enabled = false;
     }
-    
+
     const renderer = rendererRef.current;
     const scene = sceneRef.current;
     const camera = cameraRef.current;
 
-    // Store original size
     const originalWidth = renderer.domElement.width;
     const originalHeight = renderer.domElement.height;
 
-    // Calculate scale factor for point sizes
     const scaleFactor = 3840 / originalWidth;
 
-    // Store original point/sprite sizes and scale them up
     const scaledObjects: any[] = [];
     scene.traverse((object: any) => {
-      // Scale point materials
       if (object.isPoints && object.material) {
         const mat = object.material;
         if (mat.size !== undefined) {
           scaledObjects.push({ material: mat, originalSize: mat.size });
           mat.size = mat.size * scaleFactor * 1;
         }
-        // Scale size attributes directly
         if (object.geometry && object.geometry.attributes.size) {
           const sizeAttribute = object.geometry.attributes.size;
           const originalSizes = sizeAttribute.array.slice();
-          scaledObjects.push({ 
-            geometry: object.geometry, 
-            originalSizeArray: originalSizes 
+          scaledObjects.push({
+            geometry: object.geometry,
+            originalSizeArray: originalSizes,
           });
-          
+
           for (let i = 0; i < sizeAttribute.array.length; i++) {
             sizeAttribute.array[i] *= scaleFactor * 1;
           }
           sizeAttribute.needsUpdate = true;
         }
       }
-      // Scale sprites (planet labels)
       if (object.isSprite) {
-        scaledObjects.push({ 
-          object: object, 
-          originalScale: object.scale.clone() 
+        scaledObjects.push({
+          object: object,
+          originalScale: object.scale.clone(),
         });
         object.scale.multiplyScalar(scaleFactor * 1);
       }
-      // Scale line widths
       if (object.isLine && object.material) {
         const mat = object.material;
         if (mat.linewidth !== undefined) {
@@ -522,83 +511,77 @@ const SolarSystem3DViewerLeft: React.FC<SolarSystem3DViewerLeftProps> = ({ plane
       }
     });
 
-    // Set high resolution (4K)
     const width = 3840;
     const height = 3840;
     renderer.setSize(width, height);
     camera.aspect = 1;
     camera.updateProjectionMatrix();
 
-    // Render at high resolution
     renderer.render(scene, camera);
 
-    // Get the image and add watermark
-    renderer.domElement.toBlob((blob) => {
-      if (blob) {
-        // Create temporary canvas to add watermark
-        const tempCanvas = document.createElement('canvas');
-        const ctx = tempCanvas.getContext('2d');
-        tempCanvas.width = width;
-        tempCanvas.height = height;
-        
-        if (ctx) {
-          const img = new Image();
-          img.onload = async () => {
-            // Draw the original image
-            ctx.drawImage(img, 0, 0);
-            
-            // Add copyright watermark
-            addCopyrightWatermark(ctx, { imageWidth: width, imageHeight: height });
-            
-            // Add QR code with logo
-            await addQRToScreenshot(ctx, width, height, window.location.href);
-            
-            // Download the watermarked image
-            tempCanvas.toBlob((watermarkedBlob) => {
-              if (watermarkedBlob) {
-                const url = URL.createObjectURL(watermarkedBlob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `system_${systemName}_${Date.now()}.png`;
-                link.click();
-                URL.revokeObjectURL(url);
-              }
-            }, 'image/png', 1.0);
-          };
-          
-          const url = URL.createObjectURL(blob);
-          img.src = url;
-        }
-      }
+    renderer.domElement.toBlob(
+      (blob) => {
+        if (blob) {
+          const tempCanvas = document.createElement("canvas");
+          const ctx = tempCanvas.getContext("2d");
+          tempCanvas.width = width;
+          tempCanvas.height = height;
 
-      // Restore original sizes
-      scaledObjects.forEach(({ material, object, originalSize, originalScale, originalLinewidth, geometry, originalSizeArray }) => {
-        if (originalSize !== undefined) material.size = originalSize;
-        if (originalScale !== undefined) object.scale.copy(originalScale);
-        if (originalLinewidth !== undefined) material.linewidth = originalLinewidth;
-        if (geometry && originalSizeArray) {
-          const sizeAttribute = geometry.attributes.size;
-          for (let i = 0; i < originalSizeArray.length; i++) {
-            sizeAttribute.array[i] = originalSizeArray[i];
+          if (ctx) {
+            const img = new Image();
+            img.onload = async () => {
+              ctx.drawImage(img, 0, 0);
+
+              addCopyrightWatermark(ctx, { imageWidth: width, imageHeight: height });
+
+              await addQRToScreenshot(ctx, width, height, window.location.href);
+
+              tempCanvas.toBlob(
+                (watermarkedBlob) => {
+                  if (watermarkedBlob) {
+                    const url = URL.createObjectURL(watermarkedBlob);
+                    const link = document.createElement("a");
+                    link.href = url;
+                    link.download = `system_${systemName}_${Date.now()}.png`;
+                    link.click();
+                    URL.revokeObjectURL(url);
+                  }
+                },
+                "image/png",
+                1.0
+              );
+            };
+
+            const url = URL.createObjectURL(blob);
+            img.src = url;
           }
-          sizeAttribute.needsUpdate = true;
         }
-      });
 
-      // Restore original size
-      renderer.setSize(originalWidth, originalHeight);
-      camera.aspect = 1;
-      camera.updateProjectionMatrix();
-      
-      // Remove blur from canvas, re-enable controls and reset generating state
-      if (rendererRef.current?.domElement) {
-        rendererRef.current.domElement.style.filter = 'none';
-      }
-      if (controlsRef.current) {
-        controlsRef.current.enabled = true;
-      }
-      setIsGeneratingImage(false);
-    }, 'image/png', 1.0);
+        scaledObjects.forEach(({ material, object, originalSize, originalScale, originalLinewidth, geometry, originalSizeArray }) => {
+          if (originalSize !== undefined) material.size = originalSize;
+          if (originalScale !== undefined) object.scale.copy(originalScale);
+          if (originalLinewidth !== undefined) material.linewidth = originalLinewidth;
+          if (geometry && originalSizeArray) {
+            const sizeAttribute = geometry.attributes.size;
+            for (let i = 0; i < originalSizeArray.length; i++) {
+              sizeAttribute.array[i] = originalSizeArray[i];
+            }
+            sizeAttribute.needsUpdate = true;
+          }
+        });
+
+        renderer.setSize(originalWidth, originalHeight);
+        camera.aspect = 1;
+        camera.updateProjectionMatrix();
+
+        if (controlsRef.current) {
+          controlsRef.current.enabled = true;
+        }
+        setIsGeneratingImage(false);
+      },
+      "image/png",
+      1.0
+    );
   };
 
   const formatTime = (seconds: number) => {
@@ -621,6 +604,8 @@ const SolarSystem3DViewerLeft: React.FC<SolarSystem3DViewerLeftProps> = ({ plane
         <div className="relative w-full h-full">
           <div ref={mountRef} className="w-full h-full border border-white/20 rounded bg-black/20" />
 
+          <ExportingOverlay isVisible={isGeneratingImage} />
+
           {!loadingAPI && !apiError && systemName && (
             <div className="absolute bottom-0 left-0 p-2 text-white bg-black bg-opacity-50 max-w-xs rounded-tr-lg">
               <h3 className="text-xs font-bold">{formatName(systemName)}</h3>
@@ -628,21 +613,8 @@ const SolarSystem3DViewerLeft: React.FC<SolarSystem3DViewerLeftProps> = ({ plane
           )}
 
           <div className="absolute top-2 right-2 flex gap-2 z-10">
-            <button
-              onClick={handleDownloadScreenshot}
-              disabled={isGeneratingImage}
-              className={`p-2 border border-white/30 rounded-lg transition-all duration-200 backdrop-blur-sm shadow-lg ${
-                isGeneratingImage 
-                  ? 'bg-black/40 cursor-not-allowed opacity-50' 
-                  : 'bg-black/60 hover:bg-black/80'
-              }`}
-              title={isGeneratingImage ? "Generating image..." : "Download screenshot"}
-            >
-              {isGeneratingImage ? (
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <DownloadIcon className="w-4 h-4 text-white" />
-              )}
+            <button onClick={handleDownloadScreenshot} disabled={isGeneratingImage} className={`p-2 border border-white/30 rounded-lg transition-all duration-200 backdrop-blur-sm shadow-lg ${isGeneratingImage ? "bg-black/40 cursor-not-allowed opacity-50" : "bg-black/60 hover:bg-black/80"}`} title={isGeneratingImage ? "Generating image..." : "Download 4K screenshot"}>
+              {isGeneratingImage ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <DownloadIcon className="w-4 h-4 text-white" />}
             </button>
             <button
               onClick={() => {
@@ -652,11 +624,7 @@ const SolarSystem3DViewerLeft: React.FC<SolarSystem3DViewerLeftProps> = ({ plane
                 }
               }}
               disabled={isGeneratingImage}
-              className={`p-2 border border-white/30 rounded-lg transition-all duration-200 backdrop-blur-sm shadow-lg ${
-                isGeneratingImage 
-                  ? 'bg-black/40 cursor-not-allowed opacity-50' 
-                  : 'bg-black/60 hover:bg-black/80'
-              }`}
+              className={`p-2 border border-white/30 rounded-lg transition-all duration-200 backdrop-blur-sm shadow-lg ${isGeneratingImage ? "bg-black/40 cursor-not-allowed opacity-50" : "bg-black/60 hover:bg-black/80"}`}
               title={isGeneratingImage ? "Please wait..." : "Expand to fullscreen"}
             >
               <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
