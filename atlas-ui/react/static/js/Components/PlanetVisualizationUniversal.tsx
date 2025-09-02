@@ -293,6 +293,7 @@ const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> 
               }}
               cosmicOriginTime={cosmicOriginTime}
               initialAngleRotation={initialAngleRotation}
+              planetUrl={planetUrl}
             />
 
             <ExportingOverlay isVisible={isGeneratingImage} />
@@ -302,7 +303,7 @@ const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> 
                 <button
                   onClick={() => {
                     if (planetRendererRef.current && !isGeneratingImage) {
-                      setIsGeneratingImage(true); // Set immediately for instant animation
+                      setIsGeneratingImage(true);
                       planetRendererRef.current.captureScreenshot();
                     }
                   }}

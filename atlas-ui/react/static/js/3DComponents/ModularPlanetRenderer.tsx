@@ -51,6 +51,7 @@ interface ModularPlanetRendererProps {
   onDataLoaded?: (data: any) => void;
   onEffectsCreated?: (effects: EffectInstance[]) => void;
   onError?: (error: string) => void;
+  planetUrl?: string;
 }
 
 interface PlanetRenderingData {
@@ -91,7 +92,7 @@ interface RendererStats {
   renderTime: number;
 }
 
-export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void }, ModularPlanetRendererProps>(({ planetName, containerClassName = "", width = 800, height = 600, autoRotate = true, enableControls = true, showDebugInfo = false, planetData, cosmicOriginTime, initialAngleRotation, onDataLoaded, onEffectsCreated, onError }, ref) => {
+export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void }, ModularPlanetRendererProps>(({ planetName, containerClassName = "", width = 800, height = 600, autoRotate = true, enableControls = true, showDebugInfo = false, planetData, cosmicOriginTime, initialAngleRotation, onDataLoaded, onEffectsCreated, onError, planetUrl }, ref) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -213,7 +214,12 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
 
                 addCopyrightWatermark(ctx, { imageWidth: highResWidth, imageHeight: highResHeight });
 
-                await addQRToScreenshot(ctx, highResWidth, highResHeight, window.location.href);
+                if (planetUrl) {
+                  await addQRToScreenshot(ctx, highResWidth, highResHeight, {
+                    type: "planet",
+                    stargateUrl: planetUrl,
+                  });
+                }
 
                 tempCanvas.toBlob(
                   (watermarkedBlob) => {

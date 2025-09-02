@@ -33,6 +33,7 @@ interface ModularPlanetRendererProps {
   onError?: (error: string) => void;
   onEffectsCreated?: (effects: any[]) => void;
   onScreenshotReady?: (captureFunction: () => void) => void;
+  planetUrl?: string;
 }
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: string | null }> {

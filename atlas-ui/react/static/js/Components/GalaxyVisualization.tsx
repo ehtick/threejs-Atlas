@@ -139,13 +139,14 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, ga
       </div>
 
       <div className="relative w-full max-w-80 sm:max-w-96 aspect-square mx-auto bg-black/50 flex justify-center items-center rounded-xl overflow-hidden border-2 border-blue-400/30 mb-4">
-        <Galaxy3DViewer 
-          galaxyType={galaxyType} 
-          numSystems={numSystems} 
-          blackHoles={blackHoles} 
-          pulsars={pulsars} 
-          quasars={quasars} 
+        <Galaxy3DViewer
+          galaxyType={galaxyType}
+          numSystems={numSystems}
+          blackHoles={blackHoles}
+          pulsars={pulsars}
+          quasars={quasars}
           galaxyName={galaxyName}
+          galaxyUrl={galaxyUrl}
           onExpandClick={() => {
             setIsFullscreen(true);
             setIsEntering(true);
@@ -185,15 +186,13 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, ga
                 <div className="hidden sm:block">
                   <div>
                     <h2 className="text-lg font-bold text-white">Galaxy Visualization</h2>
-                    <div className="text-sm text-gray-400">Type: {galaxyType} • Systems: {numSystems.toLocaleString()}</div>
+                    <div className="text-sm text-gray-400">
+                      Type: {galaxyType} • Systems: {numSystems.toLocaleString()}
+                    </div>
                   </div>
                 </div>
 
-                <button 
-                  onClick={handleCloseFullscreen} 
-                  className="p-0.5 sm:p-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded transition-colors duration-200 text-red-400 hover:text-red-300" 
-                  title="Close"
-                >
+                <button onClick={handleCloseFullscreen} className="p-0.5 sm:p-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded transition-colors duration-200 text-red-400 hover:text-red-300" title="Close">
                   <svg className="w-3 h-3 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
@@ -201,14 +200,7 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, ga
               </div>
 
               <div className="flex-1 border border-white/20 rounded-lg bg-black/20 overflow-hidden min-h-0">
-                <Galaxy3DViewerFullscreen 
-                  galaxyType={galaxyType} 
-                  numSystems={numSystems} 
-                  blackHoles={blackHoles} 
-                  pulsars={pulsars} 
-                  quasars={quasars} 
-                  galaxyName={galaxyName}
-                />
+                <Galaxy3DViewerFullscreen galaxyType={galaxyType} numSystems={numSystems} blackHoles={blackHoles} pulsars={pulsars} quasars={quasars} galaxyName={galaxyName} />
               </div>
 
               <div className="mt-2 sm:mt-4 text-center text-xs sm:text-sm text-gray-400">

@@ -136,10 +136,8 @@ const SystemVisualizationUniversal: React.FC<SystemVisualizationUniversalProps> 
   }, []);
 
   useEffect(() => {
-    // Start loading 3D scene immediately
     setImageLoaded(true);
 
-    // Hide canvas after animation
     setTimeout(() => {
       setCanvasHidden(true);
     }, 800);
@@ -216,7 +214,7 @@ const SystemVisualizationUniversal: React.FC<SystemVisualizationUniversalProps> 
 
         {imageLoaded && system && (
           <div className={`absolute inset-0 w-full h-full transition-all duration-500 ${imageLoaded && canvasHidden ? "opacity-100 blur-0" : "opacity-0 blur-[25px]"}`}>
-            <SolarSystem3DViewerLeft planets={system.planets} stars={system.stars} systemName={system.name} cosmicOriginTime={cosmicOriginTime || 0} />
+            <SolarSystem3DViewerLeft planets={system.planets} stars={system.stars} systemName={system.name} cosmicOriginTime={cosmicOriginTime || 0} systemUrl={systemUrl} />
           </div>
         )}
       </div>

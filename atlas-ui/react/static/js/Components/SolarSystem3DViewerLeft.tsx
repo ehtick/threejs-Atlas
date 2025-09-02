@@ -34,9 +34,10 @@ interface SolarSystem3DViewerLeftProps {
   stars: Star[];
   systemName: string;
   cosmicOriginTime: number;
+  systemUrl?: string;
 }
 
-const SolarSystem3DViewerLeft: React.FC<SolarSystem3DViewerLeftProps> = ({ planets, stars, systemName, cosmicOriginTime }) => {
+const SolarSystem3DViewerLeft: React.FC<SolarSystem3DViewerLeftProps> = ({ planets, stars, systemName, cosmicOriginTime, systemUrl }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -534,7 +535,12 @@ const SolarSystem3DViewerLeft: React.FC<SolarSystem3DViewerLeftProps> = ({ plane
 
               addCopyrightWatermark(ctx, { imageWidth: width, imageHeight: height });
 
-              await addQRToScreenshot(ctx, width, height, window.location.href);
+              if (systemUrl) {
+                await addQRToScreenshot(ctx, width, height, {
+                  type: "system",
+                  stargateUrl: systemUrl,
+                });
+              }
 
               tempCanvas.toBlob(
                 (watermarkedBlob) => {

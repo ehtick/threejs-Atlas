@@ -16,9 +16,10 @@ interface Galaxy3DViewerProps {
   seed?: number;
   onExpandClick?: () => void;
   galaxyName?: string;
+  galaxyUrl?: string;
 }
 
-const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems, blackHoles, pulsars, quasars, seed = 12345, onExpandClick, galaxyName }) => {
+const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems, blackHoles, pulsars, quasars, seed = 12345, onExpandClick, galaxyName, galaxyUrl }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -178,7 +179,6 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
     renderer.setClearColor(0x000011, 1);
     rendererRef.current = renderer;
 
-    // Add basic styling to canvas
     renderer.domElement.className = "";
     container.appendChild(renderer.domElement);
 
@@ -1130,7 +1130,12 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
 
               addCopyrightWatermark(ctx, { imageWidth: width, imageHeight: height });
 
-              await addQRToScreenshot(ctx, width, height, window.location.href);
+              if (galaxyUrl) {
+                await addQRToScreenshot(ctx, width, height, {
+                  type: "galaxy",
+                  stargateUrl: galaxyUrl,
+                });
+              }
 
               tempCanvas.toBlob(
                 (watermarkedBlob) => {

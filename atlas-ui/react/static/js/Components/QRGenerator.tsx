@@ -1,10 +1,76 @@
 // atlas-ui/react/static/js/Components/QRGenerator.tsx
 import QRCode from "qrcode";
+import { StargateGenerator } from "../Utils/StargateGenerator.tsx";
 
 export interface QRGeneratorOptions {
   url: string;
   size: number;
 }
+
+interface StargateContext {
+  type: "galaxy" | "system" | "planet";
+  coordinates: string;
+  systemIndex?: number;
+  planetName?: string;
+}
+
+export const extractStargateContext = (stargateUrl: string, type: "galaxy" | "system" | "planet"): StargateContext | null => {
+  try {
+    const parts = stargateUrl.split("/stargate/")[1];
+    if (!parts) return null;
+
+    const decoded = atob(parts.replace(/-/g, "+").replace(/_/g, "/"));
+    const params = new URLSearchParams(decoded);
+    const coordinates = params.get("coordinates");
+    const systemIndex = params.get("system");
+    const planetName = params.get("planet");
+
+    if (!coordinates) return null;
+
+    const context: StargateContext = {
+      type,
+      coordinates,
+    };
+
+    if (systemIndex) {
+      context.systemIndex = parseInt(systemIndex);
+    }
+
+    if (planetName) {
+      context.planetName = planetName;
+    }
+
+    return context;
+  } catch (error) {
+    return null;
+  }
+};
+
+export const generateStargateUrlForQR = (context: StargateContext): string => {
+  try {
+    const galaxyCoords = context.coordinates.split(",").map(Number);
+    const currentPage = StargateGenerator.getCurrentPage();
+
+    switch (context.type) {
+      case "galaxy":
+        return StargateGenerator.generateGalaxyUrl(galaxyCoords, currentPage);
+      case "system":
+        if (context.systemIndex !== undefined) {
+          return StargateGenerator.generateSystemUrl(galaxyCoords, context.systemIndex, currentPage);
+        }
+        break;
+      case "planet":
+        if (context.systemIndex !== undefined && context.planetName) {
+          return StargateGenerator.generatePlanetUrl(galaxyCoords, context.systemIndex, context.planetName, currentPage);
+        }
+        break;
+    }
+
+    return window.location.pathname;
+  } catch (error) {
+    return window.location.pathname;
+  }
+};
 
 export const createQRWithLogo = async (options: QRGeneratorOptions): Promise<HTMLCanvasElement> => {
   const { url, size } = options;
@@ -61,8 +127,21 @@ export const createQRWithLogo = async (options: QRGeneratorOptions): Promise<HTM
   });
 };
 
-export const addQRToScreenshot = async (ctx: CanvasRenderingContext2D, imageWidth: number, imageHeight: number, url: string) => {
+export const addQRToScreenshot = async (ctx: CanvasRenderingContext2D, imageWidth: number, imageHeight: number, contextOrUrl: StargateContext | { type: "galaxy" | "system" | "planet"; stargateUrl: string }) => {
   try {
+    let url: string;
+
+    if ("coordinates" in contextOrUrl) {
+      url = generateStargateUrlForQR(contextOrUrl);
+    } else {
+      const context = extractStargateContext(contextOrUrl.stargateUrl, contextOrUrl.type);
+      if (context) {
+        url = generateStargateUrlForQR(context);
+      } else {
+        url = contextOrUrl.stargateUrl;
+      }
+    }
+
     const qrSize = Math.floor(imageWidth / 8);
     const qrCanvas = await createQRWithLogo({ url, size: qrSize });
 
