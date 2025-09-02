@@ -19,14 +19,14 @@ export interface TerrainCracksParams {
 }
 
 const PROCEDURAL_RANGES = {
-  CRACK_DENSITY: { min: 0.3, max: 0.6 }, // Densidad moderada
-  CRACK_DEPTH: { min: 0.5, max: 0.9 }, // Profundidad visible
-  CRACK_COMPLEXITY: { min: 3, max: 5 }, // Complejidad media-alta
-  CRACK_SCALE: { min: 3.0, max: 8.0 }, // Escala visible
-  CRACK_SHARPNESS: { min: 0.7, max: 1.0 }, // Bordes definidos
-  CRACK_OPACITY: { min: 0.6, max: 0.9 }, // Alta opacidad
-  INTERNAL_REFLECTIONS: { min: 0.5, max: 0.9 }, // Reflexiones visibles
-  ANIMATION_SPEED: { min: 0.05, max: 0.15 }, // Animación sutil
+  CRACK_DENSITY: { min: 0.3, max: 0.6 },
+  CRACK_DEPTH: { min: 0.5, max: 0.9 },
+  CRACK_COMPLEXITY: { min: 3, max: 5 },
+  CRACK_SCALE: { min: 3.0, max: 8.0 },
+  CRACK_SHARPNESS: { min: 0.7, max: 1.0 },
+  CRACK_OPACITY: { min: 0.6, max: 0.9 },
+  INTERNAL_REFLECTIONS: { min: 0.5, max: 0.9 },
+  ANIMATION_SPEED: { min: 0.05, max: 0.15 },
 };
 
 export class TerrainCracksEffect {
@@ -37,7 +37,7 @@ export class TerrainCracksEffect {
   constructor(params: TerrainCracksParams = {}) {
     const seed = params.seed !== undefined ? params.seed : 123456;
 
-    const visualRng = new SeededRandom(123456);
+    const visualRng = new SeededRandom(seed + 10000);
 
     const hue = visualRng.uniform(0, 360);
     const saturation = visualRng.uniform(0.3, 0.8);
@@ -75,6 +75,8 @@ export class TerrainCracksEffect {
         }
       `,
       fragmentShader: `
+        precision highp float;
+        
         varying vec2 vUv;
         varying vec3 vPosition;
         varying vec3 vNormal;
@@ -89,7 +91,9 @@ export class TerrainCracksEffect {
         vec2 random2(vec2 st, float seed) {
           st = vec2(dot(st, vec2(127.1 + seed, 311.7 + seed * 0.5)),
                     dot(st, vec2(269.5 + seed * 0.3, 183.3 + seed * 0.7)));
-          return -1.0 + 2.0 * fract(sin(st) * (43758.5453123 + seed));
+          vec2 result = fract(sin(st) * (43758.5453123 + seed));
+          result = clamp(result, 0.0, 1.0);
+          return -1.0 + 2.0 * result;
         }
         
         float shouldDrawLine(vec2 position, float planetSeed, float percentage) {
@@ -98,7 +102,7 @@ export class TerrainCracksEffect {
           float cellHash = dot(cellPos, vec2(127.1, 311.7));
           cellHash = fract(sin(cellHash + planetSeed * 0.001) * 43758.5453);
           
-          cellHash = fract(cellHash + planetSeed * 0.0001);
+          cellHash = clamp(fract(cellHash + planetSeed * 0.0001), 0.0, 1.0);
           
           return step(cellHash, percentage);
         }
@@ -132,7 +136,7 @@ export class TerrainCracksEffect {
         }
         
         void main() {
-          vec2 st = vUv * (6.0 + mod(planetSeed, 4.0));
+          vec2 st = clamp(vUv, 0.0, 1.0) * (6.0 + mod(planetSeed, 4.0));
           
           float drawChance1 = shouldDrawLine(st, planetSeed, lineDrawPercentage);
           float drawChance2 = shouldDrawLine(st * 1.5, planetSeed + 1000.0, lineDrawPercentage);
