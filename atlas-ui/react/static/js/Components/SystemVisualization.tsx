@@ -169,7 +169,6 @@ const SystemVisualization: React.FC<SystemVisualizationProps> = ({ systemUrl, im
     }
   }, [imageUrl]);
 
-
   return (
     <div className="h-full flex flex-col">
       <h3 className="text-lg sm:text-xl font-bold text-white mb-3">System Visualization</h3>
@@ -202,13 +201,7 @@ const SystemVisualization: React.FC<SystemVisualizationProps> = ({ systemUrl, im
       </div>
 
       <div className="text-center mt-auto">
-        <StargateButton
-          href={systemUrl}
-          className="inline-block px-4 py-2 bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 text-gray-200 font-medium text-sm rounded-lg border border-slate-600 hover:border-slate-500 shadow-md hover:shadow-lg transition-all duration-300 relative overflow-hidden group"
-          style={{
-            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)",
-          }}
-        />
+        <StargateButton href={systemUrl} />
 
         <div className="mt-2 text-xs text-gray-500 text-center">Gateway to the stars</div>
       </div>

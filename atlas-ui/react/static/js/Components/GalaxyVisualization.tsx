@@ -94,13 +94,7 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, ga
       </div>
 
       <div className="text-center mt-auto">
-        <StargateButton
-          href={galaxyUrl}
-          className="inline-block px-4 py-2 bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 text-gray-200 font-medium text-sm rounded-lg border border-slate-600 hover:border-slate-500 shadow-md hover:shadow-lg transition-all duration-300 relative overflow-hidden group"
-          style={{
-            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)",
-          }}
-        />
+        <StargateButton href={galaxyUrl} />
 
         <div className="mt-2 text-xs text-gray-500 text-center">Gateway to the stars</div>
       </div>
