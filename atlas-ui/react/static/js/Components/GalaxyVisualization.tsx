@@ -1,8 +1,9 @@
 // atlas-ui/react/static/js/Components/GalaxyVisualization.tsx
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Galaxy3DViewer from "./Galaxy3DViewer.tsx";
 import Galaxy3DViewerFullscreen from "./Galaxy3DViewerFullscreen.tsx";
+import StargateButton from "./StargateButton";
 
 interface GalaxyVisualizationProps {
   galaxyUrl: string;
@@ -15,71 +16,9 @@ interface GalaxyVisualizationProps {
 }
 
 const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, galaxyType = "Spiral", numSystems = 10000, blackHoles = 5, pulsars = 10, quasars = 3, galaxyName }) => {
-  const [stargateText, setStargateText] = useState("Aligning Stargate...");
-  const [isAnimating, setIsAnimating] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [isEntering, setIsEntering] = useState(false);
-
-  useEffect(() => {
-    const animationShown = sessionStorage.getItem("stargateAnimationShown");
-
-    if (animationShown) {
-      setStargateText("Stargate system aligned");
-      return;
-    }
-
-    sessionStorage.setItem("stargateAnimationShown", "true");
-    setIsAnimating(true);
-
-    const getRandomString = (chars: string, length: number) => {
-      return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
-    };
-
-    const phases = [
-      { chars: "01", duration: 40, iterations: 20 },
-      { chars: "0123456789", duration: 25, iterations: 35 },
-      { chars: "0123456789ABCDEF", duration: 20, iterations: 50 },
-      { chars: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{}|;:'\",.<>?/`~", duration: 15, iterations: 100 },
-    ];
-
-    let currentPhase = 0;
-    let currentIteration = 0;
-
-    const animate = () => {
-      if (currentPhase >= phases.length) {
-        const finalMessage = "Stargate system aligned";
-        let charIndex = 0;
-        setStargateText("");
-
-        const typeChar = () => {
-          if (charIndex < finalMessage.length) {
-            setStargateText(finalMessage.substring(0, charIndex + 1));
-            charIndex++;
-            setTimeout(typeChar, 30);
-          } else {
-            setIsAnimating(false);
-          }
-        };
-
-        typeChar();
-        return;
-      }
-
-      const phase = phases[currentPhase];
-      setStargateText(getRandomString(phase.chars, 32));
-      currentIteration++;
-
-      if (currentIteration >= phase.iterations) {
-        currentPhase++;
-        currentIteration = 0;
-      }
-
-      setTimeout(animate, phase.duration);
-    };
-
-    animate();
-  }, []);
 
   useEffect(() => {
     const style = document.createElement("style");
@@ -155,22 +94,13 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, ga
       </div>
 
       <div className="text-center mt-auto">
-        <a
+        <StargateButton
           href={galaxyUrl}
-          className={`inline-block px-4 py-2 bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 text-gray-200 font-medium text-sm rounded-lg border border-slate-600 hover:border-slate-500 shadow-md hover:shadow-lg transition-all duration-300 relative overflow-hidden group ${isAnimating ? "animate-pulse" : ""}`}
+          className="inline-block px-4 py-2 bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 text-gray-200 font-medium text-sm rounded-lg border border-slate-600 hover:border-slate-500 shadow-md hover:shadow-lg transition-all duration-300 relative overflow-hidden group"
           style={{
             boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)",
           }}
-        >
-          <span className="relative z-10 font-mono flex items-center gap-2">
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.736 6.979C9.208 6.193 9.696 6 10 6s.792.193 1.264.979a1 1 0 001.715-1.029C12.279 4.784 11.232 4 10 4s-2.279.784-2.979 1.95a1 1 0 001.715 1.029zM8.5 10a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM10 14c-.304 0-.792-.193-1.264-.979a1 1 0 00-1.715 1.029C7.721 15.216 8.768 16 10 16s2.279-.784 2.979-1.95a1 1 0 00-1.715-1.029C10.792 13.807 10.304 14 10 14z" clipRule="evenodd" />
-            </svg>
-            {stargateText}
-          </span>
-
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        </a>
+        />
 
         <div className="mt-2 text-xs text-gray-500 text-center">Gateway to the stars</div>
       </div>
