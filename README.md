@@ -45,13 +45,14 @@
 
 ### 🧬 Life Forms and Visualization
 
-| Life Type | Visualization | Rarity |
-|-----------|---------------|--------|
-| **Intelligent Life** | Orbital satellites and structures | Rare |
-| **Have I found God?** | Golden sacred symbols, energy waves | Ultra-rare (0.0000000000001%) |
-| **Conscious Gas** | Animated gaseous effects | Very rare |
-| **Robotic Entities** | Satellite networks and energy rings | Rare |
-| **Silicon-based Life** | Crystalline formations | Uncommon |
+| Life Type              | Visualization                       | Rarity                        |
+| ---------------------- | ----------------------------------- | ----------------------------- |
+| **Intelligent Life**   | Orbital satellites and structures   | Rare                          |
+| **Have I found God?**  | Golden sacred symbols, energy waves | Ultra-rare (0.0000000000001%) |
+| **Conscious Gas**      | Animated gaseous effects            | Very rare                     |
+| **Robotic Entities**   | Satellite networks and energy rings | Rare                          |
+| **Silicon-based Life** | Crystalline formations              | Uncommon                      |
+
 And more!
 
 ---
@@ -63,7 +64,6 @@ And more!
 - **Tidal Effects**: Close planets become tidally locked
 - **Axial Tilt**: Affects seasons and ring visibility
 - **Roche Limit Calculations**: Realistic ring formation
-
 
 ---
 
@@ -79,6 +79,12 @@ And more!
 <p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/static/ghimages/_new_09_fullscreen_carbon_planet.png" width="800"></p>
 <p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/static/ghimages/_new_10_fullscreen_system_time_navigation.png" width="800"></p>
 <p align="center"><img src="https://github.com/SurceBeats/Atlas/blob/main/static/ghimages/_new_11_fullscreen_galaxy_elliptical_preview.png" width="800"></p>
+
+---
+
+## 🖼️ Users Art Gallery
+
+<sub>Submit your screenshots and weird planets **via Twitter to @SurceBeats** in order to be included! Share your seed or make sure to keep your instance online and publicly available</sub>
 
 ---
 
@@ -169,7 +175,8 @@ To get started with _The Atlas_:
 
 Alternatively, you can install all dependencies by running: `pip install -r requirements.txt`.
 
-### 🐳 Docker 
+### 🐳 Docker
+
 Directly Docker pull **bansheetech/atlas:latest**
 
 ---
