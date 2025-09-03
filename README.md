@@ -86,6 +86,25 @@ And more!
 
 <sub>Submit your screenshots and weird planets **via Twitter to @SurceBeats** in order to be included! Share your seed or make sure to keep your instance online and publicly available</sub>
 
+<div align="center">
+  <img src="https://i.imgur.com/9Uachyw.jpeg" width="256" height="256" style="margin: 5px; border-radius: 8px;" alt="User Art">
+  <img src="https://i.imgur.com/lhNt0TE.jpeg" width="256" height="256" style="margin: 5px; border-radius: 8px;" alt="User Art">
+  <img src="https://i.imgur.com/oOSdWVK.jpeg" width="256" height="256" style="margin: 5px; border-radius: 8px;" alt="User Art">
+  <img src="https://i.imgur.com/OSflA1r.png" width="256" height="256" style="margin: 5px; border-radius: 8px;" alt="User Art">
+  <img src="https://i.imgur.com/K1xUNPI.jpeg" width="256" height="256" style="margin: 5px; border-radius: 8px;" alt="User Art">
+  <img src="https://i.imgur.com/35ZzQF6.jpeg" width="256" height="256" style="margin: 5px; border-radius: 8px;" alt="User Art">
+  <img src="https://i.imgur.com/NH4CniC.jpeg" width="256" height="256" style="margin: 5px; border-radius: 8px;" alt="User Art">
+  <img src="https://i.imgur.com/KOWIZ8X.jpeg" width="256" height="256" style="margin: 5px; border-radius: 8px;" alt="User Art">
+  <img src="https://i.imgur.com/g1xAlCK.jpeg" width="256" height="256" style="margin: 5px; border-radius: 8px;" alt="User Art">
+  <img src="https://i.imgur.com/dH8ejMy.jpeg" width="256" height="256" style="margin: 5px; border-radius: 8px;" alt="User Art">
+  <img src="https://i.imgur.com/DmzhkXv.jpeg" width="256" height="256" style="margin: 5px; border-radius: 8px;" alt="User Art">
+  <img src="https://i.imgur.com/fOMa0Cw.png" width="256" height="256" style="margin: 5px; border-radius: 8px;" alt="User Art">
+  <img src="https://i.imgur.com/QQXSSII.jpeg" width="256" height="256" style="margin: 5px; border-radius: 8px;" alt="User Art">
+  <img src="https://i.imgur.com/Y26Lw3p.jpeg" width="256" height="256" style="margin: 5px; border-radius: 8px;" alt="User Art">
+  <img src="https://i.imgur.com/aw7vJC6.jpeg" width="256" height="256" style="margin: 5px; border-radius: 8px;" alt="User Art">
+  <img src="https://i.imgur.com/kN7tkSa.jpeg" width="256" height="256" style="margin: 5px; border-radius: 8px;" alt="User Art">
+</div>
+
 ---
 
 ## 👀 Other features

@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.4.25] - 2025-09-03
+
+- Out now vacation have finished, I have added some key features which were missing and also polished the QR system and screenshot exporting, may fail on mobile devices. Fixed some 3D effects which weren't getting properly showed on screenshots, there may be still artifacts but they're 4K screenshots so... Probably will get over them this next 2026, finished for now!
+
 ## [2.4.24] - 2025-09-02
 
 - Now you can download 4K images from any view, complete with copyright info and a QR code that takes you straight to the Stargate link for instant access.
