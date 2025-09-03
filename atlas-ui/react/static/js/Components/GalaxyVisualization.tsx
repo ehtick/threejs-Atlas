@@ -1,5 +1,5 @@
 // atlas-ui/react/static/js/Components/GalaxyVisualization.tsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import Galaxy3DViewer from "./Galaxy3DViewer.tsx";
 import Galaxy3DViewerFullscreen from "./Galaxy3DViewerFullscreen.tsx";
@@ -19,6 +19,8 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, ga
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [isEntering, setIsEntering] = useState(false);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const galaxyRendererRef = useRef<{ captureScreenshot: () => void; isGeneratingImage: boolean } | null>(null);
 
   useEffect(() => {
     const style = document.createElement("style");
@@ -71,6 +73,18 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, ga
     }
   }, [isEntering]);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (galaxyRendererRef.current && isGeneratingImage) {
+        const rendererState = galaxyRendererRef.current.isGeneratingImage;
+        if (!rendererState && isGeneratingImage) {
+          setIsGeneratingImage(false);
+        }
+      }
+    }, 50);
+    return () => clearInterval(interval);
+  }, [isGeneratingImage]);
+
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between mb-3">
@@ -79,6 +93,7 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, ga
 
       <div className="relative w-full max-w-80 sm:max-w-96 aspect-square mx-auto bg-black/50 flex justify-center items-center rounded-xl overflow-hidden border-2 border-blue-400/30 mb-4">
         <Galaxy3DViewer
+          ref={galaxyRendererRef}
           galaxyType={galaxyType}
           numSystems={numSystems}
           blackHoles={blackHoles}
@@ -94,7 +109,16 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, ga
       </div>
 
       <div className="text-center mt-auto">
-        <StargateButton href={galaxyUrl} />
+        <StargateButton
+          href={galaxyUrl}
+          onTakeScreenshot={() => {
+            if (galaxyRendererRef.current && !isGeneratingImage) {
+              setIsGeneratingImage(true);
+              galaxyRendererRef.current.captureScreenshot();
+            }
+          }}
+          isGeneratingImage={isGeneratingImage}
+        />
 
         <div className="mt-2 text-xs text-gray-500 text-center">Gateway to the stars</div>
       </div>

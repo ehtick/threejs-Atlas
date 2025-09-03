@@ -6,9 +6,11 @@ interface ShareModalProps {
   onClose: () => void;
   url: string;
   title?: string;
+  onTakeScreenshot?: () => void;
+  isGeneratingImage?: boolean;
 }
 
-const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, url, title = "Share this link" }) => {
+const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, url, title = "Share this link", onTakeScreenshot, isGeneratingImage = false }) => {
   const [copied, setCopied] = useState(false);
   const [shouldRender, setShouldRender] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
@@ -99,7 +101,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, url, title = "
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className={`grid ${onTakeScreenshot ? "grid-cols-4" : "grid-cols-3"} gap-3`}>
           <button onClick={handleShareFacebook} className="flex flex-col items-center gap-2 p-3 rounded-lg bg-slate-700/50 hover:bg-slate-700 transition-colors group">
             <svg className="w-6 h-6 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
               <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
@@ -134,6 +136,25 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, url, title = "
             </svg>
             <span className="text-xs text-gray-400 group-hover:text-gray-300">Email</span>
           </button>
+
+          {onTakeScreenshot && (
+            <button onClick={onTakeScreenshot} disabled={isGeneratingImage} className={`flex flex-col items-center gap-2 p-3 rounded-lg transition-colors group ${isGeneratingImage ? "bg-slate-700/30 cursor-not-allowed opacity-50" : "bg-slate-700/50 hover:bg-slate-700"}`}>
+              {isGeneratingImage ? (
+                <>
+                  <div className="w-6 h-6 border-2 border-gray-400 border-t-white rounded-full animate-spin" />
+                  <span className="text-xs text-gray-500">Generating...</span>
+                </>
+              ) : (
+                <>
+                  <svg className="w-6 h-6 text-purple-400 group-hover:text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span className="text-xs text-purple-400 group-hover:text-purple-300">Screenshot</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
       </div>
     </div>,

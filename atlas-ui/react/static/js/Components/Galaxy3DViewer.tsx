@@ -1,5 +1,5 @@
 // atlas-ui/react/static/js/Components/Galaxy3DViewer.tsx
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import DownloadIcon from "../Icons/DownloadIcon";
@@ -19,7 +19,7 @@ interface Galaxy3DViewerProps {
   galaxyUrl?: string;
 }
 
-const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems, blackHoles, pulsars, quasars, seed = 12345, onExpandClick, galaxyName, galaxyUrl }) => {
+const Galaxy3DViewer = forwardRef<{ captureScreenshot: () => void; isGeneratingImage: boolean }, Galaxy3DViewerProps>(({ galaxyType, numSystems, blackHoles, pulsars, quasars, seed = 12345, onExpandClick, galaxyName, galaxyUrl }, ref) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -32,6 +32,11 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
   const [canvasHidden, setCanvasHidden] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+
+  useImperativeHandle(ref, () => ({
+    captureScreenshot: handleDownloadScreenshot,
+    isGeneratingImage,
+  }));
 
   class SeededRandom {
     private seed: number;
@@ -1231,6 +1236,8 @@ const Galaxy3DViewer: React.FC<Galaxy3DViewerProps> = ({ galaxyType, numSystems,
       </div>
     </div>
   );
-};
+});
+
+Galaxy3DViewer.displayName = "Galaxy3DViewer";
 
 export default Galaxy3DViewer;

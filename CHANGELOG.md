@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.4.26] - 2025-09-03
+
+- Refactored the Stargate Link button into a component to make it clearer and easier to use, added a share icon right inside the button with options to share the Stargate Links directly on different socials, and included the ability to take a screenshot right from the share modal instead of just from the 3D Scene. Last change this year I swear!"
+
 ## [2.4.25] - 2025-09-03
 
 - Out now vacation have finished, I have added some key features which were missing and also polished the QR system and screenshot exporting, may fail on mobile devices. Fixed some 3D effects which weren't getting properly showed on screenshots, there may be still artifacts but they're 4K screenshots so... Probably will get over them this next 2026, finished for now!

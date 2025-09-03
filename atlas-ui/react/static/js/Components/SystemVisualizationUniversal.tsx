@@ -38,6 +38,8 @@ const SystemVisualizationUniversal: React.FC<SystemVisualizationUniversalProps> 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [canvasHidden, setCanvasHidden] = useState(false);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const solarSystemRendererRef = useRef<{ captureScreenshot: () => void; isGeneratingImage: boolean } | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -142,6 +144,18 @@ const SystemVisualizationUniversal: React.FC<SystemVisualizationUniversalProps> 
     }, 800);
   }, []);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (solarSystemRendererRef.current && isGeneratingImage) {
+        const rendererState = solarSystemRendererRef.current.isGeneratingImage;
+        if (!rendererState && isGeneratingImage) {
+          setIsGeneratingImage(false);
+        }
+      }
+    }, 50);
+    return () => clearInterval(interval);
+  }, [isGeneratingImage]);
+
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between mb-3">
@@ -153,13 +167,22 @@ const SystemVisualizationUniversal: React.FC<SystemVisualizationUniversalProps> 
 
         {imageLoaded && system && (
           <div className={`absolute inset-0 w-full h-full transition-all duration-500 ${imageLoaded && canvasHidden ? "opacity-100 blur-0" : "opacity-0 blur-[25px]"}`}>
-            <SolarSystem3DViewerLeft planets={system.planets} stars={system.stars} systemName={system.name} cosmicOriginTime={cosmicOriginTime || 0} systemUrl={systemUrl} />
+            <SolarSystem3DViewerLeft ref={solarSystemRendererRef} planets={system.planets} stars={system.stars} systemName={system.name} cosmicOriginTime={cosmicOriginTime || 0} systemUrl={systemUrl} />
           </div>
         )}
       </div>
 
       <div className="text-center mt-auto">
-        <StargateButton href={systemUrl} />
+        <StargateButton
+          href={systemUrl}
+          onTakeScreenshot={() => {
+            if (solarSystemRendererRef.current && !isGeneratingImage) {
+              setIsGeneratingImage(true);
+              solarSystemRendererRef.current.captureScreenshot();
+            }
+          }}
+          isGeneratingImage={isGeneratingImage}
+        />
 
         <div className="mt-2 text-xs text-gray-500 text-center">Gateway to the stars</div>
       </div>

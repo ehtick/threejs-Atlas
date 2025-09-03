@@ -274,7 +274,16 @@ const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> 
       </div>
 
       <div className="text-center mt-auto">
-        <StargateButton href={planetUrl} />
+        <StargateButton
+          href={planetUrl}
+          onTakeScreenshot={() => {
+            if (planetRendererRef.current && !isGeneratingImage) {
+              setIsGeneratingImage(true);
+              planetRendererRef.current.captureScreenshot();
+            }
+          }}
+          isGeneratingImage={isGeneratingImage}
+        />
 
         <div className="mt-2 text-xs text-gray-500 text-center">Gateway to the stars</div>
       </div>

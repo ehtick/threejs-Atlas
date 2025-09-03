@@ -6,9 +6,11 @@ interface StargateButtonProps {
   href: string;
   className?: string;
   style?: React.CSSProperties;
+  onTakeScreenshot?: () => void;
+  isGeneratingImage?: boolean;
 }
 
-const StargateButton: React.FC<StargateButtonProps> = ({ href, className = "", style = {} }) => {
+const StargateButton: React.FC<StargateButtonProps> = ({ href, className = "", style = {}, onTakeScreenshot, isGeneratingImage = false }) => {
   const [displayText, setDisplayText] = useState("Aligning Stargate...");
   const [isScaled, setIsScaled] = useState(false);
   const [showShareButton, setShowShareButton] = useState(false);
@@ -102,7 +104,7 @@ const StargateButton: React.FC<StargateButtonProps> = ({ href, className = "", s
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
       </div>
 
-      <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} url={href.startsWith("/") ? `${window.location.origin}${href}` : href} title="Check out this Stargate destination on The Atlas!" />
+      <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} url={href.startsWith("/") ? `${window.location.origin}${href}` : href} title="Check out this Stargate destination on The Atlas!" onTakeScreenshot={onTakeScreenshot} isGeneratingImage={isGeneratingImage} />
     </>
   );
 };

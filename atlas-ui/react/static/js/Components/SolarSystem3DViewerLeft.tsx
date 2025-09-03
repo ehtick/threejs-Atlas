@@ -1,5 +1,5 @@
 // atlas-ui/react/static/js/Components/SolarSystem3DViewerLeft.tsx
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle } from "react";
 import { createPortal } from "react-dom";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
@@ -37,7 +37,7 @@ interface SolarSystem3DViewerLeftProps {
   systemUrl?: string;
 }
 
-const SolarSystem3DViewerLeft: React.FC<SolarSystem3DViewerLeftProps> = ({ planets, stars, systemName, cosmicOriginTime, systemUrl }) => {
+const SolarSystem3DViewerLeft = forwardRef<{ captureScreenshot: () => void; isGeneratingImage: boolean }, SolarSystem3DViewerLeftProps>(({ planets, stars, systemName, cosmicOriginTime, systemUrl }, ref) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -60,6 +60,11 @@ const SolarSystem3DViewerLeft: React.FC<SolarSystem3DViewerLeftProps> = ({ plane
   const [loadingAPI, setLoadingAPI] = useState(true);
   const [apiError, setApiError] = useState<string | null>(null);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+
+  useImperativeHandle(ref, () => ({
+    captureScreenshot: () => handleDownloadScreenshot(),
+    isGeneratingImage,
+  }));
 
   const currentTime = realCurrentTime - cosmicOriginTime + timeOffset;
 
@@ -713,6 +718,7 @@ const SolarSystem3DViewerLeft: React.FC<SolarSystem3DViewerLeftProps> = ({ plane
         )}
     </>
   );
-};
+});
 
+SolarSystem3DViewerLeft.displayName = "SolarSystem3DViewerLeft";
 export default SolarSystem3DViewerLeft;
