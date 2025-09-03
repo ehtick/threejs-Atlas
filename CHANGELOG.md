@@ -1,8 +1,12 @@
 # Changelog
 
+## [2.4.28] - 2025-09-03
+
+- Fixed copy functionality in Share Modal to work properly in non-HTTPS environments by adding fallback method for clipboard operations. Let's say I'm not good at swearing...
+
 ## [2.4.26] - 2025-09-03
 
-- Refactored the Stargate Link button into a component to make it clearer and easier to use, added a share icon right inside the button with options to share the Stargate Links directly on different socials, and included the ability to take a screenshot right from the share modal instead of just from the 3D Scene. Last change this year I swear!"
+- Refactored the Stargate Link button into a component to make it clearer and easier to use, added a share icon right inside the button with options to share the Stargate Links directly on different socials, and included the ability to take a screenshot right from the share modal instead of just from the 3D Scene. Last change this year I swear!
 
 ## [2.4.25] - 2025-09-03
 
