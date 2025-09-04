@@ -20,7 +20,7 @@ export interface ExportData {
 }
 
 export class DataExportImport {
-  private static readonly VERSION = "2.4.28";
+  private static readonly VERSION = "2.4.30";
 
   private static async generateHash(data: string): Promise<string> {
     const msgBuffer = new TextEncoder().encode(data);

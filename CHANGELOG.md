@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.4.30] - 2025-09-03
+
+- Added a way to export / import saved date into other The Atlas instances / URLs.
+
 ## [2.4.28] - 2025-09-03
 
 - Fixed copy functionality in Share Modal to work properly in non-HTTPS environments by adding fallback method for clipboard operations. Let's say I'm not good at swearing...
