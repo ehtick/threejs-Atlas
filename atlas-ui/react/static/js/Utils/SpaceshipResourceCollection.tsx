@@ -248,13 +248,6 @@ export class SpaceshipResourceCollectionManager {
       contentDiv.appendChild(discoveryBonusDiv);
     }
 
-    if (bonusInfo?.streakBonus) {
-      const streakBonusDiv = document.createElement("div");
-      streakBonusDiv.className = "text-xs text-purple-300 mt-1";
-      streakBonusDiv.textContent = "🔥 Streak Bonus: +25%";
-      contentDiv.appendChild(streakBonusDiv);
-    }
-
     if (bonusInfo?.shipMultiplier && bonusInfo.shipMultiplier > 1.0) {
       const shipMultiplierDiv = document.createElement("div");
       shipMultiplierDiv.className = "text-xs text-blue-300 mt-1";

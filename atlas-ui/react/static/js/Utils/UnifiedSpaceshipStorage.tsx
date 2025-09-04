@@ -367,7 +367,7 @@ export class UnifiedSpaceshipStorage {
     const currentStreak = data.s?.cs || 0;
     const dailyCollections = data.s?.dc || 0;
 
-    const streakMultiplier = currentStreak >= 3 ? 1.25 : 1.0;
+    const streakMultiplier = 1.0;
 
     return {
       currentStreak,
@@ -521,10 +521,10 @@ export class UnifiedSpaceshipStorage {
     }
 
     const expandedData: SpaceshipData = {
-      r: compactData.r || { a: 300, e: 200, d: 250 }, // Match new defaults
-      u: compactData.u || { l: 1, ef: 1.0, rn: 500, st: 1000, m: 1.0 }, // Match new defaults
+      r: compactData.r || { a: 300, e: 200, d: 250 },
+      u: compactData.u || { l: 1, ef: 1.0, rn: 500, st: 1000, m: 1.0 },
       c: expandedCollections,
-      t: compactData.t || {}, // Use timestamps directly (uncompressed)
+      t: compactData.t || {},
       s: compactData.s || { tc: 0, tr: { a: 0, e: 0, d: 0 }, tt: 0, cs: 0, dc: 0, dcp: 0, dcs: 0, dcg: 0, lcd: new Date().toDateString() },
     };
 
@@ -544,7 +544,7 @@ export class UnifiedSpaceshipStorage {
         data.c[key] = now - TWENTY_FOUR_HOURS;
         cleaned = true;
       } else if (value < MIN_VALID_TIMESTAMP || value > MAX_VALID_TIMESTAMP) {
-        data.c[key] = now - TWENTY_FOUR_HOURS; // Instead of deleting, set to 24hrs ago
+        data.c[key] = now - TWENTY_FOUR_HOURS;
         cleaned = true;
       }
     });
