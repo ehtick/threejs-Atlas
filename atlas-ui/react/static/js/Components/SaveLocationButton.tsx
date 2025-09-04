@@ -43,9 +43,8 @@ const SaveLocationButton: React.FC<SaveLocationButtonProps> = ({ type, name, coo
   };
 
   useEffect(() => {
-    const savedLocations = LocationBookmarks.getLocations();
     const stargateUrl = generateStargateUrl();
-    const exists = savedLocations.some((loc) => loc.stargateUrl === stargateUrl);
+    const exists = LocationBookmarks.isLocationSaved(stargateUrl);
     setIsSaved(exists);
   }, [coordinates, systemIndex, planetName, type]);
 

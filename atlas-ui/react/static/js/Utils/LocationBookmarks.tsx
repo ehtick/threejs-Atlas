@@ -29,6 +29,20 @@ export class LocationBookmarks {
     }
   }
 
+  private static normalizeStargateUrl(url: string): string {
+    // Extract just the /stargate/xxx part from any URL format
+    const stargateIndex = url.indexOf('/stargate/');
+    return stargateIndex !== -1 ? url.substring(stargateIndex) : url;
+  }
+
+  public static isLocationSaved(stargateUrl: string): boolean {
+    const normalizedUrl = this.normalizeStargateUrl(stargateUrl);
+    const savedLocations = this.getLocations();
+    return savedLocations.some((loc) => 
+      this.normalizeStargateUrl(loc.stargateUrl) === normalizedUrl
+    );
+  }
+
   public static async saveLocation(location: Omit<SavedLocation, "id" | "timestamp">): Promise<boolean> {
     try {
       const locations = this.getLocations();

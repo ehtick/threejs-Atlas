@@ -629,8 +629,12 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
                           return `${m}m`;
                         };
 
+                        const stargateIndex = location.stargateUrl.indexOf("/stargate/");
+                        const cleanUrl = stargateIndex !== -1 ? location.stargateUrl.substring(stargateIndex) : location.stargateUrl;
+                        const fullUrl = `${window.location.origin}${cleanUrl}`;
+
                         return (
-                          <a key={location.id} href={location.stargateUrl} className="block bg-white/5 hover:bg-white/10 rounded p-1.5 border border-white/10 hover:border-white/20 transition-all duration-200 hover:text-blue-300" title={`Navigate to ${formatLocationName(location.name)}`}>
+                          <a key={location.id} href={fullUrl} className="block bg-white/5 hover:bg-white/10 rounded p-1.5 border border-white/10 hover:border-white/20 transition-all duration-200 hover:text-blue-300" title={`Navigate to ${formatLocationName(location.name)}`}>
                             <div className="flex items-center justify-between mb-1">
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center space-x-1">

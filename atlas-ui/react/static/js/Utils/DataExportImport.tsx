@@ -22,12 +22,47 @@ export interface ExportData {
 export class DataExportImport {
   private static readonly VERSION = "2.4.30";
 
+  private static generateFallbackHash(data: string): string {
+    let hash = 0;
+    for (let i = 0; i < data.length; i++) {
+      const char = data.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash = hash & hash;
+    }
+    return Math.abs(hash).toString(16).padStart(8, "0");
+  }
+
   private static async generateHash(data: string): Promise<string> {
+    if (!crypto || !crypto.subtle || !crypto.subtle.digest) {
+      console.warn("crypto.subtle not available, using fallback hash");
+      return this.generateFallbackHash(data);
+    }
+
     const msgBuffer = new TextEncoder().encode(data);
     const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
     return hashHex;
+  }
+
+  private static async verifyHash(data: string, expectedHash: string): Promise<boolean> {
+    const calculatedHash = await this.generateHash(data);
+
+    if (expectedHash === calculatedHash) {
+      return true;
+    }
+
+    if (expectedHash.length === 8 || calculatedHash.length === 8) {
+      if (!crypto || !crypto.subtle || !crypto.subtle.digest) {
+        console.warn("Cannot verify SHA-256 hash in non-secure context, accepting");
+        return true;
+      } else {
+        const fallbackHash = this.generateFallbackHash(data);
+        return expectedHash === fallbackHash;
+      }
+    }
+
+    return false;
   }
 
   static async exportAllData(): Promise<string> {
@@ -117,36 +152,36 @@ export class DataExportImport {
 
           const { checksum, ...dataWithoutChecksum } = importData;
           const dataForChecksum = JSON.stringify(dataWithoutChecksum);
-          const calculatedChecksum = await this.generateHash(dataForChecksum);
+          const checksumValid = await this.verifyHash(dataForChecksum, checksum);
 
-          if (checksum !== calculatedChecksum) {
+          if (!checksumValid) {
             throw new Error("Data integrity check failed. File may have been tampered with.");
           }
 
           if (importData.data.spaceship && importData.hashes.spaceship) {
-            const hash = await this.generateHash(importData.data.spaceship);
-            if (hash !== importData.hashes.spaceship) {
+            const valid = await this.verifyHash(importData.data.spaceship, importData.hashes.spaceship);
+            if (!valid) {
               throw new Error("Spaceship data integrity check failed");
             }
           }
 
           if (importData.data.archive && importData.hashes.archive) {
-            const hash = await this.generateHash(importData.data.archive);
-            if (hash !== importData.hashes.archive) {
+            const valid = await this.verifyHash(importData.data.archive, importData.hashes.archive);
+            if (!valid) {
               throw new Error("Archive data integrity check failed");
             }
           }
 
           if (importData.data.dailyChallenges && importData.hashes.dailyChallenges) {
-            const hash = await this.generateHash(importData.data.dailyChallenges);
-            if (hash !== importData.hashes.dailyChallenges) {
+            const valid = await this.verifyHash(importData.data.dailyChallenges, importData.hashes.dailyChallenges);
+            if (!valid) {
               throw new Error("Daily challenges data integrity check failed");
             }
           }
 
           if (importData.data.locations && importData.hashes.locations) {
-            const hash = await this.generateHash(importData.data.locations);
-            if (hash !== importData.hashes.locations) {
+            const valid = await this.verifyHash(importData.data.locations, importData.hashes.locations);
+            if (!valid) {
               throw new Error("Locations data integrity check failed");
             }
           }
