@@ -7,6 +7,7 @@ import { SpaceshipResourceManager, SpaceshipResource, SpaceshipUpgrade, TravelCo
 import { UnifiedSpaceshipStorage } from "../Utils/UnifiedSpaceshipStorage.tsx";
 import { ResourceEventManager } from "../Utils/ResourceEventManager.tsx";
 import { getItem, setItem } from "../Utils/b64.tsx";
+import { DataExportImport } from "../Utils/DataExportImport.tsx";
 import ProgressBar from "./ProgressBar.tsx";
 import AntimatterIcon from "../Icons/AntimatterIcon.tsx";
 import DeuteriumIcon from "../Icons/DeuteriumIcon.tsx";
@@ -38,7 +39,10 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
   const [showCollectionPopup, setShowCollectionPopup] = useState<boolean>(false);
   const [isCollectionClosing, setIsCollectionClosing] = useState<boolean>(false);
   const [, forceUpdate] = useState({});
+  const [importError, setImportError] = useState<string | null>(null);
+  const [importSuccess, setImportSuccess] = useState<boolean>(false);
   const panelRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -102,6 +106,40 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
       setIsOpen(false);
       setIsClosing(false);
     }, 300);
+  };
+
+  const handleExport = async () => {
+    try {
+      await DataExportImport.downloadExport();
+    } catch (error) {
+      console.error("Export failed:", error);
+      setImportError("Export failed. Please try again.");
+      setTimeout(() => setImportError(null), 3000);
+    }
+  };
+
+  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.endsWith(".atl")) {
+      setImportError("Please select a valid .atl file");
+      setTimeout(() => setImportError(null), 3000);
+      return;
+    }
+
+    try {
+      await DataExportImport.importData(file);
+      setImportSuccess(true);
+      setTimeout(() => setImportSuccess(false), 3000);
+    } catch (error) {
+      setImportError(error instanceof Error ? error.message : "Import failed");
+      setTimeout(() => setImportError(null), 3000);
+    }
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const handleToggle = () => {
@@ -279,6 +317,42 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
                       </div>
                     </div>
                     <div className="text-[9px] text-gray-500 mt-1">*Complete daily tasks to save more locations</div>
+                  </div>
+
+                  <div>
+                    <h4 className="text-white font-semibold mb-2 text-xs">💾 Data Management</h4>
+
+                    <div className="space-y-2">
+                      <div className="bg-white/5 rounded p-2 border border-blue-500/20">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-[10px] text-gray-400">Export/Import Atlas Data</span>
+                          <span className="text-[9px] text-blue-400">
+                            {(() => {
+                              const summary = DataExportImport.getDataSummary();
+                              const count = [summary.hasSpaceship, summary.hasArchive, summary.hasDailyChallenges, summary.hasLocations].filter(Boolean).length;
+                              return `${count}/4 keys`;
+                            })()}
+                          </span>
+                        </div>
+
+                        <div className="flex gap-2 mt-2">
+                          <button onClick={handleExport} className="flex-1 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 text-[10px] px-2 py-1.5 rounded border border-blue-500/50 transition-colors duration-200">
+                            📥 Export
+                          </button>
+                          <button onClick={() => fileInputRef.current?.click()} className="flex-1 bg-green-500/20 hover:bg-green-500/30 text-green-300 text-[10px] px-2 py-1.5 rounded border border-green-500/50 transition-colors duration-200">
+                            📤 Import
+                          </button>
+                        </div>
+
+                        <input ref={fileInputRef} type="file" accept=".atl" onChange={handleImport} className="hidden" />
+
+                        {importError && <div className="mt-2 text-[9px] text-red-400 bg-red-500/10 p-1 rounded">{importError}</div>}
+
+                        {importSuccess && <div className="mt-2 text-[9px] text-green-400 bg-green-500/10 p-1 rounded">Data imported successfully! Reloading...</div>}
+
+                        <div className="text-[8px] text-gray-500 mt-2">Saves all localStorage keys to .atl file</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
