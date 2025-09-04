@@ -85,7 +85,6 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
 
     const unsubscribeResources = ResourceEventManager.subscribe("resources_updated", updateSpaceshipResources);
 
-    // Update mining cooldown progress bars every 30 seconds when on saved tab
     let cooldownInterval: NodeJS.Timeout | null = null;
     if (activeTab === "saved") {
       cooldownInterval = setInterval(() => {
@@ -243,80 +242,97 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
               {activeTab === "stats" && (
                 <div className="space-y-2">
                   <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="text-white font-semibold text-xs">🌟 Daily Challenges</h4>
+                    <h4 className="text-white font-semibold mb-2 text-xs">🌟 Daily Challenges</h4>
+
+                    <div className="bg-white/5 rounded p-2 border border-indigo-500/20">
                       {dailyChallenges && (
-                        <div className="text-[10px] text-indigo-400 font-medium">
-                          Day {dailyChallenges.dayNumber} • x{DailyChallengesManager.getDayInfo().multiplier}
-                        </div>
+                        <>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[10px] text-gray-400">Today's Progress</span>
+                            <span className="text-[9px] text-indigo-400">
+                              Day {dailyChallenges.dayNumber} • x{DailyChallengesManager.getDayInfo().multiplier}
+                            </span>
+                          </div>
+
+                          <div className="space-y-1.5 mb-2">
+                            {dailyChallenges.challenges.map((challenge) => {
+                              const colors = {
+                                galaxies: "indigo" as const,
+                                systems: "blue" as const,
+                                planets: "purple" as const,
+                              };
+
+                              const labels = {
+                                galaxies: "Galaxies",
+                                systems: "Systems",
+                                planets: "Planets",
+                              };
+
+                              return (
+                                <div key={challenge.type} className="relative">
+                                  <div className="text-[10px] text-gray-400 mb-0.5">{labels[challenge.type]}</div>
+                                  <ProgressBar value={challenge.current} max={challenge.target} label={`${challenge.current}/${challenge.target}`} color={colors[challenge.type]} showPercentage={true} />
+                                  {challenge.completed && (
+                                    <div className="absolute -right-2 top-1.5">
+                                      <svg xmlns="http://www.w3.org/2000/svg" width={12} height={12} viewBox="0 0 128 128">
+                                        <path fill="#40c0e7" stroke="#40c0e7" strokeMiterlimit={10} strokeWidth={6} d="M48.3 103.45L12.65 67.99a2.2 2.2 0 0 1 0-3.12l9-9.01c.86-.86 2.25-.86 3.11 0l23.47 23.33c.86.86 2.26.85 3.12-.01l51.86-52.36c.86-.87 2.26-.87 3.13-.01l9.01 9.01c.86.86.86 2.25.01 3.11l-56.5 57.01l.01.01l-7.45 7.49c-.86.86-2.26.86-3.12.01z" />
+                                      </svg>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-1 text-[10px]">
+                            <div className="bg-black/30 rounded p-1.5 border border-indigo-500/30">
+                              <div className="text-gray-400 text-[9px]">Completed</div>
+                              <div className="text-indigo-400 font-bold">
+                                {dailyChallenges.challenges.filter((c) => c.completed).length}/{dailyChallenges.challenges.length}
+                              </div>
+                            </div>
+                            <div className="bg-black/30 rounded p-1.5 border border-green-500/30">
+                              <div className="text-gray-400 text-[9px]">Atlas Size</div>
+                              <div className="text-green-400 font-bold">{stats ? formatBytes(stats.size) : "0 B"}</div>
+                            </div>
+                          </div>
+                        </>
                       )}
                     </div>
-
-                    {dailyChallenges && (
-                      <div className="space-y-1.5 mb-2">
-                        {dailyChallenges.challenges.map((challenge) => {
-                          const colors = {
-                            galaxies: "indigo" as const,
-                            systems: "blue" as const,
-                            planets: "purple" as const,
-                          };
-
-                          const labels = {
-                            galaxies: "Galaxies",
-                            systems: "Systems",
-                            planets: "Planets",
-                          };
-
-                          return (
-                            <div key={challenge.type} className="relative">
-                              <div className="text-[10px] text-gray-400 mb-0.5">{labels[challenge.type]}</div>
-                              <ProgressBar value={challenge.current} max={challenge.target} label={`${challenge.current}/${challenge.target}`} color={colors[challenge.type]} showPercentage={true} />
-                              {challenge.completed && <div className="absolute -right-2 -top-1 text-white bg-green-500 px-0.5 rounded-full text-[8px]">✓</div>}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {dailyChallenges && (
-                      <div className="grid grid-cols-2 gap-1 text-[10px] mb-2">
-                        <div className="bg-white/5 rounded p-1.5 border border-indigo-500/20">
-                          <div className="text-gray-400 text-[9px]">Completed</div>
-                          <div className="text-indigo-400 font-bold">
-                            {dailyChallenges.challenges.filter((c) => c.completed).length}/{dailyChallenges.challenges.length}
-                          </div>
-                        </div>
-                        <div className="bg-white/5 rounded p-1.5 border border-green-500/20">
-                          <div className="text-gray-400 text-[9px]">Atlas Size</div>
-                          <div className="text-green-400 font-bold">{stats ? formatBytes(stats.size) : "0 B"}</div>
-                        </div>
-                      </div>
-                    )}
                   </div>
 
                   <div>
                     <h4 className="text-white font-semibold mb-2 text-xs">📍 Saved Locations</h4>
 
-                    <div className="mb-2">
-                      <div className="text-[10px] text-gray-400 mb-0.5">Storage Usage</div>
-                      <ProgressBar value={locationStats?.total || 0} max={locationStats?.maxAllowed || 50} label={`${locationStats?.total || 0}/${locationStats?.maxAllowed || 50}`} color="cyan" showPercentage={true} />
-                    </div>
+                    <div className="bg-white/5 rounded p-2 border border-purple-500/20">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-[10px] text-gray-400">Storage Usage</span>
+                        <span className="text-[9px] text-purple-400">
+                          {locationStats?.total || 0}/{locationStats?.maxAllowed || 50} slots
+                        </span>
+                      </div>
 
-                    <div className="grid grid-cols-3 gap-1 text-[10px]">
-                      <div className="bg-white/5 rounded p-1 text-center">
-                        <div className="text-gray-400 text-[9px]">Galaxies</div>
-                        <div className="text-indigo-400 font-bold">{locationStats?.galaxies || 0}</div>
+                      <div className="mb-2">
+                        <ProgressBar value={locationStats?.total || 0} max={locationStats?.maxAllowed || 50} label={`${locationStats?.total || 0}/${locationStats?.maxAllowed || 50}`} color="purple" showPercentage={true} />
                       </div>
-                      <div className="bg-white/5 rounded p-1 text-center">
-                        <div className="text-gray-400 text-[9px]">Systems</div>
-                        <div className="text-blue-400 font-bold">{locationStats?.systems || 0}</div>
+
+                      <div className="grid grid-cols-3 gap-1 text-[10px]">
+                        <div className="bg-black/30 rounded p-1 text-center border border-indigo-500/30">
+                          <div className="text-gray-400 text-[9px]">Galaxies</div>
+                          <div className="text-indigo-400 font-bold">{locationStats?.galaxies || 0}</div>
+                        </div>
+                        <div className="bg-black/30 rounded p-1 text-center border border-blue-500/30">
+                          <div className="text-gray-400 text-[9px]">Systems</div>
+                          <div className="text-blue-400 font-bold">{locationStats?.systems || 0}</div>
+                        </div>
+                        <div className="bg-black/30 rounded p-1 text-center border border-purple-500/30">
+                          <div className="text-gray-400 text-[9px]">Planets</div>
+                          <div className="text-purple-400 font-bold">{locationStats?.planets || 0}</div>
+                        </div>
                       </div>
-                      <div className="bg-white/5 rounded p-1 text-center">
-                        <div className="text-gray-400 text-[9px]">Planets</div>
-                        <div className="text-purple-400 font-bold">{locationStats?.planets || 0}</div>
-                      </div>
+
+                      <div className="text-[8px] text-gray-500 mt-2">Complete daily tasks to save more locations</div>
                     </div>
-                    <div className="text-[9px] text-gray-500 mt-1">*Complete daily tasks to save more locations</div>
                   </div>
 
                   <div>
@@ -336,11 +352,21 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
                         </div>
 
                         <div className="flex gap-2 mt-2">
-                          <button onClick={handleExport} className="flex-1 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 text-[10px] px-2 py-1.5 rounded border border-blue-500/50 transition-colors duration-200">
-                            📥 Export
+                          <button onClick={handleExport} className="flex-1 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 text-[10px] px-2 py-1.5 rounded border border-blue-500/50 transition-colors duration-200 flex items-center justify-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width={14} height={14} viewBox="0 0 24 24">
+                              <g fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth={1.5}>
+                                <path d="M4 12a8 8 0 1 0 16 0"></path>
+                                <path strokeLinejoin="round" d="M12 14V4m0 0l3 3m-3-3L9 7"></path>
+                              </g>
+                            </svg>
+                            <span>Export</span>
                           </button>
-                          <button onClick={() => fileInputRef.current?.click()} className="flex-1 bg-green-500/20 hover:bg-green-500/30 text-green-300 text-[10px] px-2 py-1.5 rounded border border-green-500/50 transition-colors duration-200">
-                            📤 Import
+                          <button onClick={() => fileInputRef.current?.click()} className="flex-1 bg-green-500/20 hover:bg-green-500/30 text-green-300 text-[10px] px-2 py-1.5 rounded border border-green-500/50 transition-colors duration-200 flex items-center justify-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width={14} height={14} viewBox="0 0 24 24">
+                              <path fill="currentColor" d="M14.47 10.47a.75.75 0 1 1 1.06 1.06l-3 3a.75.75 0 0 1-1.06 0l-3-3a.75.75 0 1 1 1.06-1.06l1.72 1.72V4a.75.75 0 0 1 1.5 0v8.19z"></path>
+                              <path fill="currentColor" d="M20.75 12a.75.75 0 0 0-1.5 0a7.25 7.25 0 1 1-14.5 0a.75.75 0 0 0-1.5 0a8.75 8.75 0 1 0 17.5 0"></path>
+                            </svg>
+                            <span>Import</span>
                           </button>
                         </div>
 
