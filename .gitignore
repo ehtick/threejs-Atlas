@@ -8,3 +8,6 @@
 /atlas.ini
 /venv
 /node_modules
+
+# Estupideces de macOS es pa reventarlos maemia
+.DS_Store

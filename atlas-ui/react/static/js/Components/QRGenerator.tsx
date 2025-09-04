@@ -51,24 +51,33 @@ export const generateStargateUrlForQR = (context: StargateContext): string => {
     const galaxyCoords = context.coordinates.split(",").map(Number);
     const currentPage = StargateGenerator.getCurrentPage();
 
+    // For QR codes, we need full URLs
+    let relativeUrl: string;
     switch (context.type) {
       case "galaxy":
-        return StargateGenerator.generateGalaxyUrl(galaxyCoords, currentPage);
+        relativeUrl = StargateGenerator.generateGalaxyUrl(galaxyCoords, currentPage);
+        break;
       case "system":
         if (context.systemIndex !== undefined) {
-          return StargateGenerator.generateSystemUrl(galaxyCoords, context.systemIndex, currentPage);
+          relativeUrl = StargateGenerator.generateSystemUrl(galaxyCoords, context.systemIndex, currentPage);
+        } else {
+          return window.location.href;
         }
         break;
       case "planet":
         if (context.systemIndex !== undefined && context.planetName) {
-          return StargateGenerator.generatePlanetUrl(galaxyCoords, context.systemIndex, context.planetName, currentPage);
+          relativeUrl = StargateGenerator.generatePlanetUrl(galaxyCoords, context.systemIndex, context.planetName, currentPage);
+        } else {
+          return window.location.href;
         }
         break;
+      default:
+        return window.location.href;
     }
 
-    return window.location.pathname;
+    return `${window.location.origin}${relativeUrl}`;
   } catch (error) {
-    return window.location.pathname;
+    return window.location.href;
   }
 };
 

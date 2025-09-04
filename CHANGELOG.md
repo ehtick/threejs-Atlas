@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.4.32] - 2025-09-04
+
+- Enhanced data export/import system with SHA-256 integrity verification and cross-platform compatibility between HTTP and HTTPS environments using fallback hashing. Optimized Stargate URL storage to use compact relative paths (/stargate/xxx) instead of full URLs, improving data portability and storage efficiency. Also added retrocompatibility support for existing saved locations with different URL formats while maintaining proper navigation and "Saved" status detection. Improved UI design consistency in Spaceship Control Stats section with unified container styling for Daily Challenges, Saved Locations, and Data Management modules.
+
 ## [2.4.30] - 2025-09-03
 
 - Added a way to export / import saved date into other The Atlas instances / URLs.
