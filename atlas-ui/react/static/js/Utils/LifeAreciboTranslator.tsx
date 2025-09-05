@@ -2505,7 +2505,7 @@ export class AreciboGenerator {
         this.drawVegetationForm(bitmap, colorMap, centerCol, startRow, height);
         break;
       case "Animal Life":
-        this.drawAnimalForm(bitmap, colorMap, centerCol, startRow, height);
+        this.drawAnimalForm(bitmap, colorMap, centerCol, startRow, height, rng);
         break;
       case "Vegetable Animals":
         this.drawVegetableAnimalForm(bitmap, colorMap, centerCol, startRow, height);
@@ -2652,29 +2652,150 @@ export class AreciboGenerator {
   }
 
   /**
-   * Forma animal - cuadrúpeda simple
+   * Forma animal - diferentes tipos de animales con variación procedural
    */
-  private static drawAnimalForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Cabeza
-    this.setPixel(bitmap, colorMap, centerCol - 2, startRow, 1, this.COLORS.RED);
+  private static drawAnimalForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
+    // Seleccionar tipo de animal aleatoriamente (5 tipos)
+    const animalType = Math.floor(rng.random() * 5);
     
-    // Cuerpo horizontal
-    for (let c = -2; c <= 1; c++) {
+    switch (animalType) {
+      case 0: // Cuadrúpedo mamífero (perro/gato)
+        this.drawQuadrupedMammal(bitmap, colorMap, centerCol, startRow);
+        break;
+      case 1: // Ave/volador
+        this.drawBirdForm(bitmap, colorMap, centerCol, startRow);
+        break;
+      case 2: // Pez/acuático
+        this.drawFishForm(bitmap, colorMap, centerCol, startRow);
+        break;
+      case 3: // Insecto/arácnido
+        this.drawInsectForm(bitmap, colorMap, centerCol, startRow);
+        break;
+      case 4: // Reptil/serpiente
+        this.drawReptileForm(bitmap, colorMap, centerCol, startRow);
+        break;
+    }
+  }
+
+  /**
+   * Mamífero cuadrúpedo - forma mejorada
+   */
+  private static drawQuadrupedMammal(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
+    // Cabeza más realista
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.RED);
+    
+    // Cuello
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
+    
+    // Cuerpo más realista
+    for (let c = 0; c <= 2; c++) {
       this.setPixel(bitmap, colorMap, centerCol + c, startRow + 2, 1, this.COLORS.RED);
       this.setPixel(bitmap, colorMap, centerCol + c, startRow + 3, 1, this.COLORS.RED);
     }
     
-    // Patas (4 patas)
-    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 4, 1, this.COLORS.RED);
-    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 4, 1, this.COLORS.RED);
+    // Patas delanteras y traseras
     this.setPixel(bitmap, colorMap, centerCol, startRow + 4, 1, this.COLORS.RED);
-    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 4, 1, this.COLORS.RED);
-    
-    // Pies
-    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 5, 1, this.COLORS.RED);
-    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 5, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 4, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 5, 1, this.COLORS.RED);
-    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 5, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 5, 1, this.COLORS.RED);
+    
+    // Cola
+    this.setPixel(bitmap, colorMap, centerCol + 3, startRow + 2, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Forma de ave
+   */
+  private static drawBirdForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
+    // Cabeza
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
+    
+    // Pico
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow, 1, this.COLORS.RED);
+    
+    // Cuerpo
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
+    
+    // Alas extendidas
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.RED);
+    
+    // Patas
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 4, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Forma de pez
+   */
+  private static drawFishForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
+    // Cabeza
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.RED);
+    
+    // Cuerpo alargado
+    for (let c = -1; c <= 2; c++) {
+      this.setPixel(bitmap, colorMap, centerCol + c, startRow + 2, 1, this.COLORS.RED);
+    }
+    
+    // Aletas
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 3, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.RED);
+    
+    // Cola
+    this.setPixel(bitmap, colorMap, centerCol + 3, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 3, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 3, startRow + 3, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Forma de insecto
+   */
+  private static drawInsectForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
+    // Cabeza
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
+    
+    // Tórax
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
+    
+    // Abdomen
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 3, 1, this.COLORS.RED);
+    
+    // 6 patas (3 de cada lado)
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 4, 1, this.COLORS.RED);
+    
+    // Antenas
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Forma de reptil/serpiente
+   */
+  private static drawReptileForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
+    // Cabeza triangular
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
+    
+    // Cuerpo serpenteante
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 4, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 5, 1, this.COLORS.RED);
   }
 
   /**
