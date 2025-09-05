@@ -2138,7 +2138,7 @@ export class AreciboGenerator {
     console.log(`Población para ${lifeForm} en ${planetName}: ${population.toLocaleString()} = ${binaryPopulation} binario (${binaryPopulation.length} bits)`);
     
     // Área para dibujar la población: lado derecho
-    const startCol = 15; // Columnas 15-22 (8 columnas)
+    const startCol = 16; // Columnas 16-22 (7 columnas) - movido un píxel a la derecha
     const maxCols = 6; // Reducir un poco para que quepa mejor
     const maxRows = height; // Usar toda la altura disponible
     
@@ -2502,7 +2502,7 @@ export class AreciboGenerator {
         this.drawBacteriaForm(bitmap, colorMap, centerCol, startRow, height);
         break;
       case "Vegetation":
-        this.drawVegetationForm(bitmap, colorMap, centerCol, startRow, height);
+        this.drawVegetationForm(bitmap, colorMap, centerCol, startRow, height, rng);
         break;
       case "Animal Life":
         this.drawAnimalForm(bitmap, colorMap, centerCol, startRow, height, rng);
@@ -2822,22 +2822,51 @@ export class AreciboGenerator {
   }
 
   /**
-   * Forma de vegetación - estructura de planta con tallo y ramas
+   * Forma de vegetación - estructura de planta con múltiples variaciones
+   * Diferentes tipos de árboles y plantas basados en generación procedural
    */
-  private static drawVegetationForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Copa/hojas (parte superior)
+  private static drawVegetationForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
+    // Usar el generador RNG para determinar el tipo de vegetación aleatoriamente
+    const hash = Math.floor(rng.random() * 6);
+    
+    switch (hash) {
+      case 0:
+        this.drawTreeForm(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case 1:
+        this.drawBushForm(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case 2:
+        this.drawPalmTreeForm(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case 3:
+        this.drawFlowerForm(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case 4:
+        this.drawConiferForm(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      default:
+        this.drawFernForm(bitmap, colorMap, centerCol, startRow, height);
+    }
+  }
+
+  /**
+   * Árbol clásico con copa redondeada
+   */
+  private static drawTreeForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Copa/hojas (parte superior) - forma redondeada
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.RED);
     
-    // Ramas extendidas
+    // Segunda fila de copa - más amplia
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.RED);
     
-    // Tallo principal (vertical)
+    // Tronco principal (vertical)
     for (let r = 2; r < height - 1; r++) {
       this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
     }
@@ -2845,6 +2874,128 @@ export class AreciboGenerator {
     // Sistema de raíces
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + height - 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + height - 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + height - 1, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Arbusto bajo y frondoso
+   */
+  private static drawBushForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Copa baja pero amplia
+    const midHeight = Math.floor(height / 2);
+    
+    // Parte superior del arbusto
+    for (let r = 0; r < midHeight; r++) {
+      const width = Math.max(1, 3 - Math.abs(r - 1));
+      for (let c = -width; c <= width; c++) {
+        if (Math.abs(c) <= width) {
+          this.setPixel(bitmap, colorMap, centerCol + c, startRow + r, 1, this.COLORS.RED);
+        }
+      }
+    }
+    
+    // Tallo corto
+    for (let r = midHeight; r < height - 1; r++) {
+      this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
+    }
+    
+    // Raíces dispersas
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + height - 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + height - 1, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Palmera con hojas largas
+   */
+  private static drawPalmTreeForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Hojas de palmera (extendidas)
+    this.setPixel(bitmap, colorMap, centerCol - 3, startRow, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 3, startRow, 1, this.COLORS.RED);
+    
+    // Segunda fila de hojas
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.RED);
+    
+    // Tronco ligeramente curvado
+    for (let r = 2; r < height - 1; r++) {
+      const offset = r % 2 === 0 ? 0 : (r % 4 === 2 ? 1 : -1);
+      this.setPixel(bitmap, colorMap, centerCol + offset, startRow + r, 1, this.COLORS.RED);
+    }
+    
+    // Base amplia
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + height - 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + height - 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + height - 1, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Flor con pétalos
+   */
+  private static drawFlowerForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Pétalos en forma de cruz
+    this.setPixel(bitmap, colorMap, centerCol, startRow - 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
+    
+    // Tallo delgado
+    for (let r = 2; r < height - 1; r++) {
+      this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
+    }
+    
+    // Raíz pequeña
+    this.setPixel(bitmap, colorMap, centerCol, startRow + height - 1, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Conífera con forma triangular
+   */
+  private static drawConiferForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Forma triangular de conífera
+    const midHeight = Math.floor(height * 0.8);
+    
+    for (let r = 0; r < midHeight; r++) {
+      const width = Math.min(2, Math.floor(r / 2));
+      for (let c = -width; c <= width; c++) {
+        this.setPixel(bitmap, colorMap, centerCol + c, startRow + r, 1, this.COLORS.RED);
+      }
+    }
+    
+    // Tronco
+    for (let r = midHeight; r < height - 1; r++) {
+      this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
+    }
+    
+    // Base
+    this.setPixel(bitmap, colorMap, centerCol, startRow + height - 1, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Helecho con frondas
+   */
+  private static drawFernForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Frondas curvadas
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow, 1, this.COLORS.RED);
+    
+    // Más frondas en diferentes niveles
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.RED);
+    
+    // Tallo central
+    for (let r = 3; r < height - 1; r++) {
+      this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
+    }
+    
+    // Sistema de raíces subterráneas
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + height - 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + height - 1, 1, this.COLORS.RED);
   }
 
