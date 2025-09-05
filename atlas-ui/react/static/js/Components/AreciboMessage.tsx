@@ -47,12 +47,17 @@ const AreciboMessage: React.FC<AreciboMessageProps> = ({ lifeForm, planetName, c
       // Calculate how many rows to reveal
       const rowsToReveal = Math.floor(revealProgressRef.current * messageData.height);
 
-      // Draw the message bits with animation
-      ctx.fillStyle = "#00ff88";
+      // Draw the message bits with animation using color map
+      const colors = ['#000000', '#FFFFFF', '#9966CC', '#00FF00', '#0066FF', '#FF6600'];
+      
       for (let y = 0; y < Math.min(rowsToReveal, messageData.height); y++) {
         for (let x = 0; x < messageData.width; x++) {
           const index = y * messageData.width + x;
           if (messageData.bitmap[index] === 1) {
+            // Get color from color map
+            const colorIndex = messageData.colorMap[index] || 1;
+            ctx.fillStyle = colors[colorIndex] || '#FFFFFF';
+            
             // Add a fade effect for recently revealed rows
             const rowAge = (rowsToReveal - y) / 10;
             const opacity = Math.min(1, rowAge * 0.8 + 0.2);

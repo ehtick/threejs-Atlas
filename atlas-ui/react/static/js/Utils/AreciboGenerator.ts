@@ -722,19 +722,19 @@ export class AreciboGenerator {
         // Si el bit es 0, no se pone nada (queda negro)
       }
       
-      // HÉLICES LATERALES AZULES - DESDE LOS EXTREMOS HACIA EL CENTRO
+      // HÉLICES LATERALES AZULES - EXACTAMENTE EN LOS BORDES DEL MENSAJE
       // Tronco central: columnas 11-12, separación de 1px = hélices hasta columnas 10 y 13
       const helixPhase = (i * Math.PI * 2) / 8; // Una vuelta cada 8 filas
       
-      // Hélice izquierda - DESDE BORDE EXTREMO (col 3) HACIA EL CENTRO (col 10)
-      const leftHelixRange = 10 - 3; // 7 columnas disponibles (3,4,5,6,7,8,9,10)
-      const leftHelixPosition = 3 + Math.round((leftHelixRange/2) + (leftHelixRange/2) * Math.cos(helixPhase));
-      this.setPixel(bitmap, colorMap, Math.max(3, Math.min(10, leftHelixPosition)), row, 1, this.COLORS.BLUE);
+      // Hélice izquierda - DESDE BORDE ABSOLUTO (col 0) HACIA EL CENTRO (col 10)
+      const leftHelixRange = 10 - 0; // 10 columnas disponibles (0,1,2,3,4,5,6,7,8,9,10)
+      const leftHelixPosition = 0 + Math.round((leftHelixRange/2) + (leftHelixRange/2) * Math.cos(helixPhase));
+      this.setPixel(bitmap, colorMap, Math.max(0, Math.min(10, leftHelixPosition)), row, 1, this.COLORS.BLUE);
       
-      // Hélice derecha - DESDE BORDE EXTREMO (col 19) HACIA EL CENTRO (col 13)  
-      const rightHelixRange = 19 - 13; // 6 columnas disponibles (13,14,15,16,17,18,19)
+      // Hélice derecha - DESDE BORDE ABSOLUTO (col 22) HACIA EL CENTRO (col 13)  
+      const rightHelixRange = 22 - 13; // 9 columnas disponibles (13,14,15,16,17,18,19,20,21,22)
       const rightHelixPosition = 13 + Math.round((rightHelixRange/2) + (rightHelixRange/2) * Math.cos(helixPhase + Math.PI));
-      this.setPixel(bitmap, colorMap, Math.max(13, Math.min(19, rightHelixPosition)), row, 1, this.COLORS.BLUE);
+      this.setPixel(bitmap, colorMap, Math.max(13, Math.min(22, rightHelixPosition)), row, 1, this.COLORS.BLUE);
       
       // VARIACIONES ESPECÍFICAS según el tipo de vida (sutiles)
       if (lifeForm === "Intelligent Life") {
@@ -789,18 +789,18 @@ export class AreciboGenerator {
         }
       }
       
-      // REDES CRISTALINAS AZULES - DESDE LOS EXTREMOS HACIA EL CENTRO
+      // REDES CRISTALINAS AZULES - EXACTAMENTE EN LOS BORDES DEL MENSAJE
       const crystalPhase = (i * Math.PI * 2) / 6; // Estructura hexagonal
       
-      // Red izquierda - DESDE EXTREMO (col 3) HACIA EL CENTRO (col 10)
-      const leftCrystalRange = 10 - 3; // 7 columnas disponibles
-      const leftCrystalPosition = 3 + Math.round((leftCrystalRange/2) + (leftCrystalRange/2) * Math.sin(crystalPhase));
-      this.setPixel(bitmap, colorMap, Math.max(3, Math.min(10, leftCrystalPosition)), row, 1, this.COLORS.BLUE);
+      // Red izquierda - DESDE BORDE ABSOLUTO (col 0) HACIA EL CENTRO (col 10)
+      const leftCrystalRange = 10 - 0; // 10 columnas disponibles
+      const leftCrystalPosition = 0 + Math.round((leftCrystalRange/2) + (leftCrystalRange/2) * Math.sin(crystalPhase));
+      this.setPixel(bitmap, colorMap, Math.max(0, Math.min(10, leftCrystalPosition)), row, 1, this.COLORS.BLUE);
       
-      // Red derecha - DESDE EXTREMO (col 19) HACIA EL CENTRO (col 13)
-      const rightCrystalRange = 19 - 13; // 6 columnas disponibles
+      // Red derecha - DESDE BORDE ABSOLUTO (col 22) HACIA EL CENTRO (col 13)
+      const rightCrystalRange = 22 - 13; // 9 columnas disponibles
       const rightCrystalPosition = 13 + Math.round((rightCrystalRange/2) + (rightCrystalRange/2) * Math.sin(crystalPhase + Math.PI));
-      this.setPixel(bitmap, colorMap, Math.max(13, Math.min(19, rightCrystalPosition)), row, 1, this.COLORS.BLUE);
+      this.setPixel(bitmap, colorMap, Math.max(13, Math.min(22, rightCrystalPosition)), row, 1, this.COLORS.BLUE);
     }
   }
 
@@ -832,18 +832,18 @@ export class AreciboGenerator {
         }
       }
       
-      // BUSES DIGITALES AZULES - DESDE LOS EXTREMOS HACIA EL CENTRO
+      // BUSES DIGITALES AZULES - EXACTAMENTE EN LOS BORDES DEL MENSAJE
       const digitalPhase = (i * Math.PI * 2) / 4; // Ciclo de clock digital
       
-      // Bus izquierdo - DESDE EXTREMO (col 3) HACIA EL CENTRO (col 10)
-      const leftBusRange = 10 - 3; // 7 columnas disponibles
-      const leftBusPosition = 3 + Math.round((leftBusRange/2) + (leftBusRange/2) * Math.sin(digitalPhase));
-      this.setPixel(bitmap, colorMap, Math.max(3, Math.min(10, leftBusPosition)), row, 1, this.COLORS.BLUE);
+      // Bus izquierdo - DESDE BORDE ABSOLUTO (col 0) HACIA EL CENTRO (col 10)
+      const leftBusRange = 10 - 0; // 10 columnas disponibles
+      const leftBusPosition = 0 + Math.round((leftBusRange/2) + (leftBusRange/2) * Math.sin(digitalPhase));
+      this.setPixel(bitmap, colorMap, Math.max(0, Math.min(10, leftBusPosition)), row, 1, this.COLORS.BLUE);
       
-      // Bus derecho - DESDE EXTREMO (col 19) HACIA EL CENTRO (col 13)
-      const rightBusRange = 19 - 13; // 6 columnas disponibles
+      // Bus derecho - DESDE BORDE ABSOLUTO (col 22) HACIA EL CENTRO (col 13)
+      const rightBusRange = 22 - 13; // 9 columnas disponibles
       const rightBusPosition = 13 + Math.round((rightBusRange/2) + (rightBusRange/2) * Math.sin(digitalPhase + Math.PI));
-      this.setPixel(bitmap, colorMap, Math.max(13, Math.min(19, rightBusPosition)), row, 1, this.COLORS.BLUE);
+      this.setPixel(bitmap, colorMap, Math.max(13, Math.min(22, rightBusPosition)), row, 1, this.COLORS.BLUE);
     }
   }
 
@@ -875,18 +875,18 @@ export class AreciboGenerator {
         }
       }
       
-      // CAMPOS CUÁNTICOS AZULES - DESDE LOS EXTREMOS HACIA EL CENTRO
+      // CAMPOS CUÁNTICOS AZULES - EXACTAMENTE EN LOS BORDES DEL MENSAJE
       const quantumPhase = (i * Math.PI * 2) / 12; // Oscilación cuántica
       
-      // Campo izquierdo - DESDE EXTREMO (col 3) HACIA EL CENTRO (col 10)
-      const leftFieldRange = 10 - 3; // 7 columnas disponibles
-      const leftFieldPosition = 3 + Math.round((leftFieldRange/2) + (leftFieldRange/2) * Math.sin(quantumPhase));
-      this.setPixel(bitmap, colorMap, Math.max(3, Math.min(10, leftFieldPosition)), row, 1, this.COLORS.BLUE);
+      // Campo izquierdo - DESDE BORDE ABSOLUTO (col 0) HACIA EL CENTRO (col 10)
+      const leftFieldRange = 10 - 0; // 10 columnas disponibles
+      const leftFieldPosition = 0 + Math.round((leftFieldRange/2) + (leftFieldRange/2) * Math.sin(quantumPhase));
+      this.setPixel(bitmap, colorMap, Math.max(0, Math.min(10, leftFieldPosition)), row, 1, this.COLORS.BLUE);
       
-      // Campo derecho - DESDE EXTREMO (col 19) HACIA EL CENTRO (col 13)
-      const rightFieldRange = 19 - 13; // 6 columnas disponibles
+      // Campo derecho - DESDE BORDE ABSOLUTO (col 22) HACIA EL CENTRO (col 13)
+      const rightFieldRange = 22 - 13; // 9 columnas disponibles
       const rightFieldPosition = 13 + Math.round((rightFieldRange/2) + (rightFieldRange/2) * Math.cos(quantumPhase));
-      this.setPixel(bitmap, colorMap, Math.max(13, Math.min(19, rightFieldPosition)), row, 1, this.COLORS.BLUE);
+      this.setPixel(bitmap, colorMap, Math.max(13, Math.min(22, rightFieldPosition)), row, 1, this.COLORS.BLUE);
     }
   }
 
@@ -918,18 +918,18 @@ export class AreciboGenerator {
         }
       }
       
-      // CAMPOS ENERGÉTICOS AZULES - DESDE LOS EXTREMOS HACIA EL CENTRO
+      // CAMPOS ENERGÉTICOS AZULES - EXACTAMENTE EN LOS BORDES DEL MENSAJE
       const energyPhase = (i * Math.PI * 2) / 10; // Frecuencia energética
       
-      // Campo izquierdo - DESDE EXTREMO (col 3) HACIA EL CENTRO (col 10)
-      const leftEnergyRange = 10 - 3; // 7 columnas disponibles
-      const leftEnergyPosition = 3 + Math.round((leftEnergyRange/2) + (leftEnergyRange/2) * Math.sin(energyPhase));
-      this.setPixel(bitmap, colorMap, Math.max(3, Math.min(10, leftEnergyPosition)), row, 1, this.COLORS.BLUE);
+      // Campo izquierdo - DESDE BORDE ABSOLUTO (col 0) HACIA EL CENTRO (col 10)
+      const leftEnergyRange = 10 - 0; // 10 columnas disponibles
+      const leftEnergyPosition = 0 + Math.round((leftEnergyRange/2) + (leftEnergyRange/2) * Math.sin(energyPhase));
+      this.setPixel(bitmap, colorMap, Math.max(0, Math.min(10, leftEnergyPosition)), row, 1, this.COLORS.BLUE);
       
-      // Campo derecho - DESDE EXTREMO (col 19) HACIA EL CENTRO (col 13)
-      const rightEnergyRange = 19 - 13; // 6 columnas disponibles
+      // Campo derecho - DESDE BORDE ABSOLUTO (col 22) HACIA EL CENTRO (col 13)
+      const rightEnergyRange = 22 - 13; // 9 columnas disponibles
       const rightEnergyPosition = 13 + Math.round((rightEnergyRange/2) + (rightEnergyRange/2) * Math.cos(energyPhase));
-      this.setPixel(bitmap, colorMap, Math.max(13, Math.min(19, rightEnergyPosition)), row, 1, this.COLORS.BLUE);
+      this.setPixel(bitmap, colorMap, Math.max(13, Math.min(22, rightEnergyPosition)), row, 1, this.COLORS.BLUE);
     }
   }
 
@@ -961,19 +961,19 @@ export class AreciboGenerator {
         }
       }
       
-      // GEOMETRÍAS SAGRADAS AZULES - DESDE LOS EXTREMOS HACIA EL CENTRO
+      // GEOMETRÍAS SAGRADAS AZULES - EXACTAMENTE EN LOS BORDES DEL MENSAJE
       const goldenPhase = (i * Math.PI * 2) / 13; // Basado en Fibonacci (13)
       const fibonacciPhase = (i * 1.618033988749) % (2 * Math.PI); // Proporción áurea
       
-      // Geometría izquierda - DESDE EXTREMO (col 3) HACIA EL CENTRO (col 10)
-      const leftGeometryRange = 10 - 3; // 7 columnas disponibles
-      const leftGeometryPosition = 3 + Math.round((leftGeometryRange/2) + (leftGeometryRange/2) * Math.sin(goldenPhase));
-      this.setPixel(bitmap, colorMap, Math.max(3, Math.min(10, leftGeometryPosition)), row, 1, this.COLORS.BLUE);
+      // Geometría izquierda - DESDE BORDE ABSOLUTO (col 0) HACIA EL CENTRO (col 10)
+      const leftGeometryRange = 10 - 0; // 10 columnas disponibles
+      const leftGeometryPosition = 0 + Math.round((leftGeometryRange/2) + (leftGeometryRange/2) * Math.sin(goldenPhase));
+      this.setPixel(bitmap, colorMap, Math.max(0, Math.min(10, leftGeometryPosition)), row, 1, this.COLORS.BLUE);
       
-      // Geometría derecha - DESDE EXTREMO (col 19) HACIA EL CENTRO (col 13)
-      const rightGeometryRange = 19 - 13; // 6 columnas disponibles
+      // Geometría derecha - DESDE BORDE ABSOLUTO (col 22) HACIA EL CENTRO (col 13)
+      const rightGeometryRange = 22 - 13; // 9 columnas disponibles
       const rightGeometryPosition = 13 + Math.round((rightGeometryRange/2) + (rightGeometryRange/2) * Math.cos(fibonacciPhase));
-      this.setPixel(bitmap, colorMap, Math.max(13, Math.min(19, rightGeometryPosition)), row, 1, this.COLORS.BLUE);
+      this.setPixel(bitmap, colorMap, Math.max(13, Math.min(22, rightGeometryPosition)), row, 1, this.COLORS.BLUE);
     }
   }
 
