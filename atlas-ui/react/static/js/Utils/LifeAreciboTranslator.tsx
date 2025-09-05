@@ -1472,6 +1472,34 @@ export class AreciboGenerator {
       return variedElements;
     }
     
+    // APLICAR VARIACIÓN PROCEDURAL PARA VEGETABLE ANIMALS
+    if (lifeForm === "Vegetable Animals") {
+      // Elementos base siempre presentes para híbridos: H, C, N, O (esenciales)
+      const coreElements = [1, 6, 7, 8]; // H, C, N, O
+      
+      // Quinto elemento puede variar según las capacidades híbridas del planeta
+      const possibleHybridElements = [
+        26, // Fe (hierro) - transporte de oxígeno y fotosíntesis combinados
+        12, // Mg (magnesio) - clorofila para componente vegetal
+        20, // Ca (calcio) - estructuras esqueléticas para componente animal
+        29, // Cu (cobre) - enzimas oxidativas y conducción nerviosa
+        25, // Mn (manganeso) - fotosíntesis y metabolismo híbrido
+        30, // Zn (zinc) - enzimas y neurotransmisión
+        42, // Mo (molibdeno) - fijación de nitrógeno y metabolismo
+        27, // Co (cobalto) - vitaminas y simbiosis híbrida
+        28  // Ni (níquel) - metabolismo especializado de híbridos
+      ];
+      
+      const fifthElementIndex = Math.floor(rng.random() * possibleHybridElements.length);
+      const fifthElement = possibleHybridElements[fifthElementIndex];
+      
+      const variedElements = [...coreElements, fifthElement];
+      const elementNames = { 12: 'Mg', 20: 'Ca', 25: 'Mn', 26: 'Fe', 27: 'Co', 28: 'Ni', 29: 'Cu', 30: 'Zn', 42: 'Mo' };
+      console.log(`🌿🐾 ELEMENTOS GENERADOS para ${lifeForm} en ${planetName}: [${variedElements.join(', ')}] - ${elementNames[fifthElement] || fifthElement} como elemento clave para función híbrida`);
+      
+      return variedElements;
+    }
+    
     // APLICAR VARIACIÓN PROCEDURAL PARA VEGETATION
     if (lifeForm === "Vegetation") {
       // Elementos base siempre presentes para plantas: H, C, N, O (esenciales)
@@ -2563,7 +2591,7 @@ export class AreciboGenerator {
         this.drawAnimalForm(bitmap, colorMap, centerCol, startRow, height, rng);
         break;
       case "Vegetable Animals":
-        this.drawVegetableAnimalForm(bitmap, colorMap, centerCol, startRow, height);
+        this.drawVegetableAnimalForm(bitmap, colorMap, centerCol, startRow, height, rng);
         break;
       case "Intelligent Life":
         // Esto no debería pasar, pero por si acaso
@@ -3162,33 +3190,165 @@ export class AreciboGenerator {
   }
 
   /**
-   * Forma de animal-vegetal - híbrido entre planta y animal
+   * Forma de animal-vegetal - múltiples tipos de organismos híbridos
+   * Diferentes combinaciones de características vegetales y animales
    */
-  private static drawVegetableAnimalForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Parte superior como planta (hojas/corona)
+  private static drawVegetableAnimalForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
+    // Usar el generador RNG para determinar el tipo de híbrido aleatoriamente
+    const hybridType = Math.floor(rng.random() * 6);
+    
+    switch (hybridType) {
+      case 0:
+        this.drawTreentHybrid(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case 1:
+        this.drawCoralAnimalHybrid(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case 2:
+        this.drawWalkingPlantHybrid(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case 3:
+        this.drawPhotosynthethicAnimalHybrid(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case 4:
+        this.drawMyceliaNeuralHybrid(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      default:
+        this.drawFlowerBeastHybrid(bitmap, colorMap, centerCol, startRow, height);
+    }
+  }
+
+  /**
+   * Treent/Ent - árbol con capacidades animales
+   */
+  private static drawTreentHybrid(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Copa de árbol con "ojos"
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.RED); // "ojos"
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
+    
+    // Ramas como brazos
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 2, 1, this.COLORS.RED);
+    
+    // Tronco móvil
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 4, 1, this.COLORS.RED);
+    
+    // Raíces como pies
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 5, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 5, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Coral animal - estructura coral con capacidades de movimiento
+   */
+  private static drawCoralAnimalHybrid(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Estructura ramificada como coral
+    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
+    
+    // Tentáculos/pólipos animales
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 2, 1, this.COLORS.RED);
+    
+    // Base móvil
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 3, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Planta caminante - planta con patas
+   */
+  private static drawWalkingPlantHybrid(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Hojas/flores superiores
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.RED);
     
-    // Cuerpo central híbrido
-    for (let r = 1; r < 4; r++) {
-      this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
-      // Extensiones laterales (como ramas pero también como brazos)
-      if (r === 2) {
-        this.setPixel(bitmap, colorMap, centerCol - 2, startRow + r, 1, this.COLORS.RED);
-        this.setPixel(bitmap, colorMap, centerCol + 2, startRow + r, 1, this.COLORS.RED);
-      }
-    }
+    // Tallo con brazos
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 2, 1, this.COLORS.RED);
     
-    // Parte inferior móvil (como animal) - patas/raíces móviles
+    // Patas como animal
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 4, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 4, 1, this.COLORS.RED);
-    
-    // Base con capacidad de movimiento
-    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 5, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 5, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 5, 1, this.COLORS.RED);
-    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 5, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Animal fotosintético - animal que realiza fotosíntesis
+   */
+  private static drawPhotosynthethicAnimalHybrid(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // "Cabeza" con capacidad fotosintética
+    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
+    
+    // Extensiones fotosintéticas (como hojas)
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.RED);
+    
+    // Cuerpo animal
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.RED);
+    
+    // Extremidades de locomoción
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 4, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 4, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Red micelial neural - organismo tipo hongo con inteligencia distribuida
+   */
+  private static drawMyceliaNeuralHybrid(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Cuerpo frutal central
+    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
+    
+    // Red neuronal/micelial extendida
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 2, 1, this.COLORS.RED);
+    
+    // Conexiones subterráneas
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 3, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 4, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Bestia-flor - criatura animal que se camufla como flor
+   */
+  private static drawFlowerBeastHybrid(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // "Pétalos" que son en realidad apéndices sensoriales
+    this.setPixel(bitmap, colorMap, centerCol, startRow - 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
+    
+    // Centro animal (boca/órganos)
+    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
+    
+    // Tallo que es en realidad columna vertebral
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.RED);
+    
+    // Sistema de anclaje/garras
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 4, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 4, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 4, 1, this.COLORS.RED);
   }
 
   /**
