@@ -166,7 +166,7 @@ export class AreciboGenerator {
         this.drawGaseousInformation(bitmap, colorMap);
         break;
       case "energy":
-        this.drawEnergyInformation(bitmap, colorMap);
+        this.drawEnergyInformation(bitmap, colorMap, lifeForm, planetName);
         break;
       case "divine":
         this.drawDivineInformation(bitmap, colorMap);
@@ -247,6 +247,80 @@ export class AreciboGenerator {
     
     // Usar patrón específico o por defecto
     return bondPatterns[element] || [1,1,1,2,0]; // Patrón genérico
+  }
+
+  /**
+   * Obtiene la frecuencia energética para un estado dado
+   */
+  private static getEnergyFrequency(state: string): number {
+    // Mapear símbolos a frecuencias diferentes
+    const freqMap: { [key: string]: number } = {
+      'α': 1, 'β': 2, 'γ': 3, 'δ': 4, 'ε': 1.5, 'ζ': 2.5, 'η': 3.5, 'θ': 4.5,
+      'ι': 1.2, 'κ': 2.2, 'λ': 3.2, 'μ': 4.2, 'ν': 1.8, 'ξ': 2.8, 'ο': 3.8, 'π': 4.8,
+      'ρ': 2.3, 'σ': 3.3, 'τ': 4.3, 'υ': 1.7, 'φ': 2.7, 'χ': 3.7, 'ψ': 4.7, 'ω': 5,
+      '∆': 6, '∇': 7, '∞': 8, 'Ω': 9, 'Φ': 10, 'Ψ': 11, '≈': 12, '∼': 13,
+      '※': 14, '⟨⟩': 15, '◊': 16, '◎': 17
+    };
+    
+    return freqMap[state] || Math.abs(state.charCodeAt(0) % 10) + 1;
+  }
+
+  /**
+   * Obtiene el patrón visual para un estado energético
+   */
+  private static getEnergyPattern(state: string): string {
+    // Diferentes patrones según el símbolo
+    const patterns: { [key: string]: string } = {
+      'α': 'wave', 'β': 'pulse', 'γ': 'spiral', 'δ': 'zigzag',
+      'ε': 'sine', 'ζ': 'square', 'η': 'triangle', 'θ': 'sawtooth',
+      'ι': 'burst', 'κ': 'ripple', 'λ': 'vortex', 'μ': 'standing',
+      'ν': 'modulated', 'ξ': 'interference', 'ο': 'resonance', 'π': 'harmonic',
+      'ρ': 'quantum', 'σ': 'coherent', 'τ': 'entangled', 'υ': 'superposed',
+      'φ': 'phase', 'χ': 'amplitude', 'ψ': 'frequency', 'ω': 'complex',
+      '∆': 'dimensional', '∇': 'gradient', '∞': 'infinite', 'Ω': 'omega',
+      'Φ': 'phi', 'Ψ': 'psi', '≈': 'approximate', '∼': 'similar',
+      '※': 'reference', '⟨⟩': 'bracket', '◊': 'diamond', '◎': 'target'
+    };
+    
+    return patterns[state] || 'default';
+  }
+
+  /**
+   * Calcula si se debe dibujar un píxel según el patrón energético
+   */
+  private static calculateEnergyPattern(pattern: string, phase: number, step: number): boolean {
+    switch (pattern) {
+      case 'wave':
+        return Math.sin(phase) > 0;
+      case 'pulse':
+        return step % 2 === 0;
+      case 'spiral':
+        return (Math.sin(phase) + Math.cos(phase * 1.5)) > 0;
+      case 'zigzag':
+        return step % 2 === Math.floor(phase) % 2;
+      case 'sine':
+        return Math.sin(phase * 2) > 0.5;
+      case 'square':
+        return Math.sin(phase) > 0;
+      case 'triangle':
+        return Math.abs(Math.sin(phase)) > 0.5;
+      case 'burst':
+        return step === 0 || step === 3;
+      case 'ripple':
+        return Math.sin(phase + step) > 0.3;
+      case 'vortex':
+        return (step + Math.floor(phase * 2)) % 3 !== 0;
+      case 'quantum':
+        return Math.random() > 0.3; // Patrón cuántico probabilístico
+      case 'interference':
+        return Math.sin(phase) + Math.sin(phase * 1.7) > 0;
+      case 'dimensional':
+        return step < 2; // Solo primeras dimensiones
+      case 'infinite':
+        return true; // Siempre presente
+      default:
+        return Math.sin(phase) > 0;
+    }
   }
 
   /**
@@ -460,25 +534,32 @@ export class AreciboGenerator {
   /**
    * ENTIDAD DE ENERGÍA - Patrones ondulatorios análogos a nucleótidos
    */
-  private static drawEnergyInformation(bitmap: number[], colorMap: number[]): void {
-    // Cuatro frecuencias básicas - "nucleótidos energéticos"
+  private static drawEnergyInformation(bitmap: number[], colorMap: number[], lifeForm: string, planetName: string): void {
+    // Obtener los estados energéticos variables según el "planeta" energético
+    const energyStates = this.getNitrogenBases(lifeForm, planetName);
     
-    // Filas 12-15: Cuatro frecuencias fundamentales
-    const energyStates = [
-      { col: 4, freq: 1 },   // Baja frecuencia
-      { col: 8, freq: 2 },   // Media baja
-      { col: 12, freq: 3 },  // Media alta  
-      { col: 16, freq: 4 }   // Alta frecuencia
-    ];
+    console.log(`⚡ Dibujando estados energéticos: ${energyStates.join(', ')} para ${lifeForm} en ${planetName}`);
     
-    for (const es of energyStates) {
-      // Patrón de frecuencia vertical
+    // Filas 12-15: Estados energéticos variables basados en los tipos de energía
+    const stateConfigs = energyStates.map((state, index) => ({
+      col: 4 + (index * 4), // Columnas 4, 8, 12, 16
+      state: state,
+      freq: this.getEnergyFrequency(state), // Frecuencia según el estado
+      pattern: this.getEnergyPattern(state) // Patrón visual según el estado
+    }));
+    
+    // Dibujar cada estado energético
+    for (const config of stateConfigs) {
+      // Patrón visual según el tipo de estado energético
       for (let row = 12; row <= 15; row++) {
-        const phase = (row - 12) * Math.PI / es.freq;
-        if (Math.sin(phase) > 0) {
-          this.setPixel(bitmap, colorMap, es.col, row, 1, this.COLORS.GREEN);
-          if (es.freq > 2) {
-            this.setPixel(bitmap, colorMap, es.col + 1, row, 1, this.COLORS.GREEN);
+        const phase = (row - 12) * Math.PI / config.freq;
+        const shouldDraw = this.calculateEnergyPattern(config.pattern, phase, row - 12);
+        
+        if (shouldDraw) {
+          this.setPixel(bitmap, colorMap, config.col, row, 1, this.COLORS.GREEN);
+          // Estados de alta frecuencia ocupan más espacio
+          if (config.freq > 3) {
+            this.setPixel(bitmap, colorMap, config.col + 1, row, 1, this.COLORS.GREEN);
           }
         }
       }
@@ -809,7 +890,7 @@ export class AreciboGenerator {
         this.drawQuantumFieldStructure(bitmap, colorMap, centerCol, startRow, height);
         break;
       case "energy":
-        this.drawEnergyFieldStructure(bitmap, colorMap, centerCol, startRow, height);
+        this.drawEnergyFieldStructure(bitmap, colorMap, centerCol, startRow, height, lifeForm, planetName);
         break;
       case "divine":
         this.drawCosmicGeometryStructure(bitmap, colorMap, centerCol, startRow, height);
@@ -1116,20 +1197,46 @@ export class AreciboGenerator {
    * - Centro: 2 píxeles representando NÚMERO de unidades de energía
    * - Campos laterales AZULES sin sobreponerse
    */
-  private static drawEnergyFieldStructure(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Simular "unidades de energía" como análogo del genoma
-    const energyUnits = 299792458; // Velocidad de la luz (unidades energéticas)
+  private static drawEnergyFieldStructure(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, lifeForm: string, planetName: string): void {
+    // Obtener los tipos de energía para generar campos variables
+    const energyTypes = this.getElementsForLifeForm(lifeForm, planetName);
+    const energyStates = this.getNitrogenBases(lifeForm, planetName);
+    
+    // Generar "unidades de información energética" procedurales
+    const hash = this.hashString(lifeForm + planetName + "energy");
+    const rng = this.createSeededRandom(hash);
+    
+    // Diferentes constantes universales según el tipo de energía
+    const energyConstants = [
+      299792458,  // Velocidad de la luz
+      6626070e-34,// Constante de Planck (truncada)
+      16605390e-27,// Masa del protón (truncada)  
+      96485340,   // Constante de Faraday
+      13806490e-23,// Constante de Boltzmann (truncada)
+      20181970,   // Radio clásico del electrón (truncada)
+      25812807,   // Cuanto de resistencia
+      48359775,   // Cuanto de conductancia
+      11263490e-6 // Cuanto magnético (truncada)
+    ];
+    
+    const energyConstantIndex = Math.floor(rng.random() * energyConstants.length);
+    const energyUnits = energyConstants[energyConstantIndex];
     const binaryString = energyUnits.toString(2);
+    
+    console.log(`⚡ CAMPO ENERGÉTICO para ${lifeForm} en ${planetName}: ${energyUnits} unidades (constante universal)`);
     
     const centerCol1 = 11;    // Primera columna del número
     const centerCol2 = 12;    // Segunda columna del número
+    
+    // Determinar patrón de campo según los estados energéticos
+    const fieldPattern = this.getEnergyPattern(energyStates[0]); // Usar primer estado
+    const fieldFrequency = this.getEnergyFrequency(energyStates[1] || energyStates[0]); // Usar segundo estado
     
     for (let i = 0; i < height; i++) {
       const row = startRow + i;
       if (row >= this.HEIGHT) break;
       
-      // COLUMNAS CENTRALES BLANCAS - Patrones independientes como en Arecibo original
-      // Columna izquierda: bits en posiciones pares (0, 2, 4, 6...)
+      // COLUMNAS CENTRALES BLANCAS - Información energética binaria
       const leftBitIndex = i * 2;
       if (leftBitIndex < binaryString.length) {
         const leftBit = parseInt(binaryString[leftBitIndex]);
@@ -1138,7 +1245,6 @@ export class AreciboGenerator {
         }
       }
       
-      // Columna derecha: bits en posiciones impares (1, 3, 5, 7...)
       const rightBitIndex = i * 2 + 1;
       if (rightBitIndex < binaryString.length) {
         const rightBit = parseInt(binaryString[rightBitIndex]);
@@ -1147,18 +1253,60 @@ export class AreciboGenerator {
         }
       }
       
-      // CAMPOS ENERGÉTICOS AZULES - CON SEPARACIÓN DE 2PX DEL TRONCO CENTRAL
-      const energyPhase = (i * Math.PI * 2) / 10; // Frecuencia energética
+      // PATRONES DE CAMPO ENERGÉTICO VARIABLES (en lugar de hélices físicas)
+      const energyPhase = (i * Math.PI * 2) / fieldFrequency;
       
-      // Campo izquierdo - DESDE BORDE ABSOLUTO (col 0) HASTA COL 9 (2px separación del centro)
-      const leftEnergyRange = 9 - 0; // 9 columnas disponibles
-      const leftEnergyPosition = 0 + Math.round((leftEnergyRange/2) + (leftEnergyRange/2) * Math.sin(energyPhase));
-      this.setPixel(bitmap, colorMap, Math.max(0, Math.min(9, leftEnergyPosition)), row, 1, this.COLORS.BLUE);
+      // Campo izquierdo - patrón según tipo de energía
+      const leftFieldIntensity = this.calculateFieldIntensity(fieldPattern, energyPhase, i, 'left');
+      if (leftFieldIntensity > 0) {
+        const leftRange = 9; // Columnas 0-9
+        const leftPosition = Math.round(leftRange * leftFieldIntensity);
+        this.setPixel(bitmap, colorMap, Math.max(0, Math.min(9, leftPosition)), row, 1, this.COLORS.BLUE);
+      }
       
-      // Campo derecho - DESDE COL 14 (2px separación del centro) HASTA BORDE ABSOLUTO (col 22)
-      const rightEnergyRange = 22 - 14; // 8 columnas disponibles
-      const rightEnergyPosition = 14 + Math.round((rightEnergyRange/2) + (rightEnergyRange/2) * Math.cos(energyPhase));
-      this.setPixel(bitmap, colorMap, Math.max(14, Math.min(22, rightEnergyPosition)), row, 1, this.COLORS.BLUE);
+      // Campo derecho - patrón complementario
+      const rightFieldIntensity = this.calculateFieldIntensity(fieldPattern, energyPhase + Math.PI, i, 'right');
+      if (rightFieldIntensity > 0) {
+        const rightRange = 8; // Columnas 14-22
+        const rightPosition = 14 + Math.round(rightRange * rightFieldIntensity);
+        this.setPixel(bitmap, colorMap, Math.max(14, Math.min(22, rightPosition)), row, 1, this.COLORS.BLUE);
+      }
+    }
+  }
+
+  /**
+   * Calcula la intensidad de campo energético según el patrón
+   */
+  private static calculateFieldIntensity(pattern: string, phase: number, step: number, side: string): number {
+    const baseIntensity = (Math.sin(phase) + 1) / 2; // Normalizar a 0-1
+    
+    switch (pattern) {
+      case 'wave':
+        return baseIntensity;
+      case 'pulse':
+        return step % 3 === 0 ? 1 : 0;
+      case 'spiral':
+        return Math.abs(Math.sin(phase + step * 0.3));
+      case 'zigzag':
+        return side === 'left' ? baseIntensity : 1 - baseIntensity;
+      case 'interference':
+        return Math.abs(Math.sin(phase) + Math.sin(phase * 1.618)) / 2; // Proporción áurea
+      case 'quantum':
+        return Math.random() > 0.4 ? Math.random() : 0; // Comportamiento cuántico
+      case 'vortex':
+        return Math.abs(Math.cos(phase + step * 0.1)) * baseIntensity;
+      case 'standing':
+        return step % 4 < 2 ? baseIntensity : 0; // Ondas estacionarias
+      case 'dimensional':
+        return Math.pow(baseIntensity, 2); // Intensidad cuadrática
+      case 'infinite':
+        return 0.7; // Campo constante fuerte
+      case 'phase':
+        return Math.abs(Math.sin(phase + Math.PI/4));
+      case 'resonance':
+        return baseIntensity > 0.8 ? 1 : baseIntensity * 0.3; // Resonancia umbral
+      default:
+        return baseIntensity * 0.6;
     }
   }
 
@@ -1628,6 +1776,29 @@ export class AreciboGenerator {
       return variedElements;
     }
     
+    // APLICAR VARIACIÓN PROCEDURAL PARA NON-PHYSICAL ENTITY
+    if (lifeForm === "Non-Physical Entity") {
+      // No elementos físicos, sino "tipos de energía" como números de códigos energéticos
+      const energyTypeCodes = [
+        [1, 2, 7, 10],    // Electromagnética, Débil, Térmica, Lumínica
+        [3, 4, 8, 11],    // Fuerte, Gravitacional, Cinética, Radiante
+        [5, 6, 9, 12],    // Cuántica, Espín, Potencial, Resonante
+        [13, 14, 15, 16], // Dimensional, Temporal, Vibracional, Coherente
+        [17, 18, 19, 20], // Holográfica, Informacional, Entrelazada, Morfogénica
+        [21, 22, 23, 24], // Plasmática, Etérica, Escalar, Taquiónica
+        [25, 26, 27, 28], // Orgónica, Biofotónica, Psiónica, Noética
+        [29, 30, 31, 32], // Cósmica, Akáshica, Cristalina, Fractal
+        [33, 34, 35, 36]  // Hiperdimensional, Metacuántica, Consciencial, Primordial
+      ];
+      
+      const energySetIndex = Math.floor(rng.random() * energyTypeCodes.length);
+      const selectedEnergyTypes = energyTypeCodes[energySetIndex];
+      
+      console.log(`⚡ TIPOS DE ENERGÍA GENERADOS para ${lifeForm} en ${planetName}: códigos [${selectedEnergyTypes.join(', ')}] - patrones energéticos especializados`);
+      
+      return selectedEnergyTypes;
+    }
+    
     // Para otras formas de vida, usar los elementos base sin variación
     return baseElements;
   }
@@ -1684,6 +1855,35 @@ export class AreciboGenerator {
       console.log(`🔮 BASES SILICÁTICAS para ${lifeForm} en ${planetName}: [${silicateBases.join(', ')}] basadas en elementos [${planetElements.join(', ')}]`);
       
       return silicateBases;
+    }
+    
+    // APLICAR VARIACIÓN PROCEDURAL PARA NON-PHYSICAL ENTITY
+    if (lifeForm === "Non-Physical Entity") {
+      // Estados energéticos variables basados en los tipos de energía del "planeta"
+      const energyTypes = this.getElementsForLifeForm(lifeForm, planetName);
+      
+      // Mapear códigos energéticos a estados/símbolos
+      const energyStateSymbols: { [key: number]: string } = {
+        1: 'α', 2: 'β', 3: 'γ', 4: 'δ', 5: 'ε', 6: 'ζ', 7: 'η', 8: 'θ',
+        9: 'ι', 10: 'κ', 11: 'λ', 12: 'μ', 13: 'ν', 14: 'ξ', 15: 'ο', 16: 'π',
+        17: 'ρ', 18: 'σ', 19: 'τ', 20: 'υ', 21: 'φ', 22: 'χ', 23: 'ψ', 24: 'ω',
+        25: '∆', 26: '∇', 27: '∞', 28: 'Ω', 29: 'Φ', 30: 'Ψ', 31: '≈', 32: '∼',
+        33: '※', 34: '⟨⟩', 35: '◊', 36: '◎'
+      };
+      
+      // Usar los primeros 4 tipos de energía como "estados energéticos"
+      const energyStates = energyTypes.slice(0, 4).map(code => 
+        energyStateSymbols[code] || `E${code}`
+      );
+      
+      // Si no hay suficientes, completar con estados por defecto
+      while (energyStates.length < 4) {
+        energyStates.push("∅");
+      }
+      
+      console.log(`⚡ ESTADOS ENERGÉTICOS para ${lifeForm} en ${planetName}: [${energyStates.join(', ')}] basados en energías [${energyTypes.join(', ')}]`);
+      
+      return energyStates;
     }
     
     // APLICAR VARIACIÓN PROCEDURAL POR PLANETA SOLO PARA VIDA INTELIGENTE
@@ -2325,7 +2525,7 @@ export class AreciboGenerator {
           this.drawGaseousForm(bitmap, colorMap, centerCols, centerCol, startRow, height, rng);
           break;
         case "energy":
-          this.drawEnergyForm(bitmap, colorMap, centerCols, centerCol, startRow, height, rng);
+          this.drawEnergyForm(bitmap, colorMap, centerCols, centerCol, startRow, height, rng, lifeForm, planetName);
           break;
         case "divine":
           this.drawDivineForm(bitmap, colorMap, centerCols, centerCol, startRow, height, rng);
@@ -2961,22 +3161,164 @@ export class AreciboGenerator {
   }
 
   /**
-   * Forma de energía - ondas simples
+   * Forma de energía - múltiples manifestaciones energéticas no físicas
+   * Diferentes tipos de patrones según los estados energéticos
    */
-  private static drawEnergyForm(bitmap: number[], colorMap: number[], cols: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
-    // Ondas de energía - patrón zigzag
+  private static drawEnergyForm(bitmap: number[], colorMap: number[], cols: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }, lifeForm: string, planetName: string): void {
+    // Obtener los estados energéticos para determinar la manifestación
+    const energyStates = this.getNitrogenBases(lifeForm, planetName);
+    const primaryState = energyStates[0];
+    const manifestationType = this.getEnergyPattern(primaryState);
+    
+    // Seleccionar forma de manifestación energética según el patrón
+    switch (manifestationType) {
+      case 'wave':
+        this.drawWaveManifesta(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case 'spiral':
+        this.drawSpiralField(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case 'vortex':
+        this.drawVortexManifesta(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case 'pulse':
+        this.drawPulseManifesta(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case 'interference':
+        this.drawInterferencePattern(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case 'quantum':
+        this.drawQuantumState(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case 'dimensional':
+        this.drawDimensionalRift(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case 'infinite':
+        this.drawInfiniteField(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      default:
+        this.drawEnergyZigzag(bitmap, colorMap, centerCol, startRow, height); // Original por defecto
+    }
+  }
+
+  /**
+   * Manifestación ondulatoria - ondas sinusoidales
+   */
+  private static drawWaveManifesta(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    for (let r = 0; r < Math.min(8, height); r++) {
+      const wave = Math.round(2 * Math.sin(r * Math.PI / 3));
+      this.setPixel(bitmap, colorMap, centerCol + wave, startRow + r, 1, this.COLORS.RED);
+    }
+  }
+
+  /**
+   * Campo espiral - patrón de espiral energética
+   */
+  private static drawSpiralField(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    let angle = 0;
+    for (let r = 0; r < Math.min(7, height); r++) {
+      const radius = Math.floor(r / 2) + 1;
+      const x = Math.round(radius * Math.cos(angle));
+      const y = Math.round(radius * Math.sin(angle));
+      this.setPixel(bitmap, colorMap, centerCol + x, startRow + r, 1, this.COLORS.RED);
+      angle += Math.PI / 2.5;
+    }
+  }
+
+  /**
+   * Vórtice energético - patrón rotatorio
+   */
+  private static drawVortexManifesta(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Centro del vórtice
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.RED);
+    // Anillos concéntricos
+    for (let ring = 1; ring <= 2; ring++) {
+      for (let offset = -ring; offset <= ring; offset++) {
+        if (Math.abs(offset) === ring) {
+          this.setPixel(bitmap, colorMap, centerCol + offset, startRow + 3 - ring, 1, this.COLORS.RED);
+          this.setPixel(bitmap, colorMap, centerCol + offset, startRow + 3 + ring, 1, this.COLORS.RED);
+        }
+      }
+    }
+  }
+
+  /**
+   * Pulsos energéticos - ondas discretas
+   */
+  private static drawPulseManifesta(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    for (let r = 0; r < Math.min(8, height); r += 2) {
+      for (let c = -1; c <= 1; c++) {
+        this.setPixel(bitmap, colorMap, centerCol + c, startRow + r, 1, this.COLORS.RED);
+      }
+    }
+  }
+
+  /**
+   * Patrón de interferencia - ondas superpuestas
+   */
+  private static drawInterferencePattern(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    for (let r = 0; r < Math.min(7, height); r++) {
+      const wave1 = Math.sin(r * Math.PI / 2);
+      const wave2 = Math.sin(r * Math.PI / 3 + Math.PI/4);
+      const interference = wave1 + wave2;
+      
+      if (interference > 0.5) {
+        this.setPixel(bitmap, colorMap, centerCol - 1, startRow + r, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 1, startRow + r, 1, this.COLORS.RED);
+      }
+      if (Math.abs(interference) > 1) {
+        this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
+      }
+    }
+  }
+
+  /**
+   * Estado cuántico - patrón probabilístico
+   */
+  private static drawQuantumState(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Superposición cuántica - múltiples posiciones simultáneas
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 2, 1, this.COLORS.RED);
+    // Colapso de función de onda
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 4, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Fisura dimensional - apertura entre dimensiones
+   */
+  private static drawDimensionalRift(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Línea vertical (fisura)
+    for (let r = 1; r < 6; r++) {
+      this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
+    }
+    // Distorsiones laterales
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 4, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Campo infinito - presencia constante
+   */
+  private static drawInfiniteField(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Círculo de energía constante
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
+    for (let c = -1; c <= 1; c++) {
+      this.setPixel(bitmap, colorMap, centerCol + c, startRow + 2, 1, this.COLORS.RED);
+      this.setPixel(bitmap, colorMap, centerCol + c, startRow + 3, 1, this.COLORS.RED);
+    }
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 4, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Zigzag energético - patrón original como fallback
+   */
+  private static drawEnergyZigzag(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 4, 1, this.COLORS.RED);
-    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 5, 1, this.COLORS.RED);
-    this.setPixel(bitmap, colorMap, centerCol, startRow + 6, 1, this.COLORS.RED);
-    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 7, 1, this.COLORS.RED);
-    // Línea horizontal de energía
-    for (let c = -2; c <= 2; c++) {
-      this.setPixel(bitmap, colorMap, centerCol + c, startRow + 3, 1, this.COLORS.RED);
-    }
   }
 
   /**
