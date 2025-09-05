@@ -5,6 +5,7 @@ import ResourceCollectionButton from "./ResourceCollectionButton.tsx";
 import EffectsControl from "./EffectsControl.tsx";
 import MiningIndicator from "./MiningIndicator.tsx";
 import PeriodicElement from "./PeriodicElement.tsx";
+import AreciboMessage from "./AreciboMessage.tsx";
 import { SpaceshipResourceCollectionManager } from "../Utils/SpaceshipResourceCollection.tsx";
 import { LocationBookmarks } from "../Utils/LocationBookmarks.tsx";
 import { StargateGenerator } from "../Utils/StargateGenerator.tsx";
@@ -56,6 +57,7 @@ interface PlanetInfoProps {
 
 const PlanetInfo: React.FC<PlanetInfoProps> = ({ planet, system, galaxy, cosmicOriginTime, initialAngleRotation, effects, onToggleEffect }) => {
   const [showAllElements, setShowAllElements] = useState(false);
+  const [showAreciboMessage, setShowAreciboMessage] = useState(false);
   const [miningState, setMiningState] = useState({
     isOnCooldown: false,
     isSaved: false,
@@ -162,10 +164,43 @@ const PlanetInfo: React.FC<PlanetInfoProps> = ({ planet, system, galaxy, cosmicO
           <div className="text-sm font-bold text-purple-300 capitalize">{planet.atmosphere}</div>
         </div>
         <div className="bg-white/10 rounded-lg p-2 border border-green-500/30">
-          <div className="text-xs text-gray-200">Life Forms</div>
-          <div className="text-sm font-bold text-green-300 capitalize">{planet.life_forms}</div>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-xs text-gray-200">Life Forms</div>
+              <div className="text-sm font-bold text-green-300 capitalize">{planet.life_forms}</div>
+            </div>
+            {planet.life_forms !== "None" && (
+              <button 
+                onClick={() => setShowAreciboMessage(!showAreciboMessage)} 
+                className="text-xs text-green-400 hover:text-green-300 transition-colors duration-300 px-2 py-1 rounded border border-green-500/30 hover:bg-green-500/10"
+                title="View Arecibo Message"
+              >
+                {showAreciboMessage ? "Hide" : "Signal"}
+              </button>
+            )}
+          </div>
         </div>
       </div>
+
+      {showAreciboMessage && (
+        <div className="mb-3 bg-black/30 rounded-lg p-3 border border-green-500/30">
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="text-sm font-bold text-green-400">Arecibo-like Signal Pattern</h4>
+            <button 
+              onClick={() => setShowAreciboMessage(false)}
+              className="text-xs text-gray-400 hover:text-gray-300"
+            >
+              ✕
+            </button>
+          </div>
+          <AreciboMessage 
+            lifeForm={planet.life_forms}
+            planetName={planet.name}
+            scale={3}
+            className="max-w-full"
+          />
+        </div>
+      )}
 
       <div className="bg-white/10 rounded-lg p-2 border border-orange-500/30 mb-3">
         <div className="text-xs text-gray-200 mb-2">Physical Properties</div>
