@@ -57,6 +57,9 @@ export class AreciboGenerator {
     // Sección 3: Nucleótidos (filas 12-27) - COLOR VERDE
     this.drawNucleotides(bitmap, colorMap, config.lifeForm);
     
+    // Sección 4: Doble hélice del ADN (filas 28-42) - HELICES AZULES + CENTRO BLANCO
+    this.drawDNADoubleHelix(bitmap, colorMap, config.lifeForm, 28, 15);
+    
     return {
       bitmap,
       colorMap,
@@ -191,7 +194,7 @@ export class AreciboGenerator {
     // Fila 26: Línea en blanco
     this.drawBlankLine(bitmap, colorMap, 26);
     
-    // Fila 27: Bordes de la doble hélice (dejando centro libre)
+    // Fila 27: Bordes de la doble hélice (dejando centro libre para la representación posterior)
     this.drawDNAHelixBorders(bitmap, colorMap);
   }
 
@@ -252,11 +255,8 @@ export class AreciboGenerator {
     // Fila 26: Línea en blanco
     this.drawBlankLine(bitmap, colorMap, 26);
     
-    // Fila 27: Bordes de la estructura cristalina (dejando centro libre)
-    this.setPixel(bitmap, colorMap, 3, 27, 1, this.COLORS.GREEN);
-    this.setPixel(bitmap, colorMap, 4, 27, 1, this.COLORS.GREEN);
-    this.setPixel(bitmap, colorMap, 18, 27, 1, this.COLORS.GREEN);
-    this.setPixel(bitmap, colorMap, 19, 27, 1, this.COLORS.GREEN);
+    // Fila 27: Bordes de la estructura cristalina (dejando centro libre para la representación posterior)
+    this.drawDNAHelixBorders(bitmap, colorMap);
   }
 
   /**
@@ -326,11 +326,8 @@ export class AreciboGenerator {
     // Fila 26: Línea en blanco
     this.drawBlankLine(bitmap, colorMap, 26);
     
-    // Fila 27: Límites del espacio de memoria (dejando centro libre)
-    this.setPixel(bitmap, colorMap, 3, 27, 1, this.COLORS.GREEN);
-    this.setPixel(bitmap, colorMap, 4, 27, 1, this.COLORS.GREEN);
-    this.setPixel(bitmap, colorMap, 18, 27, 1, this.COLORS.GREEN);
-    this.setPixel(bitmap, colorMap, 19, 27, 1, this.COLORS.GREEN);
+    // Fila 27: Límites del espacio de memoria (dejando centro libre para la representación posterior)
+    this.drawDNAHelixBorders(bitmap, colorMap);
   }
 
   /**
@@ -403,11 +400,8 @@ export class AreciboGenerator {
     // Fila 26: Línea en blanco
     this.drawBlankLine(bitmap, colorMap, 26);
     
-    // Fila 27: Límites del campo cuántico (dejando centro libre)
-    this.setPixel(bitmap, colorMap, 3, 27, 1, this.COLORS.GREEN);
-    this.setPixel(bitmap, colorMap, 4, 27, 1, this.COLORS.GREEN);
-    this.setPixel(bitmap, colorMap, 18, 27, 1, this.COLORS.GREEN);
-    this.setPixel(bitmap, colorMap, 19, 27, 1, this.COLORS.GREEN);
+    // Fila 27: Límites del campo cuántico (dejando centro libre para la representación posterior)
+    this.drawDNAHelixBorders(bitmap, colorMap);
   }
 
   /**
@@ -470,11 +464,8 @@ export class AreciboGenerator {
     // Fila 26: Línea en blanco
     this.drawBlankLine(bitmap, colorMap, 26);
     
-    // Fila 27: Límites del campo energético (dejando centro libre)
-    this.setPixel(bitmap, colorMap, 3, 27, 1, this.COLORS.GREEN);
-    this.setPixel(bitmap, colorMap, 4, 27, 1, this.COLORS.GREEN);
-    this.setPixel(bitmap, colorMap, 18, 27, 1, this.COLORS.GREEN);
-    this.setPixel(bitmap, colorMap, 19, 27, 1, this.COLORS.GREEN);
+    // Fila 27: Límites del campo energético (dejando centro libre para la representación posterior)
+    this.drawDNAHelixBorders(bitmap, colorMap);
   }
 
   /**
@@ -535,11 +526,8 @@ export class AreciboGenerator {
     // Fila 26: Línea en blanco
     this.drawBlankLine(bitmap, colorMap, 26);
     
-    // Fila 27: Límites del cosmos (dejando centro libre para la creación)
-    this.setPixel(bitmap, colorMap, 2, 27, 1, this.COLORS.GREEN);
-    this.setPixel(bitmap, colorMap, 3, 27, 1, this.COLORS.GREEN);
-    this.setPixel(bitmap, colorMap, 19, 27, 1, this.COLORS.GREEN);
-    this.setPixel(bitmap, colorMap, 20, 27, 1, this.COLORS.GREEN);
+    // Fila 27: Límites del cosmos (dejando centro libre para la representación posterior)
+    this.drawDNAHelixBorders(bitmap, colorMap);
   }
 
   /**
@@ -665,6 +653,328 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, 19, 27, 1, this.COLORS.GREEN);
     
     // CENTRO VACÍO (columnas 5-17) - Aquí va la representación de la doble hélice
+  }
+
+  /**
+   * Dibuja la representación de la doble hélice del ADN 
+   * HELICES AZULES + CENTRO BLANCO según el mensaje original de Arecibo
+   * Adaptado para cada forma de vida de manera coherente con sus nucleótidos
+   */
+  private static drawDNADoubleHelix(bitmap: number[], colorMap: number[], lifeForm: string, startRow: number = 28, height: number = 15): void {
+    const category = this.getLifeCategory(lifeForm);
+    const centerCol = 11; // Columna central del mensaje (23/2 ≈ 11)
+    
+    switch (category) {
+      case "carbon-based":
+        this.drawCarbonBasedDoubleHelix(bitmap, colorMap, lifeForm, centerCol, startRow, height);
+        break;
+      case "silicon-based":
+        this.drawSiliconBasedStructure(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case "robotic":
+        this.drawDigitalDataStructure(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case "gaseous":
+        this.drawQuantumFieldStructure(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case "energy":
+        this.drawEnergyFieldStructure(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case "divine":
+        this.drawCosmicGeometryStructure(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      default:
+        this.drawCarbonBasedDoubleHelix(bitmap, colorMap, lifeForm, centerCol, startRow, height);
+    }
+  }
+
+  /**
+   * Doble hélice clásica de ADN para vida basada en carbono
+   * EXACTAMENTE como el mensaje de Arecibo original:
+   * - Centro: 2 píxeles de ancho representando NÚMERO BINARIO de pares de bases
+   * - Hélices laterales AZULES envolviendo el centro sin sobreponerse
+   */
+  private static drawCarbonBasedDoubleHelix(bitmap: number[], colorMap: number[], lifeForm: string, centerCol: number, startRow: number, height: number): void {
+    const genomicData = this.getGenomeSizeData(lifeForm, this.getElementsForLifeForm(lifeForm));
+    
+    // COLUMNA CENTRAL - 2 píxeles representando el NÚMERO de pares de bases
+    const centerCol1 = 11;    // Primera columna del número binario
+    const centerCol2 = 12;    // Segunda columna del número binario
+    
+    // Convertir el número total de bases a binario para la representación
+    const totalBases = genomicData.totalBases;
+    const binaryString = totalBases.toString(2);
+    
+    for (let i = 0; i < height; i++) {
+      const row = startRow + i;
+      if (row >= this.HEIGHT) break;
+      
+      // COLUMNA CENTRAL BLANCA - Representa el número binario de pares de bases
+      // Cada fila representa un bit del número total (de abajo hacia arriba)
+      const bitIndex = height - 1 - i; // Invertir para que el bit menos significativo esté abajo
+      
+      if (bitIndex < binaryString.length) {
+        const bit = parseInt(binaryString[binaryString.length - 1 - bitIndex]);
+        if (bit === 1) {
+          this.setPixel(bitmap, colorMap, centerCol1, row, 1, this.COLORS.WHITE);
+          this.setPixel(bitmap, colorMap, centerCol2, row, 1, this.COLORS.WHITE);
+        }
+        // Si el bit es 0, no se pone nada (queda negro)
+      }
+      
+      // HÉLICES LATERALES AZULES - DESDE LOS EXTREMOS HACIA EL CENTRO
+      // Tronco central: columnas 11-12, separación de 1px = hélices hasta columnas 10 y 13
+      const helixPhase = (i * Math.PI * 2) / 8; // Una vuelta cada 8 filas
+      
+      // Hélice izquierda - DESDE BORDE EXTREMO (col 3) HACIA EL CENTRO (col 10)
+      const leftHelixRange = 10 - 3; // 7 columnas disponibles (3,4,5,6,7,8,9,10)
+      const leftHelixPosition = 3 + Math.round((leftHelixRange/2) + (leftHelixRange/2) * Math.cos(helixPhase));
+      this.setPixel(bitmap, colorMap, Math.max(3, Math.min(10, leftHelixPosition)), row, 1, this.COLORS.BLUE);
+      
+      // Hélice derecha - DESDE BORDE EXTREMO (col 19) HACIA EL CENTRO (col 13)  
+      const rightHelixRange = 19 - 13; // 6 columnas disponibles (13,14,15,16,17,18,19)
+      const rightHelixPosition = 13 + Math.round((rightHelixRange/2) + (rightHelixRange/2) * Math.cos(helixPhase + Math.PI));
+      this.setPixel(bitmap, colorMap, Math.max(13, Math.min(19, rightHelixPosition)), row, 1, this.COLORS.BLUE);
+      
+      // VARIACIONES ESPECÍFICAS según el tipo de vida (sutiles)
+      if (lifeForm === "Intelligent Life") {
+        // Vida inteligente: doble hélice más regular
+        const secondaryPhase = helixPhase + Math.PI;
+        const leftSecondary = Math.round(centerCol1 - 3 - 0.5 * Math.cos(secondaryPhase));
+        const rightSecondary = Math.round(centerCol2 + 3 + 0.5 * Math.cos(secondaryPhase));
+        
+        if (leftSecondary >= 5 && leftSecondary <= 9 && i % 4 === 0) {
+          this.setPixel(bitmap, colorMap, leftSecondary, row, 1, this.COLORS.BLUE);
+        }
+        if (rightSecondary >= 14 && rightSecondary <= 18 && i % 4 === 2) {
+          this.setPixel(bitmap, colorMap, rightSecondary, row, 1, this.COLORS.BLUE);
+        }
+      } else if (lifeForm === "Vegetation") {
+        // Vegetación (RNA): hélice ligeramente más irregular - píxel adicional ocasional
+        if (i % 6 === 3) {
+          const rnaCol = leftHelixPosition - 1;
+          if (rnaCol >= 3 && rnaCol <= 10) {
+            this.setPixel(bitmap, colorMap, rnaCol, row, 1, this.COLORS.BLUE);
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Estructura cristalina para vida basada en silicio
+   * SIGUIENDO EL PATRÓN ARECIBO ORIGINAL:
+   * - Centro: 2 píxeles representando NÚMERO de unidades cristalinas
+   * - Redes laterales AZULES envolviendo sin sobreponerse
+   */
+  private static drawSiliconBasedStructure(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Simular complejidad cristalina como "número de unidades tetraédricas"
+    const crystallineUnits = 1000000; // 1M unidades cristalinas hipotéticas
+    const binaryString = crystallineUnits.toString(2);
+    
+    const centerCol1 = 11;    // Primera columna del número
+    const centerCol2 = 12;    // Segunda columna del número
+    
+    for (let i = 0; i < height; i++) {
+      const row = startRow + i;
+      if (row >= this.HEIGHT) break;
+      
+      // COLUMNA CENTRAL BLANCA - Número de unidades cristalinas
+      const bitIndex = height - 1 - i;
+      if (bitIndex < binaryString.length) {
+        const bit = parseInt(binaryString[binaryString.length - 1 - bitIndex]);
+        if (bit === 1) {
+          this.setPixel(bitmap, colorMap, centerCol1, row, 1, this.COLORS.WHITE);
+          this.setPixel(bitmap, colorMap, centerCol2, row, 1, this.COLORS.WHITE);
+        }
+      }
+      
+      // REDES CRISTALINAS AZULES - DESDE LOS EXTREMOS HACIA EL CENTRO
+      const crystalPhase = (i * Math.PI * 2) / 6; // Estructura hexagonal
+      
+      // Red izquierda - DESDE EXTREMO (col 3) HACIA EL CENTRO (col 10)
+      const leftCrystalRange = 10 - 3; // 7 columnas disponibles
+      const leftCrystalPosition = 3 + Math.round((leftCrystalRange/2) + (leftCrystalRange/2) * Math.sin(crystalPhase));
+      this.setPixel(bitmap, colorMap, Math.max(3, Math.min(10, leftCrystalPosition)), row, 1, this.COLORS.BLUE);
+      
+      // Red derecha - DESDE EXTREMO (col 19) HACIA EL CENTRO (col 13)
+      const rightCrystalRange = 19 - 13; // 6 columnas disponibles
+      const rightCrystalPosition = 13 + Math.round((rightCrystalRange/2) + (rightCrystalRange/2) * Math.sin(crystalPhase + Math.PI));
+      this.setPixel(bitmap, colorMap, Math.max(13, Math.min(19, rightCrystalPosition)), row, 1, this.COLORS.BLUE);
+    }
+  }
+
+  /**
+   * Estructura de datos digital para entidades robóticas
+   * SIGUIENDO EL PATRÓN ARECIBO ORIGINAL:
+   * - Centro: 2 píxeles representando NÚMERO de instrucciones/líneas de código
+   * - Buses laterales AZULES sin sobreponerse
+   */
+  private static drawDigitalDataStructure(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Simular "líneas de código" como análogo digital del genoma
+    const codeLines = 2147483647; // Máximo int32 como "programa complejo"
+    const binaryString = codeLines.toString(2);
+    
+    const centerCol1 = 11;    // Primera columna del número
+    const centerCol2 = 12;    // Segunda columna del número
+    
+    for (let i = 0; i < height; i++) {
+      const row = startRow + i;
+      if (row >= this.HEIGHT) break;
+      
+      // COLUMNA CENTRAL BLANCA - Número de líneas de código/instrucciones
+      const bitIndex = height - 1 - i;
+      if (bitIndex < binaryString.length) {
+        const bit = parseInt(binaryString[binaryString.length - 1 - bitIndex]);
+        if (bit === 1) {
+          this.setPixel(bitmap, colorMap, centerCol1, row, 1, this.COLORS.WHITE);
+          this.setPixel(bitmap, colorMap, centerCol2, row, 1, this.COLORS.WHITE);
+        }
+      }
+      
+      // BUSES DIGITALES AZULES - DESDE LOS EXTREMOS HACIA EL CENTRO
+      const digitalPhase = (i * Math.PI * 2) / 4; // Ciclo de clock digital
+      
+      // Bus izquierdo - DESDE EXTREMO (col 3) HACIA EL CENTRO (col 10)
+      const leftBusRange = 10 - 3; // 7 columnas disponibles
+      const leftBusPosition = 3 + Math.round((leftBusRange/2) + (leftBusRange/2) * Math.sin(digitalPhase));
+      this.setPixel(bitmap, colorMap, Math.max(3, Math.min(10, leftBusPosition)), row, 1, this.COLORS.BLUE);
+      
+      // Bus derecho - DESDE EXTREMO (col 19) HACIA EL CENTRO (col 13)
+      const rightBusRange = 19 - 13; // 6 columnas disponibles
+      const rightBusPosition = 13 + Math.round((rightBusRange/2) + (rightBusRange/2) * Math.sin(digitalPhase + Math.PI));
+      this.setPixel(bitmap, colorMap, Math.max(13, Math.min(19, rightBusPosition)), row, 1, this.COLORS.BLUE);
+    }
+  }
+
+  /**
+   * Campo cuántico para gas consciente
+   * SIGUIENDO EL PATRÓN ARECIBO ORIGINAL:
+   * - Centro: 2 píxeles representando NÚMERO de estados cuánticos
+   * - Campos laterales AZULES sin sobreponerse
+   */
+  private static drawQuantumFieldStructure(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Simular "estados cuánticos" como análogo del número de bases
+    const quantumStates = 1048576; // 2^20 estados cuánticos posibles
+    const binaryString = quantumStates.toString(2);
+    
+    const centerCol1 = 11;    // Primera columna del número
+    const centerCol2 = 12;    // Segunda columna del número
+    
+    for (let i = 0; i < height; i++) {
+      const row = startRow + i;
+      if (row >= this.HEIGHT) break;
+      
+      // COLUMNA CENTRAL BLANCA - Número de estados cuánticos
+      const bitIndex = height - 1 - i;
+      if (bitIndex < binaryString.length) {
+        const bit = parseInt(binaryString[binaryString.length - 1 - bitIndex]);
+        if (bit === 1) {
+          this.setPixel(bitmap, colorMap, centerCol1, row, 1, this.COLORS.WHITE);
+          this.setPixel(bitmap, colorMap, centerCol2, row, 1, this.COLORS.WHITE);
+        }
+      }
+      
+      // CAMPOS CUÁNTICOS AZULES - DESDE LOS EXTREMOS HACIA EL CENTRO
+      const quantumPhase = (i * Math.PI * 2) / 12; // Oscilación cuántica
+      
+      // Campo izquierdo - DESDE EXTREMO (col 3) HACIA EL CENTRO (col 10)
+      const leftFieldRange = 10 - 3; // 7 columnas disponibles
+      const leftFieldPosition = 3 + Math.round((leftFieldRange/2) + (leftFieldRange/2) * Math.sin(quantumPhase));
+      this.setPixel(bitmap, colorMap, Math.max(3, Math.min(10, leftFieldPosition)), row, 1, this.COLORS.BLUE);
+      
+      // Campo derecho - DESDE EXTREMO (col 19) HACIA EL CENTRO (col 13)
+      const rightFieldRange = 19 - 13; // 6 columnas disponibles
+      const rightFieldPosition = 13 + Math.round((rightFieldRange/2) + (rightFieldRange/2) * Math.cos(quantumPhase));
+      this.setPixel(bitmap, colorMap, Math.max(13, Math.min(19, rightFieldPosition)), row, 1, this.COLORS.BLUE);
+    }
+  }
+
+  /**
+   * Campo energético para entidades de energía
+   * SIGUIENDO EL PATRÓN ARECIBO ORIGINAL:
+   * - Centro: 2 píxeles representando NÚMERO de unidades de energía
+   * - Campos laterales AZULES sin sobreponerse
+   */
+  private static drawEnergyFieldStructure(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Simular "unidades de energía" como análogo del genoma
+    const energyUnits = 299792458; // Velocidad de la luz (unidades energéticas)
+    const binaryString = energyUnits.toString(2);
+    
+    const centerCol1 = 11;    // Primera columna del número
+    const centerCol2 = 12;    // Segunda columna del número
+    
+    for (let i = 0; i < height; i++) {
+      const row = startRow + i;
+      if (row >= this.HEIGHT) break;
+      
+      // COLUMNA CENTRAL BLANCA - Número de unidades energéticas
+      const bitIndex = height - 1 - i;
+      if (bitIndex < binaryString.length) {
+        const bit = parseInt(binaryString[binaryString.length - 1 - bitIndex]);
+        if (bit === 1) {
+          this.setPixel(bitmap, colorMap, centerCol1, row, 1, this.COLORS.WHITE);
+          this.setPixel(bitmap, colorMap, centerCol2, row, 1, this.COLORS.WHITE);
+        }
+      }
+      
+      // CAMPOS ENERGÉTICOS AZULES - DESDE LOS EXTREMOS HACIA EL CENTRO
+      const energyPhase = (i * Math.PI * 2) / 10; // Frecuencia energética
+      
+      // Campo izquierdo - DESDE EXTREMO (col 3) HACIA EL CENTRO (col 10)
+      const leftEnergyRange = 10 - 3; // 7 columnas disponibles
+      const leftEnergyPosition = 3 + Math.round((leftEnergyRange/2) + (leftEnergyRange/2) * Math.sin(energyPhase));
+      this.setPixel(bitmap, colorMap, Math.max(3, Math.min(10, leftEnergyPosition)), row, 1, this.COLORS.BLUE);
+      
+      // Campo derecho - DESDE EXTREMO (col 19) HACIA EL CENTRO (col 13)
+      const rightEnergyRange = 19 - 13; // 6 columnas disponibles
+      const rightEnergyPosition = 13 + Math.round((rightEnergyRange/2) + (rightEnergyRange/2) * Math.cos(energyPhase));
+      this.setPixel(bitmap, colorMap, Math.max(13, Math.min(19, rightEnergyPosition)), row, 1, this.COLORS.BLUE);
+    }
+  }
+
+  /**
+   * Geometría cósmica para entidades divinas
+   * SIGUIENDO EL PATRÓN ARECIBO ORIGINAL:
+   * - Centro: 2 píxeles representando NÚMERO cósmico (constantes universales)
+   * - Geometrías laterales AZULES sin sobreponerse
+   */
+  private static drawCosmicGeometryStructure(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Usar el número π * 10^9 como "constante cósmica" (como análogo del genoma)
+    const cosmicConstant = Math.floor(Math.PI * 1000000000); // π * 10^9
+    const binaryString = cosmicConstant.toString(2);
+    
+    const centerCol1 = 11;    // Primera columna del número
+    const centerCol2 = 12;    // Segunda columna del número
+    
+    for (let i = 0; i < height; i++) {
+      const row = startRow + i;
+      if (row >= this.HEIGHT) break;
+      
+      // COLUMNA CENTRAL BLANCA - Constante cósmica en binario
+      const bitIndex = height - 1 - i;
+      if (bitIndex < binaryString.length) {
+        const bit = parseInt(binaryString[binaryString.length - 1 - bitIndex]);
+        if (bit === 1) {
+          this.setPixel(bitmap, colorMap, centerCol1, row, 1, this.COLORS.WHITE);
+          this.setPixel(bitmap, colorMap, centerCol2, row, 1, this.COLORS.WHITE);
+        }
+      }
+      
+      // GEOMETRÍAS SAGRADAS AZULES - DESDE LOS EXTREMOS HACIA EL CENTRO
+      const goldenPhase = (i * Math.PI * 2) / 13; // Basado en Fibonacci (13)
+      const fibonacciPhase = (i * 1.618033988749) % (2 * Math.PI); // Proporción áurea
+      
+      // Geometría izquierda - DESDE EXTREMO (col 3) HACIA EL CENTRO (col 10)
+      const leftGeometryRange = 10 - 3; // 7 columnas disponibles
+      const leftGeometryPosition = 3 + Math.round((leftGeometryRange/2) + (leftGeometryRange/2) * Math.sin(goldenPhase));
+      this.setPixel(bitmap, colorMap, Math.max(3, Math.min(10, leftGeometryPosition)), row, 1, this.COLORS.BLUE);
+      
+      // Geometría derecha - DESDE EXTREMO (col 19) HACIA EL CENTRO (col 13)
+      const rightGeometryRange = 19 - 13; // 6 columnas disponibles
+      const rightGeometryPosition = 13 + Math.round((rightGeometryRange/2) + (rightGeometryRange/2) * Math.cos(fibonacciPhase));
+      this.setPixel(bitmap, colorMap, Math.max(13, Math.min(19, rightGeometryPosition)), row, 1, this.COLORS.BLUE);
+    }
   }
 
   /**
