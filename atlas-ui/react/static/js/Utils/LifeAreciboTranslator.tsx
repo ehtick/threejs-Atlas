@@ -1754,26 +1754,42 @@ export class AreciboGenerator {
   }
 
   /**
-   * Dibuja la estatura de la forma de vida como número binario vertical
-   * En el mensaje original era el número 14 en azul/blanco
+   * Dibuja la representación de altura exactamente como en el mensaje de Arecibo original:
+   * Barra vertical completa (azul) + número binario horizontal al lado (centrado verticalmente)
    */
   private static drawLifeFormHeight(bitmap: number[], colorMap: number[], lifeForm: string, startRow: number, height: number): void {
-    // Generar estatura procedural según el tipo de vida (valor entre 1-255 para caber en 8 bits)
+    // Generar estatura procedural según el tipo de vida
     const heightValue = this.generateLifeFormHeight(lifeForm);
     
-    // Convertir a binario (8 bits máximo para caber en 9 líneas)
-    const binaryHeight = heightValue.toString(2).padStart(8, '0');
+    // Columna para la barra de altura (lado izquierdo)
+    const barCol = 3; // Columna 3 para centrar mejor
     
-    // Dibujar verticalmente en columnas 0-2 (como el original) con colores azul y blanco
-    for (let i = 0; i < Math.min(binaryHeight.length, height); i++) {
-      const bit = parseInt(binaryHeight[binaryHeight.length - 1 - i]);
-      if (bit === 1) {
-        // Alternar entre azul y blanco para mejor legibilidad
-        const color = (i % 2 === 0) ? this.COLORS.BLUE : this.COLORS.WHITE;
-        // Dibujar en columnas 0, 1 para visibilidad
-        this.setPixel(bitmap, colorMap, 0, startRow + height - 1 - i, 1, color);
-        this.setPixel(bitmap, colorMap, 1, startRow + height - 1 - i, 1, color);
-      }
+    // 1. Dibujar barra vertical que coincida con la altura de la figura
+    // La barra SIEMPRE debe tener la misma altura que la figura humanoide (9 líneas)
+    // porque representa la altura de esa figura
+    const barHeight = height; // Siempre usa toda la altura disponible
+    
+    // Dibujar la barra desde abajo hacia arriba
+    for (let i = 0; i < barHeight; i++) {
+      this.setPixel(bitmap, colorMap, barCol, startRow + i, 1, this.COLORS.BLUE);
+    }
+    
+    // 2. Número binario horizontal AL LADO de la barra (no superpuesto)
+    // Centrado verticalmente respecto al medio de la sección
+    const binaryHeight = heightValue.toString(2);
+    const barMiddleRow = startRow + Math.floor(height / 2); // Centro de la sección
+    const binaryStartCol = barCol - 2; // Columnas 1-5
+    
+    // Dibujar "X" marcador (bit menos significativo) en blanco
+    this.setPixel(bitmap, colorMap, binaryStartCol, barMiddleRow, 1, this.COLORS.WHITE);
+    
+    // Dibujar cada bit del número binario horizontalmente
+    for (let i = 0; i < binaryHeight.length && i < 4; i++) {
+      const bit = parseInt(binaryHeight[binaryHeight.length - 1 - i]); // Leer de derecha a izquierda
+      const color = (bit === 1) ? this.COLORS.BLUE : this.COLORS.WHITE;
+      
+      // Dibujar bits hacia la derecha del marcador
+      this.setPixel(bitmap, colorMap, binaryStartCol + 1 + i, barMiddleRow, 1, color);
     }
   }
 
@@ -1863,6 +1879,26 @@ export class AreciboGenerator {
    * Valores entre 1-255 para caber en 8 bits (como el 14 del mensaje original)
    */
   private static generateLifeFormHeight(lifeForm: string): number {
+    // Para "Intelligent Life" usamos variaciones realistas basadas en combinaciones modular
+    if (lifeForm === "Intelligent Life") {
+      const hash = this.hashString(lifeForm);
+      const rng = this.createSeededRandom(hash);
+      
+      // Estaturas realistas para vida inteligente (en unidades de longitud de onda)
+      // Basado en el mensaje de Arecibo original: 14 = 176.4cm humanos
+      const heightVariations = [
+        12,  // ~150cm - Vida inteligente pequeña/compacta
+        14,  // ~176cm - Estatura similar a humanos (referencia Arecibo)  
+        18,  // ~227cm - Vida inteligente alta
+        22,  // ~277cm - Vida inteligente muy alta
+        26   // ~327cm - Gigantes inteligentes
+      ];
+      
+      const index = Math.floor(rng.random() * heightVariations.length);
+      return heightVariations[index];
+    }
+    
+    // Para otras formas de vida, mantener el sistema existente
     const category = this.getLifeCategory(lifeForm);
     const hash = this.hashString(lifeForm);
     const rng = this.createSeededRandom(hash);
