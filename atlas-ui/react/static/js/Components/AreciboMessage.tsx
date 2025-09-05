@@ -11,7 +11,7 @@ interface AreciboMessageProps {
   showInfo?: boolean;
 }
 
-const AreciboMessage: React.FC<AreciboMessageProps> = ({ lifeForm, planetName, className = "", scale = 8, showControls = true, showInfo = true }) => {
+const AreciboMessage: React.FC<AreciboMessageProps> = ({ lifeForm, planetName, className = "", scale = 16, showControls = true, showInfo = true }) => {
   const [messageData, setMessageData] = useState<AreciboMessageType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -51,8 +51,36 @@ const AreciboMessage: React.FC<AreciboMessageProps> = ({ lifeForm, planetName, c
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Use the new generator's rendering function
-    AreciboGenerator.renderToCanvas(messageData, canvas, scale);
+    // Set canvas size
+    canvas.width = messageData.width * scale;
+    canvas.height = messageData.height * scale;
+
+    // Function to draw grid
+    const drawGrid = () => {
+      if (!ctx) return;
+      
+      ctx.strokeStyle = '#222222';
+      ctx.lineWidth = 0.3;
+      ctx.globalAlpha = 0.15;
+      
+      // Vertical lines
+      for (let x = 0; x <= messageData.width; x++) {
+        ctx.beginPath();
+        ctx.moveTo(x * scale, 0);
+        ctx.lineTo(x * scale, messageData.height * scale);
+        ctx.stroke();
+      }
+      
+      // Horizontal lines
+      for (let y = 0; y <= messageData.height; y++) {
+        ctx.beginPath();
+        ctx.moveTo(0, y * scale);
+        ctx.lineTo(messageData.width * scale, y * scale);
+        ctx.stroke();
+      }
+      
+      ctx.globalAlpha = 1;
+    };
 
     // Animation function for revealing the message
     const animate = () => {
@@ -66,7 +94,7 @@ const AreciboMessage: React.FC<AreciboMessageProps> = ({ lifeForm, planetName, c
       // Calculate how many rows to reveal
       const rowsToReveal = Math.floor(revealProgressRef.current * messageData.height);
 
-      // Draw the message bits with animation using color map
+      // Draw the message bits with animation using color map (sin cuadrícula durante animación)
       const colors = ['#000000', '#FFFFFF', '#9966CC', '#00FF00', '#0066FF', '#FF6600', '#FF0000', '#FFFF00'];
       
       for (let y = 0; y < Math.min(rowsToReveal, messageData.height); y++) {
@@ -94,15 +122,31 @@ const AreciboMessage: React.FC<AreciboMessageProps> = ({ lifeForm, planetName, c
         animationFrameRef.current = requestAnimationFrame(animate);
       } else {
         setIsAnimating(false);
-        // Final render with full opacity
-        AreciboGenerator.renderToCanvas(messageData, canvas, scale);
+        // No hacer render adicional aquí - será manejado por el useEffect
       }
     };
 
-    // Start animation
+    // Start animation or render final state
     if (isAnimating) {
       revealProgressRef.current = 0;
       animate();
+    } else {
+      // Render final state exactly like animation (sin cuadrícula explícita)
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      const colors = ['#000000', '#FFFFFF', '#9966CC', '#00FF00', '#0066FF', '#FF6600', '#FF0000', '#FFFF00'];
+      for (let y = 0; y < messageData.height; y++) {
+        for (let x = 0; x < messageData.width; x++) {
+          const index = y * messageData.width + x;
+          if (messageData.bitmap[index] === 1) {
+            const colorIndex = messageData.colorMap[index] || 1;
+            ctx.fillStyle = colors[colorIndex] || '#FFFFFF';
+            ctx.fillRect(x * scale, y * scale, scale - 1, scale - 1);
+          }
+        }
+      }
     }
 
     return () => {
