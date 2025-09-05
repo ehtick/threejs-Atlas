@@ -191,7 +191,8 @@ const AreciboMessage: React.FC<AreciboMessageProps> = ({ lifeForm, planetName, c
     if (isAnimating) {
       revealProgressRef.current = 0;
       initializeRadioStatic(); // Initialize radio static
-      animate();
+      // Start animation immediately without delay
+      requestAnimationFrame(() => animate());
     } else {
       // Render final state exactly like animation (sin cuadrícula explícita)
       ctx.clearRect(0, 0, canvas.width, canvas.height);
