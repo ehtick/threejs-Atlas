@@ -174,7 +174,7 @@ export class AreciboGenerator {
     // Siguiendo el orden: H, C, N, O, P (como en la sección de elementos)
     
     // Filas 12-15: Fórmulas químicas de los 4 nucleótidos (deoxyribose + bases)
-    this.drawNucleotideFormulas(bitmap, colorMap, bases, elements);
+    this.drawNucleotideFormulas(bitmap, colorMap, bases, elements, lifeForm);
     
     // Fila 16: Línea en blanco
     this.drawBlankLine(bitmap, colorMap, 16);
@@ -186,7 +186,7 @@ export class AreciboGenerator {
     this.drawBlankLine(bitmap, colorMap, 21);
     
     // Filas 22-25: Número de nucleótidos en el genoma
-    this.drawGenomeSize(bitmap, colorMap, elements);
+    this.drawGenomeSize(bitmap, colorMap, elements, lifeForm);
     
     // Fila 26: Línea en blanco
     this.drawBlankLine(bitmap, colorMap, 26);
@@ -549,37 +549,37 @@ export class AreciboGenerator {
 
   /**
    * Dibuja las fórmulas químicas de los nucleótidos siguiendo el orden H-C-N-O-P
-   * Como en el Arecibo original: deoxyribose (C5H7O) + bases nitrogenadas
+   * PROCEDURAL: varía según el tipo específico de vida basada en carbono
    */
-  private static drawNucleotideFormulas(bitmap: number[], colorMap: number[], bases: string[], elements: number[]): void {
-    // Posiciones para las 4 bases nitrogenadas (Adenina, Timina, Citosina, Guanina)
-    const basePositions = [
-      { col: 3, formula: [5,5,5,0,0] },  // Adenina: C5H5N5
-      { col: 7, formula: [5,5,2,2,0] },  // Timina: C5H5N2O2  
-      { col: 11, formula: [4,5,3,1,0] }, // Citosina: C4H5N3O
-      { col: 15, formula: [5,5,5,1,0] }  // Guanina: C5H5N5O
-    ];
+  private static drawNucleotideFormulas(bitmap: number[], colorMap: number[], bases: string[], elements: number[], lifeForm: string): void {
+    const nucleotideData = this.getNucleotideVariation(lifeForm, elements);
     
-    // Dibujar cada nucleótido como una columna vertical (filas 12-15)
-    for (let i = 0; i < Math.min(bases.length, 4); i++) {
-      const pos = basePositions[i];
-      // Dibujar fórmula en binario (H, C, N, O, P)
-      for (let elementIdx = 0; elementIdx < pos.formula.length; elementIdx++) {
-        const count = pos.formula[elementIdx];
+    // Dibujar las bases nitrogenadas específicas para este tipo de vida
+    for (let i = 0; i < Math.min(nucleotideData.bases.length, 4); i++) {
+      const base = nucleotideData.bases[i];
+      const col = 3 + (i * 4); // Columnas 3, 7, 11, 15
+      
+      // Dibujar fórmula química de la base (H, C, N, O, P)
+      for (let elementIdx = 0; elementIdx < base.formula.length; elementIdx++) {
+        const count = base.formula[elementIdx];
         const row = 12 + elementIdx;
-        // Solo dibujamos si hay al menos 1 átomo de este tipo
+        
         if (count > 0) {
-          this.setPixel(bitmap, colorMap, pos.col, row, 1, this.COLORS.GREEN);
-          // Para números mayores, agregamos píxeles adicionales
+          this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
+          // Representar cantidades con píxeles adicionales
           if (count >= 4) {
-            this.setPixel(bitmap, colorMap, pos.col + 1, row, 1, this.COLORS.GREEN);
+            this.setPixel(bitmap, colorMap, col + 1, row, 1, this.COLORS.GREEN);
+          }
+          if (count >= 7) {
+            this.setPixel(bitmap, colorMap, col - 1, row, 1, this.COLORS.GREEN);
           }
         }
       }
     }
     
-    // Deoxyribose (C5H7O) - lado izquierdo con márgenes
-    this.drawChemicalFormula(bitmap, colorMap, 1, 12, [7,5,0,1,0]); // H7C5O1
+    // Azúcar (deoxyribose/ribose) - varía según si usa ADN o ARN
+    const sugarFormula = nucleotideData.usesRNA ? [9,5,0,4,0] : [7,5,0,1,0]; // Ribosa vs Deoxyribosa
+    this.drawChemicalFormula(bitmap, colorMap, 1, 12, sugarFormula);
   }
 
   /**
@@ -605,29 +605,48 @@ export class AreciboGenerator {
   }
 
   /**
-   * Dibuja el número total de nucleótidos en el genoma
+   * Dibuja el número total de nucleótidos en el genoma (PROCEDURAL)
    */
-  private static drawGenomeSize(bitmap: number[], colorMap: number[], elements: number[]): void {
-    const genomeSize = this.getGenomeSize(elements);
+  private static drawGenomeSize(bitmap: number[], colorMap: number[], elements: number[], lifeForm: string): void {
+    const nucleotideData = this.getNucleotideVariation(lifeForm, elements);
+    const genomeSizeData = this.getGenomeSizeData(lifeForm, elements);
     
-    // Representar el tamaño del genoma en formato binario compacto
-    // Usamos logaritmo para hacer el número manejable
-    const sizeLog = Math.floor(Math.log2(genomeSize / 1000000)); // En millones
+    // Representar complejidad del genoma visualmente
+    // Cada fila representa un aspecto diferente de la complejidad genética
     
-    // Filas 22-25: patrón que representa el orden de magnitud del genoma
-    for (let row = 22; row <= 25; row++) {
-      const level = row - 22; // 0-3
-      if (level < sizeLog) {
-        // Barras que crecen para indicar tamaño del genoma
-        for (let col = 9 + level; col <= 13 + level; col++) {
-          this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
-        }
+    // Fila 22: Genes codificantes (barras proporcionales al número de genes)
+    const geneCount = Math.floor(genomeSizeData.genes / 1000); // En miles
+    for (let col = 8; col <= Math.min(14, 8 + geneCount); col++) {
+      this.setPixel(bitmap, colorMap, col, 22, 1, this.COLORS.GREEN);
+    }
+    
+    // Fila 23: Contenido GC (patrón que refleja el ratio GC/AT)
+    const gcPattern = genomeSizeData.gcContent;
+    for (let col = 9; col <= 13; col++) {
+      if (gcPattern === "high" && col % 2 === 1) {
+        this.setPixel(bitmap, colorMap, col, 23, 1, this.COLORS.GREEN);
+      } else if (gcPattern === "moderate" && (col === 10 || col === 12)) {
+        this.setPixel(bitmap, colorMap, col, 23, 1, this.COLORS.GREEN);
+      } else if (gcPattern === "variable") {
+        this.setPixel(bitmap, colorMap, col, 23, 1, this.COLORS.GREEN);
       }
     }
     
-    // Indicadores laterales para la escala
-    this.setPixel(bitmap, colorMap, 5, 22, 1, this.COLORS.GREEN); // Millones
-    this.setPixel(bitmap, colorMap, 17, 25, 1, this.COLORS.GREEN); // Miles de millones
+    // Fila 24: Cromosomas/plásmidos
+    const chromosomes = genomeSizeData.chromosomes;
+    for (let i = 0; i < Math.min(chromosomes, 7); i++) {
+      this.setPixel(bitmap, colorMap, 8 + i, 24, 1, this.COLORS.GREEN);
+    }
+    
+    // Fila 25: Complejidad total (tamaño del genoma en megabases)
+    const totalSize = Math.floor(Math.log10(genomeSizeData.totalBases / 1000000)); // Log10 de Mb
+    for (let col = 9; col <= Math.min(15, 9 + totalSize); col++) {
+      this.setPixel(bitmap, colorMap, col, 25, 1, this.COLORS.GREEN);
+    }
+    
+    // Marcadores laterales
+    this.setPixel(bitmap, colorMap, 5, 22, 1, this.COLORS.GREEN); // Genes
+    this.setPixel(bitmap, colorMap, 17, 25, 1, this.COLORS.GREEN); // Tamaño total
   }
 
   /**
@@ -930,8 +949,303 @@ export class AreciboGenerator {
     return baseSets[lifeForm] || ["A", "T", "G", "C"];
   }
 
+  /**
+   * Genera nucleótidos basados EXCLUSIVAMENTE en los elementos químicos asignados
+   * Cada forma de vida tendrá nucleótidos únicos según su química específica
+   */
+  private static getNucleotideVariation(lifeForm: string, elements: number[]): any {
+    // Obtener elementos específicos asignados
+    const elementMap = this.createElementMap(elements);
+    
+    // Generar nucleótidos basados en elementos disponibles
+    const nucleotideData = this.generateElementBasedNucleotides(elementMap, lifeForm);
+    
+    return nucleotideData;
+  }
+
+  /**
+   * Crea un mapa de elementos disponibles para esta forma de vida
+   */
+  private static createElementMap(elements: number[]): { [key: string]: boolean } {
+    const elementNames: { [key: number]: string } = {
+      1: "H",   6: "C",   7: "N",   8: "O",   15: "P",   16: "S",
+      14: "Si", 13: "Al", 20: "Ca", 26: "Fe", 12: "Mg",
+      32: "Ge", 31: "Ga", 49: "In", 73: "Ta", 11: "Na",
+      2: "He",  10: "Ne", 18: "Ar", 36: "Kr", 54: "Xe",
+      115: "Mc", 118: "Og", 119: "Uue", 120: "Ubn", 126: "Ubh"
+    };
+    
+    const elementMap: { [key: string]: boolean } = {};
+    
+    for (const atomicNumber of elements) {
+      const elementSymbol = elementNames[atomicNumber];
+      if (elementSymbol) {
+        elementMap[elementSymbol] = true;
+      }
+    }
+    
+    return elementMap;
+  }
+
+  /**
+   * Genera estructuras de información genética basadas en elementos específicos
+   */
+  private static generateElementBasedNucleotides(elementMap: { [key: string]: boolean }, lifeForm: string): any {
+    // CASO 1: Vida basada en Carbono clásica (C, N, O, H, P disponibles)
+    if (elementMap["C"] && elementMap["N"] && elementMap["O"] && elementMap["H"]) {
+      return this.generateCarbonBasedNucleotides(elementMap, lifeForm);
+    }
+    
+    // CASO 2: Vida basada en Silicio (Si, O, H disponibles, sin C/N)
+    else if (elementMap["Si"] && elementMap["O"] && !elementMap["C"]) {
+      return this.generateSiliconBasedNucleotides(elementMap);
+    }
+    
+    // CASO 3: Vida metálica/robótica (Ga, Ge, In, Ta disponibles)
+    else if (elementMap["Ga"] || elementMap["Ge"] || elementMap["In"] || elementMap["Ta"]) {
+      return this.generateMetallicNucleotides(elementMap);
+    }
+    
+    // CASO 4: Vida gaseosa (gases nobles: He, Ne, Ar, Kr, Xe)
+    else if (elementMap["He"] || elementMap["Ne"] || elementMap["Ar"] || elementMap["Kr"] || elementMap["Xe"]) {
+      return this.generateGaseousInformation(elementMap);
+    }
+    
+    // CASO 5: Vida energética/divina (elementos super-pesados)
+    else if (elementMap["Mc"] || elementMap["Og"] || elementMap["Uue"]) {
+      return this.generateExoticInformation(elementMap);
+    }
+    
+    // FALLBACK: Usar elementos disponibles de forma genérica
+    return this.generateGenericInformation(elementMap);
+  }
+
+  /**
+   * Nucleótidos de carbono clásicos con variaciones según elementos específicos
+   */
+  private static generateCarbonBasedNucleotides(elementMap: { [key: string]: boolean }, lifeForm: string): any {
+    const hasPhosphorus = elementMap["P"];
+    const hasSulfur = elementMap["S"];
+    const hasMagnesium = elementMap["Mg"];
+    
+    // Bases clásicas pero adaptadas a elementos disponibles
+    const bases = [
+      // Adenina - siempre C5H5N5 si hay C,H,N
+      { name: "A", formula: this.adaptFormulaToElements([5,5,5,0,0], elementMap) },
+      // Timina/Uracilo - depende de si hay suficiente O
+      { name: elementMap["O"] && lifeForm !== "Vegetation" ? "T" : "U", 
+        formula: this.adaptFormulaToElements(elementMap["O"] ? [6,5,2,2,0] : [4,4,2,2,0], elementMap) },
+      // Guanina - C5H5N5O si hay O, sino C5H5N5
+      { name: "G", formula: this.adaptFormulaToElements([5,5,5, elementMap["O"] ? 1 : 0, 0], elementMap) },
+      // Citosina - C4H5N3O si hay O
+      { name: "C", formula: this.adaptFormulaToElements([5,4,3, elementMap["O"] ? 1 : 0, 0], elementMap) }
+    ];
+
+    return {
+      bases: bases,
+      usesRNA: !elementMap["O"] || lifeForm === "Vegetation", // Sin O suficiente = RNA
+      gcContent: hasSulfur ? "high" : "moderate", // Azufre permite más estabilidad GC
+      backbone: hasPhosphorus ? "phosphate" : (hasSulfur ? "sulfate" : "alternative"),
+      sugarType: elementMap["O"] ? "deoxyribose" : "modified_ribose"
+    };
+  }
+
+  /**
+   * Información genética basada en silicio
+   */
+  private static generateSiliconBasedNucleotides(elementMap: { [key: string]: boolean }): any {
+    // Tetraedros de silice como "bases"
+    const siliconBases = [
+      { name: "SiO4", formula: [0,0,0,4,0,1] },      // Tetraedro básico [H,C,N,O,P,Si]
+      { name: "Si2O3", formula: [0,0,0,3,0,2] },     // Doble tetraedro
+      { name: "SiO3Al", formula: [0,0,0,3,0,1,1] },  // Con aluminio si está disponible
+      { name: "SiO2", formula: [0,0,0,2,0,1] }       // Cuarzo
+    ];
+
+    return {
+      bases: siliconBases,
+      usesRNA: false,
+      gcContent: "crystalline",
+      backbone: "silicate_chain",
+      sugarType: "silicon_cage"
+    };
+  }
+
+  /**
+   * Información digital para entidades metálicas
+   */
+  private static generateMetallicNucleotides(elementMap: { [key: string]: boolean }): any {
+    const metallicBases = [
+      { name: "00", formula: [0,0,0,0,0,0,0,1] }, // Solo Ga (estado 00)
+      { name: "01", formula: [0,0,0,0,0,0,1,0] }, // Solo Ge (estado 01)
+      { name: "10", formula: [0,0,0,0,0,0,0,0,1] }, // In (estado 10)
+      { name: "11", formula: [0,0,0,0,0,0,0,0,0,1] } // Ta (estado 11)
+    ];
+
+    return {
+      bases: metallicBases,
+      usesRNA: false,
+      gcContent: "digital",
+      backbone: "metallic_conductor",
+      sugarType: "none"
+    };
+  }
+
+  /**
+   * Estados cuánticos para gases
+   */
+  private static generateGaseousInformation(elementMap: { [key: string]: boolean }): any {
+    const gasStates = [
+      { name: "|0⟩", formula: [0,0,0,0,0,0,0,0,0,1] }, // He
+      { name: "|1⟩", formula: [0,0,0,0,0,0,0,0,0,0,1] }, // Ne
+      { name: "|+⟩", formula: [0,0,0,0,0,0,0,0,0,0,0,1] }, // Ar
+      { name: "|-⟩", formula: [0,0,0,0,0,0,0,0,0,0,0,0,1] } // Kr
+    ];
+
+    return {
+      bases: gasStates,
+      usesRNA: false,
+      gcContent: "quantum",
+      backbone: "field_interaction",
+      sugarType: "none"
+    };
+  }
+
+  /**
+   * Información cósmica para elementos exóticos
+   */
+  private static generateExoticInformation(elementMap: { [key: string]: boolean }): any {
+    const exoticStates = [
+      { name: "α", formula: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] }, // Mc
+      { name: "β", formula: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] }, // Og
+      { name: "γ", formula: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] }, // Uue
+      { name: "δ", formula: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] } // Ubn
+    ];
+
+    return {
+      bases: exoticStates,
+      usesRNA: false,
+      gcContent: "cosmic",
+      backbone: "spacetime_fabric",
+      sugarType: "none"
+    };
+  }
+
+  /**
+   * Sistema genérico que usa cualquier elemento disponible
+   */
+  private static generateGenericInformation(elementMap: { [key: string]: boolean }): any {
+    const availableElements = Object.keys(elementMap);
+    const genericBases = [];
+
+    // Crear hasta 4 "bases" usando elementos disponibles
+    for (let i = 0; i < Math.min(4, availableElements.length); i++) {
+      const formula = new Array(15).fill(0); // Array para todos los elementos posibles
+      formula[i] = 1; // Un átomo del elemento correspondiente
+      
+      genericBases.push({
+        name: availableElements[i],
+        formula: formula
+      });
+    }
+
+    return {
+      bases: genericBases,
+      usesRNA: false,
+      gcContent: "variable",
+      backbone: "elemental",
+      sugarType: "adapted"
+    };
+  }
+
+  /**
+   * Adapta una fórmula química a los elementos disponibles
+   */
+  private static adaptFormulaToElements(baseFormula: number[], elementMap: { [key: string]: boolean }): number[] {
+    const elementOrder = ["H", "C", "N", "O", "P"];
+    const adaptedFormula = [...baseFormula];
+    
+    // Si falta algún elemento esencial, sustituir por elementos disponibles
+    for (let i = 0; i < elementOrder.length; i++) {
+      if (!elementMap[elementOrder[i]] && adaptedFormula[i] > 0) {
+        // Buscar sustituto disponible
+        if (elementOrder[i] === "C" && elementMap["Si"]) {
+          // Silicio puede sustituir carbono
+          adaptedFormula[i] = 0; // Quitar carbono
+          // Agregar silicio (posición 5 en nuestro array extendido)
+        }
+        // Más sustituciones químicamente válidas...
+      }
+    }
+    
+    return adaptedFormula;
+  }
+
+  /**
+   * Datos genómicos procedurales realistas basados en biología conocida
+   */
+  private static getGenomeSizeData(lifeForm: string, elements: number[]): any {
+    const genomicData: { [key: string]: any } = {
+      "Bacteria": {
+        totalBases: 4600000,      // E. coli típica: ~4.6M bp
+        genes: 4300,              // ~4,300 genes
+        gcContent: "high",        // 50-70% GC en muchas bacterias
+        chromosomes: 1,           // Cromosoma circular único
+        complexity: "simple",
+        modification: "restriction" // Enzimas de restricción
+      },
+      
+      "Vegetation": {
+        totalBases: 120000000,    // Arabidopsis: ~120M bp
+        genes: 27000,             // ~27,000 genes (más que animales!)
+        gcContent: "variable",    // Varía mucho entre especies
+        chromosomes: 5,           // Arabidopsis: 5 cromosomas
+        complexity: "moderate",
+        modification: "chloroplast" // DNA cloroplástico adicional
+      },
+      
+      "Animal Life": {
+        totalBases: 3200000000,   // Humanos: ~3.2B bp
+        genes: 20000,             // ~20,000 genes (menos que plantas)
+        gcContent: "moderate",    // ~41% GC en humanos
+        chromosomes: 23,          // 23 pares en humanos
+        complexity: "high",
+        modification: "histones"  // Organización en histonas
+      },
+      
+      "Intelligent Life": {
+        totalBases: 5000000000,   // Genoma expandido hipotético
+        genes: 35000,             // Más genes por duplicación
+        gcContent: "optimized",   // GC optimizado evolutivamente
+        chromosomes: 30,          // Más cromosomas para estabilidad
+        complexity: "very_high",
+        modification: "enhanced_epigenetic" // Epigenética avanzada
+      },
+      
+      "Vegetable Animals": {
+        totalBases: 800000000,    // Híbrido entre planta y animal
+        genes: 24000,             // Intermedio planta-animal
+        gcContent: "hybrid",      // Patrón mixto
+        chromosomes: 15,          // Número intermedio
+        complexity: "chimeric",
+        modification: "dual_system" // Sistema genético dual
+      }
+    };
+    
+    // Retornar datos específicos o default basado en complejidad elemental
+    if (genomicData[lifeForm]) {
+      return genomicData[lifeForm];
+    }
+    
+    // Fallback basado en elementos
+    const complexity = elements.reduce((sum, atomic) => sum + atomic, 0);
+    if (complexity < 100) return genomicData["Bacteria"];
+    if (complexity < 200) return genomicData["Vegetation"];
+    return genomicData["Animal Life"];
+  }
+
   private static getGenomeSize(elements: number[]): number {
-    // Tamaño del genoma basado en la complejidad de los elementos
+    // Función legacy mantenida para compatibilidad
     const complexity = elements.reduce((sum, atomic) => sum + atomic, 0);
     
     // Categorías basadas en complejidad elemental
