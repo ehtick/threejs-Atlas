@@ -1764,21 +1764,29 @@ export class AreciboGenerator {
     // Columna para la barra de altura (lado izquierdo)
     const barCol = 3; // Columna 3 para centrar mejor
     
-    // 1. Dibujar barra vertical que coincida con la altura de la figura
-    // La barra SIEMPRE debe tener la misma altura que la figura humanoide (9 líneas)
-    // porque representa la altura de esa figura
-    const barHeight = height; // Siempre usa toda la altura disponible
-    
-    // Dibujar la barra desde abajo hacia arriba
-    for (let i = 0; i < barHeight; i++) {
-      this.setPixel(bitmap, colorMap, barCol, startRow + i, 1, this.COLORS.BLUE);
-    }
-    
-    // 2. Número binario horizontal AL LADO de la barra (no superpuesto)
-    // Centrado verticalmente respecto al medio de la sección
+    // 1. Calcular primero la posición del número binario
     const binaryHeight = heightValue.toString(2);
     const barMiddleRow = startRow + Math.floor(height / 2); // Centro de la sección
     const binaryStartCol = barCol - 2; // Columnas 1-5
+    
+    // 2. Dibujar barra vertical con huecos donde cruza el número binario
+    // La barra SIEMPRE debe tener la misma altura que la figura humanoide (9 líneas)
+    const barHeight = height; // Siempre usa toda la altura disponible
+    
+    for (let i = 0; i < barHeight; i++) {
+      const currentRow = startRow + i;
+      // Dejar huecos: en la línea del número y uno arriba y uno abajo
+      // IMPORTANTE: En barMiddleRow NO debe haber NADA azul de la barra
+      if (currentRow === barMiddleRow - 1 || currentRow === barMiddleRow || currentRow === barMiddleRow + 1) {
+        // No dibujar nada (dejar transparente)
+        continue;
+      }
+      this.setPixel(bitmap, colorMap, barCol, currentRow, 1, this.COLORS.BLUE);
+    }
+    
+    // 3. Número binario horizontal AL LADO de la barra
+    // El número binario va de columna 1 a columna 5, y la barra está en columna 3
+    // Por lo tanto, el número binario CRUZA la barra en la columna 3
     
     // Dibujar "X" marcador (bit menos significativo) en blanco
     this.setPixel(bitmap, colorMap, binaryStartCol, barMiddleRow, 1, this.COLORS.WHITE);
@@ -1789,7 +1797,15 @@ export class AreciboGenerator {
       const color = (bit === 1) ? this.COLORS.BLUE : this.COLORS.WHITE;
       
       // Dibujar bits hacia la derecha del marcador
-      this.setPixel(bitmap, colorMap, binaryStartCol + 1 + i, barMiddleRow, 1, color);
+      const bitCol = binaryStartCol + 1 + i;
+      
+      // NO dibujar NADA en la columna de la barra (columna 3)
+      // para evitar que aparezca azul donde cruza con la barra
+      if (bitCol === barCol) {
+        continue; // Saltar esta columna completamente
+      }
+      
+      this.setPixel(bitmap, colorMap, bitCol, barMiddleRow, 1, color);
     }
   }
 
