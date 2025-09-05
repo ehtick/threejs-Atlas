@@ -7,9 +7,11 @@ interface AreciboMessageProps {
   planetName: string;
   className?: string;
   scale?: number;
+  showControls?: boolean;
+  showInfo?: boolean;
 }
 
-const AreciboMessage: React.FC<AreciboMessageProps> = ({ lifeForm, planetName, className = "", scale = 8 }) => {
+const AreciboMessage: React.FC<AreciboMessageProps> = ({ lifeForm, planetName, className = "", scale = 8, showControls = true, showInfo = true }) => {
   const [messageData, setMessageData] = useState<AreciboMessageType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -152,7 +154,7 @@ const AreciboMessage: React.FC<AreciboMessageProps> = ({ lifeForm, planetName, c
             height: "auto",
           }}
         />
-        {!isAnimating && (
+        {showControls && !isAnimating && (
           <button
             onClick={handleReplay}
             className="absolute top-2 right-2 px-2 py-1 text-xs bg-green-500/20 hover:bg-green-500/30 border border-green-500/50 text-green-400 rounded transition-colors"
@@ -162,15 +164,17 @@ const AreciboMessage: React.FC<AreciboMessageProps> = ({ lifeForm, planetName, c
         )}
       </div>
       
-      <div className="mt-2 text-xs text-gray-400">
-        <div className="flex justify-between items-center">
-          <span>Life Form: <span className="text-green-400">{messageData.lifeForm}</span></span>
-          <span>Planet: <span className="text-green-400">{messageData.planetName}</span></span>
+      {showInfo && (
+        <div className="mt-2 text-xs text-gray-400">
+          <div className="flex justify-between items-center">
+            <span>Life Form: <span className="text-green-400">{messageData.lifeForm}</span></span>
+            <span>Planet: <span className="text-green-400">{messageData.planetName}</span></span>
+          </div>
+          <div className="mt-1 text-[10px] text-center">
+            <span>73×23 Procedural Arecibo Message</span>
+          </div>
         </div>
-        <div className="mt-1 text-[10px] text-center">
-          <span>73×23 Procedural Arecibo Message</span>
-        </div>
-      </div>
+      )}
     </div>
   );
 };
