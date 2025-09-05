@@ -163,7 +163,7 @@ export class AreciboGenerator {
         this.drawRoboticInformation(bitmap, colorMap);
         break;
       case "gaseous":
-        this.drawGaseousInformation(bitmap, colorMap);
+        this.drawGaseousInformation(bitmap, colorMap, lifeForm, planetName);
         break;
       case "energy":
         this.drawEnergyInformation(bitmap, colorMap, lifeForm, planetName);
@@ -458,51 +458,132 @@ export class AreciboGenerator {
   }
 
   /**
-   * GAS CONSCIENTE - Estados cuánticos análogos a nucleótidos
+   * GAS CONSCIENTE - Estados cuánticos análogos a nucleótidos - PROCEDURAL
    */
-  private static drawGaseousInformation(bitmap: number[], colorMap: number[]): void {
+  private static drawGaseousInformation(bitmap: number[], colorMap: number[], lifeForm: string, planetName?: string): void {
     // Estados cuánticos básicos - como "nucleótidos cuánticos"
+    // VARIACIÓN PROCEDURAL basada en planeta
+    const hash = this.hashString(lifeForm + (planetName || "Earth") + "quantum");
+    const rng = this.createSeededRandom(hash);
     
-    // Filas 12-15: Cuatro estados cuánticos básicos |00⟩, |01⟩, |10⟩, |11⟩
-    const quantumStates = [
-      { col: 4, state: [0,0] },  // |00⟩
-      { col: 8, state: [0,1] },  // |01⟩
-      { col: 12, state: [1,0] }, // |10⟩
-      { col: 16, state: [1,1] }  // |11⟩
+    // Tipos de configuraciones cuánticas posibles
+    const quantumConfigurations = [
+      // Configuración básica (2-qubit)
+      [
+        { col: 4, state: [0,0] },  // |00⟩
+        { col: 8, state: [0,1] },  // |01⟩
+        { col: 12, state: [1,0] }, // |10⟩
+        { col: 16, state: [1,1] }  // |11⟩
+      ],
+      // Configuración con superposición asimétrica
+      [
+        { col: 4, state: [1,0] },  // |10⟩
+        { col: 8, state: [0,0] },  // |00⟩
+        { col: 12, state: [1,1] }, // |11⟩
+        { col: 16, state: [0,1] }  // |01⟩
+      ],
+      // Configuración entrelazada máxima
+      [
+        { col: 4, state: [0,1] },  // |01⟩
+        { col: 8, state: [1,1] },  // |11⟩
+        { col: 12, state: [0,0] }, // |00⟩
+        { col: 16, state: [1,0] }  // |10⟩
+      ],
+      // Configuración con coherencia alta
+      [
+        { col: 4, state: [1,1] },  // |11⟩
+        { col: 8, state: [1,0] },  // |10⟩
+        { col: 12, state: [0,1] }, // |01⟩
+        { col: 16, state: [0,0] }  // |00⟩
+      ]
     ];
     
+    const configIndex = Math.floor(rng.random() * quantumConfigurations.length);
+    const quantumStates = quantumConfigurations[configIndex];
+    
+    console.log(`🌀 CONFIGURACIÓN CUÁNTICA para ${lifeForm} en ${planetName}: tipo ${configIndex + 1}/4 - patrones cuánticos únicos`);
+    
+    // Filas 12-15: Dibujar los estados cuánticos procedurales
     for (const qs of quantumStates) {
-      // Representación del estado cuántico
-      this.setPixel(bitmap, colorMap, qs.col, 12, 1, this.COLORS.GREEN);
-      this.setPixel(bitmap, colorMap, qs.col + 1, 12, 1, this.COLORS.GREEN);
+      // Variación en posición columna para simular fluctuación cuántica
+      const colVariation = Math.floor(rng.random() * 3) - 1; // -1, 0, +1
+      const adjustedCol = Math.max(3, Math.min(19, qs.col + colVariation));
+      
+      // Representación del estado cuántico base
+      this.setPixel(bitmap, colorMap, adjustedCol, 12, 1, this.COLORS.GREEN);
+      this.setPixel(bitmap, colorMap, adjustedCol + 1, 12, 1, this.COLORS.GREEN);
       
       // Superposición (ambos bits en diferentes filas)
       for (let i = 0; i < qs.state.length; i++) {
         if (qs.state[i] === 1) {
-          this.setPixel(bitmap, colorMap, qs.col + i, 13 + i, 1, this.COLORS.GREEN);
+          // Añadir variación cuántica en la representación
+          const intensityVariation = rng.random() > 0.3 ? 1 : 0; // Estados de probabilidad
+          if (intensityVariation) {
+            this.setPixel(bitmap, colorMap, adjustedCol + i, 13 + i, 1, this.COLORS.GREEN);
+          }
+          
+          // Efectos de interferencia cuántica
+          if (rng.random() > 0.6) {
+            const interferenceCol = adjustedCol + (Math.floor(rng.random() * 3) - 1);
+            if (interferenceCol >= 3 && interferenceCol <= 19) {
+              this.setPixel(bitmap, colorMap, interferenceCol, 14, 1, this.COLORS.GREEN);
+            }
+          }
         }
       }
       
-      // Estado base
-      this.setPixel(bitmap, colorMap, qs.col, 15, 1, this.COLORS.GREEN);
+      // Estado base con variación
+      if (rng.random() > 0.2) { // 80% probabilidad de estado base
+        this.setPixel(bitmap, colorMap, adjustedCol, 15, 1, this.COLORS.GREEN);
+      }
     }
     
     // Fila 16: Línea en blanco
     this.drawBlankLine(bitmap, colorMap, 16);
     
-    // Filas 17-20: Entrelazamiento cuántico (backbone)
+    // Filas 17-20: Entrelazamiento cuántico (backbone) - PROCEDURAL
+    const entanglementPattern = Math.floor(rng.random() * 3); // 3 tipos de patrones de entrelazamiento
+    
     for (let row = 17; row <= 20; row++) {
-      // Centro de entrelazamiento
+      // Centro de entrelazamiento - siempre presente
       this.setPixel(bitmap, colorMap, 11, row, 1, this.COLORS.GREEN);
       
-      // Estados entrelazados
-      const spread = (row - 17) + 2; // 2-5
-      this.setPixel(bitmap, colorMap, 11 - spread, row, 1, this.COLORS.GREEN);
-      this.setPixel(bitmap, colorMap, 11 + spread, row, 1, this.COLORS.GREEN);
+      // Estados entrelazados con variación procedural
+      const baseSpread = (row - 17) + 2; // 2-5
+      const spreadVariation = Math.floor(rng.random() * 2); // 0-1
+      const spread = baseSpread + spreadVariation;
       
-      // Conectores cuánticos
-      if (row % 2 === 1) {
-        for (let col = 11 - spread; col <= 11 + spread; col += 2) {
+      switch (entanglementPattern) {
+        case 0: // Entrelazamiento simétrico
+          this.setPixel(bitmap, colorMap, 11 - spread, row, 1, this.COLORS.GREEN);
+          this.setPixel(bitmap, colorMap, 11 + spread, row, 1, this.COLORS.GREEN);
+          break;
+          
+        case 1: // Entrelazamiento asimétrico
+          if (row % 2 === 0) {
+            this.setPixel(bitmap, colorMap, 11 - spread, row, 1, this.COLORS.GREEN);
+            this.setPixel(bitmap, colorMap, 11 + (spread - 1), row, 1, this.COLORS.GREEN);
+          } else {
+            this.setPixel(bitmap, colorMap, 11 - (spread - 1), row, 1, this.COLORS.GREEN);
+            this.setPixel(bitmap, colorMap, 11 + spread, row, 1, this.COLORS.GREEN);
+          }
+          break;
+          
+        case 2: // Entrelazamiento en cascada
+          for (let i = 1; i <= spread; i++) {
+            if (rng.random() > 0.4) {
+              this.setPixel(bitmap, colorMap, 11 - i, row, 1, this.COLORS.GREEN);
+            }
+            if (rng.random() > 0.4) {
+              this.setPixel(bitmap, colorMap, 11 + i, row, 1, this.COLORS.GREEN);
+            }
+          }
+          break;
+      }
+      
+      // Conectores cuánticos procedurales
+      if ((row % 2 === 1 && entanglementPattern <= 1) || (entanglementPattern === 2 && rng.random() > 0.5)) {
+        for (let col = 11 - spread; col <= 11 + spread; col += Math.floor(rng.random() * 3) + 1) {
           if (col >= 6 && col <= 16) {
             this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
           }
@@ -513,14 +594,48 @@ export class AreciboGenerator {
     // Fila 21: Línea en blanco
     this.drawBlankLine(bitmap, colorMap, 21);
     
-    // Filas 22-25: Complejidad cuántica del sistema
+    // Filas 22-25: Complejidad cuántica del sistema - PROCEDURAL
+    const coherencePattern = Math.floor(rng.random() * 4); // 4 tipos de patrones de coherencia
+    
     for (let row = 22; row <= 25; row++) {
       const coherence = row - 22; // 0-3
-      // Estados de coherencia creciente
-      for (let col = 9; col <= 13; col++) {
-        if ((col + row + coherence) % 3 === 0) {
-          this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
-        }
+      
+      switch (coherencePattern) {
+        case 0: // Patrón modular clásico
+          for (let col = 9; col <= 13; col++) {
+            if ((col + row + coherence) % 3 === 0) {
+              this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
+            }
+          }
+          break;
+          
+        case 1: // Patrón de interferencia
+          for (let col = 9; col <= 13; col++) {
+            if (((col * row) + coherence) % 4 === 0) {
+              this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
+            }
+          }
+          break;
+          
+        case 2: // Patrón de coherencia cuántica
+          const centerCol = 11;
+          const distance = Math.abs(coherence - 1.5); // Distancia del centro
+          for (let col = 9; col <= 13; col++) {
+            if (Math.abs(col - centerCol) <= (2 - distance)) {
+              if (rng.random() > 0.3) {
+                this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
+              }
+            }
+          }
+          break;
+          
+        case 3: // Patrón caótico controlado
+          for (let col = 9; col <= 13; col++) {
+            if (rng.random() > (0.3 + coherence * 0.1)) {
+              this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
+            }
+          }
+          break;
       }
     }
     
@@ -887,7 +1002,7 @@ export class AreciboGenerator {
         this.drawDigitalDataStructure(bitmap, colorMap, centerCol, startRow, height);
         break;
       case "gaseous":
-        this.drawQuantumFieldStructure(bitmap, colorMap, centerCol, startRow, height);
+        this.drawQuantumFieldStructure(bitmap, colorMap, centerCol, startRow, height, lifeForm, planetName);
         break;
       case "energy":
         this.drawEnergyFieldStructure(bitmap, colorMap, centerCol, startRow, height, lifeForm, planetName);
@@ -1140,15 +1255,43 @@ export class AreciboGenerator {
   }
 
   /**
-   * Campo cuántico para gas consciente
+   * Campo cuántico para gas consciente - PROCEDURAL
    * SIGUIENDO EL PATRÓN ARECIBO ORIGINAL:
    * - Centro: 2 píxeles representando NÚMERO de estados cuánticos
-   * - Campos laterales AZULES sin sobreponerse
+   * - Campos laterales AZULES sin sobreponerse - CON VARIACIÓN PROCEDURAL
    */
-  private static drawQuantumFieldStructure(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Simular "estados cuánticos" como análogo del número de bases
-    const quantumStates = 1048576; // 2^20 estados cuánticos posibles
+  private static drawQuantumFieldStructure(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, lifeForm: string, planetName?: string): void {
+    // VARIACIÓN PROCEDURAL basada en planeta
+    const hash = this.hashString(lifeForm + (planetName || "Earth") + "quantumfield");
+    const rng = this.createSeededRandom(hash);
+    
+    // Diferentes configuraciones de estados cuánticos procedurales
+    const baseQuantumStates = 1048576; // 2^20 estados cuánticos base
+    const quantumVariations = [
+      baseQuantumStates,                    // Configuración estándar
+      baseQuantumStates * 2,               // Estados expandidos
+      Math.floor(baseQuantumStates * 0.5), // Estados comprimidos  
+      baseQuantumStates * 4,               // Estados complejos
+      Math.floor(baseQuantumStates * 1.5)  // Estados intermedios
+    ];
+    
+    const quantumConfigIndex = Math.floor(rng.random() * quantumVariations.length);
+    const quantumStates = quantumVariations[quantumConfigIndex];
     const binaryString = quantumStates.toString(2);
+    
+    // Patrones de oscilación cuántica procedurales
+    const oscillationPatterns = [
+      { type: "sine", frequency: 12, phase: 0 },       // Oscilación sinusoidal estándar
+      { type: "cosine", frequency: 10, phase: Math.PI/4 }, // Oscilación cosenoidal desfasada
+      { type: "mixed", frequency: 8, phase: Math.PI/2 },   // Patrón mixto
+      { type: "chaos", frequency: 15, phase: 0 },          // Patrón cuántico caótico
+      { type: "entangled", frequency: 6, phase: Math.PI/3 } // Patrón entrelazado
+    ];
+    
+    const patternIndex = Math.floor(rng.random() * oscillationPatterns.length);
+    const pattern = oscillationPatterns[patternIndex];
+    
+    console.log(`🌊 CAMPO CUÁNTICO para ${lifeForm} en ${planetName}: ${quantumStates.toLocaleString()} estados, patrón ${pattern.type}, freq ${pattern.frequency}`);
     
     const centerCol1 = 11;    // Primera columna del número
     const centerCol2 = 12;    // Segunda columna del número
@@ -1158,36 +1301,100 @@ export class AreciboGenerator {
       if (row >= this.HEIGHT) break;
       
       // COLUMNAS CENTRALES BLANCAS - Patrones independientes como en Arecibo original
-      // Columna izquierda: bits en posiciones pares (0, 2, 4, 6...)
+      // CON VARIACIÓN PROCEDURAL
+      
+      // Columna izquierda: bits en posiciones pares con variación de intensidad
       const leftBitIndex = i * 2;
       if (leftBitIndex < binaryString.length) {
         const leftBit = parseInt(binaryString[leftBitIndex]);
-        if (leftBit === 1) {
+        // Fluctuaciones cuánticas - no todos los bits se muestran siempre
+        const showProbability = 0.8 + (rng.random() - 0.5) * 0.3; // 65%-95%
+        if (leftBit === 1 && rng.random() < showProbability) {
           this.setPixel(bitmap, colorMap, centerCol1, row, 1, this.COLORS.WHITE);
         }
       }
       
-      // Columna derecha: bits en posiciones impares (1, 3, 5, 7...)
+      // Columna derecha: bits en posiciones impares con variación de intensidad
       const rightBitIndex = i * 2 + 1;
       if (rightBitIndex < binaryString.length) {
         const rightBit = parseInt(binaryString[rightBitIndex]);
-        if (rightBit === 1) {
+        const showProbability = 0.8 + (rng.random() - 0.5) * 0.3; // 65%-95%
+        if (rightBit === 1 && rng.random() < showProbability) {
           this.setPixel(bitmap, colorMap, centerCol2, row, 1, this.COLORS.WHITE);
         }
       }
       
-      // CAMPOS CUÁNTICOS AZULES - CON SEPARACIÓN DE 2PX DEL TRONCO CENTRAL
-      const quantumPhase = (i * Math.PI * 2) / 12; // Oscilación cuántica
+      // CAMPOS CUÁNTICOS AZULES PROCEDURALES - CON SEPARACIÓN DE 2PX DEL TRONCO CENTRAL
+      let quantumPhase: number;
       
-      // Campo izquierdo - DESDE BORDE ABSOLUTO (col 0) HASTA COL 9 (2px separación del centro)
+      switch (pattern.type) {
+        case "sine":
+          quantumPhase = (i * Math.PI * 2) / pattern.frequency + pattern.phase;
+          break;
+        case "cosine":
+          quantumPhase = (i * Math.PI * 2) / pattern.frequency + pattern.phase;
+          break;
+        case "mixed":
+          quantumPhase = (i * Math.PI * 2) / pattern.frequency + pattern.phase + Math.sin(i * 0.5) * 0.5;
+          break;
+        case "chaos":
+          quantumPhase = (i * Math.PI * 2) / pattern.frequency + rng.random() * Math.PI * 0.3;
+          break;
+        case "entangled":
+          quantumPhase = (i * Math.PI * 2) / pattern.frequency + pattern.phase + Math.cos(i * 0.3) * 0.7;
+          break;
+        default:
+          quantumPhase = (i * Math.PI * 2) / 12; // Default fallback
+      }
+      
+      // Campo izquierdo con variación procedural
       const leftFieldRange = 9 - 0; // 9 columnas disponibles
-      const leftFieldPosition = 0 + Math.round((leftFieldRange/2) + (leftFieldRange/2) * Math.sin(quantumPhase));
-      this.setPixel(bitmap, colorMap, Math.max(0, Math.min(9, leftFieldPosition)), row, 1, this.COLORS.BLUE);
+      let leftFieldPosition: number;
       
-      // Campo derecho - DESDE COL 14 (2px separación del centro) HASTA BORDE ABSOLUTO (col 22)
+      if (pattern.type === "sine" || pattern.type === "mixed") {
+        leftFieldPosition = 0 + Math.round((leftFieldRange/2) + (leftFieldRange/2) * Math.sin(quantumPhase));
+      } else if (pattern.type === "cosine") {
+        leftFieldPosition = 0 + Math.round((leftFieldRange/2) + (leftFieldRange/2) * Math.cos(quantumPhase));
+      } else {
+        // Para chaos y entangled, usar funciones más complejas
+        leftFieldPosition = 0 + Math.round((leftFieldRange/2) + (leftFieldRange/2) * Math.sin(quantumPhase) * Math.cos(quantumPhase * 0.7));
+      }
+      
+      const finalLeftPosition = Math.max(0, Math.min(9, leftFieldPosition));
+      this.setPixel(bitmap, colorMap, finalLeftPosition, row, 1, this.COLORS.BLUE);
+      
+      // Campo derecho con variación procedural (usualmente en contra-fase)
       const rightFieldRange = 22 - 14; // 8 columnas disponibles
-      const rightFieldPosition = 14 + Math.round((rightFieldRange/2) + (rightFieldRange/2) * Math.cos(quantumPhase));
-      this.setPixel(bitmap, colorMap, Math.max(14, Math.min(22, rightFieldPosition)), row, 1, this.COLORS.BLUE);
+      let rightFieldPosition: number;
+      
+      if (pattern.type === "sine" || pattern.type === "mixed") {
+        rightFieldPosition = 14 + Math.round((rightFieldRange/2) + (rightFieldRange/2) * Math.cos(quantumPhase + Math.PI));
+      } else if (pattern.type === "cosine") {
+        rightFieldPosition = 14 + Math.round((rightFieldRange/2) + (rightFieldRange/2) * Math.sin(quantumPhase + Math.PI));
+      } else {
+        // Para chaos y entangled
+        rightFieldPosition = 14 + Math.round((rightFieldRange/2) + (rightFieldRange/2) * Math.cos(quantumPhase) * Math.sin(quantumPhase * 0.5));
+      }
+      
+      const finalRightPosition = Math.max(14, Math.min(22, rightFieldPosition));
+      this.setPixel(bitmap, colorMap, finalRightPosition, row, 1, this.COLORS.BLUE);
+      
+      // Efectos adicionales de campo cuántico para ciertos patrones
+      if (pattern.type === "entangled" && rng.random() > 0.7) {
+        // Partículas entrelazadas adicionales
+        const entangledLeftCol = Math.max(0, Math.min(9, finalLeftPosition + Math.floor(rng.random() * 3) - 1));
+        const entangledRightCol = Math.max(14, Math.min(22, finalRightPosition + Math.floor(rng.random() * 3) - 1));
+        this.setPixel(bitmap, colorMap, entangledLeftCol, row, 1, this.COLORS.BLUE);
+        this.setPixel(bitmap, colorMap, entangledRightCol, row, 1, this.COLORS.BLUE);
+      }
+      
+      if (pattern.type === "chaos" && rng.random() > 0.8) {
+        // Fluctuaciones caóticas adicionales
+        const chaosCol = Math.floor(rng.random() * 23);
+        if (chaosCol < 10 || chaosCol > 13) { // Evitar centro
+          this.setPixel(bitmap, colorMap, chaosCol, row, 1, this.COLORS.BLUE);
+        }
+      }
     }
   }
 
@@ -1480,12 +1687,32 @@ export class AreciboGenerator {
     const centerCol = 11;
     const startRow = 5;
     
+    // Crear patrones de difusión gaseosa procedural basado en elementos
+    const gasHash = elements.join('');
+    const gasRng = this.createSeededRandom(this.hashString(gasHash + "gaseous"));
+    
     for (let i = 0; i < elements.length && i < 5; i++) {
-      const spread = 2 + i;
-      const col = centerCol + (i % 2 === 0 ? -spread : spread);
-      const rowOffset = Math.floor(i / 2);
+      // Variación en la posición para simular difusión gaseosa
+      const baseSpread = 2 + i;
+      const spreadVariation = Math.floor(gasRng.random() * 3) - 1; // -1, 0, +1
+      const spread = Math.max(1, baseSpread + spreadVariation);
+      
+      const baseCol = centerCol + (i % 2 === 0 ? -spread : spread);
+      const colVariation = Math.floor(gasRng.random() * 3) - 1; // -1, 0, +1
+      const col = Math.max(0, Math.min(22, baseCol + colVariation));
+      
+      const baseRowOffset = Math.floor(i / 2);
+      const rowVariation = Math.floor(gasRng.random() * 2); // 0, 1
+      const rowOffset = baseRowOffset + rowVariation;
       
       this.drawElementBinary(bitmap, colorMap, elements[i], col, startRow + rowOffset, 3);
+      
+      // Añadir partículas adicionales para simular movimiento gaseoso
+      if (gasRng.random() > 0.3) {
+        const particleCol = Math.max(0, Math.min(22, col + Math.floor(gasRng.random() * 3) - 1));
+        const particleRow = Math.max(startRow, Math.min(this.HEIGHT - 1, startRow + rowOffset + Math.floor(gasRng.random() * 3) - 1));
+        this.setPixel(bitmap, colorMap, particleCol, particleRow, 1, this.COLORS.PURPLE);
+      }
     }
   }
 
@@ -1797,6 +2024,47 @@ export class AreciboGenerator {
       console.log(`⚡ TIPOS DE ENERGÍA GENERADOS para ${lifeForm} en ${planetName}: códigos [${selectedEnergyTypes.join(', ')}] - patrones energéticos especializados`);
       
       return selectedEnergyTypes;
+    }
+    
+    // APLICAR VARIACIÓN PROCEDURAL PARA CONSCIOUS GAS
+    if (lifeForm === "Conscious Gas") {
+      // Elementos base siempre presentes: H, He (esenciales para gas consciente)
+      const coreElements = [1, 2]; // H, He
+      
+      // Elementos adicionales pueden variar según las condiciones del planeta
+      const possibleGaseousElements = [
+        10, // Ne (neón) - gas noble estable, ionización controlada
+        18, // Ar (argón) - gas noble común en atmósferas planetarias
+        36, // Kr (kriptón) - gas noble pesado para alta densidad
+        54, // Xe (xenón) - gas noble muy polarizable, estados cuánticos complejos
+        7,  // N (nitrógeno) - gas diatómico común, enlaces múltiples
+        8,  // O (oxígeno) - gas reactivo para metabolismo energético
+        9,  // F (flúor) - gas altamente reactivo, enlaces energéticos
+        17, // Cl (cloro) - gas diatómico, reacciones fotoquímicas
+        35  // Br (bromo) - gas pesado, estados de ionización múltiples
+      ];
+      
+      // Seleccionar 3 elementos adicionales de manera procedural
+      const selectedElements = [...coreElements];
+      const shuffledElements = [...possibleGaseousElements];
+      
+      // Mezclar usando el RNG con semilla
+      for (let i = shuffledElements.length - 1; i > 0; i--) {
+        const j = Math.floor(rng.random() * (i + 1));
+        [shuffledElements[i], shuffledElements[j]] = [shuffledElements[j], shuffledElements[i]];
+      }
+      
+      // Tomar los primeros 3
+      selectedElements.push(...shuffledElements.slice(0, 3));
+      
+      const elementNames = { 
+        1: 'H', 2: 'He', 7: 'N', 8: 'O', 9: 'F', 10: 'Ne', 17: 'Cl', 18: 'Ar', 
+        35: 'Br', 36: 'Kr', 54: 'Xe'
+      };
+      const selectedNames = selectedElements.map(e => elementNames[e] || e).join(', ');
+      console.log(`💨 ELEMENTOS GENERADOS para ${lifeForm} en ${planetName}: [${selectedElements.join(', ')}] - [${selectedNames}] - configuración gaseosa única`);
+      
+      return selectedElements;
     }
     
     // Para otras formas de vida, usar los elementos base sin variación
@@ -3136,10 +3404,176 @@ export class AreciboGenerator {
   }
 
   /**
-   * Forma gaseosa - nube difusa
+   * Forma gaseosa - múltiples tipos según morfología gaseosa real - PROCEDURAL
+   * Diferentes formas basadas en estados de la materia gaseosa y física de fluidos
    */
   private static drawGaseousForm(bitmap: number[], colorMap: number[], cols: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
-    // Nube difusa - círculo aproximado
+    // Usar el generador RNG para determinar el tipo de forma gaseosa aleatoriamente
+    const gasType = Math.floor(rng.random() * 8);
+    
+    switch (gasType) {
+      case 0:
+        this.drawGlobularGas(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case 1:
+        this.drawStreamingGas(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case 2:
+        this.drawTurbulentGas(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case 3:
+        this.drawLayeredGas(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case 4:
+        this.drawSpiralGas(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case 5:
+        this.drawClusteredGas(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case 6:
+        this.drawFilamentaryGas(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      default:
+        this.drawDiffuseGas(bitmap, colorMap, centerCol, startRow, height);
+    }
+  }
+
+  /**
+   * Gas globular - forma compacta tipo nebulosa planetaria
+   */
+  private static drawGlobularGas(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Núcleo denso central
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.RED);
+    
+    // Capa intermedia
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 3, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 4, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 4, 1, this.COLORS.RED);
+    
+    // Borde externo difuso
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 5, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Gas en corriente - flujo direccional tipo viento solar
+   */
+  private static drawStreamingGas(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Flujo diagonal ascendente
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 5, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 4, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.RED);
+    
+    // Partículas dispersas en la corriente
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 3, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Gas turbulento - remolinos y vórtices
+   */
+  private static drawTurbulentGas(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Patrón de vórtice
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 3, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 3, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 4, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 4, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 5, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Gas estratificado - capas horizontales
+   */
+  private static drawLayeredGas(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Capa superior
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
+    
+    // Capa intermedia más densa
+    for (let col = centerCol - 2; col <= centerCol + 2; col++) {
+      this.setPixel(bitmap, colorMap, col, startRow + 3, 1, this.COLORS.RED);
+    }
+    
+    // Capa inferior
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 5, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 5, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 5, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Gas en espiral - estructura helicoidal tipo galaxia
+   */
+  private static drawSpiralGas(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Centro de la espiral
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.RED);
+    
+    // Brazo espiral
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 3, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 4, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 4, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 5, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Gas agrupado - múltiples núcleos tipo cúmulo estelar
+   */
+  private static drawClusteredGas(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Núcleo principal
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.RED);
+    
+    // Núcleos secundarios
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.RED);
+    
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 4, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 5, 1, this.COLORS.RED);
+    
+    // Conexiones entre núcleos
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Gas filamentario - estructuras largas tipo nebulosa de Cygnus
+   */
+  private static drawFilamentaryGas(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Filamento principal vertical
+    for (let r = 1; r <= 5; r++) {
+      this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
+    }
+    
+    // Filamentos secundarios
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 3, 1, this.COLORS.RED);
+    
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 4, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 5, 1, this.COLORS.RED);
+    
+    // Ramificaciones
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 5, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Gas difuso - nube dispersa tipo nebulosa de reflexión (forma original mejorada)
+   */
+  private static drawDiffuseGas(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     // Fila superior
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
