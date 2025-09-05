@@ -75,8 +75,14 @@ export class AreciboGenerator {
     // Línea en blanco entre forma de vida y sistema solar
     this.drawBlankLine(bitmap, colorMap, 54);
     
-    // Sección 6: Sistema solar (filas 55-72) - COLOR AMARILLO
+    // Sección 6: Sistema solar (filas 55-62) - COLOR AMARILLO
     await this.drawSolarSystem(bitmap, colorMap, config.planetName, 55);
+    
+    // Línea en blanco entre sistema solar y antena
+    this.drawBlankLine(bitmap, colorMap, 63);
+    
+    // Sección 7: Antena/Método de transmisión (filas 64-72) - COLOR AMARILLO
+    this.drawTransmissionMethod(bitmap, colorMap, config.lifeForm, config.planetName, 64, 9);
     
     return {
       bitmap,
@@ -4970,6 +4976,455 @@ export class AreciboGenerator {
     return (planetIndex % 2) + 1; // Alterna entre 1 y 2
   }
 
+
+  /**
+   * SECCIÓN 7: Antena/Método de Transmisión
+   * Dibuja diferentes tipos de antenas según el tipo de forma de vida
+   */
+  private static drawTransmissionMethod(bitmap: number[], colorMap: number[], lifeForm: string, planetName: string, startRow: number, height: number): void {
+    const centerCol = Math.floor(this.WIDTH / 2);
+    
+    // Crear un generador de números pseudoaleatorios basado en el nombre del planeta
+    const rng = this.createPlanetRNG(planetName);
+    
+    switch (lifeForm) {
+      case "Intelligent Life":
+        this.drawIntelligentLifeAntenna(bitmap, colorMap, centerCol, startRow, height, rng);
+        break;
+      case "Silicon-Based Life":
+        this.drawSiliconBasedAntenna(bitmap, colorMap, centerCol, startRow, height, rng);
+        break;
+      case "Conscious Gas":
+        this.drawTelepathicWaves(bitmap, colorMap, centerCol, startRow, height, rng);
+        break;
+      case "Non-Physical Entity":
+        this.drawNonPhysicalTransmission(bitmap, colorMap, centerCol, startRow, height, rng);
+        break;
+      case "Robotic Entities":
+        this.drawRoboticAntenna(bitmap, colorMap, centerCol, startRow, height, rng);
+        break;
+      case "Have I just found God?":
+        this.drawDoubleSlitExperiment(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case "Animal Life":
+      case "Vegetation":  
+      case "Bacteria":
+      case "Vegetable Animals":
+      default:
+        // Sin antena - estas formas de vida no transmiten mensajes
+        break;
+    }
+  }
+
+  /**
+   * Crea un generador de números pseudoaleatorios basado en el nombre del planeta
+   */
+  private static createPlanetRNG(planetName: string): { random: () => number } {
+    let seed = 0;
+    for (let i = 0; i < planetName.length; i++) {
+      seed += planetName.charCodeAt(i);
+    }
+    
+    return {
+      random: () => {
+        seed = (seed * 9301 + 49297) % 233280;
+        return seed / 233280;
+      }
+    };
+  }
+
+  /**
+   * Antenas para Intelligent Life - diseños terrestres similares
+   */
+  private static drawIntelligentLifeAntenna(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
+    const antennaType = Math.floor(rng.random() * 3); // 3 tipos diferentes
+    
+    switch (antennaType) {
+      case 0: // Antena parabólica
+        this.drawParabolicAntenna(bitmap, colorMap, centerCol, startRow + 2);
+        break;
+      case 1: // Torre de radio con antenas
+        this.drawRadioTower(bitmap, colorMap, centerCol, startRow + 1);
+        break;
+      case 2: // Array de antenas
+        this.drawAntennaArray(bitmap, colorMap, centerCol, startRow + 2);
+        break;
+    }
+  }
+
+  /**
+   * Antena parabólica simple
+   */
+  private static drawParabolicAntenna(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
+    // Base/soporte
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.YELLOW);
+    
+    // Plato parabólico (semicírculo)
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.YELLOW);
+  }
+
+  /**
+   * Torre de radio con antenas
+   */
+  private static drawRadioTower(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
+    // Torre principal (vertical)
+    for (let i = 0; i < 6; i++) {
+      this.setPixel(bitmap, colorMap, centerCol, startRow + i, 1, this.COLORS.YELLOW);
+    }
+    
+    // Antenas horizontales
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 3, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.YELLOW);
+  }
+
+  /**
+   * Array de antenas pequeñas
+   */
+  private static drawAntennaArray(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
+    // Tres antenas pequeñas
+    for (let i = -1; i <= 1; i++) {
+      const col = centerCol + i * 2;
+      // Base
+      this.setPixel(bitmap, colorMap, col, startRow + 2, 1, this.COLORS.YELLOW);
+      // Antena
+      this.setPixel(bitmap, colorMap, col, startRow + 1, 1, this.COLORS.YELLOW);
+      this.setPixel(bitmap, colorMap, col, startRow, 1, this.COLORS.YELLOW);
+    }
+  }
+
+  /**
+   * Antenas para Silicon-Based Life - diseños cristalinos/geométricos
+   */
+  private static drawSiliconBasedAntenna(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
+    const antennaType = Math.floor(rng.random() * 3);
+    
+    switch (antennaType) {
+      case 0: // Estructura cristalina
+        this.drawCrystallineAntenna(bitmap, colorMap, centerCol, startRow + 1);
+        break;
+      case 1: // Pirámide de silicio
+        this.drawSiliconPyramid(bitmap, colorMap, centerCol, startRow + 1);
+        break;
+      case 2: // Array hexagonal
+        this.drawHexagonalArray(bitmap, colorMap, centerCol, startRow + 2);
+        break;
+    }
+  }
+
+  /**
+   * Estructura cristalina
+   */
+  private static drawCrystallineAntenna(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
+    // Centro
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.YELLOW);
+    
+    // Cristales expandiéndose
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.YELLOW);
+    
+    // Base amplia
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 3, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 3, 1, this.COLORS.YELLOW);
+  }
+
+  /**
+   * Pirámide de silicio
+   */
+  private static drawSiliconPyramid(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
+    // Punta
+    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.YELLOW);
+    // Nivel 2
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.YELLOW);
+    // Base
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 2, 1, this.COLORS.YELLOW);
+  }
+
+  /**
+   * Array hexagonal
+   */
+  private static drawHexagonalArray(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
+    // Centro
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.YELLOW);
+    
+    // Hexágono alrededor
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.YELLOW);
+  }
+
+  /**
+   * Transmisión de entidad no física - patrones dimensionales y vórtices de energía
+   */
+  private static drawNonPhysicalTransmission(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
+    const transmissionType = Math.floor(rng.random() * 3);
+    
+    switch (transmissionType) {
+      case 0: // Vórtice dimensional
+        this.drawDimensionalVortex(bitmap, colorMap, centerCol, startRow + 2);
+        break;
+      case 1: // Campo de energía pura
+        this.drawEnergyField(bitmap, colorMap, centerCol, startRow + 1, rng);
+        break;
+      case 2: // Portal interdimensional
+        this.drawInterdimensionalPortal(bitmap, colorMap, centerCol, startRow + 2);
+        break;
+    }
+  }
+
+  /**
+   * Vórtice dimensional - espiral hacia el centro
+   */
+  private static drawDimensionalVortex(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
+    // Centro del vórtice
+    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.YELLOW);
+    
+    // Espiral hacia afuera
+    // Nivel 1 - cruz inmediata
+    this.setPixel(bitmap, colorMap, centerCol, startRow - 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.YELLOW);
+    
+    // Nivel 2 - patrón espiral
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow - 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow - 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.YELLOW);
+    
+    // Nivel 3 - exterior del vórtice
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow - 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.YELLOW);
+  }
+
+  /**
+   * Campo de energía pura - patrones de energía fluctuante
+   */
+  private static drawEnergyField(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, rng: { random: () => number }): void {
+    // Núcleo energético
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.YELLOW);
+    
+    // Fluctuaciones de energía procedurales
+    for (let i = 0; i < 8; i++) {
+      if (rng.random() > 0.4) { // 60% chance de aparecer
+        const offsetX = Math.floor(rng.random() * 5) - 2; // -2 a +2
+        const offsetY = Math.floor(rng.random() * 5) - 2; // -2 a +2
+        
+        // Evitar sobreescribir el centro
+        if (offsetX !== 0 || offsetY !== 0) {
+          this.setPixel(bitmap, colorMap, centerCol + offsetX, startRow + 2 + offsetY, 1, this.COLORS.YELLOW);
+        }
+      }
+    }
+    
+    // Campo base mínimo garantizado
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.YELLOW);
+  }
+
+  /**
+   * Portal interdimensional - marco con centro vacío
+   */
+  private static drawInterdimensionalPortal(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
+    // Marco del portal - rectángulo hueco
+    // Esquina superior izquierda a derecha
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow - 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow - 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol, startRow - 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow - 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow - 1, 1, this.COLORS.YELLOW);
+    
+    // Lados verticales
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.YELLOW);
+    
+    // Esquina inferior izquierda a derecha
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 2, 1, this.COLORS.YELLOW);
+    
+    // Efecto dimensional en el centro (punto de singularidad)
+    // Dejamos el centro (centerCol, startRow) y (centerCol, startRow+1) vacíos para representar el portal
+    // Solo agregamos un pequeño punto central
+    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.YELLOW);
+  }
+
+  /**
+   * Ondas telepáticas para Conscious Gas - círculo central con ondas procedurales
+   */
+  private static drawTelepathicWaves(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
+    // Centro - fuente telepática
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.YELLOW);
+    
+    // Ondas expandiéndose - patrón procedural basado en el RNG
+    const waveCount = 3 + Math.floor(rng.random() * 3); // 3-5 ondas
+    
+    for (let wave = 0; wave < waveCount; wave++) {
+      const radius = wave + 1;
+      const intensity = rng.random();
+      
+      // Solo dibujar si la intensidad supera un umbral
+      if (intensity > 0.3) {
+        // Ondas circulares aproximadas en pixel art
+        if (radius === 1) {
+          // Primera onda - cruz
+          this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.YELLOW);
+          this.setPixel(bitmap, colorMap, centerCol, startRow + 4, 1, this.COLORS.YELLOW);
+          this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 3, 1, this.COLORS.YELLOW);
+          this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.YELLOW);
+        } else if (radius === 2) {
+          // Segunda onda - octágono aproximado
+          this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.YELLOW);
+          this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.YELLOW);
+          this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 5, 1, this.COLORS.YELLOW);
+          this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 5, 1, this.COLORS.YELLOW);
+          this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 3, 1, this.COLORS.YELLOW);
+          this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 3, 1, this.COLORS.YELLOW);
+        } else if (radius >= 3) {
+          // Ondas exteriores - puntos dispersos
+          const angle = wave * 1.5 + rng.random() * 0.5;
+          const x = Math.round(Math.cos(angle) * radius);
+          const y = Math.round(Math.sin(angle) * radius);
+          this.setPixel(bitmap, colorMap, centerCol + x, startRow + 3 + y, 1, this.COLORS.YELLOW);
+        }
+      }
+    }
+  }
+
+  /**
+   * Antena robótica - cuadrado central con múltiples pinchos
+   */
+  private static drawRoboticAntenna(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
+    const antennaType = Math.floor(rng.random() * 3);
+    
+    switch (antennaType) {
+      case 0: // Antena con pinchos simétricos
+        this.drawSymmetricSpikes(bitmap, colorMap, centerCol, startRow + 2);
+        break;
+      case 1: // Antena con grid de sensores
+        this.drawSensorGrid(bitmap, colorMap, centerCol, startRow + 1);
+        break;
+      case 2: // Antena con múltiples brazos
+        this.drawMultiArmAntenna(bitmap, colorMap, centerCol, startRow + 1);
+        break;
+    }
+  }
+
+  /**
+   * Pinchos simétricos
+   */
+  private static drawSymmetricSpikes(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
+    // Cuadrado central
+    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.YELLOW);
+    
+    // Pinchos en las 4 direcciones
+    this.setPixel(bitmap, colorMap, centerCol, startRow - 1, 1, this.COLORS.YELLOW); // Arriba
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.YELLOW); // Abajo
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.YELLOW); // Izquierda
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.YELLOW); // Derecha
+    
+    // Pinchos diagonales
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow - 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow - 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.YELLOW);
+  }
+
+  /**
+   * Grid de sensores
+   */
+  private static drawSensorGrid(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
+    // Grid 3x3 de sensores
+    for (let y = 0; y < 3; y++) {
+      for (let x = 0; x < 3; x++) {
+        this.setPixel(bitmap, colorMap, centerCol - 1 + x, startRow + y, 1, this.COLORS.YELLOW);
+      }
+    }
+    
+    // Conexiones externas
+    this.setPixel(bitmap, colorMap, centerCol, startRow - 1, 1, this.COLORS.YELLOW); // Arriba
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.YELLOW); // Abajo
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.YELLOW); // Izquierda
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.YELLOW); // Derecha
+  }
+
+  /**
+   * Antena multi-brazo
+   */
+  private static drawMultiArmAntenna(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
+    // Centro
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.YELLOW);
+    
+    // Brazos principales
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.YELLOW);
+    
+    // Brazos laterales
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.YELLOW);
+    
+    // Terminales de los brazos
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow, 1, this.COLORS.YELLOW);
+  }
+
+  /**
+   * Experimento de doble rendija - la representación más precisa posible
+   */
+  private static drawDoubleSlitExperiment(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Fuente de partículas (izquierda)
+    this.setPixel(bitmap, colorMap, centerCol - 4, startRow + 2, 1, this.COLORS.YELLOW);
+    
+    // Barrera con doble rendija (centro)
+    // Barrera superior
+    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.YELLOW);
+    // Rendija 1 (espacio vacío en startRow + 2)
+    // Barrera medio
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.YELLOW);
+    // Rendija 2 (espacio vacío en startRow + 4)  
+    // Barrera inferior
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 5, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 6, 1, this.COLORS.YELLOW);
+    
+    // Patrón de interferencia (derecha) - franjas alternadas
+    const screenCol = centerCol + 3;
+    
+    // Franja central brillante
+    this.setPixel(bitmap, colorMap, screenCol, startRow + 3, 1, this.COLORS.YELLOW);
+    
+    // Franjas secundarias
+    this.setPixel(bitmap, colorMap, screenCol, startRow + 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, screenCol, startRow + 5, 1, this.COLORS.YELLOW);
+    
+    // Líneas de trayectoria (opcionales)
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.YELLOW); // Desde fuente
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.YELLOW); // Hacia rendija 1
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 4, 1, this.COLORS.YELLOW); // Hacia rendija 2
+  }
 
   /**
    * Dibuja una representación básica del sistema solar (fallback)
