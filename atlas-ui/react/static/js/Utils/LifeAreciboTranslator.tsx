@@ -716,6 +716,24 @@ export class AreciboGenerator {
     const totalBases = genomicData.totalBases;
     const binaryString = totalBases.toString(2);
     
+    // VARIACIÓN PROCEDURAL DE HÉLICES POR PLANETA
+    const helixHash = this.hashString(lifeForm + planetName + "helix");
+    const helixRng = this.createSeededRandom(helixHash);
+    
+    // Parámetros base del DNA (científicamente correctos)
+    const baseTurnsPerHeight = 10.5; // DNA real: 1 vuelta cada 10.5 bases
+    const baseAmplitude = 0.5; // Amplitud base de las hélices
+    
+    // Variaciones por planeta (sutiles pero visibles)
+    const turnVariation = (helixRng.random() - 0.5) * 2.0; // ±1 vuelta por altura
+    const amplitudeVariation = (helixRng.random() - 0.5) * 0.3; // ±15% amplitud
+    const phaseShift = helixRng.random() * Math.PI; // Desplazamiento de fase único
+    
+    const planetTurnsPerHeight = baseTurnsPerHeight + turnVariation;
+    const planetAmplitude = baseAmplitude + amplitudeVariation;
+    
+    console.log(`Hélices para ${lifeForm} en ${planetName}: ${planetTurnsPerHeight.toFixed(1)} vueltas, amplitud ${planetAmplitude.toFixed(2)}`);
+    
     for (let i = 0; i < height; i++) {
       const row = startRow + i;
       if (row >= this.HEIGHT) break;
@@ -741,38 +759,41 @@ export class AreciboGenerator {
         }
       }
       
-      // HÉLICES LATERALES AZULES - FRECUENCIA CIENTÍFICAMENTE EXACTA
-      // DNA real: 1 vuelta cada 10.5 pares de bases = 3.4 Å por base, 36 Å por vuelta
-      const helixPhase = (i * Math.PI * 2) / 10.5; // Una vuelta cada 10.5 filas (DNA real)
+      // HÉLICES LATERALES AZULES - CON VARIACIÓN POR PLANETA
+      // Usar parámetros únicos generados para este planeta
+      const helixPhase = (i * Math.PI * 2) / planetTurnsPerHeight + phaseShift;
       
       // Hélice izquierda - DESDE BORDE ABSOLUTO (col 0) HASTA COL 9 (2px separación del centro)
       const leftHelixRange = 9 - 0; // 9 columnas disponibles (0,1,2,3,4,5,6,7,8,9)
-      const leftHelixPosition = 0 + Math.round((leftHelixRange/2) + (leftHelixRange/2) * Math.cos(helixPhase));
+      const leftHelixPosition = 0 + Math.round((leftHelixRange/2) + (leftHelixRange/2) * planetAmplitude * Math.cos(helixPhase));
       this.setPixel(bitmap, colorMap, Math.max(0, Math.min(9, leftHelixPosition)), row, 1, this.COLORS.BLUE);
       
       // Hélice derecha - DESDE COL 14 (2px separación del centro) HASTA BORDE ABSOLUTO (col 22)  
       // Desfase de 180° para hélice antiparalela (característica real del DNA)
       const rightHelixRange = 22 - 14; // 8 columnas disponibles (14,15,16,17,18,19,20,21,22)
-      const rightHelixPosition = 14 + Math.round((rightHelixRange/2) + (rightHelixRange/2) * Math.cos(helixPhase + Math.PI));
+      const rightHelixPosition = 14 + Math.round((rightHelixRange/2) + (rightHelixRange/2) * planetAmplitude * Math.cos(helixPhase + Math.PI));
       this.setPixel(bitmap, colorMap, Math.max(14, Math.min(22, rightHelixPosition)), row, 1, this.COLORS.BLUE);
       
-      // VARIACIONES ESPECÍFICAS según el tipo de vida (sutiles)
+      // VARIACIONES ESPECÍFICAS según el tipo de vida (usando parámetros del planeta)
       if (lifeForm === "Intelligent Life") {
-        // Vida inteligente: doble hélice más regular
+        // Vida inteligente: doble hélice más regular con parámetros planetarios
         const secondaryPhase = helixPhase + Math.PI;
-        const leftSecondary = Math.round(centerCol1 - 3 - 0.5 * Math.cos(secondaryPhase));
-        const rightSecondary = Math.round(centerCol2 + 3 + 0.5 * Math.cos(secondaryPhase));
+        const leftSecondary = Math.round(centerCol1 - 3 - planetAmplitude * Math.cos(secondaryPhase));
+        const rightSecondary = Math.round(centerCol2 + 3 + planetAmplitude * Math.cos(secondaryPhase));
         
-        if (leftSecondary >= 5 && leftSecondary <= 9 && i % 4 === 0) {
+        // Frecuencia de píxeles secundarios varía con las vueltas del planeta
+        const secondaryFreq = Math.max(3, Math.floor(planetTurnsPerHeight / 2));
+        if (leftSecondary >= 5 && leftSecondary <= 9 && i % secondaryFreq === 0) {
           this.setPixel(bitmap, colorMap, leftSecondary, row, 1, this.COLORS.BLUE);
         }
-        if (rightSecondary >= 14 && rightSecondary <= 18 && i % 4 === 2) {
+        if (rightSecondary >= 14 && rightSecondary <= 18 && i % (secondaryFreq + 1) === 0) {
           this.setPixel(bitmap, colorMap, rightSecondary, row, 1, this.COLORS.BLUE);
         }
       } else if (lifeForm === "Vegetation") {
-        // Vegetación (RNA): hélice ligeramente más irregular - píxel adicional ocasional
-        if (i % 6 === 3) {
-          const rnaCol = leftHelixPosition - 1;
+        // Vegetación (RNA): hélice más irregular usando amplitud planetaria
+        const rnaFreq = Math.max(4, Math.floor(planetTurnsPerHeight));
+        if (i % rnaFreq === Math.floor(rnaFreq / 2)) {
+          const rnaCol = leftHelixPosition - Math.round(planetAmplitude);
           if (rnaCol >= 0 && rnaCol <= 9) {
             this.setPixel(bitmap, colorMap, rnaCol, row, 1, this.COLORS.BLUE);
           }
