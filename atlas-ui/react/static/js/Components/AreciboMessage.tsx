@@ -19,6 +19,9 @@ const AreciboMessage: React.FC<AreciboMessageProps> = ({ lifeForm, planetName, c
   const [isAnimating, setIsAnimating] = useState(true);
   const animationFrameRef = useRef<number | undefined>(undefined);
   const revealProgressRef = useRef(0);
+  const staticNoiseRef = useRef<number[][]>([]);
+  const revealedPixelsRef = useRef<Set<number>>(new Set());
+  const signalStrengthRef = useRef(0);
 
   // Generate message data asynchronously
   useEffect(() => {
@@ -55,6 +58,22 @@ const AreciboMessage: React.FC<AreciboMessageProps> = ({ lifeForm, planetName, c
     canvas.width = messageData.width * scale;
     canvas.height = messageData.height * scale;
 
+    // Initialize static noise and revealed pixels
+    const initializeRadioStatic = () => {
+      const staticNoise: number[][] = [];
+      
+      for (let y = 0; y < messageData.height; y++) {
+        staticNoise[y] = [];
+        for (let x = 0; x < messageData.width; x++) {
+          staticNoise[y][x] = Math.random(); // Random noise value 0-1
+        }
+      }
+      
+      staticNoiseRef.current = staticNoise;
+      revealedPixelsRef.current = new Set();
+      signalStrengthRef.current = 0;
+    };
+
     // Function to draw grid
     const drawGrid = () => {
       if (!ctx) return;
@@ -82,7 +101,7 @@ const AreciboMessage: React.FC<AreciboMessageProps> = ({ lifeForm, planetName, c
       ctx.globalAlpha = 1;
     };
 
-    // Animation function for revealing the message
+    // Radio static animation function
     const animate = () => {
       if (!ctx) return;
 
@@ -91,44 +110,87 @@ const AreciboMessage: React.FC<AreciboMessageProps> = ({ lifeForm, planetName, c
       ctx.fillStyle = "#000";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Calculate how many rows to reveal
-      const rowsToReveal = Math.floor(revealProgressRef.current * messageData.height);
-
-      // Draw the message bits with animation using color map (sin cuadrícula durante animación)
+      const progress = revealProgressRef.current;
       const colors = ['#000000', '#FFFFFF', '#9966CC', '#00FF00', '#0066FF', '#FF6600', '#FF0000', '#FFFF00'];
       
-      for (let y = 0; y < Math.min(rowsToReveal, messageData.height); y++) {
+      // Update signal strength (0 to 1 over time)
+      signalStrengthRef.current = Math.min(1, progress * 1.5);
+      const signalStrength = signalStrengthRef.current;
+      
+      // Phase 1: Static noise (0-0.7) - 70% of time
+      // Phase 2: Message pixel reveal (0.7-1.0) - 30% of time
+      
+      for (let y = 0; y < messageData.height; y++) {
         for (let x = 0; x < messageData.width; x++) {
           const index = y * messageData.width + x;
-          if (messageData.bitmap[index] === 1) {
-            // Get color from color map
-            const colorIndex = messageData.colorMap[index] || 1;
-            ctx.fillStyle = colors[colorIndex] || '#FFFFFF';
-            
-            // Add a fade effect for recently revealed rows
-            const rowAge = (rowsToReveal - y) / 10;
-            const opacity = Math.min(1, rowAge * 0.8 + 0.2);
-            
-            ctx.globalAlpha = opacity;
+          
+          // Update static noise occasionally
+          if (Math.random() < 0.15) {
+            staticNoiseRef.current[y][x] = Math.random();
+          }
+          
+          const noiseValue = staticNoiseRef.current[y][x];
+          
+          if (progress < 0.7) {
+            // Phase 1: Pure TV static (grayscale noise)
+            const grayLevel = Math.floor(noiseValue * 255);
+            ctx.fillStyle = `rgb(${grayLevel}, ${grayLevel}, ${grayLevel})`;
             ctx.fillRect(x * scale, y * scale, scale - 1, scale - 1);
+            
+          } else {
+            // Phase 2: Message pixel reveal
+            const revealProgress = (progress - 0.7) / 0.3; // 0 to 1
+            const pixelIndex = index;
+            
+            if (messageData.bitmap[index] === 1) {
+              // This should be a message pixel
+              if (!revealedPixelsRef.current.has(pixelIndex) && Math.random() < revealProgress * 0.04) {
+                revealedPixelsRef.current.add(pixelIndex);
+              }
+              
+              if (revealedPixelsRef.current.has(pixelIndex)) {
+                // Revealed pixel - show final color
+                const colorIndex = messageData.colorMap[index] || 1;
+                ctx.fillStyle = colors[colorIndex] || '#FFFFFF';
+                ctx.fillRect(x * scale, y * scale, scale - 1, scale - 1);
+              } else {
+                // Not yet revealed - show static
+                const grayLevel = Math.floor(noiseValue * 255);
+                ctx.fillStyle = `rgb(${grayLevel}, ${grayLevel}, ${grayLevel})`;
+                ctx.fillRect(x * scale, y * scale, scale - 1, scale - 1);
+              }
+            } else {
+              // Background pixel - fade static to black
+              if (revealProgress > 0.3) {
+                const fadeOut = (revealProgress - 0.3) / 0.7;
+                const grayLevel = Math.floor(noiseValue * 255 * (1 - fadeOut));
+                if (grayLevel > 5) {
+                  ctx.fillStyle = `rgb(${grayLevel}, ${grayLevel}, ${grayLevel})`;
+                  ctx.fillRect(x * scale, y * scale, scale - 1, scale - 1);
+                }
+              } else {
+                const grayLevel = Math.floor(noiseValue * 255);
+                ctx.fillStyle = `rgb(${grayLevel}, ${grayLevel}, ${grayLevel})`;
+                ctx.fillRect(x * scale, y * scale, scale - 1, scale - 1);
+              }
+            }
           }
         }
       }
-      ctx.globalAlpha = 1;
 
-      // Update progress
+      // Update progress - 1 second total (60fps = 60 frames)
       if (revealProgressRef.current < 1) {
-        revealProgressRef.current += 0.015; // Slightly faster reveal
+        revealProgressRef.current += 1 / 60; // 1 second total at 60fps
         animationFrameRef.current = requestAnimationFrame(animate);
       } else {
         setIsAnimating(false);
-        // No hacer render adicional aquí - será manejado por el useEffect
       }
     };
 
     // Start animation or render final state
     if (isAnimating) {
       revealProgressRef.current = 0;
+      initializeRadioStatic(); // Initialize radio static
       animate();
     } else {
       // Render final state exactly like animation (sin cuadrícula explícita)
