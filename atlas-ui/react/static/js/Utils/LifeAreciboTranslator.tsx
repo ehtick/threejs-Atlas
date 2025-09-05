@@ -27,11 +27,12 @@ export class AreciboGenerator {
   // Colores del mensaje
   private static readonly COLORS = {
     BLACK: 0,
-    WHITE: 1,    // Números
+    WHITE: 1,    // Números, Población
     PURPLE: 2,   // Elementos
     GREEN: 3,    // Nucleótidos
-    BLUE: 4,     // ADN/Estructura genética
-    ORANGE: 5    // Forma de vida
+    BLUE: 4,     // ADN/Estructura genética, Estatura
+    ORANGE: 5,   // (No usado en nueva implementación)
+    RED: 6       // Figura de forma de vida
   };
 
   public static generate(config: AreciboConfig): AreciboMessage {
@@ -62,6 +63,13 @@ export class AreciboGenerator {
     
     // Sección 4: Doble hélice del ADN (filas 29-43) - HELICES AZULES + CENTRO BLANCO
     this.drawDNADoubleHelix(bitmap, colorMap, config.lifeForm, 29, 15);
+    
+    // Línea en blanco después del ADN
+    this.drawBlankLine(bitmap, colorMap, 44);
+    
+    // Sección 5: Forma de vida (filas 45-53, máximo 9 líneas) - COLOR NARANJA
+    // Izquierda: Estatura, Centro: Representación gráfica, Derecha: Población
+    this.drawLifeFormSection(bitmap, colorMap, config.lifeForm, config.planetName, 45, 9);
     
     return {
       bitmap,
@@ -1708,7 +1716,7 @@ export class AreciboGenerator {
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    const colors = ['#000000', '#FFFFFF', '#9966CC', '#00FF00', '#0066FF', '#FF6600'];
+    const colors = ['#000000', '#FFFFFF', '#9966CC', '#00FF00', '#0066FF', '#FF6600', '#FF0000'];
     
     for (let y = 0; y < message.height; y++) {
       for (let x = 0; x < message.width; x++) {
@@ -1726,5 +1734,627 @@ export class AreciboGenerator {
     const canvas = document.createElement('canvas');
     this.renderToCanvas(message, canvas, scale);
     return canvas.toDataURL('image/png');
+  }
+
+  /**
+   * SECCIÓN 5: FORMA DE VIDA
+   * Filas: 45-53 (9 líneas máximo), Color: NARANJA
+   * Layout: [Estatura | Representación Visual | Población]
+   * Basado en el mensaje original de Arecibo: estatura binaria vertical, figura simple, población binaria horizontal
+   */
+  private static drawLifeFormSection(bitmap: number[], colorMap: number[], lifeForm: string, planetName: string, startRow: number, height: number): void {
+    // 1. Estatura: número binario vertical (lado izquierdo, columnas 0-2)
+    this.drawLifeFormHeight(bitmap, colorMap, lifeForm, startRow, height);
+    
+    // 2. Representación visual: figura simple (centro, columnas 8-14) 
+    this.drawLifeFormRepresentation(bitmap, colorMap, lifeForm, planetName, startRow, height);
+    
+    // 3. Población: número binario horizontal (lado derecho, parte inferior)
+    this.drawLifeFormPopulation(bitmap, colorMap, lifeForm, planetName, startRow, height);
+  }
+
+  /**
+   * Dibuja la estatura de la forma de vida como número binario vertical
+   * En el mensaje original era el número 14 en azul/blanco
+   */
+  private static drawLifeFormHeight(bitmap: number[], colorMap: number[], lifeForm: string, startRow: number, height: number): void {
+    // Generar estatura procedural según el tipo de vida (valor entre 1-255 para caber en 8 bits)
+    const heightValue = this.generateLifeFormHeight(lifeForm);
+    
+    // Convertir a binario (8 bits máximo para caber en 9 líneas)
+    const binaryHeight = heightValue.toString(2).padStart(8, '0');
+    
+    // Dibujar verticalmente en columnas 0-2 (como el original) con colores azul y blanco
+    for (let i = 0; i < Math.min(binaryHeight.length, height); i++) {
+      const bit = parseInt(binaryHeight[binaryHeight.length - 1 - i]);
+      if (bit === 1) {
+        // Alternar entre azul y blanco para mejor legibilidad
+        const color = (i % 2 === 0) ? this.COLORS.BLUE : this.COLORS.WHITE;
+        // Dibujar en columnas 0, 1 para visibilidad
+        this.setPixel(bitmap, colorMap, 0, startRow + height - 1 - i, 1, color);
+        this.setPixel(bitmap, colorMap, 1, startRow + height - 1 - i, 1, color);
+      }
+    }
+  }
+
+  /**
+   * Dibuja la representación visual de la forma de vida como figura simple
+   * Solo "Intelligent Life" usa el sistema modular de 5×5×5 combinaciones
+   */
+  private static drawLifeFormRepresentation(bitmap: number[], colorMap: number[], lifeForm: string, planetName: string, startRow: number, height: number): void {
+    const category = this.getLifeCategory(lifeForm);
+    
+    // Definir el área central para la figura (columnas 8-14)
+    const centerCols = [8, 9, 10, 11, 12, 13, 14];
+    const centerCol = centerCols[Math.floor(centerCols.length / 2)]; // Columna 11
+    
+    // Solo "Intelligent Life" usa el sistema modular
+    if (lifeForm === "Intelligent Life") {
+      // Sistema modular para vida inteligente - usar planeta para crear variación
+      const hash = this.hashString(lifeForm + planetName);
+      const rng = this.createSeededRandom(hash);
+      
+      // Seleccionar componentes (0-4 para cada tipo)
+      const headType = Math.floor(rng.random() * 5);
+      const torsoType = Math.floor(rng.random() * 5);
+      const legsType = Math.floor(rng.random() * 5);
+      
+      // Dibujar la forma de vida modular
+      this.drawModularLifeForm(bitmap, colorMap, centerCol, startRow, height, headType, torsoType, legsType);
+    } else {
+      // Formas específicas para otras categorías - también usar planeta para crear variación
+      const hash = this.hashString(lifeForm + planetName);
+      const rng = this.createSeededRandom(hash);
+      
+      switch (category) {
+        case "carbon-based":
+          this.drawCarbonBasedForm(bitmap, colorMap, centerCols, centerCol, startRow, height, lifeForm, rng);
+          break;
+        case "silicon-based":
+          this.drawSiliconBasedForm(bitmap, colorMap, centerCols, centerCol, startRow, height, rng);
+          break;
+        case "robotic":
+          this.drawRoboticForm(bitmap, colorMap, centerCols, centerCol, startRow, height, rng);
+          break;
+        case "gaseous":
+          this.drawGaseousForm(bitmap, colorMap, centerCols, centerCol, startRow, height, rng);
+          break;
+        case "energy":
+          this.drawEnergyForm(bitmap, colorMap, centerCols, centerCol, startRow, height, rng);
+          break;
+        case "divine":
+          this.drawDivineForm(bitmap, colorMap, centerCols, centerCol, startRow, height, rng);
+          break;
+        default:
+          // Forma humanoide por defecto
+          this.drawHumanoidForm(bitmap, colorMap, centerCols, centerCol, startRow, height);
+      }
+    }
+  }
+
+  /**
+   * Dibuja la población del planeta como número binario horizontal
+   * En el mensaje original era la población humana en blanco
+   */
+  private static drawLifeFormPopulation(bitmap: number[], colorMap: number[], lifeForm: string, planetName: string, startRow: number, height: number): void {
+    // Generar población procedural
+    const population = this.generatePlanetaryPopulation(lifeForm, planetName);
+    
+    // Convertir a binario (máximo 8 bits para caber en columnas 15-22)
+    const binaryPopulation = population.toString(2).padStart(Math.min(population.toString(2).length, 8), '0');
+    
+    // Dibujar horizontalmente en la parte inferior (últimas 2 filas)
+    const bottomRow1 = startRow + height - 2;
+    const bottomRow2 = startRow + height - 1;
+    
+    // Dibujar el número binario horizontalmente de derecha a izquierda (columnas 15-22) en BLANCO
+    for (let i = 0; i < binaryPopulation.length && i < 8; i++) {
+      const bit = parseInt(binaryPopulation[binaryPopulation.length - 1 - i]);
+      if (bit === 1) {
+        const col = 22 - i; // Empezar desde la derecha (columna 22)
+        this.setPixel(bitmap, colorMap, col, bottomRow1, 1, this.COLORS.WHITE);
+        this.setPixel(bitmap, colorMap, col, bottomRow2, 1, this.COLORS.WHITE);
+      }
+    }
+  }
+
+  /**
+   * Genera la estatura procedural de una forma de vida
+   * Valores entre 1-255 para caber en 8 bits (como el 14 del mensaje original)
+   */
+  private static generateLifeFormHeight(lifeForm: string): number {
+    const category = this.getLifeCategory(lifeForm);
+    const hash = this.hashString(lifeForm);
+    const rng = this.createSeededRandom(hash);
+    
+    switch (category) {
+      case "carbon-based":
+        // Rango humanoide: 10-25 unidades
+        return Math.floor(10 + rng.random() * 15);
+      case "silicon-based":
+        // Más grandes: 25-50 unidades  
+        return Math.floor(25 + rng.random() * 25);
+      case "robotic":
+        // Variados: 5-100 unidades
+        return Math.floor(5 + rng.random() * 95);
+      case "gaseous":
+        // Muy grandes: 100-200 unidades
+        return Math.floor(100 + rng.random() * 100);
+      case "energy":
+        // Pequeños/teóricos: 1-10 unidades
+        return Math.floor(1 + rng.random() * 9);
+      case "divine":
+        // Épicos: 200-255 unidades
+        return Math.floor(200 + rng.random() * 55);
+      default:
+        // Similar al humano original (14): 12-18 unidades
+        return Math.floor(12 + rng.random() * 6);
+    }
+  }
+
+  /**
+   * Genera la población procedural de un planeta
+   * Valores entre 1-255 para representar en 8 bits
+   */
+  private static generatePlanetaryPopulation(lifeForm: string, planetName: string): number {
+    const category = this.getLifeCategory(lifeForm);
+    const combinedHash = this.hashString(lifeForm + planetName);
+    const rng = this.createSeededRandom(combinedHash);
+    
+    switch (category) {
+      case "carbon-based":
+        // Población alta: 150-255
+        return Math.floor(150 + rng.random() * 105);
+      case "silicon-based":
+        // Población media: 100-200
+        return Math.floor(100 + rng.random() * 100);
+      case "robotic":
+        // Población variable: 50-200
+        return Math.floor(50 + rng.random() * 150);
+      case "gaseous":
+        // Pocos individuos: 10-50
+        return Math.floor(10 + rng.random() * 40);
+      case "energy":
+        // Entidades únicas: 1-20
+        return Math.floor(1 + rng.random() * 19);
+      case "divine":
+        // Muy pocos: 1-10
+        return Math.floor(1 + rng.random() * 9);
+      default:
+        // Similar a la Tierra original (~200): 180-220
+        return Math.floor(180 + rng.random() * 40);
+    }
+  }
+
+  /**
+   * Genera un hash simple de una cadena para usar como seed
+   */
+  private static hashString(str: string): number {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convertir a 32-bit integer
+    }
+    return Math.abs(hash);
+  }
+
+  /**
+   * Crea un generador de números aleatorios con seed
+   */
+  private static createSeededRandom(seed: number): { random: () => number } {
+    return {
+      random: () => {
+        seed = (seed * 9301 + 49297) % 233280;
+        return seed / 233280;
+      }
+    };
+  }
+
+  /**
+   * Dibuja una forma de vida modular combinando cabeza, torso y piernas
+   */
+  private static drawModularLifeForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, headType: number, torsoType: number, legsType: number): void {
+    // Distribución de las 9 filas:
+    // Filas 0-2: Cabeza (3 filas)
+    // Filas 3-5: Torso (3 filas)  
+    // Filas 6-8: Piernas (3 filas)
+    
+    this.drawHead(bitmap, colorMap, centerCol, startRow, headType);
+    this.drawTorso(bitmap, colorMap, centerCol, startRow + 3, torsoType);
+    this.drawLegs(bitmap, colorMap, centerCol, startRow + 6, legsType);
+  }
+
+  /**
+   * Dibuja diferentes tipos de cabezas (5 variaciones)
+   */
+  private static drawHead(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, headType: number): void {
+    switch (headType) {
+      case 0: // Cabeza humanoide clásica
+        this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
+        break;
+        
+      case 1: // Cabeza triangular/alienígena
+        this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.RED);
+        break;
+        
+      case 2: // Cabeza cuadrada/robótica
+        for (let r = 0; r < 3; r++) {
+          for (let c = -1; c <= 1; c++) {
+            this.setPixel(bitmap, colorMap, centerCol + c, startRow + r, 1, this.COLORS.RED);
+          }
+        }
+        break;
+        
+      case 3: // Cabeza alargada vertical
+        this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.RED);
+        break;
+        
+      case 4: // Cabeza con antenas/insectoide
+        // Antenas
+        this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.RED);
+        // Cabeza central
+        this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.RED);
+        break;
+    }
+  }
+
+  /**
+   * Dibuja diferentes tipos de torsos (5 variaciones)
+   */
+  private static drawTorso(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, torsoType: number): void {
+    switch (torsoType) {
+      case 0: // Torso humanoide simple
+        for (let r = 0; r < 3; r++) {
+          this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
+        }
+        // Brazos en el medio
+        this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
+        break;
+        
+      case 1: // Torso ancho/robusto
+        for (let r = 0; r < 3; r++) {
+          for (let c = -1; c <= 1; c++) {
+            this.setPixel(bitmap, colorMap, centerCol + c, startRow + r, 1, this.COLORS.RED);
+          }
+        }
+        // Brazos extendidos
+        this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.RED);
+        break;
+        
+      case 2: // Torso con múltiples brazos
+        for (let r = 0; r < 3; r++) {
+          this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
+        }
+        // Múltiples brazos
+        this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.RED);
+        break;
+        
+      case 3: // Torso serpentino/ondulado
+        this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
+        // Brazos simétricos
+        this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.RED);
+        break;
+        
+      case 4: // Torso cristalino/geométrico
+        // Forma de diamante
+        this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
+        // Brazos puntiagudos
+        this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.RED);
+        break;
+    }
+  }
+
+  /**
+   * Dibuja diferentes tipos de piernas (5 variaciones)
+   */
+  private static drawLegs(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, legsType: number): void {
+    switch (legsType) {
+      case 0: // Piernas humanoides clásicas
+        for (let r = 0; r < 3; r++) {
+          this.setPixel(bitmap, colorMap, centerCol - 1, startRow + r, 1, this.COLORS.RED);
+          this.setPixel(bitmap, colorMap, centerCol + 1, startRow + r, 1, this.COLORS.RED);
+        }
+        break;
+        
+      case 1: // Piernas con pies grandes
+        for (let r = 0; r < 2; r++) {
+          this.setPixel(bitmap, colorMap, centerCol - 1, startRow + r, 1, this.COLORS.RED);
+          this.setPixel(bitmap, colorMap, centerCol + 1, startRow + r, 1, this.COLORS.RED);
+        }
+        // Pies grandes
+        this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 2, 1, this.COLORS.RED);
+        break;
+        
+      case 2: // Múltiples piernas/insectoide
+        // 4 patas
+        this.setPixel(bitmap, colorMap, centerCol - 2, startRow, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 2, startRow, 1, this.COLORS.RED);
+        
+        this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.RED);
+        
+        this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 2, 1, this.COLORS.RED);
+        break;
+        
+      case 3: // Columna central/serpentino
+        this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
+        break;
+        
+      case 4: // Base flotante/energética
+        // Patrón ondulado en la base
+        this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.RED);
+        break;
+    }
+  }
+
+  // Formas específicas para cada categoría de vida (mantenidas por compatibilidad)
+
+  /**
+   * Forma humanoide simple - stick figure como el original de Arecibo
+   */
+  private static drawHumanoidForm(bitmap: number[], colorMap: number[], cols: number[], centerCol: number, startRow: number, height: number): void {
+    // Cabeza (filas 0-1) - cabeza más grande
+    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
+    
+    // Cuerpo (filas 2-5) - tronco más largo usando las 9 líneas
+    for (let r = 2; r <= 5; r++) {
+      this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
+    }
+    
+    // Brazos (fila 3) - brazos extendidos
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 3, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 3, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 3, 1, this.COLORS.RED);
+    
+    // Piernas (filas 6-8) - usar completamente las 9 líneas
+    for (let r = 6; r < height; r++) {
+      this.setPixel(bitmap, colorMap, centerCol - 1, startRow + r, 1, this.COLORS.RED);
+      this.setPixel(bitmap, colorMap, centerCol + 1, startRow + r, 1, this.COLORS.RED);
+    }
+  }
+
+  /**
+   * Forma basada en carbono - variaciones humanoides/animales
+   */
+  private static drawCarbonBasedForm(bitmap: number[], colorMap: number[], cols: number[], centerCol: number, startRow: number, height: number, lifeForm: string, rng: { random: () => number }): void {
+    if (rng.random() < 0.7) {
+      // Mayormente humanoides con variaciones
+      this.drawHumanoidForm(bitmap, colorMap, cols, centerCol, startRow, height);
+    } else {
+      // Formas cuadrúpedas o alternativos
+      this.drawAnimalForm(bitmap, colorMap, centerCol, startRow, height);
+    }
+    
+    // Agregar variaciones procedurales adicionales
+    if (rng.random() < 0.3) {
+      // 30% de probabilidad de agregar características extra
+      this.addRandomFeatures(bitmap, colorMap, centerCol, startRow, height, rng);
+    }
+  }
+
+  /**
+   * Forma basada en silicio - estructura cristalina simple
+   */
+  private static drawSiliconBasedForm(bitmap: number[], colorMap: number[], cols: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
+    // Cristal en forma de diamante usando las 9 líneas completas
+    // Pico superior (fila 0)
+    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
+    
+    // Expansión (filas 1-2)
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
+    
+    for (let c = -2; c <= 2; c++) {
+      this.setPixel(bitmap, colorMap, centerCol + c, startRow + 2, 1, this.COLORS.RED);
+    }
+    
+    // Centro ancho (filas 3-5) - la parte más ancha del cristal
+    for (let r = 3; r <= 5; r++) {
+      for (let c = -3; c <= 3; c++) {
+        this.setPixel(bitmap, colorMap, centerCol + c, startRow + r, 1, this.COLORS.RED);
+      }
+    }
+    
+    // Contracción gradual (filas 6-7)
+    for (let c = -2; c <= 2; c++) {
+      this.setPixel(bitmap, colorMap, centerCol + c, startRow + 6, 1, this.COLORS.RED);
+    }
+    
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 7, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 7, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 7, 1, this.COLORS.RED);
+    
+    // Base final (fila 8)
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 8, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Forma robótica - estructura geométrica rígida
+   */
+  private static drawRoboticForm(bitmap: number[], colorMap: number[], cols: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
+    // Cabeza cuadrada
+    for (let c = -1; c <= 1; c++) {
+      this.setPixel(bitmap, colorMap, centerCol + c, startRow, 1, this.COLORS.RED);
+      this.setPixel(bitmap, colorMap, centerCol + c, startRow + 1, 1, this.COLORS.RED);
+    }
+    
+    // Cuerpo rectangular
+    for (let r = 2; r < 5; r++) {
+      this.setPixel(bitmap, colorMap, centerCol - 1, startRow + r, 1, this.COLORS.RED);
+      this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
+      this.setPixel(bitmap, colorMap, centerCol + 1, startRow + r, 1, this.COLORS.RED);
+    }
+    
+    // Brazos mecánicos
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 3, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 3, 1, this.COLORS.RED);
+    
+    // Piernas
+    for (let r = 5; r < height - 2; r++) {
+      this.setPixel(bitmap, colorMap, centerCol - 1, startRow + r, 1, this.COLORS.RED);
+      this.setPixel(bitmap, colorMap, centerCol + 1, startRow + r, 1, this.COLORS.RED);
+    }
+  }
+
+  /**
+   * Forma gaseosa - nube difusa
+   */
+  private static drawGaseousForm(bitmap: number[], colorMap: number[], cols: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
+    // Nube difusa - círculo aproximado
+    // Fila superior
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
+    
+    // Filas medias más anchas
+    for (let r = 2; r < 5; r++) {
+      this.setPixel(bitmap, colorMap, centerCol - 2, startRow + r, 1, this.COLORS.RED);
+      this.setPixel(bitmap, colorMap, centerCol - 1, startRow + r, 1, this.COLORS.RED);
+      this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
+      this.setPixel(bitmap, colorMap, centerCol + 1, startRow + r, 1, this.COLORS.RED);
+      this.setPixel(bitmap, colorMap, centerCol + 2, startRow + r, 1, this.COLORS.RED);
+    }
+    
+    // Fila inferior
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 5, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 5, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 5, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Forma de energía - ondas simples
+   */
+  private static drawEnergyForm(bitmap: number[], colorMap: number[], cols: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
+    // Ondas de energía - patrón zigzag
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 4, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 5, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 6, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 7, 1, this.COLORS.RED);
+    // Línea horizontal de energía
+    for (let c = -2; c <= 2; c++) {
+      this.setPixel(bitmap, colorMap, centerCol + c, startRow + 3, 1, this.COLORS.RED);
+    }
+  }
+
+  /**
+   * Forma divina - cruz o estrella simple
+   */
+  private static drawDivineForm(bitmap: number[], colorMap: number[], cols: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
+    // Cruz divina
+    // Línea vertical
+    for (let r = 0; r < height - 2; r++) {
+      this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
+    }
+    
+    // Línea horizontal
+    for (let c = -2; c <= 2; c++) {
+      this.setPixel(bitmap, colorMap, centerCol + c, startRow + 3, 1, this.COLORS.RED);
+    }
+    
+    // Rayos diagonales
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 4, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 4, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Forma animal - cuadrúpeda simple
+   */
+  private static drawAnimalForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Cabeza
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow, 1, this.COLORS.RED);
+    
+    // Cuerpo horizontal
+    for (let c = -2; c <= 1; c++) {
+      this.setPixel(bitmap, colorMap, centerCol + c, startRow + 2, 1, this.COLORS.RED);
+      this.setPixel(bitmap, colorMap, centerCol + c, startRow + 3, 1, this.COLORS.RED);
+    }
+    
+    // Patas (4 patas)
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 4, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 4, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 4, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 4, 1, this.COLORS.RED);
+    
+    // Pies
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 5, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 5, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 5, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 5, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Agrega características aleatorias para crear variaciones
+   */
+  private static addRandomFeatures(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
+    // Agregar puntos aleatorios para crear variaciones visuales
+    for (let i = 0; i < 3; i++) {
+      const randomRow = startRow + Math.floor(rng.random() * height);
+      const randomCol = centerCol + Math.floor(rng.random() * 6) - 3; // -3 a +2
+      
+      if (rng.random() < 0.5) {
+        this.setPixel(bitmap, colorMap, randomCol, randomRow, 1, this.COLORS.RED);
+      }
+    }
   }
 }
