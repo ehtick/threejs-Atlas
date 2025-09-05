@@ -2493,21 +2493,30 @@ export class AreciboGenerator {
   }
 
   /**
-   * Forma basada en carbono - variaciones humanoides/animales
+   * Forma basada en carbono - cada tipo de vida tiene su representación única
    */
   private static drawCarbonBasedForm(bitmap: number[], colorMap: number[], cols: number[], centerCol: number, startRow: number, height: number, lifeForm: string, rng: { random: () => number }): void {
-    if (rng.random() < 0.7) {
-      // Mayormente humanoides con variaciones
-      this.drawHumanoidForm(bitmap, colorMap, cols, centerCol, startRow, height);
-    } else {
-      // Formas cuadrúpedas o alternativos
-      this.drawAnimalForm(bitmap, colorMap, centerCol, startRow, height);
-    }
-    
-    // Agregar variaciones procedurales adicionales
-    if (rng.random() < 0.3) {
-      // 30% de probabilidad de agregar características extra
-      this.addRandomFeatures(bitmap, colorMap, centerCol, startRow, height, rng);
+    // Cada forma de vida basada en carbono tiene su propia representación visual única
+    switch (lifeForm) {
+      case "Bacteria":
+        this.drawBacteriaForm(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case "Vegetation":
+        this.drawVegetationForm(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case "Animal Life":
+        this.drawAnimalForm(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case "Vegetable Animals":
+        this.drawVegetableAnimalForm(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case "Intelligent Life":
+        // Esto no debería pasar, pero por si acaso
+        this.drawHumanoidForm(bitmap, colorMap, cols, centerCol, startRow, height);
+        break;
+      default:
+        // Forma humanoide por defecto para formas de vida desconocidas
+        this.drawHumanoidForm(bitmap, colorMap, cols, centerCol, startRow, height);
     }
   }
 
@@ -2666,6 +2675,86 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 5, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 5, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 5, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Forma de bacteria - estructura celular microscópica
+   */
+  private static drawBacteriaForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Forma circular pequeña (célula simple)
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
+    
+    // Membrana celular
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.RED);
+    
+    // Núcleo/material genético
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.RED);
+    
+    // Flagelos (apéndices para movimiento)
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 3, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 3, 1, this.COLORS.RED);
+    
+    // Base de la célula
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 4, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Forma de vegetación - estructura de planta con tallo y ramas
+   */
+  private static drawVegetationForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Copa/hojas (parte superior)
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.RED);
+    
+    // Ramas extendidas
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.RED);
+    
+    // Tallo principal (vertical)
+    for (let r = 2; r < height - 1; r++) {
+      this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
+    }
+    
+    // Sistema de raíces
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + height - 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + height - 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + height - 1, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Forma de animal-vegetal - híbrido entre planta y animal
+   */
+  private static drawVegetableAnimalForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Parte superior como planta (hojas/corona)
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.RED);
+    
+    // Cuerpo central híbrido
+    for (let r = 1; r < 4; r++) {
+      this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
+      // Extensiones laterales (como ramas pero también como brazos)
+      if (r === 2) {
+        this.setPixel(bitmap, colorMap, centerCol - 2, startRow + r, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 2, startRow + r, 1, this.COLORS.RED);
+      }
+    }
+    
+    // Parte inferior móvil (como animal) - patas/raíces móviles
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 4, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 4, 1, this.COLORS.RED);
+    
+    // Base con capacidad de movimiento
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 5, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 5, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 5, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 5, 1, this.COLORS.RED);
   }
 
   /**
