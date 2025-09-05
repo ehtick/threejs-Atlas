@@ -1744,7 +1744,7 @@ export class AreciboGenerator {
    */
   private static drawLifeFormSection(bitmap: number[], colorMap: number[], lifeForm: string, planetName: string, startRow: number, height: number): void {
     // 1. Estatura: número binario vertical (lado izquierdo, columnas 0-2)
-    this.drawLifeFormHeight(bitmap, colorMap, lifeForm, startRow, height);
+    this.drawLifeFormHeight(bitmap, colorMap, lifeForm, planetName, startRow, height);
     
     // 2. Representación visual: figura simple (centro, columnas 8-14) 
     this.drawLifeFormRepresentation(bitmap, colorMap, lifeForm, planetName, startRow, height);
@@ -1756,10 +1756,21 @@ export class AreciboGenerator {
   /**
    * Dibuja la representación de altura exactamente como en el mensaje de Arecibo original:
    * Barra vertical completa (azul) + número binario horizontal al lado (centrado verticalmente)
+   * 
+   * En Arecibo original: 14 (1110 binario) = 14 × 12.6cm = 176.4cm altura humana
+   * Se representaba como:
+   *     o (azul)
+   *     o (azul)
+   *     o (azul)
+   *     o (azul)
+   *   x xxx (blanco-azul-azul-azul, donde x=marcador, xxx=1110)
+   *     o (azul)
+   *     o (azul)
+   *     o (azul)
    */
-  private static drawLifeFormHeight(bitmap: number[], colorMap: number[], lifeForm: string, startRow: number, height: number): void {
-    // Generar estatura procedural según el tipo de vida
-    const heightValue = this.generateLifeFormHeight(lifeForm);
+  private static drawLifeFormHeight(bitmap: number[], colorMap: number[], lifeForm: string, planetName: string, startRow: number, height: number): void {
+    // Ahora incluimos planetName para generar variación única por planeta
+    const heightValue = this.generateLifeFormHeight(lifeForm, planetName);
     
     // Columna para la barra de altura (lado izquierdo)
     const barCol = 3; // Columna 3 para centrar mejor
@@ -1770,42 +1781,53 @@ export class AreciboGenerator {
     const binaryStartCol = barCol - 2; // Columnas 1-5
     
     // 2. Dibujar barra vertical con huecos donde cruza el número binario
-    // La barra SIEMPRE debe tener la misma altura que la figura humanoide (9 líneas)
+    // En Arecibo: la barra tiene huecos arriba, en medio y abajo del número
     const barHeight = height; // Siempre usa toda la altura disponible
     
     for (let i = 0; i < barHeight; i++) {
       const currentRow = startRow + i;
-      // Dejar huecos: en la línea del número y uno arriba y uno abajo
-      // IMPORTANTE: En barMiddleRow NO debe haber NADA azul de la barra
+      // Dejar huecos: una línea arriba, la línea del número, y una línea abajo
       if (currentRow === barMiddleRow - 1 || currentRow === barMiddleRow || currentRow === barMiddleRow + 1) {
-        // No dibujar nada (dejar transparente)
+        // No dibujar NADA en estas filas (dejar completamente transparente)
         continue;
       }
       this.setPixel(bitmap, colorMap, barCol, currentRow, 1, this.COLORS.BLUE);
     }
     
-    // 3. Número binario horizontal AL LADO de la barra
-    // El número binario va de columna 1 a columna 5, y la barra está en columna 3
-    // Por lo tanto, el número binario CRUZA la barra en la columna 3
+    // 3. Número binario horizontal CRUZANDO la barra (como en Arecibo original)
+    // En Arecibo: el marcador "X" y el número binario cruzan la barra vertical
+    // Ejemplo para 14 (1110): X 1110 donde X es el marcador blanco
+    
+    // Convertir altura a binario y mostrar información de depuración
+    console.log(`Altura para ${lifeForm} en ${planetName}: ${heightValue} = ${binaryHeight} binario`);
     
     // Dibujar "X" marcador (bit menos significativo) en blanco
     this.setPixel(bitmap, colorMap, binaryStartCol, barMiddleRow, 1, this.COLORS.WHITE);
     
     // Dibujar cada bit del número binario horizontalmente
+    // IMPORTANTE: En el mensaje de Arecibo original:
+    // - El marcador "X" es BLANCO
+    // - Los bits "1" son BLANCOS (presencia de señal)
+    // - Los bits "0" son TRANSPARENTES (ausencia de señal)
+    // - NO hay azul en la línea del número binario
     for (let i = 0; i < binaryHeight.length && i < 4; i++) {
-      const bit = parseInt(binaryHeight[binaryHeight.length - 1 - i]); // Leer de derecha a izquierda
-      const color = (bit === 1) ? this.COLORS.BLUE : this.COLORS.WHITE;
+      // Leer bits de izquierda a derecha (MSB primero, como en Arecibo)
+      const bit = parseInt(binaryHeight[i]); 
       
       // Dibujar bits hacia la derecha del marcador
       const bitCol = binaryStartCol + 1 + i;
       
-      // NO dibujar NADA en la columna de la barra (columna 3)
-      // para evitar que aparezca azul donde cruza con la barra
+      // NO dibujar en la columna de la barra (dejar el hueco)
       if (bitCol === barCol) {
-        continue; // Saltar esta columna completamente
+        continue; // Saltar la columna de la barra
       }
       
-      this.setPixel(bitmap, colorMap, bitCol, barMiddleRow, 1, color);
+      // Solo dibujar si el bit es 1 (en BLANCO)
+      // Si el bit es 0, no dibujar nada (dejar transparente)
+      if (bit === 1) {
+        this.setPixel(bitmap, colorMap, bitCol, barMiddleRow, 1, this.COLORS.WHITE);
+      }
+      // Si bit === 0, no dibujamos nada (queda transparente)
     }
   }
 
@@ -1893,11 +1915,13 @@ export class AreciboGenerator {
   /**
    * Genera la estatura procedural de una forma de vida
    * Valores entre 1-255 para caber en 8 bits (como el 14 del mensaje original)
+   * Ahora incluye planetName para generar variación única por planeta
    */
-  private static generateLifeFormHeight(lifeForm: string): number {
+  private static generateLifeFormHeight(lifeForm: string, planetName: string): number {
     // Para "Intelligent Life" usamos variaciones realistas basadas en combinaciones modular
     if (lifeForm === "Intelligent Life") {
-      const hash = this.hashString(lifeForm);
+      // Incluir planetName en el hash para variación por planeta
+      const hash = this.hashString(lifeForm + planetName);
       const rng = this.createSeededRandom(hash);
       
       // Estaturas realistas para vida inteligente (en unidades de longitud de onda)
@@ -1914,9 +1938,9 @@ export class AreciboGenerator {
       return heightVariations[index];
     }
     
-    // Para otras formas de vida, mantener el sistema existente
+    // Para otras formas de vida, también incluir planetName para variación
     const category = this.getLifeCategory(lifeForm);
-    const hash = this.hashString(lifeForm);
+    const hash = this.hashString(lifeForm + planetName);
     const rng = this.createSeededRandom(hash);
     
     switch (category) {
