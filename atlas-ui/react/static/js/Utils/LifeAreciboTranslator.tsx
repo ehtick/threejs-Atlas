@@ -157,7 +157,7 @@ export class AreciboGenerator {
         this.drawCarbonBasedGenetics(bitmap, colorMap, lifeForm, planetName);
         break;
       case "silicon-based":
-        this.drawSiliconBasedGenetics(bitmap, colorMap);
+        this.drawSiliconBasedGenetics(bitmap, colorMap, lifeForm, planetName);
         break;
       case "robotic":
         this.drawRoboticInformation(bitmap, colorMap);
@@ -210,18 +210,60 @@ export class AreciboGenerator {
   }
 
   /**
+   * Genera enlaces químicos para unidades silicáticas según el elemento
+   */
+  private static getSilicateBonds(element: string): number[] {
+    // Patrones de enlaces diferentes según el tipo de elemento
+    const bondPatterns: { [key: string]: number[] } = {
+      // Elementos comunes
+      'Si': [1,1,0,4,0], // SiO4 tetraédrico clásico
+      'O':  [0,2,0,2,0], // O2 con dobles enlaces
+      'Al': [2,0,1,3,0], // AlO3 trigonal
+      'Fe': [1,0,2,3,0], // FeO3 irregular
+      'Mg': [0,1,0,2,1], // MgO2 lineal
+      'Ca': [1,1,1,2,1], // CaO3 complejo
+      'K':  [0,0,1,1,0], // K-O simple
+      'Na': [0,0,1,1,0], // Na-O simple
+      'H':  [1,0,0,1,0], // H-O hidroxilo
+      'S':  [0,1,1,2,2], // SO4 tetraédrico con azufre
+      'P':  [0,1,0,3,1], // PO4 tetraédrico
+      'Ti': [2,1,0,4,0], // TiO4 refractario
+      'V':  [1,2,1,3,0], // VO4 de transición
+      'Cr': [2,0,2,2,0], // CrO4 metálico
+      'Mn': [1,1,2,2,0], // MnO4 oxidativo
+      'Co': [1,0,1,2,1], // CoO3 magnético
+      'Ni': [0,2,1,2,0], // NiO3 catalítico
+      'Cu': [2,0,0,2,0], // CuO2 conductor
+      'Zn': [0,1,1,2,0], // ZnO2 semiconductor
+      'Li': [0,0,0,1,0], // LiO simple alcalino
+      'Be': [0,0,1,2,0], // BeO2 berilio ligero
+      'B':  [0,1,2,3,0], // BO3 triangular
+      'F':  [1,0,0,1,0], // F-Si fluoruro
+      'Cl': [1,0,0,1,0], // Cl-Si cloruro
+      'Sr': [1,1,0,2,2], // SrO3 alcalinotérreo
+      'Y':  [2,1,1,3,0], // YO4 tierra rara
+      'Zr': [2,2,0,4,0]  // ZrO4 refractario pesado
+    };
+    
+    // Usar patrón específico o por defecto
+    return bondPatterns[element] || [1,1,1,2,0]; // Patrón genérico
+  }
+
+  /**
    * VIDA BASADA EN SILICIO - Información cristalina análoga a nucleótidos
    */
-  private static drawSiliconBasedGenetics(bitmap: number[], colorMap: number[]): void {
-    // Análogos cristalinos de nucleótidos - 4 tipos de unidades de sílice
+  private static drawSiliconBasedGenetics(bitmap: number[], colorMap: number[], lifeForm: string, planetName: string): void {
+    // Obtener las bases silicáticas variables según el planeta
+    const silicateBases = this.getNitrogenBases(lifeForm, planetName);
     
-    // Filas 12-15: Cuatro tipos de tetraedros Si-O
-    const siliconUnits = [
-      { col: 4, bonds: [1,1,0,4,0] },   // SiO4 básico
-      { col: 8, bonds: [2,0,1,3,0] },   // SiO3N (nitrogenado) 
-      { col: 12, bonds: [1,1,2,2,0] },  // SiO2N2 (más nitrógeno)
-      { col: 16, bonds: [0,1,0,3,1] }   // SiO3P (con fósforo)
-    ];
+    console.log(`🔬 Dibujando nucleótidos silicáticos: ${silicateBases.join(', ')} para ${lifeForm} en ${planetName}`);
+    
+    // Filas 12-15: Cuatro tipos de unidades cristalinas basadas en los elementos del planeta
+    const siliconUnits = silicateBases.map((base, index) => ({
+      col: 4 + (index * 4), // Columnas 4, 8, 12, 16
+      base: base,
+      bonds: this.getSilicateBonds(base) // Generar enlaces según el elemento
+    }));
     
     // Dibujar cada unidad cristalina vertical
     for (const unit of siliconUnits) {
@@ -1613,6 +1655,35 @@ export class AreciboGenerator {
     // Si no hay planetName, devolver las bases base
     if (!planetName || planetName === "Earth") {
       return baseBases;
+    }
+    
+    // APLICAR VARIACIÓN PROCEDURAL PARA SILICON-BASED LIFE
+    if (lifeForm === "Silicon-Based Life") {
+      // Obtener los elementos químicos específicos de este planeta
+      const planetElements = this.getElementsForLifeForm(lifeForm, planetName);
+      
+      // Usar los elementos del planeta como "nucleótidos" silicáticos
+      // Los primeros 4 elementos se usan como análogos de bases
+      const elementSymbols: { [key: number]: string } = {
+        1: 'H', 3: 'Li', 4: 'Be', 5: 'B', 8: 'O', 9: 'F', 11: 'Na', 12: 'Mg', 
+        13: 'Al', 14: 'Si', 15: 'P', 16: 'S', 17: 'Cl', 19: 'K', 20: 'Ca',
+        22: 'Ti', 23: 'V', 24: 'Cr', 25: 'Mn', 26: 'Fe', 27: 'Co', 28: 'Ni',
+        29: 'Cu', 30: 'Zn', 38: 'Sr', 39: 'Y', 40: 'Zr'
+      };
+      
+      // Tomar los primeros 4 elementos como "nucleótidos" silicáticos
+      const silicateBases = planetElements.slice(0, 4).map(atomicNumber => 
+        elementSymbols[atomicNumber] || atomicNumber.toString()
+      );
+      
+      // Si no hay suficientes elementos, completar con elementos por defecto
+      while (silicateBases.length < 4) {
+        silicateBases.push("Si");
+      }
+      
+      console.log(`🔮 BASES SILICÁTICAS para ${lifeForm} en ${planetName}: [${silicateBases.join(', ')}] basadas en elementos [${planetElements.join(', ')}]`);
+      
+      return silicateBases;
     }
     
     // APLICAR VARIACIÓN PROCEDURAL POR PLANETA SOLO PARA VIDA INTELIGENTE
