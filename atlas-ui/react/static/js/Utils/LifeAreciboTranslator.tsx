@@ -62,7 +62,7 @@ export class AreciboGenerator {
     this.drawBlankLine(bitmap, colorMap, 28);
     
     // Sección 4: Doble hélice del ADN (filas 29-43) - HELICES AZULES + CENTRO BLANCO
-    this.drawDNADoubleHelix(bitmap, colorMap, config.lifeForm, 29, 15);
+    this.drawDNADoubleHelix(bitmap, colorMap, config.lifeForm, config.planetName, 29, 15);
     
     // Línea en blanco después del ADN
     this.drawBlankLine(bitmap, colorMap, 44);
@@ -608,7 +608,7 @@ export class AreciboGenerator {
    */
   private static drawGenomeSize(bitmap: number[], colorMap: number[], elements: number[], lifeForm: string): void {
     const nucleotideData = this.getNucleotideVariation(lifeForm, elements);
-    const genomeSizeData = this.getGenomeSizeData(lifeForm, elements);
+    const genomeSizeData = this.getGenomeSizeData(lifeForm, "Earth", elements); // TODO: pasar planetName real
     
     // Representar complejidad del genoma visualmente
     // Cada fila representa un aspecto diferente de la complejidad genética
@@ -671,13 +671,13 @@ export class AreciboGenerator {
    * HELICES AZULES + CENTRO BLANCO según el mensaje original de Arecibo
    * Adaptado para cada forma de vida de manera coherente con sus nucleótidos
    */
-  private static drawDNADoubleHelix(bitmap: number[], colorMap: number[], lifeForm: string, startRow: number = 28, height: number = 15): void {
+  private static drawDNADoubleHelix(bitmap: number[], colorMap: number[], lifeForm: string, planetName: string, startRow: number = 28, height: number = 15): void {
     const category = this.getLifeCategory(lifeForm);
     const centerCol = 11; // Columna central del mensaje (23/2 ≈ 11)
     
     switch (category) {
       case "carbon-based":
-        this.drawCarbonBasedDoubleHelix(bitmap, colorMap, lifeForm, centerCol, startRow, height);
+        this.drawCarbonBasedDoubleHelix(bitmap, colorMap, lifeForm, planetName, centerCol, startRow, height);
         break;
       case "silicon-based":
         this.drawSiliconBasedStructure(bitmap, colorMap, centerCol, startRow, height);
@@ -695,7 +695,7 @@ export class AreciboGenerator {
         this.drawCosmicGeometryStructure(bitmap, colorMap, centerCol, startRow, height);
         break;
       default:
-        this.drawCarbonBasedDoubleHelix(bitmap, colorMap, lifeForm, centerCol, startRow, height);
+        this.drawCarbonBasedDoubleHelix(bitmap, colorMap, lifeForm, planetName, centerCol, startRow, height);
     }
   }
 
@@ -705,8 +705,8 @@ export class AreciboGenerator {
    * - Centro: 2 píxeles de ancho representando NÚMERO BINARIO de pares de bases
    * - Hélices laterales AZULES envolviendo el centro sin sobreponerse
    */
-  private static drawCarbonBasedDoubleHelix(bitmap: number[], colorMap: number[], lifeForm: string, centerCol: number, startRow: number, height: number): void {
-    const genomicData = this.getGenomeSizeData(lifeForm, this.getElementsForLifeForm(lifeForm));
+  private static drawCarbonBasedDoubleHelix(bitmap: number[], colorMap: number[], lifeForm: string, planetName: string, centerCol: number, startRow: number, height: number): void {
+    const genomicData = this.getGenomeSizeData(lifeForm, planetName, this.getElementsForLifeForm(lifeForm));
     
     // COLUMNA CENTRAL - 2 píxeles representando el NÚMERO de pares de bases
     const centerCol1 = 11;    // Primera columna del número binario
@@ -1565,7 +1565,7 @@ export class AreciboGenerator {
   /**
    * Datos genómicos CIENTÍFICAMENTE EXACTOS basados en biología conocida actual
    */
-  private static getGenomeSizeData(lifeForm: string, elements: number[]): any {
+  private static getGenomeSizeData(lifeForm: string, planetName: string, elements: number[]): any {
     const genomicData: { [key: string]: any } = {
       "Bacteria": {
         totalBases: 4641652,      // E. coli K-12 MG1655: 4,641,652 bp (dato exacto)
@@ -1676,18 +1676,45 @@ export class AreciboGenerator {
       }
     };
     
-    // Retornar datos específicos o especulativos
+    // Obtener datos base
+    let baseData: any;
     if (genomicData[lifeForm]) {
-      return genomicData[lifeForm];
+      baseData = genomicData[lifeForm];
     } else if (speculativeData[lifeForm]) {
-      return speculativeData[lifeForm];
+      baseData = speculativeData[lifeForm];
+    } else {
+      // Fallback basado en complejidad elemental
+      const complexity = elements.reduce((sum, atomic) => sum + atomic, 0);
+      if (complexity < 100) baseData = genomicData["Bacteria"];
+      else if (complexity < 200) baseData = genomicData["Vegetation"];
+      else baseData = genomicData["Animal Life"];
     }
     
-    // Fallback basado en complejidad elemental
-    const complexity = elements.reduce((sum, atomic) => sum + atomic, 0);
-    if (complexity < 100) return genomicData["Bacteria"];
-    if (complexity < 200) return genomicData["Vegetation"];
-    return genomicData["Animal Life"];
+    // APLICAR VARIACIÓN PROCEDURAL POR PLANETA
+    const hash = this.hashString(lifeForm + planetName);
+    const rng = this.createSeededRandom(hash);
+    
+    // Crear copia con variaciones procedurales
+    const variedData = { ...baseData };
+    
+    // Variar el número total de bases (±5-20% según complejidad)
+    const variationRange = lifeForm === "Intelligent Life" ? 0.1 : 0.2; // 10% para inteligentes, 20% para otros
+    const baseVariation = (rng.random() - 0.5) * 2 * variationRange; // -variationRange a +variationRange
+    variedData.totalBases = Math.floor(baseData.totalBases * (1 + baseVariation));
+    
+    // Variar el número de genes (±10-15%)
+    const geneVariation = (rng.random() - 0.5) * 2 * 0.15; // ±15%
+    variedData.genes = Math.floor(baseData.genes * (1 + geneVariation));
+    
+    // Variar elementos repetitivos (±5%)
+    if (typeof baseData.repetitiveElements === 'number') {
+      const repVariation = (rng.random() - 0.5) * 2 * 0.05; // ±5%
+      variedData.repetitiveElements = Math.max(0, baseData.repetitiveElements * (1 + repVariation));
+    }
+    
+    console.log(`Genoma para ${lifeForm} en ${planetName}: ${variedData.totalBases.toLocaleString()} bases, ${variedData.genes} genes`);
+    
+    return variedData;
   }
 
   private static getGenomeSize(elements: number[]): number {
