@@ -47,7 +47,7 @@ export class AreciboGenerator {
     this.drawBlankLine(bitmap, colorMap, 4);
     
     // Sección 2: Elementos químicos (filas 5-9) - COLOR LILA
-    this.drawChemicalElements(bitmap, colorMap, config.lifeForm);
+    this.drawChemicalElements(bitmap, colorMap, config.lifeForm, config.planetName);
     
     // Línea en blanco (fila 10)
     this.drawBlankLine(bitmap, colorMap, 10);
@@ -56,7 +56,7 @@ export class AreciboGenerator {
     this.drawBlankLine(bitmap, colorMap, 11);
     
     // Sección 3: Nucleótidos (filas 12-27) - COLOR VERDE
-    this.drawNucleotides(bitmap, colorMap, config.lifeForm);
+    this.drawNucleotides(bitmap, colorMap, config.lifeForm, config.planetName);
     
     // Línea en blanco entre nucleótidos y ADN
     this.drawBlankLine(bitmap, colorMap, 28);
@@ -115,8 +115,8 @@ export class AreciboGenerator {
    * SECCIÓN 2: Elementos químicos
    * Filas: 5-9, Color: LILA
    */
-  private static drawChemicalElements(bitmap: number[], colorMap: number[], lifeForm: string): void {
-    const elements = this.getElementsForLifeForm(lifeForm);
+  private static drawChemicalElements(bitmap: number[], colorMap: number[], lifeForm: string, planetName?: string): void {
+    const elements = this.getElementsForLifeForm(lifeForm, planetName || "Earth");
     const category = this.getLifeCategory(lifeForm);
     
     // Dibujar según categoría de vida con color lila
@@ -149,12 +149,12 @@ export class AreciboGenerator {
    * Filas: 12-27, Color: VERDE
    * Cada tipo de vida tiene su representación ESPECÍFICA y COHERENTE
    */
-  private static drawNucleotides(bitmap: number[], colorMap: number[], lifeForm: string): void {
+  private static drawNucleotides(bitmap: number[], colorMap: number[], lifeForm: string, planetName?: string): void {
     const category = this.getLifeCategory(lifeForm);
     
     switch (category) {
       case "carbon-based":
-        this.drawCarbonBasedGenetics(bitmap, colorMap, lifeForm);
+        this.drawCarbonBasedGenetics(bitmap, colorMap, lifeForm, planetName);
         break;
       case "silicon-based":
         this.drawSiliconBasedGenetics(bitmap, colorMap);
@@ -180,9 +180,9 @@ export class AreciboGenerator {
    * VIDA BASADA EN CARBONO - ADN/RNA clásico
    * FIEL al mensaje de Arecibo original con márgenes correctos
    */
-  private static drawCarbonBasedGenetics(bitmap: number[], colorMap: number[], lifeForm: string): void {
-    const elements = this.getElementsForLifeForm(lifeForm);
-    const bases = this.getNitrogenBases(lifeForm);
+  private static drawCarbonBasedGenetics(bitmap: number[], colorMap: number[], lifeForm: string, planetName?: string): void {
+    const elements = this.getElementsForLifeForm(lifeForm, planetName || "Earth");
+    const bases = this.getNitrogenBases(lifeForm, planetName || "Earth");
     
     // ESTRUCTURA EXACTA DEL ARECIBO CON MÁRGENES:
     // Siguiendo el orden: H, C, N, O, P (como en la sección de elementos)
@@ -553,32 +553,110 @@ export class AreciboGenerator {
   private static drawNucleotideFormulas(bitmap: number[], colorMap: number[], bases: string[], elements: number[], lifeForm: string): void {
     const nucleotideData = this.getNucleotideVariation(lifeForm, elements);
     
+    // Debug: mostrar elementos y nucleótidos generados
+    console.log(`Elementos disponibles: [${elements.join(', ')}]`);
+    console.log(`Nucleótidos generados:`, nucleotideData.bases.map(b => `${b.name}: [${b.formula.join(',')}]`));
+    
     // Dibujar las bases nitrogenadas específicas para este tipo de vida
     for (let i = 0; i < Math.min(nucleotideData.bases.length, 4); i++) {
       const base = nucleotideData.bases[i];
       const col = 3 + (i * 4); // Columnas 3, 7, 11, 15
       
-      // Dibujar fórmula química de la base (H, C, N, O, P)
-      for (let elementIdx = 0; elementIdx < base.formula.length; elementIdx++) {
-        const count = base.formula[elementIdx];
-        const row = 12 + elementIdx;
-        
-        if (count > 0) {
-          this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
-          // Representar cantidades con píxeles adicionales
-          if (count >= 4) {
-            this.setPixel(bitmap, colorMap, col + 1, row, 1, this.COLORS.GREEN);
-          }
-          if (count >= 7) {
-            this.setPixel(bitmap, colorMap, col - 1, row, 1, this.COLORS.GREEN);
-          }
-        }
-      }
+      // Dibujar fórmula química adaptada visualmente según elementos
+      this.drawAdaptedNucleotidePattern(bitmap, colorMap, base, col, elements);
     }
     
     // Azúcar (deoxyribose/ribose) - varía según si usa ADN o ARN
     const sugarFormula = nucleotideData.usesRNA ? [9,5,0,4,0] : [7,5,0,1,0]; // Ribosa vs Deoxyribosa
     this.drawChemicalFormula(bitmap, colorMap, 1, 12, sugarFormula);
+  }
+
+  /**
+   * Dibuja patrones visuales únicos de nucleótidos según los elementos del planeta
+   */
+  private static drawAdaptedNucleotidePattern(bitmap: number[], colorMap: number[], base: any, col: number, elements: number[]): void {
+    const fifthElement = elements[4]; // Quinto elemento (P, S, Mg, Ca, Fe, K, Na)
+    
+    // Debug detallado
+    console.log(`Dibujando nucleótido ${base.name} con elementos [${elements.join(',')}], quinto elemento: ${fifthElement}`);
+    console.log(`Fórmula del nucleótido: [${base.formula.join(',')}]`);
+    
+    // Dibujar patrón base estándar (H, C, N, O siempre en filas 12-15)
+    for (let elementIdx = 0; elementIdx < Math.min(4, base.formula.length); elementIdx++) {
+      const count = base.formula[elementIdx];
+      const row = 12 + elementIdx;
+      
+      if (count > 0) {
+        this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
+        
+        // Representar cantidades con píxeles adicionales
+        if (count >= 4) {
+          this.setPixel(bitmap, colorMap, col + 1, row, 1, this.COLORS.GREEN);
+        }
+        if (count >= 7) {
+          this.setPixel(bitmap, colorMap, col - 1, row, 1, this.COLORS.GREEN);
+        }
+      }
+    }
+    
+    // PATRÓN ÚNICO DEL QUINTO ELEMENTO (fila 16)
+    const fifthElementCount = base.formula[4] || 0;
+    if (fifthElementCount > 0) {
+      this.drawFifthElementPattern(bitmap, colorMap, col, 16, fifthElement, fifthElementCount);
+    }
+  }
+
+  /**
+   * Dibuja patrones visuales únicos para cada tipo de quinto elemento
+   */
+  private static drawFifthElementPattern(bitmap: number[], colorMap: number[], col: number, row: number, element: number, count: number): void {
+    // Patrones únicos según el elemento específico
+    switch (element) {
+      case 15: // Fósforo - Patrón clásico lineal (como Tierra)
+        this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
+        if (count >= 2) this.setPixel(bitmap, colorMap, col + 1, row, 1, this.COLORS.GREEN);
+        break;
+        
+      case 16: // Azufre - Patrón en L (enlaces direccionales)
+        this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
+        this.setPixel(bitmap, colorMap, col, row + 1, 1, this.COLORS.GREEN);
+        if (count >= 2) this.setPixel(bitmap, colorMap, col + 1, row, 1, this.COLORS.GREEN);
+        break;
+        
+      case 12: // Magnesio - Patrón de coordinación (centro + alrededores)
+        this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
+        this.setPixel(bitmap, colorMap, col - 1, row, 1, this.COLORS.GREEN);
+        this.setPixel(bitmap, colorMap, col + 1, row, 1, this.COLORS.GREEN);
+        break;
+        
+      case 20: // Calcio - Patrón cúbico (estructural)
+        this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
+        this.setPixel(bitmap, colorMap, col + 1, row, 1, this.COLORS.GREEN);
+        this.setPixel(bitmap, colorMap, col, row + 1, 1, this.COLORS.GREEN);
+        this.setPixel(bitmap, colorMap, col + 1, row + 1, 1, this.COLORS.GREEN);
+        break;
+        
+      case 26: // Hierro - Patrón de complejo (octaédrico)
+        this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
+        this.setPixel(bitmap, colorMap, col - 1, row, 1, this.COLORS.GREEN);
+        this.setPixel(bitmap, colorMap, col + 1, row, 1, this.COLORS.GREEN);
+        this.setPixel(bitmap, colorMap, col, row - 1, 1, this.COLORS.GREEN);
+        this.setPixel(bitmap, colorMap, col, row + 1, 1, this.COLORS.GREEN);
+        break;
+        
+      case 19: // Potasio - Patrón iónico disperso
+        this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
+        if (count >= 2) this.setPixel(bitmap, colorMap, col + 2, row, 1, this.COLORS.GREEN);
+        break;
+        
+      case 11: // Sodio - Similar al potasio pero más compacto
+        this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
+        if (count >= 2) this.setPixel(bitmap, colorMap, col + 1, row + 1, 1, this.COLORS.GREEN);
+        break;
+        
+      default: // Patrón por defecto
+        this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
+    }
   }
 
   /**
@@ -706,7 +784,7 @@ export class AreciboGenerator {
    * - Hélices laterales AZULES envolviendo el centro sin sobreponerse
    */
   private static drawCarbonBasedDoubleHelix(bitmap: number[], colorMap: number[], lifeForm: string, planetName: string, centerCol: number, startRow: number, height: number): void {
-    const genomicData = this.getGenomeSizeData(lifeForm, planetName, this.getElementsForLifeForm(lifeForm));
+    const genomicData = this.getGenomeSizeData(lifeForm, planetName, this.getElementsForLifeForm(lifeForm, planetName));
     
     // COLUMNA CENTRAL - 2 píxeles representando el NÚMERO de pares de bases
     const centerCol1 = 11;    // Primera columna del número binario
@@ -1311,7 +1389,7 @@ export class AreciboGenerator {
     return categories[lifeForm] || "carbon-based";
   }
 
-  private static getElementsForLifeForm(lifeForm: string): number[] {
+  private static getElementsForLifeForm(lifeForm: string, planetName?: string): number[] {
     // Elementos basados en DATOS REALES de abundancia en organismos vivos
     const elementSets: { [key: string]: number[] } = {
       "Bacteria": [1, 6, 7, 8, 15],    // H, C, N, O, P - elementos esenciales del DNA/RNA
@@ -1328,10 +1406,49 @@ export class AreciboGenerator {
       "Have I just found God?": [1, 2, 3, 4, 5] // H, He, Li, Be, B - primeros elementos del universo
     };
     
-    return elementSets[lifeForm] || [1, 6, 7, 8, 15]; // Default: elementos básicos de la vida
+    // Obtener elementos base
+    let baseElements = elementSets[lifeForm] || [1, 6, 7, 8, 15]; // Default: elementos básicos de la vida
+    
+    // Si no hay planetName, devolver los elementos base
+    if (!planetName || planetName === "Earth") {
+      return baseElements;
+    }
+    
+    // APLICAR VARIACIÓN PROCEDURAL POR PLANETA
+    const hash = this.hashString(lifeForm + planetName + "elements");
+    const rng = this.createSeededRandom(hash);
+    
+    // Para vida inteligente, generar variaciones bioquímicas realistas
+    if (lifeForm === "Intelligent Life") {
+      // Elementos base siempre presentes: H, C, N, O (esenciales para la vida)
+      const coreElements = [1, 6, 7, 8]; // H, C, N, O
+      
+      // Quinto elemento puede variar según el planeta
+      const possibleFifthElements = [
+        15, // P (fósforo) - DNA/RNA clásico como la Tierra
+        16, // S (azufre) - metabolismo alternativo  
+        12, // Mg (magnesio) - fotosíntesis/enzimas
+        20, // Ca (calcio) - estructuras/señalización
+        26, // Fe (hierro) - transporte de oxígeno
+        19, // K (potasio) - señalización neuronal
+        11  // Na (sodio) - equilibrio iónico
+      ];
+      
+      const fifthElementIndex = Math.floor(rng.random() * possibleFifthElements.length);
+      const fifthElement = possibleFifthElements[fifthElementIndex];
+      
+      const variedElements = [...coreElements, fifthElement];
+      const elementNames = { 11: 'Na', 12: 'Mg', 15: 'P', 16: 'S', 19: 'K', 20: 'Ca', 26: 'Fe' };
+      console.log(`🧪 ELEMENTOS GENERADOS para ${lifeForm} en ${planetName}: [${variedElements.join(', ')}] - ${elementNames[fifthElement] || fifthElement} como elemento clave`);
+      
+      return variedElements;
+    }
+    
+    // Para otras formas de vida, usar los elementos base sin variación
+    return baseElements;
   }
 
-  private static getNitrogenBases(lifeForm: string): string[] {
+  private static getNitrogenBases(lifeForm: string, planetName?: string): string[] {
     // Bases nitrogenadas REALES y especulativas científicamente fundamentadas
     const baseSets: { [key: string]: string[] } = {
       "Bacteria": ["A", "T", "G", "C"],         // DNA clásico - todas las bacterias
@@ -1348,7 +1465,52 @@ export class AreciboGenerator {
       "Have I just found God?": ["∞", "Ω", "Φ", "Ψ"]   // Símbolos cósmicos/matemáticos
     };
     
-    return baseSets[lifeForm] || ["A", "T", "G", "C"]; // Default: DNA estándar
+    // Obtener bases base
+    let baseBases = baseSets[lifeForm] || ["A", "T", "G", "C"]; // Default: DNA estándar
+    
+    // Si no hay planetName, devolver las bases base
+    if (!planetName || planetName === "Earth") {
+      return baseBases;
+    }
+    
+    // APLICAR VARIACIÓN PROCEDURAL POR PLANETA SOLO PARA VIDA INTELIGENTE
+    if (lifeForm === "Intelligent Life") {
+      const hash = this.hashString(lifeForm + planetName + "bases");
+      const rng = this.createSeededRandom(hash);
+      
+      // Bases clásicas del DNA terrestre
+      const standardBases = ["A", "T", "G", "C"];
+      
+      // Bases alternativas científicamente plausibles
+      const alternativeBases = [
+        "U", // Uracilo (RNA) - más estable en ciertos ambientes
+        "I", // Inosina - base wobble natural
+        "X", // Xantina - derivado de guanina
+        "D", // Diaminopurina - apareamiento más fuerte
+        "P", // Pseudouridina - RNA modificado
+        "M"  // 5-metilcitosina - epigenética
+      ];
+      
+      // 85% probabilidad de usar bases estándar, 15% de tener 1-2 bases alternativas
+      if (rng.random() < 0.85) {
+        return standardBases; // DNA clásico como la Tierra
+      } else {
+        // Reemplazar 1-2 bases por alternativas
+        const numReplacements = Math.floor(rng.random() * 2) + 1; // 1 o 2 reemplazos
+        const modifiedBases = [...standardBases];
+        
+        for (let i = 0; i < numReplacements; i++) {
+          const indexToReplace = Math.floor(rng.random() * 4);
+          const alternativeIndex = Math.floor(rng.random() * alternativeBases.length);
+          modifiedBases[indexToReplace] = alternativeBases[alternativeIndex];
+        }
+        
+        console.log(`Bases para ${lifeForm} en ${planetName}: [${modifiedBases.join(', ')}] - DNA modificado`);
+        return modifiedBases;
+      }
+    }
+    
+    return baseBases;
   }
 
   /**
@@ -1431,16 +1593,17 @@ export class AreciboGenerator {
     const hasMagnesium = elementMap["Mg"];
     
     // Bases clásicas pero adaptadas a elementos disponibles
+    // IMPORTANTE: Incluir 1 en la posición del quinto elemento para que se pueda sustituir
     const bases = [
-      // Adenina - siempre C5H5N5 si hay C,H,N
-      { name: "A", formula: this.adaptFormulaToElements([5,5,5,0,0], elementMap) },
-      // Timina/Uracilo - depende de si hay suficiente O
+      // Adenina - C5H5N5 + quinto elemento
+      { name: "A", formula: this.adaptFormulaToElements([5,5,5,0,1], elementMap) },
+      // Timina/Uracilo - incluye quinto elemento
       { name: elementMap["O"] && lifeForm !== "Vegetation" ? "T" : "U", 
-        formula: this.adaptFormulaToElements(elementMap["O"] ? [6,5,2,2,0] : [4,4,2,2,0], elementMap) },
-      // Guanina - C5H5N5O si hay O, sino C5H5N5
-      { name: "G", formula: this.adaptFormulaToElements([5,5,5, elementMap["O"] ? 1 : 0, 0], elementMap) },
-      // Citosina - C4H5N3O si hay O
-      { name: "C", formula: this.adaptFormulaToElements([5,4,3, elementMap["O"] ? 1 : 0, 0], elementMap) }
+        formula: this.adaptFormulaToElements(elementMap["O"] ? [6,5,2,2,1] : [4,4,2,2,1], elementMap) },
+      // Guanina - incluye quinto elemento
+      { name: "G", formula: this.adaptFormulaToElements([5,5,5, elementMap["O"] ? 1 : 0, 1], elementMap) },
+      // Citosina - incluye quinto elemento
+      { name: "C", formula: this.adaptFormulaToElements([5,4,3, elementMap["O"] ? 1 : 0, 1], elementMap) }
     ];
 
     return {
@@ -1561,24 +1724,51 @@ export class AreciboGenerator {
   }
 
   /**
-   * Adapta una fórmula química a los elementos disponibles
+   * Adapta una fórmula química a los elementos disponibles en el planeta
+   * Sustituye el fósforo (P) por el quinto elemento específico del planeta
    */
   private static adaptFormulaToElements(baseFormula: number[], elementMap: { [key: string]: boolean }): number[] {
-    const elementOrder = ["H", "C", "N", "O", "P"];
+    const elementOrder = ["H", "C", "N", "O", "P"]; // Orden estándar H-C-N-O-P
     const adaptedFormula = [...baseFormula];
     
-    // Si falta algún elemento esencial, sustituir por elementos disponibles
-    for (let i = 0; i < elementOrder.length; i++) {
-      if (!elementMap[elementOrder[i]] && adaptedFormula[i] > 0) {
-        // Buscar sustituto disponible
-        if (elementOrder[i] === "C" && elementMap["Si"]) {
-          // Silicio puede sustituir carbono
-          adaptedFormula[i] = 0; // Quitar carbono
-          // Agregar silicio (posición 5 en nuestro array extendido)
+    console.log(`🔬 ADAPTANDO FÓRMULA: [${baseFormula.join(',')}] con elementos disponibles:`, Object.keys(elementMap).filter(k => elementMap[k]));
+    
+    // SUSTITUCIÓN DEL QUINTO ELEMENTO (originalmente P)
+    // El fósforo puede ser sustituido por otros elementos en diferentes planetas
+    if (adaptedFormula[4] > 0) { // Si la fórmula base usa fósforo
+      const substitutions: { [key: string]: number } = {
+        "S":  1,   // Azufre - similar electronegatividad, puede formar enlaces similares
+        "Mg": 0.5, // Magnesio - valencia diferente, usa menos cantidad
+        "Ca": 0.5, // Calcio - similar al magnesio
+        "Fe": 1,   // Hierro - puede formar complejos estables
+        "K":  1,   // Potasio - catión monovalente
+        "Na": 1    // Sodio - similar al potasio
+      };
+      
+      // Buscar qué quinto elemento está disponible
+      for (const [element, multiplier] of Object.entries(substitutions)) {
+        if (elementMap[element] && !elementMap["P"]) {
+          // Sustituir fósforo por el elemento del planeta
+          const originalP = adaptedFormula[4];
+          adaptedFormula[4] = Math.max(1, Math.floor(originalP * multiplier));
+          break;
         }
-        // Más sustituciones químicamente válidas...
       }
     }
+    
+    // AJUSTES ADICIONALES BASADOS EN ELEMENTOS DISPONIBLES
+    // Si hay azufre, puede formar enlaces adicionales (más estables)
+    if (elementMap["S"] && adaptedFormula[4] > 0) {
+      adaptedFormula[3] = Math.max(1, adaptedFormula[3] - 1); // Menos oxígeno
+      adaptedFormula[4] = adaptedFormula[4] + 1; // Más azufre
+    }
+    
+    // Si hay magnesio, coordina con oxígeno (estructuras más estables)
+    if (elementMap["Mg"] && adaptedFormula[3] > 0) {
+      adaptedFormula[3] = adaptedFormula[3] + 1; // Más oxígeno para coordinación
+    }
+    
+    console.log(`🔬 FÓRMULA ADAPTADA: [${baseFormula.join(',')}] → [${adaptedFormula.join(',')}]`);
     
     return adaptedFormula;
   }
