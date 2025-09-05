@@ -758,7 +758,7 @@ export class AreciboGenerator {
         this.drawCarbonBasedDoubleHelix(bitmap, colorMap, lifeForm, planetName, centerCol, startRow, height);
         break;
       case "silicon-based":
-        this.drawSiliconBasedStructure(bitmap, colorMap, centerCol, startRow, height);
+        this.drawSiliconBasedStructure(bitmap, colorMap, centerCol, startRow, height, lifeForm, planetName);
         break;
       case "robotic":
         this.drawDigitalDataStructure(bitmap, colorMap, centerCol, startRow, height);
@@ -886,10 +886,30 @@ export class AreciboGenerator {
    * - Centro: 2 píxeles representando NÚMERO de unidades cristalinas
    * - Redes laterales AZULES envolviendo sin sobreponerse
    */
-  private static drawSiliconBasedStructure(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Simular complejidad cristalina como "número de unidades tetraédricas"
-    const crystallineUnits = 1000000; // 1M unidades cristalinas hipotéticas
+  private static drawSiliconBasedStructure(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, lifeForm: string, planetName: string): void {
+    // Generar complejidad cristalina proceduralmente
+    const hash = this.hashString(lifeForm + planetName + "crystalline");
+    const rng = this.createSeededRandom(hash);
+    
+    // Diferentes tipos de estructuras cristalinas con diferentes complejidades
+    const structureTypes = [
+      { units: 500000, name: "Cuarzo simple" },      // SiO2 básico
+      { units: 1200000, name: "Feldespato complejo" }, // Aluminosilicatos
+      { units: 800000, name: "Olivino" },            // Nesosilicatos
+      { units: 2000000, name: "Zeolita porosa" },    // Estructuras microporosas
+      { units: 1500000, name: "Granate denso" },     // Estructuras cúbicas complejas
+      { units: 900000, name: "Piroxeno cadena" },    // Inosilicatos
+      { units: 1800000, name: "Matriz silicática" }  // Tectosilicatos complejos
+    ];
+    
+    const structureIndex = Math.floor(rng.random() * structureTypes.length);
+    const selectedStructure = structureTypes[structureIndex];
+    const crystallineUnits = selectedStructure.units;
     const binaryString = crystallineUnits.toString(2);
+    
+    console.log(`🔮 ESTRUCTURA CRISTALINA para ${lifeForm} en ${planetName}: ${selectedStructure.name} (${crystallineUnits} unidades)`);
+    
+    const patternType = Math.floor(rng.random() * 3); // Diferentes patrones de red
     
     const centerCol1 = 11;    // Primera columna del número
     const centerCol2 = 12;    // Segunda columna del número
@@ -918,7 +938,19 @@ export class AreciboGenerator {
       }
       
       // REDES CRISTALINAS AZULES - CON SEPARACIÓN DE 2PX DEL TRONCO CENTRAL
-      const crystalPhase = (i * Math.PI * 2) / 6; // Estructura hexagonal
+      let crystalPhase: number;
+      
+      // Diferentes patrones según el tipo de estructura cristalina
+      switch (patternType) {
+        case 0: // Hexagonal (cuarzo, olivino)
+          crystalPhase = (i * Math.PI * 2) / 6;
+          break;
+        case 1: // Cúbico (granate, feldespato)
+          crystalPhase = (i * Math.PI * 2) / 4;
+          break;
+        default: // Complejo/irregular (zeolita, matriz)
+          crystalPhase = (i * Math.PI * 2) / 8 + rng.random() * 0.5;
+      }
       
       // Red izquierda - DESDE BORDE ABSOLUTO (col 0) HASTA COL 9 (2px separación del centro)
       const leftCrystalRange = 9 - 0; // 9 columnas disponibles
@@ -1523,6 +1555,33 @@ export class AreciboGenerator {
       const variedElements = [...coreElements, fifthElement];
       const elementNames = { 12: 'Mg', 16: 'S', 20: 'Ca', 25: 'Mn', 26: 'Fe', 29: 'Cu', 30: 'Zn', 42: 'Mo' };
       console.log(`🌱 ELEMENTOS GENERADOS para ${lifeForm} en ${planetName}: [${variedElements.join(', ')}] - ${elementNames[fifthElement] || fifthElement} como elemento clave para fotosíntesis/metabolismo`);
+      
+      return variedElements;
+    }
+    
+    // APLICAR VARIACIÓN PROCEDURAL PARA SILICON-BASED LIFE
+    if (lifeForm === "Silicon-Based Life") {
+      // Elementos base siempre presentes: Si, O (estructura base de silicatos)
+      const coreElements = [14, 8]; // Si, O
+      
+      // Elementos adicionales pueden variar según las condiciones geológicas del planeta
+      const possibleSiliconElements = [
+        [1, 13, 16], // H, Al, S - silicatos hidratados con azufre
+        [13, 26, 12], // Al, Fe, Mg - silicatos ferromagnesianos
+        [20, 19, 11], // Ca, K, Na - feldespatos alcalinos
+        [26, 24, 28], // Fe, Cr, Ni - silicatos metálicos pesados
+        [12, 25, 30], // Mg, Mn, Zn - silicatos con metales de transición
+        [22, 23, 27], // Ti, V, Co - silicatos de metales refractarios
+        [40, 39, 38], // Zr, Y, Sr - silicatos de tierras raras
+        [3, 4, 9],    // Li, Be, F - silicatos ligeros pegmatíticos
+        [5, 15, 17]   // B, P, Cl - silicatos con no-metales complejos
+      ];
+      
+      const elementSetIndex = Math.floor(rng.random() * possibleSiliconElements.length);
+      const additionalElements = possibleSiliconElements[elementSetIndex];
+      
+      const variedElements = [...coreElements, ...additionalElements];
+      console.log(`🔮 ELEMENTOS GENERADOS para ${lifeForm} en ${planetName}: [${variedElements.join(', ')}] - química de silicatos especializada`);
       
       return variedElements;
     }
@@ -2604,40 +2663,177 @@ export class AreciboGenerator {
   }
 
   /**
-   * Forma basada en silicio - estructura cristalina simple
+   * Forma basada en silicio - múltiples estructuras cristalinas y minerales
+   * Diferentes tipos según geología planetaria
    */
   private static drawSiliconBasedForm(bitmap: number[], colorMap: number[], cols: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
-    // Cristal en forma de diamante usando las 9 líneas completas
-    // Pico superior (fila 0)
+    // Usar el generador RNG para determinar el tipo de estructura cristalina
+    const crystalType = Math.floor(rng.random() * 7);
+    
+    switch (crystalType) {
+      case 0:
+        this.drawQuartzCrystal(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case 1:
+        this.drawFeldsparStructure(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case 2:
+        this.drawOlivineNetwork(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case 3:
+        this.drawZeoliteFramework(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case 4:
+        this.drawGarnetStructure(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case 5:
+        this.drawPyroxeneChain(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      default:
+        this.drawSilicateMatrix(bitmap, colorMap, centerCol, startRow, height);
+    }
+  }
+
+  /**
+   * Cuarzo - estructura hexagonal
+   */
+  private static drawQuartzCrystal(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Estructura hexagonal del cuarzo
+    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
+    
+    // Hexágono central
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 2, 1, this.COLORS.RED);
+    
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 3, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 3, 1, this.COLORS.RED);
+    
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 4, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 4, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 5, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Feldespato - estructura tridimensional compleja
+   */
+  private static drawFeldsparStructure(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Estructura de marco tridimensional
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.RED);
+    
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.RED);
+    
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.RED);
+    
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 4, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 4, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Olivino - estructura de islas de tetraedros
+   */
+  private static drawOlivineNetwork(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Tetraedros aislados conectados por cationes
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
     
-    // Expansión (filas 1-2)
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
+    
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
+    
+    // Segundo tetraedro
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 3, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 3, 1, this.COLORS.RED);
+    
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 4, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 4, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Zeolita - estructura microporosa
+   */
+  private static drawZeoliteFramework(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Marco con cavidades y canales
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow, 1, this.COLORS.RED);
+    
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
+    
+    // Cavidad central
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 2, 1, this.COLORS.RED);
+    
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 3, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.RED);
+    
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 4, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Granate - estructura compleja cúbica
+   */
+  private static drawGarnetStructure(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Estructura cúbica compleja
+    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
+    
+    for (let c = -2; c <= 2; c++) {
+      this.setPixel(bitmap, colorMap, centerCol + c, startRow + 1, 1, this.COLORS.RED);
+    }
+    
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 2, 1, this.COLORS.RED);
+    
+    for (let c = -1; c <= 1; c++) {
+      this.setPixel(bitmap, colorMap, centerCol + c, startRow + 3, 1, this.COLORS.RED);
+    }
+    
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 4, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Piroxeno - cadenas de tetraedros
+   */
+  private static drawPyroxeneChain(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Cadenas simples de tetraedros
+    for (let r = 0; r < Math.min(6, height); r++) {
+      this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
+      if (r % 2 === 0) {
+        this.setPixel(bitmap, colorMap, centerCol - 1, startRow + r, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 1, startRow + r, 1, this.COLORS.RED);
+      }
+    }
+  }
+
+  /**
+   * Matriz de silicatos general - red compleja
+   */
+  private static drawSilicateMatrix(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Red tridimensional compleja
+    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
     
     for (let c = -2; c <= 2; c++) {
       this.setPixel(bitmap, colorMap, centerCol + c, startRow + 2, 1, this.COLORS.RED);
     }
     
-    // Centro ancho (filas 3-5) - la parte más ancha del cristal
-    for (let r = 3; r <= 5; r++) {
-      for (let c = -3; c <= 3; c++) {
-        this.setPixel(bitmap, colorMap, centerCol + c, startRow + r, 1, this.COLORS.RED);
-      }
-    }
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 3, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.RED);
     
-    // Contracción gradual (filas 6-7)
-    for (let c = -2; c <= 2; c++) {
-      this.setPixel(bitmap, colorMap, centerCol + c, startRow + 6, 1, this.COLORS.RED);
-    }
-    
-    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 7, 1, this.COLORS.RED);
-    this.setPixel(bitmap, colorMap, centerCol, startRow + 7, 1, this.COLORS.RED);
-    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 7, 1, this.COLORS.RED);
-    
-    // Base final (fila 8)
-    this.setPixel(bitmap, colorMap, centerCol, startRow + 8, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 4, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 5, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 5, 1, this.COLORS.RED);
   }
 
   /**
