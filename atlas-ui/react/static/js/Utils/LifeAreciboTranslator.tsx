@@ -33,7 +33,8 @@ export class AreciboGenerator {
     BLUE: 4,     // ADN/Estructura genética, Estatura
     ORANGE: 5,   // (No usado en nueva implementación)
     RED: 6,      // Figura de forma de vida
-    YELLOW: 7    // Sistema solar
+    YELLOW: 7,   // Sistema solar
+    LILAC: 8     // Antenas
   };
 
   public static async generate(config: AreciboConfig): Promise<AreciboMessage> {
@@ -2970,7 +2971,7 @@ export class AreciboGenerator {
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    const colors = ['#000000', '#FFFFFF', '#9966CC', '#00FF00', '#0066FF', '#FF6600', '#FF0000', '#FFFF00'];
+    const colors = ['#000000', '#FFFFFF', '#9966CC', '#00FF00', '#0066FF', '#FF6600', '#FF0000', '#FFFF00', '#B19CD9'];
     
     for (let y = 0; y < message.height; y++) {
       for (let x = 0; x < message.width; x++) {
@@ -5057,15 +5058,15 @@ export class AreciboGenerator {
    */
   private static drawParabolicAntenna(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
     // Base/soporte
-    this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.LILAC);
     
     // Plato parabólico (semicírculo)
-    this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.LILAC);
   }
 
   /**
@@ -5074,14 +5075,14 @@ export class AreciboGenerator {
   private static drawRadioTower(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
     // Torre principal (vertical)
     for (let i = 0; i < 6; i++) {
-      this.setPixel(bitmap, colorMap, centerCol, startRow + i, 1, this.COLORS.YELLOW);
+      this.setPixel(bitmap, colorMap, centerCol, startRow + i, 1, this.COLORS.LILAC);
     }
     
     // Antenas horizontales
-    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 3, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 3, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.LILAC);
   }
 
   /**
@@ -5092,10 +5093,10 @@ export class AreciboGenerator {
     for (let i = -1; i <= 1; i++) {
       const col = centerCol + i * 2;
       // Base
-      this.setPixel(bitmap, colorMap, col, startRow + 2, 1, this.COLORS.YELLOW);
+      this.setPixel(bitmap, colorMap, col, startRow + 2, 1, this.COLORS.LILAC);
       // Antena
-      this.setPixel(bitmap, colorMap, col, startRow + 1, 1, this.COLORS.YELLOW);
-      this.setPixel(bitmap, colorMap, col, startRow, 1, this.COLORS.YELLOW);
+      this.setPixel(bitmap, colorMap, col, startRow + 1, 1, this.COLORS.LILAC);
+      this.setPixel(bitmap, colorMap, col, startRow, 1, this.COLORS.LILAC);
     }
   }
 
@@ -5123,17 +5124,17 @@ export class AreciboGenerator {
    */
   private static drawCrystallineAntenna(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
     // Centro
-    this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.LILAC);
     
     // Cristales expandiéndose
-    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.LILAC);
     
     // Base amplia
-    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 3, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 3, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 3, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 3, 1, this.COLORS.LILAC);
   }
 
   /**
@@ -5141,17 +5142,17 @@ export class AreciboGenerator {
    */
   private static drawSiliconPyramid(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
     // Punta
-    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.LILAC);
     // Nivel 2
-    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.LILAC);
     // Base
-    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 2, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 2, 1, this.COLORS.LILAC);
   }
 
   /**
@@ -5159,15 +5160,15 @@ export class AreciboGenerator {
    */
   private static drawHexagonalArray(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
     // Centro
-    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.LILAC);
     
     // Hexágono alrededor
-    this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.LILAC);
   }
 
   /**
@@ -5194,24 +5195,24 @@ export class AreciboGenerator {
    */
   private static drawDimensionalVortex(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
     // Centro del vórtice
-    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.LILAC);
     
     // Espiral hacia afuera
     // Nivel 1 - cruz inmediata
-    this.setPixel(bitmap, colorMap, centerCol, startRow - 1, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol, startRow - 1, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.LILAC);
     
     // Nivel 2 - patrón espiral
-    this.setPixel(bitmap, colorMap, centerCol - 1, startRow - 1, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol + 1, startRow - 1, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow - 1, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow - 1, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.LILAC);
     
     // Nivel 3 - exterior del vórtice
-    this.setPixel(bitmap, colorMap, centerCol - 2, startRow - 1, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow - 1, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.LILAC);
   }
 
   /**
@@ -5219,7 +5220,7 @@ export class AreciboGenerator {
    */
   private static drawEnergyField(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, rng: { random: () => number }): void {
     // Núcleo energético
-    this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.LILAC);
     
     // Fluctuaciones de energía procedurales
     for (let i = 0; i < 8; i++) {
@@ -5229,14 +5230,14 @@ export class AreciboGenerator {
         
         // Evitar sobreescribir el centro
         if (offsetX !== 0 || offsetY !== 0) {
-          this.setPixel(bitmap, colorMap, centerCol + offsetX, startRow + 2 + offsetY, 1, this.COLORS.YELLOW);
+          this.setPixel(bitmap, colorMap, centerCol + offsetX, startRow + 2 + offsetY, 1, this.COLORS.LILAC);
         }
       }
     }
     
     // Campo base mínimo garantizado
-    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.LILAC);
   }
 
   /**
@@ -5245,29 +5246,29 @@ export class AreciboGenerator {
   private static drawInterdimensionalPortal(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
     // Marco del portal - rectángulo hueco
     // Esquina superior izquierda a derecha
-    this.setPixel(bitmap, colorMap, centerCol - 2, startRow - 1, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol - 1, startRow - 1, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol, startRow - 1, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol + 1, startRow - 1, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol + 2, startRow - 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow - 1, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow - 1, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol, startRow - 1, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow - 1, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow - 1, 1, this.COLORS.LILAC);
     
     // Lados verticales
-    this.setPixel(bitmap, colorMap, centerCol - 2, startRow, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol + 2, startRow, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.LILAC);
     
     // Esquina inferior izquierda a derecha
-    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 2, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 2, 1, this.COLORS.LILAC);
     
     // Efecto dimensional en el centro (punto de singularidad)
     // Dejamos el centro (centerCol, startRow) y (centerCol, startRow+1) vacíos para representar el portal
     // Solo agregamos un pequeño punto central
-    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.LILAC);
   }
 
   /**
@@ -5275,7 +5276,7 @@ export class AreciboGenerator {
    */
   private static drawTelepathicWaves(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
     // Centro - fuente telepática
-    this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.LILAC);
     
     // Ondas expandiéndose - patrón procedural basado en el RNG
     const waveCount = 3 + Math.floor(rng.random() * 3); // 3-5 ondas
@@ -5289,24 +5290,24 @@ export class AreciboGenerator {
         // Ondas circulares aproximadas en pixel art
         if (radius === 1) {
           // Primera onda - cruz
-          this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.YELLOW);
-          this.setPixel(bitmap, colorMap, centerCol, startRow + 4, 1, this.COLORS.YELLOW);
-          this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 3, 1, this.COLORS.YELLOW);
-          this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.YELLOW);
+          this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.LILAC);
+          this.setPixel(bitmap, colorMap, centerCol, startRow + 4, 1, this.COLORS.LILAC);
+          this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 3, 1, this.COLORS.LILAC);
+          this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.LILAC);
         } else if (radius === 2) {
           // Segunda onda - octágono aproximado
-          this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.YELLOW);
-          this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.YELLOW);
-          this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 5, 1, this.COLORS.YELLOW);
-          this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 5, 1, this.COLORS.YELLOW);
-          this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 3, 1, this.COLORS.YELLOW);
-          this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 3, 1, this.COLORS.YELLOW);
+          this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.LILAC);
+          this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.LILAC);
+          this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 5, 1, this.COLORS.LILAC);
+          this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 5, 1, this.COLORS.LILAC);
+          this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 3, 1, this.COLORS.LILAC);
+          this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 3, 1, this.COLORS.LILAC);
         } else if (radius >= 3) {
           // Ondas exteriores - puntos dispersos
           const angle = wave * 1.5 + rng.random() * 0.5;
           const x = Math.round(Math.cos(angle) * radius);
           const y = Math.round(Math.sin(angle) * radius);
-          this.setPixel(bitmap, colorMap, centerCol + x, startRow + 3 + y, 1, this.COLORS.YELLOW);
+          this.setPixel(bitmap, colorMap, centerCol + x, startRow + 3 + y, 1, this.COLORS.LILAC);
         }
       }
     }
@@ -5336,19 +5337,19 @@ export class AreciboGenerator {
    */
   private static drawSymmetricSpikes(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
     // Cuadrado central
-    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.LILAC);
     
     // Pinchos en las 4 direcciones
-    this.setPixel(bitmap, colorMap, centerCol, startRow - 1, 1, this.COLORS.YELLOW); // Arriba
-    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.YELLOW); // Abajo
-    this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.YELLOW); // Izquierda
-    this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.YELLOW); // Derecha
+    this.setPixel(bitmap, colorMap, centerCol, startRow - 1, 1, this.COLORS.LILAC); // Arriba
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.LILAC); // Abajo
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.LILAC); // Izquierda
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.LILAC); // Derecha
     
     // Pinchos diagonales
-    this.setPixel(bitmap, colorMap, centerCol - 1, startRow - 1, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol + 1, startRow - 1, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow - 1, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow - 1, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.LILAC);
   }
 
   /**
@@ -5358,15 +5359,15 @@ export class AreciboGenerator {
     // Grid 3x3 de sensores
     for (let y = 0; y < 3; y++) {
       for (let x = 0; x < 3; x++) {
-        this.setPixel(bitmap, colorMap, centerCol - 1 + x, startRow + y, 1, this.COLORS.YELLOW);
+        this.setPixel(bitmap, colorMap, centerCol - 1 + x, startRow + y, 1, this.COLORS.LILAC);
       }
     }
     
     // Conexiones externas
-    this.setPixel(bitmap, colorMap, centerCol, startRow - 1, 1, this.COLORS.YELLOW); // Arriba
-    this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.YELLOW); // Abajo
-    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.YELLOW); // Izquierda
-    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.YELLOW); // Derecha
+    this.setPixel(bitmap, colorMap, centerCol, startRow - 1, 1, this.COLORS.LILAC); // Arriba
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.LILAC); // Abajo
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.LILAC); // Izquierda
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.LILAC); // Derecha
   }
 
   /**
@@ -5374,21 +5375,21 @@ export class AreciboGenerator {
    */
   private static drawMultiArmAntenna(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
     // Centro
-    this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.LILAC);
     
     // Brazos principales
-    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.LILAC);
     
     // Brazos laterales
-    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.LILAC);
     
     // Terminales de los brazos
-    this.setPixel(bitmap, colorMap, centerCol - 2, startRow, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol + 2, startRow, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow, 1, this.COLORS.LILAC);
   }
 
   /**
@@ -5396,34 +5397,34 @@ export class AreciboGenerator {
    */
   private static drawDoubleSlitExperiment(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     // Fuente de partículas (izquierda)
-    this.setPixel(bitmap, colorMap, centerCol - 4, startRow + 2, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol - 4, startRow + 2, 1, this.COLORS.LILAC);
     
     // Barrera con doble rendija (centro)
     // Barrera superior
-    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.LILAC);
     // Rendija 1 (espacio vacío en startRow + 2)
     // Barrera medio
-    this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.LILAC);
     // Rendija 2 (espacio vacío en startRow + 4)  
     // Barrera inferior
-    this.setPixel(bitmap, colorMap, centerCol, startRow + 5, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, centerCol, startRow + 6, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 5, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 6, 1, this.COLORS.LILAC);
     
     // Patrón de interferencia (derecha) - franjas alternadas
     const screenCol = centerCol + 3;
     
     // Franja central brillante
-    this.setPixel(bitmap, colorMap, screenCol, startRow + 3, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, screenCol, startRow + 3, 1, this.COLORS.LILAC);
     
     // Franjas secundarias
-    this.setPixel(bitmap, colorMap, screenCol, startRow + 1, 1, this.COLORS.YELLOW);
-    this.setPixel(bitmap, colorMap, screenCol, startRow + 5, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, screenCol, startRow + 1, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, screenCol, startRow + 5, 1, this.COLORS.LILAC);
     
     // Líneas de trayectoria (opcionales)
-    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.YELLOW); // Desde fuente
-    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.YELLOW); // Hacia rendija 1
-    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 4, 1, this.COLORS.YELLOW); // Hacia rendija 2
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.LILAC); // Desde fuente
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.LILAC); // Hacia rendija 1
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 4, 1, this.COLORS.LILAC); // Hacia rendija 2
   }
 
   /**
