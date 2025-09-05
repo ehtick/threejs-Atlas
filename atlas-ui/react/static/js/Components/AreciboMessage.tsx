@@ -1,6 +1,6 @@
 // atlas-ui/react/static/js/Components/AreciboMessage.tsx
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { AreciboGenerator, AreciboConfig, AreciboMessage as AreciboMessageType } from "../Utils/AreciboGenerator";
+import { AreciboGenerator, AreciboConfig, AreciboMessage as AreciboMessageType } from "../Utils/LifeAreciboTranslator";
 
 interface AreciboMessageProps {
   lifeForm: string;

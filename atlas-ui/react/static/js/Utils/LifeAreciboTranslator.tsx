@@ -57,8 +57,11 @@ export class AreciboGenerator {
     // Sección 3: Nucleótidos (filas 12-27) - COLOR VERDE
     this.drawNucleotides(bitmap, colorMap, config.lifeForm);
     
-    // Sección 4: Doble hélice del ADN (filas 28-42) - HELICES AZULES + CENTRO BLANCO
-    this.drawDNADoubleHelix(bitmap, colorMap, config.lifeForm, 28, 15);
+    // Línea en blanco entre nucleótidos y ADN
+    this.drawBlankLine(bitmap, colorMap, 28);
+    
+    // Sección 4: Doble hélice del ADN (filas 29-43) - HELICES AZULES + CENTRO BLANCO
+    this.drawDNADoubleHelix(bitmap, colorMap, config.lifeForm, 29, 15);
     
     return {
       bitmap,
