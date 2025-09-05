@@ -4988,24 +4988,25 @@ export class AreciboGenerator {
     // Crear un generador de números pseudoaleatorios basado en el nombre del planeta
     const rng = this.createPlanetRNG(planetName);
     
+    // Dibujar la antena en las primeras 7 filas (64-70)
     switch (lifeForm) {
       case "Intelligent Life":
-        this.drawIntelligentLifeAntenna(bitmap, colorMap, centerCol, startRow, height, rng);
+        this.drawIntelligentLifeAntenna(bitmap, colorMap, centerCol, startRow, height - 2, rng);
         break;
       case "Silicon-Based Life":
-        this.drawSiliconBasedAntenna(bitmap, colorMap, centerCol, startRow, height, rng);
+        this.drawSiliconBasedAntenna(bitmap, colorMap, centerCol, startRow, height - 2, rng);
         break;
       case "Conscious Gas":
-        this.drawTelepathicWaves(bitmap, colorMap, centerCol, startRow, height, rng);
+        this.drawTelepathicWaves(bitmap, colorMap, centerCol, startRow, height - 2, rng);
         break;
       case "Non-Physical Entity":
-        this.drawNonPhysicalTransmission(bitmap, colorMap, centerCol, startRow, height, rng);
+        this.drawNonPhysicalTransmission(bitmap, colorMap, centerCol, startRow, height - 2, rng);
         break;
       case "Robotic Entities":
-        this.drawRoboticAntenna(bitmap, colorMap, centerCol, startRow, height, rng);
+        this.drawRoboticAntenna(bitmap, colorMap, centerCol, startRow, height - 2, rng);
         break;
       case "Have I just found God?":
-        this.drawDoubleSlitExperiment(bitmap, colorMap, centerCol, startRow, height);
+        this.drawDoubleSlitExperiment(bitmap, colorMap, centerCol, startRow, height - 2);
         break;
       case "Animal Life":
       case "Vegetation":  
@@ -5014,6 +5015,87 @@ export class AreciboGenerator {
       default:
         // Sin antena - estas formas de vida no transmiten mensajes
         break;
+    }
+    
+    // Dibujar el tamaño de la antena en las últimas 2 filas (71-72)
+    if (lifeForm !== "Animal Life" && lifeForm !== "Vegetation" && 
+        lifeForm !== "Bacteria" && lifeForm !== "Vegetable Animals") {
+      this.drawAntennaSize(bitmap, colorMap, lifeForm, planetName, startRow + height - 2, rng);
+    }
+  }
+
+  /**
+   * Dibuja el tamaño de la antena en formato Arecibo en las dos últimas filas
+   */
+  private static drawAntennaSize(bitmap: number[], colorMap: number[], lifeForm: string, planetName: string, startRow: number, rng: { random: () => number }): void {
+    // Generar tamaño de antena basado en el tipo de vida
+    let antennaSize: number;
+    
+    switch (lifeForm) {
+      case "Intelligent Life":
+        // Similar a la Tierra: 50-500 metros
+        antennaSize = Math.floor(50 + rng.random() * 450);
+        break;
+      case "Silicon-Based Life":
+        // Cristalino: 100-1000 metros
+        antennaSize = Math.floor(100 + rng.random() * 900);
+        break;
+      case "Conscious Gas":
+        // Telepático: 10-200 metros (más pequeño, más concentrado)
+        antennaSize = Math.floor(10 + rng.random() * 190);
+        break;
+      case "Non-Physical Entity":
+        // Interdimensional: 1-2000 metros (rango muy amplio)
+        antennaSize = Math.floor(1 + rng.random() * 1999);
+        break;
+      case "Robotic Entities":
+        // Robótico: 200-800 metros (precisión tecnológica)
+        antennaSize = Math.floor(200 + rng.random() * 600);
+        break;
+      case "Have I just found God?":
+        // Cuántico: número especial, siempre 137 (constante de estructura fina)
+        antennaSize = 137;
+        break;
+      default:
+        antennaSize = 305; // Por defecto, como Arecibo
+        break;
+    }
+    
+    // Formato original de Arecibo para el tamaño de la antena:
+    // Primera fila:    "       x x  x        " (7 espacios, número, espacios)
+    // Segunda fila:    "xxxx  x xxxxx  xxxx  " (ancho visual + número central)
+    
+    // Convertir a binario (10 bits máximo para mantener el formato compacto)
+    // Limitamos a 1023 metros máximo para que quepa en 10 bits
+    if (antennaSize > 1023) antennaSize = 1023;
+    const binary = antennaSize.toString(2).padStart(10, '0');
+    
+    // Primera fila: solo el número en la parte central (bits 0-4)
+    // Empezamos en columna 7 para centrar
+    for (let i = 0; i < 5; i++) {
+      if (binary[i] === '1') {
+        const col = 7 + i * 2;
+        this.setPixel(bitmap, colorMap, col, startRow, 1, this.COLORS.WHITE);
+      }
+    }
+    
+    // Segunda fila: barras laterales + número central (bits 5-9)
+    // Barras izquierdas (simulan ancho de antena)
+    for (let i = 0; i < 4; i++) {
+      this.setPixel(bitmap, colorMap, i, startRow + 1, 1, this.COLORS.WHITE);
+    }
+    
+    // Número central (bits 5-9)
+    for (let i = 5; i < 10; i++) {
+      if (binary[i] === '1') {
+        const col = 6 + (i - 5) * 2;
+        this.setPixel(bitmap, colorMap, col, startRow + 1, 1, this.COLORS.WHITE);
+      }
+    }
+    
+    // Barras derechas (simulan ancho de antena)
+    for (let i = 0; i < 4; i++) {
+      this.setPixel(bitmap, colorMap, 19 + i, startRow + 1, 1, this.COLORS.WHITE);
     }
   }
 
