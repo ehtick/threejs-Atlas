@@ -10,20 +10,37 @@ interface AreciboMessageProps {
 }
 
 const AreciboMessage: React.FC<AreciboMessageProps> = ({ lifeForm, planetName, className = "", scale = 8 }) => {
-  const messageData = useMemo(() => {
-    const config: AreciboConfig = {
-      lifeForm,
-      planetName,
-      width: 23,
-      height: 73
-    };
-    return AreciboGenerator.generate(config);
-  }, [lifeForm, planetName]);
+  const [messageData, setMessageData] = useState<AreciboMessageType | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isAnimating, setIsAnimating] = useState(true);
   const animationFrameRef = useRef<number | undefined>(undefined);
   const revealProgressRef = useRef(0);
+
+  // Generate message data asynchronously
+  useEffect(() => {
+    const generateMessage = async () => {
+      setIsLoading(true);
+      try {
+        const config: AreciboConfig = {
+          lifeForm,
+          planetName,
+          width: 23,
+          height: 73
+        };
+        const data = await AreciboGenerator.generate(config);
+        setMessageData(data);
+      } catch (error) {
+        console.error('Error generating Arecibo message:', error);
+        // You could set an error state here if needed
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    generateMessage();
+  }, [lifeForm, planetName]);
 
   useEffect(() => {
     if (!canvasRef.current || !messageData) return;
@@ -48,7 +65,7 @@ const AreciboMessage: React.FC<AreciboMessageProps> = ({ lifeForm, planetName, c
       const rowsToReveal = Math.floor(revealProgressRef.current * messageData.height);
 
       // Draw the message bits with animation using color map
-      const colors = ['#000000', '#FFFFFF', '#9966CC', '#00FF00', '#0066FF', '#FF6600'];
+      const colors = ['#000000', '#FFFFFF', '#9966CC', '#00FF00', '#0066FF', '#FF6600', '#FF0000', '#FFFF00'];
       
       for (let y = 0; y < Math.min(rowsToReveal, messageData.height); y++) {
         for (let x = 0; x < messageData.width; x++) {
@@ -97,6 +114,31 @@ const AreciboMessage: React.FC<AreciboMessageProps> = ({ lifeForm, planetName, c
     setIsAnimating(true);
     revealProgressRef.current = 0;
   };
+
+  if (isLoading) {
+    return (
+      <div className={`arecibo-message-container ${className}`}>
+        <div className="relative border border-green-500/30 rounded bg-black flex items-center justify-center" style={{ minHeight: "300px" }}>
+          <div className="text-green-400 text-sm">
+            <div className="animate-pulse">Generating Arecibo Message...</div>
+            <div className="text-xs text-gray-400 mt-2 text-center">Fetching solar system data...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!messageData) {
+    return (
+      <div className={`arecibo-message-container ${className}`}>
+        <div className="relative border border-red-500/30 rounded bg-black flex items-center justify-center" style={{ minHeight: "300px" }}>
+          <div className="text-red-400 text-sm">
+            Error generating Arecibo message
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`arecibo-message-container ${className}`}>
