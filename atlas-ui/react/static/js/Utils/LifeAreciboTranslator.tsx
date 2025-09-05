@@ -850,26 +850,23 @@ export class AreciboGenerator {
   }
 
   /**
-   * ENTIDAD DIVINA - Geometría sagrada análoga a nucleótidos
+   * ENTIDAD DIVINA - Geometría sagrada análoga a nucleótidos con cruces católicas
    */
   private static drawDivineInformation(bitmap: number[], colorMap: number[]): void {
-    // Cuatro constantes cósmicas fundamentales - "nucleótidos divinos"
+    // Cuatro cruces católicas representando "nucleótidos divinos" 
     
-    // Filas 12-15: Pi, Phi, e, raíz de 2 (representadas geométricamente)
-    const divineConstants = [
-      { col: 4, pattern: [1,1,0,0] },  // Pi ≈ 3.14
-      { col: 8, pattern: [1,1,1,0] },  // Phi ≈ 1.618  
-      { col: 12, pattern: [1,0,1,1] }, // e ≈ 2.718
-      { col: 16, pattern: [1,0,1,0] }  // √2 ≈ 1.414
-    ];
+    // Filas 12-15: Cuatro cruces católicas en lugar de constantes cósmicas
+    const crossPositions = [4, 8, 12, 16]; // Posiciones de las cruces
     
-    for (const dc of divineConstants) {
-      for (let i = 0; i < dc.pattern.length; i++) {
-        if (dc.pattern[i] === 1) {
-          this.setPixel(bitmap, colorMap, dc.col, 12 + i, 1, this.COLORS.GREEN);
-          this.setPixel(bitmap, colorMap, dc.col + 1, 12 + i, 1, this.COLORS.GREEN);
-        }
+    for (const col of crossPositions) {
+      // Dibujar cruz católica (patrón de cruz)
+      // Línea vertical (filas 12-15)
+      for (let row = 12; row <= 15; row++) {
+        this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
       }
+      // Línea horizontal (fila 13)
+      this.setPixel(bitmap, colorMap, col - 1, 13, 1, this.COLORS.GREEN);
+      this.setPixel(bitmap, colorMap, col + 1, 13, 1, this.COLORS.GREEN);
     }
     
     // Fila 16: Línea en blanco
@@ -1751,10 +1748,7 @@ export class AreciboGenerator {
    * - Geometrías laterales AZULES sin sobreponerse
    */
   private static drawCosmicGeometryStructure(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Usar el número π * 10^9 como "constante cósmica" (como análogo del genoma)
-    const cosmicConstant = Math.floor(Math.PI * 1000000000); // π * 10^9
-    const binaryString = cosmicConstant.toString(2);
-    
+    // Patrón binario divino especial: 01/10 alternando infinitamente
     const centerCol1 = 11;    // Primera columna del número
     const centerCol2 = 12;    // Segunda columna del número
     
@@ -1762,23 +1756,14 @@ export class AreciboGenerator {
       const row = startRow + i;
       if (row >= this.HEIGHT) break;
       
-      // COLUMNAS CENTRALES BLANCAS - Patrones independientes como en Arecibo original
-      // Columna izquierda: bits en posiciones pares (0, 2, 4, 6...)
-      const leftBitIndex = i * 2;
-      if (leftBitIndex < binaryString.length) {
-        const leftBit = parseInt(binaryString[leftBitIndex]);
-        if (leftBit === 1) {
-          this.setPixel(bitmap, colorMap, centerCol1, row, 1, this.COLORS.WHITE);
-        }
-      }
-      
-      // Columna derecha: bits en posiciones impares (1, 3, 5, 7...)
-      const rightBitIndex = i * 2 + 1;
-      if (rightBitIndex < binaryString.length) {
-        const rightBit = parseInt(binaryString[rightBitIndex]);
-        if (rightBit === 1) {
-          this.setPixel(bitmap, colorMap, centerCol2, row, 1, this.COLORS.WHITE);
-        }
+      // COLUMNAS CENTRALES BLANCAS - Patrón binario divino 01/10 alternando
+      // Patrón: 01, 10, 01, 10, 01, 10, etc.
+      if (i % 2 === 0) {
+        // Filas pares: 01 (columna izquierda vacía, columna derecha llena)
+        this.setPixel(bitmap, colorMap, centerCol2, row, 1, this.COLORS.WHITE);
+      } else {
+        // Filas impares: 10 (columna izquierda llena, columna derecha vacía)
+        this.setPixel(bitmap, colorMap, centerCol1, row, 1, this.COLORS.WHITE);
       }
       
       // GEOMETRÍAS SAGRADAS AZULES - CON SEPARACIÓN DE 2PX DEL TRONCO CENTRAL
@@ -3025,6 +3010,11 @@ export class AreciboGenerator {
    *     o (azul)
    */
   private static drawLifeFormHeight(bitmap: number[], colorMap: number[], lifeForm: string, planetName: string, startRow: number, height: number): void {
+    // Para entidad divina, no dibujar altura (sin concepto físico)
+    if (lifeForm === "Have I just found God?") {
+      return; // No dibujar nada para la entidad divina
+    }
+    
     // Ahora incluimos planetName para generar variación única por planeta
     const heightValue = this.generateLifeFormHeight(lifeForm, planetName);
     
@@ -3261,8 +3251,8 @@ export class AreciboGenerator {
         // Entidades raras pero significativas: 100K - 50M
         return Math.floor(100000 + rng.random() * 49900000);
       case "divine":
-        // Muy pocos pero poderosos: 1K - 1M
-        return Math.floor(1000 + rng.random() * 999000);
+        // Una sola entidad divina
+        return 1;
       default:
         // Similar a la Tierra original de Arecibo: 3-6 mil millones
         return Math.floor(3000000000 + rng.random() * 3000000000);
@@ -4206,25 +4196,36 @@ export class AreciboGenerator {
   }
 
   /**
-   * Forma divina - cruz o estrella simple
+   * Forma divina - triángulo Illuminati rojo
    */
   private static drawDivineForm(bitmap: number[], colorMap: number[], cols: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
-    // Cruz divina
-    // Línea vertical
-    for (let r = 0; r < height - 2; r++) {
-      this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
+    // Triángulo Illuminati rojo
+    
+    // Vértice superior (punta del triángulo)
+    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
+    
+    // Segunda fila: 2 píxeles
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
+    
+    // Tercera fila: 3 píxeles
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 2, 1, this.COLORS.RED);
+    
+    // Cuarta fila: 4 píxeles
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 3, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 3, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 3, 1, this.COLORS.RED);
+    
+    // Base del triángulo: línea completa
+    for (let c = -3; c <= 3; c++) {
+      this.setPixel(bitmap, colorMap, centerCol + c, startRow + 4, 1, this.COLORS.RED);
     }
     
-    // Línea horizontal
-    for (let c = -2; c <= 2; c++) {
-      this.setPixel(bitmap, colorMap, centerCol + c, startRow + 3, 1, this.COLORS.RED);
-    }
-    
-    // Rayos diagonales
-    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.RED);
-    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.RED);
-    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 4, 1, this.COLORS.RED);
-    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 4, 1, this.COLORS.RED);
+    // Ojo en el centro del triángulo (símbolo Illuminati)
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.WHITE);
   }
 
   /**
