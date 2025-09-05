@@ -1444,6 +1444,33 @@ export class AreciboGenerator {
       return variedElements;
     }
     
+    // APLICAR VARIACIÓN PROCEDURAL PARA VEGETATION
+    if (lifeForm === "Vegetation") {
+      // Elementos base siempre presentes para plantas: H, C, N, O (esenciales)
+      const coreElements = [1, 6, 7, 8]; // H, C, N, O
+      
+      // Quinto elemento puede variar según las condiciones del planeta
+      const possiblePlantElements = [
+        12, // Mg (magnesio) - clorofila clásica como la Tierra
+        26, // Fe (hierro) - plantas en ambientes ricos en hierro
+        29, // Cu (cobre) - enzimas oxidativas alternativas
+        30, // Zn (zinc) - cofactor enzimático en suelos ácidos
+        25, // Mn (manganeso) - fotosíntesis en condiciones extremas
+        42, // Mo (molibdeno) - fijación de nitrógeno
+        16, // S (azufre) - metabolismo quimiosintético
+        20  // Ca (calcio) - estructuras de pared celular reforzadas
+      ];
+      
+      const fifthElementIndex = Math.floor(rng.random() * possiblePlantElements.length);
+      const fifthElement = possiblePlantElements[fifthElementIndex];
+      
+      const variedElements = [...coreElements, fifthElement];
+      const elementNames = { 12: 'Mg', 16: 'S', 20: 'Ca', 25: 'Mn', 26: 'Fe', 29: 'Cu', 30: 'Zn', 42: 'Mo' };
+      console.log(`🌱 ELEMENTOS GENERADOS para ${lifeForm} en ${planetName}: [${variedElements.join(', ')}] - ${elementNames[fifthElement] || fifthElement} como elemento clave para fotosíntesis/metabolismo`);
+      
+      return variedElements;
+    }
+    
     // Para otras formas de vida, usar los elementos base sin variación
     return baseElements;
   }
