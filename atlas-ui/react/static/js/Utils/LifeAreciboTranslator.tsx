@@ -160,7 +160,7 @@ export class AreciboGenerator {
         this.drawSiliconBasedGenetics(bitmap, colorMap, lifeForm, planetName);
         break;
       case "robotic":
-        this.drawRoboticInformation(bitmap, colorMap);
+        this.drawRoboticInformation(bitmap, colorMap, lifeForm, planetName);
         break;
       case "gaseous":
         this.drawGaseousInformation(bitmap, colorMap, lifeForm, planetName);
@@ -387,66 +387,198 @@ export class AreciboGenerator {
   }
 
   /**
-   * ENTIDADES ROBÓTICAS - Información digital análoga a nucleótidos
+   * ENTIDADES ROBÓTICAS - Información digital análoga a nucleótidos - PROCEDURAL
    */
-  private static drawRoboticInformation(bitmap: number[], colorMap: number[]): void {
+  private static drawRoboticInformation(bitmap: number[], colorMap: number[], lifeForm: string, planetName?: string): void {
     // Códigos digitales básicos - equivalentes a "nucleótidos digitales"
+    // VARIACIÓN PROCEDURAL basada en planeta
+    const hash = this.hashString(lifeForm + (planetName || "Earth") + "digital");
+    const rng = this.createSeededRandom(hash);
     
-    // Filas 12-15: Cuatro códigos básicos binarios (como ATGC digital)
-    const digitalCodes = [
-      { col: 4, code: [0,0] },  // 00 = código A
-      { col: 8, code: [0,1] },  // 01 = código T  
-      { col: 12, code: [1,0] }, // 10 = código G
-      { col: 16, code: [1,1] }  // 11 = código C
+    // Diferentes arquitecturas digitales procedurales
+    const digitalArchitectures = [
+      // Arquitectura clásica binaria
+      [
+        { col: 4, code: [0,0] },  // 00 = código A
+        { col: 8, code: [0,1] },  // 01 = código T  
+        { col: 12, code: [1,0] }, // 10 = código G
+        { col: 16, code: [1,1] }  // 11 = código C
+      ],
+      // Arquitectura con códigos extendidos
+      [
+        { col: 4, code: [1,0] },  // 10 = código A invertido
+        { col: 8, code: [1,1] },  // 11 = código T mejorado
+        { col: 12, code: [0,0] }, // 00 = código G resetado
+        { col: 16, code: [0,1] }  // 01 = código C básico
+      ],
+      // Arquitectura optimizada
+      [
+        { col: 4, code: [0,1] },  // 01 = código A optimizado
+        { col: 8, code: [1,0] },  // 10 = código T directo
+        { col: 12, code: [1,1] }, // 11 = código G complejo
+        { col: 16, code: [0,0] }  // 00 = código C simple
+      ],
+      // Arquitectura avanzada
+      [
+        { col: 4, code: [1,1] },  // 11 = código A avanzado
+        { col: 8, code: [0,0] },  // 00 = código T base
+        { col: 12, code: [0,1] }, // 01 = código G híbrido
+        { col: 16, code: [1,0] }  // 10 = código C invertido
+      ]
     ];
     
-    // Dibujar códigos básicos con patrones verticales
+    const archIndex = Math.floor(rng.random() * digitalArchitectures.length);
+    const digitalCodes = digitalArchitectures[archIndex];
+    
+    console.log(`💾 ARQUITECTURA DIGITAL para ${lifeForm} en ${planetName}: tipo ${archIndex + 1}/4 - códigos digitales únicos`);
+    
+    // Filas 12-15: Dibujar códigos digitales procedurales
     for (const dc of digitalCodes) {
-      // Cabecera del código
-      this.setPixel(bitmap, colorMap, dc.col, 12, 1, this.COLORS.GREEN);
-      this.setPixel(bitmap, colorMap, dc.col + 1, 12, 1, this.COLORS.GREEN);
+      // Variación en posición columna para simular diferentes implementaciones
+      const colVariation = Math.floor(rng.random() * 3) - 1; // -1, 0, +1
+      const adjustedCol = Math.max(3, Math.min(19, dc.col + colVariation));
       
-      // Representación binaria del código (filas 13-14)
+      // Cabecera del código con variación de intensidad
+      const headerIntensity = rng.random() > 0.2 ? 1 : 0; // 80% probabilidad
+      if (headerIntensity) {
+        this.setPixel(bitmap, colorMap, adjustedCol, 12, 1, this.COLORS.GREEN);
+        this.setPixel(bitmap, colorMap, adjustedCol + 1, 12, 1, this.COLORS.GREEN);
+      }
+      
+      // Representación binaria del código (filas 13-14) con verificación de integridad
       for (let i = 0; i < dc.code.length; i++) {
         if (dc.code[i] === 1) {
-          this.setPixel(bitmap, colorMap, dc.col + i, 13 + i, 1, this.COLORS.GREEN);
+          // Añadir verificación de paridad (no todos los bits se muestran siempre)
+          const bitReliability = 0.85 + (rng.random() - 0.5) * 0.2; // 75%-95%
+          if (rng.random() < bitReliability) {
+            this.setPixel(bitmap, colorMap, adjustedCol + i, 13 + i, 1, this.COLORS.GREEN);
+          }
+          
+          // Bits de corrección de errores
+          if (rng.random() > 0.7) {
+            const errorCorrectionCol = adjustedCol + (Math.floor(rng.random() * 3) - 1);
+            if (errorCorrectionCol >= 3 && errorCorrectionCol <= 19) {
+              this.setPixel(bitmap, colorMap, errorCorrectionCol, 14, 1, this.COLORS.GREEN);
+            }
+          }
         }
       }
       
-      // Marcador de fin
-      this.setPixel(bitmap, colorMap, dc.col, 15, 1, this.COLORS.GREEN);
+      // Marcador de fin con checksum
+      if (rng.random() > 0.15) { // 85% probabilidad de checksum válido
+        this.setPixel(bitmap, colorMap, adjustedCol, 15, 1, this.COLORS.GREEN);
+      }
     }
     
     // Fila 16: Línea en blanco
     this.drawBlankLine(bitmap, colorMap, 16);
     
-    // Filas 17-20: Backbone digital (buses de datos)
+    // Filas 17-20: Backbone digital (buses de datos) - PROCEDURAL
+    const busArchitecture = Math.floor(rng.random() * 4); // 4 tipos de arquitecturas de bus
+    
     for (let row = 17; row <= 20; row++) {
-      // Bus central de datos
-      for (let col = 9; col <= 13; col++) {
-        this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
+      switch (busArchitecture) {
+        case 0: // Bus central clásico
+          for (let col = 9; col <= 13; col++) {
+            this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
+          }
+          if (row % 2 === 0) {
+            this.setPixel(bitmap, colorMap, 6, row, 1, this.COLORS.GREEN);
+            this.setPixel(bitmap, colorMap, 7, row, 1, this.COLORS.GREEN);
+            this.setPixel(bitmap, colorMap, 15, row, 1, this.COLORS.GREEN);
+            this.setPixel(bitmap, colorMap, 16, row, 1, this.COLORS.GREEN);
+          }
+          break;
+          
+        case 1: // Bus distribuido
+          const spread = (row - 17) + 1;
+          for (let col = 11 - spread; col <= 11 + spread; col++) {
+            if (col >= 6 && col <= 16) {
+              this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
+            }
+          }
+          break;
+          
+        case 2: // Bus en anillo
+          if (row === 17 || row === 20) {
+            for (let col = 8; col <= 14; col++) {
+              this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
+            }
+          } else {
+            this.setPixel(bitmap, colorMap, 8, row, 1, this.COLORS.GREEN);
+            this.setPixel(bitmap, colorMap, 11, row, 1, this.COLORS.GREEN);
+            this.setPixel(bitmap, colorMap, 14, row, 1, this.COLORS.GREEN);
+          }
+          break;
+          
+        case 3: // Bus estrella
+          this.setPixel(bitmap, colorMap, 11, row, 1, this.COLORS.GREEN); // Centro
+          if (rng.random() > 0.3) {
+            this.setPixel(bitmap, colorMap, 11 - (row - 16), row, 1, this.COLORS.GREEN);
+          }
+          if (rng.random() > 0.3) {
+            this.setPixel(bitmap, colorMap, 11 + (row - 16), row, 1, this.COLORS.GREEN);
+          }
+          break;
       }
       
-      // Conectores a periféricos
-      if (row % 2 === 0) {
-        this.setPixel(bitmap, colorMap, 6, row, 1, this.COLORS.GREEN);
-        this.setPixel(bitmap, colorMap, 7, row, 1, this.COLORS.GREEN);
-        this.setPixel(bitmap, colorMap, 15, row, 1, this.COLORS.GREEN);
-        this.setPixel(bitmap, colorMap, 16, row, 1, this.COLORS.GREEN);
+      // Señales de control adicionales con ruido procedural
+      if (rng.random() > 0.6) {
+        const controlCol = 5 + Math.floor(rng.random() * 13); // Columnas 5-17
+        if (controlCol >= 5 && controlCol <= 17) {
+          this.setPixel(bitmap, colorMap, controlCol, row, 1, this.COLORS.GREEN);
+        }
       }
     }
     
     // Fila 21: Línea en blanco
     this.drawBlankLine(bitmap, colorMap, 21);
     
-    // Filas 22-25: Tamaño del programa/genoma digital
+    // Filas 22-25: Tamaño del programa/genoma digital - PROCEDURAL
+    const complexityPattern = Math.floor(rng.random() * 4); // 4 patrones de complejidad
+    
     for (let row = 22; row <= 25; row++) {
-      const complexity = row - 22; // 0-3
-      // Barras de complejidad creciente
-      for (let col = 8; col <= 8 + complexity * 3; col++) {
-        if (col <= 14) {
-          this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
-        }
+      const level = row - 22; // 0-3
+      
+      switch (complexityPattern) {
+        case 0: // Crecimiento lineal clásico
+          for (let col = 8; col <= 8 + level * 3; col++) {
+            if (col <= 14) {
+              this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
+            }
+          }
+          break;
+          
+        case 1: // Crecimiento exponencial
+          const exponentialWidth = Math.pow(2, level);
+          for (let col = 11 - exponentialWidth; col <= 11 + exponentialWidth; col++) {
+            if (col >= 8 && col <= 14) {
+              this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
+            }
+          }
+          break;
+          
+        case 2: // Crecimiento por módulos
+          const moduleSize = level + 1;
+          for (let module = 0; module < moduleSize; module++) {
+            const moduleCol = 8 + module * 2;
+            if (moduleCol <= 14) {
+              this.setPixel(bitmap, colorMap, moduleCol, row, 1, this.COLORS.GREEN);
+              if (moduleCol + 1 <= 14) {
+                this.setPixel(bitmap, colorMap, moduleCol + 1, row, 1, this.COLORS.GREEN);
+              }
+            }
+          }
+          break;
+          
+        case 3: // Crecimiento con fragmentación
+          const totalWidth = level * 2 + 2;
+          for (let col = 9; col <= 9 + totalWidth; col++) {
+            if (col <= 14 && rng.random() > 0.3) { // 70% de ocupación
+              this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
+            }
+          }
+          break;
       }
     }
     
@@ -999,7 +1131,7 @@ export class AreciboGenerator {
         this.drawSiliconBasedStructure(bitmap, colorMap, centerCol, startRow, height, lifeForm, planetName);
         break;
       case "robotic":
-        this.drawDigitalDataStructure(bitmap, colorMap, centerCol, startRow, height);
+        this.drawDigitalDataStructure(bitmap, colorMap, centerCol, startRow, height, lifeForm, planetName);
         break;
       case "gaseous":
         this.drawQuantumFieldStructure(bitmap, colorMap, centerCol, startRow, height, lifeForm, planetName);
@@ -1203,15 +1335,42 @@ export class AreciboGenerator {
   }
 
   /**
-   * Estructura de datos digital para entidades robóticas
+   * Estructura de datos digital para entidades robóticas - PROCEDURAL
    * SIGUIENDO EL PATRÓN ARECIBO ORIGINAL:
    * - Centro: 2 píxeles representando NÚMERO de instrucciones/líneas de código
-   * - Buses laterales AZULES sin sobreponerse
+   * - Buses laterales AZULES sin sobreponerse - CON VARIACIÓN PROCEDURAL
    */
-  private static drawDigitalDataStructure(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Simular "líneas de código" como análogo digital del genoma
-    const codeLines = 2147483647; // Máximo int32 como "programa complejo"
-    const binaryString = codeLines.toString(2);
+  private static drawDigitalDataStructure(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, lifeForm: string, planetName?: string): void {
+    // VARIACIÓN PROCEDURAL basada en planeta
+    const hash = this.hashString(lifeForm + (planetName || "Earth") + "datastructure");
+    const rng = this.createSeededRandom(hash);
+    
+    // Diferentes configuraciones de complejidad de código procedurales
+    const codeComplexityVariations = [
+      2147483647,                    // Máximo int32 - programa muy complejo
+      Math.floor(2147483647 * 0.5), // Programa mediano
+      Math.floor(2147483647 * 0.25), // Programa compacto
+      2147483647 * 2,               // Programa expandido (overflow controlado)
+      Math.floor(2147483647 * 0.75)  // Programa optimizado
+    ];
+    
+    const complexityIndex = Math.floor(rng.random() * codeComplexityVariations.length);
+    const codeLines = codeComplexityVariations[complexityIndex];
+    const binaryString = Math.abs(codeLines).toString(2); // Math.abs para manejar overflow
+    
+    // Diferentes patrones de buses de datos procedurales
+    const busPatterns = [
+      { type: "synchronized", frequency: 4, phase: 0 },       // Buses síncronos estándar
+      { type: "asynchronous", frequency: 6, phase: Math.PI/3 }, // Buses asíncronos 
+      { type: "pipelined", frequency: 8, phase: Math.PI/2 },    // Buses con pipeline
+      { type: "burst", frequency: 3, phase: 0 },               // Transferencias en ráfaga
+      { type: "differential", frequency: 5, phase: Math.PI/4 }  // Señales diferenciales
+    ];
+    
+    const patternIndex = Math.floor(rng.random() * busPatterns.length);
+    const busPattern = busPatterns[patternIndex];
+    
+    console.log(`💻 ESTRUCTURA DIGITAL para ${lifeForm} en ${planetName}: ${codeLines.toLocaleString()} líneas código, patrón ${busPattern.type}`);
     
     const centerCol1 = 11;    // Primera columna del número
     const centerCol2 = 12;    // Segunda columna del número
@@ -1221,36 +1380,104 @@ export class AreciboGenerator {
       if (row >= this.HEIGHT) break;
       
       // COLUMNAS CENTRALES BLANCAS - Patrones independientes como en Arecibo original
-      // Columna izquierda: bits en posiciones pares (0, 2, 4, 6...)
+      // CON VARIACIÓN PROCEDURAL para simular errores de compilación/optimización
+      
+      // Columna izquierda: bits en posiciones pares con control de calidad
       const leftBitIndex = i * 2;
       if (leftBitIndex < binaryString.length) {
         const leftBit = parseInt(binaryString[leftBitIndex]);
-        if (leftBit === 1) {
+        // Control de calidad del código - no todos los bits son perfectos
+        const codeQuality = 0.9 + (rng.random() - 0.5) * 0.15; // 82.5%-97.5%
+        if (leftBit === 1 && rng.random() < codeQuality) {
           this.setPixel(bitmap, colorMap, centerCol1, row, 1, this.COLORS.WHITE);
         }
       }
       
-      // Columna derecha: bits en posiciones impares (1, 3, 5, 7...)
+      // Columna derecha: bits en posiciones impares con control de calidad
       const rightBitIndex = i * 2 + 1;
       if (rightBitIndex < binaryString.length) {
         const rightBit = parseInt(binaryString[rightBitIndex]);
-        if (rightBit === 1) {
+        const codeQuality = 0.9 + (rng.random() - 0.5) * 0.15; // 82.5%-97.5%
+        if (rightBit === 1 && rng.random() < codeQuality) {
           this.setPixel(bitmap, colorMap, centerCol2, row, 1, this.COLORS.WHITE);
         }
       }
       
-      // BUSES DIGITALES AZULES - CON SEPARACIÓN DE 2PX DEL TRONCO CENTRAL
-      const digitalPhase = (i * Math.PI * 2) / 4; // Ciclo de clock digital
+      // BUSES DIGITALES AZULES PROCEDURALES - CON SEPARACIÓN DE 2PX DEL TRONCO CENTRAL
+      let digitalPhase: number;
       
-      // Bus izquierdo - DESDE BORDE ABSOLUTO (col 0) HASTA COL 9 (2px separación del centro)
+      switch (busPattern.type) {
+        case "synchronized":
+          digitalPhase = (i * Math.PI * 2) / busPattern.frequency + busPattern.phase;
+          break;
+        case "asynchronous":
+          digitalPhase = (i * Math.PI * 2) / busPattern.frequency + busPattern.phase + rng.random() * 0.5;
+          break;
+        case "pipelined":
+          digitalPhase = (i * Math.PI * 2) / busPattern.frequency + busPattern.phase + (i % 3) * Math.PI/6;
+          break;
+        case "burst":
+          digitalPhase = i % 4 < 2 ? 
+            (i * Math.PI * 2) / busPattern.frequency + busPattern.phase :
+            (i * Math.PI * 2) / (busPattern.frequency * 2) + busPattern.phase;
+          break;
+        case "differential":
+          digitalPhase = (i * Math.PI * 2) / busPattern.frequency + busPattern.phase + Math.sin(i * 0.3) * 0.2;
+          break;
+        default:
+          digitalPhase = (i * Math.PI * 2) / 4; // Fallback
+      }
+      
+      // Bus izquierdo con variación procedural
       const leftBusRange = 9 - 0; // 9 columnas disponibles
-      const leftBusPosition = 0 + Math.round((leftBusRange/2) + (leftBusRange/2) * Math.sin(digitalPhase));
-      this.setPixel(bitmap, colorMap, Math.max(0, Math.min(9, leftBusPosition)), row, 1, this.COLORS.BLUE);
+      let leftBusPosition: number;
       
-      // Bus derecho - DESDE COL 14 (2px separación del centro) HASTA BORDE ABSOLUTO (col 22)
+      if (busPattern.type === "synchronized" || busPattern.type === "pipelined") {
+        leftBusPosition = 0 + Math.round((leftBusRange/2) + (leftBusRange/2) * Math.sin(digitalPhase));
+      } else if (busPattern.type === "asynchronous") {
+        leftBusPosition = 0 + Math.round((leftBusRange/2) + (leftBusRange/3) * Math.sin(digitalPhase));
+      } else {
+        // Para burst y differential
+        leftBusPosition = 0 + Math.round((leftBusRange/2) + (leftBusRange/2) * Math.sin(digitalPhase) * Math.cos(digitalPhase * 0.7));
+      }
+      
+      const finalLeftBusPosition = Math.max(0, Math.min(9, leftBusPosition));
+      this.setPixel(bitmap, colorMap, finalLeftBusPosition, row, 1, this.COLORS.BLUE);
+      
+      // Bus derecho con variación procedural (usualmente desfasado)
       const rightBusRange = 22 - 14; // 8 columnas disponibles
-      const rightBusPosition = 14 + Math.round((rightBusRange/2) + (rightBusRange/2) * Math.sin(digitalPhase + Math.PI));
-      this.setPixel(bitmap, colorMap, Math.max(14, Math.min(22, rightBusPosition)), row, 1, this.COLORS.BLUE);
+      let rightBusPosition: number;
+      
+      if (busPattern.type === "synchronized") {
+        rightBusPosition = 14 + Math.round((rightBusRange/2) + (rightBusRange/2) * Math.sin(digitalPhase + Math.PI));
+      } else if (busPattern.type === "asynchronous") {
+        rightBusPosition = 14 + Math.round((rightBusRange/2) + (rightBusRange/3) * Math.cos(digitalPhase + Math.PI/2));
+      } else if (busPattern.type === "pipelined") {
+        rightBusPosition = 14 + Math.round((rightBusRange/2) + (rightBusRange/2) * Math.sin(digitalPhase + Math.PI + (i % 4) * Math.PI/8));
+      } else {
+        // Para burst y differential
+        rightBusPosition = 14 + Math.round((rightBusRange/2) + (rightBusRange/2) * Math.cos(digitalPhase) * Math.sin(digitalPhase * 0.5));
+      }
+      
+      const finalRightBusPosition = Math.max(14, Math.min(22, rightBusPosition));
+      this.setPixel(bitmap, colorMap, finalRightBusPosition, row, 1, this.COLORS.BLUE);
+      
+      // Efectos adicionales de buses para ciertos patrones
+      if (busPattern.type === "burst" && (i % 4 === 0) && rng.random() > 0.5) {
+        // Señales de burst adicionales
+        const burstLeftCol = Math.max(0, Math.min(9, finalLeftBusPosition + Math.floor(rng.random() * 3) - 1));
+        const burstRightCol = Math.max(14, Math.min(22, finalRightBusPosition + Math.floor(rng.random() * 3) - 1));
+        this.setPixel(bitmap, colorMap, burstLeftCol, row, 1, this.COLORS.BLUE);
+        this.setPixel(bitmap, colorMap, burstRightCol, row, 1, this.COLORS.BLUE);
+      }
+      
+      if (busPattern.type === "differential" && rng.random() > 0.7) {
+        // Señales diferenciales complementarias
+        const diffCol = Math.floor(rng.random() * 23);
+        if (diffCol < 10 || diffCol > 13) { // Evitar centro
+          this.setPixel(bitmap, colorMap, diffCol, row, 1, this.COLORS.BLUE);
+        }
+      }
     }
   }
 
@@ -1666,20 +1893,85 @@ export class AreciboGenerator {
 
   private static drawRoboticElements(bitmap: number[], colorMap: number[], elements: number[]): void {
     const startRow = 5;
-    const positions = [5, 8, 11, 14, 17];
+    
+    // Crear patrones de circuitería robótica procedural basado en elementos
+    const robotHash = elements.join('');
+    const robotRng = this.createSeededRandom(this.hashString(robotHash + "robotic"));
+    
+    // Diferentes patrones de disposición de componentes
+    const layoutPatterns = [
+      [5, 8, 11, 14, 17],     // Distribución lineal estándar
+      [4, 7, 11, 15, 18],     // Distribución expandida
+      [6, 9, 11, 13, 16],     // Distribución compacta centrada
+      [3, 8, 11, 14, 19],     // Distribución con extremos
+      [5, 9, 11, 13, 17]      // Distribución asimétrica
+    ];
+    
+    const patternIndex = Math.floor(robotRng.random() * layoutPatterns.length);
+    const positions = layoutPatterns[patternIndex];
     
     for (let i = 0; i < elements.length && i < 5; i++) {
-      const col = positions[i];
-      this.drawElementBinary(bitmap, colorMap, elements[i], col, startRow + 2, 3);
+      const baseCol = positions[i];
+      // Variación en posición para simular tolerancias de manufactura
+      const colVariation = Math.floor(robotRng.random() * 3) - 1; // -1, 0, +1
+      const col = Math.max(3, Math.min(19, baseCol + colVariation));
       
+      // Altura variable para diferentes componentes
+      const heightVariation = Math.floor(robotRng.random() * 2); // 0, 1
+      const componentHeight = 3 + heightVariation;
+      
+      this.drawElementBinary(bitmap, colorMap, elements[i], col, startRow + 2, componentHeight);
+      
+      // Conexiones entre componentes - patrones variables
       if (i > 0) {
-        for (let c = positions[i-1] + 1; c < col; c++) {
-          this.setPixel(bitmap, colorMap, c, startRow + 4, 1, this.COLORS.PURPLE);
+        const prevCol = Math.max(3, Math.min(19, positions[i-1] + (Math.floor(robotRng.random() * 3) - 1)));
+        const connectionType = Math.floor(robotRng.random() * 3);
+        
+        switch (connectionType) {
+          case 0: // Conexión directa
+            for (let c = Math.min(prevCol, col) + 1; c < Math.max(prevCol, col); c++) {
+              this.setPixel(bitmap, colorMap, c, startRow + 4, 1, this.COLORS.PURPLE);
+            }
+            break;
+          case 1: // Conexión segmentada
+            const midPoint = Math.floor((prevCol + col) / 2);
+            for (let c = prevCol + 1; c <= midPoint; c++) {
+              if (c % 2 === 0) this.setPixel(bitmap, colorMap, c, startRow + 4, 1, this.COLORS.PURPLE);
+            }
+            for (let c = midPoint + 1; c < col; c++) {
+              if (c % 2 === 1) this.setPixel(bitmap, colorMap, c, startRow + 4, 1, this.COLORS.PURPLE);
+            }
+            break;
+          case 2: // Conexión con bypass
+            this.setPixel(bitmap, colorMap, Math.floor((prevCol + col) / 2), startRow + 3, 1, this.COLORS.PURPLE);
+            this.setPixel(bitmap, colorMap, Math.floor((prevCol + col) / 2), startRow + 4, 1, this.COLORS.PURPLE);
+            this.setPixel(bitmap, colorMap, Math.floor((prevCol + col) / 2), startRow + 5, 1, this.COLORS.PURPLE);
+            break;
         }
       }
       
+      // Nodos de conexión principales
       this.setPixel(bitmap, colorMap, col, startRow + 4, 1, this.COLORS.PURPLE);
       this.setPixel(bitmap, colorMap, col, startRow + 1, 1, this.COLORS.PURPLE);
+      
+      // Añadir componentes auxiliares según el tipo de elemento
+      if (elements[i] >= 29) { // Metales conductores (Cu, Ag, Au)
+        // Líneas adicionales para alta conductividad
+        if (robotRng.random() > 0.5) {
+          this.setPixel(bitmap, colorMap, col, startRow, 1, this.COLORS.PURPLE);
+        }
+        if (robotRng.random() > 0.5) {
+          this.setPixel(bitmap, colorMap, col, startRow + 5, 1, this.COLORS.PURPLE);
+        }
+      }
+      
+      if (elements[i] === 14 || elements[i] === 32) { // Semiconductores (Si, Ge)
+        // Patrones de rejilla para semiconductores
+        if (robotRng.random() > 0.6) {
+          this.setPixel(bitmap, colorMap, col - 1, startRow + 2, 1, this.COLORS.PURPLE);
+          this.setPixel(bitmap, colorMap, col + 1, startRow + 2, 1, this.COLORS.PURPLE);
+        }
+      }
     }
   }
 
@@ -2063,6 +2355,51 @@ export class AreciboGenerator {
       };
       const selectedNames = selectedElements.map(e => elementNames[e] || e).join(', ');
       console.log(`💨 ELEMENTOS GENERADOS para ${lifeForm} en ${planetName}: [${selectedElements.join(', ')}] - [${selectedNames}] - configuración gaseosa única`);
+      
+      return selectedElements;
+    }
+    
+    // APLICAR VARIACIÓN PROCEDURAL PARA ROBOTIC ENTITIES
+    if (lifeForm === "Robotic Entities") {
+      // Elementos base siempre presentes: Si, C (silicio y carbono - semiconductores)
+      const coreElements = [14, 6]; // Si, C
+      
+      // Elementos adicionales pueden variar según la tecnología del planeta
+      const possibleRoboticElements = [
+        29, // Cu (cobre) - conductividad eléctrica clásica
+        79, // Au (oro) - conductores de alta precisión
+        47, // Ag (plata) - mejor conductor, conexiones críticas
+        13, // Al (aluminio) - estructura ligera, disipador térmico
+        26, // Fe (hierro) - estructura magnética, actuadores
+        28, // Ni (níquel) - aleaciones especiales, baterías
+        22, // Ti (titanio) - estructura ultra-resistente
+        31, // Ga (galio) - semiconductores avanzados (GaAs)
+        32, // Ge (germanio) - semiconductores alternativo al Si
+        33, // As (arsénico) - semiconductores compuestos
+        49, // In (indio) - pantallas, semiconductores flexibles
+        50, // Sn (estaño) - soldaduras, conexiones
+        74  // W (tungsteno) - componentes de alta temperatura
+      ];
+      
+      // Seleccionar 3 elementos adicionales de manera procedural
+      const selectedElements = [...coreElements];
+      const shuffledElements = [...possibleRoboticElements];
+      
+      // Mezclar usando el RNG con semilla
+      for (let i = shuffledElements.length - 1; i > 0; i--) {
+        const j = Math.floor(rng.random() * (i + 1));
+        [shuffledElements[i], shuffledElements[j]] = [shuffledElements[j], shuffledElements[i]];
+      }
+      
+      // Tomar los primeros 3
+      selectedElements.push(...shuffledElements.slice(0, 3));
+      
+      const elementNames = { 
+        6: 'C', 13: 'Al', 14: 'Si', 22: 'Ti', 26: 'Fe', 28: 'Ni', 29: 'Cu', 
+        31: 'Ga', 32: 'Ge', 33: 'As', 47: 'Ag', 49: 'In', 50: 'Sn', 74: 'W', 79: 'Au'
+      };
+      const selectedNames = selectedElements.map(e => elementNames[e] || e).join(', ');
+      console.log(`🤖 ELEMENTOS GENERADOS para ${lifeForm} en ${planetName}: [${selectedElements.join(', ')}] - [${selectedNames}] - configuración robótica única`);
       
       return selectedElements;
     }
@@ -3376,30 +3713,143 @@ export class AreciboGenerator {
   }
 
   /**
-   * Forma robótica - estructura geométrica rígida
+   * Forma robótica - estructura geométrica modular PROCEDURAL
+   * Sistema modular como Intelligent Life pero con 3 variantes de cada componente
    */
   private static drawRoboticForm(bitmap: number[], colorMap: number[], cols: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
-    // Cabeza cuadrada
-    for (let c = -1; c <= 1; c++) {
-      this.setPixel(bitmap, colorMap, centerCol + c, startRow, 1, this.COLORS.RED);
-      this.setPixel(bitmap, colorMap, centerCol + c, startRow + 1, 1, this.COLORS.RED);
+    // Seleccionar componentes proceduralmente (3 variantes de cada)
+    const headType = Math.floor(rng.random() * 3);   // 0, 1, 2
+    const torsoType = Math.floor(rng.random() * 3);  // 0, 1, 2
+    const legsType = Math.floor(rng.random() * 3);   // 0, 1, 2
+    
+    // Dibujar la forma robótica modular
+    this.drawModularRoboticForm(bitmap, colorMap, centerCol, startRow, height, headType, torsoType, legsType);
+  }
+
+  /**
+   * Dibuja una forma robótica modular combinando cabeza, torso y piernas
+   * 3 variantes de cada componente para diferentes diseños robóticos
+   */
+  private static drawModularRoboticForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, headType: number, torsoType: number, legsType: number): void {
+    // Distribución de las 9 filas:
+    // Filas 0-2: Cabeza robótica (3 filas)
+    // Filas 3-5: Torso robótico (3 filas)  
+    // Filas 6-8: Piernas robóticas (3 filas)
+    
+    // CABEZAS ROBÓTICAS (3 tipos)
+    switch (headType) {
+      case 0: // Cabeza cuadrada clásica
+        for (let c = -1; c <= 1; c++) {
+          this.setPixel(bitmap, colorMap, centerCol + c, startRow, 1, this.COLORS.RED);
+          this.setPixel(bitmap, colorMap, centerCol + c, startRow + 1, 1, this.COLORS.RED);
+        }
+        // Antena/sensor central
+        this.setPixel(bitmap, colorMap, centerCol, startRow - 1, 1, this.COLORS.RED);
+        break;
+        
+      case 1: // Cabeza con visores laterales
+        // Centro principal
+        this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
+        // Visores/sensores laterales
+        this.setPixel(bitmap, colorMap, centerCol - 2, startRow, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 2, startRow, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
+        break;
+        
+      case 2: // Cabeza triangular/cónica
+        // Punta superior
+        this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
+        // Base más ancha
+        for (let c = -1; c <= 1; c++) {
+          this.setPixel(bitmap, colorMap, centerCol + c, startRow + 1, 1, this.COLORS.RED);
+        }
+        // Sensores laterales de la base
+        this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 2, 1, this.COLORS.RED);
+        break;
     }
     
-    // Cuerpo rectangular
-    for (let r = 2; r < 5; r++) {
-      this.setPixel(bitmap, colorMap, centerCol - 1, startRow + r, 1, this.COLORS.RED);
-      this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
-      this.setPixel(bitmap, colorMap, centerCol + 1, startRow + r, 1, this.COLORS.RED);
+    // TORSOS ROBÓTICOS (3 tipos)
+    switch (torsoType) {
+      case 0: // Torso rectangular clásico
+        for (let r = 3; r <= 5; r++) {
+          this.setPixel(bitmap, colorMap, centerCol - 1, startRow + r, 1, this.COLORS.RED);
+          this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
+          this.setPixel(bitmap, colorMap, centerCol + 1, startRow + r, 1, this.COLORS.RED);
+        }
+        // Brazos mecánicos simples
+        this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 4, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 4, 1, this.COLORS.RED);
+        break;
+        
+      case 1: // Torso con módulos laterales
+        // Core central vertical
+        for (let r = 3; r <= 5; r++) {
+          this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
+        }
+        // Módulos/compartimentos laterales
+        this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 3, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 5, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 5, 1, this.COLORS.RED);
+        // Brazos articulados extendidos
+        this.setPixel(bitmap, colorMap, centerCol - 3, startRow + 4, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 3, startRow + 4, 1, this.COLORS.RED);
+        break;
+        
+      case 2: // Torso esférico/compacto
+        // Centro compacto
+        this.setPixel(bitmap, colorMap, centerCol, startRow + 4, 1, this.COLORS.RED);
+        // Anillo exterior
+        this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 3, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 4, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 4, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 5, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 5, 1, this.COLORS.RED);
+        // Brazos multi-articulados
+        this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 3, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 3, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 5, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 5, 1, this.COLORS.RED);
+        break;
     }
     
-    // Brazos mecánicos
-    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 3, 1, this.COLORS.RED);
-    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 3, 1, this.COLORS.RED);
-    
-    // Piernas
-    for (let r = 5; r < height - 2; r++) {
-      this.setPixel(bitmap, colorMap, centerCol - 1, startRow + r, 1, this.COLORS.RED);
-      this.setPixel(bitmap, colorMap, centerCol + 1, startRow + r, 1, this.COLORS.RED);
+    // PIERNAS ROBÓTICAS (3 tipos)
+    switch (legsType) {
+      case 0: // Piernas bípedas clásicas
+        for (let r = 6; r < Math.min(height, 9); r++) {
+          this.setPixel(bitmap, colorMap, centerCol - 1, startRow + r, 1, this.COLORS.RED);
+          this.setPixel(bitmap, colorMap, centerCol + 1, startRow + r, 1, this.COLORS.RED);
+        }
+        break;
+        
+      case 1: // Piernas con estabilizadores
+        for (let r = 6; r < Math.min(height, 9); r++) {
+          this.setPixel(bitmap, colorMap, centerCol - 1, startRow + r, 1, this.COLORS.RED);
+          this.setPixel(bitmap, colorMap, centerCol + 1, startRow + r, 1, this.COLORS.RED);
+          // Estabilizadores laterales cada dos filas
+          if ((r - 6) % 2 === 0) {
+            this.setPixel(bitmap, colorMap, centerCol - 2, startRow + r, 1, this.COLORS.RED);
+            this.setPixel(bitmap, colorMap, centerCol + 2, startRow + r, 1, this.COLORS.RED);
+          }
+        }
+        break;
+        
+      case 2: // Base con ruedas/orugas
+        // Plataforma base continua
+        for (let r = 6; r < Math.min(height, 9); r++) {
+          for (let c = -2; c <= 2; c++) {
+            this.setPixel(bitmap, colorMap, centerCol + c, startRow + r, 1, this.COLORS.RED);
+          }
+          // Dejar espacios para simular ruedas/orugas
+          if ((r - 6) % 2 === 1) {
+            this.setPixel(bitmap, colorMap, centerCol, startRow + r, 0, this.COLORS.BLACK); // "rueda" central
+          }
+        }
+        break;
     }
   }
 
