@@ -1444,6 +1444,34 @@ export class AreciboGenerator {
       return variedElements;
     }
     
+    // APLICAR VARIACIÓN PROCEDURAL PARA BACTERIA
+    if (lifeForm === "Bacteria") {
+      // Elementos base siempre presentes para bacterias: H, C, N, O (esenciales)
+      const coreElements = [1, 6, 7, 8]; // H, C, N, O
+      
+      // Quinto elemento puede variar según las condiciones extremas del planeta
+      const possibleBacterialElements = [
+        15, // P (fósforo) - DNA/RNA clásico como la Tierra
+        16, // S (azufre) - bacterias quimiosintéticas (fuentes hidrotermales)
+        26, // Fe (hierro) - bacterias magnetotácticas y ferruginosas
+        25, // Mn (manganeso) - bacterias oxidantes de manganeso
+        24, // Cr (cromo) - bacterias resistentes a metales pesados
+        28, // Ni (níquel) - metanógenas y hidrogenótrofas
+        27, // Co (cobalto) - bacterias productoras de vitamina B12
+        42, // Mo (molibdeno) - fijadoras de nitrógeno en condiciones extremas
+        74  // W (tungsteno) - hipertermófilas en ambientes extremos
+      ];
+      
+      const fifthElementIndex = Math.floor(rng.random() * possibleBacterialElements.length);
+      const fifthElement = possibleBacterialElements[fifthElementIndex];
+      
+      const variedElements = [...coreElements, fifthElement];
+      const elementNames = { 15: 'P', 16: 'S', 24: 'Cr', 25: 'Mn', 26: 'Fe', 27: 'Co', 28: 'Ni', 42: 'Mo', 74: 'W' };
+      console.log(`🦠 ELEMENTOS GENERADOS para ${lifeForm} en ${planetName}: [${variedElements.join(', ')}] - ${elementNames[fifthElement] || fifthElement} como elemento clave para metabolismo extremófilo`);
+      
+      return variedElements;
+    }
+    
     // APLICAR VARIACIÓN PROCEDURAL PARA VEGETATION
     if (lifeForm === "Vegetation") {
       // Elementos base siempre presentes para plantas: H, C, N, O (esenciales)
@@ -2526,7 +2554,7 @@ export class AreciboGenerator {
     // Cada forma de vida basada en carbono tiene su propia representación visual única
     switch (lifeForm) {
       case "Bacteria":
-        this.drawBacteriaForm(bitmap, colorMap, centerCol, startRow, height);
+        this.drawBacteriaForm(bitmap, colorMap, centerCol, startRow, height, rng);
         break;
       case "Vegetation":
         this.drawVegetationForm(bitmap, colorMap, centerCol, startRow, height, rng);
@@ -2826,26 +2854,133 @@ export class AreciboGenerator {
   }
 
   /**
-   * Forma de bacteria - estructura celular microscópica
+   * Forma de bacteria - múltiples tipos según morfología bacterial real
+   * Diferentes formas basadas en clasificación científica
    */
-  private static drawBacteriaForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Forma circular pequeña (célula simple)
-    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
+  private static drawBacteriaForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
+    // Usar el generador RNG para determinar el tipo de bacteria aleatoriamente
+    const bacteriaType = Math.floor(rng.random() * 7);
     
-    // Membrana celular
+    switch (bacteriaType) {
+      case 0:
+        this.drawCoccusBacteria(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case 1:
+        this.drawBacillusBacteria(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case 2:
+        this.drawSpirillusBacteria(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case 3:
+        this.drawStreptococcusBacteria(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case 4:
+        this.drawStaphylococcusBacteria(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      case 5:
+        this.drawVibroBacteria(bitmap, colorMap, centerCol, startRow, height);
+        break;
+      default:
+        this.drawFilamentousBacteria(bitmap, colorMap, centerCol, startRow, height);
+    }
+  }
+
+  /**
+   * Coccus - bacteria esférica
+   */
+  private static drawCoccusBacteria(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Forma circular simple
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.RED);
-    
-    // Núcleo/material genético
     this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.RED);
-    
-    // Flagelos (apéndices para movimiento)
-    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 3, 1, this.COLORS.RED);
-    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 3, 1, this.COLORS.RED);
-    
-    // Base de la célula
+  }
+
+  /**
+   * Bacillus - bacteria en forma de bastón
+   */
+  private static drawBacillusBacteria(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Forma alargada vertical (bastón)
+    for (let r = 0; r < Math.min(5, height); r++) {
+      this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
+      if (r === 1 || r === 3) {
+        // Ampliar en el medio
+        this.setPixel(bitmap, colorMap, centerCol - 1, startRow + r, 1, this.COLORS.RED);
+        this.setPixel(bitmap, colorMap, centerCol + 1, startRow + r, 1, this.COLORS.RED);
+      }
+    }
+  }
+
+  /**
+   * Spirillum - bacteria espiral
+   */
+  private static drawSpirillusBacteria(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Forma espiral
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 4, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Streptococcus - cadena de bacterias esféricas
+   */
+  private static drawStreptococcusBacteria(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Cadena vertical de esferas
+    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 3, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 4, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Staphylococcus - racimo de bacterias esféricas
+   */
+  private static drawStaphylococcusBacteria(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Racimo (cluster) irregular
+    this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Vibrio - bacteria en forma de coma
+   */
+  private static drawVibroBacteria(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Forma curva (como una coma)
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.RED);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 4, 1, this.COLORS.RED);
+  }
+
+  /**
+   * Bacteria filamentosa - cadena larga
+   */
+  private static drawFilamentousBacteria(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
+    // Cadena larga y delgada
+    for (let r = 0; r < Math.min(6, height); r++) {
+      this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
+      // Agregar ramificaciones ocasionales
+      if (r === 2) {
+        this.setPixel(bitmap, colorMap, centerCol - 1, startRow + r, 1, this.COLORS.RED);
+      }
+      if (r === 4) {
+        this.setPixel(bitmap, colorMap, centerCol + 1, startRow + r, 1, this.COLORS.RED);
+      }
+    }
   }
 
   /**
