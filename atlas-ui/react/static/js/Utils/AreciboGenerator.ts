@@ -709,22 +709,30 @@ export class AreciboGenerator {
       const row = startRow + i;
       if (row >= this.HEIGHT) break;
       
-      // COLUMNA CENTRAL BLANCA - Representa el número binario de pares de bases
-      // Cada fila representa un bit del número total (de abajo hacia arriba)
-      const bitIndex = height - 1 - i; // Invertir para que el bit menos significativo esté abajo
+      // COLUMNAS CENTRALES BLANCAS - Cada una muestra bits independientes del número binario
+      // Como en el Arecibo original: columna izquierda y derecha pueden tener patrones diferentes
       
-      if (bitIndex < binaryString.length) {
-        const bit = parseInt(binaryString[binaryString.length - 1 - bitIndex]);
-        if (bit === 1) {
+      // Columna izquierda: bits en posiciones pares (0, 2, 4, 6...)
+      const leftBitIndex = i * 2;
+      if (leftBitIndex < binaryString.length) {
+        const leftBit = parseInt(binaryString[leftBitIndex]);
+        if (leftBit === 1) {
           this.setPixel(bitmap, colorMap, centerCol1, row, 1, this.COLORS.WHITE);
-          this.setPixel(bitmap, colorMap, centerCol2, row, 1, this.COLORS.WHITE);
         }
-        // Si el bit es 0, no se pone nada (queda negro)
       }
       
-      // HÉLICES LATERALES AZULES - CON SEPARACIÓN DE 2PX DEL TRONCO CENTRAL
-      // Tronco central: columnas 11-12, separación de 2px = hélices hasta columnas 9 y 14
-      const helixPhase = (i * Math.PI * 2) / 8; // Una vuelta cada 8 filas
+      // Columna derecha: bits en posiciones impares (1, 3, 5, 7...)
+      const rightBitIndex = i * 2 + 1;
+      if (rightBitIndex < binaryString.length) {
+        const rightBit = parseInt(binaryString[rightBitIndex]);
+        if (rightBit === 1) {
+          this.setPixel(bitmap, colorMap, centerCol2, row, 1, this.COLORS.WHITE);
+        }
+      }
+      
+      // HÉLICES LATERALES AZULES - FRECUENCIA CIENTÍFICAMENTE EXACTA
+      // DNA real: 1 vuelta cada 10.5 pares de bases = 3.4 Å por base, 36 Å por vuelta
+      const helixPhase = (i * Math.PI * 2) / 10.5; // Una vuelta cada 10.5 filas (DNA real)
       
       // Hélice izquierda - DESDE BORDE ABSOLUTO (col 0) HASTA COL 9 (2px separación del centro)
       const leftHelixRange = 9 - 0; // 9 columnas disponibles (0,1,2,3,4,5,6,7,8,9)
@@ -732,6 +740,7 @@ export class AreciboGenerator {
       this.setPixel(bitmap, colorMap, Math.max(0, Math.min(9, leftHelixPosition)), row, 1, this.COLORS.BLUE);
       
       // Hélice derecha - DESDE COL 14 (2px separación del centro) HASTA BORDE ABSOLUTO (col 22)  
+      // Desfase de 180° para hélice antiparalela (característica real del DNA)
       const rightHelixRange = 22 - 14; // 8 columnas disponibles (14,15,16,17,18,19,20,21,22)
       const rightHelixPosition = 14 + Math.round((rightHelixRange/2) + (rightHelixRange/2) * Math.cos(helixPhase + Math.PI));
       this.setPixel(bitmap, colorMap, Math.max(14, Math.min(22, rightHelixPosition)), row, 1, this.COLORS.BLUE);
@@ -779,12 +788,21 @@ export class AreciboGenerator {
       const row = startRow + i;
       if (row >= this.HEIGHT) break;
       
-      // COLUMNA CENTRAL BLANCA - Número de unidades cristalinas
-      const bitIndex = height - 1 - i;
-      if (bitIndex < binaryString.length) {
-        const bit = parseInt(binaryString[binaryString.length - 1 - bitIndex]);
-        if (bit === 1) {
+      // COLUMNAS CENTRALES BLANCAS - Patrones independientes como en Arecibo original
+      // Columna izquierda: bits en posiciones pares (0, 2, 4, 6...)
+      const leftBitIndex = i * 2;
+      if (leftBitIndex < binaryString.length) {
+        const leftBit = parseInt(binaryString[leftBitIndex]);
+        if (leftBit === 1) {
           this.setPixel(bitmap, colorMap, centerCol1, row, 1, this.COLORS.WHITE);
+        }
+      }
+      
+      // Columna derecha: bits en posiciones impares (1, 3, 5, 7...)
+      const rightBitIndex = i * 2 + 1;
+      if (rightBitIndex < binaryString.length) {
+        const rightBit = parseInt(binaryString[rightBitIndex]);
+        if (rightBit === 1) {
           this.setPixel(bitmap, colorMap, centerCol2, row, 1, this.COLORS.WHITE);
         }
       }
@@ -822,12 +840,21 @@ export class AreciboGenerator {
       const row = startRow + i;
       if (row >= this.HEIGHT) break;
       
-      // COLUMNA CENTRAL BLANCA - Número de líneas de código/instrucciones
-      const bitIndex = height - 1 - i;
-      if (bitIndex < binaryString.length) {
-        const bit = parseInt(binaryString[binaryString.length - 1 - bitIndex]);
-        if (bit === 1) {
+      // COLUMNAS CENTRALES BLANCAS - Patrones independientes como en Arecibo original
+      // Columna izquierda: bits en posiciones pares (0, 2, 4, 6...)
+      const leftBitIndex = i * 2;
+      if (leftBitIndex < binaryString.length) {
+        const leftBit = parseInt(binaryString[leftBitIndex]);
+        if (leftBit === 1) {
           this.setPixel(bitmap, colorMap, centerCol1, row, 1, this.COLORS.WHITE);
+        }
+      }
+      
+      // Columna derecha: bits en posiciones impares (1, 3, 5, 7...)
+      const rightBitIndex = i * 2 + 1;
+      if (rightBitIndex < binaryString.length) {
+        const rightBit = parseInt(binaryString[rightBitIndex]);
+        if (rightBit === 1) {
           this.setPixel(bitmap, colorMap, centerCol2, row, 1, this.COLORS.WHITE);
         }
       }
@@ -865,12 +892,21 @@ export class AreciboGenerator {
       const row = startRow + i;
       if (row >= this.HEIGHT) break;
       
-      // COLUMNA CENTRAL BLANCA - Número de estados cuánticos
-      const bitIndex = height - 1 - i;
-      if (bitIndex < binaryString.length) {
-        const bit = parseInt(binaryString[binaryString.length - 1 - bitIndex]);
-        if (bit === 1) {
+      // COLUMNAS CENTRALES BLANCAS - Patrones independientes como en Arecibo original
+      // Columna izquierda: bits en posiciones pares (0, 2, 4, 6...)
+      const leftBitIndex = i * 2;
+      if (leftBitIndex < binaryString.length) {
+        const leftBit = parseInt(binaryString[leftBitIndex]);
+        if (leftBit === 1) {
           this.setPixel(bitmap, colorMap, centerCol1, row, 1, this.COLORS.WHITE);
+        }
+      }
+      
+      // Columna derecha: bits en posiciones impares (1, 3, 5, 7...)
+      const rightBitIndex = i * 2 + 1;
+      if (rightBitIndex < binaryString.length) {
+        const rightBit = parseInt(binaryString[rightBitIndex]);
+        if (rightBit === 1) {
           this.setPixel(bitmap, colorMap, centerCol2, row, 1, this.COLORS.WHITE);
         }
       }
@@ -908,12 +944,21 @@ export class AreciboGenerator {
       const row = startRow + i;
       if (row >= this.HEIGHT) break;
       
-      // COLUMNA CENTRAL BLANCA - Número de unidades energéticas
-      const bitIndex = height - 1 - i;
-      if (bitIndex < binaryString.length) {
-        const bit = parseInt(binaryString[binaryString.length - 1 - bitIndex]);
-        if (bit === 1) {
+      // COLUMNAS CENTRALES BLANCAS - Patrones independientes como en Arecibo original
+      // Columna izquierda: bits en posiciones pares (0, 2, 4, 6...)
+      const leftBitIndex = i * 2;
+      if (leftBitIndex < binaryString.length) {
+        const leftBit = parseInt(binaryString[leftBitIndex]);
+        if (leftBit === 1) {
           this.setPixel(bitmap, colorMap, centerCol1, row, 1, this.COLORS.WHITE);
+        }
+      }
+      
+      // Columna derecha: bits en posiciones impares (1, 3, 5, 7...)
+      const rightBitIndex = i * 2 + 1;
+      if (rightBitIndex < binaryString.length) {
+        const rightBit = parseInt(binaryString[rightBitIndex]);
+        if (rightBit === 1) {
           this.setPixel(bitmap, colorMap, centerCol2, row, 1, this.COLORS.WHITE);
         }
       }
@@ -951,12 +996,21 @@ export class AreciboGenerator {
       const row = startRow + i;
       if (row >= this.HEIGHT) break;
       
-      // COLUMNA CENTRAL BLANCA - Constante cósmica en binario
-      const bitIndex = height - 1 - i;
-      if (bitIndex < binaryString.length) {
-        const bit = parseInt(binaryString[binaryString.length - 1 - bitIndex]);
-        if (bit === 1) {
+      // COLUMNAS CENTRALES BLANCAS - Patrones independientes como en Arecibo original
+      // Columna izquierda: bits en posiciones pares (0, 2, 4, 6...)
+      const leftBitIndex = i * 2;
+      if (leftBitIndex < binaryString.length) {
+        const leftBit = parseInt(binaryString[leftBitIndex]);
+        if (leftBit === 1) {
           this.setPixel(bitmap, colorMap, centerCol1, row, 1, this.COLORS.WHITE);
+        }
+      }
+      
+      // Columna derecha: bits en posiciones impares (1, 3, 5, 7...)
+      const rightBitIndex = i * 2 + 1;
+      if (rightBitIndex < binaryString.length) {
+        const rightBit = parseInt(binaryString[rightBitIndex]);
+        if (rightBit === 1) {
           this.setPixel(bitmap, colorMap, centerCol2, row, 1, this.COLORS.WHITE);
         }
       }
@@ -1226,37 +1280,43 @@ export class AreciboGenerator {
   }
 
   private static getElementsForLifeForm(lifeForm: string): number[] {
+    // Elementos basados en DATOS REALES de abundancia en organismos vivos
     const elementSets: { [key: string]: number[] } = {
-      "Bacteria": [1, 6, 7, 8, 16],
-      "Vegetation": [1, 6, 7, 8, 12],
-      "Animal Life": [1, 6, 7, 8, 26],
-      "Intelligent Life": [1, 6, 7, 8, 15],
-      "Vegetable Animals": [1, 6, 7, 8, 11],
-      "Silicon-Based Life": [1, 14, 8, 13, 20],
-      "Robotic Entities": [14, 32, 31, 49, 73],
-      "Conscious Gas": [2, 10, 18, 36, 54],
-      "Non-Physical Entity": [1, 2, 3, 4, 6],
-      "Have I just found God?": [115, 118, 119, 120, 126]
+      "Bacteria": [1, 6, 7, 8, 15],    // H, C, N, O, P - elementos esenciales del DNA/RNA
+      "Vegetation": [1, 6, 7, 8, 12],  // H, C, N, O, Mg - magnesio esencial para clorofila
+      "Animal Life": [1, 6, 7, 8, 20], // H, C, N, O, Ca - calcio esencial para huesos/señalización
+      "Intelligent Life": [1, 6, 7, 8, 15], // H, C, N, O, P - igual que humanos básicos
+      "Vegetable Animals": [1, 6, 7, 8, 26], // H, C, N, O, Fe - hierro para transporte O2 y fotosíntesis
+      
+      // FORMAS DE VIDA ESPECULATIVAS pero científicamente plausibles
+      "Silicon-Based Life": [1, 14, 8, 13, 16], // H, Si, O, Al, S - química silicatos
+      "Robotic Entities": [14, 29, 79, 47, 6],  // Si, Cu, Au, Ag, C - semiconductores y conductores
+      "Conscious Gas": [1, 2, 10, 18, 36],      // H, He, Ne, Ar, Kr - gases nobles estables
+      "Non-Physical Entity": [1, 3, 11, 19, 37], // H, Li, Na, K, Rb - metales alcalinos (energía)
+      "Have I just found God?": [1, 2, 3, 4, 5] // H, He, Li, Be, B - primeros elementos del universo
     };
     
-    return elementSets[lifeForm] || [1, 6, 7, 8, 15];
+    return elementSets[lifeForm] || [1, 6, 7, 8, 15]; // Default: elementos básicos de la vida
   }
 
   private static getNitrogenBases(lifeForm: string): string[] {
+    // Bases nitrogenadas REALES y especulativas científicamente fundamentadas
     const baseSets: { [key: string]: string[] } = {
-      "Bacteria": ["A", "T", "G", "C"],         // DNA clásico
-      "Vegetation": ["A", "U", "G", "C"],       // RNA predominante
-      "Animal Life": ["A", "T", "G", "C"],      // DNA clásico
-      "Intelligent Life": ["A", "T", "G", "C"], // DNA clásico
-      "Vegetable Animals": ["A", "T", "G", "U"], // Híbrido DNA/RNA
-      "Silicon-Based Life": ["X", "X", "X", "X"], // Bases exóticas
-      "Robotic Entities": ["X", "X", "X", "X"],   // Bases artificiales
-      "Conscious Gas": ["X", "X", "X", "X"],      // Estados cuánticos
-      "Non-Physical Entity": ["X", "X", "X", "X"], // Patrones energéticos
-      "Have I just found God?": ["X", "X", "X", "X"] // Código cósmico
+      "Bacteria": ["A", "T", "G", "C"],         // DNA clásico - todas las bacterias
+      "Vegetation": ["A", "T", "G", "C"],       // DNA (no RNA como pensé antes - error corregido)
+      "Animal Life": ["A", "T", "G", "C"],      // DNA clásico - todos los animales
+      "Intelligent Life": ["A", "T", "G", "C"], // DNA clásico - mismo que humanos
+      "Vegetable Animals": ["A", "T", "G", "C"], // DNA estándar (organismos híbridos tendrían DNA normal)
+      
+      // BASES ESPECULATIVAS para formas de vida no-carbono
+      "Silicon-Based Life": ["Si", "Al", "O", "S"],    // Análogos basados en silicatos
+      "Robotic Entities": ["0", "1", "X", "Z"],        // Código binario extendido
+      "Conscious Gas": ["|0⟩", "|1⟩", "|+⟩", "|-⟩"],   // Estados cuánticos básicos
+      "Non-Physical Entity": ["α", "β", "γ", "δ"],     // Patrones energéticos griegos
+      "Have I just found God?": ["∞", "Ω", "Φ", "Ψ"]   // Símbolos cósmicos/matemáticos
     };
     
-    return baseSets[lifeForm] || ["A", "T", "G", "C"];
+    return baseSets[lifeForm] || ["A", "T", "G", "C"]; // Default: DNA estándar
   }
 
   /**
@@ -1492,62 +1552,127 @@ export class AreciboGenerator {
   }
 
   /**
-   * Datos genómicos procedurales realistas basados en biología conocida
+   * Datos genómicos CIENTÍFICAMENTE EXACTOS basados en biología conocida actual
    */
   private static getGenomeSizeData(lifeForm: string, elements: number[]): any {
     const genomicData: { [key: string]: any } = {
       "Bacteria": {
-        totalBases: 4600000,      // E. coli típica: ~4.6M bp
-        genes: 4300,              // ~4,300 genes
-        gcContent: "high",        // 50-70% GC en muchas bacterias
+        totalBases: 4641652,      // E. coli K-12 MG1655: 4,641,652 bp (dato exacto)
+        genes: 4288,              // 4,288 genes codificantes de proteínas
+        gcContent: "high",        // 50.8% GC en E. coli (dato real)
         chromosomes: 1,           // Cromosoma circular único
         complexity: "simple",
-        modification: "restriction" // Enzimas de restricción
+        modification: "methylation", // Metilación de DNA
+        plasmids: true,           // Plásmidos adicionales
+        repetitiveElements: 3.2   // % de elementos repetitivos
       },
       
       "Vegetation": {
-        totalBases: 120000000,    // Arabidopsis: ~120M bp
-        genes: 27000,             // ~27,000 genes (más que animales!)
-        gcContent: "variable",    // Varía mucho entre especies
-        chromosomes: 5,           // Arabidopsis: 5 cromosomas
+        totalBases: 125000000,    // Arabidopsis thaliana: ~125M bp (dato real)
+        genes: 27416,             // 27,416 genes (dato exacto de TAIR)
+        gcContent: "moderate",    // 36% GC en Arabidopsis
+        chromosomes: 5,           // 5 cromosomas (2n=10)
         complexity: "moderate",
-        modification: "chloroplast" // DNA cloroplástico adicional
+        modification: "chloroplast", // DNA cloroplástico (154 kb adicional)
+        mitochondrial: 367808,    // DNA mitocondrial: 367,808 bp
+        repetitiveElements: 14    // 14% elementos repetitivos
       },
       
       "Animal Life": {
-        totalBases: 3200000000,   // Humanos: ~3.2B bp
-        genes: 20000,             // ~20,000 genes (menos que plantas)
-        gcContent: "moderate",    // ~41% GC en humanos
-        chromosomes: 23,          // 23 pares en humanos
-        complexity: "high",
-        modification: "histones"  // Organización en histonas
+        totalBases: 3200000000,   // Homo sapiens: ~3.2B bp (haploid)
+        genes: 19969,             // 19,969 genes codificantes (dato GENCODE v44)
+        gcContent: "variable",    // 41% GC promedio, variable por cromosoma
+        chromosomes: 23,          // 23 cromosomas (46 diploides)
+        complexity: "very_high",
+        modification: "epigenetic", // Modificaciones epigenéticas complejas
+        introns: 95,             // 95% del genoma son intrones/regiones no codificantes
+        repetitiveElements: 45    // 45% elementos repetitivos (LINES, SINES, etc.)
       },
       
       "Intelligent Life": {
-        totalBases: 5000000000,   // Genoma expandido hipotético
-        genes: 35000,             // Más genes por duplicación
-        gcContent: "optimized",   // GC optimizado evolutivamente
-        chromosomes: 30,          // Más cromosomas para estabilidad
-        complexity: "very_high",
-        modification: "enhanced_epigenetic" // Epigenética avanzada
+        totalBases: 3200000000,   // Base humana real (no inflada artificialmente)
+        genes: 19969,             // Mismos genes base humanos
+        gcContent: "optimized",   // Optimización hipotética de GC
+        chromosomes: 23,          // Mantener estructura cromosómica
+        complexity: "enhanced",
+        modification: "advanced_epigenetic", // Epigenética más sofisticada
+        enhancedRegulation: true, // Regulación génica mejorada
+        repetitiveElements: 35    // Menor % elementos repetitivos por optimización
       },
       
       "Vegetable Animals": {
-        totalBases: 800000000,    // Híbrido entre planta y animal
-        genes: 24000,             // Intermedio planta-animal
-        gcContent: "hybrid",      // Patrón mixto
-        chromosomes: 15,          // Número intermedio
+        totalBases: 600000000,    // Híbrido realista entre planta simple y animal
+        genes: 23000,             // Intermedio entre Arabidopsis y humano
+        gcContent: "mixed",       // Patrón mixto planta-animal
+        chromosomes: 16,          // Número intermedio
         complexity: "chimeric",
-        modification: "dual_system" // Sistema genético dual
+        modification: "dual_system", // Sistema genético dual
+        chloroplasts: true,       // DNA cloroplástico como plantas
+        repetitiveElements: 25    // Intermedio entre plantas y animales
       }
     };
     
-    // Retornar datos específicos o default basado en complejidad elemental
+    // Datos adicionales para formas de vida especulativas pero científicamente fundamentadas
+    const speculativeData: { [key: string]: any } = {
+      "Silicon-Based Life": {
+        totalBases: 2000000,        // Información en enlaces Si-O (menor densidad que DNA)
+        genes: 8000,                // Módulos cristalinos funcionales
+        gcContent: "crystalline",   // Estructura de red cristalina
+        chromosomes: 3,             // Redes cristalinas principales
+        complexity: "moderate",
+        modification: "doping",     // Dopaje de semiconductores
+        repetitiveElements: 60      // Alta repetición en cristales
+      },
+      
+      "Robotic Entities": {
+        totalBases: 2147483647,     // 2^31 - 1 instrucciones (máximo int32)
+        genes: 65536,               // Módulos de código (2^16)
+        gcContent: "binary",        // Código binario
+        chromosomes: 8,             // Bancos de memoria
+        complexity: "digital",
+        modification: "compilation", // Compilación de código
+        repetitiveElements: 20      // Funciones repetidas/librerías
+      },
+      
+      "Conscious Gas": {
+        totalBases: 1048576,        // 2^20 estados cuánticos
+        genes: 256,                 // Estados básicos (2^8)
+        gcContent: "quantum",       // Superposición cuántica
+        chromosomes: 4,             // Grados de libertad cuánticos
+        complexity: "quantum",
+        modification: "entanglement", // Entrelazamiento cuántico
+        repetitiveElements: 0       // Cada estado es único
+      },
+      
+      "Non-Physical Entity": {
+        totalBases: 299792458,      // Velocidad de la luz (información energética)
+        genes: 2000,                // Patrones energéticos básicos
+        gcContent: "energy",        // Patrones de frecuencia
+        chromosomes: 7,             // Espectro electromagnético (7 colores)
+        complexity: "energetic",
+        modification: "resonance",   // Resonancia energética
+        repetitiveElements: 10      // Patrones armónicos
+      },
+      
+      "Have I just found God?": {
+        totalBases: 3141592653,     // π × 10^9 (constante matemática universal)
+        genes: 137,                 // Constante de estructura fina × 100
+        gcContent: "infinite",      // Información infinita
+        chromosomes: 11,            // Dimensiones del universo (teoría M)
+        complexity: "cosmic",
+        modification: "omnipresence", // Ubicuidad cósmica
+        repetitiveElements: 0       // Información única y no repetitiva
+      }
+    };
+    
+    // Retornar datos específicos o especulativos
     if (genomicData[lifeForm]) {
       return genomicData[lifeForm];
+    } else if (speculativeData[lifeForm]) {
+      return speculativeData[lifeForm];
     }
     
-    // Fallback basado en elementos
+    // Fallback basado en complejidad elemental
     const complexity = elements.reduce((sum, atomic) => sum + atomic, 0);
     if (complexity < 100) return genomicData["Bacteria"];
     if (complexity < 200) return genomicData["Vegetation"];
