@@ -1887,27 +1887,37 @@ export class AreciboGenerator {
   }
 
   /**
-   * Dibuja la población del planeta como número binario horizontal
-   * En el mensaje original era la población humana en blanco
+   * Dibuja la población del planeta como número binario vertical/horizontal
+   * En Arecibo original: 4,292,853,750 (11111111100110110111011110110 en binario)
+   * Se dibujaba como un patrón rectangular denso a la derecha del humanoide
    */
   private static drawLifeFormPopulation(bitmap: number[], colorMap: number[], lifeForm: string, planetName: string, startRow: number, height: number): void {
-    // Generar población procedural
+    // Generar población procedural (ahora con valores realistas)
     const population = this.generatePlanetaryPopulation(lifeForm, planetName);
     
-    // Convertir a binario (máximo 8 bits para caber en columnas 15-22)
-    const binaryPopulation = population.toString(2).padStart(Math.min(population.toString(2).length, 8), '0');
+    // Convertir a binario completo (32 bits para números grandes)
+    const binaryPopulation = population.toString(2);
+    console.log(`Población para ${lifeForm} en ${planetName}: ${population.toLocaleString()} = ${binaryPopulation} binario (${binaryPopulation.length} bits)`);
     
-    // Dibujar horizontalmente en la parte inferior (últimas 2 filas)
-    const bottomRow1 = startRow + height - 2;
-    const bottomRow2 = startRow + height - 1;
+    // Área para dibujar la población: lado derecho
+    const startCol = 15; // Columnas 15-22 (8 columnas)
+    const maxCols = 6; // Reducir un poco para que quepa mejor
+    const maxRows = height; // Usar toda la altura disponible
     
-    // Dibujar el número binario horizontalmente de derecha a izquierda (columnas 15-22) en BLANCO
-    for (let i = 0; i < binaryPopulation.length && i < 8; i++) {
-      const bit = parseInt(binaryPopulation[binaryPopulation.length - 1 - i]);
-      if (bit === 1) {
-        const col = 22 - i; // Empezar desde la derecha (columna 22)
-        this.setPixel(bitmap, colorMap, col, bottomRow1, 1, this.COLORS.WHITE);
-        this.setPixel(bitmap, colorMap, col, bottomRow2, 1, this.COLORS.WHITE);
+    // Dibujar el número binario en formato rectangular (como Arecibo)
+    // Dividir los bits en filas para crear un patrón denso
+    let bitIndex = binaryPopulation.length - 1; // Empezar por el bit menos significativo
+    
+    for (let row = 0; row < maxRows && bitIndex >= 0; row++) {
+      for (let col = 0; col < maxCols && bitIndex >= 0; col++) {
+        const bit = parseInt(binaryPopulation[bitIndex]);
+        
+        // Solo dibujar bits "1" en blanco (como en Arecibo)
+        if (bit === 1) {
+          this.setPixel(bitmap, colorMap, startCol + col, startRow + row, 1, this.COLORS.WHITE);
+        }
+        
+        bitIndex--; // Avanzar al siguiente bit
       }
     }
   }
@@ -1969,8 +1979,9 @@ export class AreciboGenerator {
   }
 
   /**
-   * Genera la población procedural de un planeta
-   * Valores entre 1-255 para representar en 8 bits
+   * Genera la población planetaria procedural para una forma de vida
+   * Valores realistas en millones/miles de millones como en Arecibo original
+   * Arecibo original: ~4.29 mil millones (4,292,853,750)
    */
   private static generatePlanetaryPopulation(lifeForm: string, planetName: string): number {
     const category = this.getLifeCategory(lifeForm);
@@ -1979,26 +1990,26 @@ export class AreciboGenerator {
     
     switch (category) {
       case "carbon-based":
-        // Población alta: 150-255
-        return Math.floor(150 + rng.random() * 105);
+        // Poblaciones altas como la Tierra: 1-10 mil millones
+        return Math.floor(1000000000 + rng.random() * 9000000000);
       case "silicon-based":
-        // Población media: 100-200
-        return Math.floor(100 + rng.random() * 100);
+        // Poblaciones menores: 100M - 2 mil millones 
+        return Math.floor(100000000 + rng.random() * 1900000000);
       case "robotic":
-        // Población variable: 50-200
-        return Math.floor(50 + rng.random() * 150);
+        // Muy variables: 1M - 5 mil millones
+        return Math.floor(1000000 + rng.random() * 4999000000);
       case "gaseous":
-        // Pocos individuos: 10-50
-        return Math.floor(10 + rng.random() * 40);
+        // Menos individuos pero existentes: 10M - 500M
+        return Math.floor(10000000 + rng.random() * 490000000);
       case "energy":
-        // Entidades únicas: 1-20
-        return Math.floor(1 + rng.random() * 19);
+        // Entidades raras pero significativas: 100K - 50M
+        return Math.floor(100000 + rng.random() * 49900000);
       case "divine":
-        // Muy pocos: 1-10
-        return Math.floor(1 + rng.random() * 9);
+        // Muy pocos pero poderosos: 1K - 1M
+        return Math.floor(1000 + rng.random() * 999000);
       default:
-        // Similar a la Tierra original (~200): 180-220
-        return Math.floor(180 + rng.random() * 40);
+        // Similar a la Tierra original de Arecibo: 3-6 mil millones
+        return Math.floor(3000000000 + rng.random() * 3000000000);
     }
   }
 
