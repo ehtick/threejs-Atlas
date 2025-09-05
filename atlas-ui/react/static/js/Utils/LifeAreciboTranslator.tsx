@@ -32,10 +32,11 @@ export class AreciboGenerator {
     GREEN: 3,    // Nucleótidos
     BLUE: 4,     // ADN/Estructura genética, Estatura
     ORANGE: 5,   // (No usado en nueva implementación)
-    RED: 6       // Figura de forma de vida
+    RED: 6,      // Figura de forma de vida
+    YELLOW: 7    // Sistema solar
   };
 
-  public static generate(config: AreciboConfig): AreciboMessage {
+  public static async generate(config: AreciboConfig): Promise<AreciboMessage> {
     // Canvas en blanco - 73x23 píxeles
     const bitmap = new Array(this.WIDTH * this.HEIGHT).fill(0);
     const colorMap = new Array(this.WIDTH * this.HEIGHT).fill(0);
@@ -67,9 +68,15 @@ export class AreciboGenerator {
     // Línea en blanco después del ADN
     this.drawBlankLine(bitmap, colorMap, 44);
     
-    // Sección 5: Forma de vida (filas 45-53, máximo 9 líneas) - COLOR NARANJA
+    // Sección 5: Forma de vida (filas 45-53, máximo 9 líneas) - COLOR ROJO
     // Izquierda: Estatura, Centro: Representación gráfica, Derecha: Población
     this.drawLifeFormSection(bitmap, colorMap, config.lifeForm, config.planetName, 45, 9);
+    
+    // Línea en blanco entre forma de vida y sistema solar
+    this.drawBlankLine(bitmap, colorMap, 54);
+    
+    // Sección 6: Sistema solar (filas 55-72) - COLOR AMARILLO
+    await this.drawSolarSystem(bitmap, colorMap, config.planetName, 55);
     
     return {
       bitmap,
@@ -2957,7 +2964,7 @@ export class AreciboGenerator {
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    const colors = ['#000000', '#FFFFFF', '#9966CC', '#00FF00', '#0066FF', '#FF6600', '#FF0000'];
+    const colors = ['#000000', '#FFFFFF', '#9966CC', '#00FF00', '#0066FF', '#FF6600', '#FF0000', '#FFFF00'];
     
     for (let y = 0; y < message.height; y++) {
       for (let x = 0; x < message.width; x++) {
@@ -4859,4 +4866,140 @@ export class AreciboGenerator {
       }
     }
   }
+
+  /**
+   * SECCIÓN 6: Sistema Solar
+   * Representación del sistema solar en color amarillo (estilo Arecibo original)
+   */
+  private static async drawSolarSystem(bitmap: number[], colorMap: number[], planetName: string, startRow: number): Promise<void> {
+    try {
+      // Llamada al nuevo endpoint específico para datos de Arecibo
+      const response = await fetch('/api/arecibo');
+      const data = await response.json();
+      
+      if (!data.success || !data.system_data) {
+        console.warn('No system data available from /api/arecibo');
+        this.drawBasicSolarSystem(bitmap, colorMap, startRow);
+        return;
+      }
+
+      const systemData = data.system_data;
+      const totalPlanets = systemData.total_planets;
+      const currentPlanetIndex = systemData.current_planet_index;
+      const planets = systemData.planets || [];
+      
+      console.log(`Sistema ${systemData.system_index}: ${totalPlanets} planetas, planeta actual: ${currentPlanetIndex}`);
+      
+      // Dibujar el sistema solar con datos reales
+      this.drawAreciboStyleSolarSystem(bitmap, colorMap, totalPlanets, currentPlanetIndex, startRow, planets);
+      
+    } catch (error) {
+      console.warn('Error fetching data from /api/arecibo:', error);
+      this.drawBasicSolarSystem(bitmap, colorMap, startRow);
+    }
+  }
+
+
+  /**
+   * Dibuja el sistema solar al estilo del mensaje de Arecibo original
+   * Estrella 3x3px desde borde izquierdo, planetas con tamaños variables y espaciado 1px
+   */
+  private static drawAreciboStyleSolarSystem(bitmap: number[], colorMap: number[], totalPlanets: number, currentPlanetIndex: number, startRow: number, planets: any[] = []): void {
+    
+    // Estrella: 3x3px empezando en columna 1 (separado 1px del borde)
+    const starStartCol = 1;
+    const starStartRow = startRow + 1;
+    
+    // Dibujar estrella 3x3px en color amarillo
+    for (let row = 0; row < 3; row++) {
+      for (let col = 0; col < 3; col++) {
+        this.setPixel(bitmap, colorMap, starStartCol + col, starStartRow + row, 1, this.COLORS.YELLOW);
+      }
+    }
+    
+    // Planetas empiezan después de la estrella + espacio de 1px
+    let currentCol = starStartCol + 3 + 1; // Después de estrella (3px) + separación (1px) = columna 5
+    
+    // Dibujar planetas
+    for (let i = 0; i < totalPlanets; i++) {
+      // Obtener tamaño del planeta desde los datos reales o usar lógica por defecto
+      const planetSize = this.getRealPlanetSize(i, currentPlanetIndex, planets);
+      const planetStartRow = starStartRow; // Misma fila base que la estrella
+      
+      // Dibujar planeta según su tamaño
+      for (let row = 0; row < planetSize; row++) {
+        this.setPixel(bitmap, colorMap, currentCol, planetStartRow + row, 1, this.COLORS.YELLOW);
+      }
+      
+      // Avanzar columna: tamaño del planeta + separación de 1px
+      currentCol += 1 + 1; // planeta (1px ancho) + separación (1px)
+      
+      // Verificar que no nos salimos del ancho disponible
+      if (currentCol >= this.WIDTH - 1) {
+        console.log(`Alcanzado límite de ancho en columna ${currentCol}, parando dibujo de planetas`);
+        break;
+      }
+    }
+    
+    // Información del sistema en binario omitida - solo mostrar el sistema visual
+  }
+
+  /**
+   * Determina el tamaño visual de un planeta usando datos reales de la API
+   */
+  private static getRealPlanetSize(planetIndex: number, currentPlanetIndex: number, planets: any[]): number {
+    // El planeta actual siempre es tamaño 3 (más visible)
+    if (planetIndex === currentPlanetIndex) {
+      return 3;
+    }
+    
+    // Si tenemos datos reales del planeta, usar su categoría de tamaño
+    const planetData = planets.find(p => p.index === planetIndex);
+    if (planetData && planetData.size_category) {
+      switch (planetData.size_category) {
+        case 'small': return 1;
+        case 'medium': return 2;
+        case 'large': return 3;
+        default: return 1;
+      }
+    }
+    
+    // Fallback: lógica por defecto basada en posición orbital
+    if (planetIndex === 0) return 1;
+    if (planetIndex === 1) return 2;
+    return (planetIndex % 2) + 1; // Alterna entre 1 y 2
+  }
+
+
+  /**
+   * Dibuja una representación básica del sistema solar (fallback)
+   */
+  private static drawBasicSolarSystem(bitmap: number[], colorMap: number[], startRow: number): void {
+    const centerCol = Math.floor(this.WIDTH / 2);
+    
+    // Sol en el centro (representado como un punto más grande)
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.YELLOW);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.YELLOW);
+    
+    // Planetas en diferentes órbitas (puntos simples)
+    const orbits = [
+      { col: centerCol - 3, row: startRow + 4 },  // Planeta interior
+      { col: centerCol - 1, row: startRow + 6 },  // Planeta medio
+      { col: centerCol + 2, row: startRow + 5 },  // Planeta actual (destacado)
+      { col: centerCol + 4, row: startRow + 7 },  // Planeta exterior
+    ];
+    
+    orbits.forEach((orbit, index) => {
+      if (index === 2) {
+        // Destacar el planeta actual con un patrón diferente
+        this.setPixel(bitmap, colorMap, orbit.col, orbit.row, 1, this.COLORS.YELLOW);
+        this.setPixel(bitmap, colorMap, orbit.col, orbit.row - 1, 1, this.COLORS.YELLOW);
+        this.setPixel(bitmap, colorMap, orbit.col, orbit.row + 1, 1, this.COLORS.YELLOW);
+      } else {
+        this.setPixel(bitmap, colorMap, orbit.col, orbit.row, 1, this.COLORS.YELLOW);
+      }
+    });
+  }
+
 }
