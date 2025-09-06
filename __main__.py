@@ -32,6 +32,7 @@ from pymodules.__drawer_base import handle_image_generation
 from pymodules.__atlas_ui_file_delivery import send_static_images, send_static_favicon, send_src_static, send_src_dist
 from pymodules.__frontendAPI_location_data import register_location_api
 from pymodules.__frontendAPI_planet_renderer import register_planet_renderer_api
+from pymodules.__frontendAPI_arecibo import register_arecibo_api
 
 
 template_folder = os.path.join(os.getcwd(), "atlas-ui", "template")
@@ -52,6 +53,8 @@ register_vite_assets(
 register_location_api(app)
 
 register_planet_renderer_api(app)
+
+register_arecibo_api(app)
 
 universe = None
 constants = PhysicalConstants()
