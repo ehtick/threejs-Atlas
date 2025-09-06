@@ -96,7 +96,7 @@ const AreciboModal: React.FC<AreciboModalProps> = ({ isOpen, onClose, lifeForm, 
             <AreciboMessage 
               lifeForm={lifeForm}
               planetName={planetName}
-              scale={3}
+              scale={6}
               className=""
               showControls={false}
               showInfo={false}
@@ -104,17 +104,16 @@ const AreciboModal: React.FC<AreciboModalProps> = ({ isOpen, onClose, lifeForm, 
           </div>
           
           <div className="text-center">
-            <p className="text-sm text-gray-400 mb-2">
-              Trying to understand the Life Form analyzed?
+            <p className="text-xs text-gray-400">
+              Trying to understand the Life Form analyzed? <a 
+                href="https://en.wikipedia.org/wiki/Arecibo_message" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-green-400 hover:text-green-300 underline transition-colors"
+              >
+                Click here
+              </a>
             </p>
-            <a 
-              href="https://en.wikipedia.org/wiki/Arecibo_message" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-green-400 hover:text-green-300 underline text-sm transition-colors"
-            >
-              Click here
-            </a>
           </div>
         </div>
 

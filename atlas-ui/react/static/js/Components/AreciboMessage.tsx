@@ -11,7 +11,7 @@ interface AreciboMessageProps {
   showInfo?: boolean;
 }
 
-const AreciboMessage: React.FC<AreciboMessageProps> = ({ lifeForm, planetName, className = "", scale = 16, showControls = true, showInfo = true }) => {
+const AreciboMessage: React.FC<AreciboMessageProps> = ({ lifeForm, planetName, className = "", scale = 32, showControls = true, showInfo = true }) => {
   const [messageData, setMessageData] = useState<AreciboMessageType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -267,7 +267,7 @@ const AreciboMessage: React.FC<AreciboMessageProps> = ({ lifeForm, planetName, c
           className="border border-green-500/30 rounded bg-black"
           style={{
             imageRendering: "pixelated",
-            maxWidth: "100%",
+            width: "auto",
             height: "auto",
           }}
         />
