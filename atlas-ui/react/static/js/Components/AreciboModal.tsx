@@ -62,7 +62,7 @@ const AreciboModal: React.FC<AreciboModalProps> = ({ isOpen, onClose, lifeForm, 
       onClick={handleClose}
     >
       <div
-        className="bg-gray-900/95 border border-green-500/50 rounded-lg shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto relative"
+        className="bg-gray-900/95 border border-green-500/50 rounded-lg shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] relative"
         style={{
           opacity: isVisible ? 1 : 0,
           transform: isVisible ? "scale(1)" : "scale(0.95)",
@@ -93,19 +93,13 @@ const AreciboModal: React.FC<AreciboModalProps> = ({ isOpen, onClose, lifeForm, 
           </div>
 
           <div className="text-center">
-            <p className="text-xs text-gray-400">
+            <p className="text-[10px] text-gray-400">
               Trying to understand the Life Form analyzed?{" "}
               <a href="https://en.wikipedia.org/wiki/Arecibo_message" target="_blank" rel="nofollow noopener noreferrer" className="text-green-400 hover:text-green-300 underline transition-colors">
                 Click here
               </a>
             </p>
           </div>
-        </div>
-
-        <div className="flex justify-end p-4 border-t border-green-500/30">
-          <button onClick={handleClose} className="px-4 py-2 bg-green-500/20 hover:bg-green-500/30 border border-green-500/50 text-green-400 rounded transition-colors">
-            Close
-          </button>
         </div>
       </div>
     </div>,
