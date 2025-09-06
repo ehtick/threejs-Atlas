@@ -1,4 +1,5 @@
 // atlas-ui/react/static/js/Components/PlanetVisualizationUniversal.tsx
+
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ModularPlanetRendererWrapper } from "../3DComponents/ModularPlanetRendererWrapper";
@@ -7,6 +8,8 @@ import Planet3DViewerFullscreen from "./Planet3DViewerFullscreen.tsx";
 import DownloadIcon from "../Icons/DownloadIcon";
 import ExportingOverlay from "./ExportingOverlay";
 import StargateButton from "./StargateButton";
+import MiningAnimationOverlay from "./MiningAnimationOverlay.tsx";
+import { ResourceEventManager } from "../Utils/ResourceEventManager.tsx";
 
 interface Planet {
   name: string;
@@ -47,6 +50,7 @@ const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> 
   const [isClosing, setIsClosing] = useState(false);
   const [isEntering, setIsEntering] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [showMiningAnimation, setShowMiningAnimation] = useState(false);
 
   const handleCloseFullscreen = () => {
     setIsClosing(true);
@@ -195,6 +199,18 @@ const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> 
     return () => clearInterval(interval);
   }, [isGeneratingImage]);
 
+  useEffect(() => {
+    const handleMiningCompleted = () => {
+      setShowMiningAnimation(true);
+    };
+
+    const unsubscribe = ResourceEventManager.subscribe("mining_completed", handleMiningCompleted);
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between mb-3">
@@ -271,6 +287,13 @@ const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> 
             )}
           </div>
         )}
+
+        <MiningAnimationOverlay
+          isActive={showMiningAnimation}
+          onAnimationComplete={() => {
+            setShowMiningAnimation(false);
+          }}
+        />
       </div>
 
       <div className="text-center mt-auto">
