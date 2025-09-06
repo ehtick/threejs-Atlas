@@ -42,6 +42,7 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
   const [importError, setImportError] = useState<string | null>(null);
   const [importSuccess, setImportSuccess] = useState<boolean>(false);
   const panelRef = useRef<HTMLDivElement>(null);
+  const collectionModalRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -161,6 +162,19 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isOpen, isClosing]);
+
+  useEffect(() => {
+    const handleCollectionModalClickOutside = (event: MouseEvent) => {
+      if (showCollectionPopup && !isCollectionClosing && collectionModalRef.current && !collectionModalRef.current.contains(event.target as Node)) {
+        closeCollectionPopup();
+      }
+    };
+
+    document.addEventListener("mousedown", handleCollectionModalClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleCollectionModalClickOutside);
+    };
+  }, [showCollectionPopup, isCollectionClosing]);
 
   const formatBytes = (bytes: number): string => {
     if (bytes === 0) return "0 B";
@@ -520,7 +534,12 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
               {activeTab === "saved" && (
                 <div className="space-y-2">
                   <div className="bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-lg p-2 border border-purple-500/30">
-                    <h4 className="text-white font-semibold text-xs flex items-center gap-1 mb-1">⛏️ Mining Operations</h4>
+                    <h4 className="text-white font-semibold text-xs flex items-center gap-1 mb-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" width={16} height={16} viewBox="0 0 24 24">
+                        <path fill="currentColor" fillRule="evenodd" d="M3.5 8V6.5l4-3l3 1.5l4-3l6 4.5V8zm-.476 8.124L1.184 9.5h21.632l-1.84 6.624a4.5 4.5 0 0 0-7.364 4.376h-3.224q.111-.483.112-1a4.5 4.5 0 0 0-7.476-3.376M6 22.5a3 3 0 1 0 0-6a3 3 0 0 0 0 6m12 0a3 3 0 1 0 0-6a3 3 0 0 0 0 6" clipRule="evenodd"></path>
+                      </svg>
+                      Mining Operations
+                    </h4>
 
                     {passiveGeneration.sources.planets === 0 && passiveGeneration.sources.systems === 0 ? (
                       <div className="text-[10px] text-gray-400">💡 Save planets and systems to enable mining operations</div>
@@ -705,10 +724,15 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
 
         {showCollectionPopup && (
           <div className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 ${isCollectionClosing ? "animate-fadeOut" : "animate-fadeIn"}`}>
-            <div className={`bg-black/90 backdrop-blur-xl rounded-2xl border border-purple-400/30 shadow-2xl w-full max-w-md ${isCollectionClosing ? "animate-slideDown" : "animate-slideUp"}`}>
-              <div className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 p-4 border-b border-white/10 rounded-t-2xl">
+            <div ref={collectionModalRef} className={`bg-black/90 backdrop-blur-xl rounded-2xl border border-purple-400/30 shadow-2xl w-full max-w-md ${isCollectionClosing ? "animate-slideDown" : "animate-slideUp"}`}>
+              <div className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 px-4 py-3 border-b border-white/10 rounded-t-2xl">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-white font-bold text-lg flex items-center gap-2">⛏️ Mass Collection</h3>
+                  <h3 className="text-white font-bold text-lg flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width={24} height={24} viewBox="0 0 24 24">
+                      <path fill="currentColor" fillRule="evenodd" d="M3.5 8V6.5l4-3l3 1.5l4-3l6 4.5V8zm-.476 8.124L1.184 9.5h21.632l-1.84 6.624a4.5 4.5 0 0 0-7.364 4.376h-3.224q.111-.483.112-1a4.5 4.5 0 0 0-7.476-3.376M6 22.5a3 3 0 1 0 0-6a3 3 0 0 0 0 6m12 0a3 3 0 1 0 0-6a3 3 0 0 0 0 6" clipRule="evenodd"></path>
+                    </svg>
+                    Mass Collection
+                  </h3>
                   <button onClick={closeCollectionPopup} className="text-gray-400 hover:text-white transition-colors duration-200">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

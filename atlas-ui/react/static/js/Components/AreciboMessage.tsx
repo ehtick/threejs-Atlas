@@ -210,8 +210,8 @@ const AreciboMessage: React.FC<AreciboMessageProps> = ({ lifeForm, planetName, c
   if (isLoading) {
     return (
       <div className={`arecibo-message-container ${className}`}>
-        <div className="relative border border-green-500/30 rounded bg-black flex items-center justify-center" style={{ minHeight: "300px" }}>
-          <div className="text-green-400 text-sm">
+        <div className="relative border border-blue-400/30 rounded bg-black flex items-center justify-center" style={{ minHeight: "300px" }}>
+          <div className="text-blue-400 text-sm">
             <div className="animate-pulse">Generating Arecibo Message...</div>
             <div className="text-xs text-gray-400 mt-2 text-center">Fetching solar system data...</div>
           </div>
@@ -235,7 +235,7 @@ const AreciboMessage: React.FC<AreciboMessageProps> = ({ lifeForm, planetName, c
       <div className="relative">
         <canvas
           ref={canvasRef}
-          className="border border-green-500/30 rounded bg-black"
+          className="border border-blue-400/30 rounded bg-black"
           style={{
             imageRendering: "pixelated",
             width: "auto",
@@ -243,7 +243,7 @@ const AreciboMessage: React.FC<AreciboMessageProps> = ({ lifeForm, planetName, c
           }}
         />
         {showControls && !isAnimating && (
-          <button onClick={handleReplay} className="absolute top-2 right-2 px-2 py-1 text-xs bg-green-500/20 hover:bg-green-500/30 border border-green-500/50 text-green-400 rounded transition-colors">
+          <button onClick={handleReplay} className="absolute top-2 right-2 px-2 py-1 text-xs bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/50 text-blue-400 rounded transition-colors">
             Replay
           </button>
         )}
