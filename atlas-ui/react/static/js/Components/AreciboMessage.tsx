@@ -113,7 +113,7 @@ const AreciboMessage: React.FC<AreciboMessageProps> = ({ lifeForm, planetName, c
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       const progress = revealProgressRef.current;
-      const colors = ['#000000', '#FFFFFF', '#9966CC', '#00FF00', '#0066FF', '#FF6600', '#FF0000', '#FFFF00'];
+      const colors = ['#000000', '#FFFFFF', '#9966CC', '#00FF00', '#0066FF', '#FF6600', '#FF0000', '#FFFF00', '#B19CD9'];
       
       // Update signal strength (0 to 1 over time)
       signalStrengthRef.current = Math.min(1, progress * 1.5);
@@ -209,7 +209,7 @@ const AreciboMessage: React.FC<AreciboMessageProps> = ({ lifeForm, planetName, c
       ctx.fillStyle = "#000";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
-      const colors = ['#000000', '#FFFFFF', '#9966CC', '#00FF00', '#0066FF', '#FF6600', '#FF0000', '#FFFF00'];
+      const colors = ['#000000', '#FFFFFF', '#9966CC', '#00FF00', '#0066FF', '#FF6600', '#FF0000', '#FFFF00', '#B19CD9'];
       for (let y = 0; y < messageData.height; y++) {
         for (let x = 0; x < messageData.width; x++) {
           const index = y * messageData.width + x;
