@@ -95,7 +95,7 @@ const AreciboModal: React.FC<AreciboModalProps> = ({ isOpen, onClose, lifeForm, 
           <div className="text-center">
             <p className="text-xs text-gray-400">
               Trying to understand the Life Form analyzed?{" "}
-              <a href="https://en.wikipedia.org/wiki/Arecibo_message" target="_blank" rel="noopener noreferrer" className="text-green-400 hover:text-green-300 underline transition-colors">
+              <a href="https://en.wikipedia.org/wiki/Arecibo_message" target="_blank" rel="nofollow noopener noreferrer" className="text-green-400 hover:text-green-300 underline transition-colors">
                 Click here
               </a>
             </p>

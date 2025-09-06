@@ -519,24 +519,24 @@ class Planet:
             if random.random() < 0.02:
                 return "Silicon-Based Life"
 
-        if random.random() < 0.1:
+        if random.random() < 0.0001:
             return "Non-Physical Entity"
 
         if self.atmosphere in ["Methane", "Ammonia"]:
-            if random.random() < 1:
+            if random.random() < 0.00001:
                 return "Conscious Gas"
 
         if self.planet_type in ["Metallic", "Crystalline"]:
-            if random.random() < 1:
+            if random.random() < 0.001:
                 return "Robotic Entities"
 
         if (
             self.planet_type == "Nebulous"
-            # and self.atmosphere == "Plasma"
-            # and "Moscovium" in self.elements
-            # and "Z-Divinium" in self.elements
+            and self.atmosphere == "Plasma"
+            and "Moscovium" in self.elements
+            and "Z-Divinium" in self.elements
         ):
-            if random.random() < 1:
+            if random.random() < 0.1:
                 return "Have I just found God?"
 
         return random.choice(possible_life_forms)
