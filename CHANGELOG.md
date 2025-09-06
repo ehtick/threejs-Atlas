@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.4.36] - 2025-09-06
+
+- Added Arecibo-style analysis images for planetary life forms (with compounds, nucleotides, physical representations, radio telescopes, DNA helices, etc., accessible via each planet’s “Life Forms” banner), enabled closing the Mass Collection modal by clicking outside, and introduced animations to 3D scenes when galaxies, systems, or planets are manually mined.
+
 ## [2.4.34] - 2025-09-04
 
 - Removed Daily Streak bonus multiplier, it felt like cheating the exploration and resource "minigame", also it wasn't adding any real value to simulation exploration, so... If you can ditch it, ditch it!
