@@ -1,8 +1,4 @@
-/**
- * Arecibo Message Generator - Canvas con colores
- * Genera un canvas de 73x23 píxeles con representación procedural por tipo de vida
- * Colores: 1=blanco(números), 2=lila(elementos), 3=verde(nucleótidos), 4=azul(ADN)
- */
+// atlas-ui/react/static/js/Utils/LifeAreciboTranslator.tsx
 
 export interface AreciboConfig {
   lifeForm: string;
@@ -88,10 +84,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * SECCIÓN 1: Números 1-10
-   * Filas: 0-3, Color: BLANCO
-   */
+  // Section 1: Números del 1 al 10
   private static drawNumbers(bitmap: number[], colorMap: number[]): void {
     const columnPositions = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19];
 
@@ -108,10 +101,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * SECCIÓN 2: Elementos químicos
-   * Filas: 5-9, Color: LILA
-   */
+  // Seccion 2: Elementos químicos
   private static drawChemicalElements(bitmap: number[], colorMap: number[], lifeForm: string, planetName?: string): void {
     const elements = this.getElementsForLifeForm(lifeForm, planetName || "Earth");
     const category = this.getLifeCategory(lifeForm);
@@ -140,11 +130,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * SECCIÓN 3: Nucleótidos/Información genética
-   * Filas: 12-27, Color: VERDE
-   * Cada tipo de vida tiene su representación ESPECÍFICA y COHERENTE
-   */
+  // Nucleótidos o análogos
   private static drawNucleotides(bitmap: number[], colorMap: number[], lifeForm: string, planetName?: string): void {
     const category = this.getLifeCategory(lifeForm);
 
@@ -172,10 +158,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * VIDA BASADA EN CARBONO - ADN/RNA clásico
-   * FIEL al mensaje de Arecibo original con márgenes correctos
-   */
+  // Vida basada en carbono - Nucleótidos estándar
   private static drawCarbonBasedGenetics(bitmap: number[], colorMap: number[], lifeForm: string, planetName?: string): void {
     const elements = this.getElementsForLifeForm(lifeForm, planetName || "Earth");
     const bases = this.getNitrogenBases(lifeForm, planetName || "Earth");
@@ -195,9 +178,7 @@ export class AreciboGenerator {
     this.drawDNAHelixBorders(bitmap, colorMap);
   }
 
-  /**
-   * Genera enlaces químicos para unidades silicáticas según el elemento
-   */
+  // Vida basada en silicio - Bases de silicato análogas a nucleótidos
   private static getSilicateBonds(element: string): number[] {
     const bondPatterns: { [key: string]: number[] } = {
       Si: [1, 1, 0, 4, 0],
@@ -232,9 +213,7 @@ export class AreciboGenerator {
     return bondPatterns[element] || [1, 1, 1, 2, 0];
   }
 
-  /**
-   * Obtiene la frecuencia energética para un estado dado
-   */
+  // Vida basada en energía - Estados energéticos análogos a nucleótidos
   private static getEnergyFrequency(state: string): number {
     const freqMap: { [key: string]: number } = {
       α: 1,
@@ -278,9 +257,7 @@ export class AreciboGenerator {
     return freqMap[state] || Math.abs(state.charCodeAt(0) % 10) + 1;
   }
 
-  /**
-   * Obtiene el patrón visual para un estado energético
-   */
+  // Obtiene el patrón visual para un estado energético
   private static getEnergyPattern(state: string): string {
     const patterns: { [key: string]: string } = {
       α: "wave",
@@ -324,9 +301,7 @@ export class AreciboGenerator {
     return patterns[state] || "default";
   }
 
-  /**
-   * Calcula si se debe dibujar un píxel según el patrón energético
-   */
+  // Calcula si se debe dibujar un píxel según el patrón energético
   private static calculateEnergyPattern(pattern: string, phase: number, step: number): boolean {
     switch (pattern) {
       case "wave":
@@ -362,9 +337,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * VIDA BASADA EN SILICIO - Información cristalina análoga a nucleótidos
-   */
+  // Vida basada en silicio - Información cristalina análoga a nucleótidos
   private static drawSiliconBasedGenetics(bitmap: number[], colorMap: number[], lifeForm: string, planetName: string): void {
     const silicateBases = this.getNitrogenBases(lifeForm, planetName);
 
@@ -410,9 +383,7 @@ export class AreciboGenerator {
     this.drawDNAHelixBorders(bitmap, colorMap);
   }
 
-  /**
-   * ENTIDADES ROBÓTICAS - Información digital análoga a nucleótidos - PROCEDURAL
-   */
+  // Entidades robóticas - Información digital análoga a nucleótidos - Procedural
   private static drawRoboticInformation(bitmap: number[], colorMap: number[], lifeForm: string, planetName?: string): void {
     const hash = this.hashString(lifeForm + (planetName || "Earth") + "digital");
     const rng = this.createSeededRandom(hash);
@@ -590,9 +561,7 @@ export class AreciboGenerator {
     this.drawDNAHelixBorders(bitmap, colorMap);
   }
 
-  /**
-   * GAS CONSCIENTE - Estados cuánticos análogos a nucleótidos - PROCEDURAL
-   */
+  // Gas consciente - Estados cuánticos análogos a nucleótidos
   private static drawGaseousInformation(bitmap: number[], colorMap: number[], lifeForm: string, planetName?: string): void {
     const hash = this.hashString(lifeForm + (planetName || "Earth") + "quantum");
     const rng = this.createSeededRandom(hash);
@@ -754,9 +723,7 @@ export class AreciboGenerator {
     this.drawDNAHelixBorders(bitmap, colorMap);
   }
 
-  /**
-   * ENTIDAD DE ENERGÍA - Patrones ondulatorios análogos a nucleótidos
-   */
+  // Entidad de energía - Patrones ondulatorios análogos a nucleótidos
   private static drawEnergyInformation(bitmap: number[], colorMap: number[], lifeForm: string, planetName: string): void {
     const energyStates = this.getNitrogenBases(lifeForm, planetName);
 
@@ -809,9 +776,7 @@ export class AreciboGenerator {
     this.drawDNAHelixBorders(bitmap, colorMap);
   }
 
-  /**
-   * ENTIDAD DIVINA - Geometría sagrada análoga a nucleótidos con cruces católicas
-   */
+  // Entidad divina - Geometría sagrada análoga a nucleótidos con cruces católicas
   private static drawDivineInformation(bitmap: number[], colorMap: number[]): void {
     const crossPositions = [4, 8, 12, 16];
 
@@ -853,15 +818,7 @@ export class AreciboGenerator {
     this.drawDNAHelixBorders(bitmap, colorMap);
   }
 
-  /**
-   * FUNCIONES ESPECÍFICAS PARA VIDA BASADA EN CARBONO (ADN/RNA)
-   * Siguen la estructura exacta del mensaje de Arecibo original
-   */
-
-  /**
-   * Dibuja las fórmulas químicas de los nucleótidos siguiendo el orden H-C-N-O-P
-   * PROCEDURAL: varía según el tipo específico de vida basada en carbono
-   */
+  // Vida basada en carbono - Nucleótidos estándar (A, T/U, C, G) con variaciones según el planeta y el esqueleto azúcar-fosfato del ADN
   private static drawNucleotideFormulas(bitmap: number[], colorMap: number[], bases: string[], elements: number[], lifeForm: string): void {
     const nucleotideData = this.getNucleotideVariation(lifeForm, elements);
 
@@ -876,9 +833,7 @@ export class AreciboGenerator {
     this.drawChemicalFormula(bitmap, colorMap, 1, 12, sugarFormula);
   }
 
-  /**
-   * Dibuja patrones visuales únicos de nucleótidos según los elementos del planeta
-   */
+  // Dibuja patrones visuales únicos de nucleótidos según los elementos del planeta
   private static drawAdaptedNucleotidePattern(bitmap: number[], colorMap: number[], base: any, col: number, elements: number[]): void {
     const fifthElement = elements[4];
 
@@ -904,9 +859,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Dibuja patrones visuales únicos para cada tipo de quinto elemento
-   */
+  // Dibuja patrones visuales únicos para cada tipo de quinto elemento
   private static drawFifthElementPattern(bitmap: number[], colorMap: number[], col: number, row: number, element: number, count: number): void {
     switch (element) {
       case 15:
@@ -956,9 +909,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Dibuja el esqueleto azúcar-fosfato del ADN
-   */
+  // Dibuja el esqueleto azúcar-fosfato del ADN
   private static drawSugarPhosphateBackbone(bitmap: number[], colorMap: number[], elements: number[]): void {
     this.setPixel(bitmap, colorMap, 11, 18, 1, this.COLORS.GREEN);
     this.setPixel(bitmap, colorMap, 11, 19, 1, this.COLORS.GREEN);
@@ -974,9 +925,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, 16, 18, 1, this.COLORS.GREEN);
   }
 
-  /**
-   * Dibuja el número total de nucleótidos en el genoma (PROCEDURAL)
-   */
+  // Dibuja el número total de nucleótidos en el genoma, el contenido GC, el número de cromosomas y el tamaño total del genoma
   private static drawGenomeSize(bitmap: number[], colorMap: number[], elements: number[], lifeForm: string): void {
     const nucleotideData = this.getNucleotideVariation(lifeForm, elements);
     const genomeSizeData = this.getGenomeSizeData(lifeForm, "Earth", elements);
@@ -1011,9 +960,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, 17, 25, 1, this.COLORS.GREEN);
   }
 
-  /**
-   * Dibuja solo los bordes de la doble hélice, dejando el centro libre
-   */
+  // Dibuja solo los bordes de la doble hélice, dejando el centro libre
   private static drawDNAHelixBorders(bitmap: number[], colorMap: number[]): void {
     this.setPixel(bitmap, colorMap, 3, 27, 1, this.COLORS.GREEN);
     this.setPixel(bitmap, colorMap, 4, 27, 1, this.COLORS.GREEN);
@@ -1022,11 +969,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, 19, 27, 1, this.COLORS.GREEN);
   }
 
-  /**
-   * Dibuja la representación de la doble hélice del ADN
-   * HELICES AZULES + CENTRO BLANCO según el mensaje original de Arecibo
-   * Adaptado para cada forma de vida de manera coherente con sus nucleótidos
-   */
+  // Dibuja la doble hélice de ADN adaptada según el tipo de vida
   private static drawDNADoubleHelix(bitmap: number[], colorMap: number[], lifeForm: string, planetName: string, startRow: number = 28, height: number = 15): void {
     const category = this.getLifeCategory(lifeForm);
     const centerCol = 11;
@@ -1055,12 +998,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Doble hélice clásica de ADN para vida basada en carbono
-   * EXACTAMENTE como el mensaje de Arecibo original:
-   * - Centro: 2 píxeles de ancho representando NÚMERO BINARIO de pares de bases
-   * - Hélices laterales AZULES envolviendo el centro sin sobreponerse
-   */
+  // Doble hélice de ADN para vida basada en carbono
   private static drawCarbonBasedDoubleHelix(bitmap: number[], colorMap: number[], lifeForm: string, planetName: string, centerCol: number, startRow: number, height: number): void {
     const genomicData = this.getGenomeSizeData(lifeForm, planetName, this.getElementsForLifeForm(lifeForm, planetName));
 
@@ -1137,12 +1075,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Estructura cristalina para vida basada en silicio
-   * SIGUIENDO EL PATRÓN ARECIBO ORIGINAL:
-   * - Centro: 2 píxeles representando NÚMERO de unidades cristalinas
-   * - Redes laterales AZULES envolviendo sin sobreponerse
-   */
+  // Estructura cristalina para vida basada en silicio
   private static drawSiliconBasedStructure(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, lifeForm: string, planetName: string): void {
     const hash = this.hashString(lifeForm + planetName + "crystalline");
     const rng = this.createSeededRandom(hash);
@@ -1210,12 +1143,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Estructura de datos digital para entidades robóticas - PROCEDURAL
-   * SIGUIENDO EL PATRÓN ARECIBO ORIGINAL:
-   * - Centro: 2 píxeles representando NÚMERO de instrucciones/líneas de código
-   * - Buses laterales AZULES sin sobreponerse - CON VARIACIÓN PROCEDURAL
-   */
+  // Estructura de datos digitales para vida robótica
   private static drawDigitalDataStructure(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, lifeForm: string, planetName?: string): void {
     const hash = this.hashString(lifeForm + (planetName || "Earth") + "datastructure");
     const rng = this.createSeededRandom(hash);
@@ -1330,12 +1258,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Campo cuántico para gas consciente - PROCEDURAL
-   * SIGUIENDO EL PATRÓN ARECIBO ORIGINAL:
-   * - Centro: 2 píxeles representando NÚMERO de estados cuánticos
-   * - Campos laterales AZULES sin sobreponerse - CON VARIACIÓN PROCEDURAL
-   */
+  // Estructura de campo cuántico para vida gaseosa
   private static drawQuantumFieldStructure(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, lifeForm: string, planetName?: string): void {
     const hash = this.hashString(lifeForm + (planetName || "Earth") + "quantumfield");
     const rng = this.createSeededRandom(hash);
@@ -1449,12 +1372,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Campo energético para entidades de energía
-   * SIGUIENDO EL PATRÓN ARECIBO ORIGINAL:
-   * - Centro: 2 píxeles representando NÚMERO de unidades de energía
-   * - Campos laterales AZULES sin sobreponerse
-   */
+  // Estructura de campo energético para vida basada en energía
   private static drawEnergyFieldStructure(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, lifeForm: string, planetName: string): void {
     const energyTypes = this.getElementsForLifeForm(lifeForm, planetName);
     const energyStates = this.getNitrogenBases(lifeForm, planetName);
@@ -1512,9 +1430,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Calcula la intensidad de campo energético según el patrón
-   */
+  // Calcula la intensidad del campo energético basado en el patrón y la fase
   private static calculateFieldIntensity(pattern: string, phase: number, step: number, side: string): number {
     const baseIntensity = (Math.sin(phase) + 1) / 2;
 
@@ -1548,12 +1464,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Geometría cósmica para entidades divinas
-   * SIGUIENDO EL PATRÓN ARECIBO ORIGINAL:
-   * - Centro: 2 píxeles representando NÚMERO cósmico (constantes universales)
-   * - Geometrías laterales AZULES sin sobreponerse
-   */
+  // Estructura geométrica cósmica para vida divina
   private static drawCosmicGeometryStructure(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     const centerCol1 = 11;
     const centerCol2 = 12;
@@ -1581,9 +1492,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Dibuja una fórmula química en formato vertical
-   */
+  // Dibuja una fórmula química en formato vertical
   private static drawChemicalFormula(bitmap: number[], colorMap: number[], col: number, startRow: number, formula: number[]): void {
     for (let i = 0; i < formula.length; i++) {
       const count = formula[i];
@@ -1601,9 +1510,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Dibuja un bloque compacto de píxeles
-   */
+  // Dibuja un bloque compacto de píxeles
   private static drawCompactBlock(bitmap: number[], colorMap: number[], startCol: number, startRow: number, width: number, height: number): void {
     for (let row = startRow; row < startRow + height; row++) {
       for (let col = startCol; col < startCol + width; col++) {
@@ -1612,9 +1519,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Obtiene las bases complementarias para el ADN de doble cadena
-   */
+  // Obtiene las bases complementarias para el ADN de doble cadena
   private static getComplementaryBases(bases: string[]): string[] {
     const complements: { [key: string]: string } = {
       A: "T",
@@ -1628,9 +1533,7 @@ export class AreciboGenerator {
     return bases.map((base) => complements[base] || "X");
   }
 
-  /**
-   * Obtiene el elemento equivalente al fosfato según la forma de vida
-   */
+  // Obtiene el elemento equivalente al fosfato según la forma de vida
   private static getPhosphateEquivalent(elements: number[]): number {
     return elements.includes(15) ? 15 : elements[elements.length - 1];
   }
@@ -2227,10 +2130,7 @@ export class AreciboGenerator {
     return baseBases;
   }
 
-  /**
-   * Genera nucleótidos basados EXCLUSIVAMENTE en los elementos químicos asignados
-   * Cada forma de vida tendrá nucleótidos únicos según su química específica
-   */
+  // Genera variaciones en la información genética basadas en los elementos disponibles
   private static getNucleotideVariation(lifeForm: string, elements: number[]): any {
     const elementMap = this.createElementMap(elements);
 
@@ -2239,9 +2139,7 @@ export class AreciboGenerator {
     return nucleotideData;
   }
 
-  /**
-   * Crea un mapa de elementos disponibles para esta forma de vida
-   */
+  // Crea un mapa de elementos para una búsqueda rápida
   private static createElementMap(elements: number[]): { [key: string]: boolean } {
     const elementNames: { [key: number]: string } = {
       1: "H",
@@ -2284,9 +2182,7 @@ export class AreciboGenerator {
     return elementMap;
   }
 
-  /**
-   * Genera estructuras de información genética basadas en elementos específicos
-   */
+  // Genera estructuras de información genética basadas en elementos específicos
   private static generateElementBasedNucleotides(elementMap: { [key: string]: boolean }, lifeForm: string): any {
     if (elementMap["C"] && elementMap["N"] && elementMap["O"] && elementMap["H"]) {
       return this.generateCarbonBasedNucleotides(elementMap, lifeForm);
@@ -2303,9 +2199,7 @@ export class AreciboGenerator {
     return this.generateGenericInformation(elementMap);
   }
 
-  /**
-   * Nucleótidos de carbono clásicos con variaciones según elementos específicos
-   */
+  // Nucleótidos de carbono clásicos con variaciones según elementos específicos
   private static generateCarbonBasedNucleotides(elementMap: { [key: string]: boolean }, lifeForm: string): any {
     const hasPhosphorus = elementMap["P"];
     const hasSulfur = elementMap["S"];
@@ -2327,9 +2221,7 @@ export class AreciboGenerator {
     };
   }
 
-  /**
-   * Información genética basada en silicio
-   */
+  // Adapta la fórmula molecular para incluir solo los elementos disponibles
   private static generateSiliconBasedNucleotides(elementMap: { [key: string]: boolean }): any {
     const siliconBases = [
       { name: "SiO4", formula: [0, 0, 0, 4, 0, 1] },
@@ -2347,9 +2239,7 @@ export class AreciboGenerator {
     };
   }
 
-  /**
-   * Información digital para entidades metálicas
-   */
+  // Nucleótidos basados en metales para entidades robóticas
   private static generateMetallicNucleotides(elementMap: { [key: string]: boolean }): any {
     const metallicBases = [
       { name: "00", formula: [0, 0, 0, 0, 0, 0, 0, 1] },
@@ -2367,9 +2257,7 @@ export class AreciboGenerator {
     };
   }
 
-  /**
-   * Estados cuánticos para gases
-   */
+  // Estados cuánticos para gases conscientes
   private static generateGaseousInformation(elementMap: { [key: string]: boolean }): any {
     const gasStates = [
       { name: "|0⟩", formula: [0, 0, 0, 0, 0, 0, 0, 0, 0, 1] },
@@ -2387,9 +2275,7 @@ export class AreciboGenerator {
     };
   }
 
-  /**
-   * Información cósmica para elementos exóticos
-   */
+  // Estados exóticos para entidades no físicas
   private static generateExoticInformation(elementMap: { [key: string]: boolean }): any {
     const exoticStates = [
       { name: "α", formula: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1] },
@@ -2407,9 +2293,7 @@ export class AreciboGenerator {
     };
   }
 
-  /**
-   * Sistema genérico que usa cualquier elemento disponible
-   */
+  // Información genética genérica cuando faltan elementos clave
   private static generateGenericInformation(elementMap: { [key: string]: boolean }): any {
     const availableElements = Object.keys(elementMap);
     const genericBases = [];
@@ -2433,10 +2317,7 @@ export class AreciboGenerator {
     };
   }
 
-  /**
-   * Adapta una fórmula química a los elementos disponibles en el planeta
-   * Sustituye el fósforo (P) por el quinto elemento específico del planeta
-   */
+  // Adapta la fórmula molecular para incluir solo los elementos disponibles
   private static adaptFormulaToElements(baseFormula: number[], elementMap: { [key: string]: boolean }): number[] {
     const elementOrder = ["H", "C", "N", "O", "P"];
     const adaptedFormula = [...baseFormula];
@@ -2472,9 +2353,7 @@ export class AreciboGenerator {
     return adaptedFormula;
   }
 
-  /**
-   * Datos genómicos CIENTÍFICAMENTE EXACTOS basados en biología conocida actual
-   */
+  // Genera datos de tamaño del genoma con variaciones basadas en el nombre del planeta y la forma de vida
   private static getGenomeSizeData(lifeForm: string, planetName: string, elements: number[]): any {
     const genomicData: { [key: string]: any } = {
       Bacteria: {
@@ -2659,12 +2538,7 @@ export class AreciboGenerator {
     return canvas.toDataURL("image/png");
   }
 
-  /**
-   * SECCIÓN 5: FORMA DE VIDA
-   * Filas: 45-53 (9 líneas máximo), Color: NARANJA
-   * Layout: [Estatura | Representación Visual | Población]
-   * Basado en el mensaje original de Arecibo: estatura binaria vertical, figura simple, población binaria horizontal
-   */
+  // Forma de Vida
   private static drawLifeFormSection(bitmap: number[], colorMap: number[], lifeForm: string, planetName: string, startRow: number, height: number): void {
     this.drawLifeFormHeight(bitmap, colorMap, lifeForm, planetName, startRow, height);
 
@@ -2673,21 +2547,7 @@ export class AreciboGenerator {
     this.drawLifeFormPopulation(bitmap, colorMap, lifeForm, planetName, startRow, height);
   }
 
-  /**
-   * Dibuja la representación de altura exactamente como en el mensaje de Arecibo original:
-   * Barra vertical completa (azul) + número binario horizontal al lado (centrado verticalmente)
-   *
-   * En Arecibo original: 14 (1110 binario) = 14 × 12.6cm = 176.4cm altura humana
-   * Se representaba como:
-   *     o (azul)
-   *     o (azul)
-   *     o (azul)
-   *     o (azul)
-   *   x xxx (blanco-azul-azul-azul, donde x=marcador, xxx=1110)
-   *     o (azul)
-   *     o (azul)
-   *     o (azul)
-   */
+  // Dibuja la estatura de la forma de vida como una barra con valor binario
   private static drawLifeFormHeight(bitmap: number[], colorMap: number[], lifeForm: string, planetName: string, startRow: number, height: number): void {
     if (lifeForm === "Have I just found God?") {
       return;
@@ -2728,10 +2588,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Dibuja la representación visual de la forma de vida como figura simple
-   * Solo "Intelligent Life" usa el sistema modular de 5×5×5 combinaciones
-   */
+  // Dibuja una representación simbólica de la forma de vida basada en su categoría
   private static drawLifeFormRepresentation(bitmap: number[], colorMap: number[], lifeForm: string, planetName: string, startRow: number, height: number): void {
     const category = this.getLifeCategory(lifeForm);
 
@@ -2776,11 +2633,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Dibuja la población del planeta como número binario vertical/horizontal
-   * En Arecibo original: 4,292,853,750 (11111111100110110111011110110 en binario)
-   * Se dibujaba como un patrón rectangular denso a la derecha del humanoide
-   */
+  // Dibuja la población de la forma de vida como una cuadrícula binaria
   private static drawLifeFormPopulation(bitmap: number[], colorMap: number[], lifeForm: string, planetName: string, startRow: number, height: number): void {
     const population = this.generatePlanetaryPopulation(lifeForm, planetName);
 
@@ -2805,11 +2658,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Genera la estatura procedural de una forma de vida
-   * Valores entre 1-255 para caber en 8 bits (como el 14 del mensaje original)
-   * Ahora incluye planetName para generar variación única por planeta
-   */
+  // Genera la altura de la forma de vida con variaciones basadas en el nombre del planeta
   private static generateLifeFormHeight(lifeForm: string, planetName: string): number {
     if (lifeForm === "Intelligent Life") {
       const hash = this.hashString(lifeForm + planetName);
@@ -2843,11 +2692,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Genera la población planetaria procedural para una forma de vida
-   * Valores realistas en millones/miles de millones como en Arecibo original
-   * Arecibo original: ~4.29 mil millones (4,292,853,750)
-   */
+  // Genera la población planetaria con variaciones basadas en el nombre del planeta
   private static generatePlanetaryPopulation(lifeForm: string, planetName: string): number {
     const category = this.getLifeCategory(lifeForm);
     const combinedHash = this.hashString(lifeForm + planetName);
@@ -2871,9 +2716,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Genera un hash simple de una cadena para usar como seed
-   */
+  // Genera un hash numérico a partir de una cadena para uso en seeded random
   private static hashString(str: string): number {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
@@ -2884,9 +2727,7 @@ export class AreciboGenerator {
     return Math.abs(hash);
   }
 
-  /**
-   * Crea un generador de números aleatorios con seed
-   */
+  // Crea una función de número aleatorio con semilla basada en un valor numérico
   private static createSeededRandom(seed: number): { random: () => number } {
     return {
       random: () => {
@@ -2896,18 +2737,14 @@ export class AreciboGenerator {
     };
   }
 
-  /**
-   * Dibuja una forma de vida modular combinando cabeza, torso y piernas
-   */
+  // Dibuja una forma de vida modular compuesta por cabeza, torso y piernas
   private static drawModularLifeForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, headType: number, torsoType: number, legsType: number): void {
     this.drawHead(bitmap, colorMap, centerCol, startRow, headType);
     this.drawTorso(bitmap, colorMap, centerCol, startRow + 3, torsoType);
     this.drawLegs(bitmap, colorMap, centerCol, startRow + 6, legsType);
   }
 
-  /**
-   * Dibuja diferentes tipos de cabezas (5 variaciones)
-   */
+  // Dibuja diferentes tipos de cabezas (5 variaciones)
   private static drawHead(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, headType: number): void {
     switch (headType) {
       case 0:
@@ -2953,9 +2790,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Dibuja diferentes tipos de torsos (5 variaciones)
-   */
+  // Dibuja diferentes tipos de torsos (5 variaciones)
   private static drawTorso(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, torsoType: number): void {
     switch (torsoType) {
       case 0:
@@ -3008,9 +2843,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Dibuja diferentes tipos de piernas (5 variaciones)
-   */
+  // Dibuja diferentes tipos de piernas (5 variaciones)
   private static drawLegs(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, legsType: number): void {
     switch (legsType) {
       case 0:
@@ -3066,9 +2899,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Forma humanoide simple - stick figure como el original de Arecibo
-   */
+  // Dibuja una forma humanoide simple como representación predeterminada
   private static drawHumanoidForm(bitmap: number[], colorMap: number[], cols: number[], centerCol: number, startRow: number, height: number): void {
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
@@ -3090,9 +2921,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Forma basada en carbono - cada tipo de vida tiene su representación única
-   */
+  // Forma basada en carbono, bacterias, vegetación, animales, vida inteligente
   private static drawCarbonBasedForm(bitmap: number[], colorMap: number[], cols: number[], centerCol: number, startRow: number, height: number, lifeForm: string, rng: { random: () => number }): void {
     switch (lifeForm) {
       case "Bacteria":
@@ -3115,10 +2944,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Forma basada en silicio - múltiples estructuras cristalinas y minerales
-   * Diferentes tipos según geología planetaria
-   */
+  // Dibuja diferentes estructuras cristalinas y minerales basados en silicio
   private static drawSiliconBasedForm(bitmap: number[], colorMap: number[], cols: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
     const crystalType = Math.floor(rng.random() * 7);
 
@@ -3146,9 +2972,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Cuarzo - estructura hexagonal
-   */
+  // Dibuja una estructura de cristal de cuarzo
   private static drawQuartzCrystal(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
@@ -3166,9 +2990,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol, startRow + 5, 1, this.COLORS.RED);
   }
 
-  /**
-   * Feldespato - estructura tridimensional compleja
-   */
+  // Dibuja una estructura de feldespato
   private static drawFeldsparStructure(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.RED);
@@ -3185,9 +3007,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 4, 1, this.COLORS.RED);
   }
 
-  /**
-   * Olivino - estructura de islas de tetraedros
-   */
+  // Dibuja una estructura de red de olivino
   private static drawOlivineNetwork(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
 
@@ -3204,9 +3024,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 4, 1, this.COLORS.RED);
   }
 
-  /**
-   * Zeolita - estructura microporosa
-   */
+  // Dibuja una estructura de marco de zeolita
   private static drawZeoliteFramework(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
@@ -3224,9 +3042,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol, startRow + 4, 1, this.COLORS.RED);
   }
 
-  /**
-   * Granate - estructura compleja cúbica
-   */
+  // Estructura de granate con simetría cúbica
   private static drawGarnetStructure(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
 
@@ -3245,9 +3061,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol, startRow + 4, 1, this.COLORS.RED);
   }
 
-  /**
-   * Piroxeno - cadenas de tetraedros
-   */
+  // Estructura lineal repetitiva piroxeno cadena de tetraedros
   private static drawPyroxeneChain(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     for (let r = 0; r < Math.min(6, height); r++) {
       this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
@@ -3258,9 +3072,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Matriz de silicatos general - red compleja
-   */
+  // Estructura amorfa con patrones repetitivos matriz de silicatos
   private static drawSilicateMatrix(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
@@ -3278,10 +3090,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 5, 1, this.COLORS.RED);
   }
 
-  /**
-   * Forma robótica - estructura geométrica modular PROCEDURAL
-   * Sistema modular como Intelligent Life pero con 3 variantes de cada componente
-   */
+  // Selecciona aleatoriamente tipos de cabeza, torso y piernas para una forma robótica
   private static drawRoboticForm(bitmap: number[], colorMap: number[], cols: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
     const headType = Math.floor(rng.random() * 3);
     const torsoType = Math.floor(rng.random() * 3);
@@ -3290,10 +3099,7 @@ export class AreciboGenerator {
     this.drawModularRoboticForm(bitmap, colorMap, centerCol, startRow, height, headType, torsoType, legsType);
   }
 
-  /**
-   * Dibuja una forma robótica modular combinando cabeza, torso y piernas
-   * 3 variantes de cada componente para diferentes diseños robóticos
-   */
+  // Dibuja una forma robótica modular combinando cabeza, torso y piernas
   private static drawModularRoboticForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, headType: number, torsoType: number, legsType: number): void {
     switch (headType) {
       case 0:
@@ -3393,10 +3199,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Forma gaseosa - múltiples tipos según morfología gaseosa real - PROCEDURAL
-   * Diferentes formas basadas en estados de la materia gaseosa y física de fluidos
-   */
+  // Selecciona aleatoriamente un tipo de forma gaseosa para dibujar
   private static drawGaseousForm(bitmap: number[], colorMap: number[], cols: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
     const gasType = Math.floor(rng.random() * 8);
 
@@ -3427,9 +3230,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Gas globular - forma compacta tipo nebulosa planetaria
-   */
+  // Dibuja una forma de gas globular
   private static drawGlobularGas(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.RED);
@@ -3446,9 +3247,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol, startRow + 5, 1, this.COLORS.RED);
   }
 
-  /**
-   * Gas en corriente - flujo direccional tipo viento solar
-   */
+  // Dibuja una forma de gas en corriente
   private static drawStreamingGas(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 5, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 4, 1, this.COLORS.RED);
@@ -3492,9 +3291,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 5, 1, this.COLORS.RED);
   }
 
-  /**
-   * Gas en espiral - estructura helicoidal tipo galaxia
-   */
+  // Gas en espiral - estructura helicoidal tipo galaxia
   private static drawSpiralGas(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.RED);
 
@@ -3507,9 +3304,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
   }
 
-  /**
-   * Gas agrupado - múltiples núcleos tipo cúmulo estelar
-   */
+  // Dibuja una forma de gas agrupado con múltiples núcleos
   private static drawClusteredGas(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.RED);
@@ -3524,9 +3319,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.RED);
   }
 
-  /**
-   * Gas filamentario - estructuras largas tipo nebulosa de Cygnus
-   */
+  // Estructuras alargadas y delgadas gas filamentario
   private static drawFilamentaryGas(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     for (let r = 1; r <= 5; r++) {
       this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
@@ -3542,9 +3335,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 5, 1, this.COLORS.RED);
   }
 
-  /**
-   * Gas difuso - nube dispersa tipo nebulosa de reflexión (forma original mejorada)
-   */
+  // Patrón ampliado para una apariencia más completa gas difuso
   private static drawDiffuseGas(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
@@ -3563,10 +3354,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 5, 1, this.COLORS.RED);
   }
 
-  /**
-   * Forma de energía - múltiples manifestaciones energéticas no físicas
-   * Diferentes tipos de patrones según los estados energéticos
-   */
+  // Selecciona y dibuja un patrón energético basado en los estados de energía
   private static drawEnergyForm(bitmap: number[], colorMap: number[], cols: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }, lifeForm: string, planetName: string): void {
     const energyStates = this.getNitrogenBases(lifeForm, planetName);
     const primaryState = energyStates[0];
@@ -3602,9 +3390,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Manifestación ondulatoria - ondas sinusoidales
-   */
+  // Dibuja un patrón de onda sinusoidal
   private static drawWaveManifesta(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     for (let r = 0; r < Math.min(8, height); r++) {
       const wave = Math.round(2 * Math.sin((r * Math.PI) / 3));
@@ -3612,9 +3398,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Campo espiral - patrón de espiral energética
-   */
+  // Patrón en espiral que simula un campo energético dinámico
   private static drawSpiralField(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     let angle = 0;
     for (let r = 0; r < Math.min(7, height); r++) {
@@ -3626,9 +3410,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Vórtice energético - patrón rotatorio
-   */
+  // Dibuja un patrón de vórtice energético
   private static drawVortexManifesta(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.RED);
     for (let ring = 1; ring <= 2; ring++) {
@@ -3641,9 +3423,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Pulsos energéticos - ondas discretas
-   */
+  // Dibuja un patrón de pulsos energéticos
   private static drawPulseManifesta(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     for (let r = 0; r < Math.min(8, height); r += 2) {
       for (let c = -1; c <= 1; c++) {
@@ -3652,9 +3432,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Patrón de interferencia - ondas superpuestas
-   */
+  // Dibuja un patrón de interferencia de ondas
   private static drawInterferencePattern(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     for (let r = 0; r < Math.min(7, height); r++) {
       const wave1 = Math.sin((r * Math.PI) / 2);
@@ -3671,9 +3449,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Estado cuántico - patrón probabilístico
-   */
+  // Dibuja un patrón que representa un estado cuántico
   private static drawQuantumState(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
@@ -3681,9 +3457,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol, startRow + 4, 1, this.COLORS.RED);
   }
 
-  /**
-   * Fisura dimensional - apertura entre dimensiones
-   */
+  // Dibuja un patrón que representa una fisura dimensional
   private static drawDimensionalRift(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     for (let r = 1; r < 6; r++) {
       this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
@@ -3692,9 +3466,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 4, 1, this.COLORS.RED);
   }
 
-  /**
-   * Campo infinito - presencia constante
-   */
+  // Dibuja un patrón que representa un campo energético infinito
   private static drawInfiniteField(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
     for (let c = -1; c <= 1; c++) {
@@ -3704,9 +3476,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol, startRow + 4, 1, this.COLORS.RED);
   }
 
-  /**
-   * Zigzag energético - patrón original como fallback
-   */
+  // Zigzag energético - patrón original como fallback
   private static drawEnergyZigzag(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
@@ -3715,9 +3485,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 4, 1, this.COLORS.RED);
   }
 
-  /**
-   * Forma divina - triángulo Illuminati rojo
-   */
+  // Patrón fijo para representar una forma divina illuminati rojo
   private static drawDivineForm(bitmap: number[], colorMap: number[], cols: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
 
@@ -3740,9 +3508,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.WHITE);
   }
 
-  /**
-   * Forma animal - diferentes tipos de animales con variación procedural
-   */
+  // Selecciona aleatoriamente un tipo de forma animal para dibujar
   private static drawAnimalForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
     const animalType = Math.floor(rng.random() * 5);
 
@@ -3765,9 +3531,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Mamífero cuadrúpedo - forma mejorada
-   */
+  // Mamifero cuadrúpedo perro, gato, caballo
   private static drawQuadrupedMammal(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.RED);
@@ -3787,9 +3551,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol + 3, startRow + 2, 1, this.COLORS.RED);
   }
 
-  /**
-   * Forma de ave
-   */
+  // Forma de ave
   private static drawBirdForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
 
@@ -3807,9 +3569,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol, startRow + 4, 1, this.COLORS.RED);
   }
 
-  /**
-   * Forma de pez
-   */
+  // Pez genérico
   private static drawFishForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.RED);
@@ -3828,9 +3588,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol + 3, startRow + 3, 1, this.COLORS.RED);
   }
 
-  /**
-   * Forma de insecto
-   */
+  // Forma de insecto mariposa, escarabajo, libélula
   private static drawInsectForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
 
@@ -3850,9 +3608,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
   }
 
-  /**
-   * Forma de reptil/serpiente
-   */
+  // Forma de reptil - lagarto, serpiente
   private static drawReptileForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
@@ -3865,10 +3621,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 5, 1, this.COLORS.RED);
   }
 
-  /**
-   * Forma de bacteria - múltiples tipos según morfología bacterial real
-   * Diferentes formas basadas en clasificación científica
-   */
+  // Forma de bacteria, múltiples tipos según morfología bacterial real
   private static drawBacteriaForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
     const bacteriaType = Math.floor(rng.random() * 7);
 
@@ -3896,9 +3649,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Coccus - bacteria esférica
-   */
+  // Coccus - bacteria esférica
   private static drawCoccusBacteria(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
@@ -3909,9 +3660,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.RED);
   }
 
-  /**
-   * Bacillus - bacteria en forma de bastón
-   */
+  // Bacillus - bacteria en forma de barra
   private static drawBacillusBacteria(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     for (let r = 0; r < Math.min(5, height); r++) {
       this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
@@ -3922,9 +3671,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Spirillum - bacteria espiral
-   */
+  // Spirillum - bacteria espiral
   private static drawSpirillusBacteria(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
@@ -3933,9 +3680,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 4, 1, this.COLORS.RED);
   }
 
-  /**
-   * Streptococcus - cadena de bacterias esféricas
-   */
+  // Streptococcus - cadena de bacterias esféricas
   private static drawStreptococcusBacteria(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
@@ -3946,9 +3691,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol, startRow + 4, 1, this.COLORS.RED);
   }
 
-  /**
-   * Staphylococcus - racimo de bacterias esféricas
-   */
+  // Staphylococcus - racimo de bacterias esféricas
   private static drawStaphylococcusBacteria(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
@@ -3959,9 +3702,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.RED);
   }
 
-  /**
-   * Vibrio - bacteria en forma de coma
-   */
+  // Vibrio - bacteria en forma de coma
   private static drawVibroBacteria(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
@@ -3985,10 +3726,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Forma de vegetación - estructura de planta con múltiples variaciones
-   * Diferentes tipos de árboles y plantas basados en generación procedural
-   */
+  // Forma de vegetación - estructura de planta con múltiples variaciones
   private static drawVegetationForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
     const hash = Math.floor(rng.random() * 6);
 
@@ -4013,9 +3751,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Árbol clásico con copa redondeada
-   */
+  // Árbol con forma de conífera
   private static drawTreeForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
@@ -4036,9 +3772,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + height - 1, 1, this.COLORS.RED);
   }
 
-  /**
-   * Arbusto bajo y frondoso
-   */
+  // Arbusto bajo y frondoso
   private static drawBushForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     const midHeight = Math.floor(height / 2);
 
@@ -4059,9 +3793,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + height - 1, 1, this.COLORS.RED);
   }
 
-  /**
-   * Palmera con hojas largas
-   */
+  // Palmera con hojas largas
   private static drawPalmTreeForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     this.setPixel(bitmap, colorMap, centerCol - 3, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
@@ -4082,9 +3814,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + height - 1, 1, this.COLORS.RED);
   }
 
-  /**
-   * Flor con pétalos
-   */
+  // Flor con pétalos
   private static drawFlowerForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     this.setPixel(bitmap, colorMap, centerCol, startRow - 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
@@ -4099,9 +3829,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol, startRow + height - 1, 1, this.COLORS.RED);
   }
 
-  /**
-   * Conífera con forma triangular
-   */
+  // Conífera con forma triangular
   private static drawConiferForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     const midHeight = Math.floor(height * 0.8);
 
@@ -4119,9 +3847,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol, startRow + height - 1, 1, this.COLORS.RED);
   }
 
-  /**
-   * Helecho con frondas
-   */
+  // Helecho con frondas
   private static drawFernForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
@@ -4140,10 +3866,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + height - 1, 1, this.COLORS.RED);
   }
 
-  /**
-   * Forma de animal-vegetal - múltiples tipos de organismos híbridos
-   * Diferentes combinaciones de características vegetales y animales
-   */
+  // Forma de animal-vegetal - múltiples tipos de organismos híbridos
   private static drawVegetableAnimalForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
     const hybridType = Math.floor(rng.random() * 6);
 
@@ -4168,9 +3891,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Treent/Ent - árbol con capacidades animales
-   */
+  // Treeent/Ent - árbol con capacidades animales
   private static drawTreentHybrid(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.RED);
@@ -4187,9 +3908,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 5, 1, this.COLORS.RED);
   }
 
-  /**
-   * Coral animal - estructura coral con capacidades de movimiento
-   */
+  // Coral animal - estructura coral con capacidades de movimiento
   private static drawCoralAnimalHybrid(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
@@ -4204,9 +3923,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.RED);
   }
 
-  /**
-   * Planta caminante - planta con patas
-   */
+  // Planta caminante - planta con patas
   private static drawWalkingPlantHybrid(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
@@ -4224,9 +3941,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 5, 1, this.COLORS.RED);
   }
 
-  /**
-   * Animal fotosintético - animal que realiza fotosíntesis
-   */
+  // Animal fotosintético - animal que realiza fotosíntesis
   private static drawPhotosynthethicAnimalHybrid(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
 
@@ -4243,9 +3958,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 4, 1, this.COLORS.RED);
   }
 
-  /**
-   * Red micelial neural - organismo tipo hongo con inteligencia distribuida
-   */
+  // Red micelial neural - organismo tipo hongo con inteligencia distribuida
   private static drawMyceliaNeuralHybrid(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
@@ -4261,9 +3974,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol, startRow + 4, 1, this.COLORS.RED);
   }
 
-  /**
-   * Bestia-flor - criatura animal que se camufla como flor
-   */
+  // Bestia-flor - criatura animal que se camufla como flor
   private static drawFlowerBeastHybrid(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     this.setPixel(bitmap, colorMap, centerCol, startRow - 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
@@ -4280,9 +3991,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 4, 1, this.COLORS.RED);
   }
 
-  /**
-   * Agrega características aleatorias para crear variaciones
-   */
+  // Agrega características aleatorias para crear variaciones
   private static addRandomFeatures(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
     for (let i = 0; i < 3; i++) {
       const randomRow = startRow + Math.floor(rng.random() * height);
@@ -4294,10 +4003,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * SECCIÓN 6: Sistema Solar
-   * Representación del sistema solar en color amarillo (estilo Arecibo original)
-   */
+  // Dibuja un sistema solar básico si no hay datos disponibles
   private static async drawSolarSystem(bitmap: number[], colorMap: number[], planetName: string, startRow: number): Promise<void> {
     try {
       const response = await fetch("/api/arecibo");
@@ -4321,10 +4027,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Dibuja el sistema solar al estilo del mensaje de Arecibo original
-   * Estrella 3x3px desde borde izquierdo, planetas con tamaños variables y espaciado 1px
-   */
+  // Dibuja un sistema solar básico con una estrella y algunos planetas
   private static drawAreciboStyleSolarSystem(bitmap: number[], colorMap: number[], totalPlanets: number, currentPlanetIndex: number, startRow: number, planets: any[] = []): void {
     const starStartCol = 1;
     const starStartRow = startRow + 1;
@@ -4353,9 +4056,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Determina el tamaño visual de un planeta usando datos reales de la API
-   */
+  // Si el planeta es el actual, siempre es grande (3)
   private static getRealPlanetSize(planetIndex: number, currentPlanetIndex: number, planets: any[]): number {
     if (planetIndex === currentPlanetIndex) {
       return 3;
@@ -4380,10 +4081,7 @@ export class AreciboGenerator {
     return (planetIndex % 2) + 1;
   }
 
-  /**
-   * SECCIÓN 7: Antena/Método de Transmisión
-   * Dibuja diferentes tipos de antenas según el tipo de forma de vida
-   */
+  // Dibuja diferentes tipos de antenas según el tipo de forma de vida
   private static drawTransmissionMethod(bitmap: number[], colorMap: number[], lifeForm: string, planetName: string, startRow: number, height: number): void {
     const centerCol = Math.floor(this.WIDTH / 2);
 
@@ -4391,22 +4089,22 @@ export class AreciboGenerator {
 
     switch (lifeForm) {
       case "Intelligent Life":
-        this.drawIntelligentLifeAntenna(bitmap, colorMap, centerCol, startRow, height - 2, rng);
+        this.drawIntelligentLifeAntenna(bitmap, colorMap, centerCol, startRow - 1, height - 2, rng);
         break;
       case "Silicon-Based Life":
-        this.drawSiliconBasedAntenna(bitmap, colorMap, centerCol, startRow, height - 2, rng);
+        this.drawSiliconBasedAntenna(bitmap, colorMap, centerCol, startRow - 1, height - 2, rng);
         break;
       case "Conscious Gas":
-        this.drawTelepathicWaves(bitmap, colorMap, centerCol, startRow, height - 2, rng);
+        this.drawTelepathicWaves(bitmap, colorMap, centerCol, startRow - 1, height - 2, rng);
         break;
       case "Non-Physical Entity":
-        this.drawNonPhysicalTransmission(bitmap, colorMap, centerCol, startRow, height - 2, rng);
+        this.drawNonPhysicalTransmission(bitmap, colorMap, centerCol, startRow - 1, height - 2, rng);
         break;
       case "Robotic Entities":
-        this.drawRoboticAntenna(bitmap, colorMap, centerCol, startRow, height - 2, rng);
+        this.drawRoboticAntenna(bitmap, colorMap, centerCol, startRow - 1, height - 2, rng);
         break;
       case "Have I just found God?":
-        this.drawDoubleSlitExperiment(bitmap, colorMap, centerCol, startRow, height - 2);
+        this.drawDoubleSlitExperiment(bitmap, colorMap, centerCol, startRow - 1, height - 2);
         break;
       case "Animal Life":
       case "Vegetation":
@@ -4421,9 +4119,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Dibuja el tamaño de la antena en formato Arecibo en las dos últimas filas
-   */
+  // Dibuja el tamaño de la antena en binario
   private static drawAntennaSize(bitmap: number[], colorMap: number[], lifeForm: string, planetName: string, startRow: number, rng: { random: () => number }): void {
     let antennaSize: number;
 
@@ -4477,9 +4173,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Crea un generador de números pseudoaleatorios basado en el nombre del planeta
-   */
+  // Crea un generador de números aleatorios basado en el nombre del planeta
   private static createPlanetRNG(planetName: string): { random: () => number } {
     let seed = 0;
     for (let i = 0; i < planetName.length; i++) {
@@ -4494,9 +4188,7 @@ export class AreciboGenerator {
     };
   }
 
-  /**
-   * Antenas para Intelligent Life - diseños terrestres similares
-   */
+  // Antena para vida inteligente - elige entre varios diseños terrestres
   private static drawIntelligentLifeAntenna(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
     const antennaType = Math.floor(rng.random() * 3);
 
@@ -4513,9 +4205,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Antena parabólica simple
-   */
+  // Antena parabólica simple
   private static drawParabolicAntenna(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
     this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.LILAC);
@@ -4527,9 +4217,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.LILAC);
   }
 
-  /**
-   * Torre de radio con antenas
-   */
+  // Torre de radio con antenas
   private static drawRadioTower(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
     for (let i = 0; i < 6; i++) {
       this.setPixel(bitmap, colorMap, centerCol, startRow + i, 1, this.COLORS.LILAC);
@@ -4541,9 +4229,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.LILAC);
   }
 
-  /**
-   * Array de antenas pequeñas
-   */
+  // Array de antenas pequeñas
   private static drawAntennaArray(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
     for (let i = -1; i <= 1; i++) {
       const col = centerCol + i * 2;
@@ -4553,9 +4239,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Antenas para Silicon-Based Life - diseños cristalinos/geométricos
-   */
+  // Antena para vida basada en silicio - elige entre varios diseños geométricos
   private static drawSiliconBasedAntenna(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
     const antennaType = Math.floor(rng.random() * 3);
 
@@ -4572,9 +4256,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Estructura cristalina
-   */
+  // Estructura cristalina
   private static drawCrystallineAntenna(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
     this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.LILAC);
 
@@ -4587,9 +4269,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 3, 1, this.COLORS.LILAC);
   }
 
-  /**
-   * Pirámide de silicio
-   */
+  // Pirámide de silicio
   private static drawSiliconPyramid(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.LILAC);
@@ -4602,9 +4282,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 2, 1, this.COLORS.LILAC);
   }
 
-  /**
-   * Array hexagonal
-   */
+  // Array hexagonal
   private static drawHexagonalArray(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
     this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.LILAC);
 
@@ -4616,9 +4294,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.LILAC);
   }
 
-  /**
-   * Transmisión de entidad no física - patrones dimensionales y vórtices de energía
-   */
+  // Transmisión no física - elige entre varios diseños etéreos
   private static drawNonPhysicalTransmission(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
     const transmissionType = Math.floor(rng.random() * 3);
 
@@ -4635,9 +4311,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Vórtice dimensional - espiral hacia el centro
-   */
+  // Vórtice dimensional - espiral hacia el centro
   private static drawDimensionalVortex(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.LILAC);
 
@@ -4655,9 +4329,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.LILAC);
   }
 
-  /**
-   * Campo de energía pura - patrones de energía fluctuante
-   */
+  // Patrón central con puntos aleatorios alrededor campo de energía pura
   private static drawEnergyField(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, rng: { random: () => number }): void {
     this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.LILAC);
 
@@ -4676,9 +4348,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.LILAC);
   }
 
-  /**
-   * Portal interdimensional - marco con centro vacío
-   */
+  // Portal interdimensional - marco con centro vacío
   private static drawInterdimensionalPortal(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow - 1, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow - 1, 1, this.COLORS.LILAC);
@@ -4700,9 +4370,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.LILAC);
   }
 
-  /**
-   * Ondas telepáticas para Conscious Gas - círculo central con ondas procedurales
-   */
+  // Ondas telepáticas para Conscious Gas - círculo central con ondas procedurales
   private static drawTelepathicWaves(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
     this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.LILAC);
 
@@ -4735,9 +4403,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Antena robótica - cuadrado central con múltiples pinchos
-   */
+  // Antena robótica - cuadrado central con múltiples pinchos
   private static drawRoboticAntenna(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
     const antennaType = Math.floor(rng.random() * 3);
 
@@ -4754,9 +4420,7 @@ export class AreciboGenerator {
     }
   }
 
-  /**
-   * Pinchos simétricos
-   */
+  // Pinchos simétricos
   private static drawSymmetricSpikes(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.LILAC);
 
@@ -4771,9 +4435,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.LILAC);
   }
 
-  /**
-   * Grid de sensores
-   */
+  // Grid de sensores
   private static drawSensorGrid(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
     for (let y = 0; y < 3; y++) {
       for (let x = 0; x < 3; x++) {
@@ -4787,9 +4449,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.LILAC);
   }
 
-  /**
-   * Antena multi-brazo
-   */
+  // Antena con múltiples brazos extendiéndose desde el centro
   private static drawMultiArmAntenna(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
     this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.LILAC);
 
@@ -4805,11 +4465,9 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow, 1, this.COLORS.LILAC);
   }
 
-  /**
-   * Experimento de doble rendija - la representación más precisa posible
-   */
+  // Experimento de doble rendija - la representación más precisa posible xd
   private static drawDoubleSlitExperiment(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    this.setPixel(bitmap, colorMap, centerCol - 4, startRow + 2, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol - 4, startRow + 3, 1, this.COLORS.LILAC);
 
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.LILAC);
@@ -4824,14 +4482,12 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, screenCol, startRow + 1, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, screenCol, startRow + 5, 1, this.COLORS.LILAC);
 
-    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 3, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 4, 1, this.COLORS.LILAC);
   }
 
-  /**
-   * Dibuja una representación básica del sistema solar (fallback)
-   */
+  // Dibuja un sistema solar básico con una estrella y algunos planetas si no hay datos disponibles
   private static drawBasicSolarSystem(bitmap: number[], colorMap: number[], startRow: number): void {
     const centerCol = Math.floor(this.WIDTH / 2);
 
