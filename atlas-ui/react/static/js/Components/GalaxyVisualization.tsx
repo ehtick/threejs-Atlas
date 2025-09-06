@@ -4,6 +4,8 @@ import { createPortal } from "react-dom";
 import Galaxy3DViewer from "./Galaxy3DViewer.tsx";
 import Galaxy3DViewerFullscreen from "./Galaxy3DViewerFullscreen.tsx";
 import StargateButton from "./StargateButton";
+import MiningAnimationOverlay from "./MiningAnimationOverlay.tsx";
+import { ResourceEventManager } from "../Utils/ResourceEventManager.tsx";
 
 interface GalaxyVisualizationProps {
   galaxyUrl: string;
@@ -20,6 +22,7 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, ga
   const [isClosing, setIsClosing] = useState(false);
   const [isEntering, setIsEntering] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [showMiningAnimation, setShowMiningAnimation] = useState(false);
   const galaxyRendererRef = useRef<{ captureScreenshot: () => void; isGeneratingImage: boolean } | null>(null);
 
   useEffect(() => {
@@ -85,6 +88,18 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, ga
     return () => clearInterval(interval);
   }, [isGeneratingImage]);
 
+  useEffect(() => {
+    const handleMiningCompleted = () => {
+      setShowMiningAnimation(true);
+    };
+
+    const unsubscribe = ResourceEventManager.subscribe("mining_completed", handleMiningCompleted);
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between mb-3">
@@ -104,6 +119,13 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, ga
           onExpandClick={() => {
             setIsFullscreen(true);
             setIsEntering(true);
+          }}
+        />
+
+        <MiningAnimationOverlay
+          isActive={showMiningAnimation}
+          onAnimationComplete={() => {
+            setShowMiningAnimation(false);
           }}
         />
       </div>

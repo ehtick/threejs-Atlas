@@ -79,19 +79,6 @@
       "_atlas_pGQiCQeTD5l6dMUXRRcYJ.js"
     ]
   },
-  "_atlas_BNmZdVxd96FSoxfgh6N8D.js": {
-    "file": "atlas_BNmZdVxd96FSoxfgh6N8D.js",
-    "name": "TreasureChest",
-    "imports": [
-      "_atlas_C3xj8MG9oH9uC54MklkAb.js",
-      "_atlas_i1DR7KrB-xunyzpDEnG-m.js",
-      "_atlas_D9WDsCw0X8TduftsoVtNe.js"
-    ],
-    "dynamicImports": [
-      "_atlas_i1DR7KrB-xunyzpDEnG-m.js",
-      "_atlas_i1DR7KrB-xunyzpDEnG-m.js"
-    ]
-  },
   "_atlas_BrtSY9WI0jnpWr8b8l2p0.js": {
     "file": "atlas_BrtSY9WI0jnpWr8b8l2p0.js",
     "name": "3d-savannahte",
@@ -352,6 +339,19 @@
       "_atlas_pGQiCQeTD5l6dMUXRRcYJ.js"
     ]
   },
+  "_atlas_Dg3UqbV4EEDpZd-q3dqmM.js": {
+    "file": "atlas_Dg3UqbV4EEDpZd-q3dqmM.js",
+    "name": "TreasureChest",
+    "imports": [
+      "_atlas_C3xj8MG9oH9uC54MklkAb.js",
+      "_atlas_i1DR7KrB-xunyzpDEnG-m.js",
+      "_atlas_D9WDsCw0X8TduftsoVtNe.js"
+    ],
+    "dynamicImports": [
+      "_atlas_i1DR7KrB-xunyzpDEnG-m.js",
+      "_atlas_i1DR7KrB-xunyzpDEnG-m.js"
+    ]
+  },
   "_atlas_DleynCheRNz9nOtzxamBI.js": {
     "file": "atlas_DleynCheRNz9nOtzxamBI.js",
     "name": "3d-polarhexag",
@@ -571,7 +571,7 @@
     ]
   },
   "atlas-ui/react/static/css/global.css": {
-    "file": "atlas_Byyi-D2URW1WvFmr-g63R.css",
+    "file": "atlas_CQWbgOtzN7yCHOsAwwNki.css",
     "src": "atlas-ui/react/static/css/global.css",
     "isEntry": true,
     "names": [
@@ -590,7 +590,7 @@
     ]
   },
   "atlas-ui/react/static/js/MountPoints/__galaxy__.ts": {
-    "file": "atlas_CHCXJAnSiiJiPJFlFsFPN.js",
+    "file": "atlas_BDiAqaLEelU0zLgJWbOV9.js",
     "name": "__galaxy__",
     "src": "atlas-ui/react/static/js/MountPoints/__galaxy__.ts",
     "isEntry": true,
@@ -599,7 +599,7 @@
       "_atlas_i1DR7KrB-xunyzpDEnG-m.js",
       "_atlas_jwQDkDgkbYrDf9CRKibQy.js",
       "_atlas_pGQiCQeTD5l6dMUXRRcYJ.js",
-      "_atlas_BNmZdVxd96FSoxfgh6N8D.js",
+      "_atlas_Dg3UqbV4EEDpZd-q3dqmM.js",
       "_atlas_D9WDsCw0X8TduftsoVtNe.js",
       "_atlas_D0eA6tgysic-V8oq2dTta.js",
       "_atlas_DwvSdObFEIQcgn4zq5yYd.js",
@@ -690,14 +690,14 @@
     ]
   },
   "atlas-ui/react/static/js/MountPoints/__planet__.ts": {
-    "file": "atlas_B3iBV2OnmjQSVYp2qwFIy.js",
+    "file": "atlas_Ca8GIeNCm16MyWtFyaYDA.js",
     "name": "__planet__",
     "src": "atlas-ui/react/static/js/MountPoints/__planet__.ts",
     "isEntry": true,
     "imports": [
       "_atlas_C3xj8MG9oH9uC54MklkAb.js",
       "_atlas_i1DR7KrB-xunyzpDEnG-m.js",
-      "_atlas_BNmZdVxd96FSoxfgh6N8D.js",
+      "_atlas_Dg3UqbV4EEDpZd-q3dqmM.js",
       "_atlas_D9WDsCw0X8TduftsoVtNe.js",
       "_atlas_VCubJKDOL5Jc0RUG-uxb-.js",
       "_atlas_DwvSdObFEIQcgn4zq5yYd.js",
@@ -763,7 +763,7 @@
     ]
   },
   "atlas-ui/react/static/js/MountPoints/__system__.ts": {
-    "file": "atlas_eShandkbbQDf7n6Kha8Hd.js",
+    "file": "atlas_BYEn9zNjD2YJl9djQ9NIs.js",
     "name": "__system__",
     "src": "atlas-ui/react/static/js/MountPoints/__system__.ts",
     "isEntry": true,
@@ -772,7 +772,7 @@
       "_atlas_i1DR7KrB-xunyzpDEnG-m.js",
       "_atlas_jwQDkDgkbYrDf9CRKibQy.js",
       "_atlas_pGQiCQeTD5l6dMUXRRcYJ.js",
-      "_atlas_BNmZdVxd96FSoxfgh6N8D.js",
+      "_atlas_Dg3UqbV4EEDpZd-q3dqmM.js",
       "_atlas_D9WDsCw0X8TduftsoVtNe.js",
       "_atlas_D0eA6tgysic-V8oq2dTta.js",
       "_atlas_DwvSdObFEIQcgn4zq5yYd.js",

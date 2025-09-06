@@ -2,6 +2,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import SolarSystem3DViewerLeft from "./SolarSystem3DViewerLeft.tsx";
 import StargateButton from "./StargateButton";
+import MiningAnimationOverlay from "./MiningAnimationOverlay.tsx";
+import { ResourceEventManager } from "../Utils/ResourceEventManager.tsx";
 
 interface System {
   name: string;
@@ -39,6 +41,7 @@ const SystemVisualizationUniversal: React.FC<SystemVisualizationUniversalProps> 
   const [imageLoaded, setImageLoaded] = useState(false);
   const [canvasHidden, setCanvasHidden] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [showMiningAnimation, setShowMiningAnimation] = useState(false);
   const solarSystemRendererRef = useRef<{ captureScreenshot: () => void; isGeneratingImage: boolean } | null>(null);
 
   useEffect(() => {
@@ -156,6 +159,18 @@ const SystemVisualizationUniversal: React.FC<SystemVisualizationUniversalProps> 
     return () => clearInterval(interval);
   }, [isGeneratingImage]);
 
+  useEffect(() => {
+    const handleMiningCompleted = () => {
+      setShowMiningAnimation(true);
+    };
+
+    const unsubscribe = ResourceEventManager.subscribe("mining_completed", handleMiningCompleted);
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between mb-3">
@@ -170,6 +185,13 @@ const SystemVisualizationUniversal: React.FC<SystemVisualizationUniversalProps> 
             <SolarSystem3DViewerLeft ref={solarSystemRendererRef} planets={system.planets} stars={system.stars} systemName={system.name} cosmicOriginTime={cosmicOriginTime || 0} systemUrl={systemUrl} />
           </div>
         )}
+
+        <MiningAnimationOverlay
+          isActive={showMiningAnimation}
+          onAnimationComplete={() => {
+            setShowMiningAnimation(false);
+          }}
+        />
       </div>
 
       <div className="text-center mt-auto">
