@@ -21,6 +21,7 @@ const AreciboMessage: React.FC<AreciboMessageProps> = ({ lifeForm, planetName, c
   const revealProgressRef = useRef(0);
   const staticNoiseRef = useRef<number[][]>([]);
   const revealedPixelsRef = useRef<Set<number>>(new Set());
+  const revealedBackgroundRef = useRef<Set<number>>(new Set());
   const signalStrengthRef = useRef(0);
 
   // Generate message data asynchronously
@@ -71,6 +72,7 @@ const AreciboMessage: React.FC<AreciboMessageProps> = ({ lifeForm, planetName, c
       
       staticNoiseRef.current = staticNoise;
       revealedPixelsRef.current = new Set();
+      revealedBackgroundRef.current = new Set();
       signalStrengthRef.current = 0;
     };
 
@@ -117,8 +119,8 @@ const AreciboMessage: React.FC<AreciboMessageProps> = ({ lifeForm, planetName, c
       signalStrengthRef.current = Math.min(1, progress * 1.5);
       const signalStrength = signalStrengthRef.current;
       
-      // Phase 1: Static noise (0-0.7) - 70% of time
-      // Phase 2: Message pixel reveal (0.7-1.0) - 30% of time
+      // Phase 1: Static noise (0-0.467) - 700ms of 1500ms total
+      // Phase 2: Message pixel reveal (0.467-1.0) - 800ms of 1500ms total
       
       for (let y = 0; y < messageData.height; y++) {
         for (let x = 0; x < messageData.width; x++) {
@@ -131,7 +133,7 @@ const AreciboMessage: React.FC<AreciboMessageProps> = ({ lifeForm, planetName, c
           
           const noiseValue = staticNoiseRef.current[y][x];
           
-          if (progress < 0.7) {
+          if (progress < 0.467) {
             // Phase 1: Pure TV static (grayscale noise)
             const grayLevel = Math.floor(noiseValue * 255);
             ctx.fillStyle = `rgb(${grayLevel}, ${grayLevel}, ${grayLevel})`;
@@ -139,12 +141,12 @@ const AreciboMessage: React.FC<AreciboMessageProps> = ({ lifeForm, planetName, c
             
           } else {
             // Phase 2: Message pixel reveal
-            const revealProgress = (progress - 0.7) / 0.3; // 0 to 1
+            const revealProgress = (progress - 0.467) / 0.533; // 0 to 1
             const pixelIndex = index;
             
             if (messageData.bitmap[index] === 1) {
-              // This should be a message pixel
-              if (!revealedPixelsRef.current.has(pixelIndex) && Math.random() < revealProgress * 0.04) {
+              // This should be a message pixel - constant probability reveal (2x speed)
+              if (!revealedPixelsRef.current.has(pixelIndex) && Math.random() < 0.06) {
                 revealedPixelsRef.current.add(pixelIndex);
               }
               
@@ -160,27 +162,35 @@ const AreciboMessage: React.FC<AreciboMessageProps> = ({ lifeForm, planetName, c
                 ctx.fillRect(x * scale, y * scale, scale - 1, scale - 1);
               }
             } else {
-              // Background pixel - fade static to black
-              if (revealProgress > 0.3) {
-                const fadeOut = (revealProgress - 0.3) / 0.7;
-                const grayLevel = Math.floor(noiseValue * 255 * (1 - fadeOut));
-                if (grayLevel > 5) {
-                  ctx.fillStyle = `rgb(${grayLevel}, ${grayLevel}, ${grayLevel})`;
-                  ctx.fillRect(x * scale, y * scale, scale - 1, scale - 1);
-                }
-              } else {
+              // Background pixel - transition directly from static to black background (2x speed)
+              if (revealProgress > 0.3 && !revealedBackgroundRef.current.has(pixelIndex) && Math.random() < 0.04) {
+                revealedBackgroundRef.current.add(pixelIndex);
+              }
+              
+              if (!revealedBackgroundRef.current.has(pixelIndex)) {
+                // Still showing static
                 const grayLevel = Math.floor(noiseValue * 255);
                 ctx.fillStyle = `rgb(${grayLevel}, ${grayLevel}, ${grayLevel})`;
                 ctx.fillRect(x * scale, y * scale, scale - 1, scale - 1);
               }
+              // If revealed, don't draw anything (black background shows through)
             }
           }
         }
       }
 
-      // Update progress - 1 second total (60fps = 60 frames)
-      if (revealProgressRef.current < 1) {
-        revealProgressRef.current += 1 / 60; // 1 second total at 60fps
+      // Check if animation is complete (all pixels revealed)
+      const totalMessagePixels = messageData.bitmap.filter(p => p === 1).length;
+      const totalBackgroundPixels = messageData.bitmap.filter(p => p === 0).length;
+      const revealedMessageCount = revealedPixelsRef.current.size;
+      const revealedBackgroundCount = revealedBackgroundRef.current.size;
+      const isPhase2 = progress >= 0.467;
+      
+      // Continue animation until all pixels are revealed (or time limit as backup)
+      const animationComplete = isPhase2 && revealedMessageCount >= totalMessagePixels && revealedBackgroundCount >= totalBackgroundPixels;
+      
+      if (!animationComplete && revealProgressRef.current < 3) { // 3 second backup limit
+        revealProgressRef.current += 1 / 90; // Keep same timing increment
         animationFrameRef.current = requestAnimationFrame(animate);
       } else {
         setIsAnimating(false);
