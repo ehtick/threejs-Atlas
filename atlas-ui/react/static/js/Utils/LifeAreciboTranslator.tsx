@@ -13,7 +13,7 @@ export interface AreciboConfig {
 
 export interface AreciboMessage {
   bitmap: number[];
-  colorMap: number[]; // 0=black, 1=white, 2=purple, 3=green, 4=blue, etc.
+  colorMap: number[];
   width: number;
   height: number;
   lifeForm: string;
@@ -23,75 +23,58 @@ export interface AreciboMessage {
 export class AreciboGenerator {
   private static readonly WIDTH = 23;
   private static readonly HEIGHT = 73;
-  
-  // Colores del mensaje
+
   private static readonly COLORS = {
     BLACK: 0,
-    WHITE: 1,    // Números, Población
-    PURPLE: 2,   // Elementos
-    GREEN: 3,    // Nucleótidos
-    BLUE: 4,     // ADN/Estructura genética, Estatura
-    ORANGE: 5,   // (No usado en nueva implementación)
-    RED: 6,      // Figura de forma de vida
-    YELLOW: 7,   // Sistema solar
-    LILAC: 8     // Antenas
+    WHITE: 1,
+    PURPLE: 2,
+    GREEN: 3,
+    BLUE: 4,
+    ORANGE: 5,
+    RED: 6,
+    YELLOW: 7,
+    LILAC: 8,
   };
 
   public static async generate(config: AreciboConfig): Promise<AreciboMessage> {
-    // Canvas en blanco - 73x23 píxeles
     const bitmap = new Array(this.WIDTH * this.HEIGHT).fill(0);
     const colorMap = new Array(this.WIDTH * this.HEIGHT).fill(0);
-    
-    // Sección 1: Números 1-10 (filas 0-3) - COLOR BLANCO
+
     this.drawNumbers(bitmap, colorMap);
-    
-    // Línea en blanco (fila 4)
+
     this.drawBlankLine(bitmap, colorMap, 4);
-    
-    // Sección 2: Elementos químicos (filas 5-9) - COLOR LILA
+
     this.drawChemicalElements(bitmap, colorMap, config.lifeForm, config.planetName);
-    
-    // Línea en blanco (fila 10)
+
     this.drawBlankLine(bitmap, colorMap, 10);
-    
-    // Línea en blanco (fila 11)
+
     this.drawBlankLine(bitmap, colorMap, 11);
-    
-    // Sección 3: Nucleótidos (filas 12-27) - COLOR VERDE
+
     this.drawNucleotides(bitmap, colorMap, config.lifeForm, config.planetName);
-    
-    // Línea en blanco entre nucleótidos y ADN
+
     this.drawBlankLine(bitmap, colorMap, 28);
-    
-    // Sección 4: Doble hélice del ADN (filas 29-43) - HELICES AZULES + CENTRO BLANCO
+
     this.drawDNADoubleHelix(bitmap, colorMap, config.lifeForm, config.planetName, 29, 15);
-    
-    // Línea en blanco después del ADN
+
     this.drawBlankLine(bitmap, colorMap, 44);
-    
-    // Sección 5: Forma de vida (filas 45-53, máximo 9 líneas) - COLOR ROJO
-    // Izquierda: Estatura, Centro: Representación gráfica, Derecha: Población
+
     this.drawLifeFormSection(bitmap, colorMap, config.lifeForm, config.planetName, 45, 9);
-    
-    // Línea en blanco entre forma de vida y sistema solar
+
     this.drawBlankLine(bitmap, colorMap, 54);
-    
-    // Sección 6: Sistema solar (filas 55-62) - COLOR AMARILLO
+
     await this.drawSolarSystem(bitmap, colorMap, config.planetName, 55);
-    
-    // Línea en blanco entre sistema solar y antena
+
     this.drawBlankLine(bitmap, colorMap, 63);
-    
-    // Sección 7: Antena/Método de transmisión (filas 64-72) - COLOR AMARILLO
+
     this.drawTransmissionMethod(bitmap, colorMap, config.lifeForm, config.planetName, 64, 9);
-    
+
     return {
       bitmap,
       colorMap,
       width: this.WIDTH,
       height: this.HEIGHT,
       lifeForm: config.lifeForm,
-      planetName: config.planetName
+      planetName: config.planetName,
     };
   }
 
@@ -111,12 +94,12 @@ export class AreciboGenerator {
    */
   private static drawNumbers(bitmap: number[], colorMap: number[]): void {
     const columnPositions = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19];
-    
+
     for (let i = 0; i < 10; i++) {
       const number = i + 1;
       const col = columnPositions[i];
       const binary = number.toString(2);
-      
+
       for (let bit = 0; bit < binary.length && bit < 4; bit++) {
         const row = 3 - bit;
         const bitValue = parseInt(binary[binary.length - 1 - bit]);
@@ -132,8 +115,7 @@ export class AreciboGenerator {
   private static drawChemicalElements(bitmap: number[], colorMap: number[], lifeForm: string, planetName?: string): void {
     const elements = this.getElementsForLifeForm(lifeForm, planetName || "Earth");
     const category = this.getLifeCategory(lifeForm);
-    
-    // Dibujar según categoría de vida con color lila
+
     switch (category) {
       case "carbon-based":
         this.drawCarbonBasedElements(bitmap, colorMap, elements);
@@ -165,7 +147,7 @@ export class AreciboGenerator {
    */
   private static drawNucleotides(bitmap: number[], colorMap: number[], lifeForm: string, planetName?: string): void {
     const category = this.getLifeCategory(lifeForm);
-    
+
     switch (category) {
       case "carbon-based":
         this.drawCarbonBasedGenetics(bitmap, colorMap, lifeForm, planetName);
@@ -197,29 +179,19 @@ export class AreciboGenerator {
   private static drawCarbonBasedGenetics(bitmap: number[], colorMap: number[], lifeForm: string, planetName?: string): void {
     const elements = this.getElementsForLifeForm(lifeForm, planetName || "Earth");
     const bases = this.getNitrogenBases(lifeForm, planetName || "Earth");
-    
-    // ESTRUCTURA EXACTA DEL ARECIBO CON MÁRGENES:
-    // Siguiendo el orden: H, C, N, O, P (como en la sección de elementos)
-    
-    // Filas 12-15: Fórmulas químicas de los 4 nucleótidos (deoxyribose + bases)
+
     this.drawNucleotideFormulas(bitmap, colorMap, bases, elements, lifeForm);
-    
-    // Fila 16: Línea en blanco
+
     this.drawBlankLine(bitmap, colorMap, 16);
-    
-    // Filas 17-20: Grupos fosfato y azúcares
+
     this.drawSugarPhosphateBackbone(bitmap, colorMap, elements);
-    
-    // Fila 21: Línea en blanco
+
     this.drawBlankLine(bitmap, colorMap, 21);
-    
-    // Filas 22-25: Número de nucleótidos en el genoma
+
     this.drawGenomeSize(bitmap, colorMap, elements, lifeForm);
-    
-    // Fila 26: Línea en blanco
+
     this.drawBlankLine(bitmap, colorMap, 26);
-    
-    // Fila 27: Bordes de la doble hélice (dejando centro libre para la representación posterior)
+
     this.drawDNAHelixBorders(bitmap, colorMap);
   }
 
@@ -227,55 +199,82 @@ export class AreciboGenerator {
    * Genera enlaces químicos para unidades silicáticas según el elemento
    */
   private static getSilicateBonds(element: string): number[] {
-    // Patrones de enlaces diferentes según el tipo de elemento
     const bondPatterns: { [key: string]: number[] } = {
-      // Elementos comunes
-      'Si': [1,1,0,4,0], // SiO4 tetraédrico clásico
-      'O':  [0,2,0,2,0], // O2 con dobles enlaces
-      'Al': [2,0,1,3,0], // AlO3 trigonal
-      'Fe': [1,0,2,3,0], // FeO3 irregular
-      'Mg': [0,1,0,2,1], // MgO2 lineal
-      'Ca': [1,1,1,2,1], // CaO3 complejo
-      'K':  [0,0,1,1,0], // K-O simple
-      'Na': [0,0,1,1,0], // Na-O simple
-      'H':  [1,0,0,1,0], // H-O hidroxilo
-      'S':  [0,1,1,2,2], // SO4 tetraédrico con azufre
-      'P':  [0,1,0,3,1], // PO4 tetraédrico
-      'Ti': [2,1,0,4,0], // TiO4 refractario
-      'V':  [1,2,1,3,0], // VO4 de transición
-      'Cr': [2,0,2,2,0], // CrO4 metálico
-      'Mn': [1,1,2,2,0], // MnO4 oxidativo
-      'Co': [1,0,1,2,1], // CoO3 magnético
-      'Ni': [0,2,1,2,0], // NiO3 catalítico
-      'Cu': [2,0,0,2,0], // CuO2 conductor
-      'Zn': [0,1,1,2,0], // ZnO2 semiconductor
-      'Li': [0,0,0,1,0], // LiO simple alcalino
-      'Be': [0,0,1,2,0], // BeO2 berilio ligero
-      'B':  [0,1,2,3,0], // BO3 triangular
-      'F':  [1,0,0,1,0], // F-Si fluoruro
-      'Cl': [1,0,0,1,0], // Cl-Si cloruro
-      'Sr': [1,1,0,2,2], // SrO3 alcalinotérreo
-      'Y':  [2,1,1,3,0], // YO4 tierra rara
-      'Zr': [2,2,0,4,0]  // ZrO4 refractario pesado
+      Si: [1, 1, 0, 4, 0],
+      O: [0, 2, 0, 2, 0],
+      Al: [2, 0, 1, 3, 0],
+      Fe: [1, 0, 2, 3, 0],
+      Mg: [0, 1, 0, 2, 1],
+      Ca: [1, 1, 1, 2, 1],
+      K: [0, 0, 1, 1, 0],
+      Na: [0, 0, 1, 1, 0],
+      H: [1, 0, 0, 1, 0],
+      S: [0, 1, 1, 2, 2],
+      P: [0, 1, 0, 3, 1],
+      Ti: [2, 1, 0, 4, 0],
+      V: [1, 2, 1, 3, 0],
+      Cr: [2, 0, 2, 2, 0],
+      Mn: [1, 1, 2, 2, 0],
+      Co: [1, 0, 1, 2, 1],
+      Ni: [0, 2, 1, 2, 0],
+      Cu: [2, 0, 0, 2, 0],
+      Zn: [0, 1, 1, 2, 0],
+      Li: [0, 0, 0, 1, 0],
+      Be: [0, 0, 1, 2, 0],
+      B: [0, 1, 2, 3, 0],
+      F: [1, 0, 0, 1, 0],
+      Cl: [1, 0, 0, 1, 0],
+      Sr: [1, 1, 0, 2, 2],
+      Y: [2, 1, 1, 3, 0],
+      Zr: [2, 2, 0, 4, 0],
     };
-    
-    // Usar patrón específico o por defecto
-    return bondPatterns[element] || [1,1,1,2,0]; // Patrón genérico
+
+    return bondPatterns[element] || [1, 1, 1, 2, 0];
   }
 
   /**
    * Obtiene la frecuencia energética para un estado dado
    */
   private static getEnergyFrequency(state: string): number {
-    // Mapear símbolos a frecuencias diferentes
     const freqMap: { [key: string]: number } = {
-      'α': 1, 'β': 2, 'γ': 3, 'δ': 4, 'ε': 1.5, 'ζ': 2.5, 'η': 3.5, 'θ': 4.5,
-      'ι': 1.2, 'κ': 2.2, 'λ': 3.2, 'μ': 4.2, 'ν': 1.8, 'ξ': 2.8, 'ο': 3.8, 'π': 4.8,
-      'ρ': 2.3, 'σ': 3.3, 'τ': 4.3, 'υ': 1.7, 'φ': 2.7, 'χ': 3.7, 'ψ': 4.7, 'ω': 5,
-      '∆': 6, '∇': 7, '∞': 8, 'Ω': 9, 'Φ': 10, 'Ψ': 11, '≈': 12, '∼': 13,
-      '※': 14, '⟨⟩': 15, '◊': 16, '◎': 17
+      α: 1,
+      β: 2,
+      γ: 3,
+      δ: 4,
+      ε: 1.5,
+      ζ: 2.5,
+      η: 3.5,
+      θ: 4.5,
+      ι: 1.2,
+      κ: 2.2,
+      λ: 3.2,
+      μ: 4.2,
+      ν: 1.8,
+      ξ: 2.8,
+      ο: 3.8,
+      π: 4.8,
+      ρ: 2.3,
+      σ: 3.3,
+      τ: 4.3,
+      υ: 1.7,
+      φ: 2.7,
+      χ: 3.7,
+      ψ: 4.7,
+      ω: 5,
+      "∆": 6,
+      "∇": 7,
+      "∞": 8,
+      Ω: 9,
+      Φ: 10,
+      Ψ: 11,
+      "≈": 12,
+      "∼": 13,
+      "※": 14,
+      "⟨⟩": 15,
+      "◊": 16,
+      "◎": 17,
     };
-    
+
     return freqMap[state] || Math.abs(state.charCodeAt(0) % 10) + 1;
   }
 
@@ -283,20 +282,46 @@ export class AreciboGenerator {
    * Obtiene el patrón visual para un estado energético
    */
   private static getEnergyPattern(state: string): string {
-    // Diferentes patrones según el símbolo
     const patterns: { [key: string]: string } = {
-      'α': 'wave', 'β': 'pulse', 'γ': 'spiral', 'δ': 'zigzag',
-      'ε': 'sine', 'ζ': 'square', 'η': 'triangle', 'θ': 'sawtooth',
-      'ι': 'burst', 'κ': 'ripple', 'λ': 'vortex', 'μ': 'standing',
-      'ν': 'modulated', 'ξ': 'interference', 'ο': 'resonance', 'π': 'harmonic',
-      'ρ': 'quantum', 'σ': 'coherent', 'τ': 'entangled', 'υ': 'superposed',
-      'φ': 'phase', 'χ': 'amplitude', 'ψ': 'frequency', 'ω': 'complex',
-      '∆': 'dimensional', '∇': 'gradient', '∞': 'infinite', 'Ω': 'omega',
-      'Φ': 'phi', 'Ψ': 'psi', '≈': 'approximate', '∼': 'similar',
-      '※': 'reference', '⟨⟩': 'bracket', '◊': 'diamond', '◎': 'target'
+      α: "wave",
+      β: "pulse",
+      γ: "spiral",
+      δ: "zigzag",
+      ε: "sine",
+      ζ: "square",
+      η: "triangle",
+      θ: "sawtooth",
+      ι: "burst",
+      κ: "ripple",
+      λ: "vortex",
+      μ: "standing",
+      ν: "modulated",
+      ξ: "interference",
+      ο: "resonance",
+      π: "harmonic",
+      ρ: "quantum",
+      σ: "coherent",
+      τ: "entangled",
+      υ: "superposed",
+      φ: "phase",
+      χ: "amplitude",
+      ψ: "frequency",
+      ω: "complex",
+      "∆": "dimensional",
+      "∇": "gradient",
+      "∞": "infinite",
+      Ω: "omega",
+      Φ: "phi",
+      Ψ: "psi",
+      "≈": "approximate",
+      "∼": "similar",
+      "※": "reference",
+      "⟨⟩": "bracket",
+      "◊": "diamond",
+      "◎": "target",
     };
-    
-    return patterns[state] || 'default';
+
+    return patterns[state] || "default";
   }
 
   /**
@@ -304,34 +329,34 @@ export class AreciboGenerator {
    */
   private static calculateEnergyPattern(pattern: string, phase: number, step: number): boolean {
     switch (pattern) {
-      case 'wave':
+      case "wave":
         return Math.sin(phase) > 0;
-      case 'pulse':
+      case "pulse":
         return step % 2 === 0;
-      case 'spiral':
-        return (Math.sin(phase) + Math.cos(phase * 1.5)) > 0;
-      case 'zigzag':
+      case "spiral":
+        return Math.sin(phase) + Math.cos(phase * 1.5) > 0;
+      case "zigzag":
         return step % 2 === Math.floor(phase) % 2;
-      case 'sine':
+      case "sine":
         return Math.sin(phase * 2) > 0.5;
-      case 'square':
+      case "square":
         return Math.sin(phase) > 0;
-      case 'triangle':
+      case "triangle":
         return Math.abs(Math.sin(phase)) > 0.5;
-      case 'burst':
+      case "burst":
         return step === 0 || step === 3;
-      case 'ripple':
+      case "ripple":
         return Math.sin(phase + step) > 0.3;
-      case 'vortex':
+      case "vortex":
         return (step + Math.floor(phase * 2)) % 3 !== 0;
-      case 'quantum':
-        return Math.random() > 0.3; // Patrón cuántico probabilístico
-      case 'interference':
+      case "quantum":
+        return Math.random() > 0.3;
+      case "interference":
         return Math.sin(phase) + Math.sin(phase * 1.7) > 0;
-      case 'dimensional':
-        return step < 2; // Solo primeras dimensiones
-      case 'infinite':
-        return true; // Siempre presente
+      case "dimensional":
+        return step < 2;
+      case "infinite":
+        return true;
       default:
         return Math.sin(phase) > 0;
     }
@@ -341,62 +366,47 @@ export class AreciboGenerator {
    * VIDA BASADA EN SILICIO - Información cristalina análoga a nucleótidos
    */
   private static drawSiliconBasedGenetics(bitmap: number[], colorMap: number[], lifeForm: string, planetName: string): void {
-    // Obtener las bases silicáticas variables según el planeta
     const silicateBases = this.getNitrogenBases(lifeForm, planetName);
-    
-    console.log(`🔬 Dibujando nucleótidos silicáticos: ${silicateBases.join(', ')} para ${lifeForm} en ${planetName}`);
-    
-    // Filas 12-15: Cuatro tipos de unidades cristalinas basadas en los elementos del planeta
+
     const siliconUnits = silicateBases.map((base, index) => ({
-      col: 4 + (index * 4), // Columnas 4, 8, 12, 16
+      col: 4 + index * 4,
       base: base,
-      bonds: this.getSilicateBonds(base) // Generar enlaces según el elemento
+      bonds: this.getSilicateBonds(base),
     }));
-    
-    // Dibujar cada unidad cristalina vertical
+
     for (const unit of siliconUnits) {
       this.drawChemicalFormula(bitmap, colorMap, unit.col, 12, unit.bonds);
     }
-    
-    // Fila 16: Línea en blanco
+
     this.drawBlankLine(bitmap, colorMap, 16);
-    
-    // Filas 17-20: Enlaces tetraédricos Si-O-Si (esqueleto cristalino)
+
     const centerCol = 11;
     for (let row = 17; row <= 20; row++) {
-      // Patrón tetraédrico centrado
       this.setPixel(bitmap, colorMap, centerCol, row, 1, this.COLORS.GREEN);
-      
-      // Enlaces direccionales
+
       const offset = (row - 17) % 2 === 0 ? 3 : 4;
       this.setPixel(bitmap, colorMap, centerCol - offset, row, 1, this.COLORS.GREEN);
       this.setPixel(bitmap, colorMap, centerCol + offset, row, 1, this.COLORS.GREEN);
-      
-      // Conectores entre tetraedros
+
       if (row % 2 === 1) {
         this.setPixel(bitmap, colorMap, 6, row, 1, this.COLORS.GREEN);
         this.setPixel(bitmap, colorMap, 16, row, 1, this.COLORS.GREEN);
       }
     }
-    
-    // Fila 21: Línea en blanco
+
     this.drawBlankLine(bitmap, colorMap, 21);
-    
-    // Filas 22-25: Tamaño del cristal genético (complejidad de la red)
+
     for (let row = 22; row <= 25; row++) {
-      const layer = row - 22; // 0-3
-      // Capas crecientes que representan la complejidad 3D
+      const layer = row - 22;
       for (let col = 9 - layer; col <= 13 + layer; col++) {
         if ((col + row) % 2 === 0) {
           this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
         }
       }
     }
-    
-    // Fila 26: Línea en blanco
+
     this.drawBlankLine(bitmap, colorMap, 26);
-    
-    // Fila 27: Bordes de la estructura cristalina (dejando centro libre para la representación posterior)
+
     this.drawDNAHelixBorders(bitmap, colorMap);
   }
 
@@ -404,71 +414,56 @@ export class AreciboGenerator {
    * ENTIDADES ROBÓTICAS - Información digital análoga a nucleótidos - PROCEDURAL
    */
   private static drawRoboticInformation(bitmap: number[], colorMap: number[], lifeForm: string, planetName?: string): void {
-    // Códigos digitales básicos - equivalentes a "nucleótidos digitales"
-    // VARIACIÓN PROCEDURAL basada en planeta
     const hash = this.hashString(lifeForm + (planetName || "Earth") + "digital");
     const rng = this.createSeededRandom(hash);
-    
-    // Diferentes arquitecturas digitales procedurales
+
     const digitalArchitectures = [
-      // Arquitectura clásica binaria
       [
-        { col: 4, code: [0,0] },  // 00 = código A
-        { col: 8, code: [0,1] },  // 01 = código T  
-        { col: 12, code: [1,0] }, // 10 = código G
-        { col: 16, code: [1,1] }  // 11 = código C
+        { col: 4, code: [0, 0] },
+        { col: 8, code: [0, 1] },
+        { col: 12, code: [1, 0] },
+        { col: 16, code: [1, 1] },
       ],
-      // Arquitectura con códigos extendidos
       [
-        { col: 4, code: [1,0] },  // 10 = código A invertido
-        { col: 8, code: [1,1] },  // 11 = código T mejorado
-        { col: 12, code: [0,0] }, // 00 = código G resetado
-        { col: 16, code: [0,1] }  // 01 = código C básico
+        { col: 4, code: [1, 0] },
+        { col: 8, code: [1, 1] },
+        { col: 12, code: [0, 0] },
+        { col: 16, code: [0, 1] },
       ],
-      // Arquitectura optimizada
       [
-        { col: 4, code: [0,1] },  // 01 = código A optimizado
-        { col: 8, code: [1,0] },  // 10 = código T directo
-        { col: 12, code: [1,1] }, // 11 = código G complejo
-        { col: 16, code: [0,0] }  // 00 = código C simple
+        { col: 4, code: [0, 1] },
+        { col: 8, code: [1, 0] },
+        { col: 12, code: [1, 1] },
+        { col: 16, code: [0, 0] },
       ],
-      // Arquitectura avanzada
       [
-        { col: 4, code: [1,1] },  // 11 = código A avanzado
-        { col: 8, code: [0,0] },  // 00 = código T base
-        { col: 12, code: [0,1] }, // 01 = código G híbrido
-        { col: 16, code: [1,0] }  // 10 = código C invertido
-      ]
+        { col: 4, code: [1, 1] },
+        { col: 8, code: [0, 0] },
+        { col: 12, code: [0, 1] },
+        { col: 16, code: [1, 0] },
+      ],
     ];
-    
+
     const archIndex = Math.floor(rng.random() * digitalArchitectures.length);
     const digitalCodes = digitalArchitectures[archIndex];
-    
-    console.log(`💾 ARQUITECTURA DIGITAL para ${lifeForm} en ${planetName}: tipo ${archIndex + 1}/4 - códigos digitales únicos`);
-    
-    // Filas 12-15: Dibujar códigos digitales procedurales
+
     for (const dc of digitalCodes) {
-      // Variación en posición columna para simular diferentes implementaciones
-      const colVariation = Math.floor(rng.random() * 3) - 1; // -1, 0, +1
+      const colVariation = Math.floor(rng.random() * 3) - 1;
       const adjustedCol = Math.max(3, Math.min(19, dc.col + colVariation));
-      
-      // Cabecera del código con variación de intensidad
-      const headerIntensity = rng.random() > 0.2 ? 1 : 0; // 80% probabilidad
+
+      const headerIntensity = rng.random() > 0.2 ? 1 : 0;
       if (headerIntensity) {
         this.setPixel(bitmap, colorMap, adjustedCol, 12, 1, this.COLORS.GREEN);
         this.setPixel(bitmap, colorMap, adjustedCol + 1, 12, 1, this.COLORS.GREEN);
       }
-      
-      // Representación binaria del código (filas 13-14) con verificación de integridad
+
       for (let i = 0; i < dc.code.length; i++) {
         if (dc.code[i] === 1) {
-          // Añadir verificación de paridad (no todos los bits se muestran siempre)
-          const bitReliability = 0.85 + (rng.random() - 0.5) * 0.2; // 75%-95%
+          const bitReliability = 0.85 + (rng.random() - 0.5) * 0.2;
           if (rng.random() < bitReliability) {
             this.setPixel(bitmap, colorMap, adjustedCol + i, 13 + i, 1, this.COLORS.GREEN);
           }
-          
-          // Bits de corrección de errores
+
           if (rng.random() > 0.7) {
             const errorCorrectionCol = adjustedCol + (Math.floor(rng.random() * 3) - 1);
             if (errorCorrectionCol >= 3 && errorCorrectionCol <= 19) {
@@ -477,22 +472,19 @@ export class AreciboGenerator {
           }
         }
       }
-      
-      // Marcador de fin con checksum
-      if (rng.random() > 0.15) { // 85% probabilidad de checksum válido
+
+      if (rng.random() > 0.15) {
         this.setPixel(bitmap, colorMap, adjustedCol, 15, 1, this.COLORS.GREEN);
       }
     }
-    
-    // Fila 16: Línea en blanco
+
     this.drawBlankLine(bitmap, colorMap, 16);
-    
-    // Filas 17-20: Backbone digital (buses de datos) - PROCEDURAL
-    const busArchitecture = Math.floor(rng.random() * 4); // 4 tipos de arquitecturas de bus
-    
+
+    const busArchitecture = Math.floor(rng.random() * 4);
+
     for (let row = 17; row <= 20; row++) {
       switch (busArchitecture) {
-        case 0: // Bus central clásico
+        case 0:
           for (let col = 9; col <= 13; col++) {
             this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
           }
@@ -503,17 +495,17 @@ export class AreciboGenerator {
             this.setPixel(bitmap, colorMap, 16, row, 1, this.COLORS.GREEN);
           }
           break;
-          
-        case 1: // Bus distribuido
-          const spread = (row - 17) + 1;
+
+        case 1:
+          const spread = row - 17 + 1;
           for (let col = 11 - spread; col <= 11 + spread; col++) {
             if (col >= 6 && col <= 16) {
               this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
             }
           }
           break;
-          
-        case 2: // Bus en anillo
+
+        case 2:
           if (row === 17 || row === 20) {
             for (let col = 8; col <= 14; col++) {
               this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
@@ -524,9 +516,9 @@ export class AreciboGenerator {
             this.setPixel(bitmap, colorMap, 14, row, 1, this.COLORS.GREEN);
           }
           break;
-          
-        case 3: // Bus estrella
-          this.setPixel(bitmap, colorMap, 11, row, 1, this.COLORS.GREEN); // Centro
+
+        case 3:
+          this.setPixel(bitmap, colorMap, 11, row, 1, this.COLORS.GREEN);
           if (rng.random() > 0.3) {
             this.setPixel(bitmap, colorMap, 11 - (row - 16), row, 1, this.COLORS.GREEN);
           }
@@ -535,35 +527,32 @@ export class AreciboGenerator {
           }
           break;
       }
-      
-      // Señales de control adicionales con ruido procedural
+
       if (rng.random() > 0.6) {
-        const controlCol = 5 + Math.floor(rng.random() * 13); // Columnas 5-17
+        const controlCol = 5 + Math.floor(rng.random() * 13);
         if (controlCol >= 5 && controlCol <= 17) {
           this.setPixel(bitmap, colorMap, controlCol, row, 1, this.COLORS.GREEN);
         }
       }
     }
-    
-    // Fila 21: Línea en blanco
+
     this.drawBlankLine(bitmap, colorMap, 21);
-    
-    // Filas 22-25: Tamaño del programa/genoma digital - PROCEDURAL
-    const complexityPattern = Math.floor(rng.random() * 4); // 4 patrones de complejidad
-    
+
+    const complexityPattern = Math.floor(rng.random() * 4);
+
     for (let row = 22; row <= 25; row++) {
-      const level = row - 22; // 0-3
-      
+      const level = row - 22;
+
       switch (complexityPattern) {
-        case 0: // Crecimiento lineal clásico
+        case 0:
           for (let col = 8; col <= 8 + level * 3; col++) {
             if (col <= 14) {
               this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
             }
           }
           break;
-          
-        case 1: // Crecimiento exponencial
+
+        case 1:
           const exponentialWidth = Math.pow(2, level);
           for (let col = 11 - exponentialWidth; col <= 11 + exponentialWidth; col++) {
             if (col >= 8 && col <= 14) {
@@ -571,8 +560,8 @@ export class AreciboGenerator {
             }
           }
           break;
-          
-        case 2: // Crecimiento por módulos
+
+        case 2:
           const moduleSize = level + 1;
           for (let module = 0; module < moduleSize; module++) {
             const moduleCol = 8 + module * 2;
@@ -584,22 +573,20 @@ export class AreciboGenerator {
             }
           }
           break;
-          
-        case 3: // Crecimiento con fragmentación
+
+        case 3:
           const totalWidth = level * 2 + 2;
           for (let col = 9; col <= 9 + totalWidth; col++) {
-            if (col <= 14 && rng.random() > 0.3) { // 70% de ocupación
+            if (col <= 14 && rng.random() > 0.3) {
               this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
             }
           }
           break;
       }
     }
-    
-    // Fila 26: Línea en blanco
+
     this.drawBlankLine(bitmap, colorMap, 26);
-    
-    // Fila 27: Límites del espacio de memoria (dejando centro libre para la representación posterior)
+
     this.drawDNAHelixBorders(bitmap, colorMap);
   }
 
@@ -607,68 +594,53 @@ export class AreciboGenerator {
    * GAS CONSCIENTE - Estados cuánticos análogos a nucleótidos - PROCEDURAL
    */
   private static drawGaseousInformation(bitmap: number[], colorMap: number[], lifeForm: string, planetName?: string): void {
-    // Estados cuánticos básicos - como "nucleótidos cuánticos"
-    // VARIACIÓN PROCEDURAL basada en planeta
     const hash = this.hashString(lifeForm + (planetName || "Earth") + "quantum");
     const rng = this.createSeededRandom(hash);
-    
-    // Tipos de configuraciones cuánticas posibles
+
     const quantumConfigurations = [
-      // Configuración básica (2-qubit)
       [
-        { col: 4, state: [0,0] },  // |00⟩
-        { col: 8, state: [0,1] },  // |01⟩
-        { col: 12, state: [1,0] }, // |10⟩
-        { col: 16, state: [1,1] }  // |11⟩
+        { col: 4, state: [0, 0] },
+        { col: 8, state: [0, 1] },
+        { col: 12, state: [1, 0] },
+        { col: 16, state: [1, 1] },
       ],
-      // Configuración con superposición asimétrica
       [
-        { col: 4, state: [1,0] },  // |10⟩
-        { col: 8, state: [0,0] },  // |00⟩
-        { col: 12, state: [1,1] }, // |11⟩
-        { col: 16, state: [0,1] }  // |01⟩
+        { col: 4, state: [1, 0] },
+        { col: 8, state: [0, 0] },
+        { col: 12, state: [1, 1] },
+        { col: 16, state: [0, 1] },
       ],
-      // Configuración entrelazada máxima
       [
-        { col: 4, state: [0,1] },  // |01⟩
-        { col: 8, state: [1,1] },  // |11⟩
-        { col: 12, state: [0,0] }, // |00⟩
-        { col: 16, state: [1,0] }  // |10⟩
+        { col: 4, state: [0, 1] },
+        { col: 8, state: [1, 1] },
+        { col: 12, state: [0, 0] },
+        { col: 16, state: [1, 0] },
       ],
-      // Configuración con coherencia alta
       [
-        { col: 4, state: [1,1] },  // |11⟩
-        { col: 8, state: [1,0] },  // |10⟩
-        { col: 12, state: [0,1] }, // |01⟩
-        { col: 16, state: [0,0] }  // |00⟩
-      ]
+        { col: 4, state: [1, 1] },
+        { col: 8, state: [1, 0] },
+        { col: 12, state: [0, 1] },
+        { col: 16, state: [0, 0] },
+      ],
     ];
-    
+
     const configIndex = Math.floor(rng.random() * quantumConfigurations.length);
     const quantumStates = quantumConfigurations[configIndex];
-    
-    console.log(`🌀 CONFIGURACIÓN CUÁNTICA para ${lifeForm} en ${planetName}: tipo ${configIndex + 1}/4 - patrones cuánticos únicos`);
-    
-    // Filas 12-15: Dibujar los estados cuánticos procedurales
+
     for (const qs of quantumStates) {
-      // Variación en posición columna para simular fluctuación cuántica
-      const colVariation = Math.floor(rng.random() * 3) - 1; // -1, 0, +1
+      const colVariation = Math.floor(rng.random() * 3) - 1;
       const adjustedCol = Math.max(3, Math.min(19, qs.col + colVariation));
-      
-      // Representación del estado cuántico base
+
       this.setPixel(bitmap, colorMap, adjustedCol, 12, 1, this.COLORS.GREEN);
       this.setPixel(bitmap, colorMap, adjustedCol + 1, 12, 1, this.COLORS.GREEN);
-      
-      // Superposición (ambos bits en diferentes filas)
+
       for (let i = 0; i < qs.state.length; i++) {
         if (qs.state[i] === 1) {
-          // Añadir variación cuántica en la representación
-          const intensityVariation = rng.random() > 0.3 ? 1 : 0; // Estados de probabilidad
+          const intensityVariation = rng.random() > 0.3 ? 1 : 0;
           if (intensityVariation) {
             this.setPixel(bitmap, colorMap, adjustedCol + i, 13 + i, 1, this.COLORS.GREEN);
           }
-          
-          // Efectos de interferencia cuántica
+
           if (rng.random() > 0.6) {
             const interferenceCol = adjustedCol + (Math.floor(rng.random() * 3) - 1);
             if (interferenceCol >= 3 && interferenceCol <= 19) {
@@ -677,35 +649,30 @@ export class AreciboGenerator {
           }
         }
       }
-      
-      // Estado base con variación
-      if (rng.random() > 0.2) { // 80% probabilidad de estado base
+
+      if (rng.random() > 0.2) {
         this.setPixel(bitmap, colorMap, adjustedCol, 15, 1, this.COLORS.GREEN);
       }
     }
-    
-    // Fila 16: Línea en blanco
+
     this.drawBlankLine(bitmap, colorMap, 16);
-    
-    // Filas 17-20: Entrelazamiento cuántico (backbone) - PROCEDURAL
-    const entanglementPattern = Math.floor(rng.random() * 3); // 3 tipos de patrones de entrelazamiento
-    
+
+    const entanglementPattern = Math.floor(rng.random() * 3);
+
     for (let row = 17; row <= 20; row++) {
-      // Centro de entrelazamiento - siempre presente
       this.setPixel(bitmap, colorMap, 11, row, 1, this.COLORS.GREEN);
-      
-      // Estados entrelazados con variación procedural
-      const baseSpread = (row - 17) + 2; // 2-5
-      const spreadVariation = Math.floor(rng.random() * 2); // 0-1
+
+      const baseSpread = row - 17 + 2;
+      const spreadVariation = Math.floor(rng.random() * 2);
       const spread = baseSpread + spreadVariation;
-      
+
       switch (entanglementPattern) {
-        case 0: // Entrelazamiento simétrico
+        case 0:
           this.setPixel(bitmap, colorMap, 11 - spread, row, 1, this.COLORS.GREEN);
           this.setPixel(bitmap, colorMap, 11 + spread, row, 1, this.COLORS.GREEN);
           break;
-          
-        case 1: // Entrelazamiento asimétrico
+
+        case 1:
           if (row % 2 === 0) {
             this.setPixel(bitmap, colorMap, 11 - spread, row, 1, this.COLORS.GREEN);
             this.setPixel(bitmap, colorMap, 11 + (spread - 1), row, 1, this.COLORS.GREEN);
@@ -714,8 +681,8 @@ export class AreciboGenerator {
             this.setPixel(bitmap, colorMap, 11 + spread, row, 1, this.COLORS.GREEN);
           }
           break;
-          
-        case 2: // Entrelazamiento en cascada
+
+        case 2:
           for (let i = 1; i <= spread; i++) {
             if (rng.random() > 0.4) {
               this.setPixel(bitmap, colorMap, 11 - i, row, 1, this.COLORS.GREEN);
@@ -726,8 +693,7 @@ export class AreciboGenerator {
           }
           break;
       }
-      
-      // Conectores cuánticos procedurales
+
       if ((row % 2 === 1 && entanglementPattern <= 1) || (entanglementPattern === 2 && rng.random() > 0.5)) {
         for (let col = 11 - spread; col <= 11 + spread; col += Math.floor(rng.random() * 3) + 1) {
           if (col >= 6 && col <= 16) {
@@ -736,59 +702,55 @@ export class AreciboGenerator {
         }
       }
     }
-    
-    // Fila 21: Línea en blanco
+
     this.drawBlankLine(bitmap, colorMap, 21);
-    
-    // Filas 22-25: Complejidad cuántica del sistema - PROCEDURAL
-    const coherencePattern = Math.floor(rng.random() * 4); // 4 tipos de patrones de coherencia
-    
+
+    const coherencePattern = Math.floor(rng.random() * 4);
+
     for (let row = 22; row <= 25; row++) {
-      const coherence = row - 22; // 0-3
-      
+      const coherence = row - 22;
+
       switch (coherencePattern) {
-        case 0: // Patrón modular clásico
+        case 0:
           for (let col = 9; col <= 13; col++) {
             if ((col + row + coherence) % 3 === 0) {
               this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
             }
           }
           break;
-          
-        case 1: // Patrón de interferencia
+
+        case 1:
           for (let col = 9; col <= 13; col++) {
-            if (((col * row) + coherence) % 4 === 0) {
+            if ((col * row + coherence) % 4 === 0) {
               this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
             }
           }
           break;
-          
-        case 2: // Patrón de coherencia cuántica
+
+        case 2:
           const centerCol = 11;
-          const distance = Math.abs(coherence - 1.5); // Distancia del centro
+          const distance = Math.abs(coherence - 1.5);
           for (let col = 9; col <= 13; col++) {
-            if (Math.abs(col - centerCol) <= (2 - distance)) {
+            if (Math.abs(col - centerCol) <= 2 - distance) {
               if (rng.random() > 0.3) {
                 this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
               }
             }
           }
           break;
-          
-        case 3: // Patrón caótico controlado
+
+        case 3:
           for (let col = 9; col <= 13; col++) {
-            if (rng.random() > (0.3 + coherence * 0.1)) {
+            if (rng.random() > 0.3 + coherence * 0.1) {
               this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
             }
           }
           break;
       }
     }
-    
-    // Fila 26: Línea en blanco
+
     this.drawBlankLine(bitmap, colorMap, 26);
-    
-    // Fila 27: Límites del campo cuántico (dejando centro libre para la representación posterior)
+
     this.drawDNAHelixBorders(bitmap, colorMap);
   }
 
@@ -796,70 +758,54 @@ export class AreciboGenerator {
    * ENTIDAD DE ENERGÍA - Patrones ondulatorios análogos a nucleótidos
    */
   private static drawEnergyInformation(bitmap: number[], colorMap: number[], lifeForm: string, planetName: string): void {
-    // Obtener los estados energéticos variables según el "planeta" energético
     const energyStates = this.getNitrogenBases(lifeForm, planetName);
-    
-    console.log(`⚡ Dibujando estados energéticos: ${energyStates.join(', ')} para ${lifeForm} en ${planetName}`);
-    
-    // Filas 12-15: Estados energéticos variables basados en los tipos de energía
+
     const stateConfigs = energyStates.map((state, index) => ({
-      col: 4 + (index * 4), // Columnas 4, 8, 12, 16
+      col: 4 + index * 4,
       state: state,
-      freq: this.getEnergyFrequency(state), // Frecuencia según el estado
-      pattern: this.getEnergyPattern(state) // Patrón visual según el estado
+      freq: this.getEnergyFrequency(state),
+      pattern: this.getEnergyPattern(state),
     }));
-    
-    // Dibujar cada estado energético
+
     for (const config of stateConfigs) {
-      // Patrón visual según el tipo de estado energético
       for (let row = 12; row <= 15; row++) {
-        const phase = (row - 12) * Math.PI / config.freq;
+        const phase = ((row - 12) * Math.PI) / config.freq;
         const shouldDraw = this.calculateEnergyPattern(config.pattern, phase, row - 12);
-        
+
         if (shouldDraw) {
           this.setPixel(bitmap, colorMap, config.col, row, 1, this.COLORS.GREEN);
-          // Estados de alta frecuencia ocupan más espacio
           if (config.freq > 3) {
             this.setPixel(bitmap, colorMap, config.col + 1, row, 1, this.COLORS.GREEN);
           }
         }
       }
     }
-    
-    // Fila 16: Línea en blanco
+
     this.drawBlankLine(bitmap, colorMap, 16);
-    
-    // Filas 17-20: Campo de energía (backbone)
+
     for (let row = 17; row <= 20; row++) {
-      // Campo central
       this.setPixel(bitmap, colorMap, 11, row, 1, this.COLORS.GREEN);
-      
-      // Radiación hacia los lados
-      const intensity = row - 17; // 0-3
+
+      const intensity = row - 17;
       for (let i = 1; i <= 2 + intensity; i++) {
         if (11 - i >= 6) this.setPixel(bitmap, colorMap, 11 - i, row, 1, this.COLORS.GREEN);
         if (11 + i <= 16) this.setPixel(bitmap, colorMap, 11 + i, row, 1, this.COLORS.GREEN);
       }
     }
-    
-    // Fila 21: Línea en blanco
+
     this.drawBlankLine(bitmap, colorMap, 21);
-    
-    // Filas 22-25: Densidad energética total
+
     for (let row = 22; row <= 25; row++) {
-      const level = row - 22; // 0-3
-      // Barras de densidad creciente
+      const level = row - 22;
       for (let col = 10 - level; col <= 12 + level; col++) {
         if (col >= 6 && col <= 16) {
           this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
         }
       }
     }
-    
-    // Fila 26: Línea en blanco
+
     this.drawBlankLine(bitmap, colorMap, 26);
-    
-    // Fila 27: Límites del campo energético (dejando centro libre para la representación posterior)
+
     this.drawDNAHelixBorders(bitmap, colorMap);
   }
 
@@ -867,58 +813,43 @@ export class AreciboGenerator {
    * ENTIDAD DIVINA - Geometría sagrada análoga a nucleótidos con cruces católicas
    */
   private static drawDivineInformation(bitmap: number[], colorMap: number[]): void {
-    // Cuatro cruces católicas representando "nucleótidos divinos" 
-    
-    // Filas 12-15: Cuatro cruces católicas en lugar de constantes cósmicas
-    const crossPositions = [4, 8, 12, 16]; // Posiciones de las cruces
-    
+    const crossPositions = [4, 8, 12, 16];
+
     for (const col of crossPositions) {
-      // Dibujar cruz católica (patrón de cruz)
-      // Línea vertical (filas 12-15)
       for (let row = 12; row <= 15; row++) {
         this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
       }
-      // Línea horizontal (fila 13)
       this.setPixel(bitmap, colorMap, col - 1, 13, 1, this.COLORS.GREEN);
       this.setPixel(bitmap, colorMap, col + 1, 13, 1, this.COLORS.GREEN);
     }
-    
-    // Fila 16: Línea en blanco
+
     this.drawBlankLine(bitmap, colorMap, 16);
-    
-    // Filas 17-20: Matriz de armonía universal (backbone)
+
     for (let row = 17; row <= 20; row++) {
-      // Centro de armonía
       this.setPixel(bitmap, colorMap, 11, row, 1, this.COLORS.GREEN);
-      
-      // Simetría sagrada
-      const harmony = (row - 17) + 1; // 1-4
+
+      const harmony = row - 17 + 1;
       for (let i = 1; i <= harmony; i++) {
         if (11 - i * 2 >= 6) this.setPixel(bitmap, colorMap, 11 - i * 2, row, 1, this.COLORS.GREEN);
         if (11 + i * 2 <= 16) this.setPixel(bitmap, colorMap, 11 + i * 2, row, 1, this.COLORS.GREEN);
       }
     }
-    
-    // Fila 21: Línea en blanco
+
     this.drawBlankLine(bitmap, colorMap, 21);
-    
-    // Filas 22-25: Complejidad cósmica (secuencia de Fibonacci simplificada)
-    const fibLevels = [1, 2, 3, 5]; // Primeros 4 números de Fibonacci
-    
+
+    const fibLevels = [1, 2, 3, 5];
+
     for (let row = 22; row <= 25; row++) {
       const level = fibLevels[row - 22];
-      // Barras que crecen según Fibonacci
       for (let col = 11 - level; col <= 11 + level; col++) {
         if (col >= 6 && col <= 16) {
           this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
         }
       }
     }
-    
-    // Fila 26: Línea en blanco
+
     this.drawBlankLine(bitmap, colorMap, 26);
-    
-    // Fila 27: Límites del cosmos (dejando centro libre para la representación posterior)
+
     this.drawDNAHelixBorders(bitmap, colorMap);
   }
 
@@ -933,22 +864,15 @@ export class AreciboGenerator {
    */
   private static drawNucleotideFormulas(bitmap: number[], colorMap: number[], bases: string[], elements: number[], lifeForm: string): void {
     const nucleotideData = this.getNucleotideVariation(lifeForm, elements);
-    
-    // Debug: mostrar elementos y nucleótidos generados
-    console.log(`Elementos disponibles: [${elements.join(', ')}]`);
-    console.log(`Nucleótidos generados:`, nucleotideData.bases.map(b => `${b.name}: [${b.formula.join(',')}]`));
-    
-    // Dibujar las bases nitrogenadas específicas para este tipo de vida
+
     for (let i = 0; i < Math.min(nucleotideData.bases.length, 4); i++) {
       const base = nucleotideData.bases[i];
-      const col = 3 + (i * 4); // Columnas 3, 7, 11, 15
-      
-      // Dibujar fórmula química adaptada visualmente según elementos
+      const col = 3 + i * 4;
+
       this.drawAdaptedNucleotidePattern(bitmap, colorMap, base, col, elements);
     }
-    
-    // Azúcar (deoxyribose/ribose) - varía según si usa ADN o ARN
-    const sugarFormula = nucleotideData.usesRNA ? [9,5,0,4,0] : [7,5,0,1,0]; // Ribosa vs Deoxyribosa
+
+    const sugarFormula = nucleotideData.usesRNA ? [9, 5, 0, 4, 0] : [7, 5, 0, 1, 0];
     this.drawChemicalFormula(bitmap, colorMap, 1, 12, sugarFormula);
   }
 
@@ -956,21 +880,15 @@ export class AreciboGenerator {
    * Dibuja patrones visuales únicos de nucleótidos según los elementos del planeta
    */
   private static drawAdaptedNucleotidePattern(bitmap: number[], colorMap: number[], base: any, col: number, elements: number[]): void {
-    const fifthElement = elements[4]; // Quinto elemento (P, S, Mg, Ca, Fe, K, Na)
-    
-    // Debug detallado
-    console.log(`Dibujando nucleótido ${base.name} con elementos [${elements.join(',')}], quinto elemento: ${fifthElement}`);
-    console.log(`Fórmula del nucleótido: [${base.formula.join(',')}]`);
-    
-    // Dibujar patrón base estándar (H, C, N, O siempre en filas 12-15)
+    const fifthElement = elements[4];
+
     for (let elementIdx = 0; elementIdx < Math.min(4, base.formula.length); elementIdx++) {
       const count = base.formula[elementIdx];
       const row = 12 + elementIdx;
-      
+
       if (count > 0) {
         this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
-        
-        // Representar cantidades con píxeles adicionales
+
         if (count >= 4) {
           this.setPixel(bitmap, colorMap, col + 1, row, 1, this.COLORS.GREEN);
         }
@@ -979,8 +897,7 @@ export class AreciboGenerator {
         }
       }
     }
-    
-    // PATRÓN ÚNICO DEL QUINTO ELEMENTO (fila 16)
+
     const fifthElementCount = base.formula[4] || 0;
     if (fifthElementCount > 0) {
       this.drawFifthElementPattern(bitmap, colorMap, col, 16, fifthElement, fifthElementCount);
@@ -991,51 +908,50 @@ export class AreciboGenerator {
    * Dibuja patrones visuales únicos para cada tipo de quinto elemento
    */
   private static drawFifthElementPattern(bitmap: number[], colorMap: number[], col: number, row: number, element: number, count: number): void {
-    // Patrones únicos según el elemento específico
     switch (element) {
-      case 15: // Fósforo - Patrón clásico lineal (como Tierra)
+      case 15:
         this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
         if (count >= 2) this.setPixel(bitmap, colorMap, col + 1, row, 1, this.COLORS.GREEN);
         break;
-        
-      case 16: // Azufre - Patrón en L (enlaces direccionales)
+
+      case 16:
         this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
         this.setPixel(bitmap, colorMap, col, row + 1, 1, this.COLORS.GREEN);
         if (count >= 2) this.setPixel(bitmap, colorMap, col + 1, row, 1, this.COLORS.GREEN);
         break;
-        
-      case 12: // Magnesio - Patrón de coordinación (centro + alrededores)
+
+      case 12:
         this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
         this.setPixel(bitmap, colorMap, col - 1, row, 1, this.COLORS.GREEN);
         this.setPixel(bitmap, colorMap, col + 1, row, 1, this.COLORS.GREEN);
         break;
-        
-      case 20: // Calcio - Patrón cúbico (estructural)
+
+      case 20:
         this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
         this.setPixel(bitmap, colorMap, col + 1, row, 1, this.COLORS.GREEN);
         this.setPixel(bitmap, colorMap, col, row + 1, 1, this.COLORS.GREEN);
         this.setPixel(bitmap, colorMap, col + 1, row + 1, 1, this.COLORS.GREEN);
         break;
-        
-      case 26: // Hierro - Patrón de complejo (octaédrico)
+
+      case 26:
         this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
         this.setPixel(bitmap, colorMap, col - 1, row, 1, this.COLORS.GREEN);
         this.setPixel(bitmap, colorMap, col + 1, row, 1, this.COLORS.GREEN);
         this.setPixel(bitmap, colorMap, col, row - 1, 1, this.COLORS.GREEN);
         this.setPixel(bitmap, colorMap, col, row + 1, 1, this.COLORS.GREEN);
         break;
-        
-      case 19: // Potasio - Patrón iónico disperso
+
+      case 19:
         this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
         if (count >= 2) this.setPixel(bitmap, colorMap, col + 2, row, 1, this.COLORS.GREEN);
         break;
-        
-      case 11: // Sodio - Similar al potasio pero más compacto
+
+      case 11:
         this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
         if (count >= 2) this.setPixel(bitmap, colorMap, col + 1, row + 1, 1, this.COLORS.GREEN);
         break;
-        
-      default: // Patrón por defecto
+
+      default:
         this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
     }
   }
@@ -1044,18 +960,14 @@ export class AreciboGenerator {
    * Dibuja el esqueleto azúcar-fosfato del ADN
    */
   private static drawSugarPhosphateBackbone(bitmap: number[], colorMap: number[], elements: number[]): void {
-    // Patrón del grupo fosfato PO4 (filas 17-20)
-    // Posición central para el fósforo
     this.setPixel(bitmap, colorMap, 11, 18, 1, this.COLORS.GREEN);
     this.setPixel(bitmap, colorMap, 11, 19, 1, this.COLORS.GREEN);
-    
-    // Cuatro oxígenos alrededor del fósforo
+
     this.setPixel(bitmap, colorMap, 10, 17, 1, this.COLORS.GREEN);
     this.setPixel(bitmap, colorMap, 12, 17, 1, this.COLORS.GREEN);
     this.setPixel(bitmap, colorMap, 10, 20, 1, this.COLORS.GREEN);
     this.setPixel(bitmap, colorMap, 12, 20, 1, this.COLORS.GREEN);
-    
-    // Enlaces a los azúcares (con márgenes apropiados)
+
     this.setPixel(bitmap, colorMap, 6, 18, 1, this.COLORS.GREEN);
     this.setPixel(bitmap, colorMap, 7, 18, 1, this.COLORS.GREEN);
     this.setPixel(bitmap, colorMap, 15, 18, 1, this.COLORS.GREEN);
@@ -1067,18 +979,13 @@ export class AreciboGenerator {
    */
   private static drawGenomeSize(bitmap: number[], colorMap: number[], elements: number[], lifeForm: string): void {
     const nucleotideData = this.getNucleotideVariation(lifeForm, elements);
-    const genomeSizeData = this.getGenomeSizeData(lifeForm, "Earth", elements); // TODO: pasar planetName real
-    
-    // Representar complejidad del genoma visualmente
-    // Cada fila representa un aspecto diferente de la complejidad genética
-    
-    // Fila 22: Genes codificantes (barras proporcionales al número de genes)
-    const geneCount = Math.floor(genomeSizeData.genes / 1000); // En miles
+    const genomeSizeData = this.getGenomeSizeData(lifeForm, "Earth", elements);
+
+    const geneCount = Math.floor(genomeSizeData.genes / 1000);
     for (let col = 8; col <= Math.min(14, 8 + geneCount); col++) {
       this.setPixel(bitmap, colorMap, col, 22, 1, this.COLORS.GREEN);
     }
-    
-    // Fila 23: Contenido GC (patrón que refleja el ratio GC/AT)
+
     const gcPattern = genomeSizeData.gcContent;
     for (let col = 9; col <= 13; col++) {
       if (gcPattern === "high" && col % 2 === 1) {
@@ -1089,51 +996,41 @@ export class AreciboGenerator {
         this.setPixel(bitmap, colorMap, col, 23, 1, this.COLORS.GREEN);
       }
     }
-    
-    // Fila 24: Cromosomas/plásmidos
+
     const chromosomes = genomeSizeData.chromosomes;
     for (let i = 0; i < Math.min(chromosomes, 7); i++) {
       this.setPixel(bitmap, colorMap, 8 + i, 24, 1, this.COLORS.GREEN);
     }
-    
-    // Fila 25: Complejidad total (tamaño del genoma en megabases)
-    const totalSize = Math.floor(Math.log10(genomeSizeData.totalBases / 1000000)); // Log10 de Mb
+
+    const totalSize = Math.floor(Math.log10(genomeSizeData.totalBases / 1000000));
     for (let col = 9; col <= Math.min(15, 9 + totalSize); col++) {
       this.setPixel(bitmap, colorMap, col, 25, 1, this.COLORS.GREEN);
     }
-    
-    // Marcadores laterales
-    this.setPixel(bitmap, colorMap, 5, 22, 1, this.COLORS.GREEN); // Genes
-    this.setPixel(bitmap, colorMap, 17, 25, 1, this.COLORS.GREEN); // Tamaño total
+
+    this.setPixel(bitmap, colorMap, 5, 22, 1, this.COLORS.GREEN);
+    this.setPixel(bitmap, colorMap, 17, 25, 1, this.COLORS.GREEN);
   }
 
   /**
    * Dibuja solo los bordes de la doble hélice, dejando el centro libre
    */
   private static drawDNAHelixBorders(bitmap: number[], colorMap: number[]): void {
-    // EXACTAMENTE como el Arecibo original: solo bordes externos
-    // Dejando el área central (columnas 6-16) completamente libre para la doble hélice
-    
-    // Borde izquierdo (columnas 3-4)
     this.setPixel(bitmap, colorMap, 3, 27, 1, this.COLORS.GREEN);
     this.setPixel(bitmap, colorMap, 4, 27, 1, this.COLORS.GREEN);
-    
-    // Borde derecho (columnas 18-19) 
+
     this.setPixel(bitmap, colorMap, 18, 27, 1, this.COLORS.GREEN);
     this.setPixel(bitmap, colorMap, 19, 27, 1, this.COLORS.GREEN);
-    
-    // CENTRO VACÍO (columnas 5-17) - Aquí va la representación de la doble hélice
   }
 
   /**
-   * Dibuja la representación de la doble hélice del ADN 
+   * Dibuja la representación de la doble hélice del ADN
    * HELICES AZULES + CENTRO BLANCO según el mensaje original de Arecibo
    * Adaptado para cada forma de vida de manera coherente con sus nucleótidos
    */
   private static drawDNADoubleHelix(bitmap: number[], colorMap: number[], lifeForm: string, planetName: string, startRow: number = 28, height: number = 15): void {
     const category = this.getLifeCategory(lifeForm);
-    const centerCol = 11; // Columna central del mensaje (23/2 ≈ 11)
-    
+    const centerCol = 11;
+
     switch (category) {
       case "carbon-based":
         this.drawCarbonBasedDoubleHelix(bitmap, colorMap, lifeForm, planetName, centerCol, startRow, height);
@@ -1166,41 +1063,30 @@ export class AreciboGenerator {
    */
   private static drawCarbonBasedDoubleHelix(bitmap: number[], colorMap: number[], lifeForm: string, planetName: string, centerCol: number, startRow: number, height: number): void {
     const genomicData = this.getGenomeSizeData(lifeForm, planetName, this.getElementsForLifeForm(lifeForm, planetName));
-    
-    // COLUMNA CENTRAL - 2 píxeles representando el NÚMERO de pares de bases
-    const centerCol1 = 11;    // Primera columna del número binario
-    const centerCol2 = 12;    // Segunda columna del número binario
-    
-    // Convertir el número total de bases a binario para la representación
+
+    const centerCol1 = 11;
+    const centerCol2 = 12;
+
     const totalBases = genomicData.totalBases;
     const binaryString = totalBases.toString(2);
-    
-    // VARIACIÓN PROCEDURAL DE HÉLICES POR PLANETA
+
     const helixHash = this.hashString(lifeForm + planetName + "helix");
     const helixRng = this.createSeededRandom(helixHash);
-    
-    // Parámetros base del DNA (científicamente correctos)
-    const baseTurnsPerHeight = 10.5; // DNA real: 1 vuelta cada 10.5 bases
-    const baseAmplitude = 0.5; // Amplitud base de las hélices
-    
-    // Variaciones por planeta (sutiles pero visibles)
-    const turnVariation = (helixRng.random() - 0.5) * 2.0; // ±1 vuelta por altura
-    const amplitudeVariation = (helixRng.random() - 0.5) * 0.3; // ±15% amplitud
-    const phaseShift = helixRng.random() * Math.PI; // Desplazamiento de fase único
-    
+
+    const baseTurnsPerHeight = 10.5;
+    const baseAmplitude = 0.5;
+
+    const turnVariation = (helixRng.random() - 0.5) * 2.0;
+    const amplitudeVariation = (helixRng.random() - 0.5) * 0.3;
+    const phaseShift = helixRng.random() * Math.PI;
+
     const planetTurnsPerHeight = baseTurnsPerHeight + turnVariation;
     const planetAmplitude = baseAmplitude + amplitudeVariation;
-    
-    console.log(`Hélices para ${lifeForm} en ${planetName}: ${planetTurnsPerHeight.toFixed(1)} vueltas, amplitud ${planetAmplitude.toFixed(2)}`);
-    
+
     for (let i = 0; i < height; i++) {
       const row = startRow + i;
       if (row >= this.HEIGHT) break;
-      
-      // COLUMNAS CENTRALES BLANCAS - Cada una muestra bits independientes del número binario
-      // Como en el Arecibo original: columna izquierda y derecha pueden tener patrones diferentes
-      
-      // Columna izquierda: bits en posiciones pares (0, 2, 4, 6...)
+
       const leftBitIndex = i * 2;
       if (leftBitIndex < binaryString.length) {
         const leftBit = parseInt(binaryString[leftBitIndex]);
@@ -1208,8 +1094,7 @@ export class AreciboGenerator {
           this.setPixel(bitmap, colorMap, centerCol1, row, 1, this.COLORS.WHITE);
         }
       }
-      
-      // Columna derecha: bits en posiciones impares (1, 3, 5, 7...)
+
       const rightBitIndex = i * 2 + 1;
       if (rightBitIndex < binaryString.length) {
         const rightBit = parseInt(binaryString[rightBitIndex]);
@@ -1217,30 +1102,22 @@ export class AreciboGenerator {
           this.setPixel(bitmap, colorMap, centerCol2, row, 1, this.COLORS.WHITE);
         }
       }
-      
-      // HÉLICES LATERALES AZULES - CON VARIACIÓN POR PLANETA
-      // Usar parámetros únicos generados para este planeta
+
       const helixPhase = (i * Math.PI * 2) / planetTurnsPerHeight + phaseShift;
-      
-      // Hélice izquierda - DESDE BORDE ABSOLUTO (col 0) HASTA COL 9 (2px separación del centro)
-      const leftHelixRange = 9 - 0; // 9 columnas disponibles (0,1,2,3,4,5,6,7,8,9)
-      const leftHelixPosition = 0 + Math.round((leftHelixRange/2) + (leftHelixRange/2) * planetAmplitude * Math.cos(helixPhase));
+
+      const leftHelixRange = 9 - 0;
+      const leftHelixPosition = 0 + Math.round(leftHelixRange / 2 + (leftHelixRange / 2) * planetAmplitude * Math.cos(helixPhase));
       this.setPixel(bitmap, colorMap, Math.max(0, Math.min(9, leftHelixPosition)), row, 1, this.COLORS.BLUE);
-      
-      // Hélice derecha - DESDE COL 14 (2px separación del centro) HASTA BORDE ABSOLUTO (col 22)  
-      // Desfase de 180° para hélice antiparalela (característica real del DNA)
-      const rightHelixRange = 22 - 14; // 8 columnas disponibles (14,15,16,17,18,19,20,21,22)
-      const rightHelixPosition = 14 + Math.round((rightHelixRange/2) + (rightHelixRange/2) * planetAmplitude * Math.cos(helixPhase + Math.PI));
+
+      const rightHelixRange = 22 - 14;
+      const rightHelixPosition = 14 + Math.round(rightHelixRange / 2 + (rightHelixRange / 2) * planetAmplitude * Math.cos(helixPhase + Math.PI));
       this.setPixel(bitmap, colorMap, Math.max(14, Math.min(22, rightHelixPosition)), row, 1, this.COLORS.BLUE);
-      
-      // VARIACIONES ESPECÍFICAS según el tipo de vida (usando parámetros del planeta)
+
       if (lifeForm === "Intelligent Life") {
-        // Vida inteligente: doble hélice más regular con parámetros planetarios
         const secondaryPhase = helixPhase + Math.PI;
         const leftSecondary = Math.round(centerCol1 - 3 - planetAmplitude * Math.cos(secondaryPhase));
         const rightSecondary = Math.round(centerCol2 + 3 + planetAmplitude * Math.cos(secondaryPhase));
-        
-        // Frecuencia de píxeles secundarios varía con las vueltas del planeta
+
         const secondaryFreq = Math.max(3, Math.floor(planetTurnsPerHeight / 2));
         if (leftSecondary >= 5 && leftSecondary <= 9 && i % secondaryFreq === 0) {
           this.setPixel(bitmap, colorMap, leftSecondary, row, 1, this.COLORS.BLUE);
@@ -1249,7 +1126,6 @@ export class AreciboGenerator {
           this.setPixel(bitmap, colorMap, rightSecondary, row, 1, this.COLORS.BLUE);
         }
       } else if (lifeForm === "Vegetation") {
-        // Vegetación (RNA): hélice más irregular usando amplitud planetaria
         const rnaFreq = Math.max(4, Math.floor(planetTurnsPerHeight));
         if (i % rnaFreq === Math.floor(rnaFreq / 2)) {
           const rnaCol = leftHelixPosition - Math.round(planetAmplitude);
@@ -1268,39 +1144,33 @@ export class AreciboGenerator {
    * - Redes laterales AZULES envolviendo sin sobreponerse
    */
   private static drawSiliconBasedStructure(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, lifeForm: string, planetName: string): void {
-    // Generar complejidad cristalina proceduralmente
     const hash = this.hashString(lifeForm + planetName + "crystalline");
     const rng = this.createSeededRandom(hash);
-    
-    // Diferentes tipos de estructuras cristalinas con diferentes complejidades
+
     const structureTypes = [
-      { units: 500000, name: "Cuarzo simple" },      // SiO2 básico
-      { units: 1200000, name: "Feldespato complejo" }, // Aluminosilicatos
-      { units: 800000, name: "Olivino" },            // Nesosilicatos
-      { units: 2000000, name: "Zeolita porosa" },    // Estructuras microporosas
-      { units: 1500000, name: "Granate denso" },     // Estructuras cúbicas complejas
-      { units: 900000, name: "Piroxeno cadena" },    // Inosilicatos
-      { units: 1800000, name: "Matriz silicática" }  // Tectosilicatos complejos
+      { units: 500000, name: "Cuarzo simple" },
+      { units: 1200000, name: "Feldespato complejo" },
+      { units: 800000, name: "Olivino" },
+      { units: 2000000, name: "Zeolita porosa" },
+      { units: 1500000, name: "Granate denso" },
+      { units: 900000, name: "Piroxeno cadena" },
+      { units: 1800000, name: "Matriz silicática" },
     ];
-    
+
     const structureIndex = Math.floor(rng.random() * structureTypes.length);
     const selectedStructure = structureTypes[structureIndex];
     const crystallineUnits = selectedStructure.units;
     const binaryString = crystallineUnits.toString(2);
-    
-    console.log(`🔮 ESTRUCTURA CRISTALINA para ${lifeForm} en ${planetName}: ${selectedStructure.name} (${crystallineUnits} unidades)`);
-    
-    const patternType = Math.floor(rng.random() * 3); // Diferentes patrones de red
-    
-    const centerCol1 = 11;    // Primera columna del número
-    const centerCol2 = 12;    // Segunda columna del número
-    
+
+    const patternType = Math.floor(rng.random() * 3);
+
+    const centerCol1 = 11;
+    const centerCol2 = 12;
+
     for (let i = 0; i < height; i++) {
       const row = startRow + i;
       if (row >= this.HEIGHT) break;
-      
-      // COLUMNAS CENTRALES BLANCAS - Patrones independientes como en Arecibo original
-      // Columna izquierda: bits en posiciones pares (0, 2, 4, 6...)
+
       const leftBitIndex = i * 2;
       if (leftBitIndex < binaryString.length) {
         const leftBit = parseInt(binaryString[leftBitIndex]);
@@ -1308,8 +1178,7 @@ export class AreciboGenerator {
           this.setPixel(bitmap, colorMap, centerCol1, row, 1, this.COLORS.WHITE);
         }
       }
-      
-      // Columna derecha: bits en posiciones impares (1, 3, 5, 7...)
+
       const rightBitIndex = i * 2 + 1;
       if (rightBitIndex < binaryString.length) {
         const rightBit = parseInt(binaryString[rightBitIndex]);
@@ -1317,30 +1186,26 @@ export class AreciboGenerator {
           this.setPixel(bitmap, colorMap, centerCol2, row, 1, this.COLORS.WHITE);
         }
       }
-      
-      // REDES CRISTALINAS AZULES - CON SEPARACIÓN DE 2PX DEL TRONCO CENTRAL
+
       let crystalPhase: number;
-      
-      // Diferentes patrones según el tipo de estructura cristalina
+
       switch (patternType) {
-        case 0: // Hexagonal (cuarzo, olivino)
+        case 0:
           crystalPhase = (i * Math.PI * 2) / 6;
           break;
-        case 1: // Cúbico (granate, feldespato)
+        case 1:
           crystalPhase = (i * Math.PI * 2) / 4;
           break;
-        default: // Complejo/irregular (zeolita, matriz)
+        default:
           crystalPhase = (i * Math.PI * 2) / 8 + rng.random() * 0.5;
       }
-      
-      // Red izquierda - DESDE BORDE ABSOLUTO (col 0) HASTA COL 9 (2px separación del centro)
-      const leftCrystalRange = 9 - 0; // 9 columnas disponibles
-      const leftCrystalPosition = 0 + Math.round((leftCrystalRange/2) + (leftCrystalRange/2) * Math.sin(crystalPhase));
+
+      const leftCrystalRange = 9 - 0;
+      const leftCrystalPosition = 0 + Math.round(leftCrystalRange / 2 + (leftCrystalRange / 2) * Math.sin(crystalPhase));
       this.setPixel(bitmap, colorMap, Math.max(0, Math.min(9, leftCrystalPosition)), row, 1, this.COLORS.BLUE);
-      
-      // Red derecha - DESDE COL 14 (2px separación del centro) HASTA BORDE ABSOLUTO (col 22)
-      const rightCrystalRange = 22 - 14; // 8 columnas disponibles
-      const rightCrystalPosition = 14 + Math.round((rightCrystalRange/2) + (rightCrystalRange/2) * Math.sin(crystalPhase + Math.PI));
+
+      const rightCrystalRange = 22 - 14;
+      const rightCrystalPosition = 14 + Math.round(rightCrystalRange / 2 + (rightCrystalRange / 2) * Math.sin(crystalPhase + Math.PI));
       this.setPixel(bitmap, colorMap, Math.max(14, Math.min(22, rightCrystalPosition)), row, 1, this.COLORS.BLUE);
     }
   }
@@ -1352,71 +1217,53 @@ export class AreciboGenerator {
    * - Buses laterales AZULES sin sobreponerse - CON VARIACIÓN PROCEDURAL
    */
   private static drawDigitalDataStructure(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, lifeForm: string, planetName?: string): void {
-    // VARIACIÓN PROCEDURAL basada en planeta
     const hash = this.hashString(lifeForm + (planetName || "Earth") + "datastructure");
     const rng = this.createSeededRandom(hash);
-    
-    // Diferentes configuraciones de complejidad de código procedurales
-    const codeComplexityVariations = [
-      2147483647,                    // Máximo int32 - programa muy complejo
-      Math.floor(2147483647 * 0.5), // Programa mediano
-      Math.floor(2147483647 * 0.25), // Programa compacto
-      2147483647 * 2,               // Programa expandido (overflow controlado)
-      Math.floor(2147483647 * 0.75)  // Programa optimizado
-    ];
-    
+
+    const codeComplexityVariations = [2147483647, Math.floor(2147483647 * 0.5), Math.floor(2147483647 * 0.25), 2147483647 * 2, Math.floor(2147483647 * 0.75)];
+
     const complexityIndex = Math.floor(rng.random() * codeComplexityVariations.length);
     const codeLines = codeComplexityVariations[complexityIndex];
-    const binaryString = Math.abs(codeLines).toString(2); // Math.abs para manejar overflow
-    
-    // Diferentes patrones de buses de datos procedurales
+    const binaryString = Math.abs(codeLines).toString(2);
+
     const busPatterns = [
-      { type: "synchronized", frequency: 4, phase: 0 },       // Buses síncronos estándar
-      { type: "asynchronous", frequency: 6, phase: Math.PI/3 }, // Buses asíncronos 
-      { type: "pipelined", frequency: 8, phase: Math.PI/2 },    // Buses con pipeline
-      { type: "burst", frequency: 3, phase: 0 },               // Transferencias en ráfaga
-      { type: "differential", frequency: 5, phase: Math.PI/4 }  // Señales diferenciales
+      { type: "synchronized", frequency: 4, phase: 0 },
+      { type: "asynchronous", frequency: 6, phase: Math.PI / 3 },
+      { type: "pipelined", frequency: 8, phase: Math.PI / 2 },
+      { type: "burst", frequency: 3, phase: 0 },
+      { type: "differential", frequency: 5, phase: Math.PI / 4 },
     ];
-    
+
     const patternIndex = Math.floor(rng.random() * busPatterns.length);
     const busPattern = busPatterns[patternIndex];
-    
-    console.log(`💻 ESTRUCTURA DIGITAL para ${lifeForm} en ${planetName}: ${codeLines.toLocaleString()} líneas código, patrón ${busPattern.type}`);
-    
-    const centerCol1 = 11;    // Primera columna del número
-    const centerCol2 = 12;    // Segunda columna del número
-    
+
+    const centerCol1 = 11;
+    const centerCol2 = 12;
+
     for (let i = 0; i < height; i++) {
       const row = startRow + i;
       if (row >= this.HEIGHT) break;
-      
-      // COLUMNAS CENTRALES BLANCAS - Patrones independientes como en Arecibo original
-      // CON VARIACIÓN PROCEDURAL para simular errores de compilación/optimización
-      
-      // Columna izquierda: bits en posiciones pares con control de calidad
+
       const leftBitIndex = i * 2;
       if (leftBitIndex < binaryString.length) {
         const leftBit = parseInt(binaryString[leftBitIndex]);
-        // Control de calidad del código - no todos los bits son perfectos
-        const codeQuality = 0.9 + (rng.random() - 0.5) * 0.15; // 82.5%-97.5%
+        const codeQuality = 0.9 + (rng.random() - 0.5) * 0.15;
         if (leftBit === 1 && rng.random() < codeQuality) {
           this.setPixel(bitmap, colorMap, centerCol1, row, 1, this.COLORS.WHITE);
         }
       }
-      
-      // Columna derecha: bits en posiciones impares con control de calidad
+
       const rightBitIndex = i * 2 + 1;
       if (rightBitIndex < binaryString.length) {
         const rightBit = parseInt(binaryString[rightBitIndex]);
-        const codeQuality = 0.9 + (rng.random() - 0.5) * 0.15; // 82.5%-97.5%
+        const codeQuality = 0.9 + (rng.random() - 0.5) * 0.15;
         if (rightBit === 1 && rng.random() < codeQuality) {
           this.setPixel(bitmap, colorMap, centerCol2, row, 1, this.COLORS.WHITE);
         }
       }
-      
-      // BUSES DIGITALES AZULES PROCEDURALES - CON SEPARACIÓN DE 2PX DEL TRONCO CENTRAL
+
       let digitalPhase: number;
-      
+
       switch (busPattern.type) {
         case "synchronized":
           digitalPhase = (i * Math.PI * 2) / busPattern.frequency + busPattern.phase;
@@ -1425,67 +1272,58 @@ export class AreciboGenerator {
           digitalPhase = (i * Math.PI * 2) / busPattern.frequency + busPattern.phase + rng.random() * 0.5;
           break;
         case "pipelined":
-          digitalPhase = (i * Math.PI * 2) / busPattern.frequency + busPattern.phase + (i % 3) * Math.PI/6;
+          digitalPhase = (i * Math.PI * 2) / busPattern.frequency + busPattern.phase + ((i % 3) * Math.PI) / 6;
           break;
         case "burst":
-          digitalPhase = i % 4 < 2 ? 
-            (i * Math.PI * 2) / busPattern.frequency + busPattern.phase :
-            (i * Math.PI * 2) / (busPattern.frequency * 2) + busPattern.phase;
+          digitalPhase = i % 4 < 2 ? (i * Math.PI * 2) / busPattern.frequency + busPattern.phase : (i * Math.PI * 2) / (busPattern.frequency * 2) + busPattern.phase;
           break;
         case "differential":
           digitalPhase = (i * Math.PI * 2) / busPattern.frequency + busPattern.phase + Math.sin(i * 0.3) * 0.2;
           break;
         default:
-          digitalPhase = (i * Math.PI * 2) / 4; // Fallback
+          digitalPhase = (i * Math.PI * 2) / 4;
       }
-      
-      // Bus izquierdo con variación procedural
-      const leftBusRange = 9 - 0; // 9 columnas disponibles
+
+      const leftBusRange = 9 - 0;
       let leftBusPosition: number;
-      
+
       if (busPattern.type === "synchronized" || busPattern.type === "pipelined") {
-        leftBusPosition = 0 + Math.round((leftBusRange/2) + (leftBusRange/2) * Math.sin(digitalPhase));
+        leftBusPosition = 0 + Math.round(leftBusRange / 2 + (leftBusRange / 2) * Math.sin(digitalPhase));
       } else if (busPattern.type === "asynchronous") {
-        leftBusPosition = 0 + Math.round((leftBusRange/2) + (leftBusRange/3) * Math.sin(digitalPhase));
+        leftBusPosition = 0 + Math.round(leftBusRange / 2 + (leftBusRange / 3) * Math.sin(digitalPhase));
       } else {
-        // Para burst y differential
-        leftBusPosition = 0 + Math.round((leftBusRange/2) + (leftBusRange/2) * Math.sin(digitalPhase) * Math.cos(digitalPhase * 0.7));
+        leftBusPosition = 0 + Math.round(leftBusRange / 2 + (leftBusRange / 2) * Math.sin(digitalPhase) * Math.cos(digitalPhase * 0.7));
       }
-      
+
       const finalLeftBusPosition = Math.max(0, Math.min(9, leftBusPosition));
       this.setPixel(bitmap, colorMap, finalLeftBusPosition, row, 1, this.COLORS.BLUE);
-      
-      // Bus derecho con variación procedural (usualmente desfasado)
-      const rightBusRange = 22 - 14; // 8 columnas disponibles
+
+      const rightBusRange = 22 - 14;
       let rightBusPosition: number;
-      
+
       if (busPattern.type === "synchronized") {
-        rightBusPosition = 14 + Math.round((rightBusRange/2) + (rightBusRange/2) * Math.sin(digitalPhase + Math.PI));
+        rightBusPosition = 14 + Math.round(rightBusRange / 2 + (rightBusRange / 2) * Math.sin(digitalPhase + Math.PI));
       } else if (busPattern.type === "asynchronous") {
-        rightBusPosition = 14 + Math.round((rightBusRange/2) + (rightBusRange/3) * Math.cos(digitalPhase + Math.PI/2));
+        rightBusPosition = 14 + Math.round(rightBusRange / 2 + (rightBusRange / 3) * Math.cos(digitalPhase + Math.PI / 2));
       } else if (busPattern.type === "pipelined") {
-        rightBusPosition = 14 + Math.round((rightBusRange/2) + (rightBusRange/2) * Math.sin(digitalPhase + Math.PI + (i % 4) * Math.PI/8));
+        rightBusPosition = 14 + Math.round(rightBusRange / 2 + (rightBusRange / 2) * Math.sin(digitalPhase + Math.PI + ((i % 4) * Math.PI) / 8));
       } else {
-        // Para burst y differential
-        rightBusPosition = 14 + Math.round((rightBusRange/2) + (rightBusRange/2) * Math.cos(digitalPhase) * Math.sin(digitalPhase * 0.5));
+        rightBusPosition = 14 + Math.round(rightBusRange / 2 + (rightBusRange / 2) * Math.cos(digitalPhase) * Math.sin(digitalPhase * 0.5));
       }
-      
+
       const finalRightBusPosition = Math.max(14, Math.min(22, rightBusPosition));
       this.setPixel(bitmap, colorMap, finalRightBusPosition, row, 1, this.COLORS.BLUE);
-      
-      // Efectos adicionales de buses para ciertos patrones
-      if (busPattern.type === "burst" && (i % 4 === 0) && rng.random() > 0.5) {
-        // Señales de burst adicionales
+
+      if (busPattern.type === "burst" && i % 4 === 0 && rng.random() > 0.5) {
         const burstLeftCol = Math.max(0, Math.min(9, finalLeftBusPosition + Math.floor(rng.random() * 3) - 1));
         const burstRightCol = Math.max(14, Math.min(22, finalRightBusPosition + Math.floor(rng.random() * 3) - 1));
         this.setPixel(bitmap, colorMap, burstLeftCol, row, 1, this.COLORS.BLUE);
         this.setPixel(bitmap, colorMap, burstRightCol, row, 1, this.COLORS.BLUE);
       }
-      
+
       if (busPattern.type === "differential" && rng.random() > 0.7) {
-        // Señales diferenciales complementarias
         const diffCol = Math.floor(rng.random() * 23);
-        if (diffCol < 10 || diffCol > 13) { // Evitar centro
+        if (diffCol < 10 || diffCol > 13) {
           this.setPixel(bitmap, colorMap, diffCol, row, 1, this.COLORS.BLUE);
         }
       }
@@ -1499,72 +1337,54 @@ export class AreciboGenerator {
    * - Campos laterales AZULES sin sobreponerse - CON VARIACIÓN PROCEDURAL
    */
   private static drawQuantumFieldStructure(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, lifeForm: string, planetName?: string): void {
-    // VARIACIÓN PROCEDURAL basada en planeta
     const hash = this.hashString(lifeForm + (planetName || "Earth") + "quantumfield");
     const rng = this.createSeededRandom(hash);
-    
-    // Diferentes configuraciones de estados cuánticos procedurales
-    const baseQuantumStates = 1048576; // 2^20 estados cuánticos base
-    const quantumVariations = [
-      baseQuantumStates,                    // Configuración estándar
-      baseQuantumStates * 2,               // Estados expandidos
-      Math.floor(baseQuantumStates * 0.5), // Estados comprimidos  
-      baseQuantumStates * 4,               // Estados complejos
-      Math.floor(baseQuantumStates * 1.5)  // Estados intermedios
-    ];
-    
+
+    const baseQuantumStates = 1048576;
+    const quantumVariations = [baseQuantumStates, baseQuantumStates * 2, Math.floor(baseQuantumStates * 0.5), baseQuantumStates * 4, Math.floor(baseQuantumStates * 1.5)];
+
     const quantumConfigIndex = Math.floor(rng.random() * quantumVariations.length);
     const quantumStates = quantumVariations[quantumConfigIndex];
     const binaryString = quantumStates.toString(2);
-    
-    // Patrones de oscilación cuántica procedurales
+
     const oscillationPatterns = [
-      { type: "sine", frequency: 12, phase: 0 },       // Oscilación sinusoidal estándar
-      { type: "cosine", frequency: 10, phase: Math.PI/4 }, // Oscilación cosenoidal desfasada
-      { type: "mixed", frequency: 8, phase: Math.PI/2 },   // Patrón mixto
-      { type: "chaos", frequency: 15, phase: 0 },          // Patrón cuántico caótico
-      { type: "entangled", frequency: 6, phase: Math.PI/3 } // Patrón entrelazado
+      { type: "sine", frequency: 12, phase: 0 },
+      { type: "cosine", frequency: 10, phase: Math.PI / 4 },
+      { type: "mixed", frequency: 8, phase: Math.PI / 2 },
+      { type: "chaos", frequency: 15, phase: 0 },
+      { type: "entangled", frequency: 6, phase: Math.PI / 3 },
     ];
-    
+
     const patternIndex = Math.floor(rng.random() * oscillationPatterns.length);
     const pattern = oscillationPatterns[patternIndex];
-    
-    console.log(`🌊 CAMPO CUÁNTICO para ${lifeForm} en ${planetName}: ${quantumStates.toLocaleString()} estados, patrón ${pattern.type}, freq ${pattern.frequency}`);
-    
-    const centerCol1 = 11;    // Primera columna del número
-    const centerCol2 = 12;    // Segunda columna del número
-    
+
+    const centerCol1 = 11;
+    const centerCol2 = 12;
+
     for (let i = 0; i < height; i++) {
       const row = startRow + i;
       if (row >= this.HEIGHT) break;
-      
-      // COLUMNAS CENTRALES BLANCAS - Patrones independientes como en Arecibo original
-      // CON VARIACIÓN PROCEDURAL
-      
-      // Columna izquierda: bits en posiciones pares con variación de intensidad
+
       const leftBitIndex = i * 2;
       if (leftBitIndex < binaryString.length) {
         const leftBit = parseInt(binaryString[leftBitIndex]);
-        // Fluctuaciones cuánticas - no todos los bits se muestran siempre
-        const showProbability = 0.8 + (rng.random() - 0.5) * 0.3; // 65%-95%
+        const showProbability = 0.8 + (rng.random() - 0.5) * 0.3;
         if (leftBit === 1 && rng.random() < showProbability) {
           this.setPixel(bitmap, colorMap, centerCol1, row, 1, this.COLORS.WHITE);
         }
       }
-      
-      // Columna derecha: bits en posiciones impares con variación de intensidad
+
       const rightBitIndex = i * 2 + 1;
       if (rightBitIndex < binaryString.length) {
         const rightBit = parseInt(binaryString[rightBitIndex]);
-        const showProbability = 0.8 + (rng.random() - 0.5) * 0.3; // 65%-95%
+        const showProbability = 0.8 + (rng.random() - 0.5) * 0.3;
         if (rightBit === 1 && rng.random() < showProbability) {
           this.setPixel(bitmap, colorMap, centerCol2, row, 1, this.COLORS.WHITE);
         }
       }
-      
-      // CAMPOS CUÁNTICOS AZULES PROCEDURALES - CON SEPARACIÓN DE 2PX DEL TRONCO CENTRAL
+
       let quantumPhase: number;
-      
+
       switch (pattern.type) {
         case "sine":
           quantumPhase = (i * Math.PI * 2) / pattern.frequency + pattern.phase;
@@ -1582,54 +1402,47 @@ export class AreciboGenerator {
           quantumPhase = (i * Math.PI * 2) / pattern.frequency + pattern.phase + Math.cos(i * 0.3) * 0.7;
           break;
         default:
-          quantumPhase = (i * Math.PI * 2) / 12; // Default fallback
+          quantumPhase = (i * Math.PI * 2) / 12;
       }
-      
-      // Campo izquierdo con variación procedural
-      const leftFieldRange = 9 - 0; // 9 columnas disponibles
+
+      const leftFieldRange = 9 - 0;
       let leftFieldPosition: number;
-      
+
       if (pattern.type === "sine" || pattern.type === "mixed") {
-        leftFieldPosition = 0 + Math.round((leftFieldRange/2) + (leftFieldRange/2) * Math.sin(quantumPhase));
+        leftFieldPosition = 0 + Math.round(leftFieldRange / 2 + (leftFieldRange / 2) * Math.sin(quantumPhase));
       } else if (pattern.type === "cosine") {
-        leftFieldPosition = 0 + Math.round((leftFieldRange/2) + (leftFieldRange/2) * Math.cos(quantumPhase));
+        leftFieldPosition = 0 + Math.round(leftFieldRange / 2 + (leftFieldRange / 2) * Math.cos(quantumPhase));
       } else {
-        // Para chaos y entangled, usar funciones más complejas
-        leftFieldPosition = 0 + Math.round((leftFieldRange/2) + (leftFieldRange/2) * Math.sin(quantumPhase) * Math.cos(quantumPhase * 0.7));
+        leftFieldPosition = 0 + Math.round(leftFieldRange / 2 + (leftFieldRange / 2) * Math.sin(quantumPhase) * Math.cos(quantumPhase * 0.7));
       }
-      
+
       const finalLeftPosition = Math.max(0, Math.min(9, leftFieldPosition));
       this.setPixel(bitmap, colorMap, finalLeftPosition, row, 1, this.COLORS.BLUE);
-      
-      // Campo derecho con variación procedural (usualmente en contra-fase)
-      const rightFieldRange = 22 - 14; // 8 columnas disponibles
+
+      const rightFieldRange = 22 - 14;
       let rightFieldPosition: number;
-      
+
       if (pattern.type === "sine" || pattern.type === "mixed") {
-        rightFieldPosition = 14 + Math.round((rightFieldRange/2) + (rightFieldRange/2) * Math.cos(quantumPhase + Math.PI));
+        rightFieldPosition = 14 + Math.round(rightFieldRange / 2 + (rightFieldRange / 2) * Math.cos(quantumPhase + Math.PI));
       } else if (pattern.type === "cosine") {
-        rightFieldPosition = 14 + Math.round((rightFieldRange/2) + (rightFieldRange/2) * Math.sin(quantumPhase + Math.PI));
+        rightFieldPosition = 14 + Math.round(rightFieldRange / 2 + (rightFieldRange / 2) * Math.sin(quantumPhase + Math.PI));
       } else {
-        // Para chaos y entangled
-        rightFieldPosition = 14 + Math.round((rightFieldRange/2) + (rightFieldRange/2) * Math.cos(quantumPhase) * Math.sin(quantumPhase * 0.5));
+        rightFieldPosition = 14 + Math.round(rightFieldRange / 2 + (rightFieldRange / 2) * Math.cos(quantumPhase) * Math.sin(quantumPhase * 0.5));
       }
-      
+
       const finalRightPosition = Math.max(14, Math.min(22, rightFieldPosition));
       this.setPixel(bitmap, colorMap, finalRightPosition, row, 1, this.COLORS.BLUE);
-      
-      // Efectos adicionales de campo cuántico para ciertos patrones
+
       if (pattern.type === "entangled" && rng.random() > 0.7) {
-        // Partículas entrelazadas adicionales
         const entangledLeftCol = Math.max(0, Math.min(9, finalLeftPosition + Math.floor(rng.random() * 3) - 1));
         const entangledRightCol = Math.max(14, Math.min(22, finalRightPosition + Math.floor(rng.random() * 3) - 1));
         this.setPixel(bitmap, colorMap, entangledLeftCol, row, 1, this.COLORS.BLUE);
         this.setPixel(bitmap, colorMap, entangledRightCol, row, 1, this.COLORS.BLUE);
       }
-      
+
       if (pattern.type === "chaos" && rng.random() > 0.8) {
-        // Fluctuaciones caóticas adicionales
         const chaosCol = Math.floor(rng.random() * 23);
-        if (chaosCol < 10 || chaosCol > 13) { // Evitar centro
+        if (chaosCol < 10 || chaosCol > 13) {
           this.setPixel(bitmap, colorMap, chaosCol, row, 1, this.COLORS.BLUE);
         }
       }
@@ -1643,45 +1456,28 @@ export class AreciboGenerator {
    * - Campos laterales AZULES sin sobreponerse
    */
   private static drawEnergyFieldStructure(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, lifeForm: string, planetName: string): void {
-    // Obtener los tipos de energía para generar campos variables
     const energyTypes = this.getElementsForLifeForm(lifeForm, planetName);
     const energyStates = this.getNitrogenBases(lifeForm, planetName);
-    
-    // Generar "unidades de información energética" procedurales
+
     const hash = this.hashString(lifeForm + planetName + "energy");
     const rng = this.createSeededRandom(hash);
-    
-    // Diferentes constantes universales según el tipo de energía
-    const energyConstants = [
-      299792458,  // Velocidad de la luz
-      6626070e-34,// Constante de Planck (truncada)
-      16605390e-27,// Masa del protón (truncada)  
-      96485340,   // Constante de Faraday
-      13806490e-23,// Constante de Boltzmann (truncada)
-      20181970,   // Radio clásico del electrón (truncada)
-      25812807,   // Cuanto de resistencia
-      48359775,   // Cuanto de conductancia
-      11263490e-6 // Cuanto magnético (truncada)
-    ];
-    
+
+    const energyConstants = [299792458, 6626070e-34, 16605390e-27, 96485340, 13806490e-23, 20181970, 25812807, 48359775, 11263490e-6];
+
     const energyConstantIndex = Math.floor(rng.random() * energyConstants.length);
     const energyUnits = energyConstants[energyConstantIndex];
     const binaryString = energyUnits.toString(2);
-    
-    console.log(`⚡ CAMPO ENERGÉTICO para ${lifeForm} en ${planetName}: ${energyUnits} unidades (constante universal)`);
-    
-    const centerCol1 = 11;    // Primera columna del número
-    const centerCol2 = 12;    // Segunda columna del número
-    
-    // Determinar patrón de campo según los estados energéticos
-    const fieldPattern = this.getEnergyPattern(energyStates[0]); // Usar primer estado
-    const fieldFrequency = this.getEnergyFrequency(energyStates[1] || energyStates[0]); // Usar segundo estado
-    
+
+    const centerCol1 = 11;
+    const centerCol2 = 12;
+
+    const fieldPattern = this.getEnergyPattern(energyStates[0]);
+    const fieldFrequency = this.getEnergyFrequency(energyStates[1] || energyStates[0]);
+
     for (let i = 0; i < height; i++) {
       const row = startRow + i;
       if (row >= this.HEIGHT) break;
-      
-      // COLUMNAS CENTRALES BLANCAS - Información energética binaria
+
       const leftBitIndex = i * 2;
       if (leftBitIndex < binaryString.length) {
         const leftBit = parseInt(binaryString[leftBitIndex]);
@@ -1689,7 +1485,7 @@ export class AreciboGenerator {
           this.setPixel(bitmap, colorMap, centerCol1, row, 1, this.COLORS.WHITE);
         }
       }
-      
+
       const rightBitIndex = i * 2 + 1;
       if (rightBitIndex < binaryString.length) {
         const rightBit = parseInt(binaryString[rightBitIndex]);
@@ -1697,22 +1493,19 @@ export class AreciboGenerator {
           this.setPixel(bitmap, colorMap, centerCol2, row, 1, this.COLORS.WHITE);
         }
       }
-      
-      // PATRONES DE CAMPO ENERGÉTICO VARIABLES (en lugar de hélices físicas)
+
       const energyPhase = (i * Math.PI * 2) / fieldFrequency;
-      
-      // Campo izquierdo - patrón según tipo de energía
-      const leftFieldIntensity = this.calculateFieldIntensity(fieldPattern, energyPhase, i, 'left');
+
+      const leftFieldIntensity = this.calculateFieldIntensity(fieldPattern, energyPhase, i, "left");
       if (leftFieldIntensity > 0) {
-        const leftRange = 9; // Columnas 0-9
+        const leftRange = 9;
         const leftPosition = Math.round(leftRange * leftFieldIntensity);
         this.setPixel(bitmap, colorMap, Math.max(0, Math.min(9, leftPosition)), row, 1, this.COLORS.BLUE);
       }
-      
-      // Campo derecho - patrón complementario
-      const rightFieldIntensity = this.calculateFieldIntensity(fieldPattern, energyPhase + Math.PI, i, 'right');
+
+      const rightFieldIntensity = this.calculateFieldIntensity(fieldPattern, energyPhase + Math.PI, i, "right");
       if (rightFieldIntensity > 0) {
-        const rightRange = 8; // Columnas 14-22
+        const rightRange = 8;
         const rightPosition = 14 + Math.round(rightRange * rightFieldIntensity);
         this.setPixel(bitmap, colorMap, Math.max(14, Math.min(22, rightPosition)), row, 1, this.COLORS.BLUE);
       }
@@ -1723,33 +1516,33 @@ export class AreciboGenerator {
    * Calcula la intensidad de campo energético según el patrón
    */
   private static calculateFieldIntensity(pattern: string, phase: number, step: number, side: string): number {
-    const baseIntensity = (Math.sin(phase) + 1) / 2; // Normalizar a 0-1
-    
+    const baseIntensity = (Math.sin(phase) + 1) / 2;
+
     switch (pattern) {
-      case 'wave':
+      case "wave":
         return baseIntensity;
-      case 'pulse':
+      case "pulse":
         return step % 3 === 0 ? 1 : 0;
-      case 'spiral':
+      case "spiral":
         return Math.abs(Math.sin(phase + step * 0.3));
-      case 'zigzag':
-        return side === 'left' ? baseIntensity : 1 - baseIntensity;
-      case 'interference':
-        return Math.abs(Math.sin(phase) + Math.sin(phase * 1.618)) / 2; // Proporción áurea
-      case 'quantum':
-        return Math.random() > 0.4 ? Math.random() : 0; // Comportamiento cuántico
-      case 'vortex':
+      case "zigzag":
+        return side === "left" ? baseIntensity : 1 - baseIntensity;
+      case "interference":
+        return Math.abs(Math.sin(phase) + Math.sin(phase * 1.618)) / 2;
+      case "quantum":
+        return Math.random() > 0.4 ? Math.random() : 0;
+      case "vortex":
         return Math.abs(Math.cos(phase + step * 0.1)) * baseIntensity;
-      case 'standing':
-        return step % 4 < 2 ? baseIntensity : 0; // Ondas estacionarias
-      case 'dimensional':
-        return Math.pow(baseIntensity, 2); // Intensidad cuadrática
-      case 'infinite':
-        return 0.7; // Campo constante fuerte
-      case 'phase':
-        return Math.abs(Math.sin(phase + Math.PI/4));
-      case 'resonance':
-        return baseIntensity > 0.8 ? 1 : baseIntensity * 0.3; // Resonancia umbral
+      case "standing":
+        return step % 4 < 2 ? baseIntensity : 0;
+      case "dimensional":
+        return Math.pow(baseIntensity, 2);
+      case "infinite":
+        return 0.7;
+      case "phase":
+        return Math.abs(Math.sin(phase + Math.PI / 4));
+      case "resonance":
+        return baseIntensity > 0.8 ? 1 : baseIntensity * 0.3;
       default:
         return baseIntensity * 0.6;
     }
@@ -1762,36 +1555,28 @@ export class AreciboGenerator {
    * - Geometrías laterales AZULES sin sobreponerse
    */
   private static drawCosmicGeometryStructure(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Patrón binario divino especial: 01/10 alternando infinitamente
-    const centerCol1 = 11;    // Primera columna del número
-    const centerCol2 = 12;    // Segunda columna del número
-    
+    const centerCol1 = 11;
+    const centerCol2 = 12;
+
     for (let i = 0; i < height; i++) {
       const row = startRow + i;
       if (row >= this.HEIGHT) break;
-      
-      // COLUMNAS CENTRALES BLANCAS - Patrón binario divino 01/10 alternando
-      // Patrón: 01, 10, 01, 10, 01, 10, etc.
+
       if (i % 2 === 0) {
-        // Filas pares: 01 (columna izquierda vacía, columna derecha llena)
         this.setPixel(bitmap, colorMap, centerCol2, row, 1, this.COLORS.WHITE);
       } else {
-        // Filas impares: 10 (columna izquierda llena, columna derecha vacía)
         this.setPixel(bitmap, colorMap, centerCol1, row, 1, this.COLORS.WHITE);
       }
-      
-      // GEOMETRÍAS SAGRADAS AZULES - CON SEPARACIÓN DE 2PX DEL TRONCO CENTRAL
-      const goldenPhase = (i * Math.PI * 2) / 13; // Basado en Fibonacci (13)
-      const fibonacciPhase = (i * 1.618033988749) % (2 * Math.PI); // Proporción áurea
-      
-      // Geometría izquierda - DESDE BORDE ABSOLUTO (col 0) HASTA COL 9 (2px separación del centro)
-      const leftGeometryRange = 9 - 0; // 9 columnas disponibles
-      const leftGeometryPosition = 0 + Math.round((leftGeometryRange/2) + (leftGeometryRange/2) * Math.sin(goldenPhase));
+
+      const goldenPhase = (i * Math.PI * 2) / 13;
+      const fibonacciPhase = (i * 1.618033988749) % (2 * Math.PI);
+
+      const leftGeometryRange = 9 - 0;
+      const leftGeometryPosition = 0 + Math.round(leftGeometryRange / 2 + (leftGeometryRange / 2) * Math.sin(goldenPhase));
       this.setPixel(bitmap, colorMap, Math.max(0, Math.min(9, leftGeometryPosition)), row, 1, this.COLORS.BLUE);
-      
-      // Geometría derecha - DESDE COL 14 (2px separación del centro) HASTA BORDE ABSOLUTO (col 22)
-      const rightGeometryRange = 22 - 14; // 8 columnas disponibles
-      const rightGeometryPosition = 14 + Math.round((rightGeometryRange/2) + (rightGeometryRange/2) * Math.cos(fibonacciPhase));
+
+      const rightGeometryRange = 22 - 14;
+      const rightGeometryPosition = 14 + Math.round(rightGeometryRange / 2 + (rightGeometryRange / 2) * Math.cos(fibonacciPhase));
       this.setPixel(bitmap, colorMap, Math.max(14, Math.min(22, rightGeometryPosition)), row, 1, this.COLORS.BLUE);
     }
   }
@@ -1800,14 +1585,12 @@ export class AreciboGenerator {
    * Dibuja una fórmula química en formato vertical
    */
   private static drawChemicalFormula(bitmap: number[], colorMap: number[], col: number, startRow: number, formula: number[]): void {
-    // formula = [H, C, N, O, P] counts
     for (let i = 0; i < formula.length; i++) {
       const count = formula[i];
       const row = startRow + i;
-      
+
       if (count > 0) {
         this.setPixel(bitmap, colorMap, col, row, 1, this.COLORS.GREEN);
-        // Para cantidades mayores, usar píxeles adicionales
         if (count >= 3) {
           this.setPixel(bitmap, colorMap, col + 1, row, 1, this.COLORS.GREEN);
         }
@@ -1817,7 +1600,6 @@ export class AreciboGenerator {
       }
     }
   }
-
 
   /**
    * Dibuja un bloque compacto de píxeles
@@ -1830,38 +1612,33 @@ export class AreciboGenerator {
     }
   }
 
-
   /**
    * Obtiene las bases complementarias para el ADN de doble cadena
    */
   private static getComplementaryBases(bases: string[]): string[] {
-    const complements: {[key: string]: string} = {
-      'A': 'T', 'T': 'A',
-      'G': 'C', 'C': 'G',
-      'U': 'A', // RNA
-      'X': 'X'  // Bases exóticas se complementan consigo mismas
+    const complements: { [key: string]: string } = {
+      A: "T",
+      T: "A",
+      G: "C",
+      C: "G",
+      U: "A",
+      X: "X",
     };
-    
-    return bases.map(base => complements[base] || 'X');
+
+    return bases.map((base) => complements[base] || "X");
   }
 
   /**
    * Obtiene el elemento equivalente al fosfato según la forma de vida
    */
   private static getPhosphateEquivalent(elements: number[]): number {
-    // Buscar P (15) o el último elemento de la lista como equivalente
     return elements.includes(15) ? 15 : elements[elements.length - 1];
   }
 
-
-
-
-  // Funciones auxiliares para elementos y categorías (versiones con color)
-  
   private static drawCarbonBasedElements(bitmap: number[], colorMap: number[], elements: number[]): void {
     const centerCol = 11;
     const startRow = 5;
-    
+
     this.drawElementBinary(bitmap, colorMap, elements[0], 9, startRow + 4, 4);
     this.drawElementBinary(bitmap, colorMap, elements[1], 11, startRow + 3, 5);
     this.setPixel(bitmap, colorMap, 10, startRow + 1, 1, this.COLORS.PURPLE);
@@ -1872,18 +1649,17 @@ export class AreciboGenerator {
   }
 
   private static drawSiliconBasedElements(bitmap: number[], colorMap: number[], elements: number[]): void {
-    // Implementación similar pero con colores
     const centerCol = 11;
     const startRow = 5;
-    
+
     for (let i = 0; i < elements.length && i < 5; i++) {
-      const angles = [0, Math.PI/2, Math.PI, 3*Math.PI/2, Math.PI/4];
+      const angles = [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2, Math.PI / 4];
       const radius = 3 + (i % 2);
       const col = Math.floor(centerCol + radius * Math.cos(angles[i]));
       const rowOffset = Math.floor(radius * Math.sin(angles[i]) * 0.5);
-      
+
       this.drawElementBinary(bitmap, colorMap, elements[i], col, startRow + 2 + rowOffset, 4);
-      
+
       if (i > 0) {
         this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.PURPLE);
       }
@@ -1892,47 +1668,42 @@ export class AreciboGenerator {
 
   private static drawRoboticElements(bitmap: number[], colorMap: number[], elements: number[]): void {
     const startRow = 5;
-    
-    // Crear patrones de circuitería robótica procedural basado en elementos
-    const robotHash = elements.join('');
+
+    const robotHash = elements.join("");
     const robotRng = this.createSeededRandom(this.hashString(robotHash + "robotic"));
-    
-    // Diferentes patrones de disposición de componentes
+
     const layoutPatterns = [
-      [5, 8, 11, 14, 17],     // Distribución lineal estándar
-      [4, 7, 11, 15, 18],     // Distribución expandida
-      [6, 9, 11, 13, 16],     // Distribución compacta centrada
-      [3, 8, 11, 14, 19],     // Distribución con extremos
-      [5, 9, 11, 13, 17]      // Distribución asimétrica
+      [5, 8, 11, 14, 17],
+      [4, 7, 11, 15, 18],
+      [6, 9, 11, 13, 16],
+      [3, 8, 11, 14, 19],
+      [5, 9, 11, 13, 17],
     ];
-    
+
     const patternIndex = Math.floor(robotRng.random() * layoutPatterns.length);
     const positions = layoutPatterns[patternIndex];
-    
+
     for (let i = 0; i < elements.length && i < 5; i++) {
       const baseCol = positions[i];
-      // Variación en posición para simular tolerancias de manufactura
-      const colVariation = Math.floor(robotRng.random() * 3) - 1; // -1, 0, +1
+      const colVariation = Math.floor(robotRng.random() * 3) - 1;
       const col = Math.max(3, Math.min(19, baseCol + colVariation));
-      
-      // Altura variable para diferentes componentes
-      const heightVariation = Math.floor(robotRng.random() * 2); // 0, 1
+
+      const heightVariation = Math.floor(robotRng.random() * 2);
       const componentHeight = 3 + heightVariation;
-      
+
       this.drawElementBinary(bitmap, colorMap, elements[i], col, startRow + 2, componentHeight);
-      
-      // Conexiones entre componentes - patrones variables
+
       if (i > 0) {
-        const prevCol = Math.max(3, Math.min(19, positions[i-1] + (Math.floor(robotRng.random() * 3) - 1)));
+        const prevCol = Math.max(3, Math.min(19, positions[i - 1] + (Math.floor(robotRng.random() * 3) - 1)));
         const connectionType = Math.floor(robotRng.random() * 3);
-        
+
         switch (connectionType) {
-          case 0: // Conexión directa
+          case 0:
             for (let c = Math.min(prevCol, col) + 1; c < Math.max(prevCol, col); c++) {
               this.setPixel(bitmap, colorMap, c, startRow + 4, 1, this.COLORS.PURPLE);
             }
             break;
-          case 1: // Conexión segmentada
+          case 1:
             const midPoint = Math.floor((prevCol + col) / 2);
             for (let c = prevCol + 1; c <= midPoint; c++) {
               if (c % 2 === 0) this.setPixel(bitmap, colorMap, c, startRow + 4, 1, this.COLORS.PURPLE);
@@ -1941,21 +1712,18 @@ export class AreciboGenerator {
               if (c % 2 === 1) this.setPixel(bitmap, colorMap, c, startRow + 4, 1, this.COLORS.PURPLE);
             }
             break;
-          case 2: // Conexión con bypass
+          case 2:
             this.setPixel(bitmap, colorMap, Math.floor((prevCol + col) / 2), startRow + 3, 1, this.COLORS.PURPLE);
             this.setPixel(bitmap, colorMap, Math.floor((prevCol + col) / 2), startRow + 4, 1, this.COLORS.PURPLE);
             this.setPixel(bitmap, colorMap, Math.floor((prevCol + col) / 2), startRow + 5, 1, this.COLORS.PURPLE);
             break;
         }
       }
-      
-      // Nodos de conexión principales
+
       this.setPixel(bitmap, colorMap, col, startRow + 4, 1, this.COLORS.PURPLE);
       this.setPixel(bitmap, colorMap, col, startRow + 1, 1, this.COLORS.PURPLE);
-      
-      // Añadir componentes auxiliares según el tipo de elemento
-      if (elements[i] >= 29) { // Metales conductores (Cu, Ag, Au)
-        // Líneas adicionales para alta conductividad
+
+      if (elements[i] >= 29) {
         if (robotRng.random() > 0.5) {
           this.setPixel(bitmap, colorMap, col, startRow, 1, this.COLORS.PURPLE);
         }
@@ -1963,9 +1731,8 @@ export class AreciboGenerator {
           this.setPixel(bitmap, colorMap, col, startRow + 5, 1, this.COLORS.PURPLE);
         }
       }
-      
-      if (elements[i] === 14 || elements[i] === 32) { // Semiconductores (Si, Ge)
-        // Patrones de rejilla para semiconductores
+
+      if (elements[i] === 14 || elements[i] === 32) {
         if (robotRng.random() > 0.6) {
           this.setPixel(bitmap, colorMap, col - 1, startRow + 2, 1, this.COLORS.PURPLE);
           this.setPixel(bitmap, colorMap, col + 1, startRow + 2, 1, this.COLORS.PURPLE);
@@ -1977,28 +1744,25 @@ export class AreciboGenerator {
   private static drawGaseousElements(bitmap: number[], colorMap: number[], elements: number[]): void {
     const centerCol = 11;
     const startRow = 5;
-    
-    // Crear patrones de difusión gaseosa procedural basado en elementos
-    const gasHash = elements.join('');
+
+    const gasHash = elements.join("");
     const gasRng = this.createSeededRandom(this.hashString(gasHash + "gaseous"));
-    
+
     for (let i = 0; i < elements.length && i < 5; i++) {
-      // Variación en la posición para simular difusión gaseosa
       const baseSpread = 2 + i;
-      const spreadVariation = Math.floor(gasRng.random() * 3) - 1; // -1, 0, +1
+      const spreadVariation = Math.floor(gasRng.random() * 3) - 1;
       const spread = Math.max(1, baseSpread + spreadVariation);
-      
+
       const baseCol = centerCol + (i % 2 === 0 ? -spread : spread);
-      const colVariation = Math.floor(gasRng.random() * 3) - 1; // -1, 0, +1
+      const colVariation = Math.floor(gasRng.random() * 3) - 1;
       const col = Math.max(0, Math.min(22, baseCol + colVariation));
-      
+
       const baseRowOffset = Math.floor(i / 2);
-      const rowVariation = Math.floor(gasRng.random() * 2); // 0, 1
+      const rowVariation = Math.floor(gasRng.random() * 2);
       const rowOffset = baseRowOffset + rowVariation;
-      
+
       this.drawElementBinary(bitmap, colorMap, elements[i], col, startRow + rowOffset, 3);
-      
-      // Añadir partículas adicionales para simular movimiento gaseoso
+
       if (gasRng.random() > 0.3) {
         const particleCol = Math.max(0, Math.min(22, col + Math.floor(gasRng.random() * 3) - 1));
         const particleRow = Math.max(startRow, Math.min(this.HEIGHT - 1, startRow + rowOffset + Math.floor(gasRng.random() * 3) - 1));
@@ -2010,15 +1774,15 @@ export class AreciboGenerator {
   private static drawEnergyElements(bitmap: number[], colorMap: number[], elements: number[]): void {
     const centerCol = 11;
     const startRow = 5;
-    
+
     for (let i = 0; i < elements.length && i < 5; i++) {
-      const phase = i * Math.PI / 2;
+      const phase = (i * Math.PI) / 2;
       const amplitude = 3;
-      
+
       for (let step = 0; step < 5; step++) {
         const col = centerCol + Math.floor(amplitude * Math.sin(phase + step * 0.5)) - 2 + i;
         const row = startRow + step;
-        
+
         if (col >= 0 && col < 23) {
           const binary = elements[i].toString(2);
           if (step < binary.length) {
@@ -2033,21 +1797,21 @@ export class AreciboGenerator {
   private static drawDivineElements(bitmap: number[], colorMap: number[], elements: number[]): void {
     const centerCol = 11;
     const centerRow = 7;
-    
+
     for (let i = 0; i < elements.length && i < 5; i++) {
       const angle = (i * 2 * Math.PI) / 5;
       const innerRadius = 2;
       const outerRadius = 4;
-      
+
       const innerCol = Math.floor(centerCol + innerRadius * Math.cos(angle));
       const innerRow = Math.floor(centerRow + innerRadius * Math.sin(angle) * 0.5);
-      
+
       const outerCol = Math.floor(centerCol + outerRadius * Math.cos(angle));
       const outerRow = Math.floor(centerRow + outerRadius * Math.sin(angle) * 0.5);
-      
+
       this.drawElementBinary(bitmap, colorMap, elements[i], innerCol, innerRow, 2);
       this.drawElementBinary(bitmap, colorMap, elements[i], outerCol, outerRow, 2);
-      
+
       this.drawLine(bitmap, colorMap, innerCol, innerRow, outerCol, outerRow, this.COLORS.PURPLE);
       this.drawLine(bitmap, colorMap, centerCol, centerRow, innerCol, innerRow, this.COLORS.PURPLE);
     }
@@ -2055,7 +1819,7 @@ export class AreciboGenerator {
 
   private static drawElementBinary(bitmap: number[], colorMap: number[], value: number, col: number, startRow: number, maxBits: number): void {
     const binary = value.toString(2);
-    
+
     for (let bit = 0; bit < Math.min(binary.length, maxBits); bit++) {
       const row = startRow - bit;
       const bitValue = parseInt(binary[binary.length - 1 - bit]);
@@ -2097,7 +1861,7 @@ export class AreciboGenerator {
   private static drawBinaryNumber(bitmap: number[], colorMap: number[], value: number, startCol: number, row: number, color: number): void {
     const binary = value.toString(2);
     const maxLength = Math.min(binary.length, 23 - startCol);
-    
+
     for (let bit = 0; bit < maxLength; bit++) {
       const bitValue = parseInt(binary[bit]);
       this.setPixel(bitmap, colorMap, startCol + bit, row, bitValue, color);
@@ -2110,12 +1874,10 @@ export class AreciboGenerator {
     }
   }
 
-  // Funciones de datos (sin cambios)
-  
   private static getLifeCategory(lifeForm: string): string {
     const categories: { [key: string]: string } = {
-      "Bacteria": "carbon-based",
-      "Vegetation": "carbon-based", 
+      Bacteria: "carbon-based",
+      Vegetation: "carbon-based",
       "Animal Life": "carbon-based",
       "Intelligent Life": "carbon-based",
       "Vegetable Animals": "carbon-based",
@@ -2123,410 +1885,345 @@ export class AreciboGenerator {
       "Robotic Entities": "robotic",
       "Conscious Gas": "gaseous",
       "Non-Physical Entity": "energy",
-      "Have I just found God?": "divine"
+      "Have I just found God?": "divine",
     };
-    
+
     return categories[lifeForm] || "carbon-based";
   }
 
   private static getElementsForLifeForm(lifeForm: string, planetName?: string): number[] {
-    // Elementos basados en DATOS REALES de abundancia en organismos vivos
     const elementSets: { [key: string]: number[] } = {
-      "Bacteria": [1, 6, 7, 8, 15],    // H, C, N, O, P - elementos esenciales del DNA/RNA
-      "Vegetation": [1, 6, 7, 8, 12],  // H, C, N, O, Mg - magnesio esencial para clorofila
-      "Animal Life": [1, 6, 7, 8, 20], // H, C, N, O, Ca - calcio esencial para huesos/señalización
-      "Intelligent Life": [1, 6, 7, 8, 15], // H, C, N, O, P - igual que humanos básicos
-      "Vegetable Animals": [1, 6, 7, 8, 26], // H, C, N, O, Fe - hierro para transporte O2 y fotosíntesis
-      
-      // FORMAS DE VIDA ESPECULATIVAS pero científicamente plausibles
-      "Silicon-Based Life": [1, 14, 8, 13, 16], // H, Si, O, Al, S - química silicatos
-      "Robotic Entities": [14, 29, 79, 47, 6],  // Si, Cu, Au, Ag, C - semiconductores y conductores
-      "Conscious Gas": [1, 2, 10, 18, 36],      // H, He, Ne, Ar, Kr - gases nobles estables
-      "Non-Physical Entity": [1, 3, 11, 19, 37], // H, Li, Na, K, Rb - metales alcalinos (energía)
-      "Have I just found God?": [1, 2, 3, 4, 5] // H, He, Li, Be, B - primeros elementos del universo
+      Bacteria: [1, 6, 7, 8, 15],
+      Vegetation: [1, 6, 7, 8, 12],
+      "Animal Life": [1, 6, 7, 8, 20],
+      "Intelligent Life": [1, 6, 7, 8, 15],
+      "Vegetable Animals": [1, 6, 7, 8, 26],
+
+      "Silicon-Based Life": [1, 14, 8, 13, 16],
+      "Robotic Entities": [14, 29, 79, 47, 6],
+      "Conscious Gas": [1, 2, 10, 18, 36],
+      "Non-Physical Entity": [1, 3, 11, 19, 37],
+      "Have I just found God?": [1, 2, 3, 4, 5],
     };
-    
-    // Obtener elementos base
-    let baseElements = elementSets[lifeForm] || [1, 6, 7, 8, 15]; // Default: elementos básicos de la vida
-    
-    // Si no hay planetName, devolver los elementos base
+
+    let baseElements = elementSets[lifeForm] || [1, 6, 7, 8, 15];
+
     if (!planetName || planetName === "Earth") {
       return baseElements;
     }
-    
-    // APLICAR VARIACIÓN PROCEDURAL POR PLANETA
+
     const hash = this.hashString(lifeForm + planetName + "elements");
     const rng = this.createSeededRandom(hash);
-    
-    // Para vida inteligente, generar variaciones bioquímicas realistas
+
     if (lifeForm === "Intelligent Life") {
-      // Elementos base siempre presentes: H, C, N, O (esenciales para la vida)
-      const coreElements = [1, 6, 7, 8]; // H, C, N, O
-      
-      // Quinto elemento puede variar según el planeta
-      const possibleFifthElements = [
-        15, // P (fósforo) - DNA/RNA clásico como la Tierra
-        16, // S (azufre) - metabolismo alternativo  
-        12, // Mg (magnesio) - fotosíntesis/enzimas
-        20, // Ca (calcio) - estructuras/señalización
-        26, // Fe (hierro) - transporte de oxígeno
-        19, // K (potasio) - señalización neuronal
-        11  // Na (sodio) - equilibrio iónico
-      ];
-      
+      const coreElements = [1, 6, 7, 8];
+
+      const possibleFifthElements = [15, 16, 12, 20, 26, 19, 11];
+
       const fifthElementIndex = Math.floor(rng.random() * possibleFifthElements.length);
       const fifthElement = possibleFifthElements[fifthElementIndex];
-      
+
       const variedElements = [...coreElements, fifthElement];
-      const elementNames = { 11: 'Na', 12: 'Mg', 15: 'P', 16: 'S', 19: 'K', 20: 'Ca', 26: 'Fe' };
-      console.log(`🧪 ELEMENTOS GENERADOS para ${lifeForm} en ${planetName}: [${variedElements.join(', ')}] - ${elementNames[fifthElement] || fifthElement} como elemento clave`);
-      
+      const elementNames = { 11: "Na", 12: "Mg", 15: "P", 16: "S", 19: "K", 20: "Ca", 26: "Fe" };
+
       return variedElements;
     }
-    
-    // APLICAR VARIACIÓN PROCEDURAL PARA BACTERIA
+
     if (lifeForm === "Bacteria") {
-      // Elementos base siempre presentes para bacterias: H, C, N, O (esenciales)
-      const coreElements = [1, 6, 7, 8]; // H, C, N, O
-      
-      // Quinto elemento puede variar según las condiciones extremas del planeta
-      const possibleBacterialElements = [
-        15, // P (fósforo) - DNA/RNA clásico como la Tierra
-        16, // S (azufre) - bacterias quimiosintéticas (fuentes hidrotermales)
-        26, // Fe (hierro) - bacterias magnetotácticas y ferruginosas
-        25, // Mn (manganeso) - bacterias oxidantes de manganeso
-        24, // Cr (cromo) - bacterias resistentes a metales pesados
-        28, // Ni (níquel) - metanógenas y hidrogenótrofas
-        27, // Co (cobalto) - bacterias productoras de vitamina B12
-        42, // Mo (molibdeno) - fijadoras de nitrógeno en condiciones extremas
-        74  // W (tungsteno) - hipertermófilas en ambientes extremos
-      ];
-      
+      const coreElements = [1, 6, 7, 8];
+
+      const possibleBacterialElements = [15, 16, 26, 25, 24, 28, 27, 42, 74];
+
       const fifthElementIndex = Math.floor(rng.random() * possibleBacterialElements.length);
       const fifthElement = possibleBacterialElements[fifthElementIndex];
-      
+
       const variedElements = [...coreElements, fifthElement];
-      const elementNames = { 15: 'P', 16: 'S', 24: 'Cr', 25: 'Mn', 26: 'Fe', 27: 'Co', 28: 'Ni', 42: 'Mo', 74: 'W' };
-      console.log(`🦠 ELEMENTOS GENERADOS para ${lifeForm} en ${planetName}: [${variedElements.join(', ')}] - ${elementNames[fifthElement] || fifthElement} como elemento clave para metabolismo extremófilo`);
-      
+      const elementNames = { 15: "P", 16: "S", 24: "Cr", 25: "Mn", 26: "Fe", 27: "Co", 28: "Ni", 42: "Mo", 74: "W" };
+
       return variedElements;
     }
-    
-    // APLICAR VARIACIÓN PROCEDURAL PARA VEGETABLE ANIMALS
+
     if (lifeForm === "Vegetable Animals") {
-      // Elementos base siempre presentes para híbridos: H, C, N, O (esenciales)
-      const coreElements = [1, 6, 7, 8]; // H, C, N, O
-      
-      // Quinto elemento puede variar según las capacidades híbridas del planeta
-      const possibleHybridElements = [
-        26, // Fe (hierro) - transporte de oxígeno y fotosíntesis combinados
-        12, // Mg (magnesio) - clorofila para componente vegetal
-        20, // Ca (calcio) - estructuras esqueléticas para componente animal
-        29, // Cu (cobre) - enzimas oxidativas y conducción nerviosa
-        25, // Mn (manganeso) - fotosíntesis y metabolismo híbrido
-        30, // Zn (zinc) - enzimas y neurotransmisión
-        42, // Mo (molibdeno) - fijación de nitrógeno y metabolismo
-        27, // Co (cobalto) - vitaminas y simbiosis híbrida
-        28  // Ni (níquel) - metabolismo especializado de híbridos
-      ];
-      
+      const coreElements = [1, 6, 7, 8];
+
+      const possibleHybridElements = [26, 12, 20, 29, 25, 30, 42, 27, 28];
+
       const fifthElementIndex = Math.floor(rng.random() * possibleHybridElements.length);
       const fifthElement = possibleHybridElements[fifthElementIndex];
-      
+
       const variedElements = [...coreElements, fifthElement];
-      const elementNames = { 12: 'Mg', 20: 'Ca', 25: 'Mn', 26: 'Fe', 27: 'Co', 28: 'Ni', 29: 'Cu', 30: 'Zn', 42: 'Mo' };
-      console.log(`🌿🐾 ELEMENTOS GENERADOS para ${lifeForm} en ${planetName}: [${variedElements.join(', ')}] - ${elementNames[fifthElement] || fifthElement} como elemento clave para función híbrida`);
-      
+      const elementNames = { 12: "Mg", 20: "Ca", 25: "Mn", 26: "Fe", 27: "Co", 28: "Ni", 29: "Cu", 30: "Zn", 42: "Mo" };
+
       return variedElements;
     }
-    
-    // APLICAR VARIACIÓN PROCEDURAL PARA VEGETATION
+
     if (lifeForm === "Vegetation") {
-      // Elementos base siempre presentes para plantas: H, C, N, O (esenciales)
-      const coreElements = [1, 6, 7, 8]; // H, C, N, O
-      
-      // Quinto elemento puede variar según las condiciones del planeta
-      const possiblePlantElements = [
-        12, // Mg (magnesio) - clorofila clásica como la Tierra
-        26, // Fe (hierro) - plantas en ambientes ricos en hierro
-        29, // Cu (cobre) - enzimas oxidativas alternativas
-        30, // Zn (zinc) - cofactor enzimático en suelos ácidos
-        25, // Mn (manganeso) - fotosíntesis en condiciones extremas
-        42, // Mo (molibdeno) - fijación de nitrógeno
-        16, // S (azufre) - metabolismo quimiosintético
-        20  // Ca (calcio) - estructuras de pared celular reforzadas
-      ];
-      
+      const coreElements = [1, 6, 7, 8];
+
+      const possiblePlantElements = [12, 26, 29, 30, 25, 42, 16, 20];
+
       const fifthElementIndex = Math.floor(rng.random() * possiblePlantElements.length);
       const fifthElement = possiblePlantElements[fifthElementIndex];
-      
+
       const variedElements = [...coreElements, fifthElement];
-      const elementNames = { 12: 'Mg', 16: 'S', 20: 'Ca', 25: 'Mn', 26: 'Fe', 29: 'Cu', 30: 'Zn', 42: 'Mo' };
-      console.log(`🌱 ELEMENTOS GENERADOS para ${lifeForm} en ${planetName}: [${variedElements.join(', ')}] - ${elementNames[fifthElement] || fifthElement} como elemento clave para fotosíntesis/metabolismo`);
-      
+      const elementNames = { 12: "Mg", 16: "S", 20: "Ca", 25: "Mn", 26: "Fe", 29: "Cu", 30: "Zn", 42: "Mo" };
+
       return variedElements;
     }
-    
-    // APLICAR VARIACIÓN PROCEDURAL PARA SILICON-BASED LIFE
+
     if (lifeForm === "Silicon-Based Life") {
-      // Elementos base siempre presentes: Si, O (estructura base de silicatos)
-      const coreElements = [14, 8]; // Si, O
-      
-      // Elementos adicionales pueden variar según las condiciones geológicas del planeta
+      const coreElements = [14, 8];
+
       const possibleSiliconElements = [
-        [1, 13, 16], // H, Al, S - silicatos hidratados con azufre
-        [13, 26, 12], // Al, Fe, Mg - silicatos ferromagnesianos
-        [20, 19, 11], // Ca, K, Na - feldespatos alcalinos
-        [26, 24, 28], // Fe, Cr, Ni - silicatos metálicos pesados
-        [12, 25, 30], // Mg, Mn, Zn - silicatos con metales de transición
-        [22, 23, 27], // Ti, V, Co - silicatos de metales refractarios
-        [40, 39, 38], // Zr, Y, Sr - silicatos de tierras raras
-        [3, 4, 9],    // Li, Be, F - silicatos ligeros pegmatíticos
-        [5, 15, 17]   // B, P, Cl - silicatos con no-metales complejos
+        [1, 13, 16],
+        [13, 26, 12],
+        [20, 19, 11],
+        [26, 24, 28],
+        [12, 25, 30],
+        [22, 23, 27],
+        [40, 39, 38],
+        [3, 4, 9],
+        [5, 15, 17],
       ];
-      
+
       const elementSetIndex = Math.floor(rng.random() * possibleSiliconElements.length);
       const additionalElements = possibleSiliconElements[elementSetIndex];
-      
+
       const variedElements = [...coreElements, ...additionalElements];
-      console.log(`🔮 ELEMENTOS GENERADOS para ${lifeForm} en ${planetName}: [${variedElements.join(', ')}] - química de silicatos especializada`);
-      
+
       return variedElements;
     }
-    
-    // APLICAR VARIACIÓN PROCEDURAL PARA NON-PHYSICAL ENTITY
+
     if (lifeForm === "Non-Physical Entity") {
-      // No elementos físicos, sino "tipos de energía" como números de códigos energéticos
       const energyTypeCodes = [
-        [1, 2, 7, 10],    // Electromagnética, Débil, Térmica, Lumínica
-        [3, 4, 8, 11],    // Fuerte, Gravitacional, Cinética, Radiante
-        [5, 6, 9, 12],    // Cuántica, Espín, Potencial, Resonante
-        [13, 14, 15, 16], // Dimensional, Temporal, Vibracional, Coherente
-        [17, 18, 19, 20], // Holográfica, Informacional, Entrelazada, Morfogénica
-        [21, 22, 23, 24], // Plasmática, Etérica, Escalar, Taquiónica
-        [25, 26, 27, 28], // Orgónica, Biofotónica, Psiónica, Noética
-        [29, 30, 31, 32], // Cósmica, Akáshica, Cristalina, Fractal
-        [33, 34, 35, 36]  // Hiperdimensional, Metacuántica, Consciencial, Primordial
+        [1, 2, 7, 10],
+        [3, 4, 8, 11],
+        [5, 6, 9, 12],
+        [13, 14, 15, 16],
+        [17, 18, 19, 20],
+        [21, 22, 23, 24],
+        [25, 26, 27, 28],
+        [29, 30, 31, 32],
+        [33, 34, 35, 36],
       ];
-      
+
       const energySetIndex = Math.floor(rng.random() * energyTypeCodes.length);
       const selectedEnergyTypes = energyTypeCodes[energySetIndex];
-      
-      console.log(`⚡ TIPOS DE ENERGÍA GENERADOS para ${lifeForm} en ${planetName}: códigos [${selectedEnergyTypes.join(', ')}] - patrones energéticos especializados`);
-      
+
       return selectedEnergyTypes;
     }
-    
-    // APLICAR VARIACIÓN PROCEDURAL PARA CONSCIOUS GAS
+
     if (lifeForm === "Conscious Gas") {
-      // Elementos base siempre presentes: H, He (esenciales para gas consciente)
-      const coreElements = [1, 2]; // H, He
-      
-      // Elementos adicionales pueden variar según las condiciones del planeta
-      const possibleGaseousElements = [
-        10, // Ne (neón) - gas noble estable, ionización controlada
-        18, // Ar (argón) - gas noble común en atmósferas planetarias
-        36, // Kr (kriptón) - gas noble pesado para alta densidad
-        54, // Xe (xenón) - gas noble muy polarizable, estados cuánticos complejos
-        7,  // N (nitrógeno) - gas diatómico común, enlaces múltiples
-        8,  // O (oxígeno) - gas reactivo para metabolismo energético
-        9,  // F (flúor) - gas altamente reactivo, enlaces energéticos
-        17, // Cl (cloro) - gas diatómico, reacciones fotoquímicas
-        35  // Br (bromo) - gas pesado, estados de ionización múltiples
-      ];
-      
-      // Seleccionar 3 elementos adicionales de manera procedural
+      const coreElements = [1, 2];
+
+      const possibleGaseousElements = [10, 18, 36, 54, 7, 8, 9, 17, 35];
+
       const selectedElements = [...coreElements];
       const shuffledElements = [...possibleGaseousElements];
-      
-      // Mezclar usando el RNG con semilla
+
       for (let i = shuffledElements.length - 1; i > 0; i--) {
         const j = Math.floor(rng.random() * (i + 1));
         [shuffledElements[i], shuffledElements[j]] = [shuffledElements[j], shuffledElements[i]];
       }
-      
-      // Tomar los primeros 3
+
       selectedElements.push(...shuffledElements.slice(0, 3));
-      
-      const elementNames = { 
-        1: 'H', 2: 'He', 7: 'N', 8: 'O', 9: 'F', 10: 'Ne', 17: 'Cl', 18: 'Ar', 
-        35: 'Br', 36: 'Kr', 54: 'Xe'
+
+      const elementNames = {
+        1: "H",
+        2: "He",
+        7: "N",
+        8: "O",
+        9: "F",
+        10: "Ne",
+        17: "Cl",
+        18: "Ar",
+        35: "Br",
+        36: "Kr",
+        54: "Xe",
       };
-      const selectedNames = selectedElements.map(e => elementNames[e] || e).join(', ');
-      console.log(`💨 ELEMENTOS GENERADOS para ${lifeForm} en ${planetName}: [${selectedElements.join(', ')}] - [${selectedNames}] - configuración gaseosa única`);
-      
+      const selectedNames = selectedElements.map((e) => elementNames[e] || e).join(", ");
+
       return selectedElements;
     }
-    
-    // APLICAR VARIACIÓN PROCEDURAL PARA ROBOTIC ENTITIES
+
     if (lifeForm === "Robotic Entities") {
-      // Elementos base siempre presentes: Si, C (silicio y carbono - semiconductores)
-      const coreElements = [14, 6]; // Si, C
-      
-      // Elementos adicionales pueden variar según la tecnología del planeta
-      const possibleRoboticElements = [
-        29, // Cu (cobre) - conductividad eléctrica clásica
-        79, // Au (oro) - conductores de alta precisión
-        47, // Ag (plata) - mejor conductor, conexiones críticas
-        13, // Al (aluminio) - estructura ligera, disipador térmico
-        26, // Fe (hierro) - estructura magnética, actuadores
-        28, // Ni (níquel) - aleaciones especiales, baterías
-        22, // Ti (titanio) - estructura ultra-resistente
-        31, // Ga (galio) - semiconductores avanzados (GaAs)
-        32, // Ge (germanio) - semiconductores alternativo al Si
-        33, // As (arsénico) - semiconductores compuestos
-        49, // In (indio) - pantallas, semiconductores flexibles
-        50, // Sn (estaño) - soldaduras, conexiones
-        74  // W (tungsteno) - componentes de alta temperatura
-      ];
-      
-      // Seleccionar 3 elementos adicionales de manera procedural
+      const coreElements = [14, 6];
+
+      const possibleRoboticElements = [29, 79, 47, 13, 26, 28, 22, 31, 32, 33, 49, 50, 74];
+
       const selectedElements = [...coreElements];
       const shuffledElements = [...possibleRoboticElements];
-      
-      // Mezclar usando el RNG con semilla
+
       for (let i = shuffledElements.length - 1; i > 0; i--) {
         const j = Math.floor(rng.random() * (i + 1));
         [shuffledElements[i], shuffledElements[j]] = [shuffledElements[j], shuffledElements[i]];
       }
-      
-      // Tomar los primeros 3
+
       selectedElements.push(...shuffledElements.slice(0, 3));
-      
-      const elementNames = { 
-        6: 'C', 13: 'Al', 14: 'Si', 22: 'Ti', 26: 'Fe', 28: 'Ni', 29: 'Cu', 
-        31: 'Ga', 32: 'Ge', 33: 'As', 47: 'Ag', 49: 'In', 50: 'Sn', 74: 'W', 79: 'Au'
+
+      const elementNames = {
+        6: "C",
+        13: "Al",
+        14: "Si",
+        22: "Ti",
+        26: "Fe",
+        28: "Ni",
+        29: "Cu",
+        31: "Ga",
+        32: "Ge",
+        33: "As",
+        47: "Ag",
+        49: "In",
+        50: "Sn",
+        74: "W",
+        79: "Au",
       };
-      const selectedNames = selectedElements.map(e => elementNames[e] || e).join(', ');
-      console.log(`🤖 ELEMENTOS GENERADOS para ${lifeForm} en ${planetName}: [${selectedElements.join(', ')}] - [${selectedNames}] - configuración robótica única`);
-      
+      const selectedNames = selectedElements.map((e) => elementNames[e] || e).join(", ");
+
       return selectedElements;
     }
-    
-    // Para otras formas de vida, usar los elementos base sin variación
+
     return baseElements;
   }
 
   private static getNitrogenBases(lifeForm: string, planetName?: string): string[] {
-    // Bases nitrogenadas REALES y especulativas científicamente fundamentadas
     const baseSets: { [key: string]: string[] } = {
-      "Bacteria": ["A", "T", "G", "C"],         // DNA clásico - todas las bacterias
-      "Vegetation": ["A", "T", "G", "C"],       // DNA (no RNA como pensé antes - error corregido)
-      "Animal Life": ["A", "T", "G", "C"],      // DNA clásico - todos los animales
-      "Intelligent Life": ["A", "T", "G", "C"], // DNA clásico - mismo que humanos
-      "Vegetable Animals": ["A", "T", "G", "C"], // DNA estándar (organismos híbridos tendrían DNA normal)
-      
-      // BASES ESPECULATIVAS para formas de vida no-carbono
-      "Silicon-Based Life": ["Si", "Al", "O", "S"],    // Análogos basados en silicatos
-      "Robotic Entities": ["0", "1", "X", "Z"],        // Código binario extendido
-      "Conscious Gas": ["|0⟩", "|1⟩", "|+⟩", "|-⟩"],   // Estados cuánticos básicos
-      "Non-Physical Entity": ["α", "β", "γ", "δ"],     // Patrones energéticos griegos
-      "Have I just found God?": ["∞", "Ω", "Φ", "Ψ"]   // Símbolos cósmicos/matemáticos
+      Bacteria: ["A", "T", "G", "C"],
+      Vegetation: ["A", "T", "G", "C"],
+      "Animal Life": ["A", "T", "G", "C"],
+      "Intelligent Life": ["A", "T", "G", "C"],
+      "Vegetable Animals": ["A", "T", "G", "C"],
+
+      "Silicon-Based Life": ["Si", "Al", "O", "S"],
+      "Robotic Entities": ["0", "1", "X", "Z"],
+      "Conscious Gas": ["|0⟩", "|1⟩", "|+⟩", "|-⟩"],
+      "Non-Physical Entity": ["α", "β", "γ", "δ"],
+      "Have I just found God?": ["∞", "Ω", "Φ", "Ψ"],
     };
-    
-    // Obtener bases base
-    let baseBases = baseSets[lifeForm] || ["A", "T", "G", "C"]; // Default: DNA estándar
-    
-    // Si no hay planetName, devolver las bases base
+
+    let baseBases = baseSets[lifeForm] || ["A", "T", "G", "C"];
+
     if (!planetName || planetName === "Earth") {
       return baseBases;
     }
-    
-    // APLICAR VARIACIÓN PROCEDURAL PARA SILICON-BASED LIFE
+
     if (lifeForm === "Silicon-Based Life") {
-      // Obtener los elementos químicos específicos de este planeta
       const planetElements = this.getElementsForLifeForm(lifeForm, planetName);
-      
-      // Usar los elementos del planeta como "nucleótidos" silicáticos
-      // Los primeros 4 elementos se usan como análogos de bases
+
       const elementSymbols: { [key: number]: string } = {
-        1: 'H', 3: 'Li', 4: 'Be', 5: 'B', 8: 'O', 9: 'F', 11: 'Na', 12: 'Mg', 
-        13: 'Al', 14: 'Si', 15: 'P', 16: 'S', 17: 'Cl', 19: 'K', 20: 'Ca',
-        22: 'Ti', 23: 'V', 24: 'Cr', 25: 'Mn', 26: 'Fe', 27: 'Co', 28: 'Ni',
-        29: 'Cu', 30: 'Zn', 38: 'Sr', 39: 'Y', 40: 'Zr'
+        1: "H",
+        3: "Li",
+        4: "Be",
+        5: "B",
+        8: "O",
+        9: "F",
+        11: "Na",
+        12: "Mg",
+        13: "Al",
+        14: "Si",
+        15: "P",
+        16: "S",
+        17: "Cl",
+        19: "K",
+        20: "Ca",
+        22: "Ti",
+        23: "V",
+        24: "Cr",
+        25: "Mn",
+        26: "Fe",
+        27: "Co",
+        28: "Ni",
+        29: "Cu",
+        30: "Zn",
+        38: "Sr",
+        39: "Y",
+        40: "Zr",
       };
-      
-      // Tomar los primeros 4 elementos como "nucleótidos" silicáticos
-      const silicateBases = planetElements.slice(0, 4).map(atomicNumber => 
-        elementSymbols[atomicNumber] || atomicNumber.toString()
-      );
-      
-      // Si no hay suficientes elementos, completar con elementos por defecto
+
+      const silicateBases = planetElements.slice(0, 4).map((atomicNumber) => elementSymbols[atomicNumber] || atomicNumber.toString());
+
       while (silicateBases.length < 4) {
         silicateBases.push("Si");
       }
-      
-      console.log(`🔮 BASES SILICÁTICAS para ${lifeForm} en ${planetName}: [${silicateBases.join(', ')}] basadas en elementos [${planetElements.join(', ')}]`);
-      
+
       return silicateBases;
     }
-    
-    // APLICAR VARIACIÓN PROCEDURAL PARA NON-PHYSICAL ENTITY
+
     if (lifeForm === "Non-Physical Entity") {
-      // Estados energéticos variables basados en los tipos de energía del "planeta"
       const energyTypes = this.getElementsForLifeForm(lifeForm, planetName);
-      
-      // Mapear códigos energéticos a estados/símbolos
+
       const energyStateSymbols: { [key: number]: string } = {
-        1: 'α', 2: 'β', 3: 'γ', 4: 'δ', 5: 'ε', 6: 'ζ', 7: 'η', 8: 'θ',
-        9: 'ι', 10: 'κ', 11: 'λ', 12: 'μ', 13: 'ν', 14: 'ξ', 15: 'ο', 16: 'π',
-        17: 'ρ', 18: 'σ', 19: 'τ', 20: 'υ', 21: 'φ', 22: 'χ', 23: 'ψ', 24: 'ω',
-        25: '∆', 26: '∇', 27: '∞', 28: 'Ω', 29: 'Φ', 30: 'Ψ', 31: '≈', 32: '∼',
-        33: '※', 34: '⟨⟩', 35: '◊', 36: '◎'
+        1: "α",
+        2: "β",
+        3: "γ",
+        4: "δ",
+        5: "ε",
+        6: "ζ",
+        7: "η",
+        8: "θ",
+        9: "ι",
+        10: "κ",
+        11: "λ",
+        12: "μ",
+        13: "ν",
+        14: "ξ",
+        15: "ο",
+        16: "π",
+        17: "ρ",
+        18: "σ",
+        19: "τ",
+        20: "υ",
+        21: "φ",
+        22: "χ",
+        23: "ψ",
+        24: "ω",
+        25: "∆",
+        26: "∇",
+        27: "∞",
+        28: "Ω",
+        29: "Φ",
+        30: "Ψ",
+        31: "≈",
+        32: "∼",
+        33: "※",
+        34: "⟨⟩",
+        35: "◊",
+        36: "◎",
       };
-      
-      // Usar los primeros 4 tipos de energía como "estados energéticos"
-      const energyStates = energyTypes.slice(0, 4).map(code => 
-        energyStateSymbols[code] || `E${code}`
-      );
-      
-      // Si no hay suficientes, completar con estados por defecto
+
+      const energyStates = energyTypes.slice(0, 4).map((code) => energyStateSymbols[code] || `E${code}`);
+
       while (energyStates.length < 4) {
         energyStates.push("∅");
       }
-      
-      console.log(`⚡ ESTADOS ENERGÉTICOS para ${lifeForm} en ${planetName}: [${energyStates.join(', ')}] basados en energías [${energyTypes.join(', ')}]`);
-      
+
       return energyStates;
     }
-    
-    // APLICAR VARIACIÓN PROCEDURAL POR PLANETA SOLO PARA VIDA INTELIGENTE
+
     if (lifeForm === "Intelligent Life") {
       const hash = this.hashString(lifeForm + planetName + "bases");
       const rng = this.createSeededRandom(hash);
-      
-      // Bases clásicas del DNA terrestre
+
       const standardBases = ["A", "T", "G", "C"];
-      
-      // Bases alternativas científicamente plausibles
-      const alternativeBases = [
-        "U", // Uracilo (RNA) - más estable en ciertos ambientes
-        "I", // Inosina - base wobble natural
-        "X", // Xantina - derivado de guanina
-        "D", // Diaminopurina - apareamiento más fuerte
-        "P", // Pseudouridina - RNA modificado
-        "M"  // 5-metilcitosina - epigenética
-      ];
-      
-      // 85% probabilidad de usar bases estándar, 15% de tener 1-2 bases alternativas
+
+      const alternativeBases = ["U", "I", "X", "D", "P", "M"];
+
       if (rng.random() < 0.85) {
-        return standardBases; // DNA clásico como la Tierra
+        return standardBases;
       } else {
-        // Reemplazar 1-2 bases por alternativas
-        const numReplacements = Math.floor(rng.random() * 2) + 1; // 1 o 2 reemplazos
+        const numReplacements = Math.floor(rng.random() * 2) + 1;
         const modifiedBases = [...standardBases];
-        
+
         for (let i = 0; i < numReplacements; i++) {
           const indexToReplace = Math.floor(rng.random() * 4);
           const alternativeIndex = Math.floor(rng.random() * alternativeBases.length);
           modifiedBases[indexToReplace] = alternativeBases[alternativeIndex];
         }
-        
-        console.log(`Bases para ${lifeForm} en ${planetName}: [${modifiedBases.join(', ')}] - DNA modificado`);
+
         return modifiedBases;
       }
     }
-    
+
     return baseBases;
   }
 
@@ -2535,12 +2232,10 @@ export class AreciboGenerator {
    * Cada forma de vida tendrá nucleótidos únicos según su química específica
    */
   private static getNucleotideVariation(lifeForm: string, elements: number[]): any {
-    // Obtener elementos específicos asignados
     const elementMap = this.createElementMap(elements);
-    
-    // Generar nucleótidos basados en elementos disponibles
+
     const nucleotideData = this.generateElementBasedNucleotides(elementMap, lifeForm);
-    
+
     return nucleotideData;
   }
 
@@ -2549,22 +2244,43 @@ export class AreciboGenerator {
    */
   private static createElementMap(elements: number[]): { [key: string]: boolean } {
     const elementNames: { [key: number]: string } = {
-      1: "H",   6: "C",   7: "N",   8: "O",   15: "P",   16: "S",
-      14: "Si", 13: "Al", 20: "Ca", 26: "Fe", 12: "Mg",
-      32: "Ge", 31: "Ga", 49: "In", 73: "Ta", 11: "Na",
-      2: "He",  10: "Ne", 18: "Ar", 36: "Kr", 54: "Xe",
-      115: "Mc", 118: "Og", 119: "Uue", 120: "Ubn", 126: "Ubh"
+      1: "H",
+      6: "C",
+      7: "N",
+      8: "O",
+      15: "P",
+      16: "S",
+      14: "Si",
+      13: "Al",
+      20: "Ca",
+      26: "Fe",
+      12: "Mg",
+      32: "Ge",
+      31: "Ga",
+      49: "In",
+      73: "Ta",
+      11: "Na",
+      2: "He",
+      10: "Ne",
+      18: "Ar",
+      36: "Kr",
+      54: "Xe",
+      115: "Mc",
+      118: "Og",
+      119: "Uue",
+      120: "Ubn",
+      126: "Ubh",
     };
-    
+
     const elementMap: { [key: string]: boolean } = {};
-    
+
     for (const atomicNumber of elements) {
       const elementSymbol = elementNames[atomicNumber];
       if (elementSymbol) {
         elementMap[elementSymbol] = true;
       }
     }
-    
+
     return elementMap;
   }
 
@@ -2572,32 +2288,18 @@ export class AreciboGenerator {
    * Genera estructuras de información genética basadas en elementos específicos
    */
   private static generateElementBasedNucleotides(elementMap: { [key: string]: boolean }, lifeForm: string): any {
-    // CASO 1: Vida basada en Carbono clásica (C, N, O, H, P disponibles)
     if (elementMap["C"] && elementMap["N"] && elementMap["O"] && elementMap["H"]) {
       return this.generateCarbonBasedNucleotides(elementMap, lifeForm);
-    }
-    
-    // CASO 2: Vida basada en Silicio (Si, O, H disponibles, sin C/N)
-    else if (elementMap["Si"] && elementMap["O"] && !elementMap["C"]) {
+    } else if (elementMap["Si"] && elementMap["O"] && !elementMap["C"]) {
       return this.generateSiliconBasedNucleotides(elementMap);
-    }
-    
-    // CASO 3: Vida metálica/robótica (Ga, Ge, In, Ta disponibles)
-    else if (elementMap["Ga"] || elementMap["Ge"] || elementMap["In"] || elementMap["Ta"]) {
+    } else if (elementMap["Ga"] || elementMap["Ge"] || elementMap["In"] || elementMap["Ta"]) {
       return this.generateMetallicNucleotides(elementMap);
-    }
-    
-    // CASO 4: Vida gaseosa (gases nobles: He, Ne, Ar, Kr, Xe)
-    else if (elementMap["He"] || elementMap["Ne"] || elementMap["Ar"] || elementMap["Kr"] || elementMap["Xe"]) {
+    } else if (elementMap["He"] || elementMap["Ne"] || elementMap["Ar"] || elementMap["Kr"] || elementMap["Xe"]) {
       return this.generateGaseousInformation(elementMap);
-    }
-    
-    // CASO 5: Vida energética/divina (elementos super-pesados)
-    else if (elementMap["Mc"] || elementMap["Og"] || elementMap["Uue"]) {
+    } else if (elementMap["Mc"] || elementMap["Og"] || elementMap["Uue"]) {
       return this.generateExoticInformation(elementMap);
     }
-    
-    // FALLBACK: Usar elementos disponibles de forma genérica
+
     return this.generateGenericInformation(elementMap);
   }
 
@@ -2608,27 +2310,20 @@ export class AreciboGenerator {
     const hasPhosphorus = elementMap["P"];
     const hasSulfur = elementMap["S"];
     const hasMagnesium = elementMap["Mg"];
-    
-    // Bases clásicas pero adaptadas a elementos disponibles
-    // IMPORTANTE: Incluir 1 en la posición del quinto elemento para que se pueda sustituir
+
     const bases = [
-      // Adenina - C5H5N5 + quinto elemento
-      { name: "A", formula: this.adaptFormulaToElements([5,5,5,0,1], elementMap) },
-      // Timina/Uracilo - incluye quinto elemento
-      { name: elementMap["O"] && lifeForm !== "Vegetation" ? "T" : "U", 
-        formula: this.adaptFormulaToElements(elementMap["O"] ? [6,5,2,2,1] : [4,4,2,2,1], elementMap) },
-      // Guanina - incluye quinto elemento
-      { name: "G", formula: this.adaptFormulaToElements([5,5,5, elementMap["O"] ? 1 : 0, 1], elementMap) },
-      // Citosina - incluye quinto elemento
-      { name: "C", formula: this.adaptFormulaToElements([5,4,3, elementMap["O"] ? 1 : 0, 1], elementMap) }
+      { name: "A", formula: this.adaptFormulaToElements([5, 5, 5, 0, 1], elementMap) },
+      { name: elementMap["O"] && lifeForm !== "Vegetation" ? "T" : "U", formula: this.adaptFormulaToElements(elementMap["O"] ? [6, 5, 2, 2, 1] : [4, 4, 2, 2, 1], elementMap) },
+      { name: "G", formula: this.adaptFormulaToElements([5, 5, 5, elementMap["O"] ? 1 : 0, 1], elementMap) },
+      { name: "C", formula: this.adaptFormulaToElements([5, 4, 3, elementMap["O"] ? 1 : 0, 1], elementMap) },
     ];
 
     return {
       bases: bases,
-      usesRNA: !elementMap["O"] || lifeForm === "Vegetation", // Sin O suficiente = RNA
-      gcContent: hasSulfur ? "high" : "moderate", // Azufre permite más estabilidad GC
-      backbone: hasPhosphorus ? "phosphate" : (hasSulfur ? "sulfate" : "alternative"),
-      sugarType: elementMap["O"] ? "deoxyribose" : "modified_ribose"
+      usesRNA: !elementMap["O"] || lifeForm === "Vegetation",
+      gcContent: hasSulfur ? "high" : "moderate",
+      backbone: hasPhosphorus ? "phosphate" : hasSulfur ? "sulfate" : "alternative",
+      sugarType: elementMap["O"] ? "deoxyribose" : "modified_ribose",
     };
   }
 
@@ -2636,12 +2331,11 @@ export class AreciboGenerator {
    * Información genética basada en silicio
    */
   private static generateSiliconBasedNucleotides(elementMap: { [key: string]: boolean }): any {
-    // Tetraedros de silice como "bases"
     const siliconBases = [
-      { name: "SiO4", formula: [0,0,0,4,0,1] },      // Tetraedro básico [H,C,N,O,P,Si]
-      { name: "Si2O3", formula: [0,0,0,3,0,2] },     // Doble tetraedro
-      { name: "SiO3Al", formula: [0,0,0,3,0,1,1] },  // Con aluminio si está disponible
-      { name: "SiO2", formula: [0,0,0,2,0,1] }       // Cuarzo
+      { name: "SiO4", formula: [0, 0, 0, 4, 0, 1] },
+      { name: "Si2O3", formula: [0, 0, 0, 3, 0, 2] },
+      { name: "SiO3Al", formula: [0, 0, 0, 3, 0, 1, 1] },
+      { name: "SiO2", formula: [0, 0, 0, 2, 0, 1] },
     ];
 
     return {
@@ -2649,7 +2343,7 @@ export class AreciboGenerator {
       usesRNA: false,
       gcContent: "crystalline",
       backbone: "silicate_chain",
-      sugarType: "silicon_cage"
+      sugarType: "silicon_cage",
     };
   }
 
@@ -2658,10 +2352,10 @@ export class AreciboGenerator {
    */
   private static generateMetallicNucleotides(elementMap: { [key: string]: boolean }): any {
     const metallicBases = [
-      { name: "00", formula: [0,0,0,0,0,0,0,1] }, // Solo Ga (estado 00)
-      { name: "01", formula: [0,0,0,0,0,0,1,0] }, // Solo Ge (estado 01)
-      { name: "10", formula: [0,0,0,0,0,0,0,0,1] }, // In (estado 10)
-      { name: "11", formula: [0,0,0,0,0,0,0,0,0,1] } // Ta (estado 11)
+      { name: "00", formula: [0, 0, 0, 0, 0, 0, 0, 1] },
+      { name: "01", formula: [0, 0, 0, 0, 0, 0, 1, 0] },
+      { name: "10", formula: [0, 0, 0, 0, 0, 0, 0, 0, 1] },
+      { name: "11", formula: [0, 0, 0, 0, 0, 0, 0, 0, 0, 1] },
     ];
 
     return {
@@ -2669,7 +2363,7 @@ export class AreciboGenerator {
       usesRNA: false,
       gcContent: "digital",
       backbone: "metallic_conductor",
-      sugarType: "none"
+      sugarType: "none",
     };
   }
 
@@ -2678,10 +2372,10 @@ export class AreciboGenerator {
    */
   private static generateGaseousInformation(elementMap: { [key: string]: boolean }): any {
     const gasStates = [
-      { name: "|0⟩", formula: [0,0,0,0,0,0,0,0,0,1] }, // He
-      { name: "|1⟩", formula: [0,0,0,0,0,0,0,0,0,0,1] }, // Ne
-      { name: "|+⟩", formula: [0,0,0,0,0,0,0,0,0,0,0,1] }, // Ar
-      { name: "|-⟩", formula: [0,0,0,0,0,0,0,0,0,0,0,0,1] } // Kr
+      { name: "|0⟩", formula: [0, 0, 0, 0, 0, 0, 0, 0, 0, 1] },
+      { name: "|1⟩", formula: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1] },
+      { name: "|+⟩", formula: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1] },
+      { name: "|-⟩", formula: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1] },
     ];
 
     return {
@@ -2689,7 +2383,7 @@ export class AreciboGenerator {
       usesRNA: false,
       gcContent: "quantum",
       backbone: "field_interaction",
-      sugarType: "none"
+      sugarType: "none",
     };
   }
 
@@ -2698,10 +2392,10 @@ export class AreciboGenerator {
    */
   private static generateExoticInformation(elementMap: { [key: string]: boolean }): any {
     const exoticStates = [
-      { name: "α", formula: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] }, // Mc
-      { name: "β", formula: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] }, // Og
-      { name: "γ", formula: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] }, // Uue
-      { name: "δ", formula: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] } // Ubn
+      { name: "α", formula: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1] },
+      { name: "β", formula: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1] },
+      { name: "γ", formula: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1] },
+      { name: "δ", formula: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1] },
     ];
 
     return {
@@ -2709,7 +2403,7 @@ export class AreciboGenerator {
       usesRNA: false,
       gcContent: "cosmic",
       backbone: "spacetime_fabric",
-      sugarType: "none"
+      sugarType: "none",
     };
   }
 
@@ -2720,14 +2414,13 @@ export class AreciboGenerator {
     const availableElements = Object.keys(elementMap);
     const genericBases = [];
 
-    // Crear hasta 4 "bases" usando elementos disponibles
     for (let i = 0; i < Math.min(4, availableElements.length); i++) {
-      const formula = new Array(15).fill(0); // Array para todos los elementos posibles
-      formula[i] = 1; // Un átomo del elemento correspondiente
-      
+      const formula = new Array(15).fill(0);
+      formula[i] = 1;
+
       genericBases.push({
         name: availableElements[i],
-        formula: formula
+        formula: formula,
       });
     }
 
@@ -2736,7 +2429,7 @@ export class AreciboGenerator {
       usesRNA: false,
       gcContent: "variable",
       backbone: "elemental",
-      sugarType: "adapted"
+      sugarType: "adapted",
     };
   }
 
@@ -2745,48 +2438,37 @@ export class AreciboGenerator {
    * Sustituye el fósforo (P) por el quinto elemento específico del planeta
    */
   private static adaptFormulaToElements(baseFormula: number[], elementMap: { [key: string]: boolean }): number[] {
-    const elementOrder = ["H", "C", "N", "O", "P"]; // Orden estándar H-C-N-O-P
+    const elementOrder = ["H", "C", "N", "O", "P"];
     const adaptedFormula = [...baseFormula];
-    
-    console.log(`🔬 ADAPTANDO FÓRMULA: [${baseFormula.join(',')}] con elementos disponibles:`, Object.keys(elementMap).filter(k => elementMap[k]));
-    
-    // SUSTITUCIÓN DEL QUINTO ELEMENTO (originalmente P)
-    // El fósforo puede ser sustituido por otros elementos en diferentes planetas
-    if (adaptedFormula[4] > 0) { // Si la fórmula base usa fósforo
+
+    if (adaptedFormula[4] > 0) {
       const substitutions: { [key: string]: number } = {
-        "S":  1,   // Azufre - similar electronegatividad, puede formar enlaces similares
-        "Mg": 0.5, // Magnesio - valencia diferente, usa menos cantidad
-        "Ca": 0.5, // Calcio - similar al magnesio
-        "Fe": 1,   // Hierro - puede formar complejos estables
-        "K":  1,   // Potasio - catión monovalente
-        "Na": 1    // Sodio - similar al potasio
+        S: 1,
+        Mg: 0.5,
+        Ca: 0.5,
+        Fe: 1,
+        K: 1,
+        Na: 1,
       };
-      
-      // Buscar qué quinto elemento está disponible
+
       for (const [element, multiplier] of Object.entries(substitutions)) {
         if (elementMap[element] && !elementMap["P"]) {
-          // Sustituir fósforo por el elemento del planeta
           const originalP = adaptedFormula[4];
           adaptedFormula[4] = Math.max(1, Math.floor(originalP * multiplier));
           break;
         }
       }
     }
-    
-    // AJUSTES ADICIONALES BASADOS EN ELEMENTOS DISPONIBLES
-    // Si hay azufre, puede formar enlaces adicionales (más estables)
+
     if (elementMap["S"] && adaptedFormula[4] > 0) {
-      adaptedFormula[3] = Math.max(1, adaptedFormula[3] - 1); // Menos oxígeno
-      adaptedFormula[4] = adaptedFormula[4] + 1; // Más azufre
+      adaptedFormula[3] = Math.max(1, adaptedFormula[3] - 1);
+      adaptedFormula[4] = adaptedFormula[4] + 1;
     }
-    
-    // Si hay magnesio, coordina con oxígeno (estructuras más estables)
+
     if (elementMap["Mg"] && adaptedFormula[3] > 0) {
-      adaptedFormula[3] = adaptedFormula[3] + 1; // Más oxígeno para coordinación
+      adaptedFormula[3] = adaptedFormula[3] + 1;
     }
-    
-    console.log(`🔬 FÓRMULA ADAPTADA: [${baseFormula.join(',')}] → [${adaptedFormula.join(',')}]`);
-    
+
     return adaptedFormula;
   }
 
@@ -2795,190 +2477,176 @@ export class AreciboGenerator {
    */
   private static getGenomeSizeData(lifeForm: string, planetName: string, elements: number[]): any {
     const genomicData: { [key: string]: any } = {
-      "Bacteria": {
-        totalBases: 4641652,      // E. coli K-12 MG1655: 4,641,652 bp (dato exacto)
-        genes: 4288,              // 4,288 genes codificantes de proteínas
-        gcContent: "high",        // 50.8% GC en E. coli (dato real)
-        chromosomes: 1,           // Cromosoma circular único
+      Bacteria: {
+        totalBases: 4641652,
+        genes: 4288,
+        gcContent: "high",
+        chromosomes: 1,
         complexity: "simple",
-        modification: "methylation", // Metilación de DNA
-        plasmids: true,           // Plásmidos adicionales
-        repetitiveElements: 3.2   // % de elementos repetitivos
+        modification: "methylation",
+        plasmids: true,
+        repetitiveElements: 3.2,
       },
-      
-      "Vegetation": {
-        totalBases: 125000000,    // Arabidopsis thaliana: ~125M bp (dato real)
-        genes: 27416,             // 27,416 genes (dato exacto de TAIR)
-        gcContent: "moderate",    // 36% GC en Arabidopsis
-        chromosomes: 5,           // 5 cromosomas (2n=10)
+
+      Vegetation: {
+        totalBases: 125000000,
+        genes: 27416,
+        gcContent: "moderate",
+        chromosomes: 5,
         complexity: "moderate",
-        modification: "chloroplast", // DNA cloroplástico (154 kb adicional)
-        mitochondrial: 367808,    // DNA mitocondrial: 367,808 bp
-        repetitiveElements: 14    // 14% elementos repetitivos
+        modification: "chloroplast",
+        mitochondrial: 367808,
+        repetitiveElements: 14,
       },
-      
+
       "Animal Life": {
-        totalBases: 3200000000,   // Homo sapiens: ~3.2B bp (haploid)
-        genes: 19969,             // 19,969 genes codificantes (dato GENCODE v44)
-        gcContent: "variable",    // 41% GC promedio, variable por cromosoma
-        chromosomes: 23,          // 23 cromosomas (46 diploides)
+        totalBases: 3200000000,
+        genes: 19969,
+        gcContent: "variable",
+        chromosomes: 23,
         complexity: "very_high",
-        modification: "epigenetic", // Modificaciones epigenéticas complejas
-        introns: 95,             // 95% del genoma son intrones/regiones no codificantes
-        repetitiveElements: 45    // 45% elementos repetitivos (LINES, SINES, etc.)
+        modification: "epigenetic",
+        introns: 95,
+        repetitiveElements: 45,
       },
-      
+
       "Intelligent Life": {
-        totalBases: 3200000000,   // Base humana real (no inflada artificialmente)
-        genes: 19969,             // Mismos genes base humanos
-        gcContent: "optimized",   // Optimización hipotética de GC
-        chromosomes: 23,          // Mantener estructura cromosómica
+        totalBases: 3200000000,
+        genes: 19969,
+        gcContent: "optimized",
+        chromosomes: 23,
         complexity: "enhanced",
-        modification: "advanced_epigenetic", // Epigenética más sofisticada
-        enhancedRegulation: true, // Regulación génica mejorada
-        repetitiveElements: 35    // Menor % elementos repetitivos por optimización
+        modification: "advanced_epigenetic",
+        enhancedRegulation: true,
+        repetitiveElements: 35,
       },
-      
+
       "Vegetable Animals": {
-        totalBases: 600000000,    // Híbrido realista entre planta simple y animal
-        genes: 23000,             // Intermedio entre Arabidopsis y humano
-        gcContent: "mixed",       // Patrón mixto planta-animal
-        chromosomes: 16,          // Número intermedio
+        totalBases: 600000000,
+        genes: 23000,
+        gcContent: "mixed",
+        chromosomes: 16,
         complexity: "chimeric",
-        modification: "dual_system", // Sistema genético dual
-        chloroplasts: true,       // DNA cloroplástico como plantas
-        repetitiveElements: 25    // Intermedio entre plantas y animales
-      }
+        modification: "dual_system",
+        chloroplasts: true,
+        repetitiveElements: 25,
+      },
     };
-    
-    // Datos adicionales para formas de vida especulativas pero científicamente fundamentadas
+
     const speculativeData: { [key: string]: any } = {
       "Silicon-Based Life": {
-        totalBases: 2000000,        // Información en enlaces Si-O (menor densidad que DNA)
-        genes: 8000,                // Módulos cristalinos funcionales
-        gcContent: "crystalline",   // Estructura de red cristalina
-        chromosomes: 3,             // Redes cristalinas principales
+        totalBases: 2000000,
+        genes: 8000,
+        gcContent: "crystalline",
+        chromosomes: 3,
         complexity: "moderate",
-        modification: "doping",     // Dopaje de semiconductores
-        repetitiveElements: 60      // Alta repetición en cristales
+        modification: "doping",
+        repetitiveElements: 60,
       },
-      
+
       "Robotic Entities": {
-        totalBases: 2147483647,     // 2^31 - 1 instrucciones (máximo int32)
-        genes: 65536,               // Módulos de código (2^16)
-        gcContent: "binary",        // Código binario
-        chromosomes: 8,             // Bancos de memoria
+        totalBases: 2147483647,
+        genes: 65536,
+        gcContent: "binary",
+        chromosomes: 8,
         complexity: "digital",
-        modification: "compilation", // Compilación de código
-        repetitiveElements: 20      // Funciones repetidas/librerías
+        modification: "compilation",
+        repetitiveElements: 20,
       },
-      
+
       "Conscious Gas": {
-        totalBases: 1048576,        // 2^20 estados cuánticos
-        genes: 256,                 // Estados básicos (2^8)
-        gcContent: "quantum",       // Superposición cuántica
-        chromosomes: 4,             // Grados de libertad cuánticos
+        totalBases: 1048576,
+        genes: 256,
+        gcContent: "quantum",
+        chromosomes: 4,
         complexity: "quantum",
-        modification: "entanglement", // Entrelazamiento cuántico
-        repetitiveElements: 0       // Cada estado es único
+        modification: "entanglement",
+        repetitiveElements: 0,
       },
-      
+
       "Non-Physical Entity": {
-        totalBases: 299792458,      // Velocidad de la luz (información energética)
-        genes: 2000,                // Patrones energéticos básicos
-        gcContent: "energy",        // Patrones de frecuencia
-        chromosomes: 7,             // Espectro electromagnético (7 colores)
+        totalBases: 299792458,
+        genes: 2000,
+        gcContent: "energy",
+        chromosomes: 7,
         complexity: "energetic",
-        modification: "resonance",   // Resonancia energética
-        repetitiveElements: 10      // Patrones armónicos
+        modification: "resonance",
+        repetitiveElements: 10,
       },
-      
+
       "Have I just found God?": {
-        totalBases: 3141592653,     // π × 10^9 (constante matemática universal)
-        genes: 137,                 // Constante de estructura fina × 100
-        gcContent: "infinite",      // Información infinita
-        chromosomes: 11,            // Dimensiones del universo (teoría M)
+        totalBases: 3141592653,
+        genes: 137,
+        gcContent: "infinite",
+        chromosomes: 11,
         complexity: "cosmic",
-        modification: "omnipresence", // Ubicuidad cósmica
-        repetitiveElements: 0       // Información única y no repetitiva
-      }
+        modification: "omnipresence",
+        repetitiveElements: 0,
+      },
     };
-    
-    // Obtener datos base
+
     let baseData: any;
     if (genomicData[lifeForm]) {
       baseData = genomicData[lifeForm];
     } else if (speculativeData[lifeForm]) {
       baseData = speculativeData[lifeForm];
     } else {
-      // Fallback basado en complejidad elemental
       const complexity = elements.reduce((sum, atomic) => sum + atomic, 0);
       if (complexity < 100) baseData = genomicData["Bacteria"];
       else if (complexity < 200) baseData = genomicData["Vegetation"];
       else baseData = genomicData["Animal Life"];
     }
-    
-    // APLICAR VARIACIÓN PROCEDURAL POR PLANETA
+
     const hash = this.hashString(lifeForm + planetName);
     const rng = this.createSeededRandom(hash);
-    
-    // Crear copia con variaciones procedurales
+
     const variedData = { ...baseData };
-    
-    // Variar el número total de bases (±5-20% según complejidad)
-    const variationRange = lifeForm === "Intelligent Life" ? 0.1 : 0.2; // 10% para inteligentes, 20% para otros
-    const baseVariation = (rng.random() - 0.5) * 2 * variationRange; // -variationRange a +variationRange
+
+    const variationRange = lifeForm === "Intelligent Life" ? 0.1 : 0.2;
+    const baseVariation = (rng.random() - 0.5) * 2 * variationRange;
     variedData.totalBases = Math.floor(baseData.totalBases * (1 + baseVariation));
-    
-    // Variar el número de genes (±10-15%)
-    const geneVariation = (rng.random() - 0.5) * 2 * 0.15; // ±15%
+
+    const geneVariation = (rng.random() - 0.5) * 2 * 0.15;
     variedData.genes = Math.floor(baseData.genes * (1 + geneVariation));
-    
-    // Variar elementos repetitivos (±5%)
-    if (typeof baseData.repetitiveElements === 'number') {
-      const repVariation = (rng.random() - 0.5) * 2 * 0.05; // ±5%
+
+    if (typeof baseData.repetitiveElements === "number") {
+      const repVariation = (rng.random() - 0.5) * 2 * 0.05;
       variedData.repetitiveElements = Math.max(0, baseData.repetitiveElements * (1 + repVariation));
     }
-    
-    console.log(`Genoma para ${lifeForm} en ${planetName}: ${variedData.totalBases.toLocaleString()} bases, ${variedData.genes} genes`);
-    
+
     return variedData;
   }
 
   private static getGenomeSize(elements: number[]): number {
-    // Función legacy mantenida para compatibilidad
     const complexity = elements.reduce((sum, atomic) => sum + atomic, 0);
-    
-    // Categorías basadas en complejidad elemental
-    if (complexity < 50) return 4000000;          // Vida simple (bacterias)
-    if (complexity < 100) return 150000000;       // Vida vegetal  
-    if (complexity < 150) return 1000000000;      // Vida híbrida
-    if (complexity < 200) return 3000000000;      // Vida animal
-    if (complexity < 250) return 3200000000;      // Vida inteligente
-    if (complexity < 500) return 2147483647;      // Vida digital/robótica
-    return 4294967295;                            // Vida exótica/divina
+
+    if (complexity < 50) return 4000000;
+    if (complexity < 100) return 150000000;
+    if (complexity < 150) return 1000000000;
+    if (complexity < 200) return 3000000000;
+    if (complexity < 250) return 3200000000;
+    if (complexity < 500) return 2147483647;
+    return 4294967295;
   }
 
-  // Canvas rendering con colores
   public static renderToCanvas(message: AreciboMessage, canvas: HTMLCanvasElement, scale: number = 10): void {
     canvas.width = message.width * scale;
     canvas.height = message.height * scale;
-    
-    const ctx = canvas.getContext('2d');
+
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    
-    // Background negro
-    ctx.fillStyle = '#000000';
+
+    ctx.fillStyle = "#000000";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    const colors = ['#000000', '#FFFFFF', '#9966CC', '#00FF00', '#0066FF', '#FF6600', '#FF0000', '#FFFF00', '#B19CD9'];
-    
+
+    const colors = ["#000000", "#FFFFFF", "#9966CC", "#00FF00", "#0066FF", "#FF6600", "#FF0000", "#FFFF00", "#B19CD9"];
+
     for (let y = 0; y < message.height; y++) {
       for (let x = 0; x < message.width; x++) {
         const index = y * message.width + x;
         if (message.bitmap[index] === 1) {
           const colorIndex = message.colorMap[index] || 1;
-          ctx.fillStyle = colors[colorIndex] || '#FFFFFF';
+          ctx.fillStyle = colors[colorIndex] || "#FFFFFF";
           ctx.fillRect(x * scale, y * scale, scale, scale);
         }
       }
@@ -2986,9 +2654,9 @@ export class AreciboGenerator {
   }
 
   public static exportToPNG(message: AreciboMessage, scale: number = 10): string {
-    const canvas = document.createElement('canvas');
+    const canvas = document.createElement("canvas");
     this.renderToCanvas(message, canvas, scale);
-    return canvas.toDataURL('image/png');
+    return canvas.toDataURL("image/png");
   }
 
   /**
@@ -2998,20 +2666,17 @@ export class AreciboGenerator {
    * Basado en el mensaje original de Arecibo: estatura binaria vertical, figura simple, población binaria horizontal
    */
   private static drawLifeFormSection(bitmap: number[], colorMap: number[], lifeForm: string, planetName: string, startRow: number, height: number): void {
-    // 1. Estatura: número binario vertical (lado izquierdo, columnas 0-2)
     this.drawLifeFormHeight(bitmap, colorMap, lifeForm, planetName, startRow, height);
-    
-    // 2. Representación visual: figura simple (centro, columnas 8-14) 
+
     this.drawLifeFormRepresentation(bitmap, colorMap, lifeForm, planetName, startRow, height);
-    
-    // 3. Población: número binario horizontal (lado derecho, parte inferior)
+
     this.drawLifeFormPopulation(bitmap, colorMap, lifeForm, planetName, startRow, height);
   }
 
   /**
    * Dibuja la representación de altura exactamente como en el mensaje de Arecibo original:
    * Barra vertical completa (azul) + número binario horizontal al lado (centrado verticalmente)
-   * 
+   *
    * En Arecibo original: 14 (1110 binario) = 14 × 12.6cm = 176.4cm altura humana
    * Se representaba como:
    *     o (azul)
@@ -3024,70 +2689,42 @@ export class AreciboGenerator {
    *     o (azul)
    */
   private static drawLifeFormHeight(bitmap: number[], colorMap: number[], lifeForm: string, planetName: string, startRow: number, height: number): void {
-    // Para entidad divina, no dibujar altura (sin concepto físico)
     if (lifeForm === "Have I just found God?") {
-      return; // No dibujar nada para la entidad divina
+      return;
     }
-    
-    // Ahora incluimos planetName para generar variación única por planeta
+
     const heightValue = this.generateLifeFormHeight(lifeForm, planetName);
-    
-    // Columna para la barra de altura (lado izquierdo)
-    const barCol = 3; // Columna 3 para centrar mejor
-    
-    // 1. Calcular primero la posición del número binario
+
+    const barCol = 3;
+
     const binaryHeight = heightValue.toString(2);
-    const barMiddleRow = startRow + Math.floor(height / 2); // Centro de la sección
-    const binaryStartCol = barCol - 2; // Columnas 1-5
-    
-    // 2. Dibujar barra vertical con huecos donde cruza el número binario
-    // En Arecibo: la barra tiene huecos arriba, en medio y abajo del número
-    const barHeight = height; // Siempre usa toda la altura disponible
-    
+    const barMiddleRow = startRow + Math.floor(height / 2);
+    const binaryStartCol = barCol - 2;
+
+    const barHeight = height;
+
     for (let i = 0; i < barHeight; i++) {
       const currentRow = startRow + i;
-      // Dejar huecos: una línea arriba, la línea del número, y una línea abajo
       if (currentRow === barMiddleRow - 1 || currentRow === barMiddleRow || currentRow === barMiddleRow + 1) {
-        // No dibujar NADA en estas filas (dejar completamente transparente)
         continue;
       }
       this.setPixel(bitmap, colorMap, barCol, currentRow, 1, this.COLORS.BLUE);
     }
-    
-    // 3. Número binario horizontal CRUZANDO la barra (como en Arecibo original)
-    // En Arecibo: el marcador "X" y el número binario cruzan la barra vertical
-    // Ejemplo para 14 (1110): X 1110 donde X es el marcador blanco
-    
-    // Convertir altura a binario y mostrar información de depuración
-    console.log(`Altura para ${lifeForm} en ${planetName}: ${heightValue} = ${binaryHeight} binario`);
-    
-    // Dibujar "X" marcador (bit menos significativo) en blanco
+
     this.setPixel(bitmap, colorMap, binaryStartCol, barMiddleRow, 1, this.COLORS.WHITE);
-    
-    // Dibujar cada bit del número binario horizontalmente
-    // IMPORTANTE: En el mensaje de Arecibo original:
-    // - El marcador "X" es BLANCO
-    // - Los bits "1" son BLANCOS (presencia de señal)
-    // - Los bits "0" son TRANSPARENTES (ausencia de señal)
-    // - NO hay azul en la línea del número binario
+
     for (let i = 0; i < binaryHeight.length && i < 4; i++) {
-      // Leer bits de izquierda a derecha (MSB primero, como en Arecibo)
-      const bit = parseInt(binaryHeight[i]); 
-      
-      // Dibujar bits hacia la derecha del marcador
+      const bit = parseInt(binaryHeight[i]);
+
       const bitCol = binaryStartCol + 1 + i;
-      
-      // NO dibujar en la columna de la barra (dejar el hueco)
+
       if (bitCol === barCol) {
-        continue; // Saltar la columna de la barra
+        continue;
       }
-      
-      // Solo dibujar si el bit es 1 (en BLANCO)
-      // Si el bit es 0, no dibujar nada (dejar transparente)
+
       if (bit === 1) {
         this.setPixel(bitmap, colorMap, bitCol, barMiddleRow, 1, this.COLORS.WHITE);
       }
-      // Si bit === 0, no dibujamos nada (queda transparente)
     }
   }
 
@@ -3097,29 +2734,23 @@ export class AreciboGenerator {
    */
   private static drawLifeFormRepresentation(bitmap: number[], colorMap: number[], lifeForm: string, planetName: string, startRow: number, height: number): void {
     const category = this.getLifeCategory(lifeForm);
-    
-    // Definir el área central para la figura (columnas 8-14)
+
     const centerCols = [8, 9, 10, 11, 12, 13, 14];
-    const centerCol = centerCols[Math.floor(centerCols.length / 2)]; // Columna 11
-    
-    // Solo "Intelligent Life" usa el sistema modular
+    const centerCol = centerCols[Math.floor(centerCols.length / 2)];
+
     if (lifeForm === "Intelligent Life") {
-      // Sistema modular para vida inteligente - usar planeta para crear variación
       const hash = this.hashString(lifeForm + planetName);
       const rng = this.createSeededRandom(hash);
-      
-      // Seleccionar componentes (0-4 para cada tipo)
+
       const headType = Math.floor(rng.random() * 5);
       const torsoType = Math.floor(rng.random() * 5);
       const legsType = Math.floor(rng.random() * 5);
-      
-      // Dibujar la forma de vida modular
+
       this.drawModularLifeForm(bitmap, colorMap, centerCol, startRow, height, headType, torsoType, legsType);
     } else {
-      // Formas específicas para otras categorías - también usar planeta para crear variación
       const hash = this.hashString(lifeForm + planetName);
       const rng = this.createSeededRandom(hash);
-      
+
       switch (category) {
         case "carbon-based":
           this.drawCarbonBasedForm(bitmap, colorMap, centerCols, centerCol, startRow, height, lifeForm, rng);
@@ -3140,7 +2771,6 @@ export class AreciboGenerator {
           this.drawDivineForm(bitmap, colorMap, centerCols, centerCol, startRow, height, rng);
           break;
         default:
-          // Forma humanoide por defecto
           this.drawHumanoidForm(bitmap, colorMap, centerCols, centerCol, startRow, height);
       }
     }
@@ -3152,32 +2782,25 @@ export class AreciboGenerator {
    * Se dibujaba como un patrón rectangular denso a la derecha del humanoide
    */
   private static drawLifeFormPopulation(bitmap: number[], colorMap: number[], lifeForm: string, planetName: string, startRow: number, height: number): void {
-    // Generar población procedural (ahora con valores realistas)
     const population = this.generatePlanetaryPopulation(lifeForm, planetName);
-    
-    // Convertir a binario completo (32 bits para números grandes)
+
     const binaryPopulation = population.toString(2);
-    console.log(`Población para ${lifeForm} en ${planetName}: ${population.toLocaleString()} = ${binaryPopulation} binario (${binaryPopulation.length} bits)`);
-    
-    // Área para dibujar la población: lado derecho
-    const startCol = 16; // Columnas 16-22 (7 columnas) - movido un píxel a la derecha
-    const maxCols = 6; // Reducir un poco para que quepa mejor
-    const maxRows = height; // Usar toda la altura disponible
-    
-    // Dibujar el número binario en formato rectangular (como Arecibo)
-    // Dividir los bits en filas para crear un patrón denso
-    let bitIndex = binaryPopulation.length - 1; // Empezar por el bit menos significativo
-    
+
+    const startCol = 16;
+    const maxCols = 6;
+    const maxRows = height;
+
+    let bitIndex = binaryPopulation.length - 1;
+
     for (let row = 0; row < maxRows && bitIndex >= 0; row++) {
       for (let col = 0; col < maxCols && bitIndex >= 0; col++) {
         const bit = parseInt(binaryPopulation[bitIndex]);
-        
-        // Solo dibujar bits "1" en blanco (como en Arecibo)
+
         if (bit === 1) {
           this.setPixel(bitmap, colorMap, startCol + col, startRow + row, 1, this.COLORS.WHITE);
         }
-        
-        bitIndex--; // Avanzar al siguiente bit
+
+        bitIndex--;
       }
     }
   }
@@ -3188,52 +2811,34 @@ export class AreciboGenerator {
    * Ahora incluye planetName para generar variación única por planeta
    */
   private static generateLifeFormHeight(lifeForm: string, planetName: string): number {
-    // Para "Intelligent Life" usamos variaciones realistas basadas en combinaciones modular
     if (lifeForm === "Intelligent Life") {
-      // Incluir planetName en el hash para variación por planeta
       const hash = this.hashString(lifeForm + planetName);
       const rng = this.createSeededRandom(hash);
-      
-      // Estaturas realistas para vida inteligente (en unidades de longitud de onda)
-      // Basado en el mensaje de Arecibo original: 14 = 176.4cm humanos
-      const heightVariations = [
-        12,  // ~150cm - Vida inteligente pequeña/compacta
-        14,  // ~176cm - Estatura similar a humanos (referencia Arecibo)  
-        18,  // ~227cm - Vida inteligente alta
-        22,  // ~277cm - Vida inteligente muy alta
-        26   // ~327cm - Gigantes inteligentes
-      ];
-      
+
+      const heightVariations = [12, 14, 18, 22, 26];
+
       const index = Math.floor(rng.random() * heightVariations.length);
       return heightVariations[index];
     }
-    
-    // Para otras formas de vida, también incluir planetName para variación
+
     const category = this.getLifeCategory(lifeForm);
     const hash = this.hashString(lifeForm + planetName);
     const rng = this.createSeededRandom(hash);
-    
+
     switch (category) {
       case "carbon-based":
-        // Rango humanoide: 10-25 unidades
         return Math.floor(10 + rng.random() * 15);
       case "silicon-based":
-        // Más grandes: 25-50 unidades  
         return Math.floor(25 + rng.random() * 25);
       case "robotic":
-        // Variados: 5-100 unidades
         return Math.floor(5 + rng.random() * 95);
       case "gaseous":
-        // Muy grandes: 100-200 unidades
         return Math.floor(100 + rng.random() * 100);
       case "energy":
-        // Pequeños/teóricos: 1-10 unidades
         return Math.floor(1 + rng.random() * 9);
       case "divine":
-        // Épicos: 200-255 unidades
         return Math.floor(200 + rng.random() * 55);
       default:
-        // Similar al humano original (14): 12-18 unidades
         return Math.floor(12 + rng.random() * 6);
     }
   }
@@ -3247,28 +2852,21 @@ export class AreciboGenerator {
     const category = this.getLifeCategory(lifeForm);
     const combinedHash = this.hashString(lifeForm + planetName);
     const rng = this.createSeededRandom(combinedHash);
-    
+
     switch (category) {
       case "carbon-based":
-        // Poblaciones altas como la Tierra: 1-10 mil millones
         return Math.floor(1000000000 + rng.random() * 9000000000);
       case "silicon-based":
-        // Poblaciones menores: 100M - 2 mil millones 
         return Math.floor(100000000 + rng.random() * 1900000000);
       case "robotic":
-        // Muy variables: 1M - 5 mil millones
         return Math.floor(1000000 + rng.random() * 4999000000);
       case "gaseous":
-        // Menos individuos pero existentes: 10M - 500M
         return Math.floor(10000000 + rng.random() * 490000000);
       case "energy":
-        // Entidades raras pero significativas: 100K - 50M
         return Math.floor(100000 + rng.random() * 49900000);
       case "divine":
-        // Una sola entidad divina
         return 1;
       default:
-        // Similar a la Tierra original de Arecibo: 3-6 mil millones
         return Math.floor(3000000000 + rng.random() * 3000000000);
     }
   }
@@ -3280,8 +2878,8 @@ export class AreciboGenerator {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convertir a 32-bit integer
+      hash = (hash << 5) - hash + char;
+      hash = hash & hash;
     }
     return Math.abs(hash);
   }
@@ -3294,7 +2892,7 @@ export class AreciboGenerator {
       random: () => {
         seed = (seed * 9301 + 49297) % 233280;
         return seed / 233280;
-      }
+      },
     };
   }
 
@@ -3302,11 +2900,6 @@ export class AreciboGenerator {
    * Dibuja una forma de vida modular combinando cabeza, torso y piernas
    */
   private static drawModularLifeForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, headType: number, torsoType: number, legsType: number): void {
-    // Distribución de las 9 filas:
-    // Filas 0-2: Cabeza (3 filas)
-    // Filas 3-5: Torso (3 filas)  
-    // Filas 6-8: Piernas (3 filas)
-    
     this.drawHead(bitmap, colorMap, centerCol, startRow, headType);
     this.drawTorso(bitmap, colorMap, centerCol, startRow + 3, torsoType);
     this.drawLegs(bitmap, colorMap, centerCol, startRow + 6, legsType);
@@ -3317,14 +2910,14 @@ export class AreciboGenerator {
    */
   private static drawHead(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, headType: number): void {
     switch (headType) {
-      case 0: // Cabeza humanoide clásica
+      case 0:
         this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
         break;
-        
-      case 1: // Cabeza triangular/alienígena
+
+      case 1:
         this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
@@ -3332,28 +2925,26 @@ export class AreciboGenerator {
         this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.RED);
         break;
-        
-      case 2: // Cabeza cuadrada/robótica
+
+      case 2:
         for (let r = 0; r < 3; r++) {
           for (let c = -1; c <= 1; c++) {
             this.setPixel(bitmap, colorMap, centerCol + c, startRow + r, 1, this.COLORS.RED);
           }
         }
         break;
-        
-      case 3: // Cabeza alargada vertical
+
+      case 3:
         this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.RED);
         break;
-        
-      case 4: // Cabeza con antenas/insectoide
-        // Antenas
+
+      case 4:
         this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.RED);
-        // Cabeza central
         this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
@@ -3367,31 +2958,28 @@ export class AreciboGenerator {
    */
   private static drawTorso(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, torsoType: number): void {
     switch (torsoType) {
-      case 0: // Torso humanoide simple
+      case 0:
         for (let r = 0; r < 3; r++) {
           this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
         }
-        // Brazos en el medio
         this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
         break;
-        
-      case 1: // Torso ancho/robusto
+
+      case 1:
         for (let r = 0; r < 3; r++) {
           for (let c = -1; c <= 1; c++) {
             this.setPixel(bitmap, colorMap, centerCol + c, startRow + r, 1, this.COLORS.RED);
           }
         }
-        // Brazos extendidos
         this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.RED);
         break;
-        
-      case 2: // Torso con múltiples brazos
+
+      case 2:
         for (let r = 0; r < 3; r++) {
           this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
         }
-        // Múltiples brazos
         this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.RED);
@@ -3399,24 +2987,21 @@ export class AreciboGenerator {
         this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.RED);
         break;
-        
-      case 3: // Torso serpentino/ondulado
+
+      case 3:
         this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
-        // Brazos simétricos
         this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.RED);
         break;
-        
-      case 4: // Torso cristalino/geométrico
-        // Forma de diamante
+
+      case 4:
         this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
-        // Brazos puntiagudos
         this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.RED);
         break;
@@ -3428,51 +3013,48 @@ export class AreciboGenerator {
    */
   private static drawLegs(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, legsType: number): void {
     switch (legsType) {
-      case 0: // Piernas humanoides clásicas
+      case 0:
         for (let r = 0; r < 3; r++) {
           this.setPixel(bitmap, colorMap, centerCol - 1, startRow + r, 1, this.COLORS.RED);
           this.setPixel(bitmap, colorMap, centerCol + 1, startRow + r, 1, this.COLORS.RED);
         }
         break;
-        
-      case 1: // Piernas con pies grandes
+
+      case 1:
         for (let r = 0; r < 2; r++) {
           this.setPixel(bitmap, colorMap, centerCol - 1, startRow + r, 1, this.COLORS.RED);
           this.setPixel(bitmap, colorMap, centerCol + 1, startRow + r, 1, this.COLORS.RED);
         }
-        // Pies grandes
         this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 2, 1, this.COLORS.RED);
         break;
-        
-      case 2: // Múltiples piernas/insectoide
-        // 4 patas
+
+      case 2:
         this.setPixel(bitmap, colorMap, centerCol - 2, startRow, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol + 2, startRow, 1, this.COLORS.RED);
-        
+
         this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.RED);
-        
+
         this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 2, 1, this.COLORS.RED);
         break;
-        
-      case 3: // Columna central/serpentino
+
+      case 3:
         this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
         break;
-        
-      case 4: // Base flotante/energética
-        // Patrón ondulado en la base
+
+      case 4:
         this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.RED);
@@ -3484,30 +3066,24 @@ export class AreciboGenerator {
     }
   }
 
-  // Formas específicas para cada categoría de vida (mantenidas por compatibilidad)
-
   /**
    * Forma humanoide simple - stick figure como el original de Arecibo
    */
   private static drawHumanoidForm(bitmap: number[], colorMap: number[], cols: number[], centerCol: number, startRow: number, height: number): void {
-    // Cabeza (filas 0-1) - cabeza más grande
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
-    
-    // Cuerpo (filas 2-5) - tronco más largo usando las 9 líneas
+
     for (let r = 2; r <= 5; r++) {
       this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
     }
-    
-    // Brazos (fila 3) - brazos extendidos
+
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 3, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 3, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 3, 1, this.COLORS.RED);
-    
-    // Piernas (filas 6-8) - usar completamente las 9 líneas
+
     for (let r = 6; r < height; r++) {
       this.setPixel(bitmap, colorMap, centerCol - 1, startRow + r, 1, this.COLORS.RED);
       this.setPixel(bitmap, colorMap, centerCol + 1, startRow + r, 1, this.COLORS.RED);
@@ -3518,7 +3094,6 @@ export class AreciboGenerator {
    * Forma basada en carbono - cada tipo de vida tiene su representación única
    */
   private static drawCarbonBasedForm(bitmap: number[], colorMap: number[], cols: number[], centerCol: number, startRow: number, height: number, lifeForm: string, rng: { random: () => number }): void {
-    // Cada forma de vida basada en carbono tiene su propia representación visual única
     switch (lifeForm) {
       case "Bacteria":
         this.drawBacteriaForm(bitmap, colorMap, centerCol, startRow, height, rng);
@@ -3533,11 +3108,9 @@ export class AreciboGenerator {
         this.drawVegetableAnimalForm(bitmap, colorMap, centerCol, startRow, height, rng);
         break;
       case "Intelligent Life":
-        // Esto no debería pasar, pero por si acaso
         this.drawHumanoidForm(bitmap, colorMap, cols, centerCol, startRow, height);
         break;
       default:
-        // Forma humanoide por defecto para formas de vida desconocidas
         this.drawHumanoidForm(bitmap, colorMap, cols, centerCol, startRow, height);
     }
   }
@@ -3547,9 +3120,8 @@ export class AreciboGenerator {
    * Diferentes tipos según geología planetaria
    */
   private static drawSiliconBasedForm(bitmap: number[], colorMap: number[], cols: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
-    // Usar el generador RNG para determinar el tipo de estructura cristalina
     const crystalType = Math.floor(rng.random() * 7);
-    
+
     switch (crystalType) {
       case 0:
         this.drawQuartzCrystal(bitmap, colorMap, centerCol, startRow, height);
@@ -3578,19 +3150,17 @@ export class AreciboGenerator {
    * Cuarzo - estructura hexagonal
    */
   private static drawQuartzCrystal(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Estructura hexagonal del cuarzo
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
-    
-    // Hexágono central
+
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 2, 1, this.COLORS.RED);
-    
+
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 3, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 3, 1, this.COLORS.RED);
-    
+
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 4, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 4, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 5, 1, this.COLORS.RED);
@@ -3600,17 +3170,16 @@ export class AreciboGenerator {
    * Feldespato - estructura tridimensional compleja
    */
   private static drawFeldsparStructure(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Estructura de marco tridimensional
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.RED);
-    
+
     this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.RED);
-    
+
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.RED);
-    
+
     this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 4, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 4, 1, this.COLORS.RED);
@@ -3620,19 +3189,17 @@ export class AreciboGenerator {
    * Olivino - estructura de islas de tetraedros
    */
   private static drawOlivineNetwork(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Tetraedros aislados conectados por cationes
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
-    
+
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
-    
+
     this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
-    
-    // Segundo tetraedro
+
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 3, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 3, 1, this.COLORS.RED);
-    
+
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 4, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 4, 1, this.COLORS.RED);
   }
@@ -3641,21 +3208,19 @@ export class AreciboGenerator {
    * Zeolita - estructura microporosa
    */
   private static drawZeoliteFramework(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Marco con cavidades y canales
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow, 1, this.COLORS.RED);
-    
+
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
-    
-    // Cavidad central
+
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 2, 1, this.COLORS.RED);
-    
+
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 3, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.RED);
-    
+
     this.setPixel(bitmap, colorMap, centerCol, startRow + 4, 1, this.COLORS.RED);
   }
 
@@ -3663,21 +3228,20 @@ export class AreciboGenerator {
    * Granate - estructura compleja cúbica
    */
   private static drawGarnetStructure(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Estructura cúbica compleja
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
-    
+
     for (let c = -2; c <= 2; c++) {
       this.setPixel(bitmap, colorMap, centerCol + c, startRow + 1, 1, this.COLORS.RED);
     }
-    
+
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 2, 1, this.COLORS.RED);
-    
+
     for (let c = -1; c <= 1; c++) {
       this.setPixel(bitmap, colorMap, centerCol + c, startRow + 3, 1, this.COLORS.RED);
     }
-    
+
     this.setPixel(bitmap, colorMap, centerCol, startRow + 4, 1, this.COLORS.RED);
   }
 
@@ -3685,7 +3249,6 @@ export class AreciboGenerator {
    * Piroxeno - cadenas de tetraedros
    */
   private static drawPyroxeneChain(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Cadenas simples de tetraedros
     for (let r = 0; r < Math.min(6, height); r++) {
       this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
       if (r % 2 === 0) {
@@ -3699,18 +3262,17 @@ export class AreciboGenerator {
    * Matriz de silicatos general - red compleja
    */
   private static drawSilicateMatrix(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Red tridimensional compleja
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
-    
+
     for (let c = -2; c <= 2; c++) {
       this.setPixel(bitmap, colorMap, centerCol + c, startRow + 2, 1, this.COLORS.RED);
     }
-    
+
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 3, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.RED);
-    
+
     this.setPixel(bitmap, colorMap, centerCol, startRow + 4, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 5, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 5, 1, this.COLORS.RED);
@@ -3721,12 +3283,10 @@ export class AreciboGenerator {
    * Sistema modular como Intelligent Life pero con 3 variantes de cada componente
    */
   private static drawRoboticForm(bitmap: number[], colorMap: number[], cols: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
-    // Seleccionar componentes proceduralmente (3 variantes de cada)
-    const headType = Math.floor(rng.random() * 3);   // 0, 1, 2
-    const torsoType = Math.floor(rng.random() * 3);  // 0, 1, 2
-    const legsType = Math.floor(rng.random() * 3);   // 0, 1, 2
-    
-    // Dibujar la forma robótica modular
+    const headType = Math.floor(rng.random() * 3);
+    const torsoType = Math.floor(rng.random() * 3);
+    const legsType = Math.floor(rng.random() * 3);
+
     this.drawModularRoboticForm(bitmap, colorMap, centerCol, startRow, height, headType, torsoType, legsType);
   }
 
@@ -3735,122 +3295,98 @@ export class AreciboGenerator {
    * 3 variantes de cada componente para diferentes diseños robóticos
    */
   private static drawModularRoboticForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, headType: number, torsoType: number, legsType: number): void {
-    // Distribución de las 9 filas:
-    // Filas 0-2: Cabeza robótica (3 filas)
-    // Filas 3-5: Torso robótico (3 filas)  
-    // Filas 6-8: Piernas robóticas (3 filas)
-    
-    // CABEZAS ROBÓTICAS (3 tipos)
     switch (headType) {
-      case 0: // Cabeza cuadrada clásica
+      case 0:
         for (let c = -1; c <= 1; c++) {
           this.setPixel(bitmap, colorMap, centerCol + c, startRow, 1, this.COLORS.RED);
           this.setPixel(bitmap, colorMap, centerCol + c, startRow + 1, 1, this.COLORS.RED);
         }
-        // Antena/sensor central
         this.setPixel(bitmap, colorMap, centerCol, startRow - 1, 1, this.COLORS.RED);
         break;
-        
-      case 1: // Cabeza con visores laterales
-        // Centro principal
+
+      case 1:
         this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
-        // Visores/sensores laterales
         this.setPixel(bitmap, colorMap, centerCol - 2, startRow, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol + 2, startRow, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
         break;
-        
-      case 2: // Cabeza triangular/cónica
-        // Punta superior
+
+      case 2:
         this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
-        // Base más ancha
         for (let c = -1; c <= 1; c++) {
           this.setPixel(bitmap, colorMap, centerCol + c, startRow + 1, 1, this.COLORS.RED);
         }
-        // Sensores laterales de la base
         this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 2, 1, this.COLORS.RED);
         break;
     }
-    
-    // TORSOS ROBÓTICOS (3 tipos)
+
     switch (torsoType) {
-      case 0: // Torso rectangular clásico
+      case 0:
         for (let r = 3; r <= 5; r++) {
           this.setPixel(bitmap, colorMap, centerCol - 1, startRow + r, 1, this.COLORS.RED);
           this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
           this.setPixel(bitmap, colorMap, centerCol + 1, startRow + r, 1, this.COLORS.RED);
         }
-        // Brazos mecánicos simples
         this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 4, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 4, 1, this.COLORS.RED);
         break;
-        
-      case 1: // Torso con módulos laterales
-        // Core central vertical
+
+      case 1:
         for (let r = 3; r <= 5; r++) {
           this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
         }
-        // Módulos/compartimentos laterales
         this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 3, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 5, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 5, 1, this.COLORS.RED);
-        // Brazos articulados extendidos
         this.setPixel(bitmap, colorMap, centerCol - 3, startRow + 4, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol + 3, startRow + 4, 1, this.COLORS.RED);
         break;
-        
-      case 2: // Torso esférico/compacto
-        // Centro compacto
+
+      case 2:
         this.setPixel(bitmap, colorMap, centerCol, startRow + 4, 1, this.COLORS.RED);
-        // Anillo exterior
         this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 3, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 4, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 4, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 5, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 5, 1, this.COLORS.RED);
-        // Brazos multi-articulados
         this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 3, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 3, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 5, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 5, 1, this.COLORS.RED);
         break;
     }
-    
-    // PIERNAS ROBÓTICAS (3 tipos)
+
     switch (legsType) {
-      case 0: // Piernas bípedas clásicas
+      case 0:
         for (let r = 6; r < Math.min(height, 9); r++) {
           this.setPixel(bitmap, colorMap, centerCol - 1, startRow + r, 1, this.COLORS.RED);
           this.setPixel(bitmap, colorMap, centerCol + 1, startRow + r, 1, this.COLORS.RED);
         }
         break;
-        
-      case 1: // Piernas con estabilizadores
+
+      case 1:
         for (let r = 6; r < Math.min(height, 9); r++) {
           this.setPixel(bitmap, colorMap, centerCol - 1, startRow + r, 1, this.COLORS.RED);
           this.setPixel(bitmap, colorMap, centerCol + 1, startRow + r, 1, this.COLORS.RED);
-          // Estabilizadores laterales cada dos filas
           if ((r - 6) % 2 === 0) {
             this.setPixel(bitmap, colorMap, centerCol - 2, startRow + r, 1, this.COLORS.RED);
             this.setPixel(bitmap, colorMap, centerCol + 2, startRow + r, 1, this.COLORS.RED);
           }
         }
         break;
-        
-      case 2: // Base con ruedas/orugas
-        // Plataforma base continua
+
+      case 2:
         for (let r = 6; r < Math.min(height, 9); r++) {
           for (let c = -2; c <= 2; c++) {
             this.setPixel(bitmap, colorMap, centerCol + c, startRow + r, 1, this.COLORS.RED);
           }
-          // Dejar espacios para simular ruedas/orugas
           if ((r - 6) % 2 === 1) {
-            this.setPixel(bitmap, colorMap, centerCol, startRow + r, 0, this.COLORS.BLACK); // "rueda" central
+            this.setPixel(bitmap, colorMap, centerCol, startRow + r, 0, this.COLORS.BLACK);
           }
         }
         break;
@@ -3862,9 +3398,8 @@ export class AreciboGenerator {
    * Diferentes formas basadas en estados de la materia gaseosa y física de fluidos
    */
   private static drawGaseousForm(bitmap: number[], colorMap: number[], cols: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
-    // Usar el generador RNG para determinar el tipo de forma gaseosa aleatoriamente
     const gasType = Math.floor(rng.random() * 8);
-    
+
     switch (gasType) {
       case 0:
         this.drawGlobularGas(bitmap, colorMap, centerCol, startRow, height);
@@ -3896,11 +3431,9 @@ export class AreciboGenerator {
    * Gas globular - forma compacta tipo nebulosa planetaria
    */
   private static drawGlobularGas(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Núcleo denso central
     this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.RED);
-    
-    // Capa intermedia
+
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.RED);
@@ -3909,8 +3442,7 @@ export class AreciboGenerator {
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 4, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 4, 1, this.COLORS.RED);
-    
-    // Borde externo difuso
+
     this.setPixel(bitmap, colorMap, centerCol, startRow + 5, 1, this.COLORS.RED);
   }
 
@@ -3918,14 +3450,12 @@ export class AreciboGenerator {
    * Gas en corriente - flujo direccional tipo viento solar
    */
   private static drawStreamingGas(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Flujo diagonal ascendente
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 5, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 4, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.RED);
-    
-    // Partículas dispersas en la corriente
+
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 3, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.RED);
   }
@@ -3934,7 +3464,6 @@ export class AreciboGenerator {
    * Gas turbulento - remolinos y vórtices
    */
   private static drawTurbulentGas(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Patrón de vórtice
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.RED);
@@ -3950,17 +3479,14 @@ export class AreciboGenerator {
    * Gas estratificado - capas horizontales
    */
   private static drawLayeredGas(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Capa superior
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
-    
-    // Capa intermedia más densa
+
     for (let col = centerCol - 2; col <= centerCol + 2; col++) {
       this.setPixel(bitmap, colorMap, col, startRow + 3, 1, this.COLORS.RED);
     }
-    
-    // Capa inferior
+
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 5, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 5, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 5, 1, this.COLORS.RED);
@@ -3970,10 +3496,8 @@ export class AreciboGenerator {
    * Gas en espiral - estructura helicoidal tipo galaxia
    */
   private static drawSpiralGas(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Centro de la espiral
     this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.RED);
-    
-    // Brazo espiral
+
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 3, 1, this.COLORS.RED);
@@ -3987,18 +3511,15 @@ export class AreciboGenerator {
    * Gas agrupado - múltiples núcleos tipo cúmulo estelar
    */
   private static drawClusteredGas(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Núcleo principal
     this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.RED);
-    
-    // Núcleos secundarios
+
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.RED);
-    
+
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 4, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 5, 1, this.COLORS.RED);
-    
-    // Conexiones entre núcleos
+
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.RED);
   }
@@ -4007,19 +3528,16 @@ export class AreciboGenerator {
    * Gas filamentario - estructuras largas tipo nebulosa de Cygnus
    */
   private static drawFilamentaryGas(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Filamento principal vertical
     for (let r = 1; r <= 5; r++) {
       this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
     }
-    
-    // Filamentos secundarios
+
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 3, 1, this.COLORS.RED);
-    
+
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 4, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 5, 1, this.COLORS.RED);
-    
-    // Ramificaciones
+
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 5, 1, this.COLORS.RED);
   }
@@ -4028,12 +3546,10 @@ export class AreciboGenerator {
    * Gas difuso - nube dispersa tipo nebulosa de reflexión (forma original mejorada)
    */
   private static drawDiffuseGas(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Fila superior
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
-    
-    // Filas medias más anchas
+
     for (let r = 2; r < 5; r++) {
       this.setPixel(bitmap, colorMap, centerCol - 2, startRow + r, 1, this.COLORS.RED);
       this.setPixel(bitmap, colorMap, centerCol - 1, startRow + r, 1, this.COLORS.RED);
@@ -4041,8 +3557,7 @@ export class AreciboGenerator {
       this.setPixel(bitmap, colorMap, centerCol + 1, startRow + r, 1, this.COLORS.RED);
       this.setPixel(bitmap, colorMap, centerCol + 2, startRow + r, 1, this.COLORS.RED);
     }
-    
-    // Fila inferior
+
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 5, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 5, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 5, 1, this.COLORS.RED);
@@ -4053,39 +3568,37 @@ export class AreciboGenerator {
    * Diferentes tipos de patrones según los estados energéticos
    */
   private static drawEnergyForm(bitmap: number[], colorMap: number[], cols: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }, lifeForm: string, planetName: string): void {
-    // Obtener los estados energéticos para determinar la manifestación
     const energyStates = this.getNitrogenBases(lifeForm, planetName);
     const primaryState = energyStates[0];
     const manifestationType = this.getEnergyPattern(primaryState);
-    
-    // Seleccionar forma de manifestación energética según el patrón
+
     switch (manifestationType) {
-      case 'wave':
+      case "wave":
         this.drawWaveManifesta(bitmap, colorMap, centerCol, startRow, height);
         break;
-      case 'spiral':
+      case "spiral":
         this.drawSpiralField(bitmap, colorMap, centerCol, startRow, height);
         break;
-      case 'vortex':
+      case "vortex":
         this.drawVortexManifesta(bitmap, colorMap, centerCol, startRow, height);
         break;
-      case 'pulse':
+      case "pulse":
         this.drawPulseManifesta(bitmap, colorMap, centerCol, startRow, height);
         break;
-      case 'interference':
+      case "interference":
         this.drawInterferencePattern(bitmap, colorMap, centerCol, startRow, height);
         break;
-      case 'quantum':
+      case "quantum":
         this.drawQuantumState(bitmap, colorMap, centerCol, startRow, height);
         break;
-      case 'dimensional':
+      case "dimensional":
         this.drawDimensionalRift(bitmap, colorMap, centerCol, startRow, height);
         break;
-      case 'infinite':
+      case "infinite":
         this.drawInfiniteField(bitmap, colorMap, centerCol, startRow, height);
         break;
       default:
-        this.drawEnergyZigzag(bitmap, colorMap, centerCol, startRow, height); // Original por defecto
+        this.drawEnergyZigzag(bitmap, colorMap, centerCol, startRow, height);
     }
   }
 
@@ -4094,7 +3607,7 @@ export class AreciboGenerator {
    */
   private static drawWaveManifesta(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     for (let r = 0; r < Math.min(8, height); r++) {
-      const wave = Math.round(2 * Math.sin(r * Math.PI / 3));
+      const wave = Math.round(2 * Math.sin((r * Math.PI) / 3));
       this.setPixel(bitmap, colorMap, centerCol + wave, startRow + r, 1, this.COLORS.RED);
     }
   }
@@ -4117,9 +3630,7 @@ export class AreciboGenerator {
    * Vórtice energético - patrón rotatorio
    */
   private static drawVortexManifesta(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Centro del vórtice
     this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.RED);
-    // Anillos concéntricos
     for (let ring = 1; ring <= 2; ring++) {
       for (let offset = -ring; offset <= ring; offset++) {
         if (Math.abs(offset) === ring) {
@@ -4146,10 +3657,10 @@ export class AreciboGenerator {
    */
   private static drawInterferencePattern(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
     for (let r = 0; r < Math.min(7, height); r++) {
-      const wave1 = Math.sin(r * Math.PI / 2);
-      const wave2 = Math.sin(r * Math.PI / 3 + Math.PI/4);
+      const wave1 = Math.sin((r * Math.PI) / 2);
+      const wave2 = Math.sin((r * Math.PI) / 3 + Math.PI / 4);
       const interference = wave1 + wave2;
-      
+
       if (interference > 0.5) {
         this.setPixel(bitmap, colorMap, centerCol - 1, startRow + r, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol + 1, startRow + r, 1, this.COLORS.RED);
@@ -4164,11 +3675,9 @@ export class AreciboGenerator {
    * Estado cuántico - patrón probabilístico
    */
   private static drawQuantumState(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Superposición cuántica - múltiples posiciones simultáneas
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 2, 1, this.COLORS.RED);
-    // Colapso de función de onda
     this.setPixel(bitmap, colorMap, centerCol, startRow + 4, 1, this.COLORS.RED);
   }
 
@@ -4176,11 +3685,9 @@ export class AreciboGenerator {
    * Fisura dimensional - apertura entre dimensiones
    */
   private static drawDimensionalRift(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Línea vertical (fisura)
     for (let r = 1; r < 6; r++) {
       this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
     }
-    // Distorsiones laterales
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 4, 1, this.COLORS.RED);
   }
@@ -4189,7 +3696,6 @@ export class AreciboGenerator {
    * Campo infinito - presencia constante
    */
   private static drawInfiniteField(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Círculo de energía constante
     this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
     for (let c = -1; c <= 1; c++) {
       this.setPixel(bitmap, colorMap, centerCol + c, startRow + 2, 1, this.COLORS.RED);
@@ -4213,32 +3719,24 @@ export class AreciboGenerator {
    * Forma divina - triángulo Illuminati rojo
    */
   private static drawDivineForm(bitmap: number[], colorMap: number[], cols: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
-    // Triángulo Illuminati rojo
-    
-    // Vértice superior (punta del triángulo)
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
-    
-    // Segunda fila: 2 píxeles
+
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
-    
-    // Tercera fila: 3 píxeles
+
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 2, 1, this.COLORS.RED);
-    
-    // Cuarta fila: 4 píxeles
+
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 3, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 3, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 3, 1, this.COLORS.RED);
-    
-    // Base del triángulo: línea completa
+
     for (let c = -3; c <= 3; c++) {
       this.setPixel(bitmap, colorMap, centerCol + c, startRow + 4, 1, this.COLORS.RED);
     }
-    
-    // Ojo en el centro del triángulo (símbolo Illuminati)
+
     this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.WHITE);
   }
 
@@ -4246,23 +3744,22 @@ export class AreciboGenerator {
    * Forma animal - diferentes tipos de animales con variación procedural
    */
   private static drawAnimalForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
-    // Seleccionar tipo de animal aleatoriamente (5 tipos)
     const animalType = Math.floor(rng.random() * 5);
-    
+
     switch (animalType) {
-      case 0: // Cuadrúpedo mamífero (perro/gato)
+      case 0:
         this.drawQuadrupedMammal(bitmap, colorMap, centerCol, startRow);
         break;
-      case 1: // Ave/volador
+      case 1:
         this.drawBirdForm(bitmap, colorMap, centerCol, startRow);
         break;
-      case 2: // Pez/acuático
+      case 2:
         this.drawFishForm(bitmap, colorMap, centerCol, startRow);
         break;
-      case 3: // Insecto/arácnido
+      case 3:
         this.drawInsectForm(bitmap, colorMap, centerCol, startRow);
         break;
-      case 4: // Reptil/serpiente
+      case 4:
         this.drawReptileForm(bitmap, colorMap, centerCol, startRow);
         break;
     }
@@ -4272,26 +3769,21 @@ export class AreciboGenerator {
    * Mamífero cuadrúpedo - forma mejorada
    */
   private static drawQuadrupedMammal(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
-    // Cabeza más realista
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.RED);
-    
-    // Cuello
+
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
-    
-    // Cuerpo más realista
+
     for (let c = 0; c <= 2; c++) {
       this.setPixel(bitmap, colorMap, centerCol + c, startRow + 2, 1, this.COLORS.RED);
       this.setPixel(bitmap, colorMap, centerCol + c, startRow + 3, 1, this.COLORS.RED);
     }
-    
-    // Patas delanteras y traseras
+
     this.setPixel(bitmap, colorMap, centerCol, startRow + 4, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 4, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 5, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 5, 1, this.COLORS.RED);
-    
-    // Cola
+
     this.setPixel(bitmap, colorMap, centerCol + 3, startRow + 2, 1, this.COLORS.RED);
   }
 
@@ -4299,23 +3791,18 @@ export class AreciboGenerator {
    * Forma de ave
    */
   private static drawBirdForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
-    // Cabeza
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
-    
-    // Pico
+
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow, 1, this.COLORS.RED);
-    
-    // Cuerpo
+
     this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
-    
-    // Alas extendidas
+
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.RED);
-    
-    // Patas
+
     this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 4, 1, this.COLORS.RED);
   }
@@ -4324,22 +3811,18 @@ export class AreciboGenerator {
    * Forma de pez
    */
   private static drawFishForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
-    // Cabeza
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.RED);
-    
-    // Cuerpo alargado
+
     for (let c = -1; c <= 2; c++) {
       this.setPixel(bitmap, colorMap, centerCol + c, startRow + 2, 1, this.COLORS.RED);
     }
-    
-    // Aletas
+
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 3, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.RED);
-    
-    // Cola
+
     this.setPixel(bitmap, colorMap, centerCol + 3, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 3, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 3, startRow + 3, 1, this.COLORS.RED);
@@ -4349,25 +3832,20 @@ export class AreciboGenerator {
    * Forma de insecto
    */
   private static drawInsectForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
-    // Cabeza
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
-    
-    // Tórax
+
     this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
-    
-    // Abdomen
+
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 3, 1, this.COLORS.RED);
-    
-    // 6 patas (3 de cada lado)
+
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 4, 1, this.COLORS.RED);
-    
-    // Antenas
+
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
   }
@@ -4376,12 +3854,10 @@ export class AreciboGenerator {
    * Forma de reptil/serpiente
    */
   private static drawReptileForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
-    // Cabeza triangular
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
-    
-    // Cuerpo serpenteante
+
     this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.RED);
@@ -4394,9 +3870,8 @@ export class AreciboGenerator {
    * Diferentes formas basadas en clasificación científica
    */
   private static drawBacteriaForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
-    // Usar el generador RNG para determinar el tipo de bacteria aleatoriamente
     const bacteriaType = Math.floor(rng.random() * 7);
-    
+
     switch (bacteriaType) {
       case 0:
         this.drawCoccusBacteria(bitmap, colorMap, centerCol, startRow, height);
@@ -4425,7 +3900,6 @@ export class AreciboGenerator {
    * Coccus - bacteria esférica
    */
   private static drawCoccusBacteria(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Forma circular simple
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
@@ -4439,11 +3913,9 @@ export class AreciboGenerator {
    * Bacillus - bacteria en forma de bastón
    */
   private static drawBacillusBacteria(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Forma alargada vertical (bastón)
     for (let r = 0; r < Math.min(5, height); r++) {
       this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
       if (r === 1 || r === 3) {
-        // Ampliar en el medio
         this.setPixel(bitmap, colorMap, centerCol - 1, startRow + r, 1, this.COLORS.RED);
         this.setPixel(bitmap, colorMap, centerCol + 1, startRow + r, 1, this.COLORS.RED);
       }
@@ -4454,7 +3926,6 @@ export class AreciboGenerator {
    * Spirillum - bacteria espiral
    */
   private static drawSpirillusBacteria(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Forma espiral
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.RED);
@@ -4466,7 +3937,6 @@ export class AreciboGenerator {
    * Streptococcus - cadena de bacterias esféricas
    */
   private static drawStreptococcusBacteria(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Cadena vertical de esferas
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
@@ -4480,7 +3950,6 @@ export class AreciboGenerator {
    * Staphylococcus - racimo de bacterias esféricas
    */
   private static drawStaphylococcusBacteria(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Racimo (cluster) irregular
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
@@ -4494,7 +3963,6 @@ export class AreciboGenerator {
    * Vibrio - bacteria en forma de coma
    */
   private static drawVibroBacteria(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Forma curva (como una coma)
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
@@ -4506,10 +3974,8 @@ export class AreciboGenerator {
    * Bacteria filamentosa - cadena larga
    */
   private static drawFilamentousBacteria(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Cadena larga y delgada
     for (let r = 0; r < Math.min(6, height); r++) {
       this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
-      // Agregar ramificaciones ocasionales
       if (r === 2) {
         this.setPixel(bitmap, colorMap, centerCol - 1, startRow + r, 1, this.COLORS.RED);
       }
@@ -4524,9 +3990,8 @@ export class AreciboGenerator {
    * Diferentes tipos de árboles y plantas basados en generación procedural
    */
   private static drawVegetationForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
-    // Usar el generador RNG para determinar el tipo de vegetación aleatoriamente
     const hash = Math.floor(rng.random() * 6);
-    
+
     switch (hash) {
       case 0:
         this.drawTreeForm(bitmap, colorMap, centerCol, startRow, height);
@@ -4552,24 +4017,20 @@ export class AreciboGenerator {
    * Árbol clásico con copa redondeada
    */
   private static drawTreeForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Copa/hojas (parte superior) - forma redondeada
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.RED);
-    
-    // Segunda fila de copa - más amplia
+
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.RED);
-    
-    // Tronco principal (vertical)
+
     for (let r = 2; r < height - 1; r++) {
       this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
     }
-    
-    // Sistema de raíces
+
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + height - 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + height - 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + height - 1, 1, this.COLORS.RED);
@@ -4579,10 +4040,8 @@ export class AreciboGenerator {
    * Arbusto bajo y frondoso
    */
   private static drawBushForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Copa baja pero amplia
     const midHeight = Math.floor(height / 2);
-    
-    // Parte superior del arbusto
+
     for (let r = 0; r < midHeight; r++) {
       const width = Math.max(1, 3 - Math.abs(r - 1));
       for (let c = -width; c <= width; c++) {
@@ -4591,13 +4050,11 @@ export class AreciboGenerator {
         }
       }
     }
-    
-    // Tallo corto
+
     for (let r = midHeight; r < height - 1; r++) {
       this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
     }
-    
-    // Raíces dispersas
+
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + height - 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + height - 1, 1, this.COLORS.RED);
   }
@@ -4606,24 +4063,20 @@ export class AreciboGenerator {
    * Palmera con hojas largas
    */
   private static drawPalmTreeForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Hojas de palmera (extendidas)
     this.setPixel(bitmap, colorMap, centerCol - 3, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 3, startRow, 1, this.COLORS.RED);
-    
-    // Segunda fila de hojas
+
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.RED);
-    
-    // Tronco ligeramente curvado
+
     for (let r = 2; r < height - 1; r++) {
-      const offset = r % 2 === 0 ? 0 : (r % 4 === 2 ? 1 : -1);
+      const offset = r % 2 === 0 ? 0 : r % 4 === 2 ? 1 : -1;
       this.setPixel(bitmap, colorMap, centerCol + offset, startRow + r, 1, this.COLORS.RED);
     }
-    
-    // Base amplia
+
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + height - 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + height - 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + height - 1, 1, this.COLORS.RED);
@@ -4633,19 +4086,16 @@ export class AreciboGenerator {
    * Flor con pétalos
    */
   private static drawFlowerForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Pétalos en forma de cruz
     this.setPixel(bitmap, colorMap, centerCol, startRow - 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
-    
-    // Tallo delgado
+
     for (let r = 2; r < height - 1; r++) {
       this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
     }
-    
-    // Raíz pequeña
+
     this.setPixel(bitmap, colorMap, centerCol, startRow + height - 1, 1, this.COLORS.RED);
   }
 
@@ -4653,22 +4103,19 @@ export class AreciboGenerator {
    * Conífera con forma triangular
    */
   private static drawConiferForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Forma triangular de conífera
     const midHeight = Math.floor(height * 0.8);
-    
+
     for (let r = 0; r < midHeight; r++) {
       const width = Math.min(2, Math.floor(r / 2));
       for (let c = -width; c <= width; c++) {
         this.setPixel(bitmap, colorMap, centerCol + c, startRow + r, 1, this.COLORS.RED);
       }
     }
-    
-    // Tronco
+
     for (let r = midHeight; r < height - 1; r++) {
       this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
     }
-    
-    // Base
+
     this.setPixel(bitmap, colorMap, centerCol, startRow + height - 1, 1, this.COLORS.RED);
   }
 
@@ -4676,23 +4123,19 @@ export class AreciboGenerator {
    * Helecho con frondas
    */
   private static drawFernForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Frondas curvadas
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow, 1, this.COLORS.RED);
-    
-    // Más frondas en diferentes niveles
+
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.RED);
-    
-    // Tallo central
+
     for (let r = 3; r < height - 1; r++) {
       this.setPixel(bitmap, colorMap, centerCol, startRow + r, 1, this.COLORS.RED);
     }
-    
-    // Sistema de raíces subterráneas
+
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + height - 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + height - 1, 1, this.COLORS.RED);
   }
@@ -4702,9 +4145,8 @@ export class AreciboGenerator {
    * Diferentes combinaciones de características vegetales y animales
    */
   private static drawVegetableAnimalForm(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
-    // Usar el generador RNG para determinar el tipo de híbrido aleatoriamente
     const hybridType = Math.floor(rng.random() * 6);
-    
+
     switch (hybridType) {
       case 0:
         this.drawTreentHybrid(bitmap, colorMap, centerCol, startRow, height);
@@ -4730,21 +4172,17 @@ export class AreciboGenerator {
    * Treent/Ent - árbol con capacidades animales
    */
   private static drawTreentHybrid(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Copa de árbol con "ojos"
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
-    this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.RED); // "ojos"
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
-    
-    // Ramas como brazos
+
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 2, 1, this.COLORS.RED);
-    
-    // Tronco móvil
+
     this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 4, 1, this.COLORS.RED);
-    
-    // Raíces como pies
+
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 5, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 5, 1, this.COLORS.RED);
   }
@@ -4753,18 +4191,15 @@ export class AreciboGenerator {
    * Coral animal - estructura coral con capacidades de movimiento
    */
   private static drawCoralAnimalHybrid(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Estructura ramificada como coral
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
-    
-    // Tentáculos/pólipos animales
+
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 2, 1, this.COLORS.RED);
-    
-    // Base móvil
+
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 3, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.RED);
   }
@@ -4773,18 +4208,15 @@ export class AreciboGenerator {
    * Planta caminante - planta con patas
    */
   private static drawWalkingPlantHybrid(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Hojas/flores superiores
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.RED);
-    
-    // Tallo con brazos
+
     this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 2, 1, this.COLORS.RED);
-    
-    // Patas como animal
+
     this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 4, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 4, 1, this.COLORS.RED);
@@ -4796,21 +4228,17 @@ export class AreciboGenerator {
    * Animal fotosintético - animal que realiza fotosíntesis
    */
   private static drawPhotosynthethicAnimalHybrid(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // "Cabeza" con capacidad fotosintética
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
-    
-    // Extensiones fotosintéticas (como hojas)
+
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.RED);
-    
-    // Cuerpo animal
+
     this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.RED);
-    
-    // Extremidades de locomoción
+
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 4, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 4, 1, this.COLORS.RED);
   }
@@ -4819,18 +4247,15 @@ export class AreciboGenerator {
    * Red micelial neural - organismo tipo hongo con inteligencia distribuida
    */
   private static drawMyceliaNeuralHybrid(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Cuerpo frutal central
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
-    
-    // Red neuronal/micelial extendida
+
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 2, 1, this.COLORS.RED);
-    
-    // Conexiones subterráneas
+
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 3, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 4, 1, this.COLORS.RED);
@@ -4840,20 +4265,16 @@ export class AreciboGenerator {
    * Bestia-flor - criatura animal que se camufla como flor
    */
   private static drawFlowerBeastHybrid(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // "Pétalos" que son en realidad apéndices sensoriales
     this.setPixel(bitmap, colorMap, centerCol, startRow - 1, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.RED);
-    
-    // Centro animal (boca/órganos)
+
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.RED);
-    
-    // Tallo que es en realidad columna vertebral
+
     this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.RED);
-    
-    // Sistema de anclaje/garras
+
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 4, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 4, 1, this.COLORS.RED);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 4, 1, this.COLORS.RED);
@@ -4863,11 +4284,10 @@ export class AreciboGenerator {
    * Agrega características aleatorias para crear variaciones
    */
   private static addRandomFeatures(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
-    // Agregar puntos aleatorios para crear variaciones visuales
     for (let i = 0; i < 3; i++) {
       const randomRow = startRow + Math.floor(rng.random() * height);
-      const randomCol = centerCol + Math.floor(rng.random() * 6) - 3; // -3 a +2
-      
+      const randomCol = centerCol + Math.floor(rng.random() * 6) - 3;
+
       if (rng.random() < 0.5) {
         this.setPixel(bitmap, colorMap, randomCol, randomRow, 1, this.COLORS.RED);
       }
@@ -4880,12 +4300,11 @@ export class AreciboGenerator {
    */
   private static async drawSolarSystem(bitmap: number[], colorMap: number[], planetName: string, startRow: number): Promise<void> {
     try {
-      // Llamada al nuevo endpoint específico para datos de Arecibo
-      const response = await fetch('/api/arecibo');
+      const response = await fetch("/api/arecibo");
       const data = await response.json();
-      
+
       if (!data.success || !data.system_data) {
-        console.warn('No system data available from /api/arecibo');
+        console.warn("No system data available from /api/arecibo");
         this.drawBasicSolarSystem(bitmap, colorMap, startRow);
         return;
       }
@@ -4894,89 +4313,72 @@ export class AreciboGenerator {
       const totalPlanets = systemData.total_planets;
       const currentPlanetIndex = systemData.current_planet_index;
       const planets = systemData.planets || [];
-      
-      console.log(`Sistema ${systemData.system_index}: ${totalPlanets} planetas, planeta actual: ${currentPlanetIndex}`);
-      
-      // Dibujar el sistema solar con datos reales
+
       this.drawAreciboStyleSolarSystem(bitmap, colorMap, totalPlanets, currentPlanetIndex, startRow, planets);
-      
     } catch (error) {
-      console.warn('Error fetching data from /api/arecibo:', error);
+      console.warn("Error fetching data from /api/arecibo:", error);
       this.drawBasicSolarSystem(bitmap, colorMap, startRow);
     }
   }
-
 
   /**
    * Dibuja el sistema solar al estilo del mensaje de Arecibo original
    * Estrella 3x3px desde borde izquierdo, planetas con tamaños variables y espaciado 1px
    */
   private static drawAreciboStyleSolarSystem(bitmap: number[], colorMap: number[], totalPlanets: number, currentPlanetIndex: number, startRow: number, planets: any[] = []): void {
-    
-    // Estrella: 3x3px empezando en columna 1 (separado 1px del borde)
     const starStartCol = 1;
     const starStartRow = startRow + 1;
-    
-    // Dibujar estrella 3x3px en color amarillo
+
     for (let row = 0; row < 3; row++) {
       for (let col = 0; col < 3; col++) {
         this.setPixel(bitmap, colorMap, starStartCol + col, starStartRow + row, 1, this.COLORS.YELLOW);
       }
     }
-    
-    // Planetas empiezan después de la estrella + espacio de 1px
-    let currentCol = starStartCol + 3 + 1; // Después de estrella (3px) + separación (1px) = columna 5
-    
-    // Dibujar planetas
+
+    let currentCol = starStartCol + 3 + 1;
+
     for (let i = 0; i < totalPlanets; i++) {
-      // Obtener tamaño del planeta desde los datos reales o usar lógica por defecto
       const planetSize = this.getRealPlanetSize(i, currentPlanetIndex, planets);
-      const planetStartRow = starStartRow; // Misma fila base que la estrella
-      
-      // Dibujar planeta según su tamaño
+      const planetStartRow = starStartRow;
+
       for (let row = 0; row < planetSize; row++) {
         this.setPixel(bitmap, colorMap, currentCol, planetStartRow + row, 1, this.COLORS.YELLOW);
       }
-      
-      // Avanzar columna: tamaño del planeta + separación de 1px
-      currentCol += 1 + 1; // planeta (1px ancho) + separación (1px)
-      
-      // Verificar que no nos salimos del ancho disponible
+
+      currentCol += 1 + 1;
+
       if (currentCol >= this.WIDTH - 1) {
-        console.log(`Alcanzado límite de ancho en columna ${currentCol}, parando dibujo de planetas`);
         break;
       }
     }
-    
-    // Información del sistema en binario omitida - solo mostrar el sistema visual
   }
 
   /**
    * Determina el tamaño visual de un planeta usando datos reales de la API
    */
   private static getRealPlanetSize(planetIndex: number, currentPlanetIndex: number, planets: any[]): number {
-    // El planeta actual siempre es tamaño 3 (más visible)
     if (planetIndex === currentPlanetIndex) {
       return 3;
     }
-    
-    // Si tenemos datos reales del planeta, usar su categoría de tamaño
-    const planetData = planets.find(p => p.index === planetIndex);
+
+    const planetData = planets.find((p) => p.index === planetIndex);
     if (planetData && planetData.size_category) {
       switch (planetData.size_category) {
-        case 'small': return 1;
-        case 'medium': return 2;
-        case 'large': return 3;
-        default: return 1;
+        case "small":
+          return 1;
+        case "medium":
+          return 2;
+        case "large":
+          return 3;
+        default:
+          return 1;
       }
     }
-    
-    // Fallback: lógica por defecto basada en posición orbital
+
     if (planetIndex === 0) return 1;
     if (planetIndex === 1) return 2;
-    return (planetIndex % 2) + 1; // Alterna entre 1 y 2
+    return (planetIndex % 2) + 1;
   }
-
 
   /**
    * SECCIÓN 7: Antena/Método de Transmisión
@@ -4984,11 +4386,9 @@ export class AreciboGenerator {
    */
   private static drawTransmissionMethod(bitmap: number[], colorMap: number[], lifeForm: string, planetName: string, startRow: number, height: number): void {
     const centerCol = Math.floor(this.WIDTH / 2);
-    
-    // Crear un generador de números pseudoaleatorios basado en el nombre del planeta
+
     const rng = this.createPlanetRNG(planetName);
-    
-    // Dibujar la antena en las primeras 7 filas (64-70)
+
     switch (lifeForm) {
       case "Intelligent Life":
         this.drawIntelligentLifeAntenna(bitmap, colorMap, centerCol, startRow, height - 2, rng);
@@ -5009,17 +4409,14 @@ export class AreciboGenerator {
         this.drawDoubleSlitExperiment(bitmap, colorMap, centerCol, startRow, height - 2);
         break;
       case "Animal Life":
-      case "Vegetation":  
+      case "Vegetation":
       case "Bacteria":
       case "Vegetable Animals":
       default:
-        // Sin antena - estas formas de vida no transmiten mensajes
         break;
     }
-    
-    // Dibujar el tamaño de la antena en las últimas 2 filas (71-72)
-    if (lifeForm !== "Animal Life" && lifeForm !== "Vegetation" && 
-        lifeForm !== "Bacteria" && lifeForm !== "Vegetable Animals") {
+
+    if (lifeForm !== "Animal Life" && lifeForm !== "Vegetation" && lifeForm !== "Bacteria" && lifeForm !== "Vegetable Animals") {
       this.drawAntennaSize(bitmap, colorMap, lifeForm, planetName, startRow + height - 2, rng);
     }
   }
@@ -5028,72 +4425,53 @@ export class AreciboGenerator {
    * Dibuja el tamaño de la antena en formato Arecibo en las dos últimas filas
    */
   private static drawAntennaSize(bitmap: number[], colorMap: number[], lifeForm: string, planetName: string, startRow: number, rng: { random: () => number }): void {
-    // Generar tamaño de antena basado en el tipo de vida
     let antennaSize: number;
-    
+
     switch (lifeForm) {
       case "Intelligent Life":
-        // Similar a la Tierra: 50-500 metros
         antennaSize = Math.floor(50 + rng.random() * 450);
         break;
       case "Silicon-Based Life":
-        // Cristalino: 100-1000 metros
         antennaSize = Math.floor(100 + rng.random() * 900);
         break;
       case "Conscious Gas":
-        // Telepático: 10-200 metros (más pequeño, más concentrado)
         antennaSize = Math.floor(10 + rng.random() * 190);
         break;
       case "Non-Physical Entity":
-        // Interdimensional: 1-2000 metros (rango muy amplio)
         antennaSize = Math.floor(1 + rng.random() * 1999);
         break;
       case "Robotic Entities":
-        // Robótico: 200-800 metros (precisión tecnológica)
         antennaSize = Math.floor(200 + rng.random() * 600);
         break;
       case "Have I just found God?":
-        // Cuántico: número especial, siempre 137 (constante de estructura fina)
         antennaSize = 137;
         break;
       default:
-        antennaSize = 305; // Por defecto, como Arecibo
+        antennaSize = 305;
         break;
     }
-    
-    // Formato original de Arecibo para el tamaño de la antena:
-    // Primera fila:    "       x x  x        " (7 espacios, número, espacios)
-    // Segunda fila:    "xxxx  x xxxxx  xxxx  " (ancho visual + número central)
-    
-    // Convertir a binario (10 bits máximo para mantener el formato compacto)
-    // Limitamos a 1023 metros máximo para que quepa en 10 bits
+
     if (antennaSize > 1023) antennaSize = 1023;
-    const binary = antennaSize.toString(2).padStart(10, '0');
-    
-    // Primera fila: solo el número en la parte central (bits 0-4)
-    // Empezamos en columna 7 para centrar
+    const binary = antennaSize.toString(2).padStart(10, "0");
+
     for (let i = 0; i < 5; i++) {
-      if (binary[i] === '1') {
+      if (binary[i] === "1") {
         const col = 7 + i * 2;
         this.setPixel(bitmap, colorMap, col, startRow, 1, this.COLORS.WHITE);
       }
     }
-    
-    // Segunda fila: barras laterales + número central (bits 5-9)
-    // Barras izquierdas (simulan ancho de antena)
+
     for (let i = 0; i < 4; i++) {
       this.setPixel(bitmap, colorMap, i, startRow + 1, 1, this.COLORS.WHITE);
     }
-    
-    // Número central (bits 5-9)
+
     for (let i = 5; i < 10; i++) {
-      if (binary[i] === '1') {
+      if (binary[i] === "1") {
         const col = 6 + (i - 5) * 2;
         this.setPixel(bitmap, colorMap, col, startRow + 1, 1, this.COLORS.WHITE);
       }
     }
-    
-    // Barras derechas (simulan ancho de antena)
+
     for (let i = 0; i < 4; i++) {
       this.setPixel(bitmap, colorMap, 19 + i, startRow + 1, 1, this.COLORS.WHITE);
     }
@@ -5107,12 +4485,12 @@ export class AreciboGenerator {
     for (let i = 0; i < planetName.length; i++) {
       seed += planetName.charCodeAt(i);
     }
-    
+
     return {
       random: () => {
         seed = (seed * 9301 + 49297) % 233280;
         return seed / 233280;
-      }
+      },
     };
   }
 
@@ -5120,16 +4498,16 @@ export class AreciboGenerator {
    * Antenas para Intelligent Life - diseños terrestres similares
    */
   private static drawIntelligentLifeAntenna(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
-    const antennaType = Math.floor(rng.random() * 3); // 3 tipos diferentes
-    
+    const antennaType = Math.floor(rng.random() * 3);
+
     switch (antennaType) {
-      case 0: // Antena parabólica
+      case 0:
         this.drawParabolicAntenna(bitmap, colorMap, centerCol, startRow + 2);
         break;
-      case 1: // Torre de radio con antenas
+      case 1:
         this.drawRadioTower(bitmap, colorMap, centerCol, startRow + 1);
         break;
-      case 2: // Array de antenas
+      case 2:
         this.drawAntennaArray(bitmap, colorMap, centerCol, startRow + 2);
         break;
     }
@@ -5139,11 +4517,9 @@ export class AreciboGenerator {
    * Antena parabólica simple
    */
   private static drawParabolicAntenna(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
-    // Base/soporte
     this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.LILAC);
-    
-    // Plato parabólico (semicírculo)
+
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.LILAC);
@@ -5155,12 +4531,10 @@ export class AreciboGenerator {
    * Torre de radio con antenas
    */
   private static drawRadioTower(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
-    // Torre principal (vertical)
     for (let i = 0; i < 6; i++) {
       this.setPixel(bitmap, colorMap, centerCol, startRow + i, 1, this.COLORS.LILAC);
     }
-    
-    // Antenas horizontales
+
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 3, 1, this.COLORS.LILAC);
@@ -5171,12 +4545,9 @@ export class AreciboGenerator {
    * Array de antenas pequeñas
    */
   private static drawAntennaArray(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
-    // Tres antenas pequeñas
     for (let i = -1; i <= 1; i++) {
       const col = centerCol + i * 2;
-      // Base
       this.setPixel(bitmap, colorMap, col, startRow + 2, 1, this.COLORS.LILAC);
-      // Antena
       this.setPixel(bitmap, colorMap, col, startRow + 1, 1, this.COLORS.LILAC);
       this.setPixel(bitmap, colorMap, col, startRow, 1, this.COLORS.LILAC);
     }
@@ -5187,15 +4558,15 @@ export class AreciboGenerator {
    */
   private static drawSiliconBasedAntenna(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
     const antennaType = Math.floor(rng.random() * 3);
-    
+
     switch (antennaType) {
-      case 0: // Estructura cristalina
+      case 0:
         this.drawCrystallineAntenna(bitmap, colorMap, centerCol, startRow + 1);
         break;
-      case 1: // Pirámide de silicio
+      case 1:
         this.drawSiliconPyramid(bitmap, colorMap, centerCol, startRow + 1);
         break;
-      case 2: // Array hexagonal
+      case 2:
         this.drawHexagonalArray(bitmap, colorMap, centerCol, startRow + 2);
         break;
     }
@@ -5205,15 +4576,12 @@ export class AreciboGenerator {
    * Estructura cristalina
    */
   private static drawCrystallineAntenna(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
-    // Centro
     this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.LILAC);
-    
-    // Cristales expandiéndose
+
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.LILAC);
-    
-    // Base amplia
+
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 3, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 3, 1, this.COLORS.LILAC);
@@ -5223,13 +4591,10 @@ export class AreciboGenerator {
    * Pirámide de silicio
    */
   private static drawSiliconPyramid(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
-    // Punta
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.LILAC);
-    // Nivel 2
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.LILAC);
-    // Base
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.LILAC);
@@ -5241,10 +4606,8 @@ export class AreciboGenerator {
    * Array hexagonal
    */
   private static drawHexagonalArray(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
-    // Centro
     this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.LILAC);
-    
-    // Hexágono alrededor
+
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.LILAC);
@@ -5258,15 +4621,15 @@ export class AreciboGenerator {
    */
   private static drawNonPhysicalTransmission(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
     const transmissionType = Math.floor(rng.random() * 3);
-    
+
     switch (transmissionType) {
-      case 0: // Vórtice dimensional
+      case 0:
         this.drawDimensionalVortex(bitmap, colorMap, centerCol, startRow + 2);
         break;
-      case 1: // Campo de energía pura
+      case 1:
         this.drawEnergyField(bitmap, colorMap, centerCol, startRow + 1, rng);
         break;
-      case 2: // Portal interdimensional
+      case 2:
         this.drawInterdimensionalPortal(bitmap, colorMap, centerCol, startRow + 2);
         break;
     }
@@ -5276,23 +4639,18 @@ export class AreciboGenerator {
    * Vórtice dimensional - espiral hacia el centro
    */
   private static drawDimensionalVortex(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
-    // Centro del vórtice
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.LILAC);
-    
-    // Espiral hacia afuera
-    // Nivel 1 - cruz inmediata
+
     this.setPixel(bitmap, colorMap, centerCol, startRow - 1, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.LILAC);
-    
-    // Nivel 2 - patrón espiral
+
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow - 1, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow - 1, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.LILAC);
-    
-    // Nivel 3 - exterior del vórtice
+
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow - 1, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.LILAC);
   }
@@ -5301,23 +4659,19 @@ export class AreciboGenerator {
    * Campo de energía pura - patrones de energía fluctuante
    */
   private static drawEnergyField(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, rng: { random: () => number }): void {
-    // Núcleo energético
     this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.LILAC);
-    
-    // Fluctuaciones de energía procedurales
+
     for (let i = 0; i < 8; i++) {
-      if (rng.random() > 0.4) { // 60% chance de aparecer
-        const offsetX = Math.floor(rng.random() * 5) - 2; // -2 a +2
-        const offsetY = Math.floor(rng.random() * 5) - 2; // -2 a +2
-        
-        // Evitar sobreescribir el centro
+      if (rng.random() > 0.4) {
+        const offsetX = Math.floor(rng.random() * 5) - 2;
+        const offsetY = Math.floor(rng.random() * 5) - 2;
+
         if (offsetX !== 0 || offsetY !== 0) {
           this.setPixel(bitmap, colorMap, centerCol + offsetX, startRow + 2 + offsetY, 1, this.COLORS.LILAC);
         }
       }
     }
-    
-    // Campo base mínimo garantizado
+
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.LILAC);
   }
@@ -5326,30 +4680,23 @@ export class AreciboGenerator {
    * Portal interdimensional - marco con centro vacío
    */
   private static drawInterdimensionalPortal(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
-    // Marco del portal - rectángulo hueco
-    // Esquina superior izquierda a derecha
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow - 1, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow - 1, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol, startRow - 1, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow - 1, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow - 1, 1, this.COLORS.LILAC);
-    
-    // Lados verticales
+
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.LILAC);
-    
-    // Esquina inferior izquierda a derecha
+
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 2, 1, this.COLORS.LILAC);
-    
-    // Efecto dimensional en el centro (punto de singularidad)
-    // Dejamos el centro (centerCol, startRow) y (centerCol, startRow+1) vacíos para representar el portal
-    // Solo agregamos un pequeño punto central
+
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.LILAC);
   }
 
@@ -5357,27 +4704,21 @@ export class AreciboGenerator {
    * Ondas telepáticas para Conscious Gas - círculo central con ondas procedurales
    */
   private static drawTelepathicWaves(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
-    // Centro - fuente telepática
     this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.LILAC);
-    
-    // Ondas expandiéndose - patrón procedural basado en el RNG
-    const waveCount = 3 + Math.floor(rng.random() * 3); // 3-5 ondas
-    
+
+    const waveCount = 3 + Math.floor(rng.random() * 3);
+
     for (let wave = 0; wave < waveCount; wave++) {
       const radius = wave + 1;
       const intensity = rng.random();
-      
-      // Solo dibujar si la intensidad supera un umbral
+
       if (intensity > 0.3) {
-        // Ondas circulares aproximadas en pixel art
         if (radius === 1) {
-          // Primera onda - cruz
           this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.LILAC);
           this.setPixel(bitmap, colorMap, centerCol, startRow + 4, 1, this.COLORS.LILAC);
           this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 3, 1, this.COLORS.LILAC);
           this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 3, 1, this.COLORS.LILAC);
         } else if (radius === 2) {
-          // Segunda onda - octágono aproximado
           this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.LILAC);
           this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.LILAC);
           this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 5, 1, this.COLORS.LILAC);
@@ -5385,7 +4726,6 @@ export class AreciboGenerator {
           this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 3, 1, this.COLORS.LILAC);
           this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 3, 1, this.COLORS.LILAC);
         } else if (radius >= 3) {
-          // Ondas exteriores - puntos dispersos
           const angle = wave * 1.5 + rng.random() * 0.5;
           const x = Math.round(Math.cos(angle) * radius);
           const y = Math.round(Math.sin(angle) * radius);
@@ -5400,15 +4740,15 @@ export class AreciboGenerator {
    */
   private static drawRoboticAntenna(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number, rng: { random: () => number }): void {
     const antennaType = Math.floor(rng.random() * 3);
-    
+
     switch (antennaType) {
-      case 0: // Antena con pinchos simétricos
+      case 0:
         this.drawSymmetricSpikes(bitmap, colorMap, centerCol, startRow + 2);
         break;
-      case 1: // Antena con grid de sensores
+      case 1:
         this.drawSensorGrid(bitmap, colorMap, centerCol, startRow + 1);
         break;
-      case 2: // Antena con múltiples brazos
+      case 2:
         this.drawMultiArmAntenna(bitmap, colorMap, centerCol, startRow + 1);
         break;
     }
@@ -5418,16 +4758,13 @@ export class AreciboGenerator {
    * Pinchos simétricos
    */
   private static drawSymmetricSpikes(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
-    // Cuadrado central
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.LILAC);
-    
-    // Pinchos en las 4 direcciones
-    this.setPixel(bitmap, colorMap, centerCol, startRow - 1, 1, this.COLORS.LILAC); // Arriba
-    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.LILAC); // Abajo
-    this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.LILAC); // Izquierda
-    this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.LILAC); // Derecha
-    
-    // Pinchos diagonales
+
+    this.setPixel(bitmap, colorMap, centerCol, startRow - 1, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol - 1, startRow, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow, 1, this.COLORS.LILAC);
+
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow - 1, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow - 1, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.LILAC);
@@ -5438,38 +4775,32 @@ export class AreciboGenerator {
    * Grid de sensores
    */
   private static drawSensorGrid(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
-    // Grid 3x3 de sensores
     for (let y = 0; y < 3; y++) {
       for (let x = 0; x < 3; x++) {
         this.setPixel(bitmap, colorMap, centerCol - 1 + x, startRow + y, 1, this.COLORS.LILAC);
       }
     }
-    
-    // Conexiones externas
-    this.setPixel(bitmap, colorMap, centerCol, startRow - 1, 1, this.COLORS.LILAC); // Arriba
-    this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.LILAC); // Abajo
-    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.LILAC); // Izquierda
-    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.LILAC); // Derecha
+
+    this.setPixel(bitmap, colorMap, centerCol, startRow - 1, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.LILAC);
   }
 
   /**
    * Antena multi-brazo
    */
   private static drawMultiArmAntenna(bitmap: number[], colorMap: number[], centerCol: number, startRow: number): void {
-    // Centro
     this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.LILAC);
-    
-    // Brazos principales
+
     this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.LILAC);
-    
-    // Brazos laterales
+
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 1, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 1, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 1, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow + 1, 1, this.COLORS.LILAC);
-    
-    // Terminales de los brazos
+
     this.setPixel(bitmap, colorMap, centerCol - 2, startRow, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol + 2, startRow, 1, this.COLORS.LILAC);
   }
@@ -5478,35 +4809,24 @@ export class AreciboGenerator {
    * Experimento de doble rendija - la representación más precisa posible
    */
   private static drawDoubleSlitExperiment(bitmap: number[], colorMap: number[], centerCol: number, startRow: number, height: number): void {
-    // Fuente de partículas (izquierda)
     this.setPixel(bitmap, colorMap, centerCol - 4, startRow + 2, 1, this.COLORS.LILAC);
-    
-    // Barrera con doble rendija (centro)
-    // Barrera superior
+
     this.setPixel(bitmap, colorMap, centerCol, startRow, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 1, 1, this.COLORS.LILAC);
-    // Rendija 1 (espacio vacío en startRow + 2)
-    // Barrera medio
     this.setPixel(bitmap, colorMap, centerCol, startRow + 3, 1, this.COLORS.LILAC);
-    // Rendija 2 (espacio vacío en startRow + 4)  
-    // Barrera inferior
     this.setPixel(bitmap, colorMap, centerCol, startRow + 5, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, centerCol, startRow + 6, 1, this.COLORS.LILAC);
-    
-    // Patrón de interferencia (derecha) - franjas alternadas
+
     const screenCol = centerCol + 3;
-    
-    // Franja central brillante
+
     this.setPixel(bitmap, colorMap, screenCol, startRow + 3, 1, this.COLORS.LILAC);
-    
-    // Franjas secundarias
+
     this.setPixel(bitmap, colorMap, screenCol, startRow + 1, 1, this.COLORS.LILAC);
     this.setPixel(bitmap, colorMap, screenCol, startRow + 5, 1, this.COLORS.LILAC);
-    
-    // Líneas de trayectoria (opcionales)
-    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.LILAC); // Desde fuente
-    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.LILAC); // Hacia rendija 1
-    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 4, 1, this.COLORS.LILAC); // Hacia rendija 2
+
+    this.setPixel(bitmap, colorMap, centerCol - 2, startRow + 2, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.LILAC);
+    this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 4, 1, this.COLORS.LILAC);
   }
 
   /**
@@ -5514,23 +4834,20 @@ export class AreciboGenerator {
    */
   private static drawBasicSolarSystem(bitmap: number[], colorMap: number[], startRow: number): void {
     const centerCol = Math.floor(this.WIDTH / 2);
-    
-    // Sol en el centro (representado como un punto más grande)
+
     this.setPixel(bitmap, colorMap, centerCol, startRow + 2, 1, this.COLORS.YELLOW);
     this.setPixel(bitmap, colorMap, centerCol - 1, startRow + 2, 1, this.COLORS.YELLOW);
     this.setPixel(bitmap, colorMap, centerCol + 1, startRow + 2, 1, this.COLORS.YELLOW);
-    
-    // Planetas en diferentes órbitas (puntos simples)
+
     const orbits = [
-      { col: centerCol - 3, row: startRow + 4 },  // Planeta interior
-      { col: centerCol - 1, row: startRow + 6 },  // Planeta medio
-      { col: centerCol + 2, row: startRow + 5 },  // Planeta actual (destacado)
-      { col: centerCol + 4, row: startRow + 7 },  // Planeta exterior
+      { col: centerCol - 3, row: startRow + 4 },
+      { col: centerCol - 1, row: startRow + 6 },
+      { col: centerCol + 2, row: startRow + 5 },
+      { col: centerCol + 4, row: startRow + 7 },
     ];
-    
+
     orbits.forEach((orbit, index) => {
       if (index === 2) {
-        // Destacar el planeta actual con un patrón diferente
         this.setPixel(bitmap, colorMap, orbit.col, orbit.row, 1, this.COLORS.YELLOW);
         this.setPixel(bitmap, colorMap, orbit.col, orbit.row - 1, 1, this.COLORS.YELLOW);
         this.setPixel(bitmap, colorMap, orbit.col, orbit.row + 1, 1, this.COLORS.YELLOW);
@@ -5539,5 +4856,4 @@ export class AreciboGenerator {
       }
     });
   }
-
 }
