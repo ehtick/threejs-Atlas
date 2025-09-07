@@ -372,7 +372,7 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
               setTimeout(() => {
                 setCanStartTextDecryption(true);
               }, 1500); // Esperar 1.5s para que el fade-in termine completamente
-              
+
               // Start transparency at 9s (2s after data appears - adjusted for earlier timing)
               setTimeout(() => {
                 const startTransparency = () => {
@@ -415,12 +415,12 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
 
         // Calculate star fade - starts just before complete deceleration (at 10s)
         let starOpacity = 1;
-        
+
         if (elapsed >= STAR_FADEOUT_START) {
           // Stars start fading at 10s (1s before complete stop)
           const fadeTime = elapsed - STAR_FADEOUT_START;
           const totalFadeTime = COMPLETE_STOP - STAR_FADEOUT_START; // 1 second to fade
-          
+
           if (fadeTime < totalFadeTime) {
             // Quick fadeout just before stars stop completely
             const fadeProgress = fadeTime / totalFadeTime;
@@ -684,7 +684,7 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
             if (onComplete) onComplete();
           }
           iteration += 1;
-        }, 12); // Faster for coherent timing
+        }, 6); // Much faster decryption
       }, delay);
     };
 
@@ -699,9 +699,9 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
     const decimalLine = `atlas@cube:~ $ > CREATE\n > Universal Constant: ${decimalSeed}`;
     const timeLine = seedData?.cosmic_origin_time ? `atlas@cube:~ $ > RUN\n > Genesis: ${seedData.cosmic_origin_time} Unix ${new Date(seedData.cosmic_origin_time * 1000).toLocaleString("es-ES")}` : "";
 
-    // Sequential animation with coherent timing (fits within 3s reveal phase)
+    // Sequential animation with faster timing
     setShowPrimordial(true);
-    decryptTerminalText(primordialLine, setDecryptedPrimordial, 150, () => {
+    decryptTerminalText(primordialLine, setDecryptedPrimordial, 50, () => {
       // Show hash line after primordial completes
       setTimeout(() => {
         setShowHash(true);
@@ -719,20 +719,20 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
                     stopMatrixEffect();
                     setTimeout(() => {
                       setShowCompletion(true);
-                    }, 200);
+                    }, 100);
                   });
-                }, 200);
+                }, 100);
               } else {
                 // No time data, stop Matrix and show completion directly
                 stopMatrixEffect();
                 setTimeout(() => {
                   setShowCompletion(true);
-                }, 200);
+                }, 100);
               }
             });
-          }, 200);
+          }, 100);
         });
-      }, 200);
+      }, 100);
     });
   }, [canStartTextDecryption, primordialSeed, sha256Seed, decimalSeed, seedData]);
 
@@ -744,18 +744,16 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
       setHeaderStatusDecrypting(false);
       return;
     }
-    
+
     const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    
+
     const matrixInterval = setInterval(() => {
       // Generate random 6-character string for ACTIVE length
-      const randomText = Array.from({length: 6}, () => 
-        chars[Math.floor(Math.random() * chars.length)]
-      ).join("");
-      
+      const randomText = Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+
       setHeaderStatus(randomText);
-    }, 25); // Faster Matrix cycling for more dynamic effect
-    
+    }, 15); // Even faster Matrix cycling
+
     return () => clearInterval(matrixInterval);
   }, [isMatrixMode]);
 
@@ -781,75 +779,64 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
             transition: "opacity 1.5s ease-in-out",
           }}
         >
-          <div className="w-full max-w-2xl mx-auto px-2 sm:px-0">
+          <div className="w-full max-w-4xl mx-auto px-2 sm:px-4">
             {/* Terminal-style Container - with solid background */}
             <div
-              className="bg-black/90 border border-green-400/50 shadow-2xl overflow-hidden backdrop-blur-sm mx-2 sm:mx-0"
+              className="bg-black/95 border border-green-400/60 shadow-2xl overflow-hidden backdrop-blur-sm rounded-lg"
               style={{
                 fontFamily: "Courier New, monospace",
-                backdropFilter: "blur(10px)", // Add backdrop blur for better visibility
+                backdropFilter: "blur(12px)",
+                minHeight: "320px", // Increased from implicit 200px
               }}
             >
               {/* Terminal Header */}
-              <div className={`px-2 sm:px-4 py-2 border-b border-green-400/50 flex items-center justify-between transition-all duration-500 ${
-                isMatrixMode 
-                  ? "bg-green-900/30" 
-                  : "bg-green-500/20 border-green-300"
-              }`}>
-                <div className={`text-xs sm:text-xs font-mono uppercase tracking-wider transition-colors duration-500 break-all sm:break-normal ${
-                  isMatrixMode 
-                    ? "text-green-400" 
-                    : "text-green-300"
-                }`}>
-                  <span className="hidden sm:inline">&gt; ATLAS INITIALIZATION PROTOCOL v2.4.36 &lt;</span>
+              <div className={`px-3 sm:px-6 py-3 border-b border-green-400/50 flex items-center justify-between transition-all duration-500 ${isMatrixMode ? "bg-green-900/30" : "bg-green-500/20 border-green-300"}`}>
+                <div className={`text-xs sm:text-sm font-mono uppercase tracking-wider transition-colors duration-500 break-words sm:break-normal overflow-hidden ${isMatrixMode ? "text-green-400" : "text-green-300"}`}>
+                  <span className="hidden lg:inline">&gt; ATLAS INITIALIZATION PROTOCOL v2.4.36 &lt;</span>
+                  <span className="hidden sm:inline lg:hidden">&gt; ATLAS INIT PROTOCOL v2.4.36 &lt;</span>
                   <span className="sm:hidden">&gt; ATLAS INIT v2.4.36 &lt;</span>
                 </div>
                 <div className="flex gap-1 items-center">
-                  <div className={`w-2 h-2 transition-colors duration-500 ${
-                    isMatrixMode
-                      ? "bg-green-400 animate-pulse"
-                      : "bg-green-300"
-                  }`}></div>
-                  <div className={`text-xs font-mono transition-colors duration-500 ${
-                    isMatrixMode 
-                      ? "text-green-400 animate-pulse" 
-                      : "text-green-300 font-bold"
-                  }`}>
-                    {headerStatus}
-                  </div>
+                  <div className={`w-2 h-2 transition-colors duration-500 ${isMatrixMode ? "bg-green-400 animate-pulse" : "bg-green-300"}`}></div>
+                  <div className={`text-xs sm:text-sm font-mono transition-colors duration-500 ${isMatrixMode ? "text-green-400 animate-pulse" : "text-green-300 font-bold"}`}>{headerStatus}</div>
                 </div>
               </div>
 
               {/* Terminal Content */}
-              <div className="p-2 sm:p-4 text-green-400 font-mono text-xs sm:text-xs leading-relaxed bg-black/60 overflow-x-auto" style={{ minHeight: "200px" }}>
+              <div className="p-3 sm:p-6 text-green-400 font-mono text-xs leading-relaxed bg-black/70 overflow-x-auto" style={{ minHeight: "420px" }}>
                 {/* Sequential Terminal Output Lines */}
                 {showPrimordial && (
-                  <div className="animate-fadeIn text-green-300 mb-2 break-all sm:break-normal">
+                  <div className="animate-fadeIn text-green-300 mb-3 break-words overflow-wrap-anywhere">
                     <span className="whitespace-pre-wrap">{decryptedPrimordial}</span>
                   </div>
                 )}
 
                 {showHash && (
-                  <div className="animate-fadeIn text-green-300 mb-2 break-all sm:break-normal">
+                  <div className="animate-fadeIn text-green-300 mb-3 break-words overflow-wrap-anywhere">
                     <span className="whitespace-pre-wrap">{decryptedHash}</span>
                   </div>
                 )}
 
                 {showDecimal && (
-                  <div className="animate-fadeIn text-green-300 mb-2 break-all sm:break-normal">
+                  <div className="animate-fadeIn text-green-300 mb-3 break-words overflow-wrap-anywhere">
                     <span className="whitespace-pre-wrap">{decryptedDecimal}</span>
                   </div>
                 )}
 
                 {showTime && (
-                  <div className="animate-fadeIn text-green-300 mb-4 break-all sm:break-normal">
+                  <div className="animate-fadeIn text-green-300 mb-4 break-words overflow-wrap-anywhere">
                     <span className="whitespace-pre-wrap">{decryptedTime}</span>
                   </div>
                 )}
 
                 {showCompletion && (
-                  <div className="animate-slideInUp text-green-400 uppercase tracking-wider mt-6 break-all sm:break-normal">
-                    &gt; universe initialization complete
+                  <div
+                    className="text-green-400 tracking-wider mt-8 break-words"
+                    style={{
+                      animation: "0.5s ease-out, blink 0.8s infinite",
+                    }}
+                  >
+                    &gt; ATLAS INITIALIZATION PROTOCOL COMPLETED
                   </div>
                 )}
               </div>
