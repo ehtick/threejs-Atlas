@@ -518,45 +518,48 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
       {/* Three.js mount point */}
       <div ref={mountRef} className="absolute inset-0" />
 
-      {/* Sci-fi Data Overlay */}
+      {/* Professional Data Overlay */}
       {showDataOverlay && (
         <div 
-          className="absolute inset-0 flex items-center justify-center z-[60] pointer-events-none"
+          className="absolute inset-0 flex items-center justify-center z-[60] pointer-events-none p-4"
           style={{
             opacity: dataOpacity,
             transition: "opacity 1.5s ease-in-out"
           }}
         >
-          <div className="max-w-7xl mx-auto px-4">
-            {/* Main Terminal */}
-            <div className="bg-black/95 border border-cyan-500/50 rounded-none shadow-2xl" 
-                 style={{ fontFamily: 'Courier New, monospace' }}>
+          <div className="w-full max-w-2xl mx-auto">
+            {/* Compact Modal-style Container */}
+            <div className="bg-black/90 backdrop-blur-xl border border-blue-400/30 rounded-xl shadow-2xl overflow-hidden"
+                 style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
               
-              {/* Terminal Header */}
-              <div className="bg-cyan-500/20 px-4 py-2 border-b border-cyan-500/50">
-                <div className="flex items-center gap-4">
-                  <div className="flex gap-2">
-                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                    <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  </div>
-                  <div className="text-cyan-400 text-sm font-mono">
-                    ATLAS-GENESIS-PROTOCOL v2.4.36 // QUANTUM-DECRYPTION-ENGINE
+              {/* Header */}
+              <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 px-4 py-3 border-b border-white/10">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-white font-bold text-base flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                    Atlas Initialization Protocol
+                  </h3>
+                  <div className="text-xs text-gray-400 font-mono">
+                    v2.4.36
                   </div>
                 </div>
               </div>
               
-              {/* Terminal Content */}
-              <div className="p-6 space-y-6 text-sm">
+              {/* Content */}
+              <div className="p-4 space-y-3 text-sm max-h-[60vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 
                 {/* Primordial Seed */}
                 {showPrimordial && (
                   <div className="animate-fadeIn">
-                    <div className="text-cyan-400 mb-1">{'> DECRYPTING PRIMORDIAL_SEED...'}</div>
-                    <div className="text-gray-500 mb-2">{'[##########] COMPLETE'}</div>
-                    <div className="bg-gray-900/50 border-l-4 border-cyan-500 pl-4 py-2">
-                      <div className="text-cyan-300 font-mono break-all tracking-wider">
-                        {decryptedPrimordial || primordialSeed}
+                    <div className="bg-white/5 rounded-lg p-3 border border-cyan-500/30">
+                      <div className="flex items-center justify-between mb-1">
+                        <h4 className="text-cyan-400 font-medium text-sm">Primordial Seed</h4>
+                        <div className="text-xs text-gray-400">GENESIS</div>
+                      </div>
+                      <div className="bg-black/70 p-2 rounded border border-cyan-500/20">
+                        <div className="text-cyan-300 font-mono break-all text-xs">
+                          {decryptedPrimordial || primordialSeed}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -565,67 +568,59 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
                 {/* Quantum Hash */}
                 {showHash && (
                   <div className="animate-fadeIn">
-                    <div className="text-green-400 mb-1">{'> EXTRACTING QUANTUM_HASH...'}</div>
-                    <div className="text-gray-500 mb-2">{'[##########] COMPLETE'}</div>
-                    <div className="bg-gray-900/50 border-l-4 border-green-500 pl-4 py-2">
-                      <div className="text-green-300 font-mono break-all text-xs tracking-wide">
-                        {decryptedHash || sha256Seed}
+                    <div className="bg-white/5 rounded-lg p-3 border border-green-500/30">
+                      <div className="flex items-center justify-between mb-1">
+                        <h4 className="text-green-400 font-medium text-sm">Quantum Hash</h4>
+                        <div className="text-xs text-gray-400">SHA256</div>
+                      </div>
+                      <div className="bg-black/70 p-2 rounded border border-green-500/20">
+                        <div className="text-green-300 font-mono break-all text-xs">
+                          {decryptedHash || sha256Seed}
+                        </div>
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* Universal Constant - Special Effect */}
+                {/* Universal Constant */}
                 {showDecimal && (
                   <div className="animate-fadeIn">
-                    <div className="text-yellow-400 mb-1">{'> CALCULATING UNIVERSAL_CONSTANT [77-DIGIT PRECISION]...'}</div>
-                    <div className="text-gray-500 mb-2">{'[##########] SEQUENCE LOCKED'}</div>
-                    <div className="bg-gradient-to-r from-yellow-900/30 to-orange-900/30 border border-yellow-500/50 p-4 rounded">
-                      <div className="text-center mb-2">
-                        <div className="text-yellow-400 text-xs font-mono">UNIVERSAL MATHEMATICAL CONSTANT</div>
+                    <div className="bg-white/5 rounded-lg p-3 border border-yellow-500/30">
+                      <div className="flex items-center justify-between mb-1">
+                        <h4 className="text-yellow-400 font-medium text-sm">Universal Constant</h4>
+                        <div className="text-xs text-gray-400">{decryptedDecimal.length}/77</div>
                       </div>
-                      <div className="bg-black/70 p-3 rounded border border-yellow-500/30">
-                        <div className="text-yellow-200 font-mono text-center" style={{ letterSpacing: '2px' }}>
+                      <div className="bg-black/70 p-2 rounded border border-yellow-500/20">
+                        <div className="text-yellow-200 font-mono text-xs" style={{ letterSpacing: '0.5px', wordBreak: 'break-all', lineHeight: '1.2' }}>
                           {decryptedDecimal && decryptedDecimal.split('').map((digit, i) => (
-                            <span key={i} className={i % 7 === 0 && i > 0 ? 'ml-2' : ''}>{digit}</span>
+                            <span key={i} className={i % 7 === 0 && i > 0 ? 'ml-1' : ''}>{digit}</span>
                           ))}
                         </div>
                       </div>
-                      <div className="text-center mt-2">
-                        <div className="text-yellow-600 text-xs">QUANTUM ENTROPY: {decryptedDecimal.length}/77 DIGITS</div>
-                      </div>
                     </div>
                   </div>
                 )}
 
-                {/* Cosmic Origin Time - Special Effect */}
+                {/* Genesis Timestamp */}
                 {showTime && seedData?.cosmic_origin_time && (
                   <div className="animate-fadeIn">
-                    <div className="text-purple-400 mb-1">{'> SYNCHRONIZING TEMPORAL_COORDINATES...'}</div>
-                    <div className="text-gray-500 mb-2">{'[##########] TIMELINE ESTABLISHED'}</div>
-                    <div className="bg-gradient-to-r from-purple-900/30 to-blue-900/30 border border-purple-500/50 p-4 rounded">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <div className="text-purple-400 text-xs mb-1">UNIX TIMESTAMP</div>
-                          <div className="text-purple-200 font-mono text-lg">
-                            {decryptedTime.split(' | ')[0] || seedData.cosmic_origin_time}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-purple-400 text-xs mb-1">HUMAN READABLE</div>
-                          <div className="text-purple-200 font-mono text-sm">
-                            {decryptedTime.split(' | ')[1] || seedData.cosmic_origin_datetime}
-                          </div>
-                        </div>
+                    <div className="bg-white/5 rounded-lg p-3 border border-purple-500/30">
+                      <div className="flex items-center justify-between mb-1">
+                        <h4 className="text-purple-400 font-medium text-sm">Genesis Timestamp</h4>
+                        <div className="text-xs text-gray-400">TEMPORAL</div>
                       </div>
-                      <div className="mt-3 pt-3 border-t border-purple-500/30">
-                        <div className="text-center">
-                          <div className="text-purple-400 text-xs">COSMIC GENESIS MOMENT</div>
-                          <div className="flex items-center justify-center gap-2 mt-1">
-                            <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
-                            <div className="text-purple-300 font-mono text-xs">TIMELINE_ANCHOR_CONFIRMED</div>
-                            <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
-                          </div>
+                      <div className="bg-black/70 p-2 rounded border border-purple-500/20 space-y-1">
+                        <div className="flex justify-between items-center">
+                          <span className="text-purple-400 text-xs">Unix:</span>
+                          <span className="text-purple-200 font-mono text-xs">
+                            {decryptedTime.split(' | ')[0] || seedData.cosmic_origin_time}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-purple-400 text-xs">Date:</span>
+                          <span className="text-purple-200 font-mono text-xs">
+                            {decryptedTime.split(' | ')[1] || seedData.cosmic_origin_datetime}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -634,9 +629,15 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
 
                 {/* Final Status */}
                 {showTime && (
-                  <div className="mt-8 text-center animate-fadeIn">
-                    <div className="text-green-400 font-mono text-sm border border-green-500/50 bg-green-900/20 px-4 py-2 inline-block">
-                      {'> UNIVERSE_STATE: INITIALIZED | READY_FOR_EXPLORATION <'}
+                  <div className="text-center animate-fadeIn">
+                    <div className="bg-green-500/20 border border-green-500/50 rounded-lg px-4 py-2">
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                        <span className="text-green-400 font-medium text-sm">
+                          Initialization Complete
+                        </span>
+                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                      </div>
                     </div>
                   </div>
                 )}
