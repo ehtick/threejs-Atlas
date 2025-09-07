@@ -257,7 +257,7 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
       const MAX_SPEED_HOLD = 7;
       const DECELERATION_START = 7;
       const COMPLETE_STOP = 11;
-      const STAR_FADEOUT_START = 10;
+      const STAR_FADEOUT_START = 9.5;
       const TOTAL_DURATION = 15;
       const initialWarpPass = composerRef.current?.passes[2] as ShaderPass;
       if (initialWarpPass) {
