@@ -18,12 +18,6 @@ interface StarfieldWarpRevealProps {
   onComplete?: () => void;
 }
 
-interface DecryptingTextProps {
-  text: string;
-  duration: number;
-  onComplete?: () => void;
-}
-
 const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onComplete }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -37,17 +31,12 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
   const [decryptedHash, setDecryptedHash] = useState("");
   const [decryptedDecimal, setDecryptedDecimal] = useState("");
   const [decryptedTime, setDecryptedTime] = useState("");
-  const [currentCommand, setCurrentCommand] = useState("");
-  const [currentResult, setCurrentResult] = useState("");
-  const [commandPhase, setCommandPhase] = useState(true);
-  const [activeCommandIndex, setActiveCommandIndex] = useState(0);
   const [showPrimordial, setShowPrimordial] = useState(false);
   const [showHash, setShowHash] = useState(false);
   const [showDecimal, setShowDecimal] = useState(false);
   const [showTime, setShowTime] = useState(false);
   const [showCompletion, setShowCompletion] = useState(false);
   const [headerStatus, setHeaderStatus] = useState("ACTIVE");
-  const [headerStatusDecrypting, setHeaderStatusDecrypting] = useState(true);
   const [isMatrixMode, setIsMatrixMode] = useState(true);
   const [canStartTextDecryption, setCanStartTextDecryption] = useState(false);
   const [isFadingOut, setIsFadingOut] = useState(false);
@@ -260,16 +249,13 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
       scene.add(streaks);
       let startTime = Date.now();
       let speed = 0.3;
-      let baseAcceleration = 0.005;
       let maxSpeed = 20;
       let warpTriggered = false;
       let dataRevealStarted = false;
-      let decelerationStarted = false;
 
       const ACCELERATION_PHASE = 5;
       const MAX_SPEED_HOLD = 7;
       const DECELERATION_START = 7;
-      const REVEAL_PHASE = 4;
       const COMPLETE_STOP = 11;
       const STAR_FADEOUT_START = 10;
       const TOTAL_DURATION = 15;
@@ -606,10 +592,10 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
       setIsMatrixMode(false);
     };
 
-    const primordialLine = `atlas@cube:~ $ > DEPLOY\n > Universe Primordial Seed: ${primordialSeed}`;
-    const hashLine = `atlas@cube:~ $ > CYPHER\n > Quantum Overlay: ${sha256Seed}`;
-    const decimalLine = `atlas@cube:~ $ > CREATE\n > Universal Constant: ${decimalSeed}`;
-    const timeLine = seedData?.cosmic_origin_time ? `atlas@cube:~ $ > RUN\n > Genesis: ${seedData.cosmic_origin_time} Unix ${new Date(seedData.cosmic_origin_time * 1000).toLocaleString("es-ES")}` : "";
+    const primordialLine = `atlas@cube:~ $ > DEPLOY _\n> Universe Primordial Seed: ${primordialSeed}`;
+    const hashLine = `atlas@cube:~ $ > CYPHER _\n> Quantum Overlay: ${sha256Seed}`;
+    const decimalLine = `atlas@cube:~ $ > CREATE _\n> Universal Constant: ${decimalSeed}`;
+    const timeLine = seedData?.cosmic_origin_time ? `atlas@cube:~ $ > RUN _\n> Genesis: ${seedData.cosmic_origin_time} Unix ${new Date(seedData.cosmic_origin_time * 1000).toLocaleString("es-ES")}` : "";
 
     setShowPrimordial(true);
     decryptTerminalText(primordialLine, setDecryptedPrimordial, 50, () => {
@@ -645,7 +631,6 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
   useEffect(() => {
     if (!isMatrixMode) {
       setHeaderStatus("ACTIVE");
-      setHeaderStatusDecrypting(false);
       return;
     }
 
@@ -701,7 +686,7 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
                 </div>
               </div>
 
-              <div className="p-3 sm:p-6 text-green-400 font-mono text-xs leading-relaxed bg-black/70 overflow-x-auto" style={{ minHeight: "420px" }}>
+              <div className="p-3 sm:p-6 text-green-400 font-mono text-xs leading-relaxed bg-black/70 overflow-x-auto min-h-[420px] lg:min-h-[300px]">
                 {showPrimordial && (
                   <div className="animate-fadeIn text-green-300 mb-3 break-words overflow-wrap-anywhere">
                     <span className="whitespace-pre-wrap">{decryptedPrimordial}</span>
