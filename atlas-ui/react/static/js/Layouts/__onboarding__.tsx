@@ -1,8 +1,8 @@
 // atlas-ui/react/static/js/Layouts/__onboarding__.tsx
+
 import React, { useState } from "react";
 import VersionFooter from "../Components/VersionFooter.tsx";
 import UniverseAnimationCanvas from "../Components/UniverseAnimationCanvas.tsx";
-import StarfieldWarpReveal from "../Components/StarfieldWarpReveal.tsx";
 
 interface OnboardingLayoutProps {
   version: string;
@@ -22,13 +22,6 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({ version }) => {
   const [selectedUniverse, setSelectedUniverse] = useState<string>("");
   const [animationState, setAnimationState] = useState<AnimationState>("selection");
   const [animationType, setAnimationType] = useState<AnimationType>(null);
-  const [seedData, setSeedData] = useState<{
-    primordial_seed: string;
-    sha256_seed: string;
-    decimal_seed: string;
-    cosmic_origin_time?: number;
-    cosmic_origin_datetime?: string;
-  } | null>(null);
 
   const universeOptions: UniverseOption[] = [
     {
@@ -56,7 +49,6 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({ version }) => {
   };
 
   const handleAnimationComplete = async () => {
-    // First create the universe
     const formData = new FormData();
     formData.append("universe_type", selectedUniverse);
 
@@ -65,33 +57,10 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({ version }) => {
         method: "POST",
         body: formData,
       });
-
-      if (createResponse.ok || createResponse.redirected) {
-        // Universe created, now get the config with seeds
-        const configResponse = await fetch("/api/universe/config");
-        const configData = await configResponse.json();
-
-        if (configData.success) {
-          setSeedData({
-            primordial_seed: configData.seed_str,
-            sha256_seed: configData.seed_hash,
-            decimal_seed: configData.seed_decimal,
-            cosmic_origin_time: configData.cosmic_origin_time,
-            cosmic_origin_datetime: configData.cosmic_origin_datetime,
-          });
-        }
-      }
     } catch (error) {
       console.error("Error creating universe:", error);
+      window.location.href = "/";
     }
-
-    setAnimationState("redirecting");
-    setAnimationType(null);
-  };
-
-  const handleMatrixComplete = () => {
-    // Universe already created, just redirect to the main page
-    window.location.href = "/";
   };
 
   return (
@@ -194,8 +163,6 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({ version }) => {
           <VersionFooter version={version} />
         </div>
       </div>
-
-      {animationState === "redirecting" && <StarfieldWarpReveal seedData={seedData} onComplete={handleMatrixComplete} />}
     </>
   );
 };
