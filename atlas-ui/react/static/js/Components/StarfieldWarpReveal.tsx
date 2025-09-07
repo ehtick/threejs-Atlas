@@ -17,6 +17,12 @@ interface StarfieldWarpRevealProps {
   onComplete?: () => void;
 }
 
+interface DecryptingTextProps {
+  text: string;
+  duration: number;
+  onComplete?: () => void;
+}
+
 const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onComplete }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -27,6 +33,15 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
   const [showDataOverlay, setShowDataOverlay] = useState(false);
   const [dataOpacity, setDataOpacity] = useState(0);
   const [currentPhase, setCurrentPhase] = useState<"stars" | "warp" | "reveal">("stars");
+  const [decryptedPrimordial, setDecryptedPrimordial] = useState("");
+  const [decryptedHash, setDecryptedHash] = useState("");
+  const [decryptedDecimal, setDecryptedDecimal] = useState("");
+  const [decryptedTime, setDecryptedTime] = useState("");
+  const [showPrimordial, setShowPrimordial] = useState(false);
+  const [showHash, setShowHash] = useState(false);
+  const [showDecimal, setShowDecimal] = useState(false);
+  const [showTime, setShowTime] = useState(false);
+  const [signalSearching, setSignalSearching] = useState(true);
 
   // Use actual seeds from API or fallback
   const primordialSeed = seedData?.primordial_seed || "COSMOS-" + Date.now() + "-GENESIS";
@@ -186,8 +201,8 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
         colors[i * 3 + 1] = intensity * 0.9;
         colors[i * 3 + 2] = intensity;
 
-        // Sizes (matching UniverseAnimationCanvas scale)
-        sizes[i] = Math.random() * 0.8 + 0.3;
+        // Sizes (doubled for better visibility)
+        sizes[i] = Math.random() * 1.6 + 0.6; // Doubled from 0.8 + 0.3
       }
 
       starsGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
@@ -195,7 +210,7 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
       starsGeometry.setAttribute("size", new THREE.BufferAttribute(sizes, 1));
 
       const starsMaterial = new THREE.PointsMaterial({
-        size: 0.1,
+        size: 0.2, // Doubled from 0.1
         vertexColors: true,
         blending: THREE.AdditiveBlending,
         transparent: true,
@@ -437,122 +452,236 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
     };
   }, []);
 
-  // Format decimal seed for display
-  const formatDecimalSeed = (seed: string) => {
-    return seed.match(/.{1,10}/g)?.join(" ") || seed;
-  };
+  // Decryption effect for text
+  useEffect(() => {
+    if (!showDataOverlay) return;
+    
+    // First disable signal searching after a delay
+    setTimeout(() => {
+      setSignalSearching(false);
+    }, 1500);
+    
+    const chars = "0123456789ABCDEF";
+    const decryptText = (original: string, setter: React.Dispatch<React.SetStateAction<string>>, delay: number) => {
+      setTimeout(() => {
+        let iteration = 0;
+        const interval = setInterval(() => {
+          setter(original.split("")
+            .map((char, index) => {
+              if (index < iteration) {
+                return original[index];
+              }
+              if (char === " " || char === "-" || char === ":" || char === "(" || char === ")") {
+                return char;
+              }
+              return chars[Math.floor(Math.random() * chars.length)];
+            })
+            .join(""));
+          
+          if (iteration >= original.length) {
+            clearInterval(interval);
+          }
+          iteration += 1;
+        }, 30);
+      }, delay);
+    };
+    
+    // Sequence the decryption animations - start after signal is found
+    setTimeout(() => {
+      setShowPrimordial(true);
+      decryptText(primordialSeed, setDecryptedPrimordial, 200);
+    }, 2000);
+    
+    setTimeout(() => {
+      setShowHash(true);
+      decryptText(sha256Seed, setDecryptedHash, 0);
+    }, 2800);
+    
+    setTimeout(() => {
+      setShowDecimal(true);
+      // Special effect for decimal seed - decrypt in chunks
+      const decimalChunks = decimalSeed.match(/.{1,7}/g) || [];
+      let fullDecrypted = "";
+      decimalChunks.forEach((chunk, i) => {
+        setTimeout(() => {
+          decryptText(chunk, (val) => {
+            fullDecrypted = decimalSeed.substring(0, i * 7) + val;
+            setDecryptedDecimal(fullDecrypted);
+          }, 0);
+        }, i * 100);
+      });
+    }, 3600);
+    
+    if (seedData?.cosmic_origin_time) {
+      setTimeout(() => {
+        setShowTime(true);
+        const timeString = `${seedData.cosmic_origin_time} | ${seedData.cosmic_origin_datetime}`;
+        decryptText(timeString, setDecryptedTime, 0);
+      }, 4800);
+    }
+  }, [showDataOverlay, primordialSeed, sha256Seed, decimalSeed, seedData]);
 
   return (
     <div className="fixed inset-0 bg-black z-50 overflow-hidden">
       {/* Three.js mount point */}
       <div ref={mountRef} className="absolute inset-0" />
 
-      {/* Data overlay */}
+      {/* Spaceship Cockpit HUD */}
       {showDataOverlay && (
         <div 
-          className="absolute inset-0 flex items-center justify-center z-[60] pointer-events-none"
+          className="absolute inset-0 z-[60] pointer-events-none"
           style={{
             opacity: dataOpacity,
             transition: "opacity 1.5s ease-in-out"
           }}
         >
-          <div className="max-w-5xl mx-auto px-8 text-center">
-            {/* Title with glow effect */}
-            <h1 
-              className="text-5xl md:text-7xl font-bold mb-12 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400"
-              style={{
-                textShadow: '0 0 40px rgba(6, 182, 212, 0.8), 0 0 80px rgba(147, 51, 234, 0.4)',
-                animation: 'pulse 2s ease-in-out infinite'
-              }}
-            >
-              UNIVERSAL GENESIS PROTOCOL
-            </h1>
+          {/* Cockpit Frame */}
+          <div className="absolute inset-0">
+            {/* Top cockpit frame */}
+            <div className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-gray-900 via-gray-800 to-transparent border-b border-cyan-500/30"></div>
+            
+            {/* Bottom cockpit frame */}
+            <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-gray-900 via-gray-800 to-transparent border-t border-cyan-500/30"></div>
+            
+            {/* Left cockpit frame */}
+            <div className="absolute top-0 bottom-0 left-0 w-16 sm:w-24 md:w-32 bg-gradient-to-r from-gray-900 via-gray-800 to-transparent border-r border-cyan-500/30"></div>
+            
+            {/* Right cockpit frame */}
+            <div className="absolute top-0 bottom-0 right-0 w-16 sm:w-24 md:w-32 bg-gradient-to-l from-gray-900 via-gray-800 to-transparent border-l border-cyan-500/30"></div>
 
-            {/* Seeds container with staggered reveal */}
-            <div className="space-y-8">
-              {/* Primordial Seed */}
-              <div 
-                className="opacity-0"
-                style={{
-                  animation: 'fadeInUp 0.8s ease-out 0.5s forwards'
-                }}
-              >
-                <h3 className="text-xl font-bold text-cyan-400 mb-3 tracking-wider">
-                  PRIMORDIAL SEED
-                </h3>
-                <div className="bg-black/50 backdrop-blur-md border border-cyan-400/30 rounded-lg p-4">
-                  <code className="text-cyan-300 font-mono text-sm md:text-base break-all">
-                    {primordialSeed}
-                  </code>
-                </div>
-              </div>
+            {/* Corner reinforcements */}
+            <div className="absolute top-0 left-0 w-8 h-8 border-r-2 border-b-2 border-cyan-500/50"></div>
+            <div className="absolute top-0 right-0 w-8 h-8 border-l-2 border-b-2 border-cyan-500/50"></div>
+            <div className="absolute bottom-0 left-0 w-8 h-8 border-r-2 border-t-2 border-cyan-500/50"></div>
+            <div className="absolute bottom-0 right-0 w-8 h-8 border-l-2 border-t-2 border-cyan-500/50"></div>
+          </div>
 
-              {/* SHA256 Hash */}
-              <div 
-                className="opacity-0"
-                style={{
-                  animation: 'fadeInUp 0.8s ease-out 1s forwards'
-                }}
-              >
-                <h3 className="text-xl font-bold text-green-400 mb-3 tracking-wider">
-                  QUANTUM HASH
-                </h3>
-                <div className="bg-black/50 backdrop-blur-md border border-green-400/30 rounded-lg p-4">
-                  <code className="text-green-300 font-mono text-xs md:text-sm break-all">
-                    {sha256Seed}
-                  </code>
-                </div>
-              </div>
-
-              {/* Decimal Seed */}
-              <div 
-                className="opacity-0"
-                style={{
-                  animation: 'fadeInUp 0.8s ease-out 1.5s forwards'
-                }}
-              >
-                <h3 className="text-xl font-bold text-yellow-400 mb-3 tracking-wider">
-                  UNIVERSAL CONSTANT
-                  <span className="text-sm opacity-70 ml-2">(77 digits)</span>
-                </h3>
-                <div className="bg-black/50 backdrop-blur-md border border-yellow-400/30 rounded-lg p-4">
-                  <code className="text-yellow-300 font-mono text-xs md:text-sm">
-                    {formatDecimalSeed(decimalSeed)}
-                  </code>
-                </div>
-              </div>
-
-              {/* Cosmic Origin Time */}
-              {seedData?.cosmic_origin_time && (
-                <div 
-                  className="opacity-0"
-                  style={{
-                    animation: 'fadeInUp 0.8s ease-out 2s forwards'
-                  }}
-                >
-                  <h3 className="text-xl font-bold text-purple-400 mb-3 tracking-wider">
-                    TEMPORAL ORIGIN
-                  </h3>
-                  <div className="bg-black/50 backdrop-blur-md border border-purple-400/30 rounded-lg p-4">
-                    <code className="text-purple-300 font-mono text-sm">
-                      {seedData.cosmic_origin_time} ({seedData.cosmic_origin_datetime})
-                    </code>
+          {/* HUD Panels */}
+          <div className="absolute inset-0 p-4 sm:p-6 md:p-8" style={{ fontFamily: 'Courier New, monospace' }}>
+            
+            {/* Top Left HUD - Primordial Seed */}
+            <div className="absolute top-4 left-4 sm:left-6 md:left-8 w-64 sm:w-80 md:w-96">
+              <div className="bg-black/80 border border-cyan-400/50 backdrop-blur-sm p-3 rounded">
+                <div className="text-cyan-400 text-xs mb-1">GENESIS SEED</div>
+                {signalSearching ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                    <div className="text-red-400 text-sm">SEARCHING SIGNAL...</div>
                   </div>
-                </div>
-              )}
+                ) : showPrimordial ? (
+                  <div className="text-cyan-300 font-mono text-xs break-all">
+                    {decryptedPrimordial || primordialSeed}
+                  </div>
+                ) : (
+                  <div className="text-gray-500 text-sm">STANDBY</div>
+                )}
+              </div>
             </div>
 
-            {/* Status indicator */}
-            <div 
-              className="mt-12 opacity-0"
-              style={{
-                animation: 'fadeIn 1s ease-out 2.5s forwards'
-              }}
-            >
-              <div className="inline-flex items-center gap-3 text-green-400 font-bold">
-                <span className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></span>
-                <span className="text-lg tracking-wider">UNIVERSE INITIALIZED</span>
-                <span className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></span>
+            {/* Top Right HUD - Quantum Hash */}
+            <div className="absolute top-4 right-4 sm:right-6 md:right-8 w-64 sm:w-80 md:w-96">
+              <div className="bg-black/80 border border-green-400/50 backdrop-blur-sm p-3 rounded">
+                <div className="text-green-400 text-xs mb-1">QUANTUM HASH</div>
+                {signalSearching ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                    <div className="text-red-400 text-sm">SEARCHING SIGNAL...</div>
+                  </div>
+                ) : showHash ? (
+                  <div className="text-green-300 font-mono text-xs break-all leading-tight">
+                    {decryptedHash || sha256Seed}
+                  </div>
+                ) : (
+                  <div className="text-gray-500 text-sm">STANDBY</div>
+                )}
+              </div>
+            </div>
+
+            {/* Bottom Center HUD - Universal Constant */}
+            <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 w-full max-w-2xl px-4">
+              <div className="bg-black/90 border border-yellow-400/50 backdrop-blur-sm p-4 rounded">
+                <div className="text-center">
+                  <div className="text-yellow-400 text-sm mb-2">UNIVERSAL CONSTANT</div>
+                  {signalSearching ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                      <div className="text-red-400 text-base">SEARCHING SIGNAL...</div>
+                    </div>
+                  ) : showDecimal ? (
+                    <div>
+                      <div className="bg-black/70 p-3 rounded border border-yellow-500/30 mb-2">
+                        <div className="text-yellow-200 font-mono text-center text-xs sm:text-sm leading-relaxed" style={{ letterSpacing: '1px' }}>
+                          {decryptedDecimal && decryptedDecimal.split('').map((digit, i) => (
+                            <span key={i} className={i % 8 === 0 && i > 0 ? 'ml-3' : ''}>{digit}</span>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="text-yellow-600 text-xs">
+                        ENTROPY: {decryptedDecimal.length}/77 DIGITS
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-gray-500 text-base">STANDBY</div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Left HUD - Temporal Coordinates */}
+            {seedData?.cosmic_origin_time && (
+              <div className="absolute bottom-4 left-4 sm:left-6 md:left-8 w-72 sm:w-80">
+                <div className="bg-black/80 border border-purple-400/50 backdrop-blur-sm p-3 rounded">
+                  <div className="text-purple-400 text-xs mb-2">TEMPORAL COORDS</div>
+                  {signalSearching ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                      <div className="text-red-400 text-sm">SEARCHING SIGNAL...</div>
+                    </div>
+                  ) : showTime ? (
+                    <div className="space-y-1">
+                      <div className="text-purple-200 font-mono text-sm">
+                        {decryptedTime.split(' | ')[0] || seedData.cosmic_origin_time}
+                      </div>
+                      <div className="text-purple-300 font-mono text-xs">
+                        {decryptedTime.split(' | ')[1] || seedData.cosmic_origin_datetime}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-gray-500 text-sm">STANDBY</div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Bottom Right HUD - System Status */}
+            <div className="absolute bottom-4 right-4 sm:right-6 md:right-8 w-48 sm:w-56">
+              <div className="bg-black/80 border border-blue-400/50 backdrop-blur-sm p-3 rounded">
+                <div className="text-blue-400 text-xs mb-1">NAVIGATION</div>
+                <div className="space-y-1">
+                  <div className={`text-xs flex items-center gap-2 ${currentPhase === 'stars' ? 'text-blue-300' : 'text-gray-500'}`}>
+                    <div className={`w-1.5 h-1.5 rounded-full ${currentPhase === 'stars' ? 'bg-blue-400' : 'bg-gray-600'}`}></div>
+                    ACCELERATION
+                  </div>
+                  <div className={`text-xs flex items-center gap-2 ${currentPhase === 'warp' ? 'text-cyan-300' : 'text-gray-500'}`}>
+                    <div className={`w-1.5 h-1.5 rounded-full ${currentPhase === 'warp' ? 'bg-cyan-400' : 'bg-gray-600'}`}></div>
+                    WARP SPEED
+                  </div>
+                  <div className={`text-xs flex items-center gap-2 ${currentPhase === 'reveal' ? 'text-green-300' : 'text-gray-500'}`}>
+                    <div className={`w-1.5 h-1.5 rounded-full ${currentPhase === 'reveal' ? 'bg-green-400' : 'bg-gray-600'}`}></div>
+                    DATA LINK
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Center crosshair/targeting system */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="relative w-16 h-16 border border-cyan-400/30 rounded-full">
+                <div className="absolute top-1/2 left-1/2 w-2 h-2 bg-cyan-400 rounded-full transform -translate-x-1/2 -translate-y-1/2"></div>
+                <div className="absolute top-0 left-1/2 w-px h-4 bg-cyan-400/50 transform -translate-x-1/2"></div>
+                <div className="absolute bottom-0 left-1/2 w-px h-4 bg-cyan-400/50 transform -translate-x-1/2"></div>
+                <div className="absolute left-0 top-1/2 w-4 h-px bg-cyan-400/50 transform -translate-y-1/2"></div>
+                <div className="absolute right-0 top-1/2 w-4 h-px bg-cyan-400/50 transform -translate-y-1/2"></div>
               </div>
             </div>
           </div>
@@ -561,31 +690,19 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
 
       {/* CSS animations */}
       <style>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
+        @keyframes fadeIn {
+          from { 
+            opacity: 0; 
+            transform: translateY(10px);
           }
-          to {
-            opacity: 1;
+          to { 
+            opacity: 1; 
             transform: translateY(0);
           }
         }
         
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        
-        @keyframes pulse {
-          0%, 100% { 
-            opacity: 1;
-            filter: brightness(1);
-          }
-          50% { 
-            opacity: 0.9;
-            filter: brightness(1.2);
-          }
+        .animate-fadeIn {
+          animation: fadeIn 0.6s ease-out forwards;
         }
       `}</style>
 
