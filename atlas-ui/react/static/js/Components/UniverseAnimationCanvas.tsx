@@ -19,6 +19,7 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
   const composerRef = useRef<EffectComposer | null>(null);
   const animationIdRef = useRef<number | null>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const fadeOverlayRef = useRef<HTMLDivElement | null>(null);
 
   const createCircleTexture = () => {
     const canvas = document.createElement("canvas");
@@ -413,8 +414,10 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
       const animate = () => {
         const elapsed = (Date.now() - startTime) / 1000;
 
-        const totalDuration = 8;
-        const explosionDuration = 1.5; // Duración de la explosión épica
+        const totalDuration = 10;
+        const fadeStartTime = 7.5;
+        const fadeDuration = 2;
+        const explosionDuration = 1.5;
 
         const composer = composerRef.current;
         const bloomPass = composer?.passes[1] as UnrealBloomPass;
@@ -608,8 +611,15 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
 
         if (!isExploding) {
           const postExplosionTime = elapsed - explosionDuration;
-          const approachSpeed = 0.8;
-          baseCameraDistance = Math.max(2, 8 - postExplosionTime * approachSpeed);
+
+          if (elapsed >= fadeStartTime) {
+            const fadeProgress = Math.min((elapsed - fadeStartTime) / fadeDuration, 1);
+            const zoomProgress = Math.pow(fadeProgress, 2);
+            baseCameraDistance = Math.max(0.5, 2 - zoomProgress * 1.8);
+          } else {
+            const approachSpeed = 0.8;
+            baseCameraDistance = Math.max(2, 8 - postExplosionTime * approachSpeed);
+          }
         }
 
         const cameraDistance = baseCameraDistance + Math.sin(elapsed * 0.3) * 1;
@@ -636,6 +646,12 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
           composerRef.current.render();
         } else {
           renderer.render(scene, camera);
+        }
+
+        if (elapsed >= fadeStartTime && fadeOverlayRef.current) {
+          const fadeProgress = Math.min((elapsed - fadeStartTime) / fadeDuration, 1);
+          const easedProgress = Math.pow(fadeProgress, 2);
+          fadeOverlayRef.current.style.opacity = easedProgress.toString();
         }
 
         if (elapsed > totalDuration && onAnimationComplete) {
@@ -677,14 +693,26 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
   }
 
   return (
-    <div
-      ref={mountRef}
-      className="fixed inset-0 z-50 bg-black"
-      style={{
-        width: "100vw",
-        height: "100vh",
-      }}
-    />
+    <>
+      <div
+        ref={mountRef}
+        className="fixed inset-0 z-50 bg-black"
+        style={{
+          width: "100vw",
+          height: "100vh",
+        }}
+      />
+      <div
+        ref={fadeOverlayRef}
+        className="fixed inset-0 z-[51] bg-black pointer-events-none"
+        style={{
+          width: "100vw",
+          height: "100vh",
+          opacity: 0,
+          transition: "none",
+        }}
+      />
+    </>
   );
 };
 
