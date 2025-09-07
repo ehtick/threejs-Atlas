@@ -251,35 +251,39 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
 
       // Animation
       let startTime = Date.now();
-      let speed = 0.1; // Start even slower
+      let speed = 0.3; // Start slower for better buildup
       let baseAcceleration = 0.005;
-      let maxSpeed = 60;
+      let maxSpeed = 25; // Much lower max speed for coherent warp effect
       let warpTriggered = false;
       let dataRevealStarted = false;
       
       // Initialize warp effect immediately with minimal value
       const initialWarpPass = composerRef.current?.passes[2] as ShaderPass;
       if (initialWarpPass) {
-        initialWarpPass.uniforms.warpAmount.value = 0.0001; // Tiny initial value
+        initialWarpPass.uniforms.warpAmount.value = 0.0005; // Very tiny initial value
       }
 
       const animate = () => {
         const elapsed = (Date.now() - startTime) / 1000;
 
-        // Ultra smooth acceleration curve
-        if (elapsed < 15) {
-          // Exponential acceleration that starts very slow
-          const t = elapsed / 15; // Normalize to 0-1
-          const curve = Math.pow(t, 2.2); // Exponential curve
-          speed = 0.1 + (maxSpeed - 0.1) * curve;
+        // Slower, smoother acceleration curve
+        if (elapsed < 10) { // Longer acceleration phase
+          // Smoother acceleration curve for better warp buildup
+          const t = elapsed / 10; // Normalize to 0-1
+          const curve = Math.pow(t, 2); // Quadratic curve for smoother acceleration
+          speed = 0.3 + (maxSpeed - 0.3) * curve;
           
-          // Smooth phase transitions based on speed
-          if (speed > 15 && !warpTriggered) {
+          // Earlier phase transitions
+          if (speed > 8 && !warpTriggered) { // Reduced from 15 to 8
             warpTriggered = true;
             setCurrentPhase("warp");
           }
+        } else if (elapsed < 16) { // Maintain max speed during reveal
+          // Keep at max speed while showing data
+          speed = maxSpeed;
           
-          if (speed > maxSpeed * 0.9 && !dataRevealStarted && elapsed > 10) {
+          // Trigger data reveal
+          if (!dataRevealStarted && elapsed > 11) {
             dataRevealStarted = true;
             setShowDataOverlay(true);
             setCurrentPhase("reveal");
@@ -288,8 +292,8 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
             }, 100);
           }
         } else {
-          // After 15 seconds, slow down
-          speed = Math.max(5, speed * 0.98);
+          // After 16 seconds, slowly decelerate
+          speed = Math.max(8, maxSpeed * Math.pow(0.97, elapsed - 16)); // Gradual slowdown but stays above 8
         }
 
         // Update star positions
@@ -312,12 +316,12 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
         }
         starsGeometry.attributes.position.needsUpdate = true;
 
-        // Update warp streaks - start very subtle from the beginning
-        if (speed > 3) { // Start earlier for smoother transition
+        // Update warp streaks - start very early
+        if (speed > 2) { // Start even earlier
           // Very gradual opacity curve starting from nearly invisible
-          const streakProgress = (speed - 3) / (maxSpeed - 3);
-          const streakIntensity = Math.pow(streakProgress, 2); // Quadratic for very gradual start
-          streaksMaterial.opacity = streakIntensity * 0.8; // Max 0.8 opacity
+          const streakProgress = (speed - 2) / (maxSpeed - 2);
+          const streakIntensity = Math.pow(streakProgress, 1.5); // Less extreme curve for earlier visibility
+          streaksMaterial.opacity = streakIntensity * 0.9; // Slightly higher max opacity
           
           const streakPositions = streaksGeometry.attributes.position.array as Float32Array;
           for (let i = 0; i < streakCount; i++) {
@@ -353,56 +357,48 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
         const warpPass = composer?.passes[2] as ShaderPass;
 
         if (bloomPass && warpPass) {
-          // Ultra-smooth bloom progression from the very start
+          // Bloom always proportional to speed
           const speedRatio = speed / maxSpeed; // Linear normalized
-          const bloomCurve = Math.pow(speedRatio, 1.5); // Smooth curve
-          bloomPass.strength = 0.1 + bloomCurve * 1.1; // From 0.1 to 1.2
-          bloomPass.radius = 0.3 + bloomCurve * 0.6; // From 0.3 to 0.9
+          // Linear progression for consistent growth
+          bloomPass.strength = 0.15 + speedRatio * 1.05; // From 0.15 to 1.2, always visible
+          bloomPass.radius = 0.4 + speedRatio * 0.5; // From 0.4 to 0.9
 
-          // ULTRA SMOOTH warp effect - continuous from frame 1
-          // Use a multi-stage curve for perfect progression
+          // Completely smooth and proportional warp effect
+          // Always active, growing with speed
           const normalizedSpeed = speed / maxSpeed; // 0 to 1
           
-          // Three-stage warp curve for ultimate smoothness
-          let warpValue: number;
-          if (normalizedSpeed < 0.3) {
-            // Stage 1: Very subtle start (0 to 0.3)
-            warpValue = normalizedSpeed * 0.05; // Linear, very small
-          } else if (normalizedSpeed < 0.7) {
-            // Stage 2: Acceleration (0.3 to 0.7)
-            const t = (normalizedSpeed - 0.3) / 0.4;
-            warpValue = 0.015 + Math.pow(t, 2) * 0.5; // Quadratic ramp
-          } else {
-            // Stage 3: Extreme warp (0.7 to 1.0)
-            const t = (normalizedSpeed - 0.7) / 0.3;
-            warpValue = 0.515 + Math.pow(t, 1.5) * 1.0; // Up to 1.515
-          }
+          // Smoother curve that creates a more realistic warp effect
+          // Less extreme at max speed for better visual coherence
+          const warpValue = Math.pow(normalizedSpeed, 1.8) * 0.8; // Smoother curve, max 0.8 for coherent visuals
           
-          warpPass.uniforms.warpAmount.value = warpValue;
+          // Always apply the warp, even at minimum speed
+          warpPass.uniforms.warpAmount.value = Math.max(0.001, warpValue); // Small minimum for subtle start
           warpPass.uniforms.time.value = elapsed;
         }
 
-        // Progressive camera shake - starts very subtle
-        if (speed > 5) { // Start shake much earlier but very subtle
-          // Ultra smooth progressive shake
-          const shakeProgress = Math.pow((speed - 5) / (maxSpeed - 5), 3); // Cubic for very gradual start
-          const shakeIntensity = shakeProgress * 1.0; // Max shake of 1.0
+        // Progressive camera shake - starts earlier
+        if (speed > 3) { // Start shake even earlier
+          // More noticeable progressive shake
+          const shakeProgress = Math.pow((speed - 3) / (maxSpeed - 3), 2.5); // Smoother curve
+          const shakeIntensity = shakeProgress * 1.2; // Slightly more shake
           
           // Add some variance to make it feel more organic
           const shakeX = (Math.random() - 0.5) * shakeIntensity;
           const shakeY = (Math.random() - 0.5) * shakeIntensity;
           
-          camera.position.x = shakeX * (0.3 + shakeProgress * 0.7); // Scale up with speed
-          camera.position.y = shakeY * (0.3 + shakeProgress * 0.7);
+          camera.position.x = shakeX * (0.2 + shakeProgress * 0.8);
+          camera.position.y = shakeY * (0.2 + shakeProgress * 0.8);
         } else {
           // Very smooth return to center
           camera.position.x *= 0.98;
           camera.position.y *= 0.98;
         }
 
-        // Progressive FOV change - starts immediately but very subtle
-        const fovProgress = Math.pow(speed / maxSpeed, 1.2); // Slightly more aggressive curve
-        camera.fov = 75 + fovProgress * 30; // From 75 to 105 degrees for more dramatic effect
+        // FOV always proportional to speed - but with reasonable limits
+        const normalizedSpeed = speed / maxSpeed; // 0 to 1
+        // Smooth FOV change that doesn't get too extreme
+        const fovCurve = Math.pow(normalizedSpeed, 0.7); // Slightly curved for better feel
+        camera.fov = 75 + fovCurve * 25; // From 75 to 100 degrees max - more realistic range
         camera.updateProjectionMatrix();
 
         // Render
@@ -412,8 +408,8 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
           renderer.render(scene, camera);
         }
 
-        // Complete animation after 18 seconds (extended for smoother progression)
-        if (elapsed > 18) {
+        // Complete animation after 20 seconds to allow full experience
+        if (elapsed > 20) {
           if (onComplete) onComplete();
           return;
         }
