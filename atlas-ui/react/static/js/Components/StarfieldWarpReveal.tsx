@@ -1,4 +1,5 @@
 // atlas-ui/react/static/js/Components/StarfieldWarpReveal.tsx
+
 import React, { useRef, useEffect, useState } from "react";
 import * as THREE from "three";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
@@ -46,7 +47,7 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
   const [showTime, setShowTime] = useState(false);
   const [showCompletion, setShowCompletion] = useState(false);
   const [headerStatus, setHeaderStatus] = useState("ACTIVE");
-  const [headerStatusDecrypting, setHeaderStatusDecrypting] = useState(true); // Start with Matrix effect
+  const [headerStatusDecrypting, setHeaderStatusDecrypting] = useState(true);
   const [isMatrixMode, setIsMatrixMode] = useState(true);
   const [canStartTextDecryption, setCanStartTextDecryption] = useState(false);
   const [isFadingOut, setIsFadingOut] = useState(false);
@@ -60,8 +61,6 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
   const [needsTransparency, setNeedsTransparency] = useState(false);
   const [canvasOpacity, setCanvasOpacity] = useState(1);
   const [blurAmount, setBlurAmount] = useState(0);
-
-  // Use actual seeds from API or fallback
   const primordialSeed = seedData?.primordial_seed || "COSMOS-" + Date.now() + "-GENESIS";
   const sha256Seed =
     seedData?.sha256_seed ||
@@ -69,8 +68,6 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
       .join("")
       .toUpperCase();
   const decimalSeed = seedData?.decimal_seed || Array.from({ length: 77 }, () => Math.floor(Math.random() * 10)).join("");
-
-  // Create star texture similar to UniverseAnimationCanvas
   const createCircleTexture = () => {
     const canvas = document.createElement("canvas");
     canvas.width = 64;
@@ -96,7 +93,6 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
     return texture;
   };
 
-  // Warp distortion shader - designed to be always active with smooth progression
   const WarpShader = {
     uniforms: {
       tDiffuse: { value: null },
@@ -121,28 +117,22 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
         vec2 direction = vUv - center;
         float distance = length(direction);
         
-        // Very subtle radial stretch that's always active
-        // Even at warpAmount = 0.001, there's a tiny effect
         float stretchBase = 1.0 + warpAmount * distance * distance * 2.0;
         vec2 stretchedUv = center + direction * stretchBase;
         
-        // Chromatic aberration - very subtle at low values
         float aberrationAmount = warpAmount * distance * 0.015;
         vec2 redOffset = direction * aberrationAmount * 1.2;
         vec2 blueOffset = direction * aberrationAmount * -0.4;
         
-        // Sample with offsets
         float red = texture2D(tDiffuse, stretchedUv + redOffset).r;
         float green = texture2D(tDiffuse, stretchedUv).g;
         float blue = texture2D(tDiffuse, stretchedUv + blueOffset).b;
         
-        // Motion blur lines - scale with warpAmount for smooth progression
-        float lineFrequency = 8.0 + warpAmount * 12.0; // Frequency increases with speed
+        float lineFrequency = 8.0 + warpAmount * 12.0;
         float lines = sin(atan(direction.y, direction.x) * lineFrequency + time * (20.0 + warpAmount * 80.0)) * 0.5 + 0.5;
-        float lineIntensity = warpAmount * warpAmount; // Quadratic for very subtle start
+        float lineIntensity = warpAmount * warpAmount;
         float lineEffect = lines * lineIntensity * 0.4 * distance;
         
-        // Combine with smooth blending
         vec3 color = vec3(red, green, blue);
         color += vec3(lineEffect * 0.3, lineEffect * 0.5, lineEffect * 0.8) * smoothstep(0.0, 1.0, warpAmount);
         
@@ -155,27 +145,23 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
     if (!mountRef.current) return;
 
     try {
-      // Scene setup
       const scene = new THREE.Scene();
       scene.background = new THREE.Color(0x000000);
       sceneRef.current = scene;
 
-      // Camera setup
       const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 1000);
       camera.position.set(0, 0, 0);
       cameraRef.current = camera;
 
-      // Renderer setup
       const renderer = new THREE.WebGLRenderer({
         antialias: true,
-        alpha: true, // Enable alpha for transparency
+        alpha: true,
       });
       renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setClearColor(0x000000, 1); // Start with solid black
+      renderer.setClearColor(0x000000, 1);
       mountRef.current.appendChild(renderer.domElement);
       rendererRef.current = renderer;
 
-      // Post-processing setup
       const composer = new EffectComposer(renderer);
       const renderPass = new RenderPass(scene, camera);
       composer.addPass(renderPass);
@@ -188,8 +174,7 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
 
       composerRef.current = composer;
 
-      // Create starfield
-      const starCount = 7500; // Same as UniverseAnimationCanvas
+      const starCount = 7500;
       const starsGeometry = new THREE.BufferGeometry();
       const positions = new Float32Array(starCount * 3);
       const colors = new Float32Array(starCount * 3);
@@ -197,33 +182,27 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
       const velocities = new Float32Array(starCount * 3);
       const initialZ = new Float32Array(starCount);
 
-      // Initialize stars
       for (let i = 0; i < starCount; i++) {
-        // Position stars in a cylinder around the camera
         const angle = Math.random() * Math.PI * 2;
         const radius = Math.random() * 50 + 5;
-        const z = -Math.random() * 200 - 50; // Start behind the camera's view
+        const z = -Math.random() * 200 - 50;
 
         positions[i * 3] = Math.cos(angle) * radius;
         positions[i * 3 + 1] = (Math.random() - 0.5) * 100;
         positions[i * 3 + 2] = z;
 
-        // Store initial Z for recycling
         initialZ[i] = z;
 
-        // Velocity (initially slow)
         velocities[i * 3] = 0;
         velocities[i * 3 + 1] = 0;
-        velocities[i * 3 + 2] = 0.5; // Initial forward speed
+        velocities[i * 3 + 2] = 0.5;
 
-        // Colors (blueish-white stars)
         const intensity = Math.random() * 0.6 + 0.4;
         colors[i * 3] = intensity * 0.8;
         colors[i * 3 + 1] = intensity * 0.9;
         colors[i * 3 + 2] = intensity;
 
-        // Sizes (doubled for better visibility)
-        sizes[i] = Math.random() * 1.6 + 0.6; // Doubled from 0.8 + 0.3
+        sizes[i] = Math.random() * 1.6 + 0.6;
       }
 
       starsGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
@@ -231,7 +210,7 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
       starsGeometry.setAttribute("size", new THREE.BufferAttribute(sizes, 1));
 
       const starsMaterial = new THREE.PointsMaterial({
-        size: 0.2, // Doubled from 0.1
+        size: 0.2,
         vertexColors: true,
         blending: THREE.AdditiveBlending,
         transparent: true,
@@ -241,28 +220,23 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
 
       const stars = new THREE.Points(starsGeometry, starsMaterial);
       scene.add(stars);
-
-      // Create warp streaks (initially hidden)
       const streakCount = 200;
       const streaksGeometry = new THREE.BufferGeometry();
-      const streakPositions = new Float32Array(streakCount * 6); // 2 vertices per line
+      const streakPositions = new Float32Array(streakCount * 6);
       const streakColors = new Float32Array(streakCount * 6);
 
       for (let i = 0; i < streakCount; i++) {
         const angle = Math.random() * Math.PI * 2;
         const radius = Math.random() * 30 + 10;
 
-        // Start point
         streakPositions[i * 6] = Math.cos(angle) * radius;
         streakPositions[i * 6 + 1] = (Math.random() - 0.5) * 60;
         streakPositions[i * 6 + 2] = 10;
 
-        // End point (stretched back)
         streakPositions[i * 6 + 3] = Math.cos(angle) * radius;
         streakPositions[i * 6 + 4] = streakPositions[i * 6 + 1];
         streakPositions[i * 6 + 5] = -20;
 
-        // Colors
         const intensity = Math.random() * 0.5 + 0.5;
         for (let j = 0; j < 2; j++) {
           streakColors[i * 6 + j * 3] = intensity * 0.7;
@@ -284,35 +258,29 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
 
       const streaks = new THREE.LineSegments(streaksGeometry, streaksMaterial);
       scene.add(streaks);
-
-      // Animation with coherent timing constants
       let startTime = Date.now();
-      let speed = 0.3; // Start slower for better buildup
+      let speed = 0.3;
       let baseAcceleration = 0.005;
-      let maxSpeed = 20; // Optimized for coherent warp effect
+      let maxSpeed = 20;
       let warpTriggered = false;
       let dataRevealStarted = false;
       let decelerationStarted = false;
 
-      // Coherent phase timing constants (total: 15 seconds)
-      const ACCELERATION_PHASE = 5; // 0-5s: Acceleration to max speed
-      const MAX_SPEED_HOLD = 7; // 5-7s: Hold max speed
-      const DECELERATION_START = 7; // 7s: Start deceleration when terminal appears (1s earlier)
-      const REVEAL_PHASE = 4; // 7-11s: Data revelation (during deceleration)
-      const COMPLETE_STOP = 11; // 11s: Complete stop (no stars or effects)
-      const STAR_FADEOUT_START = 10; // Stars start fading 1s before complete stop
+      const ACCELERATION_PHASE = 5;
+      const MAX_SPEED_HOLD = 7;
+      const DECELERATION_START = 7;
+      const REVEAL_PHASE = 4;
+      const COMPLETE_STOP = 11;
+      const STAR_FADEOUT_START = 10;
       const TOTAL_DURATION = 15;
-
-      // Initialize warp effect immediately with minimal value
       const initialWarpPass = composerRef.current?.passes[2] as ShaderPass;
       if (initialWarpPass) {
-        initialWarpPass.uniforms.warpAmount.value = 0.0005; // Very tiny initial value
+        initialWarpPass.uniforms.warpAmount.value = 0.0005;
       }
 
       const animate = () => {
         const elapsed = (Date.now() - startTime) / 1000;
 
-        // Show star acceleration badge at the beginning (coherent 2s display)
         if (elapsed > 0.8 && elapsed < 0.9 && !showStarAccelerationBadge) {
           setShowStarAccelerationBadge(true);
           setTimeout(() => {
@@ -321,16 +289,13 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
               setShowStarAccelerationBadge(false);
               setStarAccelerationFadingOut(false);
             }, 300);
-          }, 2000); // Consistent 2s display
+          }, 2000);
         }
-
-        // Phase 1: Acceleration (0-5s)
         if (elapsed < ACCELERATION_PHASE) {
           const t = elapsed / ACCELERATION_PHASE;
           const curve = Math.pow(t, 2.2);
           speed = 0.3 + (maxSpeed - 0.3) * curve;
 
-          // Trigger warp badge at 75% acceleration
           if (speed > maxSpeed * 0.75 && !warpTriggered) {
             warpTriggered = true;
             setShowWarpSpeedBadge(true);
@@ -340,20 +305,16 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
                 setShowWarpSpeedBadge(false);
                 setWarpSpeedFadingOut(false);
               }, 300);
-            }, 2000); // Consistent 2s display
+            }, 2000);
           }
         } else if (elapsed < MAX_SPEED_HOLD) {
-          // Phase 2: Hold maximum speed (5-7s)
           speed = maxSpeed;
         } else if (elapsed < COMPLETE_STOP) {
-          // Phase 3: Deceleration (7-11s) - starts when terminal appears (1s earlier)
           const decelerationTime = elapsed - DECELERATION_START;
-          const decelerationDuration = COMPLETE_STOP - DECELERATION_START; // 4 seconds total
+          const decelerationDuration = COMPLETE_STOP - DECELERATION_START;
           const t = decelerationTime / decelerationDuration;
           const decelerationCurve = Math.pow(1 - t, 2);
-          speed = 0.001 + (maxSpeed - 0.001) * decelerationCurve; // Decelerate from max to complete stop
-
-          // Trigger data reveal at exactly 7s (when deceleration starts - 1s earlier)
+          speed = 0.001 + (maxSpeed - 0.001) * decelerationCurve;
           if (!dataRevealStarted && elapsed >= DECELERATION_START) {
             dataRevealStarted = true;
             setShowDataOverlay(true);
@@ -368,16 +329,13 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
 
             setTimeout(() => {
               setDataOpacity(1);
-              // SOLO DESPUÉS de que el fade-in termine completamente, iniciar la escritura
               setTimeout(() => {
                 setCanStartTextDecryption(true);
-              }, 1500); // Esperar 1.5s para que el fade-in termine completamente
-
-              // Start transparency at 9s (2s after data appears - adjusted for earlier timing)
+              }, 1500);
               setTimeout(() => {
                 const startTransparency = () => {
                   let progress = 0;
-                  const duration = 2500; // 2.5s for complete transparency
+                  const duration = 2500;
                   const interval = 50;
                   const steps = duration / interval;
                   const opacityStep = 1.0 / steps;
@@ -399,66 +357,51 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
                   }, interval);
                 };
                 startTransparency();
-              }, 2000); // 2s delay = 9s total
+              }, 2000);
             }, 100);
           }
         } else if (elapsed < TOTAL_DURATION) {
-          // Phase 4: Complete stop (11-15s) - no movement, no effects
           speed = 0.001;
         } else {
-          // After 15s - completely static
           speed = 0.001;
         }
 
-        // Update star positions and fade to void
         const positions = starsGeometry.attributes.position.array as Float32Array;
 
-        // Calculate star fade - starts just before complete deceleration (at 10s)
         let starOpacity = 1;
 
         if (elapsed >= STAR_FADEOUT_START) {
-          // Stars start fading at 10s (1s before complete stop)
           const fadeTime = elapsed - STAR_FADEOUT_START;
-          const totalFadeTime = COMPLETE_STOP - STAR_FADEOUT_START; // 1 second to fade
+          const totalFadeTime = COMPLETE_STOP - STAR_FADEOUT_START;
 
           if (fadeTime < totalFadeTime) {
-            // Quick fadeout just before stars stop completely
             const fadeProgress = fadeTime / totalFadeTime;
-            starOpacity = Math.max(0, 1 - Math.pow(fadeProgress, 0.5)); // Smooth curve, faster at end
+            starOpacity = Math.max(0, 1 - Math.pow(fadeProgress, 0.5));
           } else {
-            // Complete fadeout after 11s
             starOpacity = 0;
           }
         }
 
-        // Background transparency logic
         if (elapsed >= DECELERATION_START) {
-          // Background transparency handled by earlier logic
           scene.background = null;
           renderer.setClearColor(0x000000, 0);
         } else if (elapsed > DECELERATION_START - 1) {
-          // Prepare for transparency slightly before deceleration (at 6s)
           scene.background = null;
           renderer.setClearColor(0x000000, 0);
         } else {
-          // Keep solid black during acceleration and warp
           scene.background = new THREE.Color(0x000000);
           renderer.setClearColor(0x000000, 1);
         }
 
-        // Update star material opacity with smooth transition
         const starMaterial = stars.material as THREE.PointsMaterial;
         starMaterial.opacity = starOpacity;
 
         for (let i = 0; i < starCount; i++) {
-          // Move stars forward
           positions[i * 3 + 2] += speed;
 
-          // Recycle stars that pass the camera
           if (positions[i * 3 + 2] > 10) {
             positions[i * 3 + 2] = initialZ[i];
 
-            // Randomize position for variety
             const angle = Math.random() * Math.PI * 2;
             const radius = Math.random() * 50 + 5;
             positions[i * 3] = Math.cos(angle) * radius;
@@ -467,31 +410,26 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
         }
         starsGeometry.attributes.position.needsUpdate = true;
 
-        // Update warp streaks with coherent timing
         if (speed > 2) {
           const streakProgress = (speed - 2) / (maxSpeed - 2);
           let streakIntensity = Math.pow(streakProgress, 1.5);
 
-          // Fade out during deceleration phase - complete fade by 11s (adjusted timing)
           if (elapsed > 10) {
             const fadeTime = elapsed - 10;
-            const fadeProgress = Math.min(1, fadeTime / 1); // 1 second to fade
+            const fadeProgress = Math.min(1, fadeTime / 1);
             streakIntensity *= 1 - fadeProgress;
           }
 
-          streaksMaterial.opacity = streakIntensity * 0.9; // Slightly higher max opacity
+          streaksMaterial.opacity = streakIntensity * 0.9;
 
           const streakPositions = streaksGeometry.attributes.position.array as Float32Array;
           for (let i = 0; i < streakCount; i++) {
-            // Move streaks with speed-based velocity
-            const streakSpeed = speed * (1.0 + streakIntensity * 1.0); // Streaks get faster as speed increases
+            const streakSpeed = speed * (1.0 + streakIntensity * 1.0);
             streakPositions[i * 6 + 2] += streakSpeed;
 
-            // Stretch streaks based on speed - start short and grow
-            const stretchFactor = 5 + speed * 2; // Start with short streaks
+            const stretchFactor = 5 + speed * 2;
             streakPositions[i * 6 + 5] = streakPositions[i * 6 + 2] - stretchFactor;
 
-            // Recycle streaks
             if (streakPositions[i * 6 + 2] > 20) {
               const angle = Math.random() * Math.PI * 2;
               const radius = Math.random() * 30 + 10;
@@ -510,19 +448,16 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
           streaksMaterial.opacity = 0;
         }
 
-        // Update post-processing effects progressively
         const bloomPass = composer?.passes[1] as UnrealBloomPass;
         const warpPass = composer?.passes[2] as ShaderPass;
 
         if (bloomPass && warpPass) {
-          // Bloom proportional to speed, with deceleration fade
-          let speedRatio = speed / maxSpeed; // Linear normalized
-          let normalizedSpeed = speed / maxSpeed; // 0 to 1
+          let speedRatio = speed / maxSpeed;
+          let normalizedSpeed = speed / maxSpeed;
 
-          // Apply deceleration fade to effects - complete fade by 11s (adjusted timing)
           if (elapsed > 10) {
             const effectFadeTime = elapsed - 10;
-            const maxFadeTime = 1; // 1 second to fade effects completely (10s to 11s)
+            const maxFadeTime = 1;
             if (effectFadeTime < maxFadeTime) {
               const fadeProgress = effectFadeTime / maxFadeTime;
               const fadeMultiplier = Math.max(0, 1 - fadeProgress);
@@ -534,51 +469,41 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
             }
           }
 
-          // Linear progression for consistent growth, reduced during deceleration
-          bloomPass.strength = 0.15 + speedRatio * 1.05; // From 0.15 to 1.2, fades during deceleration
-          bloomPass.radius = 0.4 + speedRatio * 0.5; // From 0.4 to 0.9, fades during deceleration
+          bloomPass.strength = 0.15 + speedRatio * 1.05;
+          bloomPass.radius = 0.4 + speedRatio * 0.5;
 
-          // Smoother curve that creates a more realistic warp effect
-          // Less extreme at max speed for better visual coherence, fades during deceleration
-          const warpValue = Math.pow(normalizedSpeed, 1.8) * 0.8; // Smoother curve, max 0.8 for coherent visuals
+          const warpValue = Math.pow(normalizedSpeed, 1.8) * 0.8;
 
-          // Always apply the warp, even at minimum speed, but fade during deceleration
-          warpPass.uniforms.warpAmount.value = Math.max(0.001, warpValue); // Small minimum for subtle start
+          warpPass.uniforms.warpAmount.value = Math.max(0.001, warpValue);
           warpPass.uniforms.time.value = elapsed;
         }
 
-        // Progressive camera shake with coherent timing
         if (speed > 3) {
           let shakeProgress = Math.pow((speed - 3) / (maxSpeed - 3), 2.5);
 
-          // Apply deceleration fade to shake - complete fade by 11s (adjusted timing)
           if (elapsed > 10) {
             const fadeTime = elapsed - 10;
             const fadeProgress = Math.min(1, fadeTime / 1);
             shakeProgress *= 1 - fadeProgress;
           }
 
-          const shakeIntensity = shakeProgress * 1.2; // Slightly more shake
+          const shakeIntensity = shakeProgress * 1.2;
 
-          // Add some variance to make it feel more organic
           const shakeX = (Math.random() - 0.5) * shakeIntensity;
           const shakeY = (Math.random() - 0.5) * shakeIntensity;
 
           camera.position.x = shakeX * (0.2 + shakeProgress * 0.8);
           camera.position.y = shakeY * (0.2 + shakeProgress * 0.8);
         } else {
-          // Very smooth return to center
           camera.position.x *= 0.98;
           camera.position.y *= 0.98;
         }
 
-        // FOV changes - complete return to normal by 12s
         let fovNormalizedSpeed = speed / maxSpeed;
 
-        // FOV completely returns to normal by 11s (adjusted timing)
         if (elapsed > 10) {
           const returnTime = elapsed - 10;
-          const maxReturnTime = 1; // 1 second to return FOV completely (10s to 11s)
+          const maxReturnTime = 1;
           if (returnTime < maxReturnTime) {
             const fadeProgress = returnTime / maxReturnTime;
             fovNormalizedSpeed *= Math.max(0, 1 - fadeProgress);
@@ -587,31 +512,25 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
           }
         }
 
-        // Smooth FOV change that returns to 75
         const fovCurve = Math.pow(fovNormalizedSpeed, 0.7);
         camera.fov = 75 + fovCurve * 25;
         camera.updateProjectionMatrix();
 
-        // Hide data overlay at 14s
         if (elapsed > 14 && showDataOverlay) {
           setDataOpacity(0);
           setTimeout(() => {
             setShowDataOverlay(false);
-          }, 1000); // Faster fade for coherent ending
+          }, 1000);
         }
 
-        // Render
         if (needsTransparency) {
-          // Use direct renderer for transparency
           renderer.render(scene, camera);
         } else if (composerRef.current) {
-          // Use post-processing effects for normal phases
           composerRef.current.render();
         } else {
           renderer.render(scene, camera);
         }
 
-        // Complete animation after 15.5s
         if (elapsed > TOTAL_DURATION + 0.5) {
           setIsFadingOut(true);
           setTimeout(() => {
@@ -629,7 +548,6 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
     }
   };
 
-  // Update canvas opacity when it changes
   useEffect(() => {
     if (rendererRef.current && rendererRef.current.domElement) {
       rendererRef.current.domElement.style.opacity = canvasOpacity.toString();
@@ -651,10 +569,6 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
     };
   }, []);
 
-  // Text decryption will now start when canStartTextDecryption is set to true
-  // This happens 1.5s AFTER the terminal fade-in begins (when dataOpacity reaches 1)
-
-  // Decryption effect for text - starts AFTER terminal fade-in completes
   useEffect(() => {
     if (!canStartTextDecryption) return;
 
@@ -684,38 +598,31 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
             if (onComplete) onComplete();
           }
           iteration += 1;
-        }, 6); // Much faster decryption
+        }, 6);
       }, delay);
     };
 
-    // Function to stop Matrix effect when all text is done
     const stopMatrixEffect = () => {
       setIsMatrixMode(false);
     };
 
-    // Generate separate terminal lines for each data type
     const primordialLine = `atlas@cube:~ $ > DEPLOY\n > Universe Primordial Seed: ${primordialSeed}`;
     const hashLine = `atlas@cube:~ $ > CYPHER\n > Quantum Overlay: ${sha256Seed}`;
     const decimalLine = `atlas@cube:~ $ > CREATE\n > Universal Constant: ${decimalSeed}`;
     const timeLine = seedData?.cosmic_origin_time ? `atlas@cube:~ $ > RUN\n > Genesis: ${seedData.cosmic_origin_time} Unix ${new Date(seedData.cosmic_origin_time * 1000).toLocaleString("es-ES")}` : "";
 
-    // Sequential animation with faster timing
     setShowPrimordial(true);
     decryptTerminalText(primordialLine, setDecryptedPrimordial, 50, () => {
-      // Show hash line after primordial completes
       setTimeout(() => {
         setShowHash(true);
         decryptTerminalText(hashLine, setDecryptedHash, 0, () => {
-          // Show decimal line after hash completes
           setTimeout(() => {
             setShowDecimal(true);
             decryptTerminalText(decimalLine, setDecryptedDecimal, 0, () => {
-              // Show time line after decimal completes (if exists)
               if (timeLine) {
                 setTimeout(() => {
                   setShowTime(true);
                   decryptTerminalText(timeLine, setDecryptedTime, 0, () => {
-                    // Stop Matrix effect and show completion after all data is done
                     stopMatrixEffect();
                     setTimeout(() => {
                       setShowCompletion(true);
@@ -723,7 +630,6 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
                   });
                 }, 100);
               } else {
-                // No time data, stop Matrix and show completion directly
                 stopMatrixEffect();
                 setTimeout(() => {
                   setShowCompletion(true);
@@ -736,10 +642,8 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
     });
   }, [canStartTextDecryption, primordialSeed, sha256Seed, decimalSeed, seedData]);
 
-  // Matrix effect for header status
   useEffect(() => {
     if (!isMatrixMode) {
-      // When Matrix mode ends, set to ACTIVE
       setHeaderStatus("ACTIVE");
       setHeaderStatusDecrypting(false);
       return;
@@ -748,11 +652,10 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
     const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
     const matrixInterval = setInterval(() => {
-      // Generate random 6-character string for ACTIVE length
       const randomText = Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
 
       setHeaderStatus(randomText);
-    }, 15); // Even faster Matrix cycling
+    }, 15);
 
     return () => clearInterval(matrixInterval);
   }, [isMatrixMode]);
@@ -767,10 +670,8 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
         transition: "background-color 0.1s ease-out, backdrop-filter 0.1s ease-out",
       }}
     >
-      {/* Three.js mount point */}
       <div ref={mountRef} className="absolute inset-0" />
 
-      {/* Professional Data Overlay */}
       {showDataOverlay && (
         <div
           className="absolute inset-0 flex items-center justify-center z-[60] pointer-events-none p-4"
@@ -780,16 +681,14 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
           }}
         >
           <div className="w-full max-w-4xl mx-auto px-2 sm:px-4">
-            {/* Terminal-style Container - with solid background */}
             <div
               className="bg-black/95 border border-green-400/60 shadow-2xl overflow-hidden backdrop-blur-sm rounded-lg"
               style={{
                 fontFamily: "Courier New, monospace",
                 backdropFilter: "blur(12px)",
-                minHeight: "320px", // Increased from implicit 200px
+                minHeight: "320px",
               }}
             >
-              {/* Terminal Header */}
               <div className={`px-3 sm:px-6 py-3 border-b border-green-400/50 flex items-center justify-between transition-all duration-500 ${isMatrixMode ? "bg-green-900/30" : "bg-green-500/20 border-green-300"}`}>
                 <div className={`text-xs sm:text-sm font-mono uppercase tracking-wider transition-colors duration-500 break-words sm:break-normal overflow-hidden ${isMatrixMode ? "text-green-400" : "text-green-300"}`}>
                   <span className="hidden lg:inline">&gt; ATLAS INITIALIZATION PROTOCOL v2.4.36 &lt;</span>
@@ -802,9 +701,7 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
                 </div>
               </div>
 
-              {/* Terminal Content */}
               <div className="p-3 sm:p-6 text-green-400 font-mono text-xs leading-relaxed bg-black/70 overflow-x-auto" style={{ minHeight: "420px" }}>
-                {/* Sequential Terminal Output Lines */}
                 {showPrimordial && (
                   <div className="animate-fadeIn text-green-300 mb-3 break-words overflow-wrap-anywhere">
                     <span className="whitespace-pre-wrap">{decryptedPrimordial}</span>
@@ -845,7 +742,6 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
         </div>
       )}
 
-      {/* Phase badges (bottom center) */}
       <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-[60]">
         {showStarAccelerationBadge && <div className={`bg-blue-500/20 text-blue-400 px-3 py-1 rounded-lg font-mono text-xs uppercase tracking-wider border border-blue-400/30 backdrop-blur-sm ${starAccelerationFadingOut ? "animate-phaseSlideDownFadeOut" : "animate-phaseSlideUpFadeIn"}`}>INMMERSION</div>}
         {showWarpSpeedBadge && <div className={`bg-cyan-500/20 text-cyan-400 px-3 py-1 rounded-lg font-mono text-xs uppercase tracking-wider border border-cyan-400/30 backdrop-blur-sm ${warpSpeedFadingOut ? "animate-phaseSlideDownFadeOut" : "animate-phaseSlideUpFadeIn"}`}>WARP SPEED</div>}
