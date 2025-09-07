@@ -296,10 +296,11 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
 
       // Coherent phase timing constants (total: 15 seconds)
       const ACCELERATION_PHASE = 5; // 0-5s: Acceleration to max speed
-      const MAX_SPEED_HOLD = 8; // 5-8s: Hold max speed
-      const DECELERATION_START = 8; // 8s: Start deceleration when terminal appears
-      const REVEAL_PHASE = 4; // 8-12s: Data revelation (during deceleration)
-      const COMPLETE_STOP = 12; // 12s: Complete stop (no stars or effects)
+      const MAX_SPEED_HOLD = 7; // 5-7s: Hold max speed
+      const DECELERATION_START = 7; // 7s: Start deceleration when terminal appears (1s earlier)
+      const REVEAL_PHASE = 4; // 7-11s: Data revelation (during deceleration)
+      const COMPLETE_STOP = 11; // 11s: Complete stop (no stars or effects)
+      const STAR_FADEOUT_START = 10; // Stars start fading 1s before complete stop
       const TOTAL_DURATION = 15;
 
       // Initialize warp effect immediately with minimal value
@@ -342,17 +343,17 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
             }, 2000); // Consistent 2s display
           }
         } else if (elapsed < MAX_SPEED_HOLD) {
-          // Phase 2: Hold maximum speed (5-8s)
+          // Phase 2: Hold maximum speed (5-7s)
           speed = maxSpeed;
         } else if (elapsed < COMPLETE_STOP) {
-          // Phase 3: Deceleration (8-12s) - starts when terminal appears
+          // Phase 3: Deceleration (7-11s) - starts when terminal appears (1s earlier)
           const decelerationTime = elapsed - DECELERATION_START;
           const decelerationDuration = COMPLETE_STOP - DECELERATION_START; // 4 seconds total
           const t = decelerationTime / decelerationDuration;
           const decelerationCurve = Math.pow(1 - t, 2);
           speed = 0.001 + (maxSpeed - 0.001) * decelerationCurve; // Decelerate from max to complete stop
 
-          // Trigger data reveal at exactly 8s (when deceleration starts)
+          // Trigger data reveal at exactly 7s (when deceleration starts - 1s earlier)
           if (!dataRevealStarted && elapsed >= DECELERATION_START) {
             dataRevealStarted = true;
             setShowDataOverlay(true);
@@ -372,7 +373,7 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
                 setCanStartTextDecryption(true);
               }, 1500); // Esperar 1.5s para que el fade-in termine completamente
               
-              // Start transparency at 10s (2s after data appears)
+              // Start transparency at 9s (2s after data appears - adjusted for earlier timing)
               setTimeout(() => {
                 const startTransparency = () => {
                   let progress = 0;
@@ -398,11 +399,11 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
                   }, interval);
                 };
                 startTransparency();
-              }, 2000); // 2s delay = 10s total
+              }, 2000); // 2s delay = 9s total
             }, 100);
           }
         } else if (elapsed < TOTAL_DURATION) {
-          // Phase 4: Complete stop (12-15s) - no movement, no effects
+          // Phase 4: Complete stop (11-15s) - no movement, no effects
           speed = 0.001;
         } else {
           // After 15s - completely static
@@ -412,36 +413,31 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
         // Update star positions and fade to void
         const positions = starsGeometry.attributes.position.array as Float32Array;
 
-        // Calculate star fade - starts during deceleration phase for smooth transition
+        // Calculate star fade - starts just before complete deceleration (at 10s)
         let starOpacity = 1;
         
-        if (elapsed >= DECELERATION_START) {
-          // Start fadeout during deceleration phase based on speed reduction
-          const decelerationTime = elapsed - DECELERATION_START;
-          const decelerationDuration = COMPLETE_STOP - DECELERATION_START; // 4 seconds total
+        if (elapsed >= STAR_FADEOUT_START) {
+          // Stars start fading at 10s (1s before complete stop)
+          const fadeTime = elapsed - STAR_FADEOUT_START;
+          const totalFadeTime = COMPLETE_STOP - STAR_FADEOUT_START; // 1 second to fade
           
-          if (decelerationTime < decelerationDuration) {
-            // Smooth fadeout curve that follows the speed deceleration
-            const t = decelerationTime / decelerationDuration;
-            // Use a smooth curve that starts slow and accelerates the fade
-            const fadeProgress = Math.pow(t, 1.5); // Smoother fade curve
-            starOpacity = Math.max(0, 1 - fadeProgress * 0.7); // Fade to 30% by end of deceleration
+          if (fadeTime < totalFadeTime) {
+            // Quick fadeout just before stars stop completely
+            const fadeProgress = fadeTime / totalFadeTime;
+            starOpacity = Math.max(0, 1 - Math.pow(fadeProgress, 0.5)); // Smooth curve, faster at end
           } else {
-            // Complete fadeout after deceleration (11-12s)
-            const finalFadeTime = elapsed - COMPLETE_STOP;
-            if (finalFadeTime > 0) {
-              const finalFadeProgress = Math.min(1, finalFadeTime / 1); // 1 second final fade
-              starOpacity = Math.max(0, 0.3 * (1 - finalFadeProgress)); // Fade from 30% to 0%
-            } else {
-              starOpacity = 0.3; // Maintain 30% opacity at complete stop
-            }
+            // Complete fadeout after 11s
+            starOpacity = 0;
           }
+        }
 
+        // Background transparency logic
+        if (elapsed >= DECELERATION_START) {
           // Background transparency handled by earlier logic
           scene.background = null;
           renderer.setClearColor(0x000000, 0);
         } else if (elapsed > DECELERATION_START - 1) {
-          // Prepare for transparency slightly before deceleration
+          // Prepare for transparency slightly before deceleration (at 6s)
           scene.background = null;
           renderer.setClearColor(0x000000, 0);
         } else {
@@ -476,9 +472,9 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
           const streakProgress = (speed - 2) / (maxSpeed - 2);
           let streakIntensity = Math.pow(streakProgress, 1.5);
 
-          // Fade out during deceleration phase - complete fade by 12s
-          if (elapsed > 11) {
-            const fadeTime = elapsed - 11;
+          // Fade out during deceleration phase - complete fade by 11s (adjusted timing)
+          if (elapsed > 10) {
+            const fadeTime = elapsed - 10;
             const fadeProgress = Math.min(1, fadeTime / 1); // 1 second to fade
             streakIntensity *= 1 - fadeProgress;
           }
@@ -523,10 +519,10 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
           let speedRatio = speed / maxSpeed; // Linear normalized
           let normalizedSpeed = speed / maxSpeed; // 0 to 1
 
-          // Apply deceleration fade to effects - complete fade by 12s
-          if (elapsed > 11) {
-            const effectFadeTime = elapsed - 11;
-            const maxFadeTime = 1; // 1 second to fade effects completely (11s to 12s)
+          // Apply deceleration fade to effects - complete fade by 11s (adjusted timing)
+          if (elapsed > 10) {
+            const effectFadeTime = elapsed - 10;
+            const maxFadeTime = 1; // 1 second to fade effects completely (10s to 11s)
             if (effectFadeTime < maxFadeTime) {
               const fadeProgress = effectFadeTime / maxFadeTime;
               const fadeMultiplier = Math.max(0, 1 - fadeProgress);
@@ -555,9 +551,9 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
         if (speed > 3) {
           let shakeProgress = Math.pow((speed - 3) / (maxSpeed - 3), 2.5);
 
-          // Apply deceleration fade to shake - complete fade by 12s
-          if (elapsed > 11) {
-            const fadeTime = elapsed - 11;
+          // Apply deceleration fade to shake - complete fade by 11s (adjusted timing)
+          if (elapsed > 10) {
+            const fadeTime = elapsed - 10;
             const fadeProgress = Math.min(1, fadeTime / 1);
             shakeProgress *= 1 - fadeProgress;
           }
@@ -579,10 +575,10 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
         // FOV changes - complete return to normal by 12s
         let fovNormalizedSpeed = speed / maxSpeed;
 
-        // FOV completely returns to normal by 12s
-        if (elapsed > 11) {
-          const returnTime = elapsed - 11;
-          const maxReturnTime = 1; // 1 second to return FOV completely (11s to 12s)
+        // FOV completely returns to normal by 11s (adjusted timing)
+        if (elapsed > 10) {
+          const returnTime = elapsed - 10;
+          const maxReturnTime = 1; // 1 second to return FOV completely (10s to 11s)
           if (returnTime < maxReturnTime) {
             const fadeProgress = returnTime / maxReturnTime;
             fovNormalizedSpeed *= Math.max(0, 1 - fadeProgress);
