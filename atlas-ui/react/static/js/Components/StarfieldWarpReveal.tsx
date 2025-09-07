@@ -41,6 +41,8 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
   const [showHash, setShowHash] = useState(false);
   const [showDecimal, setShowDecimal] = useState(false);
   const [showTime, setShowTime] = useState(false);
+  const [showCompletion, setShowCompletion] = useState(false);
+  const [showProtocols, setShowProtocols] = useState(false);
   const [isFadingOut, setIsFadingOut] = useState(false);
 
   // Use actual seeds from API or fallback
@@ -580,62 +582,86 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
   useEffect(() => {
     if (!showDataOverlay) return;
     
-    const chars = "0123456789ABCDEF";
-    const decryptText = (original: string, setter: React.Dispatch<React.SetStateAction<string>>, delay: number) => {
+    const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const formatTerminalLine = (text: string, maxWidth: number = 40) => {
+      const chunks = [];
+      for (let i = 0; i < text.length; i += maxWidth) {
+        chunks.push(text.slice(i, i + maxWidth));
+      }
+      return chunks.join('\n');
+    };
+    
+    const decryptTerminalText = (terminalText: string, setter: React.Dispatch<React.SetStateAction<string>>, delay: number, onComplete?: () => void) => {
       setTimeout(() => {
         let iteration = 0;
         const interval = setInterval(() => {
-          setter(original.split("")
+          setter(terminalText.split("")
             .map((char, index) => {
               if (index < iteration) {
-                return original[index];
+                return terminalText[index];
               }
-              if (char === " " || char === "-" || char === ":" || char === "(" || char === ")") {
+              if (char === " " || char === "\n" || char === ">" || char === "|" || char === "-") {
                 return char;
               }
               return chars[Math.floor(Math.random() * chars.length)];
             })
             .join(""));
           
-          if (iteration >= original.length) {
+          if (iteration >= terminalText.length) {
             clearInterval(interval);
+            if (onComplete) onComplete();
           }
           iteration += 1;
-        }, 30);
+        }, 15); // Faster: reduced from 25ms to 15ms
       }, delay);
     };
     
-    // Sequence the decryption animations
+    // Generate separate terminal lines for each data type
+    const primordialLine = `> universe primordial seed ${primordialSeed}`;
+    const hashLine = `> quantum overlay sha256 ${sha256Seed}`;
+    const decimalLine = `> universal constant decimal ${decimalSeed}`;
+    const timeLine = seedData?.cosmic_origin_time ? 
+      `> atlas genesis ${seedData.cosmic_origin_time} unix ${new Date(seedData.cosmic_origin_time * 1000).toLocaleString('es-ES')}` : '';
+    
+    // Sequential animation for each line
     setShowPrimordial(true);
-    decryptText(primordialSeed, setDecryptedPrimordial, 200);
-    
-    setTimeout(() => {
-      setShowHash(true);
-      decryptText(sha256Seed, setDecryptedHash, 0);
-    }, 800);
-    
-    setTimeout(() => {
-      setShowDecimal(true);
-      // Special effect for decimal seed - decrypt in chunks
-      const decimalChunks = decimalSeed.match(/.{1,7}/g) || [];
-      let fullDecrypted = "";
-      decimalChunks.forEach((chunk, i) => {
-        setTimeout(() => {
-          decryptText(chunk, (val) => {
-            fullDecrypted = decimalSeed.substring(0, i * 7) + val;
-            setDecryptedDecimal(fullDecrypted);
-          }, 0);
-        }, i * 100);
-      });
-    }, 1600);
-    
-    if (seedData?.cosmic_origin_time) {
+    decryptTerminalText(primordialLine, setDecryptedPrimordial, 200, () => {
+      // Show hash line after primordial completes
       setTimeout(() => {
-        setShowTime(true);
-        const timeString = `${seedData.cosmic_origin_time} | ${seedData.cosmic_origin_datetime}`;
-        decryptText(timeString, setDecryptedTime, 0);
-      }, 2800);
-    }
+        setShowHash(true);
+        decryptTerminalText(hashLine, setDecryptedHash, 0, () => {
+          // Show decimal line after hash completes
+          setTimeout(() => {
+            setShowDecimal(true);
+            decryptTerminalText(decimalLine, setDecryptedDecimal, 0, () => {
+              // Show time line after decimal completes (if exists)
+              if (timeLine) {
+                setTimeout(() => {
+                  setShowTime(true);
+                  decryptTerminalText(timeLine, setDecryptedTime, 0, () => {
+                    // Show completion after all data is done
+                    setTimeout(() => {
+                      setShowCompletion(true);
+                      setTimeout(() => {
+                        setShowProtocols(true);
+                      }, 800);
+                    }, 500);
+                  });
+                }, 300);
+              } else {
+                // No time data, show completion directly
+                setTimeout(() => {
+                  setShowCompletion(true);
+                  setTimeout(() => {
+                    setShowProtocols(true);
+                  }, 800);
+                }, 500);
+              }
+            });
+          }, 300);
+        });
+      }, 300);
+    });
   }, [showDataOverlay, primordialSeed, sha256Seed, decimalSeed, seedData]);
 
   return (
@@ -653,117 +679,57 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
           }}
         >
           <div className="w-full max-w-2xl mx-auto">
-            {/* Compact Modal-style Container */}
-            <div className="bg-black/90 backdrop-blur-xl border border-blue-400/30 rounded-xl shadow-2xl overflow-hidden"
-                 style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+            {/* Terminal-style Container */}
+            <div className="bg-black/95 border border-green-400/50 shadow-2xl overflow-hidden"
+                 style={{ fontFamily: 'Courier New, monospace' }}>
               
-              {/* Header */}
-              <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 px-4 py-3 border-b border-white/10">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-white font-bold text-base flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                    Atlas Initialization Protocol
-                  </h3>
-                  <div className="text-xs text-gray-400 font-mono">
-                    v2.4.36
-                  </div>
+              {/* Terminal Header */}
+              <div className="bg-green-900/30 px-4 py-2 border-b border-green-400/50 flex items-center justify-between">
+                <div className="text-green-400 text-xs font-mono uppercase tracking-wider">
+                  &gt; ATLAS QUANTUM ANALYSIS PROTOCOL v2.4.36 &lt;
+                </div>
+                <div className="flex gap-1 items-center">
+                  <div className="w-2 h-2 bg-green-400 animate-pulse"></div>
+                  <div className="text-green-400 text-xs">ACTIVE</div>
                 </div>
               </div>
               
-              {/* Content */}
-              <div className="p-4 space-y-3 text-sm max-h-[60vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                
-                {/* Primordial Seed */}
+              {/* Terminal Content */}
+              <div className="p-4 text-green-400 font-mono text-xs leading-relaxed bg-black/50" style={{ minHeight: '300px' }}>
+                {/* Sequential Terminal Output Lines */}
                 {showPrimordial && (
-                  <div className="animate-fadeIn">
-                    <div className="bg-white/5 rounded-lg p-3 border border-cyan-500/30">
-                      <div className="flex items-center justify-between mb-1">
-                        <h4 className="text-cyan-400 font-medium text-sm">Primordial Seed</h4>
-                        <div className="text-xs text-gray-400">GENESIS</div>
-                      </div>
-                      <div className="bg-black/70 p-2 rounded border border-cyan-500/20">
-                        <div className="text-cyan-300 font-mono break-all text-xs">
-                          {decryptedPrimordial || primordialSeed}
-                        </div>
-                      </div>
-                    </div>
+                  <div className="animate-fadeIn text-green-300 mb-2">
+                    {decryptedPrimordial}
                   </div>
                 )}
-
-                {/* Quantum Hash */}
+                
                 {showHash && (
-                  <div className="animate-fadeIn">
-                    <div className="bg-white/5 rounded-lg p-3 border border-green-500/30">
-                      <div className="flex items-center justify-between mb-1">
-                        <h4 className="text-green-400 font-medium text-sm">Quantum Hash</h4>
-                        <div className="text-xs text-gray-400">SHA256</div>
-                      </div>
-                      <div className="bg-black/70 p-2 rounded border border-green-500/20">
-                        <div className="text-green-300 font-mono break-all text-xs">
-                          {decryptedHash || sha256Seed}
-                        </div>
-                      </div>
-                    </div>
+                  <div className="animate-fadeIn text-green-300 mb-2">
+                    {decryptedHash}
                   </div>
                 )}
-
-                {/* Universal Constant */}
+                
                 {showDecimal && (
-                  <div className="animate-fadeIn">
-                    <div className="bg-white/5 rounded-lg p-3 border border-yellow-500/30">
-                      <div className="flex items-center justify-between mb-1">
-                        <h4 className="text-yellow-400 font-medium text-sm">Universal Constant</h4>
-                        <div className="text-xs text-gray-400">{decryptedDecimal.length}/77</div>
-                      </div>
-                      <div className="bg-black/70 p-2 rounded border border-yellow-500/20">
-                        <div className="text-yellow-200 font-mono text-xs" style={{ letterSpacing: '0.5px', wordBreak: 'break-all', lineHeight: '1.2' }}>
-                          {decryptedDecimal && decryptedDecimal.split('').map((digit, i) => (
-                            <span key={i} className={i % 7 === 0 && i > 0 ? 'ml-1' : ''}>{digit}</span>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
+                  <div className="animate-fadeIn text-green-300 mb-2">
+                    {decryptedDecimal}
                   </div>
                 )}
-
-                {/* Genesis Timestamp */}
-                {showTime && seedData?.cosmic_origin_time && (
-                  <div className="animate-fadeIn">
-                    <div className="bg-white/5 rounded-lg p-3 border border-purple-500/30">
-                      <div className="flex items-center justify-between mb-1">
-                        <h4 className="text-purple-400 font-medium text-sm">Genesis Timestamp</h4>
-                        <div className="text-xs text-gray-400">TEMPORAL</div>
-                      </div>
-                      <div className="bg-black/70 p-2 rounded border border-purple-500/20 space-y-1">
-                        <div className="flex justify-between items-center">
-                          <span className="text-purple-400 text-xs">Unix:</span>
-                          <span className="text-purple-200 font-mono text-xs">
-                            {decryptedTime.split(' | ')[0] || seedData.cosmic_origin_time}
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-purple-400 text-xs">Date:</span>
-                          <span className="text-purple-200 font-mono text-xs">
-                            {decryptedTime.split(' | ')[1] || seedData.cosmic_origin_datetime}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Final Status */}
+                
                 {showTime && (
-                  <div className="text-center animate-fadeIn">
-                    <div className="bg-green-500/20 border border-green-500/50 rounded-lg px-4 py-2">
-                      <div className="flex items-center justify-center gap-2">
-                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                        <span className="text-green-400 font-medium text-sm">
-                          Initialization Complete
-                        </span>
-                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                      </div>
-                    </div>
+                  <div className="animate-fadeIn text-green-300 mb-4">
+                    {decryptedTime}
+                  </div>
+                )}
+                
+                {showCompletion && (
+                  <div className="animate-slideInUp text-green-400 uppercase tracking-wider mt-6">
+                    &gt; universe initialization complete
+                  </div>
+                )}
+                
+                {showProtocols && (
+                  <div className="animate-slideInUp text-green-400 mt-1">
+                    &gt; ready for exploration protocols
                   </div>
                 )}
               </div>
@@ -772,35 +738,6 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
         </div>
       )}
 
-      {/* CSS animations */}
-      <style>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        
-        @keyframes pulse {
-          0%, 100% { 
-            opacity: 1;
-            filter: brightness(1);
-          }
-          50% { 
-            opacity: 0.9;
-            filter: brightness(1.2);
-          }
-        }
-      `}</style>
 
       {/* Phase indicator (bottom left) */}
       <div className="absolute bottom-4 left-4 z-[60] text-white/50 text-sm font-mono">
