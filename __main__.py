@@ -468,7 +468,11 @@ def get_universe_config():
         return jsonify({
             "success": True,
             "config_seed": config.seed,
-            "cosmic_origin_time": config.cosmic_origin_time
+            "seed_str": config.seed_str,  # Primordial seed
+            "seed_hash": config.seed_hash,  # SHA256 hash
+            "seed_decimal": str(config.seed),  # Full decimal seed (can be very large!)
+            "cosmic_origin_time": config.cosmic_origin_time,
+            "cosmic_origin_datetime": str(config.cosmic_origin_datetime)  # Formatted datetime
         })
     except Exception as e:
         return jsonify({"error": str(e)})
