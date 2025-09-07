@@ -606,8 +606,8 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
         // Clear only depth buffer to render HUD on top
         renderer.clearDepth();
         
-        // Render HUD scene with orthographic camera (only when data overlay is visible)
-        if (showDataOverlay && hudSceneRef.current && hudCameraRef.current) {
+        // Render HUD scene with orthographic camera (cockpit always visible)
+        if (hudSceneRef.current && hudCameraRef.current) {
           renderer.render(hudSceneRef.current, hudCameraRef.current);
         }
 
