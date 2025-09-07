@@ -26,10 +26,8 @@ interface DecryptingTextProps {
 const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onComplete }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
-  const hudSceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
-  const hudCameraRef = useRef<THREE.OrthographicCamera | null>(null);
   const composerRef = useRef<EffectComposer | null>(null);
   const animationIdRef = useRef<number | null>(null);
   const [showDataOverlay, setShowDataOverlay] = useState(false);
@@ -43,7 +41,6 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
   const [showHash, setShowHash] = useState(false);
   const [showDecimal, setShowDecimal] = useState(false);
   const [showTime, setShowTime] = useState(false);
-  const [signalSearching, setSignalSearching] = useState(true);
 
   // Use actual seeds from API or fallback
   const primordialSeed = seedData?.primordial_seed || "COSMOS-" + Date.now() + "-GENESIS";
@@ -51,164 +48,6 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
     Math.floor(Math.random() * 16).toString(16)
   ).join("").toUpperCase();
   const decimalSeed = seedData?.decimal_seed || Array.from({length: 77}, () => Math.floor(Math.random() * 10)).join("");
-
-  // Create HUD cockpit elements
-  const createHUDCockpit = (hudScene: THREE.Scene, width: number, height: number) => {
-    // Dashboard (bottom 15% of screen) - much smaller
-    const dashboardHeight = height * 0.15;
-    const dashboardGeometry = new THREE.PlaneGeometry(width * 1.1, dashboardHeight);
-    const dashboardMaterial = new THREE.MeshBasicMaterial({ 
-      color: 0x1a1a1a, 
-      transparent: true, 
-      opacity: 0.6,
-      side: THREE.DoubleSide
-    });
-    const dashboard = new THREE.Mesh(dashboardGeometry, dashboardMaterial);
-    dashboard.position.set(0, -height/2 + dashboardHeight/2, -10);
-    hudScene.add(dashboard);
-
-    // Left panel (8% of screen width) - much smaller
-    const leftPanelWidth = width * 0.08;
-    const leftPanelGeometry = new THREE.PlaneGeometry(leftPanelWidth, height * 0.8);
-    const leftPanelMaterial = new THREE.MeshBasicMaterial({ 
-      color: 0x1a1a1a, 
-      transparent: true, 
-      opacity: 0.5,
-      side: THREE.DoubleSide
-    });
-    const leftPanel = new THREE.Mesh(leftPanelGeometry, leftPanelMaterial);
-    leftPanel.position.set(-width/2 + leftPanelWidth/2, 0, -10);
-    hudScene.add(leftPanel);
-
-    // Right panel (8% of screen width) - much smaller
-    const rightPanelWidth = width * 0.08;
-    const rightPanelGeometry = new THREE.PlaneGeometry(rightPanelWidth, height * 0.8);
-    const rightPanelMaterial = new THREE.MeshBasicMaterial({ 
-      color: 0x1a1a1a, 
-      transparent: true, 
-      opacity: 0.5,
-      side: THREE.DoubleSide
-    });
-    const rightPanel = new THREE.Mesh(rightPanelGeometry, rightPanelMaterial);
-    rightPanel.position.set(width/2 - rightPanelWidth/2, 0, -10);
-    hudScene.add(rightPanel);
-
-    // Top frame (5% of screen) - much smaller
-    const topFrameHeight = height * 0.05;
-    const topFrameGeometry = new THREE.PlaneGeometry(width * 0.9, topFrameHeight);
-    const topFrameMaterial = new THREE.MeshBasicMaterial({ 
-      color: 0x2a2a2a, 
-      transparent: true, 
-      opacity: 0.4,
-      side: THREE.DoubleSide
-    });
-    const topFrame = new THREE.Mesh(topFrameGeometry, topFrameMaterial);
-    topFrame.position.set(0, height/2 - topFrameHeight/2, -10);
-    hudScene.add(topFrame);
-
-    // Create HUD screens for data display
-    const createHUDScreen = (x: number, y: number, screenWidth: number, screenHeight: number, color: number = 0x003333) => {
-      const screenGeometry = new THREE.PlaneGeometry(screenWidth, screenHeight);
-      const screenMaterial = new THREE.MeshBasicMaterial({ 
-        color: color, 
-        transparent: true, 
-        opacity: 0.3,
-        side: THREE.DoubleSide
-      });
-      const screen = new THREE.Mesh(screenGeometry, screenMaterial);
-      screen.position.set(x, y, -5);
-      hudScene.add(screen);
-
-      // Add screen border
-      const borderGeometry = new THREE.EdgesGeometry(screenGeometry);
-      const borderMaterial = new THREE.LineBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.8 });
-      const border = new THREE.LineSegments(borderGeometry, borderMaterial);
-      border.position.copy(screen.position);
-      hudScene.add(border);
-
-      return screen;
-    };
-
-    // Create three small HUD screens in the dashboard
-    const screenWidth = width * 0.12;
-    const screenHeight = dashboardHeight * 0.4;
-    const screenY = -height/2 + dashboardHeight * 0.5;
-
-    createHUDScreen(-width * 0.2, screenY, screenWidth, screenHeight, 0x002200); // Left screen - green
-    createHUDScreen(0, screenY, screenWidth, screenHeight, 0x220033); // Center screen - purple  
-    createHUDScreen(width * 0.2, screenY, screenWidth, screenHeight, 0x002233); // Right screen - blue
-
-    // Add corner reinforcements
-    const cornerSize = 20;
-    const cornerGeometry = new THREE.PlaneGeometry(cornerSize, 2);
-    const cornerMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.7 });
-
-    // Top corners
-    const topLeftCorner1 = new THREE.Mesh(cornerGeometry, cornerMaterial);
-    topLeftCorner1.position.set(-width/2 + cornerSize/2, height/2 - 1, -5);
-    hudScene.add(topLeftCorner1);
-
-    const topLeftCorner2 = new THREE.Mesh(new THREE.PlaneGeometry(2, cornerSize), cornerMaterial);
-    topLeftCorner2.position.set(-width/2 + 1, height/2 - cornerSize/2, -5);
-    hudScene.add(topLeftCorner2);
-
-    const topRightCorner1 = new THREE.Mesh(cornerGeometry, cornerMaterial);
-    topRightCorner1.position.set(width/2 - cornerSize/2, height/2 - 1, -5);
-    hudScene.add(topRightCorner1);
-
-    const topRightCorner2 = new THREE.Mesh(new THREE.PlaneGeometry(2, cornerSize), cornerMaterial);
-    topRightCorner2.position.set(width/2 - 1, height/2 - cornerSize/2, -5);
-    hudScene.add(topRightCorner2);
-
-    // Add center crosshair/targeting system
-    const crosshairSize = 32;
-    const crosshairGeometry = new THREE.RingGeometry(crosshairSize - 2, crosshairSize, 0, Math.PI * 2, 32);
-    const crosshairMaterial = new THREE.MeshBasicMaterial({ 
-      color: 0x00ffff, 
-      transparent: true, 
-      opacity: 0.4,
-      side: THREE.DoubleSide
-    });
-    const crosshair = new THREE.Mesh(crosshairGeometry, crosshairMaterial);
-    crosshair.position.set(0, 0, -5);
-    hudScene.add(crosshair);
-
-    // Center dot
-    const dotGeometry = new THREE.CircleGeometry(2, 8);
-    const dotMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.8 });
-    const dot = new THREE.Mesh(dotGeometry, dotMaterial);
-    dot.position.set(0, 0, -4);
-    hudScene.add(dot);
-
-    // Crosshair lines
-    const lineLength = 8;
-    const lineGeometry = new THREE.PlaneGeometry(lineLength, 1);
-    const lineMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.6 });
-
-    // Top line
-    const topLine = new THREE.Mesh(lineGeometry, lineMaterial);
-    topLine.position.set(0, crosshairSize + 2, -4);
-    topLine.rotation.z = Math.PI / 2;
-    hudScene.add(topLine);
-
-    // Bottom line
-    const bottomLine = new THREE.Mesh(lineGeometry, lineMaterial);
-    bottomLine.position.set(0, -(crosshairSize + 2), -4);
-    bottomLine.rotation.z = Math.PI / 2;
-    hudScene.add(bottomLine);
-
-    // Left line
-    const leftLine = new THREE.Mesh(lineGeometry, lineMaterial);
-    leftLine.position.set(-(crosshairSize + 2), 0, -4);
-    hudScene.add(leftLine);
-
-    // Right line
-    const rightLine = new THREE.Mesh(lineGeometry, lineMaterial);
-    rightLine.position.set(crosshairSize + 2, 0, -4);
-    hudScene.add(rightLine);
-
-    return hudScene;
-  };
 
   // Create star texture similar to UniverseAnimationCanvas
   const createCircleTexture = () => {
@@ -295,26 +134,15 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
     if (!mountRef.current) return;
 
     try {
-      // Main scene setup (for stars)
+      // Scene setup
       const scene = new THREE.Scene();
       scene.background = new THREE.Color(0x000000);
       sceneRef.current = scene;
 
-      // HUD scene setup
-      const hudScene = new THREE.Scene();
-      hudSceneRef.current = hudScene;
-
-      // Perspective camera for stars
+      // Camera setup
       const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 1000);
       camera.position.set(0, 0, 0);
       cameraRef.current = camera;
-
-      // Orthographic camera for HUD (using pixel coordinates)
-      const width = window.innerWidth;
-      const height = window.innerHeight;
-      const hudCamera = new THREE.OrthographicCamera(-width/2, width/2, height/2, -height/2, -1000, 1000);
-      hudCamera.position.z = 1;
-      hudCameraRef.current = hudCamera;
 
       // Renderer setup
       const renderer = new THREE.WebGLRenderer({
@@ -322,7 +150,6 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
         alpha: false,
       });
       renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.autoClear = false; // Disable auto clear for manual control
       mountRef.current.appendChild(renderer.domElement);
       rendererRef.current = renderer;
 
@@ -338,9 +165,6 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
       composer.addPass(warpPass);
 
       composerRef.current = composer;
-
-      // Create HUD cockpit
-      createHUDCockpit(hudScene, width, height);
 
       // Create starfield
       const starCount = 7500; // Same as UniverseAnimationCanvas
@@ -591,24 +415,11 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
         camera.fov = 75 + fovCurve * 25; // From 75 to 100 degrees max - more realistic range
         camera.updateProjectionMatrix();
 
-        // Clear everything first
-        renderer.clear();
-
-        // Dual rendering pass - stars first, then HUD overlay
+        // Render
         if (composerRef.current) {
-          // Render stars with post-processing effects
           composerRef.current.render();
         } else {
-          // Fallback render for stars
           renderer.render(scene, camera);
-        }
-
-        // Clear only depth buffer to render HUD on top
-        renderer.clearDepth();
-        
-        // Render HUD scene with orthographic camera (cockpit always visible)
-        if (hudSceneRef.current && hudCameraRef.current) {
-          renderer.render(hudSceneRef.current, hudCameraRef.current);
         }
 
         // Complete animation after 20 seconds to allow full experience
@@ -619,45 +430,6 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
 
         animationIdRef.current = requestAnimationFrame(animate);
       };
-
-      // Handle window resize
-      const handleResize = () => {
-        const width = window.innerWidth;
-        const height = window.innerHeight;
-
-        // Update perspective camera
-        camera.aspect = width / height;
-        camera.updateProjectionMatrix();
-
-        // Update orthographic camera with pixel coordinates
-        if (hudCameraRef.current) {
-          hudCameraRef.current.left = -width / 2;
-          hudCameraRef.current.right = width / 2;
-          hudCameraRef.current.top = height / 2;
-          hudCameraRef.current.bottom = -height / 2;
-          hudCameraRef.current.updateProjectionMatrix();
-        }
-
-        // Update renderer size
-        renderer.setSize(width, height);
-        
-        // Update post-processing
-        if (composerRef.current) {
-          composerRef.current.setSize(width, height);
-        }
-
-        // Recreate HUD elements with new dimensions
-        if (hudSceneRef.current) {
-          // Clear existing HUD elements
-          while (hudSceneRef.current.children.length > 0) {
-            hudSceneRef.current.remove(hudSceneRef.current.children[0]);
-          }
-          // Recreate with new dimensions
-          createHUDCockpit(hudSceneRef.current, width, height);
-        }
-      };
-
-      window.addEventListener('resize', handleResize);
 
       animate();
     } catch (error) {
@@ -676,19 +448,12 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
         mountRef.current.removeChild(rendererRef.current.domElement);
         rendererRef.current.dispose();
       }
-      // Remove resize listener
-      window.removeEventListener('resize', () => {}); // This will be recreated each time
     };
   }, []);
 
   // Decryption effect for text
   useEffect(() => {
     if (!showDataOverlay) return;
-    
-    // First disable signal searching after a delay
-    setTimeout(() => {
-      setSignalSearching(false);
-    }, 1500);
     
     const chars = "0123456789ABCDEF";
     const decryptText = (original: string, setter: React.Dispatch<React.SetStateAction<string>>, delay: number) => {
@@ -715,16 +480,14 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
       }, delay);
     };
     
-    // Sequence the decryption animations - start after signal is found
-    setTimeout(() => {
-      setShowPrimordial(true);
-      decryptText(primordialSeed, setDecryptedPrimordial, 200);
-    }, 2000);
+    // Sequence the decryption animations
+    setShowPrimordial(true);
+    decryptText(primordialSeed, setDecryptedPrimordial, 200);
     
     setTimeout(() => {
       setShowHash(true);
       decryptText(sha256Seed, setDecryptedHash, 0);
-    }, 2800);
+    }, 800);
     
     setTimeout(() => {
       setShowDecimal(true);
@@ -739,14 +502,14 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
           }, 0);
         }, i * 100);
       });
-    }, 3600);
+    }, 1600);
     
     if (seedData?.cosmic_origin_time) {
       setTimeout(() => {
         setShowTime(true);
         const timeString = `${seedData.cosmic_origin_time} | ${seedData.cosmic_origin_datetime}`;
         decryptText(timeString, setDecryptedTime, 0);
-      }, 4800);
+      }, 2800);
     }
   }, [showDataOverlay, primordialSeed, sha256Seed, decimalSeed, seedData]);
 
@@ -755,22 +518,161 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
       {/* Three.js mount point */}
       <div ref={mountRef} className="absolute inset-0" />
 
+      {/* Sci-fi Data Overlay */}
+      {showDataOverlay && (
+        <div 
+          className="absolute inset-0 flex items-center justify-center z-[60] pointer-events-none"
+          style={{
+            opacity: dataOpacity,
+            transition: "opacity 1.5s ease-in-out"
+          }}
+        >
+          <div className="max-w-7xl mx-auto px-4">
+            {/* Main Terminal */}
+            <div className="bg-black/95 border border-cyan-500/50 rounded-none shadow-2xl" 
+                 style={{ fontFamily: 'Courier New, monospace' }}>
+              
+              {/* Terminal Header */}
+              <div className="bg-cyan-500/20 px-4 py-2 border-b border-cyan-500/50">
+                <div className="flex items-center gap-4">
+                  <div className="flex gap-2">
+                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                    <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  </div>
+                  <div className="text-cyan-400 text-sm font-mono">
+                    ATLAS-GENESIS-PROTOCOL v2.4.36 // QUANTUM-DECRYPTION-ENGINE
+                  </div>
+                </div>
+              </div>
+              
+              {/* Terminal Content */}
+              <div className="p-6 space-y-6 text-sm">
+                
+                {/* Primordial Seed */}
+                {showPrimordial && (
+                  <div className="animate-fadeIn">
+                    <div className="text-cyan-400 mb-1">{'> DECRYPTING PRIMORDIAL_SEED...'}</div>
+                    <div className="text-gray-500 mb-2">{'[##########] COMPLETE'}</div>
+                    <div className="bg-gray-900/50 border-l-4 border-cyan-500 pl-4 py-2">
+                      <div className="text-cyan-300 font-mono break-all tracking-wider">
+                        {decryptedPrimordial || primordialSeed}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Quantum Hash */}
+                {showHash && (
+                  <div className="animate-fadeIn">
+                    <div className="text-green-400 mb-1">{'> EXTRACTING QUANTUM_HASH...'}</div>
+                    <div className="text-gray-500 mb-2">{'[##########] COMPLETE'}</div>
+                    <div className="bg-gray-900/50 border-l-4 border-green-500 pl-4 py-2">
+                      <div className="text-green-300 font-mono break-all text-xs tracking-wide">
+                        {decryptedHash || sha256Seed}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Universal Constant - Special Effect */}
+                {showDecimal && (
+                  <div className="animate-fadeIn">
+                    <div className="text-yellow-400 mb-1">{'> CALCULATING UNIVERSAL_CONSTANT [77-DIGIT PRECISION]...'}</div>
+                    <div className="text-gray-500 mb-2">{'[##########] SEQUENCE LOCKED'}</div>
+                    <div className="bg-gradient-to-r from-yellow-900/30 to-orange-900/30 border border-yellow-500/50 p-4 rounded">
+                      <div className="text-center mb-2">
+                        <div className="text-yellow-400 text-xs font-mono">UNIVERSAL MATHEMATICAL CONSTANT</div>
+                      </div>
+                      <div className="bg-black/70 p-3 rounded border border-yellow-500/30">
+                        <div className="text-yellow-200 font-mono text-center" style={{ letterSpacing: '2px' }}>
+                          {decryptedDecimal && decryptedDecimal.split('').map((digit, i) => (
+                            <span key={i} className={i % 7 === 0 && i > 0 ? 'ml-2' : ''}>{digit}</span>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="text-center mt-2">
+                        <div className="text-yellow-600 text-xs">QUANTUM ENTROPY: {decryptedDecimal.length}/77 DIGITS</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Cosmic Origin Time - Special Effect */}
+                {showTime && seedData?.cosmic_origin_time && (
+                  <div className="animate-fadeIn">
+                    <div className="text-purple-400 mb-1">{'> SYNCHRONIZING TEMPORAL_COORDINATES...'}</div>
+                    <div className="text-gray-500 mb-2">{'[##########] TIMELINE ESTABLISHED'}</div>
+                    <div className="bg-gradient-to-r from-purple-900/30 to-blue-900/30 border border-purple-500/50 p-4 rounded">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <div className="text-purple-400 text-xs mb-1">UNIX TIMESTAMP</div>
+                          <div className="text-purple-200 font-mono text-lg">
+                            {decryptedTime.split(' | ')[0] || seedData.cosmic_origin_time}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-purple-400 text-xs mb-1">HUMAN READABLE</div>
+                          <div className="text-purple-200 font-mono text-sm">
+                            {decryptedTime.split(' | ')[1] || seedData.cosmic_origin_datetime}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-3 pt-3 border-t border-purple-500/30">
+                        <div className="text-center">
+                          <div className="text-purple-400 text-xs">COSMIC GENESIS MOMENT</div>
+                          <div className="flex items-center justify-center gap-2 mt-1">
+                            <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
+                            <div className="text-purple-300 font-mono text-xs">TIMELINE_ANCHOR_CONFIRMED</div>
+                            <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Final Status */}
+                {showTime && (
+                  <div className="mt-8 text-center animate-fadeIn">
+                    <div className="text-green-400 font-mono text-sm border border-green-500/50 bg-green-900/20 px-4 py-2 inline-block">
+                      {'> UNIVERSE_STATE: INITIALIZED | READY_FOR_EXPLORATION <'}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* CSS animations */}
       <style>{`
-        @keyframes fadeIn {
-          from { 
-            opacity: 0; 
-            transform: translateY(10px);
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
           }
-          to { 
-            opacity: 1; 
+          to {
+            opacity: 1;
             transform: translateY(0);
           }
         }
         
-        .animate-fadeIn {
-          animation: fadeIn 0.6s ease-out forwards;
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        
+        @keyframes pulse {
+          0%, 100% { 
+            opacity: 1;
+            filter: brightness(1);
+          }
+          50% { 
+            opacity: 0.9;
+            filter: brightness(1.2);
+          }
         }
       `}</style>
 
