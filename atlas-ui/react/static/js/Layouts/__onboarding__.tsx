@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import VersionFooter from "../Components/VersionFooter.tsx";
 import UniverseAnimationCanvas from "../Components/UniverseAnimationCanvas.tsx";
-import MatrixTextReveal from "../Components/MatrixTextReveal.tsx";
+import StarfieldWarpReveal from "../Components/StarfieldWarpReveal.tsx";
 
 interface OnboardingLayoutProps {
   version: string;
@@ -195,7 +195,7 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({ version }) => {
         </div>
       </div>
 
-      {animationState === "redirecting" && <MatrixTextReveal seedData={seedData} onComplete={handleMatrixComplete} />}
+      {animationState === "redirecting" && <StarfieldWarpReveal seedData={seedData} onComplete={handleMatrixComplete} />}
     </>
   );
 };
