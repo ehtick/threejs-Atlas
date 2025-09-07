@@ -36,11 +36,19 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
   const [decryptedHash, setDecryptedHash] = useState("");
   const [decryptedDecimal, setDecryptedDecimal] = useState("");
   const [decryptedTime, setDecryptedTime] = useState("");
+  const [currentCommand, setCurrentCommand] = useState("");
+  const [currentResult, setCurrentResult] = useState("");
+  const [commandPhase, setCommandPhase] = useState(true);
+  const [activeCommandIndex, setActiveCommandIndex] = useState(0);
   const [showPrimordial, setShowPrimordial] = useState(false);
   const [showHash, setShowHash] = useState(false);
   const [showDecimal, setShowDecimal] = useState(false);
   const [showTime, setShowTime] = useState(false);
   const [showCompletion, setShowCompletion] = useState(false);
+  const [headerStatus, setHeaderStatus] = useState("ACTIVE");
+  const [headerStatusDecrypting, setHeaderStatusDecrypting] = useState(true); // Start with Matrix effect
+  const [isMatrixMode, setIsMatrixMode] = useState(true);
+  const [canStartTextDecryption, setCanStartTextDecryption] = useState(false);
   const [isFadingOut, setIsFadingOut] = useState(false);
   const [showStarAccelerationBadge, setShowStarAccelerationBadge] = useState(false);
   const [starAccelerationFadingOut, setStarAccelerationFadingOut] = useState(false);
@@ -48,13 +56,19 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
   const [warpSpeedFadingOut, setWarpSpeedFadingOut] = useState(false);
   const [showDataManifestationBadge, setShowDataManifestationBadge] = useState(false);
   const [dataManifestationFadingOut, setDataManifestationFadingOut] = useState(false);
+  const [containerBackgroundOpacity, setContainerBackgroundOpacity] = useState(1);
+  const [needsTransparency, setNeedsTransparency] = useState(false);
+  const [canvasOpacity, setCanvasOpacity] = useState(1);
+  const [blurAmount, setBlurAmount] = useState(0);
 
   // Use actual seeds from API or fallback
   const primordialSeed = seedData?.primordial_seed || "COSMOS-" + Date.now() + "-GENESIS";
-  const sha256Seed = seedData?.sha256_seed || Array.from({length: 64}, () => 
-    Math.floor(Math.random() * 16).toString(16)
-  ).join("").toUpperCase();
-  const decimalSeed = seedData?.decimal_seed || Array.from({length: 77}, () => Math.floor(Math.random() * 10)).join("");
+  const sha256Seed =
+    seedData?.sha256_seed ||
+    Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16))
+      .join("")
+      .toUpperCase();
+  const decimalSeed = seedData?.decimal_seed || Array.from({ length: 77 }, () => Math.floor(Math.random() * 10)).join("");
 
   // Create star texture similar to UniverseAnimationCanvas
   const createCircleTexture = () => {
@@ -154,9 +168,10 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
       // Renderer setup
       const renderer = new THREE.WebGLRenderer({
         antialias: true,
-        alpha: false,
+        alpha: true, // Enable alpha for transparency
       });
       renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setClearColor(0x000000, 1); // Start with solid black
       mountRef.current.appendChild(renderer.domElement);
       rendererRef.current = renderer;
 
@@ -236,12 +251,12 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
       for (let i = 0; i < streakCount; i++) {
         const angle = Math.random() * Math.PI * 2;
         const radius = Math.random() * 30 + 10;
-        
+
         // Start point
         streakPositions[i * 6] = Math.cos(angle) * radius;
         streakPositions[i * 6 + 1] = (Math.random() - 0.5) * 60;
         streakPositions[i * 6 + 2] = 10;
-        
+
         // End point (stretched back)
         streakPositions[i * 6 + 3] = Math.cos(angle) * radius;
         streakPositions[i * 6 + 4] = streakPositions[i * 6 + 1];
@@ -270,17 +285,23 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
       const streaks = new THREE.LineSegments(streaksGeometry, streaksMaterial);
       scene.add(streaks);
 
-
-
-      // Animation
+      // Animation with coherent timing constants
       let startTime = Date.now();
       let speed = 0.3; // Start slower for better buildup
       let baseAcceleration = 0.005;
-      let maxSpeed = 25; // Much lower max speed for coherent warp effect
+      let maxSpeed = 20; // Optimized for coherent warp effect
       let warpTriggered = false;
       let dataRevealStarted = false;
       let decelerationStarted = false;
-      
+
+      // Coherent phase timing constants (total: 15 seconds)
+      const ACCELERATION_PHASE = 5; // 0-5s: Acceleration to max speed
+      const MAX_SPEED_HOLD = 8; // 5-8s: Hold max speed
+      const DECELERATION_START = 8; // 8s: Start deceleration when terminal appears
+      const REVEAL_PHASE = 4; // 8-12s: Data revelation (during deceleration)
+      const COMPLETE_STOP = 12; // 12s: Complete stop (no stars or effects)
+      const TOTAL_DURATION = 15;
+
       // Initialize warp effect immediately with minimal value
       const initialWarpPass = composerRef.current?.passes[2] as ShaderPass;
       if (initialWarpPass) {
@@ -289,92 +310,150 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
 
       const animate = () => {
         const elapsed = (Date.now() - startTime) / 1000;
-        
-        // Show star acceleration badge at the beginning
-        if (elapsed > 1 && elapsed < 1.1 && !showStarAccelerationBadge) {
+
+        // Show star acceleration badge at the beginning (coherent 2s display)
+        if (elapsed > 0.8 && elapsed < 0.9 && !showStarAccelerationBadge) {
           setShowStarAccelerationBadge(true);
           setTimeout(() => {
             setStarAccelerationFadingOut(true);
             setTimeout(() => {
               setShowStarAccelerationBadge(false);
               setStarAccelerationFadingOut(false);
-            }, 400); // Wait for fadeout animation
-          }, 2500);
+            }, 300);
+          }, 2000); // Consistent 2s display
         }
 
-        // Slower, smoother acceleration curve
-        if (elapsed < 10) { // Longer acceleration phase
-          // Smoother acceleration curve for better warp buildup
-          const t = elapsed / 10; // Normalize to 0-1
-          const curve = Math.pow(t, 2); // Quadratic curve for smoother acceleration
+        // Phase 1: Acceleration (0-5s)
+        if (elapsed < ACCELERATION_PHASE) {
+          const t = elapsed / ACCELERATION_PHASE;
+          const curve = Math.pow(t, 2.2);
           speed = 0.3 + (maxSpeed - 0.3) * curve;
-          
-          // Earlier phase transitions
-          if (speed > 8 && !warpTriggered) { // Reduced from 15 to 8
+
+          // Trigger warp badge at 75% acceleration
+          if (speed > maxSpeed * 0.75 && !warpTriggered) {
             warpTriggered = true;
-            // Show warp speed badge for 2.5 seconds
             setShowWarpSpeedBadge(true);
             setTimeout(() => {
               setWarpSpeedFadingOut(true);
               setTimeout(() => {
                 setShowWarpSpeedBadge(false);
                 setWarpSpeedFadingOut(false);
-              }, 400); // Wait for fadeout animation
-            }, 2500);
+              }, 300);
+            }, 2000); // Consistent 2s display
           }
-        } else if (elapsed < 14) { // Maintain max speed during reveal (reduced from 16)
-          // Keep at max speed while showing data
+        } else if (elapsed < MAX_SPEED_HOLD) {
+          // Phase 2: Hold maximum speed (5-8s)
           speed = maxSpeed;
-          
-          // Trigger data reveal
-          if (!dataRevealStarted && elapsed > 11) {
+        } else if (elapsed < COMPLETE_STOP) {
+          // Phase 3: Deceleration (8-12s) - starts when terminal appears
+          const decelerationTime = elapsed - DECELERATION_START;
+          const decelerationDuration = COMPLETE_STOP - DECELERATION_START; // 4 seconds total
+          const t = decelerationTime / decelerationDuration;
+          const decelerationCurve = Math.pow(1 - t, 2);
+          speed = 0.001 + (maxSpeed - 0.001) * decelerationCurve; // Decelerate from max to complete stop
+
+          // Trigger data reveal at exactly 8s (when deceleration starts)
+          if (!dataRevealStarted && elapsed >= DECELERATION_START) {
             dataRevealStarted = true;
             setShowDataOverlay(true);
-            // Show data manifestation badge for 2.5 seconds
             setShowDataManifestationBadge(true);
             setTimeout(() => {
               setDataManifestationFadingOut(true);
               setTimeout(() => {
                 setShowDataManifestationBadge(false);
                 setDataManifestationFadingOut(false);
-              }, 400); // Wait for fadeout animation
-            }, 2500);
+              }, 300);
+            }, 1800);
+
             setTimeout(() => {
               setDataOpacity(1);
+              // SOLO DESPUÉS de que el fade-in termine completamente, iniciar la escritura
+              setTimeout(() => {
+                setCanStartTextDecryption(true);
+              }, 1500); // Esperar 1.5s para que el fade-in termine completamente
+              
+              // Start transparency at 10s (2s after data appears)
+              setTimeout(() => {
+                const startTransparency = () => {
+                  let progress = 0;
+                  const duration = 2500; // 2.5s for complete transparency
+                  const interval = 50;
+                  const steps = duration / interval;
+                  const opacityStep = 1.0 / steps;
+                  const blurStep = 10 / steps;
+
+                  const timer = setInterval(() => {
+                    progress += 1;
+                    const currentOpacity = Math.max(0, 1 - opacityStep * progress);
+                    const currentBlur = Math.min(10, blurStep * progress);
+
+                    setContainerBackgroundOpacity(currentOpacity);
+                    setCanvasOpacity(currentOpacity);
+                    setBlurAmount(currentBlur);
+
+                    if (progress >= steps) {
+                      clearInterval(timer);
+                      setNeedsTransparency(true);
+                    }
+                  }, interval);
+                };
+                startTransparency();
+              }, 2000); // 2s delay = 10s total
             }, 100);
           }
-        } else if (elapsed < 18) { // Gradual deceleration phase
-          // Start deceleration phase
-          if (!decelerationStarted) {
-            decelerationStarted = true;
-            // No badge needed for deceleration phase
-          }
-          
-          // Smooth deceleration curve - from maxSpeed to almost stopped
-          const decelerationTime = elapsed - 14; // 0 to 4 seconds
-          const t = decelerationTime / 4; // Normalize to 0-1
-          const decelerationCurve = Math.pow(1 - t, 3); // Cubic deceleration for smoother stop
-          speed = 0.05 + (maxSpeed - 0.05) * decelerationCurve; // Decelerate to almost zero
+        } else if (elapsed < TOTAL_DURATION) {
+          // Phase 4: Complete stop (12-15s) - no movement, no effects
+          speed = 0.001;
         } else {
-          // Final void phase - practically static with mysterious light
-          speed = 0.001; // Almost completely stopped
+          // After 15s - completely static
+          speed = 0.001;
         }
 
         // Update star positions and fade to void
         const positions = starsGeometry.attributes.position.array as Float32Array;
-        
-        // Calculate star fade during deceleration to void
+
+        // Calculate star fade - starts during deceleration phase for smooth transition
         let starOpacity = 1;
-        if (elapsed > 16) { // Start fading stars 2 seconds before complete stop
-          const fadeTime = elapsed - 16; // 0 to 2 seconds (until 18s)
-          const fadeProgress = Math.min(1, fadeTime / 2); // Normalize to 0-1
-          starOpacity = 1 - fadeProgress; // Fade from 1 to 0
-        }
         
-        // Update star material opacity
+        if (elapsed >= DECELERATION_START) {
+          // Start fadeout during deceleration phase based on speed reduction
+          const decelerationTime = elapsed - DECELERATION_START;
+          const decelerationDuration = COMPLETE_STOP - DECELERATION_START; // 4 seconds total
+          
+          if (decelerationTime < decelerationDuration) {
+            // Smooth fadeout curve that follows the speed deceleration
+            const t = decelerationTime / decelerationDuration;
+            // Use a smooth curve that starts slow and accelerates the fade
+            const fadeProgress = Math.pow(t, 1.5); // Smoother fade curve
+            starOpacity = Math.max(0, 1 - fadeProgress * 0.7); // Fade to 30% by end of deceleration
+          } else {
+            // Complete fadeout after deceleration (11-12s)
+            const finalFadeTime = elapsed - COMPLETE_STOP;
+            if (finalFadeTime > 0) {
+              const finalFadeProgress = Math.min(1, finalFadeTime / 1); // 1 second final fade
+              starOpacity = Math.max(0, 0.3 * (1 - finalFadeProgress)); // Fade from 30% to 0%
+            } else {
+              starOpacity = 0.3; // Maintain 30% opacity at complete stop
+            }
+          }
+
+          // Background transparency handled by earlier logic
+          scene.background = null;
+          renderer.setClearColor(0x000000, 0);
+        } else if (elapsed > DECELERATION_START - 1) {
+          // Prepare for transparency slightly before deceleration
+          scene.background = null;
+          renderer.setClearColor(0x000000, 0);
+        } else {
+          // Keep solid black during acceleration and warp
+          scene.background = new THREE.Color(0x000000);
+          renderer.setClearColor(0x000000, 1);
+        }
+
+        // Update star material opacity with smooth transition
         const starMaterial = stars.material as THREE.PointsMaterial;
         starMaterial.opacity = starOpacity;
-        
+
         for (let i = 0; i < starCount; i++) {
           // Move stars forward
           positions[i * 3 + 2] += speed;
@@ -382,7 +461,7 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
           // Recycle stars that pass the camera
           if (positions[i * 3 + 2] > 10) {
             positions[i * 3 + 2] = initialZ[i];
-            
+
             // Randomize position for variety
             const angle = Math.random() * Math.PI * 2;
             const radius = Math.random() * 50 + 5;
@@ -392,26 +471,26 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
         }
         starsGeometry.attributes.position.needsUpdate = true;
 
-        // Update warp streaks - start very early and fade during deceleration
-        if (speed > 2) { // Start even earlier
-          // Very gradual opacity curve starting from nearly invisible
+        // Update warp streaks with coherent timing
+        if (speed > 2) {
           const streakProgress = (speed - 2) / (maxSpeed - 2);
-          let streakIntensity = Math.pow(streakProgress, 1.5); // Less extreme curve for earlier visibility
-          
-          // Fade out during deceleration phase
-          if (decelerationStarted && elapsed > 14) {
-            const fadeProgress = Math.min(1, (elapsed - 14) / 4); // 4 seconds to fade out
-            streakIntensity *= (1 - fadeProgress);
+          let streakIntensity = Math.pow(streakProgress, 1.5);
+
+          // Fade out during deceleration phase - complete fade by 12s
+          if (elapsed > 11) {
+            const fadeTime = elapsed - 11;
+            const fadeProgress = Math.min(1, fadeTime / 1); // 1 second to fade
+            streakIntensity *= 1 - fadeProgress;
           }
-          
+
           streaksMaterial.opacity = streakIntensity * 0.9; // Slightly higher max opacity
-          
+
           const streakPositions = streaksGeometry.attributes.position.array as Float32Array;
           for (let i = 0; i < streakCount; i++) {
             // Move streaks with speed-based velocity
             const streakSpeed = speed * (1.0 + streakIntensity * 1.0); // Streaks get faster as speed increases
             streakPositions[i * 6 + 2] += streakSpeed;
-            
+
             // Stretch streaks based on speed - start short and grow
             const stretchFactor = 5 + speed * 2; // Start with short streaks
             streakPositions[i * 6 + 5] = streakPositions[i * 6 + 2] - stretchFactor;
@@ -420,11 +499,11 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
             if (streakPositions[i * 6 + 2] > 20) {
               const angle = Math.random() * Math.PI * 2;
               const radius = Math.random() * 30 + 10;
-              
+
               streakPositions[i * 6] = Math.cos(angle) * radius;
               streakPositions[i * 6 + 1] = (Math.random() - 0.5) * 60;
               streakPositions[i * 6 + 2] = -100;
-              
+
               streakPositions[i * 6 + 3] = streakPositions[i * 6];
               streakPositions[i * 6 + 4] = streakPositions[i * 6 + 1];
               streakPositions[i * 6 + 5] = -100 - stretchFactor;
@@ -443,15 +522,22 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
           // Bloom proportional to speed, with deceleration fade
           let speedRatio = speed / maxSpeed; // Linear normalized
           let normalizedSpeed = speed / maxSpeed; // 0 to 1
-          
-          // Apply deceleration fade to effects
-          if (decelerationStarted && elapsed > 14) {
-            const fadeProgress = Math.min(1, (elapsed - 14) / 4); // 4 seconds to fade out
-            const fadeMultiplier = 1 - fadeProgress;
-            speedRatio *= fadeMultiplier;
-            normalizedSpeed *= fadeMultiplier;
+
+          // Apply deceleration fade to effects - complete fade by 12s
+          if (elapsed > 11) {
+            const effectFadeTime = elapsed - 11;
+            const maxFadeTime = 1; // 1 second to fade effects completely (11s to 12s)
+            if (effectFadeTime < maxFadeTime) {
+              const fadeProgress = effectFadeTime / maxFadeTime;
+              const fadeMultiplier = Math.max(0, 1 - fadeProgress);
+              speedRatio *= fadeMultiplier;
+              normalizedSpeed *= fadeMultiplier;
+            } else {
+              speedRatio = 0;
+              normalizedSpeed = 0;
+            }
           }
-          
+
           // Linear progression for consistent growth, reduced during deceleration
           bloomPass.strength = 0.15 + speedRatio * 1.05; // From 0.15 to 1.2, fades during deceleration
           bloomPass.radius = 0.4 + speedRatio * 0.5; // From 0.4 to 0.9, fades during deceleration
@@ -459,29 +545,29 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
           // Smoother curve that creates a more realistic warp effect
           // Less extreme at max speed for better visual coherence, fades during deceleration
           const warpValue = Math.pow(normalizedSpeed, 1.8) * 0.8; // Smoother curve, max 0.8 for coherent visuals
-          
+
           // Always apply the warp, even at minimum speed, but fade during deceleration
           warpPass.uniforms.warpAmount.value = Math.max(0.001, warpValue); // Small minimum for subtle start
           warpPass.uniforms.time.value = elapsed;
         }
 
-        // Progressive camera shake - starts earlier, fades during deceleration
-        if (speed > 3) { // Start shake even earlier
-          // More noticeable progressive shake
-          let shakeProgress = Math.pow((speed - 3) / (maxSpeed - 3), 2.5); // Smoother curve
-          
-          // Apply deceleration fade to shake
-          if (decelerationStarted && elapsed > 14) {
-            const fadeProgress = Math.min(1, (elapsed - 14) / 4); // 4 seconds to fade out
-            shakeProgress *= (1 - fadeProgress);
+        // Progressive camera shake with coherent timing
+        if (speed > 3) {
+          let shakeProgress = Math.pow((speed - 3) / (maxSpeed - 3), 2.5);
+
+          // Apply deceleration fade to shake - complete fade by 12s
+          if (elapsed > 11) {
+            const fadeTime = elapsed - 11;
+            const fadeProgress = Math.min(1, fadeTime / 1);
+            shakeProgress *= 1 - fadeProgress;
           }
-          
+
           const shakeIntensity = shakeProgress * 1.2; // Slightly more shake
-          
+
           // Add some variance to make it feel more organic
           const shakeX = (Math.random() - 0.5) * shakeIntensity;
           const shakeY = (Math.random() - 0.5) * shakeIntensity;
-          
+
           camera.position.x = shakeX * (0.2 + shakeProgress * 0.8);
           camera.position.y = shakeY * (0.2 + shakeProgress * 0.8);
         } else {
@@ -490,43 +576,51 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
           camera.position.y *= 0.98;
         }
 
-        // FOV proportional to speed - with reasonable limits and deceleration fade
-        let fovNormalizedSpeed = speed / maxSpeed; // 0 to 1
-        
-        // Apply deceleration fade to FOV
-        if (decelerationStarted && elapsed > 14) {
-          const fadeProgress = Math.min(1, (elapsed - 14) / 4); // 4 seconds to fade out
-          fovNormalizedSpeed *= (1 - fadeProgress);
+        // FOV changes - complete return to normal by 12s
+        let fovNormalizedSpeed = speed / maxSpeed;
+
+        // FOV completely returns to normal by 12s
+        if (elapsed > 11) {
+          const returnTime = elapsed - 11;
+          const maxReturnTime = 1; // 1 second to return FOV completely (11s to 12s)
+          if (returnTime < maxReturnTime) {
+            const fadeProgress = returnTime / maxReturnTime;
+            fovNormalizedSpeed *= Math.max(0, 1 - fadeProgress);
+          } else {
+            fovNormalizedSpeed = 0;
+          }
         }
-        
-        // Smooth FOV change that doesn't get too extreme, returns to normal during deceleration
-        const fovCurve = Math.pow(fovNormalizedSpeed, 0.7); // Slightly curved for better feel
-        camera.fov = 75 + fovCurve * 25; // From 75 to 100 degrees max - more realistic range, returns to 75
+
+        // Smooth FOV change that returns to 75
+        const fovCurve = Math.pow(fovNormalizedSpeed, 0.7);
+        camera.fov = 75 + fovCurve * 25;
         camera.updateProjectionMatrix();
 
-        // Hide data overlay before void phase to reveal the mysterious light
-        if (elapsed > 16 && showDataOverlay) {
-          setDataOpacity(0); // Start fading out data overlay
+        // Hide data overlay at 14s
+        if (elapsed > 14 && showDataOverlay) {
+          setDataOpacity(0);
           setTimeout(() => {
-            setShowDataOverlay(false); // Completely hide overlay after fade
-          }, 1500); // Wait for CSS transition to complete
+            setShowDataOverlay(false);
+          }, 1000); // Faster fade for coherent ending
         }
 
-
-
         // Render
-        if (composerRef.current) {
+        if (needsTransparency) {
+          // Use direct renderer for transparency
+          renderer.render(scene, camera);
+        } else if (composerRef.current) {
+          // Use post-processing effects for normal phases
           composerRef.current.render();
         } else {
           renderer.render(scene, camera);
         }
 
-        // Complete animation after 20 seconds to allow full experience
-        if (elapsed > 20) {
+        // Complete animation after 15.5s
+        if (elapsed > TOTAL_DURATION + 0.5) {
           setIsFadingOut(true);
           setTimeout(() => {
             if (onComplete) onComplete();
-          }, 300); // Wait for fadeout animation
+          }, 300);
           return;
         }
 
@@ -538,6 +632,14 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
       console.error("Error initializing scene:", error);
     }
   };
+
+  // Update canvas opacity when it changes
+  useEffect(() => {
+    if (rendererRef.current && rendererRef.current.domElement) {
+      rendererRef.current.domElement.style.opacity = canvasOpacity.toString();
+      rendererRef.current.domElement.style.transition = "opacity 2s ease-out";
+    }
+  }, [canvasOpacity]);
 
   useEffect(() => {
     initScene();
@@ -553,54 +655,57 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
     };
   }, []);
 
-  // Decryption effect for text
+  // Text decryption will now start when canStartTextDecryption is set to true
+  // This happens 1.5s AFTER the terminal fade-in begins (when dataOpacity reaches 1)
+
+  // Decryption effect for text - starts AFTER terminal fade-in completes
   useEffect(() => {
-    if (!showDataOverlay) return;
-    
+    if (!canStartTextDecryption) return;
+
     const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    const formatTerminalLine = (text: string, maxWidth: number = 40) => {
-      const chunks = [];
-      for (let i = 0; i < text.length; i += maxWidth) {
-        chunks.push(text.slice(i, i + maxWidth));
-      }
-      return chunks.join('\n');
-    };
-    
+
     const decryptTerminalText = (terminalText: string, setter: React.Dispatch<React.SetStateAction<string>>, delay: number, onComplete?: () => void) => {
       setTimeout(() => {
         let iteration = 0;
         const interval = setInterval(() => {
-          setter(terminalText.split("")
-            .map((char, index) => {
-              if (index < iteration) {
-                return terminalText[index];
-              }
-              if (char === " " || char === "\n" || char === ">" || char === "|" || char === "-") {
-                return char;
-              }
-              return chars[Math.floor(Math.random() * chars.length)];
-            })
-            .join(""));
-          
+          setter(
+            terminalText
+              .split("")
+              .map((char, index) => {
+                if (index < iteration) {
+                  return terminalText[index];
+                }
+                if (char === " " || char === "\n" || char === ">" || char === "|" || char === "-") {
+                  return char;
+                }
+                return chars[Math.floor(Math.random() * chars.length)];
+              })
+              .join("")
+          );
+
           if (iteration >= terminalText.length) {
             clearInterval(interval);
             if (onComplete) onComplete();
           }
           iteration += 1;
-        }, 15); // Faster: reduced from 25ms to 15ms
+        }, 12); // Faster for coherent timing
       }, delay);
     };
-    
+
+    // Function to stop Matrix effect when all text is done
+    const stopMatrixEffect = () => {
+      setIsMatrixMode(false);
+    };
+
     // Generate separate terminal lines for each data type
-    const primordialLine = `> universe primordial seed ${primordialSeed}`;
-    const hashLine = `> quantum overlay sha256 ${sha256Seed}`;
-    const decimalLine = `> universal constant decimal ${decimalSeed}`;
-    const timeLine = seedData?.cosmic_origin_time ? 
-      `> atlas genesis ${seedData.cosmic_origin_time} unix ${new Date(seedData.cosmic_origin_time * 1000).toLocaleString('es-ES')}` : '';
-    
-    // Sequential animation for each line
+    const primordialLine = `atlas@cube:~ $ > DEPLOY\n > Universe Primordial Seed: ${primordialSeed}`;
+    const hashLine = `atlas@cube:~ $ > CYPHER\n > Quantum Overlay: ${sha256Seed}`;
+    const decimalLine = `atlas@cube:~ $ > CREATE\n > Universal Constant: ${decimalSeed}`;
+    const timeLine = seedData?.cosmic_origin_time ? `atlas@cube:~ $ > RUN\n > Genesis: ${seedData.cosmic_origin_time} Unix ${new Date(seedData.cosmic_origin_time * 1000).toLocaleString("es-ES")}` : "";
+
+    // Sequential animation with coherent timing (fits within 3s reveal phase)
     setShowPrimordial(true);
-    decryptTerminalText(primordialLine, setDecryptedPrimordial, 200, () => {
+    decryptTerminalText(primordialLine, setDecryptedPrimordial, 150, () => {
       // Show hash line after primordial completes
       setTimeout(() => {
         setShowHash(true);
@@ -614,84 +719,140 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
                 setTimeout(() => {
                   setShowTime(true);
                   decryptTerminalText(timeLine, setDecryptedTime, 0, () => {
-                    // Show completion after all data is done
+                    // Stop Matrix effect and show completion after all data is done
+                    stopMatrixEffect();
                     setTimeout(() => {
                       setShowCompletion(true);
-                    }, 500);
+                    }, 200);
                   });
-                }, 300);
+                }, 200);
               } else {
-                // No time data, show completion directly
+                // No time data, stop Matrix and show completion directly
+                stopMatrixEffect();
                 setTimeout(() => {
                   setShowCompletion(true);
-                }, 500);
+                }, 200);
               }
             });
-          }, 300);
+          }, 200);
         });
-      }, 300);
+      }, 200);
     });
-  }, [showDataOverlay, primordialSeed, sha256Seed, decimalSeed, seedData]);
+  }, [canStartTextDecryption, primordialSeed, sha256Seed, decimalSeed, seedData]);
+
+  // Matrix effect for header status
+  useEffect(() => {
+    if (!isMatrixMode) {
+      // When Matrix mode ends, set to ACTIVE
+      setHeaderStatus("ACTIVE");
+      setHeaderStatusDecrypting(false);
+      return;
+    }
+    
+    const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    
+    const matrixInterval = setInterval(() => {
+      // Generate random 6-character string for ACTIVE length
+      const randomText = Array.from({length: 6}, () => 
+        chars[Math.floor(Math.random() * chars.length)]
+      ).join("");
+      
+      setHeaderStatus(randomText);
+    }, 25); // Faster Matrix cycling for more dynamic effect
+    
+    return () => clearInterval(matrixInterval);
+  }, [isMatrixMode]);
 
   return (
-    <div className={`fixed inset-0 bg-black z-[9999] overflow-hidden ${isFadingOut ? 'animate-fadeOut' : 'animate-fadeIn'}`}>
+    <div
+      className={`fixed inset-0 z-[9999] overflow-hidden ${isFadingOut ? "animate-fadeOut" : "animate-fadeIn"}`}
+      style={{
+        backgroundColor: containerBackgroundOpacity > 0 ? `rgba(0, 0, 0, ${containerBackgroundOpacity})` : "transparent",
+        backdropFilter: blurAmount > 0 ? `blur(${blurAmount}px)` : "none",
+        WebkitBackdropFilter: blurAmount > 0 ? `blur(${blurAmount}px)` : "none",
+        transition: "background-color 0.1s ease-out, backdrop-filter 0.1s ease-out",
+      }}
+    >
       {/* Three.js mount point */}
       <div ref={mountRef} className="absolute inset-0" />
 
       {/* Professional Data Overlay */}
       {showDataOverlay && (
-        <div 
+        <div
           className="absolute inset-0 flex items-center justify-center z-[60] pointer-events-none p-4"
           style={{
             opacity: dataOpacity,
-            transition: "opacity 1.5s ease-in-out"
+            transition: "opacity 1.5s ease-in-out",
           }}
         >
-          <div className="w-full max-w-2xl mx-auto">
-            {/* Terminal-style Container */}
-            <div className="bg-black/95 border border-green-400/50 shadow-2xl overflow-hidden"
-                 style={{ fontFamily: 'Courier New, monospace' }}>
-              
+          <div className="w-full max-w-2xl mx-auto px-2 sm:px-0">
+            {/* Terminal-style Container - with solid background */}
+            <div
+              className="bg-black/90 border border-green-400/50 shadow-2xl overflow-hidden backdrop-blur-sm mx-2 sm:mx-0"
+              style={{
+                fontFamily: "Courier New, monospace",
+                backdropFilter: "blur(10px)", // Add backdrop blur for better visibility
+              }}
+            >
               {/* Terminal Header */}
-              <div className="bg-green-900/30 px-4 py-2 border-b border-green-400/50 flex items-center justify-between">
-                <div className="text-green-400 text-xs font-mono uppercase tracking-wider">
-                  &gt; ATLAS QUANTUM ANALYSIS PROTOCOL v2.4.36 &lt;
+              <div className={`px-2 sm:px-4 py-2 border-b border-green-400/50 flex items-center justify-between transition-all duration-500 ${
+                isMatrixMode 
+                  ? "bg-green-900/30" 
+                  : "bg-green-500/20 border-green-300"
+              }`}>
+                <div className={`text-xs sm:text-xs font-mono uppercase tracking-wider transition-colors duration-500 break-all sm:break-normal ${
+                  isMatrixMode 
+                    ? "text-green-400" 
+                    : "text-green-300"
+                }`}>
+                  <span className="hidden sm:inline">&gt; ATLAS INITIALIZATION PROTOCOL v2.4.36 &lt;</span>
+                  <span className="sm:hidden">&gt; ATLAS INIT v2.4.36 &lt;</span>
                 </div>
                 <div className="flex gap-1 items-center">
-                  <div className="w-2 h-2 bg-green-400 animate-pulse"></div>
-                  <div className="text-green-400 text-xs">ACTIVE</div>
+                  <div className={`w-2 h-2 transition-colors duration-500 ${
+                    isMatrixMode
+                      ? "bg-green-400 animate-pulse"
+                      : "bg-green-300"
+                  }`}></div>
+                  <div className={`text-xs font-mono transition-colors duration-500 ${
+                    isMatrixMode 
+                      ? "text-green-400 animate-pulse" 
+                      : "text-green-300 font-bold"
+                  }`}>
+                    {headerStatus}
+                  </div>
                 </div>
               </div>
-              
+
               {/* Terminal Content */}
-              <div className="p-4 text-green-400 font-mono text-xs leading-relaxed bg-black/50" style={{ minHeight: '300px' }}>
+              <div className="p-2 sm:p-4 text-green-400 font-mono text-xs sm:text-xs leading-relaxed bg-black/60 overflow-x-auto" style={{ minHeight: "200px" }}>
                 {/* Sequential Terminal Output Lines */}
                 {showPrimordial && (
-                  <div className="animate-fadeIn text-green-300 mb-2">
-                    {decryptedPrimordial}
+                  <div className="animate-fadeIn text-green-300 mb-2 break-all sm:break-normal">
+                    <span className="whitespace-pre-wrap">{decryptedPrimordial}</span>
                   </div>
                 )}
-                
+
                 {showHash && (
-                  <div className="animate-fadeIn text-green-300 mb-2">
-                    {decryptedHash}
+                  <div className="animate-fadeIn text-green-300 mb-2 break-all sm:break-normal">
+                    <span className="whitespace-pre-wrap">{decryptedHash}</span>
                   </div>
                 )}
-                
+
                 {showDecimal && (
-                  <div className="animate-fadeIn text-green-300 mb-2">
-                    {decryptedDecimal}
+                  <div className="animate-fadeIn text-green-300 mb-2 break-all sm:break-normal">
+                    <span className="whitespace-pre-wrap">{decryptedDecimal}</span>
                   </div>
                 )}
-                
+
                 {showTime && (
-                  <div className="animate-fadeIn text-green-300 mb-4">
-                    {decryptedTime}
+                  <div className="animate-fadeIn text-green-300 mb-4 break-all sm:break-normal">
+                    <span className="whitespace-pre-wrap">{decryptedTime}</span>
                   </div>
                 )}
-                
+
                 {showCompletion && (
-                  <div className="animate-slideInUp text-green-400 uppercase tracking-wider mt-6">
+                  <div className="animate-slideInUp text-green-400 uppercase tracking-wider mt-6 break-all sm:break-normal">
                     &gt; universe initialization complete
                   </div>
                 )}
@@ -701,24 +862,11 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
         </div>
       )}
 
-
       {/* Phase badges (bottom center) */}
       <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-[60]">
-        {showStarAccelerationBadge && (
-          <div className={`bg-blue-500/20 text-blue-400 px-3 py-1 rounded-lg font-mono text-xs uppercase tracking-wider border border-blue-400/30 backdrop-blur-sm ${starAccelerationFadingOut ? 'animate-phaseSlideDownFadeOut' : 'animate-phaseSlideUpFadeIn'}`}>
-            INMMERSION
-          </div>
-        )}
-        {showWarpSpeedBadge && (
-          <div className={`bg-cyan-500/20 text-cyan-400 px-3 py-1 rounded-lg font-mono text-xs uppercase tracking-wider border border-cyan-400/30 backdrop-blur-sm ${warpSpeedFadingOut ? 'animate-phaseSlideDownFadeOut' : 'animate-phaseSlideUpFadeIn'}`}>
-            WARP SPEED
-          </div>
-        )}
-        {showDataManifestationBadge && (
-          <div className={`bg-green-500/20 text-green-400 px-3 py-1 rounded-lg font-mono text-xs uppercase tracking-wider border border-green-400/30 backdrop-blur-sm ${dataManifestationFadingOut ? 'animate-phaseSlideDownFadeOut' : 'animate-phaseSlideUpFadeIn'}`}>
-            GNOSIS
-          </div>
-        )}
+        {showStarAccelerationBadge && <div className={`bg-blue-500/20 text-blue-400 px-3 py-1 rounded-lg font-mono text-xs uppercase tracking-wider border border-blue-400/30 backdrop-blur-sm ${starAccelerationFadingOut ? "animate-phaseSlideDownFadeOut" : "animate-phaseSlideUpFadeIn"}`}>INMMERSION</div>}
+        {showWarpSpeedBadge && <div className={`bg-cyan-500/20 text-cyan-400 px-3 py-1 rounded-lg font-mono text-xs uppercase tracking-wider border border-cyan-400/30 backdrop-blur-sm ${warpSpeedFadingOut ? "animate-phaseSlideDownFadeOut" : "animate-phaseSlideUpFadeIn"}`}>WARP SPEED</div>}
+        {showDataManifestationBadge && <div className={`bg-green-500/20 text-green-400 px-3 py-1 rounded-lg font-mono text-xs uppercase tracking-wider border border-green-400/30 backdrop-blur-sm ${dataManifestationFadingOut ? "animate-phaseSlideDownFadeOut" : "animate-phaseSlideUpFadeIn"}`}>GNOSIS</div>}
       </div>
     </div>
   );
