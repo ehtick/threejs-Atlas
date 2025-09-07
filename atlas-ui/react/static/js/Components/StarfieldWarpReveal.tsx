@@ -32,7 +32,6 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
   const animationIdRef = useRef<number | null>(null);
   const [showDataOverlay, setShowDataOverlay] = useState(false);
   const [dataOpacity, setDataOpacity] = useState(0);
-  const [currentPhase, setCurrentPhase] = useState<"stars" | "warp" | "reveal">("stars");
   const [decryptedPrimordial, setDecryptedPrimordial] = useState("");
   const [decryptedHash, setDecryptedHash] = useState("");
   const [decryptedDecimal, setDecryptedDecimal] = useState("");
@@ -43,6 +42,12 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
   const [showTime, setShowTime] = useState(false);
   const [showCompletion, setShowCompletion] = useState(false);
   const [isFadingOut, setIsFadingOut] = useState(false);
+  const [showStarAccelerationBadge, setShowStarAccelerationBadge] = useState(false);
+  const [starAccelerationFadingOut, setStarAccelerationFadingOut] = useState(false);
+  const [showWarpSpeedBadge, setShowWarpSpeedBadge] = useState(false);
+  const [warpSpeedFadingOut, setWarpSpeedFadingOut] = useState(false);
+  const [showDataManifestationBadge, setShowDataManifestationBadge] = useState(false);
+  const [dataManifestationFadingOut, setDataManifestationFadingOut] = useState(false);
 
   // Use actual seeds from API or fallback
   const primordialSeed = seedData?.primordial_seed || "COSMOS-" + Date.now() + "-GENESIS";
@@ -284,6 +289,18 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
 
       const animate = () => {
         const elapsed = (Date.now() - startTime) / 1000;
+        
+        // Show star acceleration badge at the beginning
+        if (elapsed > 1 && elapsed < 1.1 && !showStarAccelerationBadge) {
+          setShowStarAccelerationBadge(true);
+          setTimeout(() => {
+            setStarAccelerationFadingOut(true);
+            setTimeout(() => {
+              setShowStarAccelerationBadge(false);
+              setStarAccelerationFadingOut(false);
+            }, 400); // Wait for fadeout animation
+          }, 2500);
+        }
 
         // Slower, smoother acceleration curve
         if (elapsed < 10) { // Longer acceleration phase
@@ -295,7 +312,15 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
           // Earlier phase transitions
           if (speed > 8 && !warpTriggered) { // Reduced from 15 to 8
             warpTriggered = true;
-            setCurrentPhase("warp");
+            // Show warp speed badge for 2.5 seconds
+            setShowWarpSpeedBadge(true);
+            setTimeout(() => {
+              setWarpSpeedFadingOut(true);
+              setTimeout(() => {
+                setShowWarpSpeedBadge(false);
+                setWarpSpeedFadingOut(false);
+              }, 400); // Wait for fadeout animation
+            }, 2500);
           }
         } else if (elapsed < 14) { // Maintain max speed during reveal (reduced from 16)
           // Keep at max speed while showing data
@@ -305,7 +330,15 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
           if (!dataRevealStarted && elapsed > 11) {
             dataRevealStarted = true;
             setShowDataOverlay(true);
-            setCurrentPhase("reveal");
+            // Show data manifestation badge for 2.5 seconds
+            setShowDataManifestationBadge(true);
+            setTimeout(() => {
+              setDataManifestationFadingOut(true);
+              setTimeout(() => {
+                setShowDataManifestationBadge(false);
+                setDataManifestationFadingOut(false);
+              }, 400); // Wait for fadeout animation
+            }, 2500);
             setTimeout(() => {
               setDataOpacity(1);
             }, 100);
@@ -314,7 +347,7 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
           // Start deceleration phase
           if (!decelerationStarted) {
             decelerationStarted = true;
-            setCurrentPhase("stars"); // Return to calm phase
+            // No badge needed for deceleration phase
           }
           
           // Smooth deceleration curve - from maxSpeed to almost stopped
@@ -584,15 +617,6 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
                     // Show completion after all data is done
                     setTimeout(() => {
                       setShowCompletion(true);
-                      setTimeout(() => {
-                        // Fade out terminal overlay
-                        setTimeout(() => {
-                          setDataOpacity(0);
-                          setTimeout(() => {
-                            setShowDataOverlay(false);
-                          }, 1500); // Wait for CSS transition
-                        }, 1000); // Wait 1s after completion
-                      }, 1000);
                     }, 500);
                   });
                 }, 300);
@@ -600,15 +624,6 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
                 // No time data, show completion directly
                 setTimeout(() => {
                   setShowCompletion(true);
-                  setTimeout(() => {
-                    // Fade out terminal overlay
-                    setTimeout(() => {
-                      setDataOpacity(0);
-                      setTimeout(() => {
-                        setShowDataOverlay(false);
-                      }, 1500); // Wait for CSS transition
-                    }, 1000); // Wait 1s after completion
-                  }, 1000);
                 }, 500);
               }
             });
@@ -687,21 +702,23 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
       )}
 
 
-      {/* Phase indicator (bottom left) */}
-      <div className="absolute bottom-4 left-4 z-[60] text-white/50 text-sm font-mono">
-        <div className="flex items-center gap-2">
-          <span>PHASE:</span>
-          <span className={`
-            px-2 py-1 rounded
-            ${currentPhase === 'stars' ? 'bg-blue-500/20 text-blue-400' : ''}
-            ${currentPhase === 'warp' ? 'bg-cyan-500/20 text-cyan-400' : ''}
-            ${currentPhase === 'reveal' ? 'bg-green-500/20 text-green-400' : ''}
-          `}>
-            {currentPhase === 'stars' ? 'STAR ACCELERATION' : 
-             currentPhase === 'warp' ? 'WARP SPEED' : 
-             'DATA MANIFESTATION'}
-          </span>
-        </div>
+      {/* Phase badges (bottom center) */}
+      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-[60]">
+        {showStarAccelerationBadge && (
+          <div className={`bg-blue-500/20 text-blue-400 px-3 py-1 rounded-lg font-mono text-xs uppercase tracking-wider border border-blue-400/30 backdrop-blur-sm ${starAccelerationFadingOut ? 'animate-phaseSlideDownFadeOut' : 'animate-phaseSlideUpFadeIn'}`}>
+            INMMERSION
+          </div>
+        )}
+        {showWarpSpeedBadge && (
+          <div className={`bg-cyan-500/20 text-cyan-400 px-3 py-1 rounded-lg font-mono text-xs uppercase tracking-wider border border-cyan-400/30 backdrop-blur-sm ${warpSpeedFadingOut ? 'animate-phaseSlideDownFadeOut' : 'animate-phaseSlideUpFadeIn'}`}>
+            WARP SPEED
+          </div>
+        )}
+        {showDataManifestationBadge && (
+          <div className={`bg-green-500/20 text-green-400 px-3 py-1 rounded-lg font-mono text-xs uppercase tracking-wider border border-green-400/30 backdrop-blur-sm ${dataManifestationFadingOut ? 'animate-phaseSlideDownFadeOut' : 'animate-phaseSlideUpFadeIn'}`}>
+            GNOSIS
+          </div>
+        )}
       </div>
     </div>
   );
