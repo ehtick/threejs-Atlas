@@ -264,6 +264,30 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
       const streaks = new THREE.LineSegments(streaksGeometry, streaksMaterial);
       scene.add(streaks);
 
+      // Create mysterious void light (initially hidden)
+      const voidLightGeometry = new THREE.SphereGeometry(0.5, 32, 32);
+      const voidLightMaterial = new THREE.MeshBasicMaterial({
+        color: 0x4A90E2, // Deep blue/cyan color
+        transparent: true,
+        opacity: 0
+      });
+      const voidLight = new THREE.Mesh(voidLightGeometry, voidLightMaterial);
+      voidLight.position.set(0, 0, -50); // Far in the distance
+      scene.add(voidLight);
+
+      // Add a glow ring around the void light
+      const glowRingGeometry = new THREE.RingGeometry(2, 4, 64);
+      const glowRingMaterial = new THREE.MeshBasicMaterial({
+        color: 0x4A90E2,
+        transparent: true,
+        opacity: 0,
+        side: THREE.DoubleSide,
+        blending: THREE.AdditiveBlending
+      });
+      const glowRing = new THREE.Mesh(glowRingGeometry, glowRingMaterial);
+      glowRing.position.copy(voidLight.position);
+      scene.add(glowRing);
+
       // Animation
       let startTime = Date.now();
       let speed = 0.3; // Start slower for better buildup
@@ -314,18 +338,30 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
             setCurrentPhase("stars"); // Return to calm phase
           }
           
-          // Smooth deceleration curve - from maxSpeed to very slow
+          // Smooth deceleration curve - from maxSpeed to almost stopped
           const decelerationTime = elapsed - 14; // 0 to 4 seconds
           const t = decelerationTime / 4; // Normalize to 0-1
-          const decelerationCurve = Math.pow(1 - t, 2); // Quadratic deceleration
-          speed = 0.5 + (maxSpeed - 0.5) * decelerationCurve; // Decelerate to 0.5
+          const decelerationCurve = Math.pow(1 - t, 3); // Cubic deceleration for smoother stop
+          speed = 0.05 + (maxSpeed - 0.05) * decelerationCurve; // Decelerate to almost zero
         } else {
-          // Final slow phase - almost stopped
-          speed = 0.5; // Very slow movement
+          // Final void phase - practically static with mysterious light
+          speed = 0.001; // Almost completely stopped
         }
 
-        // Update star positions
+        // Update star positions and fade to void
         const positions = starsGeometry.attributes.position.array as Float32Array;
+        
+        // Calculate star fade during deceleration to void
+        let starOpacity = 1;
+        if (elapsed > 16) { // Start fading stars 2 seconds before complete stop
+          const fadeTime = elapsed - 16; // 0 to 2 seconds (until 18s)
+          const fadeProgress = Math.min(1, fadeTime / 2); // Normalize to 0-1
+          starOpacity = 1 - fadeProgress; // Fade from 1 to 0
+        }
+        
+        // Update star material opacity
+        const starMaterial = stars.material as THREE.PointsMaterial;
+        starMaterial.opacity = starOpacity;
         
         for (let i = 0; i < starCount; i++) {
           // Move stars forward
@@ -455,6 +491,51 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
         const fovCurve = Math.pow(fovNormalizedSpeed, 0.7); // Slightly curved for better feel
         camera.fov = 75 + fovCurve * 25; // From 75 to 100 degrees max - more realistic range, returns to 75
         camera.updateProjectionMatrix();
+
+        // Hide data overlay before void phase to reveal the mysterious light
+        if (elapsed > 16 && showDataOverlay) {
+          setDataOpacity(0); // Start fading out data overlay
+          setTimeout(() => {
+            setShowDataOverlay(false); // Completely hide overlay after fade
+          }, 1500); // Wait for CSS transition to complete
+        }
+
+        // Mysterious void light - appears only in the final void phase
+        if (elapsed > 17) { // Appear 1 second before fadeout
+          const voidProgress = (elapsed - 17) / 3; // 3 seconds to fully appear
+          const pulsePhase = elapsed * 2; // Pulse frequency
+          
+          // Slow pulse with varying intensity
+          const basePulse = (Math.sin(pulsePhase) + 1) / 2; // 0 to 1
+          const slowPulse = (Math.sin(pulsePhase * 0.3) + 1) / 2; // Slower variation
+          const pulseIntensity = basePulse * 0.7 + slowPulse * 0.3; // Combined pulse
+          
+          // Fade in the mysterious light
+          const lightOpacity = Math.min(1, voidProgress) * pulseIntensity * 0.8;
+          voidLightMaterial.opacity = lightOpacity;
+          
+          // Change color intensity instead of emissive
+          const colorIntensity = lightOpacity * 3;
+          voidLightMaterial.color.setHex(0x4A90E2);
+          voidLightMaterial.color.multiplyScalar(1 + colorIntensity);
+          
+          // Pulsating glow ring
+          const ringOpacity = Math.min(1, voidProgress) * pulseIntensity * 0.3;
+          glowRingMaterial.opacity = ringOpacity;
+          
+          // Subtle rotation for mystique
+          glowRing.rotation.z = elapsed * 0.1;
+          
+          // Slight scale pulsation
+          const scaleMultiplier = 1 + pulseIntensity * 0.2;
+          voidLight.scale.setScalar(scaleMultiplier);
+          glowRing.scale.setScalar(scaleMultiplier);
+        } else {
+          // Hide the void light before final phase
+          voidLightMaterial.opacity = 0;
+          voidLightMaterial.color.setHex(0x4A90E2); // Reset color
+          glowRingMaterial.opacity = 0;
+        }
 
         // Render
         if (composerRef.current) {
