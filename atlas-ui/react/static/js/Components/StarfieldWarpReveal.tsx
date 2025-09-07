@@ -42,7 +42,6 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
   const [showDecimal, setShowDecimal] = useState(false);
   const [showTime, setShowTime] = useState(false);
   const [showCompletion, setShowCompletion] = useState(false);
-  const [showFinalCube, setShowFinalCube] = useState(false);
   const [isFadingOut, setIsFadingOut] = useState(false);
 
   // Use actual seeds from API or fallback
@@ -266,76 +265,7 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
       const streaks = new THREE.LineSegments(streaksGeometry, streaksMaterial);
       scene.add(streaks);
 
-      // Create mysterious void light (initially hidden)
-      const voidLightGeometry = new THREE.SphereGeometry(0.5, 32, 32);
-      const voidLightMaterial = new THREE.MeshBasicMaterial({
-        color: 0x4A90E2, // Deep blue/cyan color
-        transparent: true,
-        opacity: 0
-      });
-      const voidLight = new THREE.Mesh(voidLightGeometry, voidLightMaterial);
-      voidLight.position.set(0, 0, -50); // Far in the distance
-      scene.add(voidLight);
 
-      // Add a glow ring around the void light
-      const glowRingGeometry = new THREE.RingGeometry(2, 4, 64);
-      const glowRingMaterial = new THREE.MeshBasicMaterial({
-        color: 0x4A90E2,
-        transparent: true,
-        opacity: 0,
-        side: THREE.DoubleSide,
-        blending: THREE.AdditiveBlending
-      });
-      const glowRing = new THREE.Mesh(glowRingGeometry, glowRingMaterial);
-      glowRing.position.copy(voidLight.position);
-      scene.add(glowRing);
-
-      // Create final rotating cube with stars inside (similar to UniverseAnimationCanvas)
-      const finalCubeGeometry = new THREE.BoxGeometry(15, 15, 15);
-      const finalCubeMaterial = new THREE.MeshBasicMaterial({
-        color: 0x00FFFF, // Bright cyan color
-        transparent: true,
-        opacity: 0,
-        wireframe: true
-      });
-      const finalCube = new THREE.Mesh(finalCubeGeometry, finalCubeMaterial);
-      finalCube.position.set(0, 0, -5); // Even closer to camera
-      scene.add(finalCube);
-
-      // Create stars inside the cube
-      const cubeStarCount = 50;
-      const cubeStarsGeometry = new THREE.BufferGeometry();
-      const cubeStarPositions = new Float32Array(cubeStarCount * 3);
-      const cubeStarColors = new Float32Array(cubeStarCount * 3);
-
-      for (let i = 0; i < cubeStarCount; i++) {
-        // Position stars randomly inside the cube
-        cubeStarPositions[i * 3] = (Math.random() - 0.5) * 14;     // x: -7 to 7
-        cubeStarPositions[i * 3 + 1] = (Math.random() - 0.5) * 14; // y: -7 to 7
-        cubeStarPositions[i * 3 + 2] = (Math.random() - 0.5) * 14; // z: -7 to 7
-
-        // Random colors (blueish-white)
-        const intensity = Math.random() * 0.5 + 0.5;
-        cubeStarColors[i * 3] = intensity * 0.8;     // r
-        cubeStarColors[i * 3 + 1] = intensity * 0.9; // g
-        cubeStarColors[i * 3 + 2] = intensity;       // b
-      }
-
-      cubeStarsGeometry.setAttribute("position", new THREE.BufferAttribute(cubeStarPositions, 3));
-      cubeStarsGeometry.setAttribute("color", new THREE.BufferAttribute(cubeStarColors, 3));
-
-      const cubeStarsMaterial = new THREE.PointsMaterial({
-        size: 0.3,
-        vertexColors: true,
-        blending: THREE.AdditiveBlending,
-        transparent: true,
-        opacity: 0,
-        map: createCircleTexture(),
-      });
-
-      const cubeStars = new THREE.Points(cubeStarsGeometry, cubeStarsMaterial);
-      cubeStars.position.copy(finalCube.position);
-      scene.add(cubeStars);
 
       // Animation
       let startTime = Date.now();
@@ -549,33 +479,7 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
           }, 1500); // Wait for CSS transition to complete
         }
 
-        // Keep void light hidden - we only want the cube to appear
-        voidLightMaterial.opacity = 0;
-        voidLightMaterial.color.setHex(0x4A90E2); // Reset color
-        glowRingMaterial.opacity = 0;
 
-        // Show final rotating cube with stars after completion
-        if (showFinalCube) {
-          const cubeAppearTime = elapsed - 16; // Cube appears at 16s (earlier)
-          const cubeProgress = Math.min(1, Math.max(0, cubeAppearTime * 2)); // Fade in over 0.5s
-          
-          // Fade in the cube (make it very visible)
-          finalCubeMaterial.opacity = cubeProgress * 1.0; // Full opacity for wireframe
-          cubeStarsMaterial.opacity = cubeProgress * 1.0; // Full opacity for stars
-          
-          // Rotate the cube similar to UniverseAnimationCanvas
-          const rotationSpeed = elapsed * 0.4;
-          finalCube.rotation.x = Math.sin(rotationSpeed * 0.7) * 0.3;
-          finalCube.rotation.y = rotationSpeed * 0.8;
-          finalCube.rotation.z = Math.cos(rotationSpeed * 0.5) * 0.25;
-          
-          // Rotate the stars inside with the cube
-          cubeStars.rotation.copy(finalCube.rotation);
-        } else {
-          // Hide the cube
-          finalCubeMaterial.opacity = 0;
-          cubeStarsMaterial.opacity = 0;
-        }
 
         // Render
         if (composerRef.current) {
@@ -681,14 +585,13 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
                     setTimeout(() => {
                       setShowCompletion(true);
                       setTimeout(() => {
-                        setShowFinalCube(true);
-                        // Fade out terminal overlay to show the cube
+                        // Fade out terminal overlay
                         setTimeout(() => {
                           setDataOpacity(0);
                           setTimeout(() => {
                             setShowDataOverlay(false);
                           }, 1500); // Wait for CSS transition
-                        }, 1000); // Wait 1s after cube appears
+                        }, 1000); // Wait 1s after completion
                       }, 1000);
                     }, 500);
                   });
@@ -698,14 +601,13 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
                 setTimeout(() => {
                   setShowCompletion(true);
                   setTimeout(() => {
-                    setShowFinalCube(true);
-                    // Fade out terminal overlay to show the cube
+                    // Fade out terminal overlay
                     setTimeout(() => {
                       setDataOpacity(0);
                       setTimeout(() => {
                         setShowDataOverlay(false);
                       }, 1500); // Wait for CSS transition
-                    }, 1000); // Wait 1s after cube appears
+                    }, 1000); // Wait 1s after completion
                   }, 1000);
                 }, 500);
               }
