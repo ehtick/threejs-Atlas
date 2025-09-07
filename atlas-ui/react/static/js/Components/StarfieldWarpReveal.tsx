@@ -591,6 +591,9 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
         camera.fov = 75 + fovCurve * 25; // From 75 to 100 degrees max - more realistic range
         camera.updateProjectionMatrix();
 
+        // Clear everything first
+        renderer.clear();
+
         // Dual rendering pass - stars first, then HUD overlay
         if (composerRef.current) {
           // Render stars with post-processing effects
@@ -603,8 +606,8 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
         // Clear only depth buffer to render HUD on top
         renderer.clearDepth();
         
-        // Render HUD scene with orthographic camera
-        if (hudSceneRef.current && hudCameraRef.current) {
+        // Render HUD scene with orthographic camera (only when data overlay is visible)
+        if (showDataOverlay && hudSceneRef.current && hudCameraRef.current) {
           renderer.render(hudSceneRef.current, hudCameraRef.current);
         }
 
