@@ -41,6 +41,7 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
   const [showHash, setShowHash] = useState(false);
   const [showDecimal, setShowDecimal] = useState(false);
   const [showTime, setShowTime] = useState(false);
+  const [isFadingOut, setIsFadingOut] = useState(false);
 
   // Use actual seeds from API or fallback
   const primordialSeed = seedData?.primordial_seed || "COSMOS-" + Date.now() + "-GENESIS";
@@ -424,7 +425,10 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
 
         // Complete animation after 20 seconds to allow full experience
         if (elapsed > 20) {
-          if (onComplete) onComplete();
+          setIsFadingOut(true);
+          setTimeout(() => {
+            if (onComplete) onComplete();
+          }, 300); // Wait for fadeout animation
           return;
         }
 
@@ -514,7 +518,7 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
   }, [showDataOverlay, primordialSeed, sha256Seed, decimalSeed, seedData]);
 
   return (
-    <div className="fixed inset-0 bg-black z-50 overflow-hidden">
+    <div className={`fixed inset-0 bg-black z-[9999] overflow-hidden ${isFadingOut ? 'animate-fadeOut' : 'animate-fadeIn'}`}>
       {/* Three.js mount point */}
       <div ref={mountRef} className="absolute inset-0" />
 
