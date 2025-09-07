@@ -271,6 +271,7 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
       let maxSpeed = 25; // Much lower max speed for coherent warp effect
       let warpTriggered = false;
       let dataRevealStarted = false;
+      let decelerationStarted = false;
       
       // Initialize warp effect immediately with minimal value
       const initialWarpPass = composerRef.current?.passes[2] as ShaderPass;
@@ -293,7 +294,7 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
             warpTriggered = true;
             setCurrentPhase("warp");
           }
-        } else if (elapsed < 16) { // Maintain max speed during reveal
+        } else if (elapsed < 14) { // Maintain max speed during reveal (reduced from 16)
           // Keep at max speed while showing data
           speed = maxSpeed;
           
@@ -306,9 +307,21 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
               setDataOpacity(1);
             }, 100);
           }
+        } else if (elapsed < 18) { // Gradual deceleration phase
+          // Start deceleration phase
+          if (!decelerationStarted) {
+            decelerationStarted = true;
+            setCurrentPhase("stars"); // Return to calm phase
+          }
+          
+          // Smooth deceleration curve - from maxSpeed to very slow
+          const decelerationTime = elapsed - 14; // 0 to 4 seconds
+          const t = decelerationTime / 4; // Normalize to 0-1
+          const decelerationCurve = Math.pow(1 - t, 2); // Quadratic deceleration
+          speed = 0.5 + (maxSpeed - 0.5) * decelerationCurve; // Decelerate to 0.5
         } else {
-          // After 16 seconds, slowly decelerate
-          speed = Math.max(8, maxSpeed * Math.pow(0.97, elapsed - 16)); // Gradual slowdown but stays above 8
+          // Final slow phase - almost stopped
+          speed = 0.5; // Very slow movement
         }
 
         // Update star positions
@@ -331,11 +344,18 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
         }
         starsGeometry.attributes.position.needsUpdate = true;
 
-        // Update warp streaks - start very early
+        // Update warp streaks - start very early and fade during deceleration
         if (speed > 2) { // Start even earlier
           // Very gradual opacity curve starting from nearly invisible
           const streakProgress = (speed - 2) / (maxSpeed - 2);
-          const streakIntensity = Math.pow(streakProgress, 1.5); // Less extreme curve for earlier visibility
+          let streakIntensity = Math.pow(streakProgress, 1.5); // Less extreme curve for earlier visibility
+          
+          // Fade out during deceleration phase
+          if (decelerationStarted && elapsed > 14) {
+            const fadeProgress = Math.min(1, (elapsed - 14) / 4); // 4 seconds to fade out
+            streakIntensity *= (1 - fadeProgress);
+          }
+          
           streaksMaterial.opacity = streakIntensity * 0.9; // Slightly higher max opacity
           
           const streakPositions = streaksGeometry.attributes.position.array as Float32Array;
@@ -372,29 +392,42 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
         const warpPass = composer?.passes[2] as ShaderPass;
 
         if (bloomPass && warpPass) {
-          // Bloom always proportional to speed
-          const speedRatio = speed / maxSpeed; // Linear normalized
-          // Linear progression for consistent growth
-          bloomPass.strength = 0.15 + speedRatio * 1.05; // From 0.15 to 1.2, always visible
-          bloomPass.radius = 0.4 + speedRatio * 0.5; // From 0.4 to 0.9
-
-          // Completely smooth and proportional warp effect
-          // Always active, growing with speed
-          const normalizedSpeed = speed / maxSpeed; // 0 to 1
+          // Bloom proportional to speed, with deceleration fade
+          let speedRatio = speed / maxSpeed; // Linear normalized
+          let normalizedSpeed = speed / maxSpeed; // 0 to 1
           
+          // Apply deceleration fade to effects
+          if (decelerationStarted && elapsed > 14) {
+            const fadeProgress = Math.min(1, (elapsed - 14) / 4); // 4 seconds to fade out
+            const fadeMultiplier = 1 - fadeProgress;
+            speedRatio *= fadeMultiplier;
+            normalizedSpeed *= fadeMultiplier;
+          }
+          
+          // Linear progression for consistent growth, reduced during deceleration
+          bloomPass.strength = 0.15 + speedRatio * 1.05; // From 0.15 to 1.2, fades during deceleration
+          bloomPass.radius = 0.4 + speedRatio * 0.5; // From 0.4 to 0.9, fades during deceleration
+
           // Smoother curve that creates a more realistic warp effect
-          // Less extreme at max speed for better visual coherence
+          // Less extreme at max speed for better visual coherence, fades during deceleration
           const warpValue = Math.pow(normalizedSpeed, 1.8) * 0.8; // Smoother curve, max 0.8 for coherent visuals
           
-          // Always apply the warp, even at minimum speed
+          // Always apply the warp, even at minimum speed, but fade during deceleration
           warpPass.uniforms.warpAmount.value = Math.max(0.001, warpValue); // Small minimum for subtle start
           warpPass.uniforms.time.value = elapsed;
         }
 
-        // Progressive camera shake - starts earlier
+        // Progressive camera shake - starts earlier, fades during deceleration
         if (speed > 3) { // Start shake even earlier
           // More noticeable progressive shake
-          const shakeProgress = Math.pow((speed - 3) / (maxSpeed - 3), 2.5); // Smoother curve
+          let shakeProgress = Math.pow((speed - 3) / (maxSpeed - 3), 2.5); // Smoother curve
+          
+          // Apply deceleration fade to shake
+          if (decelerationStarted && elapsed > 14) {
+            const fadeProgress = Math.min(1, (elapsed - 14) / 4); // 4 seconds to fade out
+            shakeProgress *= (1 - fadeProgress);
+          }
+          
           const shakeIntensity = shakeProgress * 1.2; // Slightly more shake
           
           // Add some variance to make it feel more organic
@@ -409,11 +442,18 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
           camera.position.y *= 0.98;
         }
 
-        // FOV always proportional to speed - but with reasonable limits
-        const normalizedSpeed = speed / maxSpeed; // 0 to 1
-        // Smooth FOV change that doesn't get too extreme
-        const fovCurve = Math.pow(normalizedSpeed, 0.7); // Slightly curved for better feel
-        camera.fov = 75 + fovCurve * 25; // From 75 to 100 degrees max - more realistic range
+        // FOV proportional to speed - with reasonable limits and deceleration fade
+        let fovNormalizedSpeed = speed / maxSpeed; // 0 to 1
+        
+        // Apply deceleration fade to FOV
+        if (decelerationStarted && elapsed > 14) {
+          const fadeProgress = Math.min(1, (elapsed - 14) / 4); // 4 seconds to fade out
+          fovNormalizedSpeed *= (1 - fadeProgress);
+        }
+        
+        // Smooth FOV change that doesn't get too extreme, returns to normal during deceleration
+        const fovCurve = Math.pow(fovNormalizedSpeed, 0.7); // Slightly curved for better feel
+        camera.fov = 75 + fovCurve * 25; // From 75 to 100 degrees max - more realistic range, returns to 75
         camera.updateProjectionMatrix();
 
         // Render
