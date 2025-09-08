@@ -10,6 +10,7 @@ from hypercorn.asyncio import serve
 from hypercorn.config import Config
 
 from flask import Flask, render_template, request, redirect, url_for, send_file, session, g, send_from_directory, jsonify
+from flask_compress import Compress
 
 from vite_fusion import register_vite_assets
 
@@ -39,6 +40,9 @@ template_folder = os.path.join(os.getcwd(), "atlas-ui", "template")
 
 app = Flask(__name__, static_folder=None, template_folder=template_folder)
 app.secret_key = os.urandom(24)
+
+# Enable gzip compression
+Compress(app)
 
 register_vite_assets(
     app,

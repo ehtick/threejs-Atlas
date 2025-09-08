@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.4.40] - 2025-09-08
+
+- Added Flask-Compress to the whole app, there's an almost 2MiB JS bundle which needs to be sent faster.
+
 ## [2.4.38] - 2025-09-08
 
 - Completely redesigned initialization sequence with animated starfield on main screen per-device first join showing seeds information and cosmic origin time. Improved initialization protocol to create atlas.ini configuration before animation starts, ensuring proper setup sequence later on starfield animation and disabled enable_cache on the atlas.ini by default since this was a deprecated Pillow option.
