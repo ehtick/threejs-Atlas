@@ -257,7 +257,7 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
       const MAX_SPEED_HOLD = 7;
       const DECELERATION_START = 7;
       const COMPLETE_STOP = 11;
-      const STAR_FADEOUT_START = 9.5;
+      const STAR_FADEOUT_START = 9;
       const TOTAL_DURATION = 15;
       const initialWarpPass = composerRef.current?.passes[2] as ShaderPass;
       if (initialWarpPass) {
@@ -325,12 +325,12 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
                   const interval = 50;
                   const steps = duration / interval;
                   const opacityStep = 1.0 / steps;
-                  const blurStep = 10 / steps;
+                  const blurStep = 100 / steps;
 
                   const timer = setInterval(() => {
                     progress += 1;
                     const currentOpacity = Math.max(0, 1 - opacityStep * progress);
-                    const currentBlur = Math.min(10, blurStep * progress);
+                    const currentBlur = Math.min(100, blurStep * progress);
 
                     setContainerBackgroundOpacity(currentOpacity);
                     setCanvasOpacity(currentOpacity);
@@ -501,6 +501,7 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
         const fovCurve = Math.pow(fovNormalizedSpeed, 0.7);
         camera.fov = 75 + fovCurve * 25;
         camera.updateProjectionMatrix();
+
 
         if (elapsed > 14 && showDataOverlay) {
           setDataOpacity(0);
