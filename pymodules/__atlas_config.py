@@ -73,7 +73,7 @@ class Config:
             "seed": seed_str,
             "cosmic_origin_time": str(cosmic_origin_time),
             "image_quality": "100",
-            "enable_cache": "True",
+            "enable_cache": "False",
             "cache_cleanup_time": "900",
         }
         with open("atlas.ini", "w") as configfile:

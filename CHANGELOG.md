@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.4.38] - 2025-09-08
+
+- Completely redesigned initialization sequence with animated starfield on main screen per-device first join showing seeds information and cosmic origin time. Improved initialization protocol to create atlas.ini configuration before animation starts, ensuring proper setup sequence later on starfield animation and disabled enable_cache on the atlas.ini by default since this was a deprecated Pillow option.
+
 ## [2.4.36] - 2025-09-06
 
 - Added Arecibo-style analysis images for planetary life forms (with compounds, nucleotides, physical representations, radio telescopes, DNA helices, etc., accessible via each planet’s “Life Forms” banner), enabled closing the Mass Collection modal by clicking outside, and introduced animations to 3D scenes when galaxies, systems, or planets are manually mined.

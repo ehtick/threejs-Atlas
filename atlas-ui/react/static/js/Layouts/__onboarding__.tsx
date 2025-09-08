@@ -40,15 +40,10 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({ version }) => {
     setSelectedUniverse(value);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedUniverse || animationState !== "selection") return;
 
-    setAnimationState("animating");
-    setAnimationType(selectedUniverse === "default" ? "core" : "multiverse");
-  };
-
-  const handleAnimationComplete = async () => {
     const formData = new FormData();
     formData.append("universe_type", selectedUniverse);
 
@@ -57,16 +52,26 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({ version }) => {
         method: "POST",
         body: formData,
       });
+
+      if (createResponse.ok) {
+        setAnimationState("animating");
+        setAnimationType(selectedUniverse === "default" ? "core" : "multiverse");
+      } else {
+        console.error("Server responded with error:", createResponse.status);
+      }
     } catch (error) {
       console.error("Error creating universe:", error);
-      window.location.href = "/";
     }
+  };
+
+  const handleAnimationComplete = async () => {
+    window.location.href = "/";
   };
 
   return (
     <>
       {animationType && (
-        <div className="fixed inset-0 bg-black z-50 opacity-0 animate-fade-in">
+        <div className="fixed inset-0 bg-black z-50">
           <UniverseAnimationCanvas animationType={animationType} onAnimationComplete={handleAnimationComplete} />
         </div>
       )}
