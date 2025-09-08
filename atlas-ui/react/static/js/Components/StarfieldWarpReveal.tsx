@@ -106,11 +106,11 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
         vec2 direction = vUv - center;
         float distance = length(direction);
         
-        float stretchBase = 1.0 + warpAmount * distance * distance * 2.0;
+        float stretchBase = 1.0 + warpAmount * distance * distance * 6.0;
         vec2 stretchedUv = center + direction * stretchBase;
         
-        float aberrationAmount = warpAmount * distance * 0.015;
-        vec2 redOffset = direction * aberrationAmount * 1.2;
+        float aberrationAmount = warpAmount * distance * 1.0;
+        vec2 redOffset = direction * aberrationAmount * 0.4;
         vec2 blueOffset = direction * aberrationAmount * -0.4;
         
         float red = texture2D(tDiffuse, stretchedUv + redOffset).r;
@@ -120,7 +120,7 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
         float lineFrequency = 8.0 + warpAmount * 12.0;
         float lines = sin(atan(direction.y, direction.x) * lineFrequency + time * (20.0 + warpAmount * 80.0)) * 0.5 + 0.5;
         float lineIntensity = warpAmount * warpAmount;
-        float lineEffect = lines * lineIntensity * 0.4 * distance;
+        float lineEffect = lines * lineIntensity * 0.2 * distance;
         
         vec3 color = vec3(red, green, blue);
         color += vec3(lineEffect * 0.3, lineEffect * 0.5, lineEffect * 0.8) * smoothstep(0.0, 1.0, warpAmount);
@@ -253,10 +253,10 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
       let warpTriggered = false;
       let dataRevealStarted = false;
 
-      const ACCELERATION_PHASE = 5;
+      const ACCELERATION_PHASE = 4;
       const MAX_SPEED_HOLD = 7;
-      const DECELERATION_START = 7;
-      const COMPLETE_STOP = 11;
+      const DECELERATION_START = 8;
+      const COMPLETE_STOP = 12;
       const STAR_FADEOUT_START = 9;
       const TOTAL_DURATION = 15;
       const initialWarpPass = composerRef.current?.passes[2] as ShaderPass;
@@ -729,8 +729,8 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
       )}
 
       <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-[60]">
-        {showStarAccelerationBadge && <div className={`bg-blue-500/20 text-blue-400 px-3 py-1 rounded-lg font-mono text-xs uppercase tracking-wider border border-blue-400/30 backdrop-blur-sm ${starAccelerationFadingOut ? "animate-phaseSlideDownFadeOut" : "animate-phaseSlideUpFadeIn"}`}>INMMERSION</div>}
-        {showWarpSpeedBadge && <div className={`bg-cyan-500/20 text-cyan-400 px-3 py-1 rounded-lg font-mono text-xs uppercase tracking-wider border border-cyan-400/30 backdrop-blur-sm ${warpSpeedFadingOut ? "animate-phaseSlideDownFadeOut" : "animate-phaseSlideUpFadeIn"}`}>WARP SPEED</div>}
+        {showStarAccelerationBadge && <div className={`bg-blue-500/20 text-blue-400 px-3 py-1 rounded-lg font-mono text-xs uppercase tracking-wider border border-blue-400/30 backdrop-blur-sm ${starAccelerationFadingOut ? "animate-phaseSlideDownFadeOut" : "animate-phaseSlideUpFadeIn"}`}>IMMERSION</div>}
+        {showWarpSpeedBadge && <div className={`bg-cyan-500/20 text-cyan-400 px-3 py-1 rounded-lg font-mono text-xs uppercase tracking-wider border border-cyan-400/30 backdrop-blur-sm ${warpSpeedFadingOut ? "animate-phaseSlideDownFadeOut" : "animate-phaseSlideUpFadeIn"}`}>WARP</div>}
         {showDataManifestationBadge && <div className={`bg-green-500/20 text-green-400 px-3 py-1 rounded-lg font-mono text-xs uppercase tracking-wider border border-green-400/30 backdrop-blur-sm ${dataManifestationFadingOut ? "animate-phaseSlideDownFadeOut" : "animate-phaseSlideUpFadeIn"}`}>GNOSIS</div>}
       </div>
     </div>
