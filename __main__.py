@@ -112,6 +112,11 @@ def onboarding():
     return render_template("onboarding.html", version=VERSION, versionHash=VERSION_HASH, run_mode=RUN)
 
 
+@app.route("/universe-faq")
+def universe_faq():
+    return render_template("faq.html", version=VERSION, versionHash=VERSION_HASH, run_mode=RUN)
+
+
 @app.route("/navigate", methods=["POST"])
 def navigate():
     x = int(request.form["x"])

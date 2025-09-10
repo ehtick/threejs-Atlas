@@ -79,7 +79,7 @@ const StargateButton: React.FC<StargateButtonProps> = ({ href, className = "", s
       >
         <div className="flex-1 flex items-stretch">
           <a href={href} className="px-4 py-2 font-mono flex items-center gap-1 text-inherit no-underline w-full h-full rounded-lg hover:bg-slate-700 transition-all duration-200">
-            <svg xmlns="http://www.w3.org/2000/svg" width={24} height={24} viewBox="0 0 24 24">
+            <svg xmlns="http://www.w3.org/2000/svg" className="mr-1" width={24} height={24} viewBox="0 0 24 24">
               <g fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth={1.5}>
                 <path d="M14 12a6 6 0 1 1-6-6"></path>
                 <path d="M10 12a6 6 0 1 1 6 6" opacity={0.5}></path>

@@ -10,6 +10,7 @@ import SpaceshipPanel from "../Components/SpaceshipPanel.tsx";
 import TreasureChest from "../Components/TreasureChest.tsx";
 import FuelBars from "../Components/FuelBars.tsx";
 import { markSystemAsVisited } from "../Utils/VisitHistory.tsx";
+import DidYouKnow from "../Components/DidYouKnow.tsx";
 
 interface System {
   name: string;
@@ -132,6 +133,7 @@ const SystemLayout: React.FC<SystemLayoutProps> = ({ system, galaxy, system_url,
           systemIndex: system.index,
         }}
       />
+      <DidYouKnow currentView="system" />
     </div>
   );
 };

@@ -11,6 +11,7 @@ import SpaceshipPanel from "../Components/SpaceshipPanel.tsx";
 import TreasureChest from "../Components/TreasureChest.tsx";
 import FuelBars from "../Components/FuelBars.tsx";
 import { markGalaxyAsVisited } from "../Utils/VisitHistory.tsx";
+import DidYouKnow from "../Components/DidYouKnow.tsx";
 
 interface Galaxy {
   name: string;
@@ -78,15 +79,7 @@ const GalaxyLayout: React.FC<GalaxyLayoutProps> = ({ galaxy, systems, galaxy_url
           <div className="bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 mb-8 shadow-2xl p-4 sm:p-6">
             <div className="flex flex-col lg:grid lg:grid-cols-[400px_1fr] gap-6 lg:gap-8 relative">
               <div className="order-1 lg:order-1">
-                <GalaxyVisualization 
-                  galaxyUrl={galaxy_url} 
-                  galaxyType={galaxy.galaxy_type}
-                  numSystems={galaxy.num_systems}
-                  blackHoles={galaxy.black_holes}
-                  pulsars={galaxy.pulsars}
-                  quasars={galaxy.quasars}
-                  galaxyName={formatGalaxyName(galaxy.name)}
-                />
+                <GalaxyVisualization galaxyUrl={galaxy_url} galaxyType={galaxy.galaxy_type} numSystems={galaxy.num_systems} blackHoles={galaxy.black_holes} pulsars={galaxy.pulsars} quasars={galaxy.quasars} galaxyName={formatGalaxyName(galaxy.name)} />
               </div>
 
               <div className="hidden lg:block absolute left-[416px] top-0 bottom-0 w-1 rounded-full bg-white/10 -translate-x-1.5"></div>
@@ -122,6 +115,7 @@ const GalaxyLayout: React.FC<GalaxyLayoutProps> = ({ galaxy, systems, galaxy_url
           coordinates: galaxy.coordinates.join(","),
         }}
       />
+      <DidYouKnow currentView="galaxy" />
     </div>
   );
 };

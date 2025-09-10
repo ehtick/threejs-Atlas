@@ -676,9 +676,9 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
             >
               <div className={`px-3 sm:px-6 py-3 border-b border-green-400/50 flex items-center justify-between transition-all duration-500 ${isMatrixMode ? "bg-green-900/30" : "bg-green-500/20 border-green-300"}`}>
                 <div className={`text-xs sm:text-sm font-mono uppercase tracking-wider transition-colors duration-500 break-words sm:break-normal overflow-hidden ${isMatrixMode ? "text-green-400" : "text-green-300"}`}>
-                  <span className="hidden lg:inline">&gt; ATLAS INITIALIZATION PROTOCOL v2.4.40 &lt;</span>
-                  <span className="hidden sm:inline lg:hidden">&gt; ATLAS INIT PROTOCOL v2.4.40 &lt;</span>
-                  <span className="sm:hidden">&gt; ATLAS INIT v2.4.40 &lt;</span>
+                  <span className="hidden lg:inline">&gt; ATLAS INITIALIZATION PROTOCOL v2.4.42 &lt;</span>
+                  <span className="hidden sm:inline lg:hidden">&gt; ATLAS INIT PROTOCOL v2.4.42 &lt;</span>
+                  <span className="sm:hidden">&gt; ATLAS INIT v2.4.42 &lt;</span>
                 </div>
                 <div className="flex gap-1 items-center">
                   <div className={`w-2 h-2 transition-colors duration-500 ${isMatrixMode ? "bg-green-400 animate-pulse" : "bg-green-300"}`}></div>
@@ -729,7 +729,7 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
 
       <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-[60]">
         {showStarAccelerationBadge && <div className={`bg-blue-500/20 text-blue-400 px-3 py-1 rounded-lg font-mono text-xs uppercase tracking-wider border border-blue-400/30 backdrop-blur-sm ${starAccelerationFadingOut ? "animate-phaseSlideDownFadeOut" : "animate-phaseSlideUpFadeIn"}`}>IMMERSION</div>}
-        {showWarpSpeedBadge && <div className={`bg-cyan-500/20 text-cyan-400 px-3 py-1 rounded-lg font-mono text-xs uppercase tracking-wider border border-cyan-400/30 backdrop-blur-sm ${warpSpeedFadingOut ? "animate-phaseSlideDownFadeOut" : "animate-phaseSlideUpFadeIn"}`}>WARP</div>}
+        {showWarpSpeedBadge && <div className={`bg-cyan-500/20 text-cyan-400 px-3 py-1 rounded-lg font-mono text-xs uppercase tracking-wider border border-cyan-400/30 backdrop-blur-sm ${warpSpeedFadingOut ? "animate-phaseSlideDownFadeOut" : "animate-phaseSlideUpFadeIn"}`}>WARP JUMP</div>}
         {showDataManifestationBadge && <div className={`bg-green-500/20 text-green-400 px-3 py-1 rounded-lg font-mono text-xs uppercase tracking-wider border border-green-400/30 backdrop-blur-sm ${dataManifestationFadingOut ? "animate-phaseSlideDownFadeOut" : "animate-phaseSlideUpFadeIn"}`}>GNOSIS</div>}
       </div>
     </div>

@@ -240,6 +240,14 @@ html.nprogress-busy * {
   animation: spin-slow 2s linear infinite;
 }
 
+.animate-slideUpFadeIn {
+  animation: slideUpFadeIn 0.3s ease-out forwards;
+}
+
+.animate-slideDownFadeOut {
+  animation: slideDownFadeOut 0.3s ease-out forwards;
+}
+
 @keyframes drill-hammer {
   0%,
   100% {
@@ -1153,4 +1161,71 @@ html.nprogress-busy * {
   100% {
     opacity: 0;
   }
+}
+
+@keyframes factsFadeOut {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes factsButtonPulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+.animate-factsFadeOut {
+  animation: factsFadeOut 0.3s ease-out forwards;
+}
+
+.animate-factsButtonPulse {
+  animation: factsButtonPulse 0.4s ease-in-out;
+}
+
+@keyframes didYouKnowCircleFadeOut {
+  0% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.8) translateY(-5px);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.6) translateY(-10px);
+  }
+}
+
+.animate-didYouKnowCircleFadeOut {
+  animation: didYouKnowCircleFadeOut 0.5s ease-out forwards;
+}
+
+@keyframes didYouKnowCircleFadeIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) translateY(20px);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.1) translateY(-2px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-didYouKnowCircleFadeIn {
+  animation: didYouKnowCircleFadeIn 0.6s ease-out forwards;
 }

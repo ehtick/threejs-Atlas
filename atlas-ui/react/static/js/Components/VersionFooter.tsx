@@ -17,6 +17,12 @@ const WebIcon = () => (
   </svg>
 );
 
+const FAQIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="text-gray-400 hover:text-white transition-colors duration-200">
+    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z" />
+  </svg>
+);
+
 const TwitterIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="text-gray-400 hover:text-white transition-colors duration-200">
     <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
@@ -63,6 +69,11 @@ const VersionFooter: React.FC<VersionFooterProps> = ({ version }) => {
               <a href="https://www.banshee.pro" target="_blank" rel="noopener noreferrer" className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 transition-all duration-200 group" title="Visit Banshee Technologies">
                 <WebIcon />
                 <span className="text-sm text-gray-400 group-hover:text-white">Banshee</span>
+              </a>
+
+              <a href="/universe-faq" className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 transition-all duration-200 group" title="Universe FAQ">
+                <FAQIcon />
+                <span className="text-sm text-gray-400 group-hover:text-white">F.A.Q.</span>
               </a>
             </div>
           </div>

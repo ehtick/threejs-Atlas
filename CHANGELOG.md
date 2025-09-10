@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.4.42] - 2025-09-10
+
+- Added comprehensive F.A.Q. section with detailed explanations of The Atlas's mind-bending scale and mechanics, plus an interactive "Did you know...?" component that displays fascinating universe facts with configurable appearance to enhance user understanding of this procedural universe simulation.
+
 ## [2.4.40] - 2025-09-08
 
 - Added Flask-Compress to the whole app, there's an almost 2MiB JS bundle which needs to be sent faster.
