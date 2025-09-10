@@ -82,7 +82,7 @@ const DidYouKnow: React.FC<DidYouKnowProps> = ({ currentView }) => {
     }
 
     const randomChance = Math.random();
-    if (randomChance < 0.02 && atlasFactsEnabled !== null) {
+    if (randomChance < 0.10 && atlasFactsEnabled !== null) {
       setShouldShow(true);
       setFactIndex(Math.floor(Math.random() * facts.length));
 
