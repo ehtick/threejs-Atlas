@@ -78,7 +78,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
     setCurrentCoordinates(coordinates);
 
     if (isUserInteraction) {
-      // Clear any existing timer
       if (hideTimerRef.current) {
         clearTimeout(hideTimerRef.current);
       }
@@ -90,7 +89,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
         setShow3DViewer(false);
         setShowNavigationText(true);
         hideTimerRef.current = null;
-      }, 2000);
+      }, 3000);
     }
   };
 
@@ -133,7 +132,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
     return () => clearInterval(interval);
   }, [currentCoordinates.x, currentCoordinates.y, currentCoordinates.z]);
 
-  // Cleanup timer on unmount
   useEffect(() => {
     return () => {
       if (hideTimerRef.current) {
