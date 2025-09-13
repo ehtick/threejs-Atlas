@@ -145,8 +145,10 @@ const SystemInfo: React.FC<SystemInfoProps> = ({ system, galaxy, systemIndex, co
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1">
           {system.stars.map((star, index) => (
             <div key={index} className="bg-white/5 rounded p-1.5 border border-yellow-500/20">
-              <div className="text-xs text-gray-300">Star {index + 1}</div>
-              <div className="text-xs font-bold text-yellow-300">{star.Type}</div>
+              <div className="text-xs text-gray-300 flex items-center gap-2">
+                <span>Star {index + 1}</span>
+                <span className="font-bold text-yellow-300">{star.Type}</span>
+              </div>
               <div className="text-xs text-gray-300">
                 {star.Color} • {star.Size}
               </div>

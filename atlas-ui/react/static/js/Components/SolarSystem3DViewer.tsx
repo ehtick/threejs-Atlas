@@ -172,12 +172,12 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({ planets, star
     scene.background = new THREE.Color(0x000011);
     sceneRef.current = scene;
 
-    const camera = new THREE.PerspectiveCamera(45, containerWidth / (isMobile ? 120 : 140), 0.1, 10000);
+    const camera = new THREE.PerspectiveCamera(45, containerWidth / (isMobile ? 120 : 120), 0.1, 10000);
     camera.position.set(0, 80, 120);
     camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(containerWidth, isMobile ? 120 : 140);
+    renderer.setSize(containerWidth, isMobile ? 120 : 120);
     renderer.setClearColor(0x000011, 1);
     rendererRef.current = renderer;
     container.appendChild(renderer.domElement);
@@ -464,7 +464,7 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({ planets, star
 
     const handleResize = () => {
       const newWidth = container.clientWidth;
-      const newHeight = newWidth < 640 ? 120 : 140;
+      const newHeight = newWidth < 640 ? 120 : 120;
 
       camera.aspect = newWidth / newHeight;
       camera.updateProjectionMatrix();
