@@ -11,7 +11,7 @@ interface Coordinates {
 }
 
 interface CoordinateSelectorProps {
-  onCoordinateChange?: (coordinates: Coordinates) => void;
+  onCoordinateChange?: (coordinates: Coordinates, isUserInteraction?: boolean) => void;
   travelCost?: { antimatter: number; element115: number; deuterium: number } | null;
   canAfford?: boolean;
   formatResource?: (value: number) => string;
@@ -24,6 +24,7 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
     y: 1000000,
     z: 1000000,
   });
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const coordinateOptions = {
     x: [
@@ -86,6 +87,9 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
       ...prev,
       [coordinate]: numValue,
     }));
+    if (isInitialized && onCoordinateChange) {
+      onCoordinateChange({ ...coordinates, [coordinate]: numValue }, true);
+    }
   };
 
   const handleInputChange = (coordinate, value) => {
@@ -100,6 +104,9 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
       ...prev,
       [coordinate]: numValue,
     }));
+    if (isInitialized && onCoordinateChange) {
+      onCoordinateChange({ ...coordinates, [coordinate]: numValue }, true);
+    }
   };
 
   const handleSelectChange = (coordinate, value) => {
@@ -108,6 +115,9 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
       ...prev,
       [coordinate]: numValue,
     }));
+    if (isInitialized && onCoordinateChange) {
+      onCoordinateChange({ ...coordinates, [coordinate]: numValue }, true);
+    }
   };
 
   const randomizeCoordinates = () => {
@@ -118,16 +128,20 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
       z: Math.floor(Math.random() * maxCoordinate),
     };
     setCoordinates(newCoordinates);
+    if (isInitialized && onCoordinateChange) {
+      onCoordinateChange(newCoordinates, true);
+    }
   };
 
   useEffect(() => {
-    if (onCoordinateChange) {
-      onCoordinateChange(coordinates);
+    if (onCoordinateChange && isInitialized) {
+      onCoordinateChange(coordinates, false);
     }
-  }, [coordinates, onCoordinateChange]);
+  }, [coordinates, onCoordinateChange, isInitialized]);
 
   useEffect(() => {
     randomizeCoordinates();
+    setIsInitialized(true);
   }, []);
 
   const renderCoordinateGroup = (coordinate: string, label: string) => {

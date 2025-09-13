@@ -1,6 +1,6 @@
 // atlas-ui/react/static/js/Layouts/__main__.tsx
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Header from "../Components/Header.tsx";
 import CoordinateSelector from "../Components/CoordinateSelector.tsx";
 import CoordinateViewer3D from "../Components/CoordinateViewer3D.tsx";
@@ -32,6 +32,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
   const [travelCost, setTravelCost] = useState<{ antimatter: number; element115: number; deuterium: number } | null>(null);
   const [canAfford, setCanAfford] = useState(false);
   const [showWarpReveal, setShowWarpReveal] = useState(false);
+  const [show3DViewer, setShow3DViewer] = useState(false);
+  const [showNavigationText, setShowNavigationText] = useState(true);
+  const hideTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [seedData, setSeedData] = useState<{
     primordial_seed: string;
     sha256_seed: string;
@@ -71,8 +74,24 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
     setShowWarpReveal(false);
   };
 
-  const handleCoordinateChange = (coordinates: Coordinates) => {
+  const handleCoordinateChange = (coordinates: Coordinates, isUserInteraction: boolean = false) => {
     setCurrentCoordinates(coordinates);
+
+    if (isUserInteraction) {
+      // Clear any existing timer
+      if (hideTimerRef.current) {
+        clearTimeout(hideTimerRef.current);
+      }
+
+      setShow3DViewer(true);
+      setShowNavigationText(false);
+
+      hideTimerRef.current = setTimeout(() => {
+        setShow3DViewer(false);
+        setShowNavigationText(true);
+        hideTimerRef.current = null;
+      }, 2000);
+    }
   };
 
   const calculateTravelCost = (coordinates: Coordinates) => {
@@ -113,6 +132,15 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
 
     return () => clearInterval(interval);
   }, [currentCoordinates.x, currentCoordinates.y, currentCoordinates.z]);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (hideTimerRef.current) {
+        clearTimeout(hideTimerRef.current);
+      }
+    };
+  }, []);
 
   const formatResource = (value: number) => {
     if (value >= 1000000) {
@@ -170,14 +198,17 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
           <Header />
 
           <div className="w-full px-2 sm:px-4 lg:px-6 py-4 sm:py-8 relative">
-            <div className="text-center mb-12">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-4">Atlas Navigation System</h1>
-              <p className="text-lg sm:text-xl text-gray-300 max-w-4xl mx-auto px-4">Navigate through infinite galaxies, solar systems, and planets. Enter coordinates to begin your journey across the universe.</p>
-            </div>
+            <div className="text-center mb-12 relative min-h-[200px] flex items-center justify-center">
+              <div className={`absolute inset-0 flex flex-col items-center justify-center transition-all duration-700 ease-in-out transform ${showNavigationText ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 translate-y-2"}`} style={{ pointerEvents: showNavigationText ? "auto" : "none" }}>
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-4">Atlas Navigation System</h1>
+                <p className="text-lg sm:text-xl text-gray-300 max-w-4xl mx-auto px-4">Navigate through infinite galaxies, solar systems, and planets. Enter coordinates to begin your journey across the universe.</p>
+              </div>
 
-            {/* 3D Universe Viewer - Floating overlay */}
-            <div className="absolute left-1/2 transform -translate-x-1/2 top-32 w-64 h-48 z-30 pointer-events-none">
-              <CoordinateViewer3D coordinates={currentCoordinates} className="w-full h-full" />
+              <div className={`absolute inset-0 flex items-center justify-center transition-all duration-700 ease-in-out transform ${show3DViewer ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 -translate-y-2"}`} style={{ pointerEvents: "none" }}>
+                <div className="w-96 h-96">
+                  <CoordinateViewer3D coordinates={currentCoordinates} className="w-full h-full" />
+                </div>
+              </div>
             </div>
 
             {error && (
