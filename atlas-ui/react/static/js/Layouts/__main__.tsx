@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Header from "../Components/Header.tsx";
 import CoordinateSelector from "../Components/CoordinateSelector.tsx";
+import CoordinateViewer3D from "../Components/CoordinateViewer3D.tsx";
 import VersionFooter from "../Components/VersionFooter.tsx";
 import SpaceshipPanel from "../Components/SpaceshipPanel.tsx";
 import FuelBars from "../Components/FuelBars.tsx";
@@ -168,10 +169,15 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
         <div className="relative z-10 pt-1">
           <Header />
 
-          <div className="w-full px-2 sm:px-4 lg:px-6 py-4 sm:py-8">
+          <div className="w-full px-2 sm:px-4 lg:px-6 py-4 sm:py-8 relative">
             <div className="text-center mb-12">
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-4">Atlas Navigation System</h1>
               <p className="text-lg sm:text-xl text-gray-300 max-w-4xl mx-auto px-4">Navigate through infinite galaxies, solar systems, and planets. Enter coordinates to begin your journey across the universe.</p>
+            </div>
+
+            {/* 3D Universe Viewer - Floating overlay */}
+            <div className="absolute left-1/2 transform -translate-x-1/2 top-32 w-64 h-48 z-30 pointer-events-none">
+              <CoordinateViewer3D coordinates={currentCoordinates} className="w-full h-full" />
             </div>
 
             {error && (

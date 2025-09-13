@@ -1,6 +1,7 @@
 // atlas-ui/react/static/js/Components/NavigationForm.tsx
 import React, { useState } from "react";
 import CoordinateSelector from "./CoordinateSelector.jsx";
+import CoordinateViewer3D from "./CoordinateViewer3D.tsx";
 
 const NavigationForm = ({ error }) => {
   const [coordinates, setCoordinates] = useState({ x: 1000000, y: 1000000, z: 1000000 });
@@ -29,7 +30,13 @@ const NavigationForm = ({ error }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="flex justify-center mb-8">
+        <div className="w-80 h-60 rounded-xl overflow-hidden">
+          <CoordinateViewer3D coordinates={coordinates} className="w-full h-full" />
+        </div>
+      </div>
+
       <CoordinateSelector onCoordinateChange={handleCoordinateChange} />
       {error && <p className="error">{error}</p>}
     </form>
