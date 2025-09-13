@@ -158,33 +158,27 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
     const style = axisStyles[coordinate as keyof typeof axisStyles];
 
     return (
-      <div className="space-y-4" key={coordinate}>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      <div className="space-y-3" key={coordinate}>
+        <div className="flex items-center justify-between gap-2">
           <h3 className="text-lg sm:text-xl font-bold text-white">{label} Coordinate</h3>
           <div className={`text-xl sm:text-2xl font-mono ${style.accent} font-bold`}>{coordinates[coordinate].toLocaleString()}</div>
         </div>
 
-        <div className="space-y-2">
-          <label htmlFor={`${coordinate}-name`} className="block text-sm font-medium text-gray-300">
-            Region Name
-          </label>
-          <select id={`${coordinate}-name`} className={`w-full bg-white/10 border ${style.border} rounded-lg px-4 py-3 text-white focus:ring-2 ${style.ring} focus:border-transparent backdrop-blur-sm`} value={selectedIndex >= 0 ? coordinateOptions[coordinate][selectedIndex].value : ""} onChange={(e) => handleSelectChange(coordinate, e.target.value)}>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <select id={`${coordinate}-name`} className={`flex-1 bg-white/10 border ${style.border} rounded-lg px-4 py-3 text-white focus:ring-2 ${style.ring} focus:border-transparent backdrop-blur-sm`} value={selectedIndex >= 0 ? coordinateOptions[coordinate][selectedIndex].value : ""} onChange={(e) => handleSelectChange(coordinate, e.target.value)}>
             {coordinateOptions[coordinate].map((option, index) => (
               <option key={index} value={option.value} className="bg-gray-800 text-white">
                 {option.name}
               </option>
             ))}
           </select>
-        </div>
-
-        <div className="space-y-2">
-          <input type="number" id={`${coordinate}-value`} name={coordinate} value={coordinates[coordinate]} className={`w-full bg-white/10 border ${style.border} rounded-lg px-4 py-3 text-white focus:ring-2 ${style.ring} focus:border-transparent backdrop-blur-sm`} min="0" max="10000000" onChange={(e) => handleInputChange(coordinate, e.target.value)} />
+          <input type="number" id={`${coordinate}-value`} name={coordinate} value={coordinates[coordinate]} className={`flex-1 bg-white/10 border ${style.border} rounded-lg px-4 py-3 text-white focus:ring-2 ${style.ring} focus:border-transparent backdrop-blur-sm`} min="0" max="10000000" onChange={(e) => handleInputChange(coordinate, e.target.value)} />
         </div>
 
         <div className="space-y-3">
           <div className="relative">
             <div className={`absolute inset-0 bg-gradient-to-r ${style.gradient} opacity-20 rounded-xl blur-sm`}></div>
-            <div className="relative p-4 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm">
+            <div className="relative p-2 bg-white/5 rounded-lg border border-white/10 backdrop-blur-sm">
               <div className="relative">
                 <div className="absolute top-1 left-3 right-3 h-3 bg-white/10 rounded-xl"></div>
                 <div className={`absolute top-1 left-3 right-3 h-3 bg-gradient-to-r ${style.gradient} rounded-xl transition-all duration-200 pointer-events-none z-10`} style={{ width: `calc(${(coordinates[coordinate] / 10000000) * 100}% - 12px)` }}></div>
@@ -231,9 +225,9 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
                   `}
                   onChange={(e) => handleSliderChange(coordinate, e.target.value)}
                 />
-                <div className="flex justify-between mt-3 text-xs font-medium">
+                <div className="flex justify-between mt-2 text-xs font-medium">
                   <span className={`${style.text} drop-shadow-sm`}>The Edge</span>
-                  <span className={`text-gray-400 text-center ${style.text}`}>{coordinateOptions[coordinate][selectedIndex >= 0 ? selectedIndex : 0]?.name || "Unknown Region"}</span>
+                  <span className={`text-center ${style.text}`}>{coordinateOptions[coordinate][selectedIndex >= 0 ? selectedIndex : 0]?.name || "Unknown Region"}</span>
                   <span className={`${style.text} drop-shadow-sm`}>The Unknown</span>
                 </div>
               </div>
