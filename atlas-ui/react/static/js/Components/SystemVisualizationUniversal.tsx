@@ -174,7 +174,7 @@ const SystemVisualizationUniversal: React.FC<SystemVisualizationUniversalProps> 
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-medium text-white">{system?.name || "System"}</h3>
+        <h3 className="text-lg sm:text-xl font-bold text-white">System Visualization</h3>
       </div>
 
       <div className="relative w-full max-w-80 sm:max-w-96 aspect-square mx-auto bg-black flex justify-center items-center rounded-xl overflow-hidden border-2 border-blue-400/30 mb-4">
