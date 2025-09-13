@@ -272,16 +272,16 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
       {travelCost && formatResource && (
         <div className="w-full relative z-10">
           <div className={`w-full flex items-center justify-center gap-3 rounded-xl px-4 py-3 border backdrop-blur-sm text-sm ${canAfford ? "bg-emerald-500/10 border-emerald-500/30" : "bg-red-500/10 border-red-500/30"}`}>
-            <div className="flex items-center gap-1">
-              <AntimatterIcon size={14} color="#a855f7" />
+            <div className="flex items-center gap-1 text-xl">
+              <AntimatterIcon size={20} color="#a855f7" />
               <span className="text-purple-400 font-medium">{formatResource(travelCost.antimatter)}</span>
             </div>
-            <div className="flex items-center gap-1">
-              <Element115Icon size={14} color="#06b6d4" />
+            <div className="flex items-center gap-1 text-xl">
+              <Element115Icon size={20} color="#06b6d4" />
               <span className="text-cyan-400 font-medium">{formatResource(travelCost.element115)}</span>
             </div>
-            <div className="flex items-center gap-1">
-              <DeuteriumIcon size={14} color="#fb7185" />
+            <div className="flex items-center gap-1 text-xl">
+              <DeuteriumIcon size={20} color="#fb7185" />
               <span className="text-orange-400 font-medium">{formatResource(travelCost.deuterium)}</span>
             </div>
           </div>
