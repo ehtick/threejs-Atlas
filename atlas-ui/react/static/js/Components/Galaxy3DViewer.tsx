@@ -669,17 +669,17 @@ const Galaxy3DViewer = forwardRef<{ captureScreenshot: () => void; isGeneratingI
       galaxyGroup.add(jet2);
     }
 
+    const blackHolePositions: Array<{ x: number; y: number; z: number; sizeMultiplier: number }> = [];
+    const bhRng = new SeededRandom(seed + 999);
+    for (let i = 0; i < blackHoles; i++) {
+      const x = bhRng.uniform(-50, 50);
+      const y = bhRng.uniform(-20, 20);
+      const z = bhRng.uniform(-50, 50);
+      const sizeMultiplier = bhRng.uniform(0.5, 1.0);
+      blackHolePositions.push({ x, y, z, sizeMultiplier });
+    }
+
     if (galaxyType !== "Singularity Void") {
-      const blackHolePositions: Array<{ x: number; y: number; z: number }> = [];
-
-      const bhRng = new SeededRandom(seed + 999);
-      for (let i = 0; i < blackHoles; i++) {
-        const x = bhRng.uniform(-50, 50);
-        const y = bhRng.uniform(-20, 20);
-        const z = bhRng.uniform(-50, 50);
-        blackHolePositions.push({ x, y, z });
-      }
-
       const processedPositions: number[] = [];
       const processedColors: number[] = [];
       const processedSizes: number[] = [];
@@ -856,15 +856,22 @@ const Galaxy3DViewer = forwardRef<{ captureScreenshot: () => void; isGeneratingI
       galaxyGroup.add(stars);
     }
 
-    const bhRng = new SeededRandom(seed + 999);
     for (let i = 0; i < blackHoles; i++) {
       const blackHoleGroup = new THREE.Group();
 
-      const x = bhRng.uniform(-50, 50);
-      const y = bhRng.uniform(-20, 20);
-      const z = bhRng.uniform(-50, 50);
+      const bhData =
+        galaxyType !== "Singularity Void" && i < blackHolePositions.length
+          ? blackHolePositions[i]
+          : {
+              x: rng.uniform(-50, 50),
+              y: rng.uniform(-20, 20),
+              z: rng.uniform(-50, 50),
+              sizeMultiplier: rng.uniform(0.5, 1.0),
+            };
 
-      const bhGeometry = new THREE.SphereGeometry(1.5, 16, 16);
+      const { x, y, z, sizeMultiplier } = bhData;
+
+      const bhGeometry = new THREE.SphereGeometry(0.8 * sizeMultiplier, 16, 16);
       const bhMaterial = new THREE.MeshBasicMaterial({
         color: 0x000000,
         transparent: true,
@@ -874,11 +881,11 @@ const Galaxy3DViewer = forwardRef<{ captureScreenshot: () => void; isGeneratingI
       blackHoleGroup.add(bhMesh);
 
       const diskRings = [
-        { innerRadius: 2, outerRadius: 2.3, color: 0xffffff, opacity: 0.8, emissive: 0xffffcc },
-        { innerRadius: 2.3, outerRadius: 2.7, color: 0xffaa00, opacity: 0.7, emissive: 0xff8800 },
-        { innerRadius: 2.7, outerRadius: 3.2, color: 0xff4400, opacity: 0.6, emissive: 0xff2200 },
-        { innerRadius: 3.2, outerRadius: 4, color: 0xaa0000, opacity: 0.5, emissive: 0x660000 },
-        { innerRadius: 4, outerRadius: 5, color: 0x440000, opacity: 0.3, emissive: 0x220000 },
+        { innerRadius: 1.2 * sizeMultiplier, outerRadius: 1.5 * sizeMultiplier, color: 0xffffff, opacity: 0.8, emissive: 0xffffcc },
+        { innerRadius: 1.5 * sizeMultiplier, outerRadius: 1.8 * sizeMultiplier, color: 0xffaa00, opacity: 0.7, emissive: 0xff8800 },
+        { innerRadius: 1.8 * sizeMultiplier, outerRadius: 2.2 * sizeMultiplier, color: 0xff4400, opacity: 0.6, emissive: 0xff2200 },
+        { innerRadius: 2.2 * sizeMultiplier, outerRadius: 2.8 * sizeMultiplier, color: 0xaa0000, opacity: 0.5, emissive: 0x660000 },
+        { innerRadius: 2.8 * sizeMultiplier, outerRadius: 3.5 * sizeMultiplier, color: 0x440000, opacity: 0.3, emissive: 0x220000 },
       ];
 
       diskRings.forEach((ring, index) => {
@@ -907,7 +914,8 @@ const Galaxy3DViewer = forwardRef<{ captureScreenshot: () => void; isGeneratingI
     }
 
     for (let i = 0; i < pulsars; i++) {
-      const pulsarGeometry = new THREE.SphereGeometry(1.5, 8, 8);
+      const pulsarSize = rng.uniform(0.6, 1.0);
+      const pulsarGeometry = new THREE.SphereGeometry(pulsarSize, 8, 8);
       const pulsarMaterial = new THREE.MeshStandardMaterial({
         color: 0xffff00,
         emissive: 0xffff00,
@@ -926,7 +934,8 @@ const Galaxy3DViewer = forwardRef<{ captureScreenshot: () => void; isGeneratingI
     for (let i = 0; i < quasars; i++) {
       const quasarGroup = new THREE.Group();
 
-      const coreGeometry = new THREE.SphereGeometry(2, 16, 16);
+      const quasarSize = rng.uniform(0.8, 1.3);
+      const coreGeometry = new THREE.SphereGeometry(quasarSize, 16, 16);
       const coreMaterial = new THREE.MeshStandardMaterial({
         color: 0xffffff,
         emissive: 0xffffff,
@@ -935,7 +944,7 @@ const Galaxy3DViewer = forwardRef<{ captureScreenshot: () => void; isGeneratingI
       const core = new THREE.Mesh(coreGeometry, coreMaterial);
       quasarGroup.add(core);
 
-      const jetGeometry = new THREE.ConeGeometry(1, 20, 8);
+      const jetGeometry = new THREE.ConeGeometry(0.5 * quasarSize, 12 * quasarSize, 8);
       const jetMaterial = new THREE.MeshStandardMaterial({
         color: 0xff0000,
         transparent: true,
@@ -945,11 +954,11 @@ const Galaxy3DViewer = forwardRef<{ captureScreenshot: () => void; isGeneratingI
       });
 
       const jet1 = new THREE.Mesh(jetGeometry, jetMaterial);
-      jet1.position.y = 10;
+      jet1.position.y = 6 * quasarSize;
       quasarGroup.add(jet1);
 
       const jet2 = new THREE.Mesh(jetGeometry, jetMaterial);
-      jet2.position.y = -10;
+      jet2.position.y = -6 * quasarSize;
       jet2.rotation.z = Math.PI;
       quasarGroup.add(jet2);
 
