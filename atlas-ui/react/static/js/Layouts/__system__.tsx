@@ -11,6 +11,8 @@ import TreasureChest from "../Components/TreasureChest.tsx";
 import FuelBars from "../Components/FuelBars.tsx";
 import { markSystemAsVisited } from "../Utils/VisitHistory.tsx";
 import DidYouKnow from "../Components/DidYouKnow.tsx";
+import GalaxyIcon from "../Icons/GalaxyIcon.tsx";
+import CoordinatesIcon from "../Icons/CoordinatesIcon.tsx";
 
 interface System {
   name: string;
@@ -86,10 +88,17 @@ const SystemLayout: React.FC<SystemLayoutProps> = ({ system, galaxy, system_url,
         <Header />
 
         <div className="w-full px-2 sm:px-4 lg:px-6 py-4 sm:py-8">
-          <div className="text-center mb-8">
+          <div className="text-center mb-2">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-2">System '{formatSystemName(system.name)}'</h1>
-            <p className="text-lg sm:text-xl text-gray-300">
-              at Galaxy '{formatGalaxyName(galaxy.name)}' - Coordinates {galaxy.coordinates.join(", ")}
+            <p className="text-[10px] sm:text-xs text-gray-300 flex items-center justify-center gap-4 flex-wrap">
+              <span className="flex items-center gap-1">
+                <GalaxyIcon size={20} color="#9ca3af" />
+                {formatGalaxyName(galaxy.name)}
+              </span>
+              <span className="flex items-center gap-1">
+                <CoordinatesIcon size={20} color="#9ca3af" />
+                {galaxy.coordinates.join(", ")}
+              </span>
             </p>
           </div>
 

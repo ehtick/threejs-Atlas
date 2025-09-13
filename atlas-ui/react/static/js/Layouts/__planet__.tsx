@@ -13,6 +13,9 @@ import { markPlanetAsVisited, markSystemAsVisited } from "../Utils/VisitHistory.
 import { debugConfig } from "../Utils/DebugConfig.tsx";
 import { useAtlasKeySequence } from "../Hooks/useAtlasKeySequence.tsx";
 import DidYouKnow from "../Components/DidYouKnow.tsx";
+import SystemIcon from "../Icons/SystemIcon.tsx";
+import GalaxyIcon from "../Icons/GalaxyIcon.tsx";
+import CoordinatesIcon from "../Icons/CoordinatesIcon.tsx";
 
 interface Planet {
   name: string;
@@ -120,15 +123,22 @@ const PlanetLayout: React.FC<PlanetLayoutProps> = ({ planet, system, galaxy, pla
         <Header />
 
         <div className="w-full px-2 sm:px-4 lg:px-6 py-4 sm:py-8">
-          <div className="text-center mb-8">
-            <div className="flex items-center justify-center gap-4 mb-4">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">Planet '{formatPlanetName(planet.name)}'</h1>
-            </div>
-
-            <p className="text-lg sm:text-xl text-gray-300">
-              in System '{formatSystemName(system.name)}' - Galaxy '{formatGalaxyName(galaxy.name)}'
+          <div className="text-center mb-2">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-2">Planet '{formatPlanetName(planet.name)}'</h1>
+            <p className="text-[10px] sm:text-xs text-gray-300 flex items-center justify-center gap-4 flex-wrap">
+              <span className="flex items-center gap-1">
+                <SystemIcon size={20} color="#9ca3af" />
+                {formatSystemName(system.name)}
+              </span>
+              <span className="flex items-center gap-1">
+                <GalaxyIcon size={20} color="#9ca3af" />
+                {formatGalaxyName(galaxy.name)}
+              </span>
+              <span className="flex items-center gap-1">
+                <CoordinatesIcon size={20} color="#9ca3af" />
+                {galaxy.coordinates.join(", ")}
+              </span>
             </p>
-            <p className="text-sm sm:text-base text-gray-400">Coordinates {galaxy.coordinates.join(", ")}</p>
           </div>
 
           <PlanetNavigation currentPlanet={planet.name} system={system} galaxy={galaxy} systemPlanets={system.planets || []} />

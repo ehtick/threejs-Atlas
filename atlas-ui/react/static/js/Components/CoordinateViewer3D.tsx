@@ -44,18 +44,32 @@ const CoordinateViewer3D: React.FC<CoordinateViewer3DProps> = ({ coordinates, cl
     const cubeGeometry = new THREE.BoxGeometry(4, 4, 4);
     const cubeEdges = new THREE.EdgesGeometry(cubeGeometry);
     const cubeMaterial = new THREE.LineBasicMaterial({
-      color: 0x6366f1,
-      opacity: 1,
-      transparent: false,
+      color: 0xffffff,
+      opacity: 0.4,
+      transparent: true,
     });
     const cubeWireframe = new THREE.LineSegments(cubeEdges, cubeMaterial);
     rotatingGroup.add(cubeWireframe);
 
-    const gridHelper = new THREE.GridHelper(4, 4, 0x6366f1, 0x6366f1);
-    gridHelper.material.opacity = 0.3;
-    gridHelper.material.transparent = true;
-    gridHelper.position.y = -2;
-    rotatingGroup.add(gridHelper);
+    const gridHelper1 = new THREE.GridHelper(4, 8, 0xffffff, 0xffffff);
+    gridHelper1.material.opacity = 0.1;
+    gridHelper1.material.transparent = true;
+    gridHelper1.position.y = -2;
+    rotatingGroup.add(gridHelper1);
+
+    const gridHelper2 = new THREE.GridHelper(4, 8, 0xffffff, 0xffffff);
+    gridHelper2.material.opacity = 0.05;
+    gridHelper2.material.transparent = true;
+    gridHelper2.rotation.z = Math.PI / 2;
+    gridHelper2.position.x = -2;
+    rotatingGroup.add(gridHelper2);
+
+    const gridHelper3 = new THREE.GridHelper(4, 8, 0xffffff, 0xffffff);
+    gridHelper3.material.opacity = 0.05;
+    gridHelper3.material.transparent = true;
+    gridHelper3.rotation.x = Math.PI / 2;
+    gridHelper3.position.z = -2;
+    rotatingGroup.add(gridHelper3);
 
     const centerGeometry = new THREE.SphereGeometry(0.15, 12, 12);
     const centerMaterial = new THREE.MeshBasicMaterial({
@@ -121,19 +135,19 @@ const CoordinateViewer3D: React.FC<CoordinateViewer3DProps> = ({ coordinates, cl
 
     const xLabel = createTextSprite("X", 0xff6b6b);
     if (xLabel) {
-      xLabel.position.set(2.2, -1.8, -1.8);
+      xLabel.position.set(2.0, -2.0, -2.0);
       rotatingGroup.add(xLabel);
     }
 
     const yLabel = createTextSprite("Y", 0x6bff6b);
     if (yLabel) {
-      yLabel.position.set(-1.8, 2.2, -1.8);
+      yLabel.position.set(-2.0, 2.0, -2.0);
       rotatingGroup.add(yLabel);
     }
 
     const zLabel = createTextSprite("Z", 0x6b6bff);
     if (zLabel) {
-      zLabel.position.set(-1.8, -1.8, 2.2);
+      zLabel.position.set(-2.0, -2.0, 2.0);
       rotatingGroup.add(zLabel);
     }
 
