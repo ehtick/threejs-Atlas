@@ -10,9 +10,6 @@ import StarfieldWarpReveal from "../Components/StarfieldWarpReveal.tsx";
 import { UnifiedSpaceshipStorage } from "../Utils/UnifiedSpaceshipStorage.tsx";
 import { SpaceshipTravelManager } from "../Utils/SpaceshipTravelCosts.tsx";
 import { SpaceshipResourceManager } from "../Utils/SpaceshipResources.tsx";
-import AntimatterIcon from "../Icons/AntimatterIcon.tsx";
-import Element115Icon from "../Icons/Element115Icon.tsx";
-import DeuteriumIcon from "../Icons/DeuteriumIcon.tsx";
 
 interface MainLayoutProps {
   error: string | null;
@@ -192,80 +189,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
                 className="w-full"
               >
                 <div className="p-3 sm:p-4 lg:p-6">
-                  <CoordinateSelector onCoordinateChange={handleCoordinateChange} />
+                  <CoordinateSelector onCoordinateChange={handleCoordinateChange} travelCost={travelCost} canAfford={canAfford} formatResource={formatResource} efficiency={SpaceshipTravelManager.getTravelEfficiency()} />
                 </div>
               </form>
-            </div>
-
-            {travelCost && (
-              <div className={`bg-gradient-to-r ${canAfford ? "from-emerald-500/20 via-blue-500/20 to-purple-500/20 border-emerald-500/30" : "from-red-500/20 via-orange-500/20 to-yellow-500/20 border-red-500/30"} rounded-xl p-4 sm:p-6 mb-8 border backdrop-blur-sm`}>
-                <div className="text-center mb-4">
-                  <h3 className={`text-xl sm:text-2xl font-semibold mb-2 ${canAfford ? "text-emerald-300" : "text-red-300"}`}>🚀 Travel Fuel Consumption</h3>
-                  <p className="text-sm sm:text-base text-gray-300">Resources required for this journey (including ship efficiency bonuses)</p>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="bg-white/10 rounded-lg p-4 border border-purple-500/30 hover:border-purple-500/50 transition-colors duration-300">
-                    <div className="flex items-center gap-3 mb-2">
-                      <AntimatterIcon size={24} color="#a855f7" />
-                      <span className="text-sm font-medium text-gray-300">Antimatter</span>
-                    </div>
-                    <div className="text-2xl sm:text-3xl font-bold text-purple-400">{formatResource(travelCost.antimatter)}</div>
-                    <div className="text-xs text-gray-400 mt-1">AM Required</div>
-                  </div>
-
-                  <div className="bg-white/10 rounded-lg p-4 border border-cyan-500/30 hover:border-cyan-500/50 transition-colors duration-300">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Element115Icon size={24} color="#06b6d4" />
-                      <span className="text-sm font-medium text-gray-300">Element 115</span>
-                    </div>
-                    <div className="text-2xl sm:text-3xl font-bold text-cyan-400">{formatResource(travelCost.element115)}</div>
-                    <div className="text-xs text-gray-400 mt-1">E115 Required</div>
-                  </div>
-
-                  <div className="bg-white/10 rounded-lg p-4 border border-orange-500/30 hover:border-orange-500/50 transition-colors duration-300 sm:col-span-3 lg:col-span-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <DeuteriumIcon size={24} color="#fb7185" />
-                      <span className="text-sm font-medium text-gray-300">Deuterium</span>
-                    </div>
-                    <div className="text-2xl sm:text-3xl font-bold text-orange-400">{formatResource(travelCost.deuterium)}</div>
-                    <div className="text-xs text-gray-400 mt-1">D Required</div>
-                  </div>
-                </div>
-
-                <div className="mt-4 text-center">
-                  {canAfford ? (
-                    <div className="flex items-center justify-center gap-2 text-emerald-300">
-                      <span className="text-lg">✅</span>
-                      <span className="font-medium">Sufficient fuel for travel</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center gap-2 text-red-300">
-                      <span className="text-lg">⚠️</span>
-                      <span className="font-medium">Insufficient fuel - collect more resources</span>
-                    </div>
-                  )}
-                  <div className="text-xs text-gray-400 mt-2">Ship efficiency: {SpaceshipTravelManager.getTravelEfficiency().toFixed(2)}x</div>
-                </div>
-              </div>
-            )}
-
-            <div className="bg-gradient-to-r from-emerald-500/20 via-violet-500/20 to-rose-500/20 rounded-xl p-4 sm:p-6 text-center border border-white/20">
-              <h3 className="text-xl sm:text-2xl font-semibold mb-4 bg-gradient-to-r from-emerald-300 via-violet-300 to-rose-300 bg-clip-text text-transparent">Current Coordinates</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                <div className="bg-white/10 rounded-lg p-3 sm:p-4 border border-emerald-500/30 hover:border-emerald-500/50 transition-colors duration-300">
-                  <div className="text-2xl sm:text-3xl font-bold text-emerald-400">{currentCoordinates.x.toLocaleString()}</div>
-                  <div className="text-xs sm:text-sm text-gray-300">X Coordinate</div>
-                </div>
-                <div className="bg-white/10 rounded-lg p-3 sm:p-4 border border-violet-500/30 hover:border-violet-500/50 transition-colors duration-300">
-                  <div className="text-2xl sm:text-3xl font-bold text-violet-400">{currentCoordinates.y.toLocaleString()}</div>
-                  <div className="text-xs sm:text-sm text-gray-300">Y Coordinate</div>
-                </div>
-                <div className="bg-white/10 rounded-lg p-3 sm:p-4 border border-rose-500/30 hover:border-rose-500/50 transition-colors duration-300 sm:col-span-2 lg:col-span-1">
-                  <div className="text-2xl sm:text-3xl font-bold text-rose-400">{currentCoordinates.z.toLocaleString()}</div>
-                  <div className="text-xs sm:text-sm text-gray-300">Z Coordinate</div>
-                </div>
-              </div>
             </div>
           </div>
 
