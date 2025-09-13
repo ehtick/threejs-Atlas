@@ -32,6 +32,10 @@ const Galaxy3DViewer = forwardRef<{ captureScreenshot: () => void; isGeneratingI
   const [canvasHidden, setCanvasHidden] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const autorotateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const targetSpeedRef = useRef<number>(0.5);
+  const currentSpeedRef = useRef<number>(0.5);
+  const isResuming = useRef<boolean>(false);
 
   useImperativeHandle(ref, () => ({
     captureScreenshot: handleDownloadScreenshot,
@@ -198,6 +202,26 @@ const Galaxy3DViewer = forwardRef<{ captureScreenshot: () => void; isGeneratingI
     controls.enableZoom = true;
     controls.target.set(0, 0, 0);
     controlsRef.current = controls;
+
+    // Pausa y reanudación de auto-rotación al interactuar
+    controls.addEventListener('start', () => {
+      if (autorotateTimeoutRef.current) {
+        clearTimeout(autorotateTimeoutRef.current);
+      }
+      controls.autoRotate = false;
+      currentSpeedRef.current = 0;
+      targetSpeedRef.current = 0;
+      isResuming.current = false;
+      controls.autoRotateSpeed = 0;
+    });
+
+    controls.addEventListener('end', () => {
+      autorotateTimeoutRef.current = setTimeout(() => {
+        controls.autoRotate = true;
+        targetSpeedRef.current = 0.5; // Objetivo: llegar a 0.5 gradualmente
+        isResuming.current = true; // Activar transición suave
+      }, 3000); // Reanudar después de 3 segundos
+    });
 
     const galaxyGroup = new THREE.Group();
     galaxyGroupRef.current = galaxyGroup;
@@ -978,7 +1002,7 @@ const Galaxy3DViewer = forwardRef<{ captureScreenshot: () => void; isGeneratingI
       animationIdRef.current = requestAnimationFrame(animate);
       const time = performance.now() / 1000;
 
-      if (galaxyGroupRef.current) {
+      if (galaxyGroupRef.current && controlsRef.current && controlsRef.current.autoRotate) {
         galaxyGroupRef.current.rotation.y += 0.001;
       }
 
@@ -1047,6 +1071,21 @@ const Galaxy3DViewer = forwardRef<{ captureScreenshot: () => void; isGeneratingI
 
       if (controlsRef.current) {
         controlsRef.current.update();
+
+        // Transición suave de velocidad cuando se reanuda
+        if (isResuming.current) {
+          const speedDifference = targetSpeedRef.current - currentSpeedRef.current;
+          if (Math.abs(speedDifference) > 0.001) {
+            // Interpolación suave: aumentar gradualmente hacia el objetivo
+            currentSpeedRef.current += speedDifference * 0.001; // Factor de suavizado muy gradual
+            controlsRef.current.autoRotateSpeed = currentSpeedRef.current;
+          } else {
+            // Ya llegamos al objetivo, detener la transición
+            currentSpeedRef.current = targetSpeedRef.current;
+            controlsRef.current.autoRotateSpeed = targetSpeedRef.current;
+            isResuming.current = false;
+          }
+        }
       }
 
       renderer.render(scene, camera);
@@ -1073,6 +1112,10 @@ const Galaxy3DViewer = forwardRef<{ captureScreenshot: () => void; isGeneratingI
 
     return () => {
       window.removeEventListener("resize", handleResize);
+
+      if (autorotateTimeoutRef.current) {
+        clearTimeout(autorotateTimeoutRef.current);
+      }
 
       if (controlsRef.current) {
         controlsRef.current.dispose();
