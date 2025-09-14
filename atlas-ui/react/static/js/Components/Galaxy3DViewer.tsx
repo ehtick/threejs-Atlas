@@ -33,9 +33,11 @@ const Galaxy3DViewer = forwardRef<{ captureScreenshot: () => void; isGeneratingI
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const autorotateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const targetSpeedRef = useRef<number>(0.5);
-  const currentSpeedRef = useRef<number>(0.5);
-  const isResuming = useRef<boolean>(false);
+  const manualRotationSpeed = useRef<number>(0.002);
+  const targetRotationSpeed = useRef<number>(0.002);
+  const isTransitioning = useRef<boolean>(false);
+  const transitionStartTime = useRef<number>(0);
+  const isUserInteracting = useRef<boolean>(false);
 
   useImperativeHandle(ref, () => ({
     captureScreenshot: handleDownloadScreenshot,
@@ -196,31 +198,28 @@ const Galaxy3DViewer = forwardRef<{ captureScreenshot: () => void; isGeneratingI
     controls.dampingFactor = 0.05;
     controls.minDistance = 50;
     controls.maxDistance = 800;
-    controls.autoRotate = true;
-    controls.autoRotateSpeed = 0.5;
+    controls.autoRotate = false;
     controls.enablePan = true;
     controls.enableZoom = true;
     controls.target.set(0, 0, 0);
     controlsRef.current = controls;
 
-    // Pausa y reanudación de auto-rotación al interactuar
-    controls.addEventListener('start', () => {
+    controls.addEventListener("start", () => {
       if (autorotateTimeoutRef.current) {
         clearTimeout(autorotateTimeoutRef.current);
       }
-      controls.autoRotate = false;
-      currentSpeedRef.current = 0;
-      targetSpeedRef.current = 0;
-      isResuming.current = false;
-      controls.autoRotateSpeed = 0;
+      isUserInteracting.current = true;
+      manualRotationSpeed.current = 0;
+      isTransitioning.current = false;
     });
 
-    controls.addEventListener('end', () => {
+    controls.addEventListener("end", () => {
+      isUserInteracting.current = false;
       autorotateTimeoutRef.current = setTimeout(() => {
-        controls.autoRotate = true;
-        targetSpeedRef.current = 0.5; // Objetivo: llegar a 0.5 gradualmente
-        isResuming.current = true; // Activar transición suave
-      }, 3000); // Reanudar después de 3 segundos
+        isTransitioning.current = true;
+        transitionStartTime.current = performance.now();
+        manualRotationSpeed.current = 0;
+      }, 3000);
     });
 
     const galaxyGroup = new THREE.Group();
@@ -1002,8 +1001,23 @@ const Galaxy3DViewer = forwardRef<{ captureScreenshot: () => void; isGeneratingI
       animationIdRef.current = requestAnimationFrame(animate);
       const time = performance.now() / 1000;
 
-      if (galaxyGroupRef.current && controlsRef.current && controlsRef.current.autoRotate) {
-        galaxyGroupRef.current.rotation.y += 0.001;
+      if (galaxyGroupRef.current && !isUserInteracting.current) {
+        if (isTransitioning.current) {
+          const currentTime = performance.now();
+          const elapsed = currentTime - transitionStartTime.current;
+          const duration = 3000;
+
+          if (elapsed < duration) {
+            const t = elapsed / duration;
+            const easedT = t * t * t;
+            manualRotationSpeed.current = targetRotationSpeed.current * easedT;
+          } else {
+            manualRotationSpeed.current = targetRotationSpeed.current;
+            isTransitioning.current = false;
+          }
+        }
+
+        galaxyGroupRef.current.rotation.y += manualRotationSpeed.current;
       }
 
       galaxyGroup.children.forEach((child) => {
@@ -1071,21 +1085,6 @@ const Galaxy3DViewer = forwardRef<{ captureScreenshot: () => void; isGeneratingI
 
       if (controlsRef.current) {
         controlsRef.current.update();
-
-        // Transición suave de velocidad cuando se reanuda
-        if (isResuming.current) {
-          const speedDifference = targetSpeedRef.current - currentSpeedRef.current;
-          if (Math.abs(speedDifference) > 0.001) {
-            // Interpolación suave: aumentar gradualmente hacia el objetivo
-            currentSpeedRef.current += speedDifference * 0.001; // Factor de suavizado muy gradual
-            controlsRef.current.autoRotateSpeed = currentSpeedRef.current;
-          } else {
-            // Ya llegamos al objetivo, detener la transición
-            currentSpeedRef.current = targetSpeedRef.current;
-            controlsRef.current.autoRotateSpeed = targetSpeedRef.current;
-            isResuming.current = false;
-          }
-        }
       }
 
       renderer.render(scene, camera);
