@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.4.46] - 2025-09-14
+
+- Enhanced data display coordinate selector, improved galaxy 3D view with smoother movement and optimized rendering performance, fixed planet 4K export functionality on various devices, changed export format from PNG to JPG with 100% quality to reduce file sizes, and implemented system time travel feature with +100 year functionality
+
 ## [2.4.44] - 2025-09-10
 
 - Minor changes in FAQ
