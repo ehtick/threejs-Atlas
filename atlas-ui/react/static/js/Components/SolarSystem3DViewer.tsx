@@ -499,6 +499,8 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({ planets, star
   }, [planets, stars, cosmicOriginTime, systemData]);
 
   const formatTime = (seconds: number) => {
+    if (seconds <= 0) return "Cosmic Origin Time";
+
     const years = Math.floor(seconds / (365.25 * 24 * 3600));
     const days = Math.floor((seconds % (365.25 * 24 * 3600)) / (24 * 3600));
     const hours = Math.floor((seconds % (24 * 3600)) / 3600);
@@ -591,29 +593,38 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({ planets, star
 
               <div className="mb-2 sm:mb-4 px-2 sm:px-4">
                 <div className="flex items-center gap-2 sm:gap-4">
-                  <span className="text-xs sm:text-sm text-gray-400 min-w-fit">-15y</span>
+                  <span className="text-xs sm:text-sm text-gray-400 min-w-fit">-100y</span>
                   <div className="flex-1 relative">
                     <input
                       type="range"
-                      min={-15 * 365.25 * 24 * 3600}
-                      max={15 * 365.25 * 24 * 3600}
+                      min={-100 * 365.25 * 24 * 3600}
+                      max={100 * 365.25 * 24 * 3600}
                       step={604800}
                       value={sliderTimeOffset}
-                      onChange={(e) => setSliderTimeOffset(Number(e.target.value))}
-                      className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer 
-                               [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 
-                               [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-400 
+                      onChange={(e) => {
+                        const newValue = Number(e.target.value);
+                        const maxPastTime = -(realCurrentTime - cosmicOriginTime);
+                        setSliderTimeOffset(Math.max(newValue, maxPastTime));
+                      }}
+                      className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer
+                               [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5
+                               [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-400
                                [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-blue-600
                                [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-lg"
                     />
-                    <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-0.5 h-2 bg-yellow-400 rounded"></div>
+                    <div
+                      className="absolute top-0 transform -translate-x-1/2 w-0.5 h-2 bg-yellow-400 rounded"
+                      style={{
+                        left: `${((0 - -100 * 365.25 * 24 * 3600) / (100 * 365.25 * 24 * 3600 - -100 * 365.25 * 24 * 3600)) * 100}%`,
+                      }}
+                    ></div>
                   </div>
-                  <span className="text-xs sm:text-sm text-gray-400 min-w-fit">+15y</span>
+                  <span className="text-xs sm:text-sm text-gray-400 min-w-fit">+100y</span>
                   <button onClick={() => setSliderTimeOffset(0)} className="px-2 py-1 text-xs bg-gray-600 hover:bg-gray-500 text-white rounded transition-colors duration-200" title="Reset to current time">
                     Now
                   </button>
                 </div>
-                <div className="text-center text-xs text-gray-500 mt-1">Time Travel: {sliderTimeOffset === 0 ? "Present" : sliderTimeOffset > 0 ? `+${Math.abs(sliderTimeOffset / (365.25 * 24 * 3600)).toFixed(1)} years` : `-${Math.abs(sliderTimeOffset / (365.25 * 24 * 3600)).toFixed(1)} years`} • Range: 30 years</div>
+                <div className="text-center text-xs text-gray-500 mt-1">Time Travel: {sliderTimeOffset === 0 ? "Present" : sliderTimeOffset > 0 ? `+${Math.abs(sliderTimeOffset / (365.25 * 24 * 3600)).toFixed(1)} years` : `-${Math.abs(sliderTimeOffset / (365.25 * 24 * 3600)).toFixed(1)} years`} • Range: 200 years</div>
               </div>
 
               <div className="flex-1 border border-white/20 rounded-lg bg-black/20 overflow-hidden min-h-0">
