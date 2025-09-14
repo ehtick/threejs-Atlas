@@ -265,7 +265,7 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
           });
 
           renderer.setSize(originalWidth, originalHeight);
-          camera.aspect = originalWidth / originalHeight;
+          camera.aspect = 1;
           camera.updateProjectionMatrix();
 
           if (controlsRef.current) {
@@ -294,13 +294,15 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
     const containerWidth = container.clientWidth || 400;
     const containerHeight = container.clientHeight || 400;
 
-    rendererRef.current.setSize(containerWidth, containerHeight);
+    const size = Math.min(containerWidth, containerHeight);
+
+    rendererRef.current.setSize(size, size);
 
     if (toxicPostProcessingRef.current) {
-      toxicPostProcessingRef.current.setSize(containerWidth, containerHeight);
+      toxicPostProcessingRef.current.setSize(size, size);
     }
 
-    cameraRef.current.aspect = containerWidth / containerHeight;
+    cameraRef.current.aspect = 1;
     cameraRef.current.updateProjectionMatrix();
   }, []);
 
@@ -404,11 +406,13 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
       const containerWidth = container.clientWidth || width || 400;
       const containerHeight = container.clientHeight || height || 400;
 
+      const size = Math.min(containerWidth, containerHeight);
+
       const scene = new THREE.Scene();
       scene.background = new THREE.Color(0x000511);
       sceneRef.current = scene;
 
-      const camera = new THREE.PerspectiveCamera(45, containerWidth / containerHeight, 0.1, 10000);
+      const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 10000);
 
       const cameraDistance = calculateExactCameraDistance();
 
@@ -422,7 +426,7 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
         powerPreference: "high-performance",
       });
 
-      renderer.setSize(containerWidth, containerHeight);
+      renderer.setSize(size, size);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;

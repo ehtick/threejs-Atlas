@@ -14,7 +14,7 @@ export const addCopyrightWatermark = (ctx: CanvasRenderingContext2D, options: Co
 
   const currentYear = new Date().getFullYear();
   const yearRange = currentYear === startYear ? `${startYear}` : `${startYear}-${currentYear}`;
-  const copyrightText = `The Atlas • Copyright ${companyName} • ${yearRange}`;
+  const copyrightText = `The Atlas © Copyright ${companyName} • ${yearRange}`;
 
   ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
   const responsiveFontSize = fontSize || Math.floor(imageWidth / 80);
