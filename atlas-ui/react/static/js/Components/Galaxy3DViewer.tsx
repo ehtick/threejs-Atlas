@@ -1214,12 +1214,12 @@ const Galaxy3DViewer = forwardRef<{ captureScreenshot: () => void; isGeneratingI
                     const url = URL.createObjectURL(watermarkedBlob);
                     const link = document.createElement("a");
                     link.href = url;
-                    link.download = `galaxy_${galaxyName || galaxyType}_${Date.now()}.png`;
+                    link.download = `galaxy_${galaxyName || galaxyType}_${Date.now()}.jpg`;
                     link.click();
                     URL.revokeObjectURL(url);
                   }
                 },
-                "image/png",
+                "image/jpeg",
                 1.0
               );
             };
@@ -1250,7 +1250,7 @@ const Galaxy3DViewer = forwardRef<{ captureScreenshot: () => void; isGeneratingI
         }
         setIsGeneratingImage(false);
       },
-      "image/png",
+      "image/jpeg",
       1.0
     );
   };

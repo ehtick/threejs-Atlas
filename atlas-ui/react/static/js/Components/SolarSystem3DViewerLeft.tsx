@@ -197,7 +197,6 @@ const SolarSystem3DViewerLeft = forwardRef<{ captureScreenshot: () => void; isGe
     renderer.setClearColor(0x000011, 1);
     rendererRef.current = renderer;
 
-    // Add basic styling to canvas
     renderer.domElement.className = "";
     container.appendChild(renderer.domElement);
 
@@ -553,12 +552,12 @@ const SolarSystem3DViewerLeft = forwardRef<{ captureScreenshot: () => void; isGe
                     const url = URL.createObjectURL(watermarkedBlob);
                     const link = document.createElement("a");
                     link.href = url;
-                    link.download = `system_${systemName}_${Date.now()}.png`;
+                    link.download = `system_${systemName}_${Date.now()}.jpg`;
                     link.click();
                     URL.revokeObjectURL(url);
                   }
                 },
-                "image/png",
+                "image/jpeg",
                 1.0
               );
             };
@@ -590,7 +589,7 @@ const SolarSystem3DViewerLeft = forwardRef<{ captureScreenshot: () => void; isGe
         }
         setIsGeneratingImage(false);
       },
-      "image/png",
+      "image/jpeg",
       1.0
     );
   };

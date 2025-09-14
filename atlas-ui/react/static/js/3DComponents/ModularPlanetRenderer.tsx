@@ -174,7 +174,6 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
               originalSizeArray: originalSizes,
             });
 
-            // Use same detection logic for geometry attributes
             const isPulsatingCubeParticle = (mat as any).isPulsatingCubeParticle === true;
             const particleScaleFactor = isPulsatingCubeParticle ? scaleFactor * 0.3 : scaleFactor * 1;
 
@@ -236,12 +235,12 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
                       const url = URL.createObjectURL(watermarkedBlob);
                       const link = document.createElement("a");
                       link.href = url;
-                      link.download = `planet_${planetName}_${Date.now()}.png`;
+                      link.download = `planet_${planetName}_${Date.now()}.jpg`;
                       link.click();
                       URL.revokeObjectURL(url);
                     }
                   },
-                  "image/png",
+                  "image/jpeg",
                   1.0
                 );
               };
@@ -274,7 +273,7 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
           }
           setIsGeneratingImage(false);
         },
-        "image/png",
+        "image/jpeg",
         1.0
       );
     },
