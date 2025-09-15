@@ -35,6 +35,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
   const [show3DViewer, setShow3DViewer] = useState(false);
   const [showNavigationText, setShowNavigationText] = useState(true);
   const hideTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isUser3DInteracting = useRef<boolean>(false);
   const [seedData, setSeedData] = useState<{
     primordial_seed: string;
     sha256_seed: string;
@@ -74,6 +75,26 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
     setShowWarpReveal(false);
   };
 
+  const handle3DUserInteraction = (isInteracting: boolean) => {
+    isUser3DInteracting.current = isInteracting;
+
+    if (isInteracting) {
+      if (hideTimerRef.current) {
+        clearTimeout(hideTimerRef.current);
+        hideTimerRef.current = null;
+      }
+    } else {
+      if (hideTimerRef.current) {
+        clearTimeout(hideTimerRef.current);
+      }
+      hideTimerRef.current = setTimeout(() => {
+        setShow3DViewer(false);
+        setShowNavigationText(true);
+        hideTimerRef.current = null;
+      }, 4000);
+    }
+  };
+
   const handleCoordinateChange = (coordinates: Coordinates, isUserInteraction: boolean = false) => {
     setCurrentCoordinates(coordinates);
 
@@ -85,11 +106,13 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
       setShow3DViewer(true);
       setShowNavigationText(false);
 
-      hideTimerRef.current = setTimeout(() => {
-        setShow3DViewer(false);
-        setShowNavigationText(true);
-        hideTimerRef.current = null;
-      }, 3000);
+      if (!isUser3DInteracting.current) {
+        hideTimerRef.current = setTimeout(() => {
+          setShow3DViewer(false);
+          setShowNavigationText(true);
+          hideTimerRef.current = null;
+        }, 3000);
+      }
     }
   };
 
@@ -202,9 +225,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
                 <p className="text-lg sm:text-xl text-gray-300 max-w-4xl mx-auto px-4">Navigate through infinite galaxies, solar systems, and planets. Enter coordinates to begin your journey across the universe.</p>
               </div>
 
-              <div className={`absolute inset-0 flex items-center justify-center transition-all duration-700 ease-in-out transform ${show3DViewer ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 -translate-y-2"}`} style={{ pointerEvents: "none" }}>
-                <div className="w-96 h-96">
-                  <CoordinateViewer3D coordinates={currentCoordinates} className="w-full h-full" />
+              <div className={`absolute inset-0 flex items-center justify-center transition-all duration-700 ease-in-out transform ${show3DViewer ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 -translate-y-2"}`} style={{ pointerEvents: show3DViewer ? "auto" : "none" }}>
+                <div className="w-96 h-96" style={{ pointerEvents: "auto" }}>
+                  <CoordinateViewer3D coordinates={currentCoordinates} className="w-full h-full" onUserInteraction={handle3DUserInteraction} />
                 </div>
               </div>
             </div>

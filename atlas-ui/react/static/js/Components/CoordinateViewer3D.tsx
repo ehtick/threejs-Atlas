@@ -1,13 +1,15 @@
 // atlas-ui/react/static/js/Components/CoordinateViewer3D.tsx
 import React, { useRef, useEffect } from "react";
 import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
 interface CoordinateViewer3DProps {
   coordinates: { x: number; y: number; z: number };
   className?: string;
+  onUserInteraction?: (isInteracting: boolean) => void;
 }
 
-const CoordinateViewer3D: React.FC<CoordinateViewer3DProps> = ({ coordinates, className = "" }) => {
+const CoordinateViewer3D: React.FC<CoordinateViewer3DProps> = ({ coordinates, className = "", onUserInteraction }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -16,6 +18,12 @@ const CoordinateViewer3D: React.FC<CoordinateViewer3DProps> = ({ coordinates, cl
   const rotatingGroupRef = useRef<THREE.Group | null>(null);
   const targetPositionRef = useRef<THREE.Vector3>(new THREE.Vector3(0, 0, 0));
   const currentPositionRef = useRef<THREE.Vector3>(new THREE.Vector3(0, 0, 0));
+  const controlsRef = useRef<OrbitControls | null>(null);
+  const isUserInteracting = useRef<boolean>(false);
+  const autorotateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const rotationSpeed = useRef<number>(0.002);
+  const isTransitioning = useRef<boolean>(false);
+  const transitionStartTime = useRef<number>(0);
 
   useEffect(() => {
     if (!mountRef.current) return;
@@ -34,8 +42,47 @@ const CoordinateViewer3D: React.FC<CoordinateViewer3DProps> = ({ coordinates, cl
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(containerWidth, containerHeight);
     renderer.setClearColor(0x000000, 0);
+    renderer.domElement.style.pointerEvents = "auto";
+    renderer.domElement.style.touchAction = "none";
     rendererRef.current = renderer;
     container.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.minDistance = 4;
+    controls.maxDistance = 20;
+    controls.enablePan = true;
+    controls.enableZoom = true;
+    controls.target.set(0, 0, 0);
+    controls.autoRotate = false;
+    controlsRef.current = controls;
+
+    const resetAutoRotateTimeout = () => {
+      if (autorotateTimeoutRef.current) {
+        clearTimeout(autorotateTimeoutRef.current);
+      }
+      isUserInteracting.current = true;
+      rotationSpeed.current = 0;
+      isTransitioning.current = false;
+
+      if (onUserInteraction) {
+        onUserInteraction(true);
+      }
+
+      autorotateTimeoutRef.current = setTimeout(() => {
+        isUserInteracting.current = false;
+        isTransitioning.current = true;
+        transitionStartTime.current = performance.now();
+
+        if (onUserInteraction) {
+          onUserInteraction(false);
+        }
+      }, 4000);
+    };
+
+    controls.addEventListener("start", resetAutoRotateTimeout);
+    controls.addEventListener("change", resetAutoRotateTimeout);
 
     const rotatingGroup = new THREE.Group();
     scene.add(rotatingGroup);
@@ -161,15 +208,34 @@ const CoordinateViewer3D: React.FC<CoordinateViewer3DProps> = ({ coordinates, cl
     const animate = () => {
       animationIdRef.current = requestAnimationFrame(animate);
 
-      if (rotatingGroupRef.current) {
-        rotatingGroupRef.current.rotation.y += 0.002;
-        rotatingGroupRef.current.rotation.x += 0.001;
+      if (rotatingGroupRef.current && !isUserInteracting.current) {
+        if (isTransitioning.current) {
+          const currentTime = performance.now();
+          const elapsed = currentTime - transitionStartTime.current;
+          const duration = 3000;
+
+          if (elapsed < duration) {
+            const t = elapsed / duration;
+            const easedT = t * t * t;
+            rotationSpeed.current = 0.002 * easedT;
+          } else {
+            rotationSpeed.current = 0.002;
+            isTransitioning.current = false;
+          }
+        }
+
+        rotatingGroupRef.current.rotation.y += rotationSpeed.current;
+        rotatingGroupRef.current.rotation.x += rotationSpeed.current * 0.5;
       }
 
       if (galaxyRef.current) {
         const lerpSpeed = 0.05;
         currentPositionRef.current.lerp(targetPositionRef.current, lerpSpeed);
         galaxyRef.current.position.copy(currentPositionRef.current);
+      }
+
+      if (controlsRef.current) {
+        controlsRef.current.update();
       }
 
       renderer.render(scene, camera);
@@ -190,6 +256,14 @@ const CoordinateViewer3D: React.FC<CoordinateViewer3DProps> = ({ coordinates, cl
     resizeObserver.observe(container);
 
     return () => {
+      if (autorotateTimeoutRef.current) {
+        clearTimeout(autorotateTimeoutRef.current);
+      }
+
+      if (controlsRef.current) {
+        controlsRef.current.dispose();
+      }
+
       if (animationIdRef.current) {
         cancelAnimationFrame(animationIdRef.current);
       }
