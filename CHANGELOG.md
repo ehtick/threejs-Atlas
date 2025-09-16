@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.4.64] - 2025-09-17
+
+- Fixed a Stargate Links bug introduced in the `__main__.py` refactor which made them not to load anything. Logic at its max (guess what, nope).
+
 ## [2.4.62] - 2025-09-17
 
 - Complete `__main__.py` refactor, refactorized routes into `./pymodules/__universe_routes*`. Small GUI improvements on CoordinateSelector.tsx and reduced API requests for Random Location.
