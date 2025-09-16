@@ -72,8 +72,6 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
     system: string;
     planet: string;
   } | null>(null);
-  const [warpCharging, setWarpCharging] = useState(false);
-  const [jumpReady, setJumpReady] = useState(false);
   const [coordinateGlitchStates, setCoordinateGlitchStates] = useState({
     x: false, y: false, z: false
   });
@@ -234,21 +232,9 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
   };
 
   const handleRandomLocationJump = async () => {
-    // Fase 1: Preparación y carga de warp
-    setWarpCharging(true);
-    setRandomJumpText("⚡ Charging Warp Drive...");
-
-    await sleep(1200);
-
-    setWarpCharging(false);
-    setJumpReady(true);
-    setRandomJumpText("🚀 Warp Drive Online");
-
-    await sleep(800);
-
+    // Iniciar directamente el salto sin mensajes
     setIsRandomJumping(true);
-    setJumpReady(false);
-    setRandomJumpText("🌌 Initiating Jump...");
+    setRandomJumpText("");
 
     // Activar efectos de glitch en coordenadas
     setCoordinateGlitchStates({ x: true, y: true, z: true });
@@ -319,23 +305,14 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
         planet: finalPlanetName ? cleanName(finalPlanetName) : "",
       });
 
-      // Iniciar efecto holográfico
+      // Mostrar directamente la información sin fase de scanning
       setDestinationReveal({
-        phase: 'scanning',
-        scanLines: true,
-        hologram: false,
-        typewriterActive: false
+        phase: 'ready',
+        scanLines: false,
+        hologram: true,
+        typewriterActive: true,
+        showReadyToJump: false
       });
-
-      // Después de 1.5 segundos, mostrar el holograma
-      setTimeout(() => {
-        setDestinationReveal(prev => ({
-          ...prev,
-          scanLines: false,
-          hologram: true,
-          typewriterActive: true
-        }));
-      }, 1500);
 
       // Matrix animation phases
       const matrixChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{}|;:'\",.<>?/`~";
@@ -397,39 +374,24 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
 
       await sleep(500); // Reduced from 1000ms to 500ms
 
-      setRandomJumpText("🚀 Jump initiated!");
-
-      // Mostrar "Ready to Jump" después de que termine toda la información
-      setTimeout(() => {
-        setDestinationReveal(prev => ({
-          ...prev,
-          showReadyToJump: true
-        }));
-        setRandomJumpText("⚡ Navigation data locked. Ready to jump!");
-      }, 4000);
-
       // Navigate automatically después de mostrar toda la información
       setTimeout(() => {
-        setRandomJumpText("🚀 Jump initiated! Engaging hyperspace drive...");
+        const form = document.createElement("form");
+        form.method = "POST";
+        form.action = "/api/random-jump";
+        form.style.display = "none";
 
-        setTimeout(() => {
-          const form = document.createElement("form");
-          form.method = "POST";
-          form.action = "/api/random-jump";
-          form.style.display = "none";
+        Object.keys(navigationData).forEach((key) => {
+          const input = document.createElement("input");
+          input.type = "hidden";
+          input.name = key;
+          input.value = navigationData[key];
+          form.appendChild(input);
+        });
 
-          Object.keys(navigationData).forEach((key) => {
-            const input = document.createElement("input");
-            input.type = "hidden";
-            input.name = key;
-            input.value = navigationData[key];
-            form.appendChild(input);
-          });
-
-          document.body.appendChild(form);
-          form.submit();
-        }, 2000);
-      }, 7000); // Esperar 7 segundos total para que se vea toda la información
+        document.body.appendChild(form);
+        form.submit();
+      }, 3500); // Reducir tiempo de espera
     } catch (error) {
       console.error("Random jump failed:", error);
       setRandomJumpText("❌ Jump failed");
@@ -446,8 +408,6 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
         setIsRandomJumping(false);
         setShowInitializeJump(true);
         setRandomJumpText("🎲 Random Location");
-        setWarpCharging(false);
-        setJumpReady(false);
       }, 2000);
     }
   };
@@ -582,7 +542,7 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
       </div>
 
       <div className="w-full flex gap-4 relative z-10">
-        {showInitializeJump && !isRandomJumping && !warpCharging && !jumpReady && (
+        {showInitializeJump && !isRandomJumping && (
           <button type="submit" className="flex-1 px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-700 hover:from-blue-700 hover:via-purple-700 hover:to-blue-800 text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-95 shadow-lg backdrop-blur-sm">
             <span className="text-base sm:text-lg">🚀 Initialize Jump</span>
           </button>
@@ -592,40 +552,24 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
           className={`
             group relative overflow-hidden font-bold text-lg rounded-xl shadow-lg backdrop-blur-sm
             transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]
-            ${isRandomJumping || warpCharging || jumpReady ? "w-full" : "flex-1"}
-            ${warpCharging
-              ? 'bg-gradient-to-r from-yellow-500/20 via-orange-500/30 to-yellow-500/20 text-yellow-400 cursor-wait'
-              : jumpReady
-              ? 'bg-gradient-to-r from-green-500/20 via-cyan-500/30 to-green-500/20 text-cyan-400 cursor-pointer'
-              : isRandomJumping
+            ${isRandomJumping ? "w-full" : "flex-1"}
+            ${isRandomJumping
               ? 'bg-gradient-to-r from-cyan-500/20 via-purple-500/30 to-cyan-500/20 text-cyan-400 cursor-wait'
               : 'bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 text-white hover:from-purple-700 hover:via-pink-700 hover:to-purple-800'
             }
             px-6 sm:px-8 py-3 sm:py-4
           `}
-          onClick={(warpCharging || isRandomJumping) ? undefined : handleRandomLocationJump}
-          disabled={warpCharging || isRandomJumping}
+          onClick={isRandomJumping ? undefined : handleRandomLocationJump}
+          disabled={isRandomJumping}
         >
           {/* Fondo animado para hover */}
-          {!warpCharging && !isRandomJumping && !jumpReady && (
+          {!isRandomJumping && (
             <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/0 via-cyan-400/20 to-cyan-400/0
                             translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
           )}
 
-          {/* Efecto de carga warp */}
-          {warpCharging && (
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-400/30 to-transparent
-                            animate-[slideRight_1.5s_ease-in-out_infinite]"></div>
-          )}
-
-          {/* Efecto de energía ready */}
-          {jumpReady && (
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-300/20 to-transparent
-                            animate-pulse"></div>
-          )}
-
           {/* Partículas flotantes para estado normal */}
-          {!isRandomJumping && !warpCharging && !jumpReady && (
+          {!isRandomJumping && (
             <div className="absolute inset-0">
               {Array.from({length: 6}).map((_, i) => (
                 <div key={i}
@@ -642,20 +586,10 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
 
           {/* Contenido del botón */}
           <span className="relative z-10 flex items-center justify-center gap-3">
-            {warpCharging ? (
-              <>
-                <div className="w-5 h-5 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
-                <span className="font-mono">{randomJumpText}</span>
-              </>
-            ) : jumpReady ? (
-              <>
-                <div className="w-5 h-5 bg-cyan-400 rounded-full animate-pulse shadow-lg shadow-cyan-400/50"></div>
-                <span className="font-mono">{randomJumpText}</span>
-              </>
-            ) : isRandomJumping ? (
+            {isRandomJumping ? (
               <>
                 <div className="w-5 h-5 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
-                <span className="font-mono">{randomJumpText}</span>
+                <span className="font-mono">Calculating...</span>
               </>
             ) : (
               <>
@@ -667,7 +601,7 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
           </span>
 
           {/* Efecto de brillo en hover para estado normal */}
-          {!warpCharging && !isRandomJumping && !jumpReady && (
+          {!isRandomJumping && (
             <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-300
                             bg-gradient-to-r from-white via-transparent to-white blur-sm"></div>
           )}
@@ -676,12 +610,6 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
 
       {destinationInfo && (
         <>
-          {/* Efecto sutil de scanning */}
-          {destinationReveal.scanLines && (
-            <div className="fixed top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent z-[90]
-                            animate-[scanLine_3s_ease-in-out_infinite]"></div>
-          )}
-
           {/* Overlay de información tipo toast elegante */}
           <div className={`fixed top-8 right-8 z-[95] transition-all duration-700 transform
                            ${destinationReveal.hologram ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}`}>
@@ -694,7 +622,7 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
                 <div className="flex items-center gap-2 text-xs">
                   <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse"></div>
                   <span className="text-cyan-300 font-mono uppercase tracking-wide">
-                    {destinationReveal.phase === 'scanning' ? 'Scanning...' : 'Jump Coordinates'}
+                    Jump Coordinates
                   </span>
                 </div>
               </div>
@@ -754,15 +682,6 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
                       </div>
                     )}
 
-                    {/* Status ready */}
-                    {destinationReveal.showReadyToJump && (
-                      <div className="pt-2 border-t border-green-400/20">
-                        <div className="flex items-center gap-2 text-green-400">
-                          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                          <span className="text-xs font-mono uppercase tracking-wider">Ready to jump</span>
-                        </div>
-                      </div>
-                    )}
                   </>
                 ) : (
                   <div className="flex items-center gap-3 py-2">
