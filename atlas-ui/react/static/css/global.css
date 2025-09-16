@@ -1232,22 +1232,49 @@ html.nprogress-busy * {
 
 /* Random Location Ultra-Dynamic Animations */
 @keyframes slideRight {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 @keyframes glitchFlicker {
-  0%, 100% { opacity: 0.8; filter: hue-rotate(0deg); }
-  25% { opacity: 0.2; filter: hue-rotate(90deg); }
-  50% { opacity: 0.9; filter: hue-rotate(180deg); }
-  75% { opacity: 0.1; filter: hue-rotate(270deg); }
+  0%,
+  100% {
+    opacity: 0.8;
+    filter: hue-rotate(0deg);
+  }
+  25% {
+    opacity: 0.2;
+    filter: hue-rotate(90deg);
+  }
+  50% {
+    opacity: 0.9;
+    filter: hue-rotate(180deg);
+  }
+  75% {
+    opacity: 0.1;
+    filter: hue-rotate(270deg);
+  }
 }
 
 @keyframes scanLine {
-  0% { transform: translateY(-100%); opacity: 0; }
-  10% { opacity: 1; }
-  90% { opacity: 1; }
-  100% { transform: translateY(calc(100vh + 100%)); opacity: 0; }
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(calc(100vh + 100%));
+    opacity: 0;
+  }
 }
 
 @keyframes materializeHologram {
@@ -1269,7 +1296,8 @@ html.nprogress-busy * {
 }
 
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0px) rotateZ(0deg);
     opacity: 0.6;
   }
@@ -1295,7 +1323,8 @@ html.nprogress-busy * {
 }
 
 @keyframes warpReady {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 15px rgba(34, 211, 238, 0.5);
     transform: scale(1);
   }
@@ -1306,16 +1335,37 @@ html.nprogress-busy * {
 }
 
 @keyframes coordinateGlitchShake {
-  0%, 100% { transform: translateX(0px); }
-  10% { transform: translateX(-2px); }
-  20% { transform: translateX(2px); }
-  30% { transform: translateX(-3px); }
-  40% { transform: translateX(3px); }
-  50% { transform: translateX(-1px); }
-  60% { transform: translateX(1px); }
-  70% { transform: translateX(-2px); }
-  80% { transform: translateX(2px); }
-  90% { transform: translateX(-1px); }
+  0%,
+  100% {
+    transform: translateX(0px);
+  }
+  10% {
+    transform: translateX(-2px);
+  }
+  20% {
+    transform: translateX(2px);
+  }
+  30% {
+    transform: translateX(-3px);
+  }
+  40% {
+    transform: translateX(3px);
+  }
+  50% {
+    transform: translateX(-1px);
+  }
+  60% {
+    transform: translateX(1px);
+  }
+  70% {
+    transform: translateX(-2px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
+  90% {
+    transform: translateX(-1px);
+  }
 }
 
 @keyframes holographicScanline {
@@ -1340,7 +1390,8 @@ html.nprogress-busy * {
 }
 
 @keyframes particleFloat {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0, 0) scale(0.8);
     opacity: 0.4;
   }
@@ -1370,7 +1421,8 @@ html.nprogress-busy * {
 }
 
 @keyframes destinationRevealPulse {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 20px rgba(34, 211, 238, 0.2);
     border-color: rgba(34, 211, 238, 0.3);
   }
@@ -1426,4 +1478,468 @@ html.nprogress-busy * {
 
 .animate-destinationRevealPulse {
   animation: destinationRevealPulse 3s ease-in-out infinite;
+}
+
+/* CoordinateSelector Navigation Bar Animations */
+@keyframes flashIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.85) translateX(-30px) rotateY(15deg);
+    filter: blur(3px) brightness(0.3);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.05) translateX(5px) rotateY(-2deg);
+    filter: blur(1px) brightness(1.2);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateX(0) rotateY(0deg);
+    filter: blur(0px) brightness(1);
+  }
+}
+
+@keyframes flashOut {
+  0% {
+    opacity: 1;
+    transform: scale(1) translateX(0) rotateY(0deg);
+    filter: blur(0px) brightness(1);
+  }
+  50% {
+    opacity: 0.3;
+    transform: scale(0.95) translateX(10px) rotateY(-5deg);
+    filter: blur(2px) brightness(0.7);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.8) translateX(40px) rotateY(-15deg);
+    filter: blur(4px) brightness(0.2);
+  }
+}
+
+@keyframes dataTransfer {
+  0% {
+    opacity: 0;
+    transform: translateX(-30px) scale(0.9);
+    filter: blur(2px);
+  }
+  50% {
+    opacity: 0.7;
+    transform: translateX(5px) scale(1.02);
+    filter: blur(1px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    filter: blur(0px);
+  }
+}
+
+.animate-dataTransfer {
+  animation: dataTransfer 0.6s ease-out;
+}
+
+@keyframes greenOverlay {
+  0% {
+    background: rgba(34, 197, 94, 0);
+  }
+  100% {
+    background: rgba(34, 197, 94, 0.25);
+  }
+}
+
+.topbar-green-overlay {
+  position: relative;
+}
+
+.topbar-green-overlay::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(34, 197, 94, 0);
+  transition: background 0.6s ease-out;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.topbar-green-overlay.ready::before {
+  background: rgba(34, 197, 94, 0.25);
+}
+
+.animate-greenOverlay::before {
+  animation: greenOverlay 0.6s ease-out forwards;
+}
+
+/* CoordinateSelector Specific Animations */
+@keyframes typewriter {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes matrixReveal {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes coordinateTransition {
+  from {
+    color: rgba(96, 165, 250, 0.5);
+    transform: scale(0.95);
+  }
+  to {
+    color: rgba(96, 165, 250, 1);
+    transform: scale(1);
+  }
+}
+
+@keyframes buttonParticleFloat {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(0.8);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translate(10px, -15px) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes energyWave {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes slideOutLeft {
+  0% {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+    max-width: 100%;
+  }
+  100% {
+    transform: translateX(-20px) scale(0.95);
+    opacity: 0;
+    max-width: 0;
+  }
+}
+
+@keyframes slideInRight {
+  0% {
+    transform: translateX(-20px) scale(0.95);
+    opacity: 0;
+    max-width: 0;
+  }
+  100% {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+    max-width: 100%;
+  }
+}
+
+@keyframes toastSlideIn {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -20px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+@keyframes iconTransition {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Utility classes for CoordinateSelector */
+.coordinate-selector-particle {
+  animation: buttonParticleFloat 2s ease-in-out infinite;
+}
+
+.coordinate-selector-energy-wave {
+  animation: energyWave 0.7s ease-in-out;
+}
+
+.coordinate-selector-toast {
+  animation: toastSlideIn 0.5s ease-out;
+}
+
+.coordinate-selector-icon-transition {
+  animation: iconTransition 0.5s ease-in-out;
+}
+
+.coordinate-selector-gradient-x {
+  background: linear-gradient(to right, #60a5fa, #06b6d4);
+}
+
+.coordinate-selector-gradient-y {
+  background: linear-gradient(to right, #a855f7, #7c3aed);
+}
+
+.coordinate-selector-gradient-z {
+  background: linear-gradient(to right, #f472b6, #ec4899);
+}
+
+.coordinate-selector-glitch {
+  animation: coordinateGlitchShake 0.5s ease-in-out infinite;
+}
+
+.animate-slideOutLeft {
+  animation: slideOutLeft 0.5s ease-in-out forwards;
+}
+
+.animate-slideInRight {
+  animation: slideInRight 0.5s ease-in-out forwards;
+}
+
+@keyframes accordionCollapse {
+  0% {
+    max-height: 80px;
+    opacity: 1;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+  99% {
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+  100% {
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    display: none;
+    visibility: hidden;
+  }
+}
+
+@keyframes buttonAccordionCollapse {
+  0% {
+    opacity: 1;
+    transform: scaleY(1);
+    max-height: 80px;
+    min-height: auto;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+  25% {
+    opacity: 0.8;
+    transform: scaleY(0.8);
+    max-height: 64px;
+    min-height: auto;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+  50% {
+    opacity: 0.5;
+    transform: scaleY(0.5);
+    max-height: 40px;
+    min-height: auto;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+  75% {
+    opacity: 0.2;
+    transform: scaleY(0.2);
+    max-height: 16px;
+    min-height: auto;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+  100% {
+    opacity: 0;
+    transform: scaleY(0);
+    max-height: 0;
+    min-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    visibility: hidden;
+    display: none;
+  }
+}
+
+.animate-accordionCollapse {
+  animation: accordionCollapse 0.6s ease-in-out forwards;
+  overflow: hidden;
+}
+
+.animate-buttonAccordionCollapse {
+  animation: buttonAccordionCollapse 0.8s ease-in-out forwards;
+  overflow: hidden;
+  transform-origin: center;
+}
+
+.animate-buttonAccordionCollapse * {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Axis-specific styles */
+.axis-x {
+  --gradient-colors: linear-gradient(to right, #60a5fa, #06b6d4);
+  --border-color: rgb(59 130 246 / 0.4);
+  --text-color: rgb(147 197 253);
+  --accent-color: rgb(96 165 250);
+  --ring-color: rgb(59 130 246);
+}
+
+.axis-y {
+  --gradient-colors: linear-gradient(to right, #a855f7, #7c3aed);
+  --border-color: rgb(168 85 247 / 0.4);
+  --text-color: rgb(196 181 253);
+  --accent-color: rgb(168 85 247);
+  --ring-color: rgb(147 51 234);
+}
+
+.axis-z {
+  --gradient-colors: linear-gradient(to right, #f472b6, #ec4899);
+  --border-color: rgb(244 114 182 / 0.4);
+  --text-color: rgb(251 207 232);
+  --accent-color: rgb(244 114 182);
+  --ring-color: rgb(236 72 153);
+}
+
+/* Custom range slider styles for CoordinateSelector */
+.axis-x input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  background: linear-gradient(to bottom right, #60a5fa, #06b6d4);
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: -6px;
+}
+
+.axis-x input[type="range"]::-webkit-slider-thumb:hover {
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+  transform: scale(1.1);
+}
+
+.axis-y input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  background: linear-gradient(to bottom right, #a855f7, #7c3aed);
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: -6px;
+}
+
+.axis-y input[type="range"]::-webkit-slider-thumb:hover {
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+  transform: scale(1.1);
+}
+
+.axis-z input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  background: linear-gradient(to bottom right, #f472b6, #ec4899);
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: -6px;
+}
+
+.axis-z input[type="range"]::-webkit-slider-thumb:hover {
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+  transform: scale(1.1);
+}
+
+/* Firefox range slider styles */
+.axis-x input[type="range"]::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  background: linear-gradient(to bottom right, #60a5fa, #06b6d4);
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.axis-y input[type="range"]::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  background: linear-gradient(to bottom right, #a855f7, #7c3aed);
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.axis-z input[type="range"]::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  background: linear-gradient(to bottom right, #f472b6, #ec4899);
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  border: none;
+  transition: all 0.2s ease;
 }
