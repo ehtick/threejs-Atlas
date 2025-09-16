@@ -13,6 +13,8 @@
     <title>Atlas Error</title>
   </head>
   <body>
+    {% include 'partials/_preloader.html' %}
+
     <div id="atlas-react-root"></div>
 
     {{ vitejs('__error__') | safe }}

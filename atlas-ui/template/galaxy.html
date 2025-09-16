@@ -12,6 +12,8 @@
     <title>Galaxy: {{ galaxy.name.replace("_", " ") }}</title>
   </head>
   <body class="h-full m-0 p-0 font-sans bg-slate-900 text-gray-200 leading-relaxed">
+    {% include 'partials/_preloader.html' %}
+
     <div id="atlas-react-root" class="w-full h-full"></div>
 
     <script id="data-galaxy" type="application/json">

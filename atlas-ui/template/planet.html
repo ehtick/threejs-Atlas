@@ -12,6 +12,8 @@
     <title>Planet: {{ planet.name.replace("_", " ") }}</title>
   </head>
   <body class="h-full w-full bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    {% include 'partials/_preloader.html' %}
+
     <div id="atlas-react-root" class="h-full w-full"></div>
 
     <script type="application/json" id="planet-data">
