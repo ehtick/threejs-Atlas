@@ -1,8 +1,13 @@
 // atlas-ui/react/static/js/Components/CoordinateSelector.tsx
 import React, { useState, useEffect } from "react";
+import { createRoot } from "react-dom/client";
 import AntimatterIcon from "../Icons/AntimatterIcon.tsx";
 import Element115Icon from "../Icons/Element115Icon.tsx";
 import DeuteriumIcon from "../Icons/DeuteriumIcon.tsx";
+import GalaxyIcon from "../Icons/GalaxyIcon.tsx";
+import SystemIcon from "../Icons/SystemIcon.tsx";
+import PlanetIcon from "../Icons/PlanetIcon.tsx";
+import CoordinatesIcon from "../Icons/CoordinatesIcon.tsx";
 
 interface Coordinates {
   x: number;
@@ -17,6 +22,9 @@ interface CoordinateSelectorProps {
   formatResource?: (value: number) => string;
   efficiency?: number;
 }
+
+// Charset compartido para efectos matrix
+const MATRIX_CHARSET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
 
 const TypewriterText: React.FC<{
   text: string;
@@ -41,7 +49,7 @@ const TypewriterText: React.FC<{
           setIsComplete(true);
           if (onComplete) onComplete();
         }
-      }, 30); // Más rápido para ser más profesional
+      }, 30);
 
       return () => clearInterval(interval);
     }, delay);
@@ -53,6 +61,77 @@ const TypewriterText: React.FC<{
     <span className={className}>
       {displayText}
       {!isComplete && <span className="animate-pulse">|</span>}
+    </span>
+  );
+};
+
+const MatrixRevealText: React.FC<{
+  text: string;
+  className?: string;
+  delay?: number;
+  matrixColor?: string;
+}> = ({ text, className = "", delay = 0, matrixColor = "inherit" }) => {
+  const [revealedChars, setRevealedChars] = useState<boolean[]>([]);
+  const [matrixChars, setMatrixChars] = useState<string[]>([]);
+
+  const matrixCharset = MATRIX_CHARSET;
+
+  useEffect(() => {
+    if (!text) return;
+
+    // Initialize with all false (matrix chars) and random matrix characters
+    const initialRevealed = new Array(text.length).fill(false);
+    setRevealedChars(initialRevealed);
+    setMatrixChars(text.split('').map(() =>
+      matrixCharset[Math.floor(Math.random() * matrixCharset.length)]
+    ));
+
+    const timeout = setTimeout(() => {
+      let currentIndex = 0;
+      let currentRevealed = [...initialRevealed];
+
+      // Matrix animation for unrevealed chars - start immediately
+      const matrixInterval = setInterval(() => {
+        setMatrixChars(prev =>
+          prev.map((_, index) => {
+            // Don't change chars that are already revealed
+            if (currentRevealed[index]) return prev[index];
+            return matrixCharset[Math.floor(Math.random() * matrixCharset.length)];
+          })
+        );
+      }, 40); // Faster matrix animation
+
+      const revealInterval = setInterval(() => {
+        if (currentIndex < text.length) {
+          currentRevealed[currentIndex] = true;
+          setRevealedChars([...currentRevealed]);
+          currentIndex++;
+        } else {
+          clearInterval(revealInterval);
+          clearInterval(matrixInterval);
+        }
+      }, 15); // Much faster: 15ms per character
+
+      return () => {
+        clearInterval(revealInterval);
+        clearInterval(matrixInterval);
+      };
+    }, delay);
+
+    return () => clearTimeout(timeout);
+  }, [text, delay]);
+
+  return (
+    <span className={className}>
+      {text.split('').map((char, index) => (
+        <span
+          key={index}
+          className={revealedChars[index] ? '' : 'animate-pulse opacity-70'}
+          style={revealedChars[index] ? {} : { color: matrixColor }}
+        >
+          {revealedChars[index] ? char : (char === ' ' ? ' ' : matrixChars[index])}
+        </span>
+      ))}
     </span>
   );
 };
@@ -82,6 +161,7 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
     typewriterActive: false,
     showReadyToJump: false
   });
+  const [currentFlash, setCurrentFlash] = useState<'coordinates' | 'galaxy' | 'system' | 'planet' | 'ready' | null>(null);
 
   const coordinateOptions = {
     x: [
@@ -205,22 +285,9 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
 
     if (isGlitching) {
       return (
-        <div className="relative inline-block">
-          {Array.from({length: 3}).map((_, i) => (
-            <span key={i}
-                  className="absolute inset-0 text-cyan-400 font-mono text-xl sm:text-2xl"
-                  style={{
-                    animation: `glitchFlicker ${0.1 + i * 0.03}s infinite`,
-                    opacity: Math.random() * 0.8 + 0.2,
-                    transform: `translateX(${(Math.random() - 0.5) * 4}px) translateY(${(Math.random() - 0.5) * 2}px)`,
-                  }}>
-              {Math.floor(Math.random() * 10000000).toLocaleString()}
-            </span>
-          ))}
-          <span className="text-white font-mono text-xl sm:text-2xl relative z-10 drop-shadow-lg">
-            {value.toLocaleString()}
-          </span>
-        </div>
+        <span className="font-mono text-xl sm:text-2xl text-cyan-400 drop-shadow-sm animate-pulse">
+          {value.toLocaleString()}
+        </span>
       );
     }
 
@@ -232,9 +299,9 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
   };
 
   const handleRandomLocationJump = async () => {
-    // Iniciar directamente el salto sin mensajes
+    // Iniciar directamente el salto con efecto matrix
     setIsRandomJumping(true);
-    setRandomJumpText("");
+    setRandomJumpText("INITIALIZING...");
 
     // Activar efectos de glitch en coordenadas
     setCoordinateGlitchStates({ x: true, y: true, z: true });
@@ -261,12 +328,12 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
       let finalSystemName = "";
       let finalPlanetName = "";
 
-      if (rand <= 0.1) {
-        // 10% - Stay at galaxy level
+      if (rand <= 0.05) {
+        // 5% - Stay at galaxy level
         finalSystemName = "";
         finalPlanetName = "";
-      } else if (rand <= 0.4) {
-        // 30% - Go to system level
+      } else if (rand <= 0.15) {
+        // 10% - Go to system level (5% + 10% = 15%)
         if (numSystems > 0) {
           const randomSystem = Math.floor(Math.random() * numSystems);
           const systemResponse = await fetch(`/api/system-info?x=${galaxyX}&y=${galaxyY}&z=${galaxyZ}&system=${randomSystem}`);
@@ -278,7 +345,7 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
           }
         }
       } else {
-        // 60% - Go to planet level
+        // 85% - Go to planet level
         if (numSystems > 0) {
           const randomSystem = Math.floor(Math.random() * numSystems);
           const systemResponse = await fetch(`/api/system-info?x=${galaxyX}&y=${galaxyY}&z=${galaxyZ}&system=${randomSystem}`);
@@ -298,29 +365,22 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
         }
       }
 
-      // Set destination info for display
-      setDestinationInfo({
-        galaxy: cleanName(galaxyData.galaxy_name),
-        system: finalSystemName ? cleanName(finalSystemName) : "",
-        planet: finalPlanetName ? cleanName(finalPlanetName) : "",
-      });
+      // Matrix animation phases - usando el mismo charset que MatrixRevealText
+      const matrixChars = MATRIX_CHARSET;
 
-      // Mostrar directamente la información sin fase de scanning
-      setDestinationReveal({
-        phase: 'ready',
-        scanLines: false,
-        hologram: true,
-        typewriterActive: true,
-        showReadyToJump: false
-      });
-
-      // Matrix animation phases
-      const matrixChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{}|;:'\",.<>?/`~";
-
-      // Phase 1: Matrix effect with coordinate jumping
-      const numJumps = 10 + Math.floor(Math.random() * 6); // 10-15 jumps
+      // Phase 1: Matrix effect with coordinate jumping - exponential deceleration
+      const numJumps = 20 + Math.floor(Math.random() * 11); // 20-30 jumps
       for (let jump = 0; jump < numJumps; jump++) {
-        // Show random coordinates while doing matrix effect
+        // Calculate exponential deceleration - starts super fast, ends very slow
+        const progress = jump / (numJumps - 1); // 0 to 1
+
+        // Exponential delay calculation: starts at 5ms, ends at 300ms
+        const baseDelay = 5; // Very fast start
+        const maxDelay = 300; // Slow end
+        const exponentialFactor = 3; // Higher = more dramatic curve
+        const currentDelay = baseDelay + (Math.pow(progress, exponentialFactor) * (maxDelay - baseDelay));
+
+        // Show random coordinates
         const randomCoords = {
           x: Math.floor(Math.random() * 10000001),
           y: Math.floor(Math.random() * 10000001),
@@ -328,17 +388,18 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
         };
         setCoordinates(randomCoords);
         if (onCoordinateChange) {
-          onCoordinateChange(randomCoords, true); // Changed to true to trigger 3D cube
+          onCoordinateChange(randomCoords, true);
         }
 
-        // Matrix text animation for this jump (faster)
-        for (let i = 0; i < 8; i++) {
-          // Reduced from 15 to 8 iterations
+        // Quick matrix animation (gets shorter towards end)
+        const matrixIterations = Math.max(2, 6 - Math.floor(progress * 4));
+        for (let i = 0; i < matrixIterations; i++) {
           setRandomJumpText(getRandomString(matrixChars, 20));
-          await sleep(15); // Reduced from 30ms to 15ms
+          await sleep(8); // Fast matrix animation
         }
 
-        await sleep(25); // Reduced from 50ms to 25ms
+        // Main exponential delay between coordinate jumps
+        await sleep(currentDelay);
       }
 
       // Set final coordinates y desactivar glitch
@@ -348,31 +409,164 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
         onCoordinateChange(finalCoordinates, true);
       }
 
-      // Phase 2: Reveal destination (faster)
-      if (finalPlanetName) {
-        setRandomJumpText("");
-        const planetText = `Planet: ${cleanName(finalPlanetName)}`;
-        for (let i = 0; i < planetText.length; i++) {
-          setRandomJumpText(planetText.substring(0, i + 1));
-          await sleep(25); // Reduced from 50ms to 25ms
-        }
-      } else if (finalSystemName) {
-        setRandomJumpText("");
-        const systemText = `System: ${cleanName(finalSystemName)}`;
-        for (let i = 0; i < systemText.length; i++) {
-          setRandomJumpText(systemText.substring(0, i + 1));
-          await sleep(25); // Reduced from 50ms to 25ms
-        }
-      } else {
-        setRandomJumpText("");
-        const galaxyText = `Galaxy: ${cleanName(galaxyData.galaxy_name)}`;
-        for (let i = 0; i < galaxyText.length; i++) {
-          setRandomJumpText(galaxyText.substring(0, i + 1));
-          await sleep(25); // Reduced from 50ms to 25ms
-        }
+      // Set destination info
+      setDestinationInfo({
+        galaxy: cleanName(galaxyData.galaxy_name),
+        system: finalSystemName ? cleanName(finalSystemName) : "",
+        planet: finalPlanetName ? cleanName(finalPlanetName) : "",
+      });
+
+      // Mostrar la información del destino
+      setDestinationReveal({
+        phase: 'ready',
+        scanLines: false,
+        hologram: true,
+        typewriterActive: true,
+        showReadyToJump: false
+      });
+
+      // SECUENCIA DE FLASHES FUTURISTA - ritmo dinámico pero legible
+      await sleep(300);
+
+      // Crear el toast una sola vez y actualizar su contenido
+      const toast = document.createElement("div");
+      toast.className = "fixed top-4 left-1/2 transform -translate-x-1/2 z-[9999] w-[90vw] max-w-lg opacity-0 scale-95 transition-all duration-500 ease-out";
+
+      // Añadir fade in inicial
+      setTimeout(() => {
+        toast.style.opacity = "1";
+        toast.style.transform = "translate(-50%, 0) scale(1)";
+      }, 100);
+
+      const popup = document.createElement("div");
+      popup.className = "relative rounded-lg shadow-lg border px-4 py-3 transition-all duration-1000 bg-gradient-to-r from-slate-900/90 to-blue-900/90 border-cyan-500/50";
+
+      // Crear un overlay para la animación de color
+      const overlay = document.createElement("div");
+      overlay.className = "absolute inset-0 rounded-lg transition-all duration-1000 ease-in-out";
+      overlay.style.background = "transparent";
+      overlay.style.opacity = "0";
+      popup.appendChild(overlay);
+
+      const container = document.createElement("div");
+      container.className = "flex items-center space-x-3 relative z-10";
+
+      // Icono dinámico que cambia según la fase
+      const iconDiv = document.createElement("div");
+      iconDiv.className = "flex items-center justify-center w-8 h-8 transition-all duration-500 ease-in-out";
+
+      const iconRoot = createRoot(iconDiv);
+      // Empezar con icono de coordenadas
+      iconRoot.render(React.createElement(CoordinatesIcon, { size: 24, color: "#60A5FA" }));
+
+      const contentDiv = document.createElement("div");
+      contentDiv.className = "flex-1";
+
+      const flashDiv = document.createElement("div");
+      flashDiv.className = "text-sm font-medium transition-all duration-500 ease-in-out";
+
+      contentDiv.appendChild(flashDiv);
+      container.appendChild(iconDiv);
+      container.appendChild(contentDiv);
+      popup.appendChild(container);
+      toast.appendChild(popup);
+
+      document.body.appendChild(toast);
+      currentToastElement = toast;
+
+      // Función para actualizar el contenido del flash Y el icono con animación
+      const updateFlash = (type: string) => {
+        let flashHTML = '';
+
+        // Animación de salida del icono y texto (scale down + fade out)
+        iconDiv.style.transform = "scale(0.5)";
+        iconDiv.style.opacity = "0";
+        flashDiv.style.transform = "translateX(-20px)";
+        flashDiv.style.opacity = "0";
+
+        // Después de la animación de salida, cambiar el icono y animar la entrada
+        setTimeout(() => {
+          // Actualizar el icono según el tipo
+          if (type === 'coordinates') {
+            iconRoot.render(React.createElement(CoordinatesIcon, { size: 24, color: "#60A5FA" }));
+            flashHTML = `
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-1 bg-blue-900/50 text-blue-300 text-xs font-mono uppercase rounded border border-blue-500/30">COORDS</span>
+                <span class="text-blue-200">[${finalCoordinates.x.toLocaleString()}, ${finalCoordinates.y.toLocaleString()}, ${finalCoordinates.z.toLocaleString()}]</span>
+              </div>
+            `;
+          } else if (type === 'galaxy') {
+            iconRoot.render(React.createElement(GalaxyIcon, { size: 24, color: "#C084FC" }));
+            flashHTML = `
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-1 bg-purple-900/50 text-purple-300 text-xs font-mono uppercase rounded border border-purple-500/30">GALAXY</span>
+                <span class="text-purple-200">${cleanName(galaxyData.galaxy_name)}</span>
+              </div>
+            `;
+          } else if (type === 'system' && finalSystemName) {
+            iconRoot.render(React.createElement(SystemIcon, { size: 24, color: "#67E8F9" }));
+            flashHTML = `
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-1 bg-cyan-900/50 text-cyan-300 text-xs font-mono uppercase rounded border border-cyan-500/30">SYSTEM</span>
+                <span class="text-cyan-200">${cleanName(finalSystemName)}</span>
+              </div>
+            `;
+          } else if (type === 'planet' && finalPlanetName) {
+            iconRoot.render(React.createElement(PlanetIcon, { size: 24, color: "#F9A8D4" }));
+            flashHTML = `
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-1 bg-pink-900/50 text-pink-300 text-xs font-mono uppercase rounded border border-pink-500/30">PLANET</span>
+                <span class="text-pink-200">${cleanName(finalPlanetName)}</span>
+              </div>
+            `;
+          }
+
+          // Actualizar el contenido del flash
+          flashDiv.innerHTML = flashHTML;
+
+          // Animación de entrada del icono y texto (scale up + fade in + slide in)
+          setTimeout(() => {
+            iconDiv.style.transform = "scale(1)";
+            iconDiv.style.opacity = "1";
+            flashDiv.style.transform = "translateX(0)";
+            flashDiv.style.opacity = "1";
+          }, 50);
+        }, 250); // La mitad de la duración de la transición CSS (500ms / 2)
+      };
+
+      // SECUENCIA DE FLASHES FUTURISTA - ritmo dinámico pero legible
+      // Flash 1: Coordenadas
+      setCurrentFlash('coordinates');
+      updateFlash('coordinates');
+      await sleep(1000);
+
+      // Flash 2: Galaxy
+      setCurrentFlash('galaxy');
+      updateFlash('galaxy');
+      await sleep(900);
+
+      // Flash 3: System (si existe)
+      if (finalSystemName) {
+        setCurrentFlash('system');
+        updateFlash('system');
+        await sleep(900);
       }
 
-      await sleep(500); // Reduced from 1000ms to 500ms
+      // Flash 4: Planet (si existe)
+      if (finalPlanetName) {
+        setCurrentFlash('planet');
+        updateFlash('planet');
+        await sleep(900);
+      }
+
+      // Estado final: cambiar gradualmente el color de fondo a verde
+
+      // Animar el overlay para crear una transición suave a verde
+      overlay.style.background = "linear-gradient(to right, rgb(20 83 45 / 0.9), rgb(30 58 138 / 0.9))";
+      overlay.style.opacity = "1";
+      popup.style.borderColor = "rgb(34 197 94 / 0.5)";
+
+      await sleep(500);
 
       // Navigate automatically después de mostrar toda la información
       setTimeout(() => {
@@ -396,6 +590,7 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
       console.error("Random jump failed:", error);
       setRandomJumpText("❌ Jump failed");
       setDestinationInfo(null);
+      setCurrentFlash(null);
       setCoordinateGlitchStates({ x: false, y: false, z: false });
       setDestinationReveal({
         phase: 'scanning',
@@ -408,6 +603,7 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
         setIsRandomJumping(false);
         setShowInitializeJump(true);
         setRandomJumpText("🎲 Random Location");
+        setCurrentFlash(null);
       }, 2000);
     }
   };
@@ -417,6 +613,9 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
       onCoordinateChange(coordinates, false);
     }
   }, [coordinates, onCoordinateChange, isInitialized]);
+
+  // Variable para rastrear el toast actual
+  let currentToastElement: HTMLDivElement | null = null;
 
   useEffect(() => {
     randomizeCoordinates();
@@ -534,190 +733,102 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
   };
 
   return (
-    <div className="w-full space-y-6 sm:space-y-8 relative">
-      <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 relative">
-        <div className="w-full bg-white/5 rounded-xl p-3 sm:p-4 lg:p-6 border border-blue-500/30 backdrop-blur-sm">{renderCoordinateGroup("x", "X")}</div>
-        <div className="w-full bg-white/5 rounded-xl p-3 sm:p-4 lg:p-6 border border-purple-500/30 backdrop-blur-sm">{renderCoordinateGroup("y", "Y")}</div>
-        <div className="w-full bg-white/5 rounded-xl p-3 sm:p-4 lg:p-6 border border-pink-500/30 backdrop-blur-sm md:col-span-2 lg:col-span-1">{renderCoordinateGroup("z", "Z")}</div>
-      </div>
-
-      <div className="w-full flex gap-4 relative z-10">
-        {showInitializeJump && !isRandomJumping && (
-          <button type="submit" className="flex-1 px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-700 hover:from-blue-700 hover:via-purple-700 hover:to-blue-800 text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-95 shadow-lg backdrop-blur-sm">
-            <span className="text-base sm:text-lg">🚀 Initialize Jump</span>
-          </button>
-        )}
-        <button
-          type="button"
-          className={`
-            group relative overflow-hidden font-bold text-lg rounded-xl shadow-lg backdrop-blur-sm
-            transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]
-            ${isRandomJumping ? "w-full" : "flex-1"}
-            ${isRandomJumping
-              ? 'bg-gradient-to-r from-cyan-500/20 via-purple-500/30 to-cyan-500/20 text-cyan-400 cursor-wait'
-              : 'bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 text-white hover:from-purple-700 hover:via-pink-700 hover:to-purple-800'
-            }
-            px-6 sm:px-8 py-3 sm:py-4
-          `}
-          onClick={isRandomJumping ? undefined : handleRandomLocationJump}
-          disabled={isRandomJumping}
-        >
-          {/* Fondo animado para hover */}
-          {!isRandomJumping && (
-            <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/0 via-cyan-400/20 to-cyan-400/0
-                            translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-          )}
-
-          {/* Partículas flotantes para estado normal */}
-          {!isRandomJumping && (
-            <div className="absolute inset-0">
-              {Array.from({length: 6}).map((_, i) => (
-                <div key={i}
-                     className="absolute w-1 h-1 bg-white/60 rounded-full animate-pulse"
-                     style={{
-                       left: `${15 + i * 12}%`,
-                       top: `${20 + (i % 2) * 60}%`,
-                       animationDelay: `${i * 0.2}s`,
-                       animationDuration: '2s'
-                     }}></div>
-              ))}
-            </div>
-          )}
-
-          {/* Contenido del botón */}
-          <span className="relative z-10 flex items-center justify-center gap-3">
-            {isRandomJumping ? (
-              <>
-                <div className="w-5 h-5 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
-                <span className="font-mono">Calculating...</span>
-              </>
-            ) : (
-              <>
-                <span className="text-2xl">🎲</span>
-                <span>Random Location</span>
-                <span className="text-xl opacity-70 group-hover:opacity-100 transition-opacity">✨</span>
-              </>
-            )}
-          </span>
-
-          {/* Efecto de brillo en hover para estado normal */}
-          {!isRandomJumping && (
-            <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-300
-                            bg-gradient-to-r from-white via-transparent to-white blur-sm"></div>
-          )}
-        </button>
-      </div>
-
-      {destinationInfo && (
-        <>
-          {/* Overlay de información tipo toast elegante */}
-          <div className={`fixed top-8 right-8 z-[95] transition-all duration-700 transform
-                           ${destinationReveal.hologram ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}`}>
-
-            <div className="bg-slate-900/95 backdrop-blur-xl border border-cyan-400/30 rounded-lg
-                            shadow-2xl shadow-cyan-400/10 max-w-sm">
-
-              {/* Header minimalista */}
-              <div className="px-4 py-2 border-b border-cyan-400/20">
-                <div className="flex items-center gap-2 text-xs">
-                  <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse"></div>
-                  <span className="text-cyan-300 font-mono uppercase tracking-wide">
-                    Jump Coordinates
-                  </span>
-                </div>
-              </div>
-
-              {/* Contenido elegante */}
-              <div className="p-4 space-y-3">
-                {destinationReveal.typewriterActive ? (
-                  <>
-                    {/* Coordenadas en formato elegante */}
-                    <div className="space-y-1">
-                      <div className="text-blue-400/70 text-xs font-mono uppercase tracking-wider">Location</div>
-                      <div className="text-blue-300 font-mono text-sm">
-                        <TypewriterText
-                          text={`${coordinates.x.toLocaleString()}, ${coordinates.y.toLocaleString()}, ${coordinates.z.toLocaleString()}`}
-                          className="text-blue-300"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Galaxy */}
-                    <div className="space-y-1">
-                      <div className="text-purple-400/70 text-xs font-mono uppercase tracking-wider">Galaxy</div>
-                      <div className="text-purple-300 text-sm">
-                        <TypewriterText
-                          text={destinationInfo.galaxy}
-                          className="text-purple-300"
-                          delay={600}
-                        />
-                      </div>
-                    </div>
-
-                    {/* System - solo si existe */}
-                    {destinationInfo.system && (
-                      <div className="space-y-1">
-                        <div className="text-cyan-400/70 text-xs font-mono uppercase tracking-wider">System</div>
-                        <div className="text-cyan-300 text-sm">
-                          <TypewriterText
-                            text={destinationInfo.system}
-                            className="text-cyan-300"
-                            delay={1200}
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Planet - solo si existe */}
-                    {destinationInfo.planet && (
-                      <div className="space-y-1">
-                        <div className="text-pink-400/70 text-xs font-mono uppercase tracking-wider">Planet</div>
-                        <div className="text-pink-300 text-sm font-medium">
-                          <TypewriterText
-                            text={destinationInfo.planet}
-                            className="text-pink-300 font-medium"
-                            delay={1800}
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                  </>
-                ) : (
-                  <div className="flex items-center gap-3 py-2">
-                    <div className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
-                    <span className="text-cyan-400 text-sm">Initializing...</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Borde sutil */}
-              <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-cyan-400/0 via-cyan-400/10 to-cyan-400/0
-                              pointer-events-none opacity-50"></div>
-            </div>
-          </div>
-        </>
-      )}
-
-      {travelCost && formatResource && (
-        <div className="w-full relative z-10">
-          <div className={`w-full flex items-center justify-center gap-3 rounded-xl px-4 py-3 border backdrop-blur-sm text-sm ${canAfford ? "bg-emerald-500/10 border-emerald-500/30" : "bg-red-500/10 border-red-500/30"}`}>
-            <div className="flex items-center gap-1 text-xl">
-              <AntimatterIcon size={20} color="#a855f7" />
-              <span className="text-purple-400 font-medium">{formatResource(travelCost.antimatter)}</span>
-            </div>
-            <div className="flex items-center gap-1 text-xl">
-              <Element115Icon size={20} color="#06b6d4" />
-              <span className="text-cyan-400 font-medium">{formatResource(travelCost.element115)}</span>
-            </div>
-            <div className="flex items-center gap-1 text-xl">
-              <DeuteriumIcon size={20} color="#fb7185" />
-              <span className="text-orange-400 font-medium">{formatResource(travelCost.deuterium)}</span>
-            </div>
-          </div>
+    <>
+      <div className="w-full space-y-6 sm:space-y-8 relative">
+        <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 relative">
+          <div className="w-full bg-white/5 rounded-xl p-3 sm:p-4 lg:p-6 border border-blue-500/30 backdrop-blur-sm">{renderCoordinateGroup("x", "X")}</div>
+          <div className="w-full bg-white/5 rounded-xl p-3 sm:p-4 lg:p-6 border border-purple-500/30 backdrop-blur-sm">{renderCoordinateGroup("y", "Y")}</div>
+          <div className="w-full bg-white/5 rounded-xl p-3 sm:p-4 lg:p-6 border border-pink-500/30 backdrop-blur-sm md:col-span-2 lg:col-span-1">{renderCoordinateGroup("z", "Z")}</div>
         </div>
-      )}
-    </div>
+
+        <div className="w-full flex gap-4 relative z-10">
+          {showInitializeJump && !isRandomJumping && (
+            <button type="submit" className="flex-1 px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-700 hover:from-blue-700 hover:via-purple-700 hover:to-blue-800 text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-95 shadow-lg backdrop-blur-sm">
+              <span className="text-base sm:text-lg">🚀 Initialize Jump</span>
+            </button>
+          )}
+          <button
+            type="button"
+            className={`
+              group relative overflow-hidden font-bold text-lg rounded-xl shadow-lg backdrop-blur-sm
+              transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]
+              ${isRandomJumping ? "w-full" : "flex-1"}
+              ${isRandomJumping
+                ? 'bg-gradient-to-r from-cyan-500/20 via-purple-500/30 to-cyan-500/20 text-cyan-400 cursor-wait'
+                : 'bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 text-white hover:from-purple-700 hover:via-pink-700 hover:to-purple-800'
+              }
+              px-6 sm:px-8 py-3 sm:py-4
+            `}
+            onClick={isRandomJumping ? undefined : handleRandomLocationJump}
+            disabled={isRandomJumping}
+          >
+            {/* Fondo animado para hover */}
+            {!isRandomJumping && (
+              <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/0 via-cyan-400/20 to-cyan-400/0
+                              translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+            )}
+
+            {/* Partículas flotantes para estado normal */}
+            {!isRandomJumping && (
+              <div className="absolute inset-0">
+                {Array.from({length: 6}).map((_, i) => (
+                  <div key={i}
+                       className="absolute w-1 h-1 bg-white/60 rounded-full animate-pulse"
+                       style={{
+                         left: `${15 + i * 12}%`,
+                         top: `${20 + (i % 2) * 60}%`,
+                         animationDelay: `${i * 0.2}s`,
+                         animationDuration: '2s'
+                       }}></div>
+                ))}
+              </div>
+            )}
+
+            {/* Contenido del botón */}
+            <span className="relative z-10 flex items-center justify-center gap-3">
+              {isRandomJumping ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="font-mono text-cyan-300">{randomJumpText}</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-2xl">🎲</span>
+                  <span>Random Location</span>
+                  <span className="text-xl opacity-70 group-hover:opacity-100 transition-opacity">✨</span>
+                </>
+              )}
+            </span>
+
+            {/* Efecto de brillo en hover para estado normal */}
+            {!isRandomJumping && (
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-300
+                              bg-gradient-to-r from-white via-transparent to-white blur-sm"></div>
+            )}
+          </button>
+        </div>
+
+        {travelCost && formatResource && (
+          <div className="w-full relative z-10">
+            <div className={`w-full flex items-center justify-center gap-3 rounded-xl px-4 py-3 border backdrop-blur-sm text-sm ${canAfford ? "bg-emerald-500/10 border-emerald-500/30" : "bg-red-500/10 border-red-500/30"}`}>
+              <div className="flex items-center gap-1 text-xl">
+                <AntimatterIcon size={20} color="#a855f7" />
+                <span className="text-purple-400 font-medium">{formatResource(travelCost.antimatter)}</span>
+              </div>
+              <div className="flex items-center gap-1 text-xl">
+                <Element115Icon size={20} color="#06b6d4" />
+                <span className="text-cyan-400 font-medium">{formatResource(travelCost.element115)}</span>
+              </div>
+              <div className="flex items-center gap-1 text-xl">
+                <DeuteriumIcon size={20} color="#fb7185" />
+                <span className="text-orange-400 font-medium">{formatResource(travelCost.deuterium)}</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+    </>
   );
 };
 
