@@ -382,6 +382,10 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
     setIsRandomJumping(true);
     setRandomJumpText("INITIALIZING...");
 
+    if ((window as any).setRandomLocationActive) {
+      (window as any).setRandomLocationActive(true);
+    }
+
     setCoordinateGlitchStates({ x: true, y: true, z: true });
 
     let matrixIntervalId: NodeJS.Timeout | null = null;
@@ -672,6 +676,11 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
       await sleep(500);
 
       setTimeout(() => {
+        // Deactivate Random Location mode
+        if ((window as any).setRandomLocationActive) {
+          (window as any).setRandomLocationActive(false);
+        }
+
         const form = document.createElement("form");
         form.method = "POST";
         form.action = "/api/random-jump";
@@ -690,6 +699,11 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
       }, 3500);
     } catch (error) {
       console.error("Random jump failed:", error);
+
+      if ((window as any).setRandomLocationActive) {
+        (window as any).setRandomLocationActive(false);
+      }
+
       if (matrixIntervalId) {
         clearInterval(matrixIntervalId);
       }

@@ -36,6 +36,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
   const [showNavigationText, setShowNavigationText] = useState(true);
   const hideTimerRef = useRef<NodeJS.Timeout | null>(null);
   const isUser3DInteracting = useRef<boolean>(false);
+  const isRandomLocationActive = useRef<boolean>(false);
   const [seedData, setSeedData] = useState<{
     primordial_seed: string;
     sha256_seed: string;
@@ -88,8 +89,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
         clearTimeout(hideTimerRef.current);
       }
       hideTimerRef.current = setTimeout(() => {
-        setShow3DViewer(false);
-        setShowNavigationText(true);
+        if (!isRandomLocationActive.current) {
+          setShow3DViewer(false);
+          setShowNavigationText(true);
+        }
         hideTimerRef.current = null;
       }, 4000);
     }
@@ -106,7 +109,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
       setShow3DViewer(true);
       setShowNavigationText(false);
 
-      if (!isUser3DInteracting.current) {
+      if (!isUser3DInteracting.current && !isRandomLocationActive.current) {
         hideTimerRef.current = setTimeout(() => {
           setShow3DViewer(false);
           setShowNavigationText(true);
@@ -115,6 +118,26 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
       }
     }
   };
+
+  useEffect(() => {
+    (window as any).setRandomLocationActive = (active: boolean) => {
+      isRandomLocationActive.current = active;
+      if (active) {
+        if (hideTimerRef.current) {
+          clearTimeout(hideTimerRef.current);
+          hideTimerRef.current = null;
+        }
+        setShow3DViewer(true);
+        setShowNavigationText(false);
+      }
+    };
+
+    return () => {
+      if ((window as any).setRandomLocationActive) {
+        delete (window as any).setRandomLocationActive;
+      }
+    };
+  }, []);
 
   const calculateTravelCost = (coordinates: Coordinates) => {
     const distance = Math.floor(Math.sqrt(Math.pow(coordinates.x - 1000000, 2) + Math.pow(coordinates.y - 1000000, 2) + Math.pow(coordinates.z - 1000000, 2)) / 10000);
