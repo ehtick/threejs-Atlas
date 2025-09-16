@@ -177,11 +177,15 @@ const ButtonGroup: React.FC<{
       className={`
         bg-gradient-to-r from-blue-600 via-purple-600 to-blue-700 hover:from-blue-700 hover:via-purple-700 hover:to-blue-800
         text-white font-bold rounded-xl shadow-lg backdrop-blur-sm transition-all duration-500 transform hover:scale-95 overflow-hidden
-        ${showInitializeJump && !isRandomJumping ? "w-1/2 opacity-100 px-6 sm:px-8 py-3 sm:py-4 mr-4" : "w-0 opacity-0 px-0 py-3 sm:py-4 mr-0"}
+        ${showInitializeJump && !isRandomJumping
+          ? "w-1/2 max-h-20 opacity-100 px-6 sm:px-8 py-3 sm:py-4 mr-4"
+          : "w-0 max-h-0 opacity-0 px-0 py-0 mr-0 overflow-hidden"}
       `}
       disabled={!showInitializeJump || isRandomJumping}
     >
-      <span className={`text-base sm:text-lg whitespace-nowrap transition-opacity duration-200 ${showInitializeJump && !isRandomJumping ? "opacity-100" : "opacity-0"}`}>🚀 Initialize Jump</span>
+      <span className="relative z-10 flex items-center justify-center gap-3">
+        <span className={`text-base sm:text-lg transition-opacity duration-200 ${showInitializeJump && !isRandomJumping ? "opacity-100" : "opacity-0"}`}>🚀 Initialize Jump</span>
+      </span>
     </button>
     <button
       type="button"
