@@ -451,7 +451,7 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
           if (isMatrixRunning) {
             setRandomJumpText(getRandomString(matrixChars, 15));
           }
-        }, 50);
+        }, 10);
       };
 
       const stopMatrixEffect = () => {
@@ -696,7 +696,7 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
 
         document.body.appendChild(form);
         form.submit();
-      }, 3500);
+      }, 1000);
     } catch (error) {
       console.error("Random jump failed:", error);
 
