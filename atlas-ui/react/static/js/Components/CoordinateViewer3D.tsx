@@ -1,4 +1,5 @@
 // atlas-ui/react/static/js/Components/CoordinateViewer3D.tsx
+
 import React, { useRef, useEffect } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
@@ -7,9 +8,10 @@ interface CoordinateViewer3DProps {
   coordinates: { x: number; y: number; z: number };
   className?: string;
   onUserInteraction?: (isInteracting: boolean) => void;
+  isVisible?: boolean;
 }
 
-const CoordinateViewer3D: React.FC<CoordinateViewer3DProps> = ({ coordinates, className = "", onUserInteraction }) => {
+const CoordinateViewer3D: React.FC<CoordinateViewer3DProps> = ({ coordinates, className = "", onUserInteraction, isVisible = true }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -50,10 +52,8 @@ const CoordinateViewer3D: React.FC<CoordinateViewer3DProps> = ({ coordinates, cl
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    controls.minDistance = 4;
-    controls.maxDistance = 20;
-    controls.enablePan = true;
-    controls.enableZoom = true;
+    controls.enablePan = false;
+    controls.enableZoom = false;
     controls.target.set(0, 0, 0);
     controls.autoRotate = false;
     controlsRef.current = controls;
@@ -274,6 +274,12 @@ const CoordinateViewer3D: React.FC<CoordinateViewer3DProps> = ({ coordinates, cl
       renderer.dispose();
     };
   }, []);
+
+  useEffect(() => {
+    if (controlsRef.current) {
+      controlsRef.current.enabled = isVisible;
+    }
+  }, [isVisible]);
 
   useEffect(() => {
     const MIN_COORD = 0;
