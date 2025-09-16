@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.4.62] - 2025-09-17
+
+- Complete `__main__.py` refactor, refactorized routes into `./pymodules/__universe_routes*`. Small GUI improvements on CoordinateSelector.tsx and reduced API requests for Random Location.
+
 ## [2.4.60] - 2025-09-16
 
 - Redesigned Random Location button and its behavior to be **actually useful**, fixed the 3D cube viewer disappearing bug, added proper destination preview popup showing exactly where you're going, and improved the entire jump sequence with smoother animations and better matrix effects.

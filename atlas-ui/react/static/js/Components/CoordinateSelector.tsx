@@ -1,4 +1,5 @@
 // atlas-ui/react/static/js/Components/CoordinateSelector.tsx
+
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { createRoot } from "react-dom/client";
 import AntimatterIcon from "../Icons/AntimatterIcon.tsx";
@@ -23,7 +24,7 @@ interface CoordinateSelectorProps {
   efficiency?: number;
 }
 
-const MATRIX_CHARSET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+const MATRIX_CHARSET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!·$%&/()=?#+-*<>[]{}^°@€<>~";
 const ANIMATION_TIMINGS = {
   TYPEWRITER: 30,
   MATRIX_REVEAL: 15,
@@ -169,10 +170,11 @@ const ButtonGroup: React.FC<{
   showInitializeJump: boolean;
   slideUpInitializeJump: boolean;
   isRandomJumping: boolean;
+  showSpinner: boolean;
   randomJumpText: string;
   shouldCollapseButton: boolean;
   onRandomJump: () => void;
-}> = ({ showInitializeJump, slideUpInitializeJump, isRandomJumping, randomJumpText, shouldCollapseButton, onRandomJump }) => (
+}> = ({ showInitializeJump, slideUpInitializeJump, isRandomJumping, showSpinner, randomJumpText, shouldCollapseButton, onRandomJump }) => (
   <div className={`w-full flex relative z-10 transition-all duration-800 ${shouldCollapseButton ? "justify-center animate-accordionCollapse" : ""}`}>
     <button
       type="submit"
@@ -212,7 +214,7 @@ const ButtonGroup: React.FC<{
       <span className="relative z-10 flex items-center justify-center gap-3">
         {isRandomJumping ? (
           <>
-            <div className="w-5 h-5 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
+            {showSpinner && <div className="w-5 h-5 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>}
             <span className="font-mono text-cyan-300">{randomJumpText}</span>
           </>
         ) : (
@@ -238,6 +240,7 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
   });
   const [isInitialized, setIsInitialized] = useState(false);
   const [isRandomJumping, setIsRandomJumping] = useState(false);
+  const [showSpinner, setShowSpinner] = useState(false);
   const [showInitializeJump, setShowInitializeJump] = useState(true);
   const [slideUpInitializeJump, setSlideUpInitializeJump] = useState(false);
   const [randomJumpText, setRandomJumpText] = useState("🎲 Random Location");
@@ -380,7 +383,8 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
 
   const handleRandomLocationJump = async () => {
     setIsRandomJumping(true);
-    setRandomJumpText("INITIALIZING...");
+    setShowSpinner(true);
+    setRandomJumpText("Jump Protocol");
 
     if ((window as any).setRandomLocationActive) {
       (window as any).setRandomLocationActive(true);
@@ -392,57 +396,28 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
     let isMatrixRunning = true;
 
     try {
-      const galaxyX = Math.floor(Math.random() * 10000001);
-      const galaxyY = Math.floor(Math.random() * 10000001);
-      const galaxyZ = Math.floor(Math.random() * 10000001);
-      const finalCoordinates = { x: galaxyX, y: galaxyY, z: galaxyZ };
-
-      const galaxyResponse = await fetch(`/api/galaxy-info?x=${galaxyX}&y=${galaxyY}&z=${galaxyZ}`);
-      if (!galaxyResponse.ok) {
-        throw new Error("Failed to get galaxy info");
+      const locationResponse = await fetch("/api/generate-random-location");
+      if (!locationResponse.ok) {
+        throw new Error("Failed to generate random location");
       }
 
-      const galaxyData = await galaxyResponse.json();
-      const numSystems = galaxyData.num_systems;
+      const locationData = await locationResponse.json();
 
-      const rand = Math.random();
-      let navigationData: any = { x: galaxyX, y: galaxyY, z: galaxyZ };
-      let finalSystemName = "";
-      let finalPlanetName = "";
+      const finalCoordinates = {
+        x: locationData.coordinates.x,
+        y: locationData.coordinates.y,
+        z: locationData.coordinates.z,
+      };
 
-      if (rand <= 0.05) {
-        finalSystemName = "";
-        finalPlanetName = "";
-      } else if (rand <= 0.15) {
-        if (numSystems > 0) {
-          const randomSystem = Math.floor(Math.random() * numSystems);
-          const systemResponse = await fetch(`/api/system-info?x=${galaxyX}&y=${galaxyY}&z=${galaxyZ}&system=${randomSystem}`);
+      const galaxyData = {
+        galaxy_name: locationData.galaxy_name,
+        galaxy_type: locationData.galaxy_type,
+        num_systems: locationData.num_systems,
+      };
 
-          if (systemResponse.ok) {
-            const systemData = await systemResponse.json();
-            navigationData.system = randomSystem;
-            finalSystemName = systemData.system_name;
-          }
-        }
-      } else {
-        if (numSystems > 0) {
-          const randomSystem = Math.floor(Math.random() * numSystems);
-          const systemResponse = await fetch(`/api/system-info?x=${galaxyX}&y=${galaxyY}&z=${galaxyZ}&system=${randomSystem}`);
-
-          if (systemResponse.ok) {
-            const systemData = await systemResponse.json();
-            const planets = systemData.planets;
-
-            if (planets && planets.length > 0) {
-              const randomPlanet = planets[Math.floor(Math.random() * planets.length)];
-              navigationData.system = randomSystem;
-              navigationData.planet = randomPlanet.name;
-              finalSystemName = systemData.system_name;
-              finalPlanetName = randomPlanet.name;
-            }
-          }
-        }
-      }
+      const navigationData = locationData.navigation_data;
+      const finalSystemName = locationData.system_name || "";
+      const finalPlanetName = locationData.planet_name || "";
 
       const matrixChars = MATRIX_CHARSET;
 
@@ -494,7 +469,8 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
       await sleep(1500);
 
       stopMatrixEffect();
-      setRandomJumpText("Initializing Jump...");
+      setRandomJumpText("...");
+      setShowSpinner(false);
       setShouldCollapseButton(true);
       setCoordinateGlitchStates({ x: false, y: false, z: false });
 
@@ -557,12 +533,12 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
           if (type === "coordinates") {
             iconRoot.render(React.createElement(CoordinatesIcon, { size: 24, color: "#60A5FA" }));
             contentRoot.render(
-              React.createElement("div", { className: "flex items-center gap-2 min-w-0" }, [
+              React.createElement("div", { className: "flex items-center gap-1.5 min-w-0" }, [
                 React.createElement(
                   "span",
                   {
                     key: "label",
-                    className: "px-2 py-1 bg-blue-900/50 text-blue-300 text-xs font-mono uppercase rounded border border-blue-500/30 flex-shrink-0",
+                    className: "px-2 py-1 bg-blue-900/50 text-blue-300 text-[10px] font-mono uppercase rounded border border-blue-500/30 flex-shrink-0",
                   },
                   "COORDS"
                 ),
@@ -570,7 +546,7 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
                   "span",
                   {
                     key: "value",
-                    className: "text-blue-200 truncate flex-1 min-w-0",
+                    className: "text-sm text-blue-200 truncate flex-1 min-w-0",
                   },
                   `[${finalCoordinates.x.toLocaleString()}, ${finalCoordinates.y.toLocaleString()}, ${finalCoordinates.z.toLocaleString()}]`
                 ),
@@ -579,12 +555,12 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
           } else if (type === "galaxy") {
             iconRoot.render(React.createElement(GalaxyIcon, { size: 24, color: "#C084FC" }));
             contentRoot.render(
-              React.createElement("div", { className: "flex items-center gap-2 min-w-0" }, [
+              React.createElement("div", { className: "flex items-center gap-1.5 min-w-0" }, [
                 React.createElement(
                   "span",
                   {
                     key: "label",
-                    className: "px-2 py-1 bg-purple-900/50 text-purple-300 text-xs font-mono uppercase rounded border border-purple-500/30 flex-shrink-0",
+                    className: "px-2 py-1 bg-purple-900/50 text-purple-300 text-[10px] font-mono uppercase rounded border border-purple-500/30 flex-shrink-0",
                   },
                   "GALAXY"
                 ),
@@ -592,7 +568,7 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
                   "span",
                   {
                     key: "value",
-                    className: "text-purple-200 truncate flex-1 min-w-0",
+                    className: "text-sm text-purple-200 truncate flex-1 min-w-0",
                   },
                   cleanName(galaxyData.galaxy_name)
                 ),
@@ -601,12 +577,12 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
           } else if (type === "system" && finalSystemName) {
             iconRoot.render(React.createElement(SystemIcon, { size: 24, color: "#67E8F9" }));
             contentRoot.render(
-              React.createElement("div", { className: "flex items-center gap-2 min-w-0" }, [
+              React.createElement("div", { className: "flex items-center gap-1.5 min-w-0" }, [
                 React.createElement(
                   "span",
                   {
                     key: "label",
-                    className: "px-2 py-1 bg-cyan-900/50 text-cyan-300 text-xs font-mono uppercase rounded border border-cyan-500/30 flex-shrink-0",
+                    className: "px-2 py-1 bg-cyan-900/50 text-cyan-300 text-[10px] font-mono uppercase rounded border border-cyan-500/30 flex-shrink-0",
                   },
                   "SYSTEM"
                 ),
@@ -614,7 +590,7 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
                   "span",
                   {
                     key: "value",
-                    className: "text-cyan-200 truncate flex-1 min-w-0",
+                    className: "text-sm text-cyan-200 truncate flex-1 min-w-0",
                   },
                   cleanName(finalSystemName)
                 ),
@@ -623,12 +599,12 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
           } else if (type === "planet" && finalPlanetName) {
             iconRoot.render(React.createElement(PlanetIcon, { size: 24, color: "#F9A8D4" }));
             contentRoot.render(
-              React.createElement("div", { className: "flex items-center gap-2 min-w-0" }, [
+              React.createElement("div", { className: "flex items-center gap-1.5 min-w-0" }, [
                 React.createElement(
                   "span",
                   {
                     key: "label",
-                    className: "px-2 py-1 bg-pink-900/50 text-pink-300 text-xs font-mono uppercase rounded border border-pink-500/30 flex-shrink-0",
+                    className: "px-2 py-1 bg-pink-900/50 text-pink-300 text-[10px] font-mono uppercase rounded border border-pink-500/30 flex-shrink-0",
                   },
                   "PLANET"
                 ),
@@ -636,7 +612,7 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
                   "span",
                   {
                     key: "value",
-                    className: "text-pink-200 truncate flex-1 min-w-0",
+                    className: "text-sm text-pink-200 truncate flex-1 min-w-0",
                   },
                   cleanName(finalPlanetName)
                 ),
@@ -676,7 +652,6 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
       await sleep(500);
 
       setTimeout(() => {
-        // Deactivate Random Location mode
         if ((window as any).setRandomLocationActive) {
           (window as any).setRandomLocationActive(false);
         }
@@ -708,6 +683,7 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
         clearInterval(matrixIntervalId);
       }
       setRandomJumpText("❌ Jump failed");
+      setShowSpinner(false);
       setCoordinateGlitchStates({ x: false, y: false, z: false });
       setSlideUpInitializeJump(false);
       setShouldCollapseButton(false);
@@ -826,7 +802,7 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
           <div className="w-full bg-white/5 rounded-xl p-3 sm:p-4 lg:p-6 border border-pink-500/30 backdrop-blur-sm md:col-span-2 lg:col-span-1">{renderCoordinateGroup("z", "Z")}</div>
         </div>
 
-        <ButtonGroup showInitializeJump={showInitializeJump} slideUpInitializeJump={slideUpInitializeJump} isRandomJumping={isRandomJumping} randomJumpText={randomJumpText} shouldCollapseButton={shouldCollapseButton} onRandomJump={handleRandomLocationJump} />
+        <ButtonGroup showInitializeJump={showInitializeJump} slideUpInitializeJump={slideUpInitializeJump} isRandomJumping={isRandomJumping} showSpinner={showSpinner} randomJumpText={randomJumpText} shouldCollapseButton={shouldCollapseButton} onRandomJump={handleRandomLocationJump} />
 
         {travelCost && formatResource && (
           <div className="w-full relative z-10">
