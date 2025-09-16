@@ -1,5 +1,5 @@
 // atlas-ui/react/static/js/Components/CoordinateSelector.tsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { createRoot } from "react-dom/client";
 import AntimatterIcon from "../Icons/AntimatterIcon.tsx";
 import Element115Icon from "../Icons/Element115Icon.tsx";
@@ -23,15 +23,22 @@ interface CoordinateSelectorProps {
   efficiency?: number;
 }
 
-// Charset compartido para efectos matrix
 const MATRIX_CHARSET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+const ANIMATION_TIMINGS = {
+  TYPEWRITER: 30,
+  MATRIX_REVEAL: 15,
+  MATRIX_CHANGE: 40,
+  COORDINATE_JUMP_BASE: 1,
+  COORDINATE_JUMP_MAX: 200,
+} as const;
 
-const TypewriterText: React.FC<{
-  text: string;
-  className?: string;
-  delay?: number;
-  onComplete?: () => void;
-}> = ({ text, className = "", delay = 0, onComplete }) => {
+const AXIS_CONFIGS = {
+  x: { label: "X", className: "axis-x", edges: ["The Edge", "The Unknown"] },
+  y: { label: "Y", className: "axis-y", edges: ["The Edge", "The Unknown"] },
+  z: { label: "Z", className: "axis-z", edges: ["The Edge", "The Unknown"] },
+} as const;
+
+const useTypewriter = (text: string, delay = 0, onComplete?: () => void) => {
   const [displayText, setDisplayText] = useState("");
   const [isComplete, setIsComplete] = useState(false);
 
@@ -47,15 +54,26 @@ const TypewriterText: React.FC<{
         } else {
           clearInterval(interval);
           setIsComplete(true);
-          if (onComplete) onComplete();
+          onComplete?.();
         }
-      }, 30);
+      }, ANIMATION_TIMINGS.TYPEWRITER);
 
       return () => clearInterval(interval);
     }, delay);
 
     return () => clearTimeout(timeout);
   }, [text, delay, onComplete]);
+
+  return { displayText, isComplete };
+};
+
+const TypewriterText: React.FC<{
+  text: string;
+  className?: string;
+  delay?: number;
+  onComplete?: () => void;
+}> = ({ text, className = "", delay = 0, onComplete }) => {
+  const { displayText, isComplete } = useTypewriter(text, delay, onComplete);
 
   return (
     <span className={className}>
@@ -65,41 +83,29 @@ const TypewriterText: React.FC<{
   );
 };
 
-const MatrixRevealText: React.FC<{
-  text: string;
-  className?: string;
-  delay?: number;
-  matrixColor?: string;
-}> = ({ text, className = "", delay = 0, matrixColor = "inherit" }) => {
+const useMatrixReveal = (text: string, delay = 0, matrixColor = "inherit") => {
   const [revealedChars, setRevealedChars] = useState<boolean[]>([]);
   const [matrixChars, setMatrixChars] = useState<string[]>([]);
-
-  const matrixCharset = MATRIX_CHARSET;
 
   useEffect(() => {
     if (!text) return;
 
-    // Initialize with all false (matrix chars) and random matrix characters
     const initialRevealed = new Array(text.length).fill(false);
     setRevealedChars(initialRevealed);
-    setMatrixChars(text.split('').map(() =>
-      matrixCharset[Math.floor(Math.random() * matrixCharset.length)]
-    ));
+    setMatrixChars(text.split("").map(() => MATRIX_CHARSET[Math.floor(Math.random() * MATRIX_CHARSET.length)]));
 
     const timeout = setTimeout(() => {
       let currentIndex = 0;
       let currentRevealed = [...initialRevealed];
 
-      // Matrix animation for unrevealed chars - start immediately
       const matrixInterval = setInterval(() => {
-        setMatrixChars(prev =>
+        setMatrixChars((prev) =>
           prev.map((_, index) => {
-            // Don't change chars that are already revealed
             if (currentRevealed[index]) return prev[index];
-            return matrixCharset[Math.floor(Math.random() * matrixCharset.length)];
+            return MATRIX_CHARSET[Math.floor(Math.random() * MATRIX_CHARSET.length)];
           })
         );
-      }, 40); // Faster matrix animation
+      }, ANIMATION_TIMINGS.MATRIX_CHANGE);
 
       const revealInterval = setInterval(() => {
         if (currentIndex < text.length) {
@@ -110,7 +116,7 @@ const MatrixRevealText: React.FC<{
           clearInterval(revealInterval);
           clearInterval(matrixInterval);
         }
-      }, 15); // Much faster: 15ms per character
+      }, ANIMATION_TIMINGS.MATRIX_REVEAL);
 
       return () => {
         clearInterval(revealInterval);
@@ -121,22 +127,105 @@ const MatrixRevealText: React.FC<{
     return () => clearTimeout(timeout);
   }, [text, delay]);
 
+  return { revealedChars, matrixChars };
+};
+
+const MatrixRevealText: React.FC<{
+  text: string;
+  className?: string;
+  delay?: number;
+  matrixColor?: string;
+}> = ({ text, className = "", delay = 0, matrixColor = "inherit" }) => {
+  const { revealedChars, matrixChars } = useMatrixReveal(text, delay, matrixColor);
+
   return (
     <span className={className}>
-      {text.split('').map((char, index) => (
-        <span
-          key={index}
-          className={revealedChars[index] ? '' : 'animate-pulse opacity-70'}
-          style={revealedChars[index] ? {} : { color: matrixColor }}
-        >
-          {revealedChars[index] ? char : (char === ' ' ? ' ' : matrixChars[index])}
+      {text.split("").map((char, index) => (
+        <span key={index} className={revealedChars[index] ? "" : "animate-pulse opacity-70"} style={revealedChars[index] ? {} : { color: matrixColor }}>
+          {revealedChars[index] ? char : char === " " ? " " : matrixChars[index]}
         </span>
       ))}
     </span>
   );
 };
 
-const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateChange, travelCost, canAfford, formatResource, efficiency }) => {
+const ButtonParticles: React.FC = () => (
+  <div className="absolute inset-0">
+    {Array.from({ length: 6 }).map((_, i) => (
+      <div
+        key={i}
+        className="coordinate-selector-particle absolute w-1 h-1 bg-white/60 rounded-full"
+        style={{
+          left: `${15 + i * 12}%`,
+          top: `${20 + (i % 2) * 60}%`,
+          animationDelay: `${i * 0.2}s`,
+        }}
+      ></div>
+    ))}
+  </div>
+);
+
+const ButtonGroup: React.FC<{
+  showInitializeJump: boolean;
+  isRandomJumping: boolean;
+  randomJumpText: string;
+  onRandomJump: () => void;
+}> = ({ showInitializeJump, isRandomJumping, randomJumpText, onRandomJump }) => (
+  <div className="w-full flex relative z-10">
+    <button
+      type="submit"
+      className={`
+        bg-gradient-to-r from-blue-600 via-purple-600 to-blue-700 hover:from-blue-700 hover:via-purple-700 hover:to-blue-800
+        text-white font-bold rounded-xl shadow-lg backdrop-blur-sm transition-all duration-500 transform hover:scale-95 overflow-hidden
+        ${showInitializeJump && !isRandomJumping ? "w-1/2 opacity-100 px-6 sm:px-8 py-3 sm:py-4 mr-4" : "w-0 opacity-0 px-0 py-3 sm:py-4 mr-0"}
+      `}
+      disabled={!showInitializeJump || isRandomJumping}
+    >
+      <span className={`text-base sm:text-lg whitespace-nowrap transition-opacity duration-200 ${showInitializeJump && !isRandomJumping ? "opacity-100" : "opacity-0"}`}>🚀 Initialize Jump</span>
+    </button>
+    <button
+      type="button"
+      className={`
+        group relative overflow-hidden font-bold text-lg rounded-xl shadow-lg backdrop-blur-sm
+        transition-all duration-500 transform hover:scale-95
+        ${isRandomJumping || !showInitializeJump ? "w-full" : "w-1/2"}
+        ${isRandomJumping ? "bg-gradient-to-r from-cyan-500/20 via-purple-500/30 to-cyan-500/20 text-cyan-400 cursor-wait" : "bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 text-white hover:from-purple-700 hover:via-pink-700 hover:to-purple-800"}
+        px-6 sm:px-8 py-3 sm:py-4
+      `}
+      onClick={isRandomJumping ? undefined : onRandomJump}
+      disabled={isRandomJumping}
+    >
+      {!isRandomJumping && (
+        <div
+          className="coordinate-selector-energy-wave absolute inset-0 bg-gradient-to-r from-cyan-400/0 via-cyan-400/20 to-cyan-400/0
+                        translate-x-[-100%] group-hover:translate-x-[100%]"
+        ></div>
+      )}
+
+      {!isRandomJumping && <ButtonParticles />}
+
+      <span className="relative z-10 flex items-center justify-center gap-3">
+        {isRandomJumping ? (
+          <>
+            <div className="w-5 h-5 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
+            <span className="font-mono text-cyan-300">{randomJumpText}</span>
+          </>
+        ) : (
+          <span className="text-base sm:text-lg">🎲 Random Location</span>
+        )}
+      </span>
+
+      {!isRandomJumping && (
+        <div
+          className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-300
+                        bg-gradient-to-r from-white via-transparent to-white blur-sm"
+        ></div>
+      )}
+    </button>
+  </div>
+);
+
+const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateChange, travelCost, canAfford, formatResource }) => {
   const [coordinates, setCoordinates] = useState({
     x: 1000000,
     y: 1000000,
@@ -146,64 +235,56 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
   const [isRandomJumping, setIsRandomJumping] = useState(false);
   const [showInitializeJump, setShowInitializeJump] = useState(true);
   const [randomJumpText, setRandomJumpText] = useState("🎲 Random Location");
-  const [destinationInfo, setDestinationInfo] = useState<{
-    galaxy: string;
-    system: string;
-    planet: string;
-  } | null>(null);
   const [coordinateGlitchStates, setCoordinateGlitchStates] = useState({
-    x: false, y: false, z: false
+    x: false,
+    y: false,
+    z: false,
   });
-  const [destinationReveal, setDestinationReveal] = useState({
-    phase: 'scanning',
-    scanLines: false,
-    hologram: false,
-    typewriterActive: false,
-    showReadyToJump: false
-  });
-  const [currentFlash, setCurrentFlash] = useState<'coordinates' | 'galaxy' | 'system' | 'planet' | 'ready' | null>(null);
 
-  const coordinateOptions = {
-    x: [
-      { value: 0, name: "The Edge" },
-      { value: 1000000, name: "Alpha" },
-      { value: 2000000, name: "Beta" },
-      { value: 3000000, name: "Gamma" },
-      { value: 4000000, name: "Delta" },
-      { value: 5000000, name: "Epsilon" },
-      { value: 6000000, name: "Zeta" },
-      { value: 7000000, name: "Eta" },
-      { value: 8000000, name: "Theta" },
-      { value: 9000000, name: "Iota" },
-      { value: 10000000, name: "The Unknown" },
-    ],
-    y: [
-      { value: 0, name: "The Edge" },
-      { value: 1000000, name: "Lambda" },
-      { value: 2000000, name: "Mu" },
-      { value: 3000000, name: "Nu" },
-      { value: 4000000, name: "Xi" },
-      { value: 5000000, name: "Omicron" },
-      { value: 6000000, name: "Pi" },
-      { value: 7000000, name: "Rho" },
-      { value: 8000000, name: "Sigma" },
-      { value: 9000000, name: "Tau" },
-      { value: 10000000, name: "The Unknown" },
-    ],
-    z: [
-      { value: 0, name: "The Edge" },
-      { value: 1000000, name: "Phi" },
-      { value: 2000000, name: "Chi" },
-      { value: 3000000, name: "Psi" },
-      { value: 4000000, name: "Omega" },
-      { value: 5000000, name: "Vega" },
-      { value: 6000000, name: "Rigel" },
-      { value: 7000000, name: "Sirius" },
-      { value: 8000000, name: "Antares" },
-      { value: 9000000, name: "Procyon" },
-      { value: 10000000, name: "The Unknown" },
-    ],
-  };
+  const coordinateOptions = useMemo(
+    () => ({
+      x: [
+        { value: 0, name: "The Edge" },
+        { value: 1000000, name: "Alpha" },
+        { value: 2000000, name: "Beta" },
+        { value: 3000000, name: "Gamma" },
+        { value: 4000000, name: "Delta" },
+        { value: 5000000, name: "Epsilon" },
+        { value: 6000000, name: "Zeta" },
+        { value: 7000000, name: "Eta" },
+        { value: 8000000, name: "Theta" },
+        { value: 9000000, name: "Iota" },
+        { value: 10000000, name: "The Unknown" },
+      ],
+      y: [
+        { value: 0, name: "The Edge" },
+        { value: 1000000, name: "Lambda" },
+        { value: 2000000, name: "Mu" },
+        { value: 3000000, name: "Nu" },
+        { value: 4000000, name: "Xi" },
+        { value: 5000000, name: "Omicron" },
+        { value: 6000000, name: "Pi" },
+        { value: 7000000, name: "Rho" },
+        { value: 8000000, name: "Sigma" },
+        { value: 9000000, name: "Tau" },
+        { value: 10000000, name: "The Unknown" },
+      ],
+      z: [
+        { value: 0, name: "The Edge" },
+        { value: 1000000, name: "Phi" },
+        { value: 2000000, name: "Chi" },
+        { value: 3000000, name: "Psi" },
+        { value: 4000000, name: "Omega" },
+        { value: 5000000, name: "Vega" },
+        { value: 6000000, name: "Rigel" },
+        { value: 7000000, name: "Sirius" },
+        { value: 8000000, name: "Antares" },
+        { value: 9000000, name: "Procyon" },
+        { value: 10000000, name: "The Unknown" },
+      ],
+    }),
+    []
+  );
 
   const updateSelectOption = (coordinate, value) => {
     const options = coordinateOptions[coordinate];
@@ -280,44 +361,31 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
     return name.replace(/_/g, " ");
   };
 
-  const renderGlitchCoordinate = (value: number, axis: 'x' | 'y' | 'z') => {
+  const renderGlitchCoordinate = (value: number, axis: "x" | "y" | "z") => {
     const isGlitching = coordinateGlitchStates[axis];
 
     if (isGlitching) {
-      return (
-        <span className="font-mono text-xl sm:text-2xl text-cyan-400 drop-shadow-sm animate-pulse">
-          {value.toLocaleString()}
-        </span>
-      );
+      return <span className="font-mono text-xl sm:text-2xl text-cyan-400 drop-shadow-sm animate-pulse">{value.toLocaleString()}</span>;
     }
 
-    return (
-      <span className="font-mono text-xl sm:text-2xl text-cyan-400 drop-shadow-sm transition-all duration-300">
-        {value.toLocaleString()}
-      </span>
-    );
+    return <span className="font-mono text-xl sm:text-2xl text-cyan-400 drop-shadow-sm transition-all duration-300">{value.toLocaleString()}</span>;
   };
 
   const handleRandomLocationJump = async () => {
-    // Iniciar directamente el salto con efecto matrix
     setIsRandomJumping(true);
     setRandomJumpText("INITIALIZING...");
 
-    // Activar efectos de glitch en coordenadas
     setCoordinateGlitchStates({ x: true, y: true, z: true });
 
-    // Matrix effect variables (outside try block for cleanup)
     let matrixIntervalId: NodeJS.Timeout | null = null;
     let isMatrixRunning = true;
 
     try {
-      // Decide final coordinates and destination BEFORE animation
       const galaxyX = Math.floor(Math.random() * 10000001);
       const galaxyY = Math.floor(Math.random() * 10000001);
       const galaxyZ = Math.floor(Math.random() * 10000001);
       const finalCoordinates = { x: galaxyX, y: galaxyY, z: galaxyZ };
 
-      // Get galaxy info
       const galaxyResponse = await fetch(`/api/galaxy-info?x=${galaxyX}&y=${galaxyY}&z=${galaxyZ}`);
       if (!galaxyResponse.ok) {
         throw new Error("Failed to get galaxy info");
@@ -326,18 +394,15 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
       const galaxyData = await galaxyResponse.json();
       const numSystems = galaxyData.num_systems;
 
-      // Determine final destination
       const rand = Math.random();
       let navigationData: any = { x: galaxyX, y: galaxyY, z: galaxyZ };
       let finalSystemName = "";
       let finalPlanetName = "";
 
       if (rand <= 0.05) {
-        // 5% - Stay at galaxy level
         finalSystemName = "";
         finalPlanetName = "";
       } else if (rand <= 0.15) {
-        // 10% - Go to system level (5% + 10% = 15%)
         if (numSystems > 0) {
           const randomSystem = Math.floor(Math.random() * numSystems);
           const systemResponse = await fetch(`/api/system-info?x=${galaxyX}&y=${galaxyY}&z=${galaxyZ}&system=${randomSystem}`);
@@ -349,7 +414,6 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
           }
         }
       } else {
-        // 85% - Go to planet level
         if (numSystems > 0) {
           const randomSystem = Math.floor(Math.random() * numSystems);
           const systemResponse = await fetch(`/api/system-info?x=${galaxyX}&y=${galaxyY}&z=${galaxyZ}&system=${randomSystem}`);
@@ -369,7 +433,6 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
         }
       }
 
-      // Matrix animation phases - usando el mismo charset que MatrixRevealText
       const matrixChars = MATRIX_CHARSET;
 
       const startMatrixEffect = () => {
@@ -377,7 +440,7 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
           if (isMatrixRunning) {
             setRandomJumpText(getRandomString(matrixChars, 15));
           }
-        }, 50); // Continuous matrix animation every 50ms
+        }, 50);
       };
 
       const stopMatrixEffect = () => {
@@ -388,22 +451,17 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
         }
       };
 
-      // Start matrix effect immediately
       startMatrixEffect();
 
-      // Phase 1: Coordinate jumping with exponential deceleration (while matrix continues)
-      const numJumps = 40 + Math.floor(Math.random() * 21); // 40-60 jumps for more activity
+      const numJumps = 40 + Math.floor(Math.random() * 21);
       for (let jump = 0; jump < numJumps; jump++) {
-        // Calculate exponential deceleration - starts extremely fast, ends very slow
-        const progress = jump / (numJumps - 1); // 0 to 1
+        const progress = jump / (numJumps - 1);
 
-        // Much faster exponential delay calculation: starts at 1ms, ends at 200ms
-        const baseDelay = 1; // Extremely fast start
-        const maxDelay = 200; // Moderate end
-        const exponentialFactor = 4; // Higher = more dramatic curve
-        const currentDelay = baseDelay + (Math.pow(progress, exponentialFactor) * (maxDelay - baseDelay));
+        const baseDelay = 1;
+        const maxDelay = 200;
+        const exponentialFactor = 4;
+        const currentDelay = baseDelay + Math.pow(progress, exponentialFactor) * (maxDelay - baseDelay);
 
-        // Show random coordinates
         const randomCoords = {
           x: Math.floor(Math.random() * 10000001),
           y: Math.floor(Math.random() * 10000001),
@@ -414,48 +472,25 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
           onCoordinateChange(randomCoords, true);
         }
 
-        // Main exponential delay between coordinate jumps
         await sleep(currentDelay);
       }
 
-      // Set final coordinates immediately after animation ends
       setCoordinates(finalCoordinates);
       if (onCoordinateChange) {
         onCoordinateChange(finalCoordinates, true);
       }
 
-      // Continue matrix effect for additional time after coordinates are set
-      await sleep(1500); // Let matrix continue for 1.5 seconds after coordinates stop
+      await sleep(1500);
 
-      // Stop matrix effect and change to "Initializing Jump..."
       stopMatrixEffect();
       setRandomJumpText("Initializing Jump...");
       setCoordinateGlitchStates({ x: false, y: false, z: false });
 
-      // Set destination info
-      setDestinationInfo({
-        galaxy: cleanName(galaxyData.galaxy_name),
-        system: finalSystemName ? cleanName(finalSystemName) : "",
-        planet: finalPlanetName ? cleanName(finalPlanetName) : "",
-      });
-
-      // Mostrar la información del destino
-      setDestinationReveal({
-        phase: 'ready',
-        scanLines: false,
-        hologram: true,
-        typewriterActive: true,
-        showReadyToJump: false
-      });
-
-      // SECUENCIA DE FLASHES FUTURISTA - ritmo dinámico pero legible
       await sleep(300);
 
-      // Crear el toast una sola vez y actualizar su contenido
       const toast = document.createElement("div");
       toast.className = "fixed top-4 left-1/2 transform -translate-x-1/2 z-[9999] w-[90vw] max-w-lg opacity-0 scale-95 transition-all duration-500 ease-out";
 
-      // Añadir fade in inicial
       setTimeout(() => {
         toast.style.opacity = "1";
         toast.style.transform = "translate(-50%, 0) scale(1)";
@@ -464,7 +499,6 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
       const popup = document.createElement("div");
       popup.className = "relative rounded-lg shadow-lg border px-4 py-3 transition-all duration-1000 bg-gradient-to-r from-slate-900/90 to-blue-900/90 border-cyan-500/50";
 
-      // Crear un overlay para la animación de color
       const overlay = document.createElement("div");
       overlay.className = "absolute inset-0 rounded-lg transition-all duration-1000 ease-in-out";
       overlay.style.background = "transparent";
@@ -474,12 +508,10 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
       const container = document.createElement("div");
       container.className = "flex items-center space-x-3 relative z-10";
 
-      // Icono dinámico que cambia según la fase
       const iconDiv = document.createElement("div");
       iconDiv.className = "flex items-center justify-center w-8 h-8 transition-all duration-500 ease-in-out";
 
       const iconRoot = createRoot(iconDiv);
-      // Empezar con icono de coordenadas
       iconRoot.render(React.createElement(CoordinatesIcon, { size: 24, color: "#60A5FA" }));
 
       const contentDiv = document.createElement("div");
@@ -495,22 +527,17 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
       toast.appendChild(popup);
 
       document.body.appendChild(toast);
-      currentToastElement = toast;
 
-      // Función para actualizar el contenido del flash Y el icono con animación
       const updateFlash = (type: string) => {
-        let flashHTML = '';
+        let flashHTML = "";
 
-        // Animación de salida del icono y texto (scale down + fade out)
         iconDiv.style.transform = "scale(0.5)";
         iconDiv.style.opacity = "0";
         flashDiv.style.transform = "translateX(-20px)";
         flashDiv.style.opacity = "0";
 
-        // Después de la animación de salida, cambiar el icono y animar la entrada
         setTimeout(() => {
-          // Actualizar el icono según el tipo
-          if (type === 'coordinates') {
+          if (type === "coordinates") {
             iconRoot.render(React.createElement(CoordinatesIcon, { size: 24, color: "#60A5FA" }));
             flashHTML = `
               <div class="flex items-center gap-2 min-w-0">
@@ -518,7 +545,7 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
                 <span class="text-blue-200 truncate flex-1 min-w-0">[${finalCoordinates.x.toLocaleString()}, ${finalCoordinates.y.toLocaleString()}, ${finalCoordinates.z.toLocaleString()}]</span>
               </div>
             `;
-          } else if (type === 'galaxy') {
+          } else if (type === "galaxy") {
             iconRoot.render(React.createElement(GalaxyIcon, { size: 24, color: "#C084FC" }));
             flashHTML = `
               <div class="flex items-center gap-2 min-w-0">
@@ -526,7 +553,7 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
                 <span class="text-purple-200 truncate flex-1 min-w-0">${cleanName(galaxyData.galaxy_name)}</span>
               </div>
             `;
-          } else if (type === 'system' && finalSystemName) {
+          } else if (type === "system" && finalSystemName) {
             iconRoot.render(React.createElement(SystemIcon, { size: 24, color: "#67E8F9" }));
             flashHTML = `
               <div class="flex items-center gap-2 min-w-0">
@@ -534,7 +561,7 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
                 <span class="text-cyan-200 truncate flex-1 min-w-0">${cleanName(finalSystemName)}</span>
               </div>
             `;
-          } else if (type === 'planet' && finalPlanetName) {
+          } else if (type === "planet" && finalPlanetName) {
             iconRoot.render(React.createElement(PlanetIcon, { size: 24, color: "#F9A8D4" }));
             flashHTML = `
               <div class="flex items-center gap-2 min-w-0">
@@ -544,54 +571,39 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
             `;
           }
 
-          // Actualizar el contenido del flash
           flashDiv.innerHTML = flashHTML;
 
-          // Animación de entrada del icono y texto (scale up + fade in + slide in)
           setTimeout(() => {
             iconDiv.style.transform = "scale(1)";
             iconDiv.style.opacity = "1";
             flashDiv.style.transform = "translateX(0)";
             flashDiv.style.opacity = "1";
           }, 50);
-        }, 250); // La mitad de la duración de la transición CSS (500ms / 2)
+        }, 250);
       };
 
-      // SECUENCIA DE FLASHES FUTURISTA - ritmo dinámico pero legible
-      // Flash 1: Coordenadas
-      setCurrentFlash('coordinates');
-      updateFlash('coordinates');
+      updateFlash("coordinates");
       await sleep(1000);
 
-      // Flash 2: Galaxy
-      setCurrentFlash('galaxy');
-      updateFlash('galaxy');
+      updateFlash("galaxy");
       await sleep(900);
 
-      // Flash 3: System (si existe)
       if (finalSystemName) {
-        setCurrentFlash('system');
-        updateFlash('system');
+        updateFlash("system");
         await sleep(900);
       }
 
-      // Flash 4: Planet (si existe)
       if (finalPlanetName) {
-        setCurrentFlash('planet');
-        updateFlash('planet');
+        updateFlash("planet");
         await sleep(900);
       }
 
-      // Estado final: cambiar gradualmente el color de fondo a verde
-
-      // Animar el overlay para crear una transición suave a verde
       overlay.style.background = "linear-gradient(to right, rgb(20 83 45 / 0.9), rgb(30 58 138 / 0.9))";
       overlay.style.opacity = "1";
       popup.style.borderColor = "rgb(34 197 94 / 0.5)";
 
       await sleep(500);
 
-      // Navigate automatically después de mostrar toda la información
       setTimeout(() => {
         const form = document.createElement("form");
         form.method = "POST";
@@ -608,29 +620,18 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
 
         document.body.appendChild(form);
         form.submit();
-      }, 3500); // Reducir tiempo de espera
+      }, 3500);
     } catch (error) {
       console.error("Random jump failed:", error);
-      // Stop matrix effect in case of error
       if (matrixIntervalId) {
         clearInterval(matrixIntervalId);
       }
       setRandomJumpText("❌ Jump failed");
-      setDestinationInfo(null);
-      setCurrentFlash(null);
       setCoordinateGlitchStates({ x: false, y: false, z: false });
-      setDestinationReveal({
-        phase: 'scanning',
-        scanLines: false,
-        hologram: false,
-        typewriterActive: false,
-        showReadyToJump: false
-      });
       setTimeout(() => {
         setIsRandomJumping(false);
         setShowInitializeJump(true);
         setRandomJumpText("🎲 Random Location");
-        setCurrentFlash(null);
       }, 2000);
     }
   };
@@ -641,123 +642,97 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
     }
   }, [coordinates, onCoordinateChange, isInitialized]);
 
-  // Variable para rastrear el toast actual
-  let currentToastElement: HTMLDivElement | null = null;
-
   useEffect(() => {
     randomizeCoordinates();
     setIsInitialized(true);
   }, []);
 
-  const renderCoordinateGroup = (coordinate: string, label: string) => {
-    const selectedIndex = updateSelectOption(coordinate, coordinates[coordinate]);
-    const axisStyles = {
-      x: {
-        gradient: "from-blue-400 to-cyan-400",
-        border: "border-blue-500/40",
-        text: "text-blue-300",
-        accent: "text-blue-400",
-        ring: "focus:ring-blue-500",
-      },
-      y: {
-        gradient: "from-purple-400 to-violet-400",
-        border: "border-purple-500/40",
-        text: "text-purple-300",
-        accent: "text-purple-400",
-        ring: "focus:ring-purple-500",
-      },
-      z: {
-        gradient: "from-pink-400 to-rose-400",
-        border: "border-pink-500/40",
-        text: "text-pink-300",
-        accent: "text-pink-400",
-        ring: "focus:ring-pink-500",
-      },
-    };
-    const style = axisStyles[coordinate as keyof typeof axisStyles];
+  const renderCoordinateGroup = useCallback(
+    (coordinate: keyof Coordinates, label: string) => {
+      const selectedIndex = updateSelectOption(coordinate, coordinates[coordinate]);
+      const config = AXIS_CONFIGS[coordinate];
+      const axisClass = config.className;
 
-    return (
-      <div className="space-y-3" key={coordinate}>
-        <div className="flex items-center justify-between gap-2">
-          <h3 className="text-lg sm:text-xl font-bold text-white truncate flex-1 min-w-0">{label} Coordinate</h3>
-          <div className={`${style.accent} font-bold flex-shrink-0`}>
-            {renderGlitchCoordinate(coordinates[coordinate], coordinate as 'x' | 'y' | 'z')}
+      return (
+        <div className={`space-y-3 ${axisClass}`} key={coordinate}>
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-lg sm:text-xl font-bold text-white truncate flex-1 min-w-0">{label} Coordinate</h3>
+            <div className="font-bold flex-shrink-0" style={{ color: "var(--accent-color)" }}>
+              {renderGlitchCoordinate(coordinates[coordinate], coordinate)}
+            </div>
           </div>
-        </div>
 
-        <div className="flex flex-col sm:flex-row gap-2">
-          <select id={`${coordinate}-name`} className={`flex-1 bg-white/10 border ${style.border} rounded-lg px-4 py-3 text-white focus:ring-2 ${style.ring} focus:border-transparent backdrop-blur-sm`} value={selectedIndex >= 0 ? coordinateOptions[coordinate][selectedIndex].value : ""} onChange={(e) => handleSelectChange(coordinate, e.target.value)}>
-            {coordinateOptions[coordinate].map((option, index) => (
-              <option key={index} value={option.value} className="bg-gray-800 text-white truncate">
-                {option.name}
-              </option>
-            ))}
-          </select>
-          <input type="number" id={`${coordinate}-value`} name={coordinate} value={coordinates[coordinate]} className={`flex-1 bg-white/10 border ${style.border} rounded-lg px-4 py-3 text-white focus:ring-2 ${style.ring} focus:border-transparent backdrop-blur-sm`} min="0" max="10000000" onChange={(e) => handleInputChange(coordinate, e.target.value)} />
-        </div>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <select
+              id={`${coordinate}-name`}
+              className="flex-1 bg-white/10 rounded-lg px-4 py-3 text-white focus:ring-2 focus:border-transparent backdrop-blur-sm"
+              style={
+                {
+                  borderColor: "var(--border-color)",
+                  "--tw-ring-color": "var(--ring-color)",
+                } as React.CSSProperties
+              }
+              value={selectedIndex >= 0 ? coordinateOptions[coordinate][selectedIndex].value : ""}
+              onChange={(e) => handleSelectChange(coordinate, e.target.value)}
+            >
+              {coordinateOptions[coordinate].map((option: any, index: any) => (
+                <option key={index} value={option.value} className="bg-gray-800 text-white truncate">
+                  {option.name}
+                </option>
+              ))}
+            </select>
+            <input
+              type="number"
+              id={`${coordinate}-value`}
+              name={coordinate}
+              value={coordinates[coordinate]}
+              className="flex-1 bg-white/10 rounded-lg px-4 py-3 text-white focus:ring-2 focus:border-transparent backdrop-blur-sm"
+              style={
+                {
+                  borderColor: "var(--border-color)",
+                  "--tw-ring-color": "var(--ring-color)",
+                } as React.CSSProperties
+              }
+              min="0"
+              max="10000000"
+              onChange={(e) => handleInputChange(coordinate, e.target.value)}
+            />
+          </div>
 
-        <div className="space-y-3">
-          <div className="relative">
-            <div className={`absolute inset-0 bg-gradient-to-r ${style.gradient} opacity-20 rounded-xl blur-sm`}></div>
-            <div className="relative p-2 bg-white/5 rounded-lg border border-white/10 backdrop-blur-sm">
-              <div className="relative">
-                <div className="absolute top-1 left-3 right-3 h-3 bg-white/10 rounded-xl"></div>
-                <div className={`absolute top-1 left-3 right-3 h-3 bg-gradient-to-r ${style.gradient} rounded-xl transition-all duration-200 pointer-events-none z-10`} style={{ width: `calc(${(coordinates[coordinate] / 10000000) * 100}% - 12px)` }}></div>
-                <input
-                  type="range"
-                  id={`${coordinate}-slider`}
-                  name={coordinate}
-                  min="0"
-                  max="10000000"
-                  value={coordinates[coordinate]}
-                  className={`
-                    relative z-20 w-full h-3 bg-transparent rounded-xl appearance-none cursor-pointer
-                    [&::-webkit-slider-track]:bg-transparent
-                    [&::-webkit-slider-track]:rounded-xl
-                    [&::-webkit-slider-thumb]:appearance-none
-                    [&::-webkit-slider-thumb]:w-6
-                    [&::-webkit-slider-thumb]:h-6
-                    [&::-webkit-slider-thumb]:bg-gradient-to-br
-                    [&::-webkit-slider-thumb]:${style.gradient}
-                    [&::-webkit-slider-thumb]:rounded-full
-                    [&::-webkit-slider-thumb]:border-2
-                    [&::-webkit-slider-thumb]:border-white/30
-                    [&::-webkit-slider-thumb]:shadow-lg
-                    [&::-webkit-slider-thumb]:hover:shadow-xl
-                    [&::-webkit-slider-thumb]:hover:scale-110
-                    [&::-webkit-slider-thumb]:transition-all
-                    [&::-webkit-slider-thumb]:duration-200
-                    [&::-webkit-slider-thumb]:-mt-1.5
-                    [&::-moz-range-thumb]:w-6
-                    [&::-moz-range-thumb]:h-6
-                    [&::-moz-range-thumb]:bg-gradient-to-br
-                    [&::-moz-range-thumb]:${style.gradient}
-                    [&::-moz-range-thumb]:rounded-full
-                    [&::-moz-range-thumb]:border-2
-                    [&::-moz-range-thumb]:border-white/30
-                    [&::-moz-range-thumb]:cursor-pointer
-                    [&::-moz-range-thumb]:shadow-lg
-                    [&::-moz-range-thumb]:border-none
-                    [&::-moz-range-track]:bg-transparent
-                    [&::-moz-range-track]:border-none
-                    [&::-moz-range-track]:h-3
-                    transition-all
-                    duration-200
-                  `}
-                  onChange={(e) => handleSliderChange(coordinate, e.target.value)}
-                />
-                <div className="flex justify-between items-center mt-2 text-xs font-medium">
-                  <span className={`${style.text} drop-shadow-sm flex-shrink-0`}>The Edge</span>
-                  <span className={`text-center ${style.text} truncate flex-1 min-w-0 px-2`}>{coordinateOptions[coordinate][selectedIndex >= 0 ? selectedIndex : 0]?.name || "Unknown Region"}</span>
-                  <span className={`${style.text} drop-shadow-sm flex-shrink-0`}>The Unknown</span>
+          <div className="space-y-3">
+            <div className="relative">
+              <div className="absolute inset-0 opacity-20 rounded-xl blur-sm" style={{ background: "var(--gradient-colors)" }}></div>
+              <div className="relative p-2 bg-white/5 rounded-lg border border-white/10 backdrop-blur-sm">
+                <div className="relative">
+                  <div className="absolute top-1 left-3 right-3 h-3 bg-white/10 rounded-xl"></div>
+                  <div
+                    className="absolute top-1 left-3 right-3 h-3 rounded-xl transition-all duration-200 pointer-events-none z-10"
+                    style={{
+                      background: "var(--gradient-colors)",
+                      width: `calc(${(coordinates[coordinate] / 10000000) * 100}% - 12px)`,
+                    }}
+                  ></div>
+                  <input type="range" id={`${coordinate}-slider`} name={coordinate} min="0" max="10000000" value={coordinates[coordinate]} className="relative z-20 w-full h-3 bg-transparent rounded-xl appearance-none cursor-pointer transition-all duration-200" onChange={(e) => handleSliderChange(coordinate, e.target.value)} />
+                  <div className="flex justify-between items-center mt-2 text-xs font-medium">
+                    <span className="drop-shadow-sm flex-shrink-0" style={{ color: "var(--text-color)" }}>
+                      The Edge
+                    </span>
+                    <span className="text-center truncate flex-1 min-w-0 px-2" style={{ color: "var(--text-color)" }}>
+                      {coordinateOptions[coordinate][selectedIndex >= 0 ? selectedIndex : 0]?.name || "Unknown Region"}
+                    </span>
+                    <span className="drop-shadow-sm flex-shrink-0" style={{ color: "var(--text-color)" }}>
+                      The Unknown
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    );
-  };
+      );
+    },
+    [coordinates, coordinateOptions, updateSelectOption, renderGlitchCoordinate, handleSelectChange, handleInputChange, handleSliderChange]
+  );
 
   return (
     <>
@@ -768,79 +743,7 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
           <div className="w-full bg-white/5 rounded-xl p-3 sm:p-4 lg:p-6 border border-pink-500/30 backdrop-blur-sm md:col-span-2 lg:col-span-1">{renderCoordinateGroup("z", "Z")}</div>
         </div>
 
-        <div className="w-full flex relative z-10">
-          <button
-            type="submit"
-            className={`
-              bg-gradient-to-r from-blue-600 via-purple-600 to-blue-700 hover:from-blue-700 hover:via-purple-700 hover:to-blue-800 text-white font-bold rounded-xl shadow-lg backdrop-blur-sm
-              transition-all duration-500 transform hover:scale-95 overflow-hidden
-              ${showInitializeJump && !isRandomJumping
-                ? "w-1/2 opacity-100 px-6 sm:px-8 py-3 sm:py-4 mr-4"
-                : "w-0 opacity-0 px-0 py-3 sm:py-4 mr-0"
-              }
-            `}
-            disabled={!showInitializeJump || isRandomJumping}
-          >
-            <span className={`text-base sm:text-lg whitespace-nowrap transition-opacity duration-200 ${showInitializeJump && !isRandomJumping ? "opacity-100" : "opacity-0"}`}>
-              🚀 Initialize Jump
-            </span>
-          </button>
-          <button
-            type="button"
-            className={`
-              group relative overflow-hidden font-bold text-lg rounded-xl shadow-lg backdrop-blur-sm
-              transition-all duration-500 transform hover:scale-95
-              ${isRandomJumping || !showInitializeJump ? "w-full" : "w-1/2"}
-              ${isRandomJumping
-                ? 'bg-gradient-to-r from-cyan-500/20 via-purple-500/30 to-cyan-500/20 text-cyan-400 cursor-wait'
-                : 'bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 text-white hover:from-purple-700 hover:via-pink-700 hover:to-purple-800'
-              }
-              px-6 sm:px-8 py-3 sm:py-4
-            `}
-            onClick={isRandomJumping ? undefined : handleRandomLocationJump}
-            disabled={isRandomJumping}
-          >
-            {/* Fondo animado para hover */}
-            {!isRandomJumping && (
-              <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/0 via-cyan-400/20 to-cyan-400/0
-                              translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-            )}
-
-            {/* Partículas flotantes para estado normal */}
-            {!isRandomJumping && (
-              <div className="absolute inset-0">
-                {Array.from({length: 6}).map((_, i) => (
-                  <div key={i}
-                       className="absolute w-1 h-1 bg-white/60 rounded-full animate-pulse"
-                       style={{
-                         left: `${15 + i * 12}%`,
-                         top: `${20 + (i % 2) * 60}%`,
-                         animationDelay: `${i * 0.2}s`,
-                         animationDuration: '2s'
-                       }}></div>
-                ))}
-              </div>
-            )}
-
-            {/* Contenido del botón */}
-            <span className="relative z-10 flex items-center justify-center gap-3">
-              {isRandomJumping ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
-                  <span className="font-mono text-cyan-300">{randomJumpText}</span>
-                </>
-              ) : (
-                <span className="text-base sm:text-lg">🎲 Random Location</span>
-              )}
-            </span>
-
-            {/* Efecto de brillo en hover para estado normal */}
-            {!isRandomJumping && (
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-300
-                              bg-gradient-to-r from-white via-transparent to-white blur-sm"></div>
-            )}
-          </button>
-        </div>
+        <ButtonGroup showInitializeJump={showInitializeJump} isRandomJumping={isRandomJumping} randomJumpText={randomJumpText} onRandomJump={handleRandomLocationJump} />
 
         {travelCost && formatResource && (
           <div className="w-full relative z-10">
@@ -861,7 +764,6 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
           </div>
         )}
       </div>
-
     </>
   );
 };
