@@ -25,6 +25,14 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
     z: 1000000,
   });
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isRandomJumping, setIsRandomJumping] = useState(false);
+  const [showInitializeJump, setShowInitializeJump] = useState(true);
+  const [randomJumpText, setRandomJumpText] = useState("🎲 Random Location");
+  const [destinationInfo, setDestinationInfo] = useState<{
+    galaxy: string;
+    system: string;
+    planet: string;
+  } | null>(null);
 
   const coordinateOptions = {
     x: [
@@ -130,6 +138,177 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
     setCoordinates(newCoordinates);
     if (isInitialized && onCoordinateChange) {
       onCoordinateChange(newCoordinates, true);
+    }
+  };
+
+  const getRandomString = (chars: string, length: number) => {
+    return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+  };
+
+  const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  const cleanName = (name: string) => {
+    return name.replace(/_/g, " ");
+  };
+
+  const handleRandomLocationJump = async () => {
+    setIsRandomJumping(true);
+    setShowInitializeJump(false);
+
+    try {
+      // Decide final coordinates and destination BEFORE animation
+      const galaxyX = Math.floor(Math.random() * 10000001);
+      const galaxyY = Math.floor(Math.random() * 10000001);
+      const galaxyZ = Math.floor(Math.random() * 10000001);
+      const finalCoordinates = { x: galaxyX, y: galaxyY, z: galaxyZ };
+
+      // Get galaxy info
+      const galaxyResponse = await fetch(`/api/galaxy-info?x=${galaxyX}&y=${galaxyY}&z=${galaxyZ}`);
+      if (!galaxyResponse.ok) {
+        throw new Error("Failed to get galaxy info");
+      }
+
+      const galaxyData = await galaxyResponse.json();
+      const numSystems = galaxyData.num_systems;
+
+      // Determine final destination
+      const rand = Math.random();
+      let navigationData: any = { x: galaxyX, y: galaxyY, z: galaxyZ };
+      let finalSystemName = "";
+      let finalPlanetName = "";
+
+      if (rand <= 0.1) {
+        // 10% - Stay at galaxy level
+        finalSystemName = "";
+        finalPlanetName = "";
+      } else if (rand <= 0.4) {
+        // 30% - Go to system level
+        if (numSystems > 0) {
+          const randomSystem = Math.floor(Math.random() * numSystems);
+          const systemResponse = await fetch(`/api/system-info?x=${galaxyX}&y=${galaxyY}&z=${galaxyZ}&system=${randomSystem}`);
+
+          if (systemResponse.ok) {
+            const systemData = await systemResponse.json();
+            navigationData.system = randomSystem;
+            finalSystemName = systemData.system_name;
+          }
+        }
+      } else {
+        // 60% - Go to planet level
+        if (numSystems > 0) {
+          const randomSystem = Math.floor(Math.random() * numSystems);
+          const systemResponse = await fetch(`/api/system-info?x=${galaxyX}&y=${galaxyY}&z=${galaxyZ}&system=${randomSystem}`);
+
+          if (systemResponse.ok) {
+            const systemData = await systemResponse.json();
+            const planets = systemData.planets;
+
+            if (planets && planets.length > 0) {
+              const randomPlanet = planets[Math.floor(Math.random() * planets.length)];
+              navigationData.system = randomSystem;
+              navigationData.planet = randomPlanet.name;
+              finalSystemName = systemData.system_name;
+              finalPlanetName = randomPlanet.name;
+            }
+          }
+        }
+      }
+
+      // Set destination info for display
+      setDestinationInfo({
+        galaxy: cleanName(galaxyData.galaxy_name),
+        system: finalSystemName ? cleanName(finalSystemName) : "",
+        planet: finalPlanetName ? cleanName(finalPlanetName) : "",
+      });
+
+      // Matrix animation phases
+      const matrixChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{}|;:'\",.<>?/`~";
+
+      // Phase 1: Matrix effect with coordinate jumping
+      const numJumps = 10 + Math.floor(Math.random() * 6); // 10-15 jumps
+      for (let jump = 0; jump < numJumps; jump++) {
+        // Show random coordinates while doing matrix effect
+        const randomCoords = {
+          x: Math.floor(Math.random() * 10000001),
+          y: Math.floor(Math.random() * 10000001),
+          z: Math.floor(Math.random() * 10000001),
+        };
+        setCoordinates(randomCoords);
+        if (onCoordinateChange) {
+          onCoordinateChange(randomCoords, true); // Changed to true to trigger 3D cube
+        }
+
+        // Matrix text animation for this jump (faster)
+        for (let i = 0; i < 8; i++) {
+          // Reduced from 15 to 8 iterations
+          setRandomJumpText(getRandomString(matrixChars, 20));
+          await sleep(15); // Reduced from 30ms to 15ms
+        }
+
+        await sleep(25); // Reduced from 50ms to 25ms
+      }
+
+      // Set final coordinates
+      setCoordinates(finalCoordinates);
+      if (onCoordinateChange) {
+        onCoordinateChange(finalCoordinates, true);
+      }
+
+      // Phase 2: Reveal destination (faster)
+      if (finalPlanetName) {
+        setRandomJumpText("");
+        const planetText = `Planet: ${cleanName(finalPlanetName)}`;
+        for (let i = 0; i < planetText.length; i++) {
+          setRandomJumpText(planetText.substring(0, i + 1));
+          await sleep(25); // Reduced from 50ms to 25ms
+        }
+      } else if (finalSystemName) {
+        setRandomJumpText("");
+        const systemText = `System: ${cleanName(finalSystemName)}`;
+        for (let i = 0; i < systemText.length; i++) {
+          setRandomJumpText(systemText.substring(0, i + 1));
+          await sleep(25); // Reduced from 50ms to 25ms
+        }
+      } else {
+        setRandomJumpText("");
+        const galaxyText = `Galaxy: ${cleanName(galaxyData.galaxy_name)}`;
+        for (let i = 0; i < galaxyText.length; i++) {
+          setRandomJumpText(galaxyText.substring(0, i + 1));
+          await sleep(25); // Reduced from 50ms to 25ms
+        }
+      }
+
+      await sleep(500); // Reduced from 1000ms to 500ms
+
+      setRandomJumpText("🚀 Jump initiated!");
+
+      // Navigate automatically
+      setTimeout(() => {
+        const form = document.createElement("form");
+        form.method = "POST";
+        form.action = "/api/random-jump";
+        form.style.display = "none";
+
+        Object.keys(navigationData).forEach((key) => {
+          const input = document.createElement("input");
+          input.type = "hidden";
+          input.name = key;
+          input.value = navigationData[key];
+          form.appendChild(input);
+        });
+
+        document.body.appendChild(form);
+        form.submit();
+      }, 500);
+    } catch (error) {
+      console.error("Random jump failed:", error);
+      setRandomJumpText("❌ Jump failed");
+      setDestinationInfo(null);
+      setTimeout(() => {
+        setIsRandomJumping(false);
+        setShowInitializeJump(true);
+        setRandomJumpText("🎲 Random Location");
+      }, 2000);
     }
   };
 
@@ -261,13 +440,43 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
       </div>
 
       <div className="w-full flex gap-4 relative z-10">
-        <button type="submit" className="flex-1 px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-700 hover:from-blue-700 hover:via-purple-700 hover:to-blue-800 text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-95 shadow-lg backdrop-blur-sm">
-          <span className="text-base sm:text-lg">🚀 Initialize Jump</span>
-        </button>
-        <button type="button" className="flex-1 px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 hover:from-purple-700 hover:via-pink-700 hover:to-purple-800 text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-95 shadow-lg backdrop-blur-sm" onClick={randomizeCoordinates}>
-          <span className="text-base sm:text-lg">🎲 Random Location</span>
+        {showInitializeJump && !isRandomJumping && (
+          <button type="submit" className="flex-1 px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-700 hover:from-blue-700 hover:via-purple-700 hover:to-blue-800 text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-95 shadow-lg backdrop-blur-sm">
+            <span className="text-base sm:text-lg">🚀 Initialize Jump</span>
+          </button>
+        )}
+        <button type="button" className={`${isRandomJumping ? "w-full" : "flex-1"} px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 hover:from-purple-700 hover:via-pink-700 hover:to-purple-800 text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-95 shadow-lg backdrop-blur-sm ${isRandomJumping ? "animate-pulse" : ""}`} onClick={isRandomJumping ? undefined : handleRandomLocationJump} disabled={isRandomJumping}>
+          <span className="text-base sm:text-lg">{randomJumpText}</span>
         </button>
       </div>
+
+      {destinationInfo && (
+        <div className="w-full relative z-10">
+          <div className="w-full bg-white/5 rounded-xl px-4 py-3 border border-yellow-500/30 backdrop-blur-sm">
+            <div className="text-center space-y-1">
+              <div className="text-yellow-400 font-semibold text-sm">Random Jump Destination</div>
+              <div className="space-y-0.5 text-xs font-mono">
+                <div className="text-blue-300">
+                  <span className="text-gray-400">Coordinates:</span> {coordinates.x.toLocaleString()}, {coordinates.y.toLocaleString()}, {coordinates.z.toLocaleString()}
+                </div>
+                <div className="text-purple-300">
+                  <span className="text-gray-400">Galaxy:</span> {destinationInfo.galaxy}
+                </div>
+                {destinationInfo.system && (
+                  <div className="text-cyan-300">
+                    <span className="text-gray-400">System:</span> {destinationInfo.system}
+                  </div>
+                )}
+                {destinationInfo.planet && (
+                  <div className="text-pink-300">
+                    <span className="text-gray-400">Planet:</span> {destinationInfo.planet}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {travelCost && formatResource && (
         <div className="w-full relative z-10">

@@ -44,20 +44,9 @@ app.secret_key = os.urandom(24)
 # Enable gzip compression
 Compress(app)
 
-register_vite_assets(
-    app,
-    dev_mode=(RUN == "DEV"),
-    dev_server_url="http://localhost:5173",
-    dist_path="/atlas-ui/react/dist",
-    manifest_path="atlas-ui/react/dist/.vite/manifest.json",
-    nonce_provider=lambda: g.get("nonce"),
-    logger=None
-)
-
+register_vite_assets(app, dev_mode=(RUN == "DEV"), dev_server_url="http://localhost:5173", dist_path="/atlas-ui/react/dist", manifest_path="atlas-ui/react/dist/.vite/manifest.json", nonce_provider=lambda: g.get("nonce"), logger=None)
 register_location_api(app)
-
 register_planet_renderer_api(app)
-
 register_arecibo_api(app)
 
 universe = None
@@ -187,9 +176,7 @@ def view_galaxy(page):
     except ValueError as ve:
         return render_template("error.html", message=str(ve), run_mode=RUN)
     except Exception as e:
-        return render_template(
-            "error.html", message=f"An unexpected error occurred: {str(e)}", run_mode=RUN
-        )
+        return render_template("error.html", message=f"An unexpected error occurred: {str(e)}", run_mode=RUN)
 
 
 @app.route("/galaxy_blob")
@@ -228,9 +215,7 @@ def view_system(system_index):
 
         page = session.get(f"page_{current_galaxy.coordinates}", 1)
 
-        system_url = generate_system_url(
-            current_galaxy.coordinates, current_system.index, page
-        )
+        system_url = generate_system_url(current_galaxy.coordinates, current_system.index, page)
 
         image_url = url_for("system_blob")
 
@@ -249,23 +234,13 @@ def view_system(system_index):
             "Stars": star_summary,
         }
 
-        if request.headers.get('Accept') == 'application/json':
+        if request.headers.get("Accept") == "application/json":
             planets_list = []
             for planet in current_system.planets.values():
                 planets_list.append({"name": planet.name})
-            
-            return jsonify({
-                "system": {
-                    "name": current_system.name,
-                    "index": current_system.index,
-                    "planets": planets_list
-                },
-                "galaxy": {
-                    "name": current_galaxy.name,
-                    "coordinates": current_galaxy.coordinates
-                }
-            })
-        
+
+            return jsonify({"system": {"name": current_system.name, "index": current_system.index, "planets": planets_list}, "galaxy": {"name": current_galaxy.name, "coordinates": current_galaxy.coordinates}})
+
         return render_template(
             "system.html",
             system=current_system,
@@ -324,11 +299,9 @@ def view_planet(planet_name):
     for planet_index, planet in current_system.planets.items():
         if planet.name.lower() == planet_name:
             session["planet"] = planet_index
-            
+
             image_url = url_for("planet_blob", planet_name=planet_name)
-            planet_url = generate_planet_url(
-                current_galaxy.coordinates, current_system.index, planet_name, page
-            )
+            planet_url = generate_planet_url(current_galaxy.coordinates, current_system.index, planet_name, page)
 
             planet_summary = {
                 "Type": planet.planet_type,
@@ -371,9 +344,7 @@ def planet_blob(planet_name):
     system_name = current_system.name.lower()
     planet_name = planet_name.lower()
 
-    cache_filepath = get_cached_image_path(
-        "planet", coordinates, system_name, planet_name
-    )
+    cache_filepath = get_cached_image_path("planet", coordinates, system_name, planet_name)
 
     if config.enable_cache:
         if os.path.exists(cache_filepath):
@@ -462,7 +433,7 @@ def atlas_ui_src_dist(path):
     return send_src_dist(path)
 
 
-@app.route("/static/<path:filename>", endpoint='static')
+@app.route("/static/<path:filename>", endpoint="static")
 def send_static_files(filename):
     return send_from_directory("static", filename)
 
@@ -473,37 +444,109 @@ def get_universe_config():
         if not config.is_initialized:
             if not config.initialize():
                 return jsonify({"error": "Config not initialized"})
-        
-        return jsonify({
-            "success": True,
-            "config_seed": config.seed,
-            "seed_str": config.seed_str,  # Primordial seed
-            "seed_hash": config.seed_hash,  # SHA256 hash
-            "seed_decimal": str(config.seed),  # Full decimal seed (can be very large!)
-            "cosmic_origin_time": config.cosmic_origin_time,
-            "cosmic_origin_datetime": str(config.cosmic_origin_datetime)  # Formatted datetime
-        })
+
+        return jsonify({"success": True, "config_seed": config.seed, "seed_str": config.seed_str, "seed_hash": config.seed_hash, "seed_decimal": str(config.seed), "cosmic_origin_time": config.cosmic_origin_time, "cosmic_origin_datetime": str(config.cosmic_origin_datetime)})  # Primordial seed  # SHA256 hash  # Full decimal seed (can be very large!)  # Formatted datetime
     except Exception as e:
         return jsonify({"error": str(e)})
+
+
+@app.route("/api/galaxy-info")
+def get_galaxy_info():
+    try:
+        if universe is None:
+            return jsonify({"error": "Universe not initialized"}), 500
+
+        x = int(request.args.get("x"))
+        y = int(request.args.get("y"))
+        z = int(request.args.get("z"))
+
+        galaxy = universe.get_galaxy(x, y, z)
+
+        return jsonify({"success": True, "num_systems": galaxy.num_systems, "galaxy_name": galaxy.name, "galaxy_type": galaxy.galaxy_type, "coordinates": [x, y, z]})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/system-info")
+def get_system_info():
+    try:
+        if universe is None:
+            return jsonify({"error": "Universe not initialized"}), 500
+
+        x = int(request.args.get("x"))
+        y = int(request.args.get("y"))
+        z = int(request.args.get("z"))
+        system_index = int(request.args.get("system"))
+
+        galaxy = universe.get_galaxy(x, y, z)
+
+        if system_index >= galaxy.num_systems:
+            return jsonify({"error": "System index out of range"}), 400
+
+        system = galaxy.get_solar_system(system_index)
+
+        planets_list = []
+        for planet in system.planets.values():
+            planets_list.append({"name": planet.name})
+
+        return jsonify({"success": True, "system_name": system.name, "system_index": system_index, "planets": planets_list, "num_planets": system.num_planets})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/random-jump", methods=["POST"])
+def handle_random_jump():
+    try:
+        if universe is None:
+            return jsonify({"error": "Universe not initialized"}), 500
+
+        x = int(request.form["x"])
+        y = int(request.form["y"])
+        z = int(request.form["z"])
+
+        galaxy = universe.get_galaxy(x, y, z)
+        session["galaxy"] = {
+            "seed": galaxy.seed,
+            "name": galaxy.name,
+            "constants": galaxy.constants.__dict__,
+            "galaxy_type": galaxy.galaxy_type,
+            "coordinates": (x, y, z),
+        }
+
+        system_index = request.form.get("system")
+        planet_name = request.form.get("planet")
+
+        if system_index and planet_name:
+            session["system"] = int(system_index)
+            return redirect(url_for("view_planet", planet_name=planet_name))
+        elif system_index:
+            session["system"] = int(system_index)
+            return redirect(url_for("view_system", system_index=int(system_index)))
+        else:
+            session["system"] = None
+            return redirect(url_for("view_galaxy"))
+
+    except Exception as e:
+        return render_template("error.html", message=f"Random jump failed: {str(e)}", run_mode=RUN)
 
 
 if __name__ == "__main__":
 
     if "--debug" in sys.argv:
         from pymodules.__atlas_debug_flag import AtlasDebugger
-        
+
         debug_index = sys.argv.index("--debug")
         if debug_index + 1 < len(sys.argv):
             stargate_url = sys.argv[debug_index + 1]
-            
+
             debugger = AtlasDebugger()
-            
+
             if "--json" in sys.argv:
                 output_file = debugger.export_to_json(stargate_url)
                 print(f"💾 Debug data exported to: {output_file}")
             else:
                 debugger.debug_planet_rendering(stargate_url)
-            
+
             exit("Debug complete!")
         else:
             print("❌ Error: --debug requires a stargate URL")
