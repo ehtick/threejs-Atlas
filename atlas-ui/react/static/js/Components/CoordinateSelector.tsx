@@ -528,9 +528,9 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
 
       document.body.appendChild(toast);
 
-      const updateFlash = (type: string) => {
-        let flashHTML = "";
+      const contentRoot = createRoot(contentDiv);
 
+      const updateFlash = (type: string) => {
         iconDiv.style.transform = "scale(0.5)";
         iconDiv.style.opacity = "0";
         flashDiv.style.transform = "translateX(-20px)";
@@ -539,39 +539,93 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
         setTimeout(() => {
           if (type === "coordinates") {
             iconRoot.render(React.createElement(CoordinatesIcon, { size: 24, color: "#60A5FA" }));
-            flashHTML = `
-              <div class="flex items-center gap-2 min-w-0">
-                <span class="px-2 py-1 bg-blue-900/50 text-blue-300 text-xs font-mono uppercase rounded border border-blue-500/30 flex-shrink-0">COORDS</span>
-                <span class="text-blue-200 truncate flex-1 min-w-0">[${finalCoordinates.x.toLocaleString()}, ${finalCoordinates.y.toLocaleString()}, ${finalCoordinates.z.toLocaleString()}]</span>
-              </div>
-            `;
+            contentRoot.render(
+              React.createElement("div", { className: "flex items-center gap-2 min-w-0" }, [
+                React.createElement(
+                  "span",
+                  {
+                    key: "label",
+                    className: "px-2 py-1 bg-blue-900/50 text-blue-300 text-xs font-mono uppercase rounded border border-blue-500/30 flex-shrink-0",
+                  },
+                  "COORDS"
+                ),
+                React.createElement(
+                  "span",
+                  {
+                    key: "value",
+                    className: "text-blue-200 truncate flex-1 min-w-0",
+                  },
+                  `[${finalCoordinates.x.toLocaleString()}, ${finalCoordinates.y.toLocaleString()}, ${finalCoordinates.z.toLocaleString()}]`
+                ),
+              ])
+            );
           } else if (type === "galaxy") {
             iconRoot.render(React.createElement(GalaxyIcon, { size: 24, color: "#C084FC" }));
-            flashHTML = `
-              <div class="flex items-center gap-2 min-w-0">
-                <span class="px-2 py-1 bg-purple-900/50 text-purple-300 text-xs font-mono uppercase rounded border border-purple-500/30 flex-shrink-0">GALAXY</span>
-                <span class="text-purple-200 truncate flex-1 min-w-0">${cleanName(galaxyData.galaxy_name)}</span>
-              </div>
-            `;
+            contentRoot.render(
+              React.createElement("div", { className: "flex items-center gap-2 min-w-0" }, [
+                React.createElement(
+                  "span",
+                  {
+                    key: "label",
+                    className: "px-2 py-1 bg-purple-900/50 text-purple-300 text-xs font-mono uppercase rounded border border-purple-500/30 flex-shrink-0",
+                  },
+                  "GALAXY"
+                ),
+                React.createElement(
+                  "span",
+                  {
+                    key: "value",
+                    className: "text-purple-200 truncate flex-1 min-w-0",
+                  },
+                  cleanName(galaxyData.galaxy_name)
+                ),
+              ])
+            );
           } else if (type === "system" && finalSystemName) {
             iconRoot.render(React.createElement(SystemIcon, { size: 24, color: "#67E8F9" }));
-            flashHTML = `
-              <div class="flex items-center gap-2 min-w-0">
-                <span class="px-2 py-1 bg-cyan-900/50 text-cyan-300 text-xs font-mono uppercase rounded border border-cyan-500/30 flex-shrink-0">SYSTEM</span>
-                <span class="text-cyan-200 truncate flex-1 min-w-0">${cleanName(finalSystemName)}</span>
-              </div>
-            `;
+            contentRoot.render(
+              React.createElement("div", { className: "flex items-center gap-2 min-w-0" }, [
+                React.createElement(
+                  "span",
+                  {
+                    key: "label",
+                    className: "px-2 py-1 bg-cyan-900/50 text-cyan-300 text-xs font-mono uppercase rounded border border-cyan-500/30 flex-shrink-0",
+                  },
+                  "SYSTEM"
+                ),
+                React.createElement(
+                  "span",
+                  {
+                    key: "value",
+                    className: "text-cyan-200 truncate flex-1 min-w-0",
+                  },
+                  cleanName(finalSystemName)
+                ),
+              ])
+            );
           } else if (type === "planet" && finalPlanetName) {
             iconRoot.render(React.createElement(PlanetIcon, { size: 24, color: "#F9A8D4" }));
-            flashHTML = `
-              <div class="flex items-center gap-2 min-w-0">
-                <span class="px-2 py-1 bg-pink-900/50 text-pink-300 text-xs font-mono uppercase rounded border border-pink-500/30 flex-shrink-0">PLANET</span>
-                <span class="text-pink-200 truncate flex-1 min-w-0">${cleanName(finalPlanetName)}</span>
-              </div>
-            `;
+            contentRoot.render(
+              React.createElement("div", { className: "flex items-center gap-2 min-w-0" }, [
+                React.createElement(
+                  "span",
+                  {
+                    key: "label",
+                    className: "px-2 py-1 bg-pink-900/50 text-pink-300 text-xs font-mono uppercase rounded border border-pink-500/30 flex-shrink-0",
+                  },
+                  "PLANET"
+                ),
+                React.createElement(
+                  "span",
+                  {
+                    key: "value",
+                    className: "text-pink-200 truncate flex-1 min-w-0",
+                  },
+                  cleanName(finalPlanetName)
+                ),
+              ])
+            );
           }
-
-          flashDiv.innerHTML = flashHTML;
 
           setTimeout(() => {
             iconDiv.style.transform = "scale(1)";
