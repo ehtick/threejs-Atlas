@@ -54,7 +54,7 @@ def register_universe_page_routes(app, universe, config):
 
     @app.route("/universe-faq")
     def universe_faq():
-        return render_template("universe-faq.html", version=VERSION, versionHash=VERSION_HASH, run_mode=RUN)
+        return render_template("faq.html", version=VERSION, versionHash=VERSION_HASH, run_mode=RUN)
 
     @app.route("/navigate", methods=["POST"])
     def navigate():

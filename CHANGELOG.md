@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.4.66] - 2025-09-17
+
+- Fixed a Universe FAQ route in `__universe_route_pages.py`, such a mess is equal to IQ over 9000.
+
 ## [2.4.64] - 2025-09-17
 
 - Fixed a Stargate Links bug introduced in the `__main__.py` refactor which made them not to load anything. Logic at its max (guess what, nope).
