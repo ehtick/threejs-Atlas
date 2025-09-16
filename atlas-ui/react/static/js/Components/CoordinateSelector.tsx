@@ -167,19 +167,20 @@ const ButtonParticles: React.FC = () => (
 
 const ButtonGroup: React.FC<{
   showInitializeJump: boolean;
+  slideUpInitializeJump: boolean;
   isRandomJumping: boolean;
   randomJumpText: string;
+  shouldCollapseButton: boolean;
   onRandomJump: () => void;
-}> = ({ showInitializeJump, isRandomJumping, randomJumpText, onRandomJump }) => (
-  <div className="w-full flex relative z-10">
+}> = ({ showInitializeJump, slideUpInitializeJump, isRandomJumping, randomJumpText, shouldCollapseButton, onRandomJump }) => (
+  <div className={`w-full flex relative z-10 transition-all duration-800 ${shouldCollapseButton ? "justify-center animate-accordionCollapse" : ""}`}>
     <button
       type="submit"
       className={`
         bg-gradient-to-r from-blue-600 via-purple-600 to-blue-700 hover:from-blue-700 hover:via-purple-700 hover:to-blue-800
         text-white font-bold rounded-xl shadow-lg backdrop-blur-sm transition-all duration-500 transform hover:scale-95 overflow-hidden
-        ${showInitializeJump && !isRandomJumping
-          ? "w-1/2 max-h-20 opacity-100 px-6 sm:px-8 py-3 sm:py-4 mr-4"
-          : "w-0 max-h-0 opacity-0 px-0 py-0 mr-0 overflow-hidden"}
+        ${slideUpInitializeJump ? "animate-accordionCollapse" : ""}
+        ${showInitializeJump && !isRandomJumping ? "w-1/2 max-h-20 opacity-100 px-6 sm:px-8 py-3 sm:py-4 mr-4" : "w-0 max-h-0 opacity-0 px-0 py-0 mr-0 overflow-hidden"}
       `}
       disabled={!showInitializeJump || isRandomJumping}
     >
@@ -238,7 +239,9 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
   const [isInitialized, setIsInitialized] = useState(false);
   const [isRandomJumping, setIsRandomJumping] = useState(false);
   const [showInitializeJump, setShowInitializeJump] = useState(true);
+  const [slideUpInitializeJump, setSlideUpInitializeJump] = useState(false);
   const [randomJumpText, setRandomJumpText] = useState("🎲 Random Location");
+  const [shouldCollapseButton, setShouldCollapseButton] = useState(false);
   const [coordinateGlitchStates, setCoordinateGlitchStates] = useState({
     x: false,
     y: false,
@@ -488,7 +491,13 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
 
       stopMatrixEffect();
       setRandomJumpText("Initializing Jump...");
+      setShouldCollapseButton(true);
       setCoordinateGlitchStates({ x: false, y: false, z: false });
+
+      setSlideUpInitializeJump(true);
+      setTimeout(() => {
+        setShowInitializeJump(false);
+      }, 600);
 
       await sleep(300);
 
@@ -686,6 +695,8 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
       }
       setRandomJumpText("❌ Jump failed");
       setCoordinateGlitchStates({ x: false, y: false, z: false });
+      setSlideUpInitializeJump(false);
+      setShouldCollapseButton(false);
       setTimeout(() => {
         setIsRandomJumping(false);
         setShowInitializeJump(true);
@@ -801,7 +812,7 @@ const CoordinateSelector: React.FC<CoordinateSelectorProps> = ({ onCoordinateCha
           <div className="w-full bg-white/5 rounded-xl p-3 sm:p-4 lg:p-6 border border-pink-500/30 backdrop-blur-sm md:col-span-2 lg:col-span-1">{renderCoordinateGroup("z", "Z")}</div>
         </div>
 
-        <ButtonGroup showInitializeJump={showInitializeJump} isRandomJumping={isRandomJumping} randomJumpText={randomJumpText} onRandomJump={handleRandomLocationJump} />
+        <ButtonGroup showInitializeJump={showInitializeJump} slideUpInitializeJump={slideUpInitializeJump} isRandomJumping={isRandomJumping} randomJumpText={randomJumpText} shouldCollapseButton={shouldCollapseButton} onRandomJump={handleRandomLocationJump} />
 
         {travelCost && formatResource && (
           <div className="w-full relative z-10">
