@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.4.60] - 2025-09-16
+
+- Redesigned Random Location button and its behavior to be **actually useful**, fixed the 3D cube viewer disappearing bug, added proper destination preview popup showing exactly where you're going, and improved the entire jump sequence with smoother animations and better matrix effects.
+
 ## [2.4.48] - 2025-09-14
 
 - Fixed a bug introduced in v2.4.46 to handle planet view resize while exporting 4K snapshots which made the fullscreen view to get viewed as a square.
