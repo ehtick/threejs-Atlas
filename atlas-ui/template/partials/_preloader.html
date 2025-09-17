@@ -1,7 +1,6 @@
 <div id="atlas-preloader">
   <div class="preloader-content">
     <img src="/static/atlas-logo.jpg" alt="Atlas" class="preloader-logo" onerror="this.style.display='none'" />
-    <div class="preloader-title">The Atlas</div>
 
     <div class="progress-container">
       <div class="progress-bar" id="progress-bar"></div>
@@ -75,7 +74,21 @@
 
     completeProgress() {
       this.isReactLoaded = true;
-      this.progressBar.classList.add("complete");
+      const currentWidth = (parseFloat(getComputedStyle(this.progressBar).width) / parseFloat(getComputedStyle(this.progressBar.parentElement).width)) * 100;
+
+      this.progressBar.style.animation = "none";
+      this.progressBar.style.width = currentWidth + "%";
+
+      let progress = currentWidth;
+      const interval = setInterval(() => {
+        progress += 8;
+        this.progressBar.style.width = Math.min(100, progress) + "%";
+        if (progress >= 100) {
+          clearInterval(interval);
+        }
+      }, 1);
+
+      this.hide();
     }
 
     setupHideTimer() {
@@ -101,9 +114,7 @@
     new AtlasPreloader();
   });
 
-  if (document.readyState === "loading") {
-    // Do nothing, DOMContentLoaded will fire
-  } else {
+  if (document.readyState !== "loading") {
     new AtlasPreloader();
   }
 </script>

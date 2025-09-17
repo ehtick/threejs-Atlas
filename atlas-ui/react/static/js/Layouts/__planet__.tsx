@@ -125,7 +125,7 @@ const PlanetLayout: React.FC<PlanetLayoutProps> = ({ planet, system, galaxy, pla
         <div className="w-full px-2 sm:px-4 lg:px-6 py-4 sm:py-8">
           <div className="text-center mb-2">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-2">Planet '{formatPlanetName(planet.name)}'</h1>
-            <p className="text-[10px] sm:text-xs text-gray-300 flex items-center justify-center gap-4 flex-wrap">
+            <p className="text-[10px] sm:text-xs text-gray-300 flex items-center justify-center gap-x-4 gap-y-1 flex-wrap">
               <span className="flex items-center gap-1">
                 <SystemIcon size={15} color="#ffffffff" />
                 {formatSystemName(system.name)}

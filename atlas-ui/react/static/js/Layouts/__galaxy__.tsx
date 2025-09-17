@@ -72,7 +72,7 @@ const GalaxyLayout: React.FC<GalaxyLayoutProps> = ({ galaxy, systems, galaxy_url
         <div className="w-full px-2 sm:px-4 lg:px-6 py-4 sm:py-8">
           <div className="text-center mb-2">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-2">Galaxy '{formatGalaxyName(galaxy.name)}'</h1>
-            <p className="text-[10px] sm:text-xs text-gray-300 flex items-center justify-center gap-1">
+            <p className="text-[10px] sm:text-xs text-gray-300 flex items-center justify-center gap-x-4 gap-y-1 flex-wrap">
               <CoordinatesIcon size={15} color="#ffffffff" />
               {galaxy.coordinates.join(", ")}
             </p>

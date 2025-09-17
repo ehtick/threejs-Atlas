@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.4.68] - 2025-09-17
+
+- Added a preloader before react loads (2MiB build) to avoid white flashes on slow networks or overwhelmed servers like Koyeb free tier.
+
 ## [2.4.66] - 2025-09-17
 
 - Fixed a Universe FAQ route in `__universe_route_pages.py`, such a mess is equal to IQ over 9000.
