@@ -293,13 +293,9 @@ def register_universe_page_routes(app, universe, config):
                 return redirect(url_for("view_galaxy", page=page))
             elif system_index and not planet_name:
                 session["system"] = int(system_index)
-                if page:
-                    session[f"page_{galaxy.coordinates}"] = int(page)
                 return redirect(url_for("view_system", system_index=int(system_index)))
             elif system_index and planet_name:
                 session["system"] = int(system_index)
-                if page:
-                    session[f"page_{galaxy.coordinates}"] = int(page)
                 return redirect(url_for("view_planet", planet_name=planet_name))
             else:
                 raise ValueError("Malformed URL")

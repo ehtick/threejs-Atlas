@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.4.84] - 2025-09-17
+
+- Simplified Stargate Links by removing redundant page parameter for systems and planets, page is now automatically calculated from system index for cleaner, shorter URLs.
+- Updated QR code generation to exclude page parameter for systems/planets, reducing URL length while maintaining full functionality (galaxy links still include page as it's needed to proper page location).
+
 ## [2.4.82] - 2025-09-17
 
 - Fixed pagination issue when navigating to systems via Stargate Links, now correctly calculates and preserves the galaxy page based on system index, ensuring "Back to Galaxy" returns to the correct page instead of page 1, let's say refactors are not my thing...

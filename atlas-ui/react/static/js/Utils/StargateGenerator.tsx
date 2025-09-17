@@ -11,14 +11,14 @@ export class StargateGenerator {
     return `/stargate/${encodedData}`;
   }
 
-  public static generateSystemUrl(galaxyCoordinates: number[], systemIndex: number, page: number = 1): string {
-    const data = `coordinates=${galaxyCoordinates[0]},${galaxyCoordinates[1]},${galaxyCoordinates[2]}&system=${systemIndex}&page=${page}`;
+  public static generateSystemUrl(galaxyCoordinates: number[], systemIndex: number, page?: number): string {
+    const data = `coordinates=${galaxyCoordinates[0]},${galaxyCoordinates[1]},${galaxyCoordinates[2]}&system=${systemIndex}`;
     const encodedData = this.encodeUrl(data);
     return `/stargate/${encodedData}`;
   }
 
-  public static generatePlanetUrl(galaxyCoordinates: number[], systemIndex: number, planetName: string, page: number = 1): string {
-    const data = `coordinates=${galaxyCoordinates[0]},${galaxyCoordinates[1]},${galaxyCoordinates[2]}&system=${systemIndex}&planet=${planetName.toLowerCase()}&page=${page}`;
+  public static generatePlanetUrl(galaxyCoordinates: number[], systemIndex: number, planetName: string, page?: number): string {
+    const data = `coordinates=${galaxyCoordinates[0]},${galaxyCoordinates[1]},${galaxyCoordinates[2]}&system=${systemIndex}&planet=${planetName.toLowerCase()}`;
     const encodedData = this.encodeUrl(data);
     return `/stargate/${encodedData}`;
   }

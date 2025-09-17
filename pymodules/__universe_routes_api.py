@@ -81,12 +81,14 @@ def register_universe_routes(app, universe, config):
             system_index = request.form.get("system")
             planet_name = request.form.get("planet")
 
-            if system_index and planet_name:
-                session["system"] = int(system_index)
-                return redirect(url_for("view_planet", planet_name=planet_name))
-            elif system_index:
-                session["system"] = int(system_index)
-                return redirect(url_for("view_system", system_index=int(system_index)))
+            if system_index:
+                system_idx = int(system_index)
+                session["system"] = system_idx
+
+                if planet_name:
+                    return redirect(url_for("view_planet", planet_name=planet_name))
+                else:
+                    return redirect(url_for("view_system", system_index=system_idx))
             else:
                 session["system"] = None
                 return redirect(url_for("view_galaxy"))
