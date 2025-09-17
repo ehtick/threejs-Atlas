@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.4.80] - 2025-09-17
+
+- Fixed 3D coordinate viewer capturing mouse/touch events when hidden, preventing natural scrolling and swipe gestures on the page.
+- Fixed missing system numbers in `SystemsList.tsx` component that were lost during the route refactoring in v2.4.62 (backend was not sending the `number` field).
+
 ## [2.4.68] - 2025-09-17
 
 - Added a preloader before react loads (2MiB build) to avoid white flashes on slow networks or overwhelmed servers like Koyeb free tier.

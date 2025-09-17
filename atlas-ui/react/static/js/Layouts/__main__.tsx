@@ -249,7 +249,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
               </div>
 
               <div className={`absolute inset-0 flex items-center justify-center transition-all duration-700 ease-in-out transform ${show3DViewer ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 -translate-y-2"}`} style={{ pointerEvents: show3DViewer ? "auto" : "none" }}>
-                <div className="w-96 h-96" style={{ pointerEvents: "auto" }}>
+                <div className="w-96 h-96">
                   <CoordinateViewer3D coordinates={currentCoordinates} className="w-full h-full" onUserInteraction={handle3DUserInteraction} isVisible={show3DViewer} />
                 </div>
               </div>

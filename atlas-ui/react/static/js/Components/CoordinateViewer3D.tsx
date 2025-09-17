@@ -44,7 +44,7 @@ const CoordinateViewer3D: React.FC<CoordinateViewer3DProps> = ({ coordinates, cl
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(containerWidth, containerHeight);
     renderer.setClearColor(0x000000, 0);
-    renderer.domElement.style.pointerEvents = "auto";
+    renderer.domElement.style.pointerEvents = "none";
     renderer.domElement.style.touchAction = "none";
     rendererRef.current = renderer;
     container.appendChild(renderer.domElement);
@@ -278,6 +278,9 @@ const CoordinateViewer3D: React.FC<CoordinateViewer3DProps> = ({ coordinates, cl
   useEffect(() => {
     if (controlsRef.current) {
       controlsRef.current.enabled = isVisible;
+    }
+    if (rendererRef.current && rendererRef.current.domElement) {
+      rendererRef.current.domElement.style.pointerEvents = isVisible ? "auto" : "none";
     }
   }, [isVisible]);
 

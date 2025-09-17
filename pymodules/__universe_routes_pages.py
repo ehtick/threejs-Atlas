@@ -113,6 +113,7 @@ def register_universe_page_routes(app, universe, config):
                 {
                     "name": current_galaxy.get_solar_system(i).name,
                     "index": i,
+                    "number": i + 1,
                     "num_planets": current_galaxy.get_solar_system(i).num_planets,
                 }
                 for i in range(start, min(end, current_galaxy.num_systems))
