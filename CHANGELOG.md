@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.4.86] - 2025-09-17
+
+- Enhanced Save Location button for galaxies, it now shows a pulsing green border when you have that galaxy saved but on a different page, allowing you to save multiple pages of the same galaxy while maintaining visual consistency.
+- Added green dot indicators in galaxy pagination to show which pages are saved in your bookmarks, now displays on visible page numbers (current, adjacent, first, last, etc), providing comprehensive visual feedback for saved galaxy pages.
+- Enhanced pagination to update green dot indicators in real-time when saving locations, providing instant visual feedback without needing to refresh the page.
+
 ## [2.4.84] - 2025-09-17
 
 - Simplified Stargate Links by removing redundant page parameter for systems and planets, page is now automatically calculated from system index for cleaner, shorter URLs.

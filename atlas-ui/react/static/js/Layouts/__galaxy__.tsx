@@ -105,7 +105,7 @@ const GalaxyLayout: React.FC<GalaxyLayoutProps> = ({ galaxy, systems, galaxy_url
             </button>
           </div>
 
-          <Pagination page={page} prevPage={prev_page} nextPage={next_page} finish={finish} />
+          <Pagination page={page} prevPage={prev_page} nextPage={next_page} finish={finish} galaxyCoordinates={galaxy.coordinates} />
         </div>
 
         <VersionFooter version={version} />

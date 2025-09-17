@@ -30,17 +30,78 @@ export class LocationBookmarks {
   }
 
   private static normalizeStargateUrl(url: string): string {
-    // Extract just the /stargate/xxx part from any URL format
-    const stargateIndex = url.indexOf('/stargate/');
+    const stargateIndex = url.indexOf("/stargate/");
     return stargateIndex !== -1 ? url.substring(stargateIndex) : url;
+  }
+
+  private static decodeStargateUrl(url: string): string {
+    try {
+      const match = url.match(/\/stargate\/([A-Za-z0-9\-_]+)/);
+      if (!match) return url;
+
+      const encoded = match[1];
+      const decoded = atob(encoded.replace(/-/g, "+").replace(/_/g, "/"));
+
+      if (decoded.includes("&system=") || decoded.includes("&planet=")) {
+        return decoded.replace(/&page=\d+/, "");
+      }
+
+      return decoded;
+    } catch (error) {
+      return url;
+    }
   }
 
   public static isLocationSaved(stargateUrl: string): boolean {
     const normalizedUrl = this.normalizeStargateUrl(stargateUrl);
+    const decodedUrl = this.decodeStargateUrl(normalizedUrl);
     const savedLocations = this.getLocations();
-    return savedLocations.some((loc) => 
-      this.normalizeStargateUrl(loc.stargateUrl) === normalizedUrl
-    );
+
+    return savedLocations.some((loc) => {
+      const savedNormalized = this.normalizeStargateUrl(loc.stargateUrl);
+      const savedDecoded = this.decodeStargateUrl(savedNormalized);
+      return savedDecoded === decodedUrl;
+    });
+  }
+
+  public static isGalaxyLocationSavedDifferentPage(stargateUrl: string, type: string): boolean {
+    if (type !== "galaxy") return false;
+
+    try {
+      const normalizedUrl = this.normalizeStargateUrl(stargateUrl);
+      const parts = normalizedUrl.split("/stargate/")[1];
+      if (!parts) return false;
+
+      const decoded = atob(parts.replace(/-/g, "+").replace(/_/g, "/"));
+      const params = new URLSearchParams(decoded);
+      const coordinates = params.get("coordinates");
+      const currentPage = params.get("page");
+
+      if (!coordinates || !currentPage) return false;
+
+      const savedLocations = this.getLocations();
+
+      return savedLocations.some((loc) => {
+        if (loc.type !== "galaxy") return false;
+
+        try {
+          const savedNormalized = this.normalizeStargateUrl(loc.stargateUrl);
+          const savedParts = savedNormalized.split("/stargate/")[1];
+          if (!savedParts) return false;
+
+          const savedDecoded = atob(savedParts.replace(/-/g, "+").replace(/_/g, "/"));
+          const savedParams = new URLSearchParams(savedDecoded);
+          const savedCoordinates = savedParams.get("coordinates");
+          const savedPage = savedParams.get("page");
+
+          return savedCoordinates === coordinates && savedPage !== currentPage;
+        } catch (error) {
+          return false;
+        }
+      });
+    } catch (error) {
+      return false;
+    }
   }
 
   public static async saveLocation(location: Omit<SavedLocation, "id" | "timestamp">): Promise<boolean> {
@@ -48,7 +109,11 @@ export class LocationBookmarks {
       const locations = this.getLocations();
       const currentMaxLocations = this.getCurrentMaxLocations();
 
-      const existingIndex = locations.findIndex((loc) => loc.stargateUrl === location.stargateUrl);
+      const newUrlDecoded = this.decodeStargateUrl(this.normalizeStargateUrl(location.stargateUrl));
+      const existingIndex = locations.findIndex((loc) => {
+        const savedDecoded = this.decodeStargateUrl(this.normalizeStargateUrl(loc.stargateUrl));
+        return savedDecoded === newUrlDecoded;
+      });
 
       const newLocation: SavedLocation = {
         ...location,
@@ -76,6 +141,13 @@ export class LocationBookmarks {
       }
 
       setItem(this.STORAGE_KEY, JSON.stringify(locations));
+
+      window.dispatchEvent(
+        new CustomEvent("locationSaved", {
+          detail: { location: newLocation },
+        })
+      );
+
       return true;
     } catch (error) {
       console.error("Error saving location:", error);
@@ -87,7 +159,11 @@ export class LocationBookmarks {
     const locations = this.getLocations();
     const currentMaxLocations = this.getCurrentMaxLocations();
 
-    const existingIndex = locations.findIndex((loc) => loc.stargateUrl === location.stargateUrl);
+    const newUrlDecoded = this.decodeStargateUrl(this.normalizeStargateUrl(location.stargateUrl));
+    const existingIndex = locations.findIndex((loc) => {
+      const savedDecoded = this.decodeStargateUrl(this.normalizeStargateUrl(loc.stargateUrl));
+      return savedDecoded === newUrlDecoded;
+    });
 
     const newLocation: SavedLocation = {
       ...location,
@@ -107,6 +183,12 @@ export class LocationBookmarks {
     }
 
     setItem(this.STORAGE_KEY, JSON.stringify(locations));
+
+    window.dispatchEvent(
+      new CustomEvent("locationSaved", {
+        detail: { location: newLocation },
+      })
+    );
   }
 
   public static removeLocation(id: string): void {

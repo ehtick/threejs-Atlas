@@ -691,7 +691,6 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
                               </button>
                             </div>
 
-                            {/* Mining cooldown progress bar */}
                             {!canCollect && timeRemaining > 0 && (
                               <div className="mt-1">
                                 <div className="flex items-center justify-between mb-0.5">
