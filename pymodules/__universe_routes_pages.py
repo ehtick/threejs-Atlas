@@ -153,7 +153,22 @@ def register_universe_page_routes(app, universe, config):
             session["system"] = system_index
             current_system = current_galaxy.get_solar_system(system_index)
 
-            page = session.get(f"page_{current_galaxy.coordinates}", 1)
+            calculated_page = (system_index // 150) + 1
+
+            session_page = session.get(f"page_{current_galaxy.coordinates}", None)
+            if session_page is None:
+                page = calculated_page
+                session[f"page_{current_galaxy.coordinates}"] = page
+            else:
+                per_page = 150
+                start = (session_page - 1) * per_page
+                end = start + per_page
+                if system_index < start or system_index >= end:
+                    page = calculated_page
+                    session[f"page_{current_galaxy.coordinates}"] = page
+                else:
+                    page = session_page
+
             system_url = generate_system_url(current_galaxy.coordinates, current_system.index, page)
             image_url = ""
 
@@ -278,9 +293,13 @@ def register_universe_page_routes(app, universe, config):
                 return redirect(url_for("view_galaxy", page=page))
             elif system_index and not planet_name:
                 session["system"] = int(system_index)
+                if page:
+                    session[f"page_{galaxy.coordinates}"] = int(page)
                 return redirect(url_for("view_system", system_index=int(system_index)))
             elif system_index and planet_name:
                 session["system"] = int(system_index)
+                if page:
+                    session[f"page_{galaxy.coordinates}"] = int(page)
                 return redirect(url_for("view_planet", planet_name=planet_name))
             else:
                 raise ValueError("Malformed URL")

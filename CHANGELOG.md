@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.4.82] - 2025-09-17
+
+- Fixed pagination issue when navigating to systems via Stargate Links, now correctly calculates and preserves the galaxy page based on system index, ensuring "Back to Galaxy" returns to the correct page instead of page 1, let's say refactors are not my thing...
+
 ## [2.4.80] - 2025-09-17
 
 - Fixed 3D coordinate viewer capturing mouse/touch events when hidden, preventing natural scrolling and swipe gestures on the page.
