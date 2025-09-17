@@ -10,6 +10,7 @@ from pymodules.__atlas_config import config
 
 from pymodules.__universe_name_generator import generate_name
 from pymodules.__universe_elements import periodic_table
+from pymodules.__universe_moons import MoonSystem
 
 
 class Universe:
@@ -168,6 +169,25 @@ class SolarSystem:
 
             self.planets[i] = Planet(planet_seed, planet_name, self.constants)
 
+            # Generate moon system for each planet
+            # Use the primary star's mass for Hill sphere calculation
+            star_mass = self.constants.M_SUN  # Default to solar mass
+            if self.stars:
+                # Adjust mass based on star type (more realistic masses)
+                star_type = self.stars[0]['Type']
+                mass_factors = {
+                    'Red Dwarf': 0.2,      # 0.08-0.45 solar masses
+                    'Yellow Dwarf': 1.0,    # ~1 solar mass (like our Sun)
+                    'Blue Giant': 10.0,     # 2-50+ solar masses
+                    'Red Giant': 1.2,       # 0.3-8 solar masses (evolved stars)
+                    'White Dwarf': 0.6,     # 0.5-1.4 solar masses
+                    'Neutron Star': 1.4     # 1.1-2.2 solar masses
+                }
+                star_mass *= mass_factors.get(star_type, 1.0)
+
+            # Create moon system
+            self.planets[i].moon_system = MoonSystem(self.planets[i], star_mass)
+
     def determine_star_system_type(self):
         system_type = random.choices(
             ["single", "binary", "tertiary"],
@@ -255,6 +275,9 @@ class Planet:
         self.initial_angle_rotation = random.uniform(0, 2 * math.pi)
         self.initial_orbital_angle = random.uniform(0, 2 * math.pi)
         self.correct_temperature_orbital_distance()
+
+        # Generate moon system (needs to be after all planet properties are set)
+        self.moon_system = None  # Will be set by parent SolarSystem after star properties are known
 
     def generate_planet_seed(self):
         seedmaster_4 = seedmaster(4)
