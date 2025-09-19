@@ -67,7 +67,16 @@ const DidYouKnow: React.FC<DidYouKnowProps> = ({ currentView }) => {
     "There's an extremely rare intelligent life form called 'Have I Just Found God?' that appears near Z-Divinium compounds?",
     "The Atlas doesn't calculate anything, it reveals temporal slices of an eternally existing mathematical reality?",
     "Each seed contains a completely different universe with unique galactic configurations never seen in other seeds?",
-    "Planet illumination changes are based on exact orbital position, creating authentic day-night cycles synchronized with universal time?"
+    "Planet illumination changes are based on exact orbital position, creating authentic day-night cycles synchronized with universal time?",
+    "Planets can now host intricate lunar systems where each moon experiences real-time tidal locking with precise libration effects?",
+    "Moon hydrostatic relaxation simulates how gravity reshapes celestial bodies, turning irregular asteroids into perfect spheres over millions of years?",
+    "A captured asteroid might take 10 billion years to become round, while an icy moon with tidal heating could relax quite faster?",
+    "Moon evolution operates on geological timescales extending far beyond The Atlas's 1.9 million year galactic development limit?",
+    "The Atlas features four distinct lunar types, from icy moons with dramatic color variations, rocky moons, asteroidal irregular objects, and more?",
+    "Each moon follows elliptical orbits calculated using real Kepler's laws with proper eccentric anomaly solutions and orbital precession?",
+    "Large gas giants in The Atlas might host dozens of moons ranging from tiny captured asteroids to massive ice worlds larger than Mercury?",
+    "Moon surfaces are procedurally generated with 3D noise algorithms creating realistic terrain features unique to each lunar type?",
+    "Ice moons in The Atlas get crystal shimmer effects and dramatic color diversity inspired by real moons like Europa's blue ice and Triton's pink surfaces?"
   ];
 
   useEffect(() => {
@@ -82,7 +91,7 @@ const DidYouKnow: React.FC<DidYouKnowProps> = ({ currentView }) => {
     }
 
     const randomChance = Math.random();
-    if (randomChance < 0.10 && atlasFactsEnabled !== null) {
+    if (randomChance < 0.1 && atlasFactsEnabled !== null) {
       setShouldShow(true);
       setFactIndex(Math.floor(Math.random() * facts.length));
 
