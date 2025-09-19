@@ -8,5 +8,5 @@ services:
       - "42424:5000"
     volumes:
       - /DATA/HomeDock/the-atlas:/app
-      # - /your_ssl_cert:/app/ssl # optional SSL certs directory
+      # - /your_ssl_cert:/app/ssl:ro # optional SSL certs directory
     restart: always
