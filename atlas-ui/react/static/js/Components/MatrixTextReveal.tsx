@@ -1,4 +1,3 @@
-// atlas-ui/react/static/js/Components/MatrixTextReveal.tsx
 import React, { useState, useEffect, useRef } from "react";
 
 interface MatrixTextRevealProps {
@@ -27,7 +26,6 @@ const MatrixTextReveal: React.FC<MatrixTextRevealProps> = ({ seedData, onComplet
   const titleText = "COSMIC GENESIS PROTOCOL";
   const subtitleText = "Universal Constants Initialization";
 
-  // Use actual seeds from API or fallback - always show full decimal seed
   const primordialSeed = seedData?.primordial_seed || "COSMOS-" + Date.now() + "-GENESIS";
   const sha256Seed =
     seedData?.sha256_seed ||
@@ -35,15 +33,12 @@ const MatrixTextReveal: React.FC<MatrixTextRevealProps> = ({ seedData, onComplet
       .join("")
       .toUpperCase();
 
-  // Always show the full 77-digit decimal seed
   const decimalSeed = seedData?.decimal_seed || Array.from({ length: 77 }, () => Math.floor(Math.random() * 10)).join("");
 
-  // Format for display with proper spacing
   const formatDecimalSeedForDisplay = (decimal: string) => {
     return decimal.replace(/(.{8})/g, "$1 ").trim();
   };
 
-  // Smooth cosmic background effect
   useEffect(() => {
     if (!cosmicRainRef.current) return;
 
@@ -59,11 +54,9 @@ const MatrixTextReveal: React.FC<MatrixTextRevealProps> = ({ seedData, onComplet
     updateCanvas();
     window.addEventListener("resize", updateCanvas);
 
-    // Gentle particles for smooth background
     const particleCount = Math.min(20, Math.floor(window.innerWidth / 80));
     const particles: Array<{ x: number; y: number; opacity: number; speed: number; size: number }> = [];
 
-    // Initialize particles with varied properties
     for (let i = 0; i < particleCount; i++) {
       particles.push({
         x: Math.random() * canvas.width,
@@ -79,17 +72,14 @@ const MatrixTextReveal: React.FC<MatrixTextRevealProps> = ({ seedData, onComplet
 
     const draw = (currentTime: number) => {
       if (currentTime - lastTime < 60) {
-        // Smoother 16fps
         animationId = requestAnimationFrame(draw);
         return;
       }
       lastTime = currentTime;
 
-      // Subtle background clear for trailing effect
       ctx.fillStyle = "rgba(0, 0, 0, 0.03)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Gentle floating particles
       particles.forEach((particle, i) => {
         const alpha = particle.opacity * universeIntensity * 0.6;
         ctx.fillStyle = `rgba(100, 200, 255, ${alpha})`;
@@ -97,7 +87,6 @@ const MatrixTextReveal: React.FC<MatrixTextRevealProps> = ({ seedData, onComplet
         ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
         ctx.fill();
 
-        // Gentle floating movement
         particle.y += particle.speed;
         particle.x += Math.sin(currentTime * 0.001 + i) * 0.1;
 
@@ -118,13 +107,12 @@ const MatrixTextReveal: React.FC<MatrixTextRevealProps> = ({ seedData, onComplet
     };
   }, [universeIntensity]);
 
-  // Elegant animation system for universe creation
   const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
   const typeCosmicText = async (text: string, speed: number = 80) => {
     for (let i = 0; i <= text.length; i++) {
       setDisplayText(text.substring(0, i));
-      setProgress((i / text.length) * 15); // Only use 15% of progress for title
+      setProgress((i / text.length) * 15);
       await sleep(speed + Math.random() * 40);
     }
   };
@@ -136,27 +124,21 @@ const MatrixTextReveal: React.FC<MatrixTextRevealProps> = ({ seedData, onComplet
     setIsTransitioning(true);
     setUniverseIntensity(0.7);
 
-    // Reveal each digit with a smooth animation
     for (let i = 0; i < chars.length; i++) {
-      // Add some cosmic characters before revealing the real digit
       const cosmicChars = ["◊", "◈", "✦", "✧"];
       const tempChar = cosmicChars[Math.floor(Math.random() * cosmicChars.length)];
 
-      // Show temporary cosmic character
       setCurrentSeedDisplay(revealed + tempChar + "█".repeat(Math.max(0, chars.length - i - 1)));
       await sleep(50);
 
-      // Reveal the actual digit
       revealed += chars[i];
       setCurrentSeedDisplay(revealed + "█".repeat(Math.max(0, chars.length - i - 1)));
 
-      // Update progress (75% of total progress for seed reveal)
       setProgress(15 + ((i + 1) / chars.length) * 75);
 
       await sleep(80 + Math.random() * 40);
     }
 
-    // Final reveal without cursor
     setCurrentSeedDisplay(revealed);
     setIsTransitioning(false);
     setUniverseIntensity(0.5);
@@ -168,7 +150,6 @@ const MatrixTextReveal: React.FC<MatrixTextRevealProps> = ({ seedData, onComplet
     setIsTransitioning(true);
     setUniverseIntensity(0.8);
 
-    // Create elegant crystallization effect
     for (let step = 0; step < steps; step++) {
       const crystallized = Array.from({ length: targetText.length }, (_, i) => {
         if (step === steps - 1) return targetText[i];
@@ -194,7 +175,6 @@ const MatrixTextReveal: React.FC<MatrixTextRevealProps> = ({ seedData, onComplet
     setUniverseIntensity(0.4);
   };
 
-  // Initialize decimal seed display when component mounts
   useEffect(() => {
     if (phase === "digital" && showFullSeed) {
       setCurrentSeedDisplay("");
@@ -203,55 +183,47 @@ const MatrixTextReveal: React.FC<MatrixTextRevealProps> = ({ seedData, onComplet
 
   useEffect(() => {
     const executeUniverseSequence = async () => {
-      await sleep(800); // Longer initial pause
+      await sleep(800);
       setUniverseIntensity(0.2);
 
-      // Phase 1: Genesis - Slow title reveal
       setPhase("genesis");
-      await typeCosmicText(titleText, 120); // Much slower typing
-      await sleep(1200); // Longer pause after title
+      await typeCosmicText(titleText, 120);
+      await sleep(1200);
 
-      // Phase 2: Nucleosynthesis - Show primordial seed
       setPhase("nucleosynthesis");
-      await sleep(1500); // Longer transition
+      await sleep(1500);
       setProgress(20);
 
-      // Phase 3: Quantum - Show hash with crystallization
       setPhase("quantum");
-      await sleep(1800); // Even longer for dramatic effect
+      await sleep(1800);
       setProgress(35);
 
-      // Phase 4: Digital - Reveal the 77-digit seed digit by digit
       setPhase("digital");
       setShowFullSeed(true);
       await sleep(1000);
 
-      // Animate the decimal seed revelation
       await revealDecimalSeed();
 
-      await sleep(1500); // Pause to admire the full seed
+      await sleep(1500);
 
-      // Phase 5: Cosmic
       if (seedData?.cosmic_origin_time) {
         setPhase("cosmic");
         await sleep(1200);
         setProgress(95);
       }
 
-      // Phase 6: Universe - Final stabilization
       setPhase("universe");
       await sleep(1000);
       if (!seedData?.cosmic_origin_time) {
         setProgress(95);
       }
 
-      // Complete - Gentle finish
       await sleep(800);
       setPhase("complete");
       setProgress(100);
       setUniverseIntensity(0.15);
 
-      await sleep(2000); // Longer final pause
+      await sleep(2000);
       if (onComplete) onComplete();
     };
 
@@ -260,35 +232,13 @@ const MatrixTextReveal: React.FC<MatrixTextRevealProps> = ({ seedData, onComplet
 
   return (
     <div className="fixed inset-0 bg-black z-50 overflow-hidden">
-      {/* Custom styles for animations */}
-      <style>{`
-        @keyframes fade-in {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in {
-          animation: fade-in 0.8s ease-out;
-        }
-        
-        @keyframes glow-pulse {
-          0%, 100% { box-shadow: 0 0 20px rgba(6, 182, 212, 0.3); }
-          50% { box-shadow: 0 0 40px rgba(6, 182, 212, 0.6), 0 0 60px rgba(147, 51, 234, 0.3); }
-        }
-        .animate-glow-pulse {
-          animation: glow-pulse 3s ease-in-out infinite;
-        }
-      `}</style>
-      {/* Cosmic particle background */}
       <canvas ref={cosmicRainRef} className="absolute inset-0 opacity-60" />
 
-      {/* Secondary cosmic effects */}
       <canvas ref={particlesRef} className="absolute inset-0 opacity-30 pointer-events-none" width={typeof window !== "undefined" ? window.innerWidth : 1920} height={typeof window !== "undefined" ? window.innerHeight : 1080} />
 
-      {/* Simple cosmic background */}
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-gradient-to-br from-purple-900/10 via-blue-900/5 to-black" />
 
-        {/* Minimal floating elements */}
         {Array.from({ length: 8 }).map((_, i) => (
           <div
             key={i}
@@ -306,15 +256,11 @@ const MatrixTextReveal: React.FC<MatrixTextRevealProps> = ({ seedData, onComplet
         ))}
       </div>
 
-      {/* Main content */}
       <div className="relative z-10 flex items-center justify-center min-h-full px-2 py-4">
         <div className="w-full max-w-6xl mx-auto">
-          {/* Simple container */}
           <div className="relative w-full">
-            {/* Simple glow effect */}
             <div className="absolute inset-0 blur-xl opacity-30 bg-cyan-500/20 rounded-2xl" />
 
-            {/* Main container */}
             <div
               className={`
               relative bg-black/90 border border-cyan-400/40 rounded-2xl 
@@ -329,15 +275,12 @@ const MatrixTextReveal: React.FC<MatrixTextRevealProps> = ({ seedData, onComplet
                 boxShadow: phase === "complete" ? "0 0 30px rgba(34, 197, 94, 0.4), 0 0 50px rgba(34, 197, 94, 0.2)" : "0 0 30px rgba(6, 182, 212, 0.3)",
               }}
             >
-              {/* Simple corner indicators */}
               <div className="absolute top-2 left-2 text-cyan-400 text-sm opacity-60">✦</div>
               <div className="absolute top-2 right-2 text-purple-400 text-sm opacity-60">✧</div>
               <div className="absolute bottom-2 left-2 text-green-400 text-sm opacity-60">✩</div>
               <div className="absolute bottom-2 right-2 text-yellow-400 text-sm opacity-60">⭐</div>
 
-              {/* Universe creation display */}
               <div className="relative z-10 text-center">
-                {/* Main title */}
                 <div className="mb-6">
                   <h1
                     className={`
@@ -370,7 +313,6 @@ const MatrixTextReveal: React.FC<MatrixTextRevealProps> = ({ seedData, onComplet
                   )}
                 </div>
 
-                {/* Seed display */}
                 {phase !== "genesis" && (
                   <div
                     className={`
@@ -379,7 +321,6 @@ const MatrixTextReveal: React.FC<MatrixTextRevealProps> = ({ seedData, onComplet
                     opacity-100 translate-y-0
                   `}
                   >
-                    {/* Primordial seed */}
                     {(phase === "nucleosynthesis" || phase === "quantum" || phase === "digital" || phase === "cosmic" || phase === "universe" || phase === "complete") && (
                       <div
                         className={`
@@ -397,7 +338,6 @@ const MatrixTextReveal: React.FC<MatrixTextRevealProps> = ({ seedData, onComplet
                       </div>
                     )}
 
-                    {/* Quantum hash */}
                     {(phase === "quantum" || phase === "digital" || phase === "cosmic" || phase === "universe" || phase === "complete") && (
                       <div
                         className={`
@@ -417,7 +357,6 @@ const MatrixTextReveal: React.FC<MatrixTextRevealProps> = ({ seedData, onComplet
                       </div>
                     )}
 
-                    {/* Universal constant (77 digits) */}
                     {(phase === "digital" || phase === "cosmic" || phase === "universe" || phase === "complete") && (
                       <div className="space-y-3">
                         <h3 className="text-sm sm:text-base md:text-lg font-bold text-yellow-400 flex items-center gap-2">
@@ -427,25 +366,21 @@ const MatrixTextReveal: React.FC<MatrixTextRevealProps> = ({ seedData, onComplet
                         </h3>
                         <div className="bg-gray-900/60 border border-yellow-400/40 rounded-lg p-3 sm:p-4">
                           <div className="text-yellow-300 font-mono relative">
-                            {/* Animated seed display */}
                             <div className="min-h-[120px] flex items-center justify-center">
                               {isTransitioning || phase === "digital" ? (
-                                // Show animated reveal
                                 <div className="text-center space-y-2">
                                   <div className="text-sm sm:text-base leading-relaxed tracking-wider">
                                     <span className="bg-yellow-400/20 border border-yellow-400/30 rounded px-2 py-1 inline-block">{currentSeedDisplay || "█".repeat(77)}</span>
                                   </div>
-                                  {currentSeedDisplay && !currentSeedDisplay.includes("█") && <div className="text-xs text-yellow-500 opacity-75 animate-fade-in">✓ Sequence Complete: {currentSeedDisplay.length} digits</div>}
+                                  {currentSeedDisplay && !currentSeedDisplay.includes("█") && <div className="text-xs text-yellow-500 opacity-75 animate-matrix-fade-in">✓ Sequence Complete: {currentSeedDisplay.length} digits</div>}
                                 </div>
                               ) : (
-                                // Show final formatted display
                                 <div className="space-y-3 w-full">
-                                  {/* Grouped display in rows */}
                                   <div className="space-y-2">
                                     {formatDecimalSeedForDisplay(decimalSeed)
                                       .split(" ")
                                       .reduce((rows: string[][], chunk, i) => {
-                                        const rowIndex = Math.floor(i / 6); // 6 chunks per row
+                                        const rowIndex = Math.floor(i / 6);
                                         if (!rows[rowIndex]) rows[rowIndex] = [];
                                         rows[rowIndex].push(chunk);
                                         return rows;
@@ -461,7 +396,6 @@ const MatrixTextReveal: React.FC<MatrixTextRevealProps> = ({ seedData, onComplet
                                       ))}
                                   </div>
 
-                                  {/* Status indicator */}
                                   <div className="text-center pt-3 border-t border-yellow-400/20">
                                     <div className="inline-flex items-center gap-2 text-xs text-yellow-500 opacity-75">
                                       <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
@@ -476,7 +410,6 @@ const MatrixTextReveal: React.FC<MatrixTextRevealProps> = ({ seedData, onComplet
                       </div>
                     )}
 
-                    {/* Temporal coordinates */}
                     {seedData?.cosmic_origin_time && (phase === "cosmic" || phase === "universe" || phase === "complete") && (
                       <div
                         className={`
@@ -499,9 +432,8 @@ const MatrixTextReveal: React.FC<MatrixTextRevealProps> = ({ seedData, onComplet
                 )}
               </div>
 
-              {/* Completion indicator */}
               {phase === "complete" && (
-                <div className="mt-6 text-center animate-fade-in">
+                <div className="mt-6 text-center animate-matrix-fade-in">
                   <div className="text-green-400 text-sm font-bold flex items-center justify-center gap-2">
                     <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
                     <span>✅ UNIVERSE STABLE</span>
@@ -513,7 +445,6 @@ const MatrixTextReveal: React.FC<MatrixTextRevealProps> = ({ seedData, onComplet
             </div>
           </div>
 
-          {/* Simple progress bar */}
           {phase !== "complete" && (
             <div className="mt-4 w-full max-w-md mx-auto px-4">
               <div className="flex items-center space-x-2">
@@ -527,7 +458,6 @@ const MatrixTextReveal: React.FC<MatrixTextRevealProps> = ({ seedData, onComplet
             </div>
           )}
 
-          {/* Enhanced status */}
           <div className="mt-4 text-center px-4">
             <div className="text-xs text-gray-400 transition-all duration-300">
               <span className="inline-flex items-center gap-2">

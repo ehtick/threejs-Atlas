@@ -12,6 +12,7 @@ import { createPlanetEffectConfig, EffectsLogger } from "../3DEffects";
 import { DebugPlanetData, useDebugPlanetData } from "../Utils/DebugPlanetData.tsx";
 import { getPlanetBaseColor } from "../3DEffects/PlanetColorBase";
 import { PlanetLayerSystem } from "./PlanetLayerSystem";
+import { MoonSystem } from "./MoonSystem";
 import { ToxicPostProcessingEffect, createToxicPostProcessingFromPythonData } from "../3DEffects/ToxicPostProcessing";
 
 const NORMALIZED_PLANET_RADIUS = 2.5;
@@ -51,6 +52,7 @@ interface ModularPlanetRendererProps {
   onDataLoaded?: (data: any) => void;
   onEffectsCreated?: (effects: EffectInstance[]) => void;
   onError?: (error: string) => void;
+  onMoonSelected?: (moon: any | null) => void;
   planetUrl?: string;
 }
 
@@ -65,6 +67,46 @@ interface PlanetRenderingData {
   surface_elements?: any;
   atmosphere?: any;
   rings?: any;
+  moons?: {
+    count: number;
+    roche_limit: number;
+    hill_radius: number;
+    moons: Array<{
+      name: string;
+      properties: {
+        mass_kg: number;
+        radius_km: number;
+        density_kg_m3: number;
+        type: string;
+        origin: string;
+      };
+      orbit: {
+        semi_major_axis_km: number;
+        eccentricity: number;
+        inclination_deg: number;
+        orbital_period_seconds: number;
+        orbital_period_days: number;
+        current_angle: number;
+        position: { x: number; y: number; z: number };
+      };
+      visuals: {
+        base_color: string;
+        roughness: number;
+        metalness: number;
+        normal_strength: number;
+        relative_size: number;
+        has_atmosphere: boolean;
+        atmosphere_color?: string;
+        atmosphere_opacity?: number;
+      };
+      surface: any;
+      procedural: any;
+    }>;
+    render_settings: {
+      max_visible_distance: number;
+      lod_distances: number[];
+    };
+  };
   timing?: {
     cosmic_origin_time: number;
     current_time_seconds: number;
@@ -92,7 +134,7 @@ interface RendererStats {
   renderTime: number;
 }
 
-export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void }, ModularPlanetRendererProps>(({ planetName, containerClassName = "", width = 800, height = 600, autoRotate = true, enableControls = true, showDebugInfo = false, planetData, cosmicOriginTime, initialAngleRotation, onDataLoaded, onEffectsCreated, onError, planetUrl }, ref) => {
+export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void }, ModularPlanetRendererProps>(({ planetName, containerClassName = "", width = 800, height = 600, autoRotate = true, enableControls = true, showDebugInfo = false, planetData, cosmicOriginTime, initialAngleRotation, onDataLoaded, onEffectsCreated, onError, onMoonSelected, planetUrl }, ref) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -120,9 +162,27 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
   const lastFrameTimeRef = useRef<number>(0);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const planetLayerSystemRef = useRef<PlanetLayerSystem | null>(null);
+  const moonSystemRef = useRef<MoonSystem | null>(null);
   const toxicPostProcessingRef = useRef<ToxicPostProcessingEffect | null>(null);
 
+  const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
+  const mouseRef = useRef<THREE.Vector2>(new THREE.Vector2());
+
+  const mouseDownRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  const isDraggingRef = useRef<boolean>(false);
+
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [selectedMoon, setSelectedMoon] = useState<any | null>(null);
+
+  const cameraAnimationRef = useRef<{
+    isAnimating: boolean;
+    startPosition: THREE.Vector3;
+    startTarget: THREE.Vector3;
+    endPosition: THREE.Vector3;
+    endTarget: THREE.Vector3;
+    startTime: number;
+    duration: number;
+  } | null>(null);
 
   useImperativeHandle(ref, () => ({
     captureScreenshot: () => {
@@ -468,9 +528,7 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
 
   const sunLightRef = useRef<THREE.DirectionalLight | null>(null);
   const fillLightRef = useRef<THREE.DirectionalLight | null>(null);
-
   const sunSphereRef = useRef<THREE.Mesh | null>(null);
-
   const orbitLineRef = useRef<THREE.Line | null>(null);
 
   const setupShadowProperties = (light: THREE.DirectionalLight) => {
@@ -530,13 +588,10 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
       scene.add(defaultSunLight.target);
       sunLightRef.current = defaultSunLight;
 
-      const defaultFillLight = new THREE.DirectionalLight(0xffffff, 0.05);
+      const defaultFillLight = new THREE.DirectionalLight(0xffffff, 0.01);
       defaultFillLight.position.set(8, -3, -5);
       scene.add(defaultFillLight);
       fillLightRef.current = defaultFillLight;
-
-      const ambientLight = new THREE.AmbientLight(0x222244, 0.1);
-      scene.add(ambientLight);
 
       setTimeout(() => {
         if (planetLayerSystemRef.current && defaultSunLight) {
@@ -569,13 +624,12 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
     scene.add(sunLight);
     sunLightRef.current = sunLight;
 
-    const fillLight = new THREE.DirectionalLight(0xffffff, 0.03);
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.005);
     fillLight.position.set(-sunX * 0.5, 0, -sunZ * 0.5);
     scene.add(fillLight);
     fillLightRef.current = fillLight;
+
     if (!scene.children.find((child) => child instanceof THREE.AmbientLight)) {
-      const ambientLight = new THREE.AmbientLight(0x222244, 0.1);
-      scene.add(ambientLight);
     }
 
     if (planetLayerSystemRef.current && sunLight) {
@@ -602,7 +656,118 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
     const defaultColor = new THREE.Color(0x808080);
     planetLayerSystemRef.current = new PlanetLayerSystem(planetMesh, defaultColor);
     planetLayerSystemRef.current.addToScene(scene);
+
+    if (cameraRef.current) {
+      const defaultCosmicOriginTime = 514080000;
+      moonSystemRef.current = new MoonSystem(scene, NORMALIZED_PLANET_RADIUS, cameraRef.current, new THREE.Vector3(0, 0, 0), defaultCosmicOriginTime);
+    }
   };
+
+  const handleMouseDown = useCallback((event: MouseEvent) => {
+    const rect = mountRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    mouseDownRef.current = {
+      x: event.clientX,
+      y: event.clientY,
+      time: Date.now(),
+    };
+    isDraggingRef.current = false;
+  }, []);
+
+  const handleMouseMove = useCallback((event: MouseEvent) => {
+    if (!mouseDownRef.current) return;
+
+    const deltaX = event.clientX - mouseDownRef.current.x;
+    const deltaY = event.clientY - mouseDownRef.current.y;
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+    if (distance > 5) {
+      isDraggingRef.current = true;
+    }
+  }, []);
+
+  const handleMoonClick = useCallback((event: MouseEvent) => {
+    if (!cameraRef.current || !sceneRef.current || !moonSystemRef.current || !controlsRef.current) return;
+
+    if (!mouseDownRef.current) return;
+
+    const timeSinceMouseDown = Date.now() - mouseDownRef.current.time;
+    const wasDragging = isDraggingRef.current;
+
+    mouseDownRef.current = null;
+    isDraggingRef.current = false;
+
+    if (wasDragging || timeSinceMouseDown > 500) {
+      return;
+    }
+
+    const rect = mountRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    mouseRef.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouseRef.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
+
+    const clickedMoon = moonSystemRef.current.getMoonAtPosition(raycasterRef.current);
+
+    if (clickedMoon) {
+      setSelectedMoon(clickedMoon);
+
+      if (onMoonSelected) {
+        onMoonSelected(clickedMoon);
+      }
+
+      const moonPosition = moonSystemRef.current.getMoonPosition(clickedMoon.name);
+      if (moonPosition) {
+        const focusDistance = NORMALIZED_PLANET_RADIUS * 8;
+        const targetPosition = new THREE.Vector3(moonPosition.x, moonPosition.y + focusDistance * 0.3, moonPosition.z + focusDistance);
+
+        animateCameraToTarget(targetPosition, moonPosition);
+      }
+    } else {
+      const planetIntersects = raycasterRef.current.intersectObject(planetMeshRef.current || new THREE.Object3D(), true);
+
+      if (planetIntersects.length > 0) {
+        setSelectedMoon(null);
+
+        if (onMoonSelected) {
+          onMoonSelected(null);
+        }
+        const planetPosition = new THREE.Vector3(0, 0, 0);
+        const cameraDistance = calculateExactCameraDistance();
+        const targetPosition = new THREE.Vector3(0, 0, cameraDistance);
+
+        animateCameraToTarget(targetPosition, planetPosition);
+      } else {
+        setSelectedMoon(null);
+
+        if (onMoonSelected) {
+          onMoonSelected(null);
+        }
+      }
+    }
+  }, []);
+
+  const animateCameraToTarget = useCallback((targetPosition: THREE.Vector3, targetLookAt: THREE.Vector3) => {
+    if (!cameraRef.current || !controlsRef.current) return;
+
+    const camera = cameraRef.current;
+    const controls = controlsRef.current;
+
+    cameraAnimationRef.current = {
+      isAnimating: true,
+      startPosition: camera.position.clone(),
+      startTarget: controls.target.clone(),
+      endPosition: targetPosition,
+      endTarget: targetLookAt,
+      startTime: performance.now(),
+      duration: 1500,
+    };
+
+    controls.enabled = false;
+  }, []);
 
   const setupControls = (camera: THREE.PerspectiveCamera, domElement: HTMLElement) => {
     const controls = new OrbitControls(camera, domElement);
@@ -661,6 +826,7 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
         surface_elements: renderingApiData?.surface_elements,
         atmosphere: renderingApiData?.atmosphere,
         rings: renderingApiData?.rings,
+        moons: renderingApiData?.moons,
         effects_3d: renderingApiData?.effects_3d,
         shader_uniforms: renderingApiData?.shader_uniforms,
         universal_actions: renderingApiData?.universal_actions,
@@ -686,6 +852,12 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
         hasEffects: !!data.surface_elements,
         fullRenderingData: renderingApiData,
       });
+
+      updateLightingWithRealData(data);
+
+      if (data.moons) {
+        (data as any).pendingMoonData = data.moons;
+      }
 
       if (onDataLoaded) {
         onDataLoaded(data);
@@ -747,6 +919,7 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
         surface_elements: renderingApiData?.surface_elements,
         atmosphere: renderingApiData?.atmosphere,
         rings: renderingApiData?.rings,
+        moons: renderingApiData?.moons,
         effects_3d: renderingApiData?.effects_3d,
         shader_uniforms: renderingApiData?.shader_uniforms,
         universal_actions: renderingApiData?.universal_actions,
@@ -774,6 +947,33 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
       });
 
       updateLightingWithRealData(data);
+
+      if (data.moons) {
+        if (!moonSystemRef.current && cameraRef.current && sceneRef.current) {
+          const cosmicOriginTime = data.timing?.cosmic_origin_time || 514080000;
+          moonSystemRef.current = new MoonSystem(sceneRef.current, NORMALIZED_PLANET_RADIUS, cameraRef.current, new THREE.Vector3(0, 0, 0), cosmicOriginTime);
+        }
+
+        if (moonSystemRef.current) {
+          const moonSystemData = {
+            ...data.moons,
+            cosmic_origin_time: data.timing?.cosmic_origin_time || 514080000,
+            planet_mass: data.original_planet_data?.mass || 1e24,
+            planet_radius: NORMALIZED_PLANET_RADIUS,
+            moons: data.moons.moons.map((moon) => ({
+              ...moon,
+              rotation: {
+                rotation_period_s: moon.orbit.orbital_period_seconds || 86400,
+                rotation_period_hours: (moon.orbit.orbital_period_seconds || 86400) / 3600,
+                angular_velocity_rad_s: (2 * Math.PI) / (moon.orbit.orbital_period_seconds || 86400),
+                is_tidally_locked: true,
+              },
+            })),
+          };
+          moonSystemRef.current.loadMoonSystem(moonSystemData);
+        }
+      }
+
       if (orbitLineRef.current && sceneRef.current) {
         sceneRef.current.remove(orbitLineRef.current);
         orbitLineRef.current.geometry.dispose();
@@ -918,7 +1118,29 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
     const currentTime = performance.now();
     const deltaTime = clockRef.current.getDelta();
 
-    if (controlsRef.current) {
+    if (cameraAnimationRef.current?.isAnimating && cameraRef.current && controlsRef.current) {
+      const animation = cameraAnimationRef.current;
+      const elapsed = currentTime - animation.startTime;
+      const progress = Math.min(elapsed / animation.duration, 1);
+
+      const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1);
+      const easedProgress = easeInOutCubic(progress);
+
+      const camera = cameraRef.current;
+      const controls = controlsRef.current;
+
+      camera.position.lerpVectors(animation.startPosition, animation.endPosition, easedProgress);
+      controls.target.lerpVectors(animation.startTarget, animation.endTarget, easedProgress);
+
+      camera.lookAt(controls.target);
+      controls.update();
+
+      if (progress >= 1) {
+        cameraAnimationRef.current.isAnimating = false;
+        controls.enabled = true;
+        cameraAnimationRef.current = null;
+      }
+    } else if (controlsRef.current) {
       controlsRef.current.update();
     }
 
@@ -982,6 +1204,10 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
     }
 
     if (rendererRef.current && sceneRef.current && cameraRef.current) {
+      if (moonSystemRef.current) {
+        moonSystemRef.current.update();
+      }
+
       const renderStartTime = performance.now();
 
       if (toxicPostProcessingRef.current && toxicPostProcessingEnabled) {
@@ -1017,18 +1243,6 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
   useEffect(() => {
     let isMounted = true;
 
-    (window as any).tonnirLoggedInPlanet = false;
-    (window as any).orbitChecked = false;
-    (window as any).debugOrbitRadius = null;
-    (window as any).debugSystemMaxRadius = null;
-    (window as any).planetNameLogged = false;
-    (window as any).timingDataLogged = false;
-    (window as any).isLoadingPlanetData = false;
-    (window as any).orbitalAngleSourceLogged = false;
-    (window as any).orbitalAngleDebugged = false;
-    (window as any).positionDebugged = false;
-    (window as any).animationLoopDebugged = false;
-
     const initialize = async () => {
       try {
         if (!isMounted) return;
@@ -1051,6 +1265,12 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
         }
 
         window.addEventListener("resize", handleResize);
+
+        if (mountRef.current) {
+          mountRef.current.addEventListener("mousedown", handleMouseDown);
+          mountRef.current.addEventListener("mousemove", handleMouseMove);
+          mountRef.current.addEventListener("click", handleMoonClick);
+        }
 
         if (!isMounted) return;
         if (apiData) {
@@ -1081,11 +1301,22 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
       }
       window.removeEventListener("resize", handleResize);
 
+      if (mountRef.current) {
+        mountRef.current.removeEventListener("mousedown", handleMouseDown);
+        mountRef.current.removeEventListener("mousemove", handleMouseMove);
+        mountRef.current.removeEventListener("click", handleMoonClick);
+      }
+
       clearActiveEffects();
 
       if (planetLayerSystemRef.current) {
         planetLayerSystemRef.current.dispose();
         planetLayerSystemRef.current = null;
+      }
+
+      if (moonSystemRef.current) {
+        moonSystemRef.current.dispose();
+        moonSystemRef.current = null;
       }
 
       if (controlsRef.current) {
@@ -1138,6 +1369,30 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
     }
   }, [renderingData, updatePlanetPositionWithAPIData]);
 
+  useEffect(() => {
+    if (renderingData && (renderingData as any).pendingMoonData && moonSystemRef.current) {
+      const moonData = (renderingData as any).pendingMoonData;
+      const moonSystemData = {
+        ...moonData,
+        cosmic_origin_time: renderingData.timing?.cosmic_origin_time || 514080000,
+        planet_mass: renderingData.original_planet_data?.mass || 1e24,
+        planet_radius: NORMALIZED_PLANET_RADIUS,
+        moons: moonData.moons.map((moon: any) => ({
+          ...moon,
+          rotation: {
+            rotation_period_s: moon.orbit.orbital_period_seconds || 86400,
+            rotation_period_hours: (moon.orbit.orbital_period_seconds || 86400) / 3600,
+            angular_velocity_rad_s: (2 * Math.PI) / (moon.orbit.orbital_period_seconds || 86400),
+            is_tidally_locked: true,
+          },
+        })),
+      };
+      moonSystemRef.current.loadMoonSystem(moonSystemData);
+
+      delete (renderingData as any).pendingMoonData;
+    }
+  }, [renderingData, moonSystemRef.current]);
+
   useDebugPlanetData(renderingData);
 
   return (
@@ -1166,6 +1421,7 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
       {renderingData && !loading && (
         <div className="absolute bottom-0 left-0 p-2 text-white bg-black bg-opacity-50 max-w-xs rounded-tr-lg">
           <h3 className="text-xs font-bold">{renderingData.planet_info.name}</h3>
+          {renderingData.moons && <div className="text-xs mt-1">Moons: {renderingData.moons.count}</div>}
         </div>
       )}
 

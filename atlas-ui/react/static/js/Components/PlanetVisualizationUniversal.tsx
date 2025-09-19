@@ -39,9 +39,10 @@ interface PlanetVisualizationUniversalProps {
   onEffectsCreated?: (effects: any[]) => void;
   effects?: any[];
   onToggleEffect?: (effectId: string, enabled: boolean) => void;
+  onMoonSelected?: (moon: any | null) => void;
 }
 
-const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> = ({ planetUrl, planet, cosmicOriginTime, initialAngleRotation, onEffectsCreated, effects, onToggleEffect }) => {
+const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> = ({ planetUrl, planet, cosmicOriginTime, initialAngleRotation, onEffectsCreated, effects, onToggleEffect, onMoonSelected }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const planetRendererRef = useRef<{ captureScreenshot: () => void; isGeneratingImage: boolean } | null>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -230,6 +231,7 @@ const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> 
               enableControls={true}
               showDebugInfo={false}
               onEffectsCreated={onEffectsCreated}
+              onMoonSelected={onMoonSelected}
               planetData={{
                 name: planet.name,
                 diameter: planet.diameter,

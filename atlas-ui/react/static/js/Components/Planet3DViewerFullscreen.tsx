@@ -27,12 +27,7 @@ interface Planet3DViewerFullscreenProps {
   onEffectsCreated?: (effects: any[]) => void;
 }
 
-const Planet3DViewerFullscreen: React.FC<Planet3DViewerFullscreenProps> = ({ 
-  planet, 
-  cosmicOriginTime, 
-  initialAngleRotation,
-  onEffectsCreated 
-}) => {
+const Planet3DViewerFullscreen: React.FC<Planet3DViewerFullscreenProps> = ({ planet, cosmicOriginTime, initialAngleRotation, onEffectsCreated }) => {
   const handleKeyDown = (event: KeyboardEvent) => {
     if (event.key === "Escape") {
       document.dispatchEvent(new CustomEvent("planet-close-fullscreen"));

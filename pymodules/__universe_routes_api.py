@@ -8,6 +8,7 @@ from pymodules.__atlas_fixed_vars import RUN
 
 
 def register_universe_routes(app, universe, config):
+    from pymodules.__universe_routes_uip import get_universe
 
     @app.route("/api/universe/config")
     def get_universe_config():
@@ -23,14 +24,14 @@ def register_universe_routes(app, universe, config):
     @app.route("/api/generate-random-location", methods=["GET"])
     def generate_random_location():
         try:
-            if universe is None:
+            if get_universe() is None:
                 return jsonify({"error": "Universe not initialized"}), 500
 
             x = random.randint(0, 10000000)
             y = random.randint(0, 10000000)
             z = random.randint(0, 10000000)
 
-            galaxy = universe.get_galaxy(x, y, z)
+            galaxy = get_universe().get_galaxy(x, y, z)
 
             response_data = {"success": True, "coordinates": {"x": x, "y": y, "z": z}, "galaxy_name": galaxy.name, "galaxy_type": galaxy.galaxy_type, "num_systems": galaxy.num_systems, "navigation_data": {"x": x, "y": y, "z": z}}
 
@@ -62,14 +63,14 @@ def register_universe_routes(app, universe, config):
     @app.route("/api/random-jump", methods=["POST"])
     def handle_random_jump():
         try:
-            if universe is None:
+            if get_universe() is None:
                 return jsonify({"error": "Universe not initialized"}), 500
 
             x = int(request.form["x"])
             y = int(request.form["y"])
             z = int(request.form["z"])
 
-            galaxy = universe.get_galaxy(x, y, z)
+            galaxy = get_universe().get_galaxy(x, y, z)
             session["galaxy"] = {
                 "seed": galaxy.seed,
                 "name": galaxy.name,

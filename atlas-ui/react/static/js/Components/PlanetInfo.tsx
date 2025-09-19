@@ -46,6 +46,41 @@ interface EffectInfo {
   enabled: boolean;
 }
 
+interface MoonData {
+  name: string;
+  properties: {
+    mass_kg: number;
+    radius_km: number;
+    density_kg_m3: number;
+    type: string;
+    origin: string;
+  };
+  orbit: {
+    semi_major_axis_km: number;
+    eccentricity: number;
+    inclination_deg: number;
+    orbital_period_seconds: number;
+    orbital_period_days: number;
+    current_angle: number;
+  };
+  rotation: {
+    rotation_period_s: number;
+    rotation_period_hours: number;
+    angular_velocity_rad_s: number;
+    is_tidally_locked: boolean;
+  };
+  visuals: {
+    base_color: string;
+    roughness: number;
+    metalness: number;
+    normal_strength: number;
+    relative_size: number;
+    has_atmosphere: boolean;
+    atmosphere_color?: string;
+    atmosphere_opacity?: number;
+  };
+}
+
 interface PlanetInfoProps {
   planet: Planet;
   system: System;
@@ -54,9 +89,10 @@ interface PlanetInfoProps {
   initialAngleRotation?: number;
   effects?: EffectInfo[];
   onToggleEffect?: (effectId: string, enabled: boolean) => void;
+  selectedMoon?: MoonData | null;
 }
 
-const PlanetInfo: React.FC<PlanetInfoProps> = ({ planet, system, galaxy, cosmicOriginTime, initialAngleRotation, effects, onToggleEffect }) => {
+const PlanetInfo: React.FC<PlanetInfoProps> = ({ planet, system, galaxy, cosmicOriginTime, initialAngleRotation, effects, onToggleEffect, selectedMoon }) => {
   const [showAllElements, setShowAllElements] = useState(false);
   const [showAreciboModal, setShowAreciboModal] = useState(false);
   const [miningState, setMiningState] = useState({
@@ -164,18 +200,14 @@ const PlanetInfo: React.FC<PlanetInfoProps> = ({ planet, system, galaxy, cosmicO
           <div className="text-xs text-gray-200">Atmosphere</div>
           <div className="text-sm font-bold text-purple-300 capitalize">{planet.atmosphere}</div>
         </div>
-{planet.life_forms !== "None" ? (
+        {planet.life_forms !== "None" ? (
           <div className="relative">
             {/* Notification dot */}
             <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse z-20 border border-green-300">
               <div className="w-full h-full bg-green-400 rounded-full animate-ping absolute"></div>
             </div>
             {/* Clickable Life Forms div */}
-            <button 
-              onClick={() => setShowAreciboModal(true)}
-              className="w-full bg-white/10 hover:bg-green-500/20 rounded-lg p-2 border border-green-500/30 hover:border-green-400 transition-all duration-300 animate-pulse-glow hover:animate-bounce-subtle group cursor-pointer text-left"
-              title="Click to view Arecibo message"
-            >
+            <button onClick={() => setShowAreciboModal(true)} className="w-full bg-white/10 hover:bg-green-500/20 rounded-lg p-2 border border-green-500/30 hover:border-green-400 transition-all duration-300 animate-pulse-glow hover:animate-bounce-subtle group cursor-pointer text-left" title="Click to view Arecibo message">
               <div className="text-xs text-gray-200 group-hover:text-green-200 transition-colors">Life Forms</div>
               <div className="text-sm font-bold text-green-300 group-hover:text-green-200 capitalize transition-colors">{planet.life_forms}</div>
             </button>
@@ -187,7 +219,6 @@ const PlanetInfo: React.FC<PlanetInfoProps> = ({ planet, system, galaxy, cosmicO
           </div>
         )}
       </div>
-
 
       <div className="bg-white/10 rounded-lg p-2 border border-orange-500/30 mb-3">
         <div className="text-xs text-gray-200 mb-2">Physical Properties</div>
@@ -273,6 +304,63 @@ const PlanetInfo: React.FC<PlanetInfoProps> = ({ planet, system, galaxy, cosmicO
         </div>
       </div>
 
+      {/* Selected Moon Information */}
+      {selectedMoon && (
+        <div className="mt-3 p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-lg">🌙</span>
+            <h4 className="text-sm font-bold text-blue-300">Selected Moon: {selectedMoon.name}</h4>
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 mb-3">
+            <div className="bg-white/5 rounded p-2 border border-blue-500/20">
+              <div className="text-xs text-gray-300">Type</div>
+              <div className="text-xs font-bold text-blue-300 capitalize">{selectedMoon.properties.type}</div>
+            </div>
+            <div className="bg-white/5 rounded p-2 border border-blue-500/20">
+              <div className="text-xs text-gray-300">Origin</div>
+              <div className="text-xs font-bold text-blue-300 capitalize">{selectedMoon.properties.origin.replace("_", " ")}</div>
+            </div>
+            <div className="bg-white/5 rounded p-2 border border-blue-500/20">
+              <div className="text-xs text-gray-300">Radius</div>
+              <div className="text-xs font-bold text-blue-300">{selectedMoon.properties.radius_km.toFixed(1)} km</div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 mb-2">
+            <div className="bg-white/5 rounded p-2 border border-blue-500/20">
+              <div className="text-xs text-gray-300">Orbital Period</div>
+              <div className="text-xs font-bold text-blue-300">{formatPeriod(selectedMoon.orbit.orbital_period_seconds)}</div>
+            </div>
+            <div className="bg-white/5 rounded p-2 border border-blue-500/20">
+              <div className="text-xs text-gray-300">Distance</div>
+              <div className="text-xs font-bold text-blue-300">{(selectedMoon.orbit.semi_major_axis_km / 1000).toFixed(0)}k km</div>
+            </div>
+            <div className="bg-white/5 rounded p-2 border border-blue-500/20">
+              <div className="text-xs text-gray-300">Eccentricity</div>
+              <div className="text-xs font-bold text-blue-300">{selectedMoon.orbit.eccentricity.toFixed(3)}</div>
+            </div>
+          </div>
+
+          {/* Moon Surface Conditions */}
+          <div className="bg-white/5 rounded-lg p-2 border border-blue-500/20">
+            <div className="text-xs text-gray-200 mb-2">Surface Conditions</div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="bg-white/5 rounded p-1.5 border border-blue-500/20">
+                <div className="text-xs text-gray-300">Rotation</div>
+                <div className="text-xs font-bold text-blue-300">{selectedMoon.rotation ? formatPeriod(selectedMoon.rotation.rotation_period_s) : "Unknown"}</div>
+              </div>
+              <div className="bg-white/5 rounded p-1.5 border border-blue-500/20">
+                <div className="text-xs text-gray-300">Tidal Lock</div>
+                <div className={`text-xs font-bold ${selectedMoon.rotation?.is_tidally_locked ? "text-green-300" : "text-orange-300"}`}>{selectedMoon.rotation?.is_tidally_locked ? "Yes" : "No"}</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-2 text-xs text-blue-400/80 text-center">Click on planet to return to planet view</div>
+        </div>
+      )}
+
       <div className="mt-4 pt-3 border-t border-white/10">
         <div className="text-xs text-gray-400 mb-2">Technical Data</div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-xs">
@@ -304,16 +392,9 @@ const PlanetInfo: React.FC<PlanetInfoProps> = ({ planet, system, galaxy, cosmicO
       </div>
 
       {effects && onToggleEffect && <EffectsControl effects={effects} onToggleEffect={onToggleEffect} />}
-      
+
       {/* Arecibo Modal */}
-      {planet.life_forms !== "None" && (
-        <AreciboModal 
-          isOpen={showAreciboModal}
-          onClose={() => setShowAreciboModal(false)}
-          lifeForm={planet.life_forms}
-          planetName={planet.name}
-        />
-      )}
+      {planet.life_forms !== "None" && <AreciboModal isOpen={showAreciboModal} onClose={() => setShowAreciboModal(false)} lifeForm={planet.life_forms} planetName={planet.name} />}
     </div>
   );
 };

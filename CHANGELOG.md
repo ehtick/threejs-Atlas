@@ -1,5 +1,49 @@
 # Changelog
 
+## [2.6.10] - 2025-09-19
+
+- Fixed Atlas Initialization Protocol broken after `__main__.py` refactor that moved endpoints to `pymodules/universe_routes*.py`, using `pymodules/__universe_routes_uip.py`.
+- Added deterministic moon generation using planet-specific seeds derived from the universal seedmaster system and using consistent hashes.
+- Introduced sophisticated moon origin classification system such as Co-formation (regular satellites), Giant Impact (like Earth's Moon), and Capture (irregular satellites).
+- Created comprehensive moon type system with Icy, Rocky, Asteroidal, and Captured moons with distinct physical properties.
+- Implemented Roche limit calculations preventing moon formation too close to planets `d_R ≈ 2.456 × R_p × (ρ_p / ρ_s)^(1/3)`.
+- Added Hill sphere calculations for maximum stable moon orbits `r_H = a_p × (M_p / 3M_*)^(1/3)`.
+- Implemented complete moon property system including mass, radius, density, composition type, origin classification.
+- Added realistic orbital element generation with semi-major axis, eccentricity, inclination, argument of periapsis, longitude of ascending node.
+- Implemented complete Keplerian orbital system with eccentric anomaly solving and true anomaly calculations.
+- Integrated initial orbital phases for continuous orbital motion across universe age.
+- Added full orbital parameter suite with periods, distances, angles, eccentricity, inclination.
+- Integrated orbital stability checks using mutual Hill sphere criterion `3.5` mutual Hill radii separation minimum.
+- Applied resonance detection and adjustment system to prevent chaotic orbital interactions.
+- Created tidal migration effects based on real Moon migration `~3.8 cm/year` scaled for different planetary systems.
+- Added comprehensive tidal heating based on Io's reference model, scaling with `eccentricity²`, `mean motion²`, `radius⁵`, and `distance⁻⁶`.
+- Created realistic ice viscosity calculations based on internal temperature from tidal heating `1e12` to `1e21 Pa·s` range.
+- Implemented Darwin's formula for tidal locking timescales considering moment of inertia, Love numbers, and Q factors.
+- Added material-specific Q factors with different dissipation rates for icy `Q=12`, asteroidal `Q=25`, captured `Q=40`, and rocky `Q=80` moons.
+- Created progressive tidal locking with exponential approach to synchronous rotation with realistic locking thresholds.
+- Added distance-dependent locking / quick tidal locking for close moons `<10 planetary radii` with physics-based acceleration factors.
+- Created rotational dynamics system of rotation periods, angular velocity, tidal locking status separated for each moon.
+- Implemented physically accurate moon shape evolution using viscosity and shear modulus calculations `τ = η / μ`.
+- Integrated cosmic time-based evolution allowing moons to gradually relax from irregular to spherical shapes over geological timescales.
+- Added surface characteristics of procedural seeds each type of moons.
+- Implemented multi-octave noise-based terrain generation specific to moon types (icy: smooth with subtle features, asteroidal: chaotic irregular terrain, rocky: varied highland/lowland patterns).
+- Added dynamic geometry deformation of real-time surface displacement based on current hydrostatic relaxation state.
+- Implemented material-based rendering of distinct visual materials for each moon type with appropriate roughness, metalness, and color variations.
+- Created efficient orbital line segmentation system with proper depth buffer handling.
+- Added elegant orbital line behavior where lines start invisible, fade in smoothly during navigation, fade out when stationary.
+- Created professional fade transitions of hybrid opacity/visibility system preventing depth buffer artifacts.
+- Added Level-of-Detail (LOD) system for moon rendering based on distance and apparent size.
+- Implemented selective update system for surface relaxation (every `30 seconds`) to maintain performance.
+- Integrated geometry disposal and material cleanup systems for memory management.
+- Added cinematic experience of clean initial views focusing on moon beauty, contextual orbital assistance during navigation.
+- Implemented comprehensive debug logging about detailed relaxation physics logging showing viscosity, timescales, cosmic age, and relaxation factors (removed later).
+- Fixed critical variable declaration conflicts in hydrostatic relaxation calculations.
+- Implemented proper timer cleanup in disposal methods preventing memory leaks.
+- Added comprehensive error handling for edge cases in moon generation.
+- Created modular architecture allowing future expansion of moon system complexity.
+- Implemented fully procedural moon system generation for all planets based on real astrophysical constraints.
+- Removed unit tests for different approaches.
+
 ## [2.4.86] - 2025-09-17
 
 - Enhanced Save Location button for galaxies, it now shows a pulsing green border when you have that galaxy saved but on a different page, allowing you to save multiple pages of the same galaxy while maintaining visual consistency.

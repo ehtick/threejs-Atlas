@@ -76,6 +76,11 @@ def observer(universe):
         "Do you want the planet to have rings? (Select 'Doesn't matter' to skip or 'Infinite Search' for endless rings search)",
     )
 
+    has_moons_option = select_option(
+        ["Yes", "No", "Doesn't matter"],
+        "Do you want the planet to have moons?",
+    )
+
     if desired_planet_type == "None":
         desired_planet_type = None
     if desired_life_form == "None":
@@ -89,9 +94,15 @@ def observer(universe):
     elif has_rings_option == "Infinite Search (Rings)":
         search_rings = "infinite"
 
-    if not desired_planet_type and not desired_life_form and search_rings is None:
+    search_moons = None
+    if has_moons_option == "Yes":
+        search_moons = True
+    elif has_moons_option == "No":
+        search_moons = False
+
+    if not desired_planet_type and not desired_life_form and search_rings is None and search_moons is None:
         print(
-            "You must select at least one criterion (planet type, life form, or rings) to search."
+            "You must select at least one criterion (planet type, life form, rings, or moons) to search."
         )
         return
 
@@ -103,7 +114,6 @@ def observer(universe):
     planet_type_counts = {ptype: 0 for ptype in planet_types}
     planets_with_rings_by_type = {ptype: 0 for ptype in planet_types}
 
-    print("Searching infinitely. Please wait...")
     x = 0
     while True:
         for y in range(9999999):
@@ -129,43 +139,6 @@ def observer(universe):
                                         planets_with_rings += 1
                                         planets_with_rings_by_type[planet_type] += 1
 
-                                if total_planets_searched % 1000 == 0:
-                                    print(
-                                        f"Total planets searched: {total_planets_searched}"
-                                    )
-                                    ring_percentage = (
-                                        planets_with_rings / total_planets_searched
-                                    ) * 100
-                                    print(
-                                        f"Total planets with rings: {planets_with_rings} ({ring_percentage}%)"
-                                    )
-                                    print()
-
-                                    probabilities = []
-                                    for ptype in planet_types:
-                                        if planet_type_counts[ptype] > 0:
-                                            ring_prob_by_type = (
-                                                planets_with_rings_by_type[ptype]
-                                                / planet_type_counts[ptype]
-                                            ) * 100
-                                            if ring_prob_by_type > 0:
-                                                probabilities.append(
-                                                    (ptype, ring_prob_by_type)
-                                                )
-
-                                    probabilities.sort(key=lambda x: x[1], reverse=True)
-
-                                    prob_strings = [
-                                        f"[{ptype}: {prob:.2f}%]"
-                                        for ptype, prob in probabilities
-                                    ]
-                                    print(
-                                        "Percentage by type -> "
-                                        + " ".join(prob_strings)
-                                    )
-
-                                    print("-" * 50)
-
                                 match = True
                                 if planet and search_rings != "infinite":
                                     if (
@@ -185,6 +158,11 @@ def observer(universe):
                                         and planet.planet_rings != search_rings
                                     ):
                                         match = False
+
+                                    if search_moons is not None:
+                                        has_moons = hasattr(planet, 'moon_system') and planet.moon_system and len(planet.moon_system.moons) > 0
+                                        if has_moons != search_moons:
+                                            match = False
 
                                     if match:
                                         print("Found a match!")

@@ -33,6 +33,7 @@ interface ModularPlanetRendererProps {
   onError?: (error: string) => void;
   onEffectsCreated?: (effects: any[]) => void;
   onScreenshotReady?: (captureFunction: () => void) => void;
+  onMoonSelected?: (moon: any | null) => void;
   planetUrl?: string;
 }
 

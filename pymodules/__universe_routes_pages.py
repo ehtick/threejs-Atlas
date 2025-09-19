@@ -12,8 +12,12 @@ from pymodules.__atlas_stargate import (
 
 
 def register_universe_page_routes(app, universe, config):
+    from pymodules.__universe_routes_uip import get_universe
 
     def get_current_galaxy():
+        universe = get_universe()
+        if universe is None:
+            return None
         galaxy_data = session.get("galaxy")
         if galaxy_data:
             galaxy = universe.get_galaxy(*galaxy_data["coordinates"])
@@ -29,8 +33,13 @@ def register_universe_page_routes(app, universe, config):
 
     @app.route("/")
     def index():
-        if not config.is_initialized or universe is None:
-            return redirect(url_for("onboarding"))
+        import __main__
+
+        if not config.is_initialized or get_universe() is None:
+            if os.path.exists("atlas.ini"):
+                __main__.RunAtlasProtocol()
+            else:
+                return redirect(url_for("onboarding"))
         return render_template("index.html", version=VERSION, versionHash=VERSION_HASH, run_mode=RUN)
 
     @app.route("/onboarding", methods=["GET", "POST"])
@@ -39,18 +48,14 @@ def register_universe_page_routes(app, universe, config):
             return redirect(url_for("index"))
 
         if request.method == "POST":
-            from pymodules.__atlas_config import config
+            universe_type = request.form.get("universe_type")
 
-            seed_input = request.form.get("seed", "").strip()
-            if not seed_input:
-                return render_template("onboarding.html", error="Please enter a seed", run_mode=RUN)
-
-            if config.create_configuration(seed_input):
+            if config.setup_universe(universe_type):
                 return redirect(url_for("index"))
             else:
                 return render_template("onboarding.html", error="Failed to create configuration", run_mode=RUN)
 
-        return render_template("onboarding.html", run_mode=RUN)
+        return render_template("onboarding.html", version=VERSION, versionHash=VERSION_HASH, run_mode=RUN)
 
     @app.route("/universe-faq")
     def universe_faq():
@@ -70,7 +75,7 @@ def register_universe_page_routes(app, universe, config):
             system_index = request.form.get("system")
             planet_name = request.form.get("planet")
             page = int(request.form.get("page", 1))
-            galaxy = universe.get_galaxy(x, y, z)
+            galaxy = get_universe().get_galaxy(x, y, z)
 
             session["galaxy"] = {
                 "seed": galaxy.seed,
@@ -279,7 +284,7 @@ def register_universe_page_routes(app, universe, config):
             page = params.get("page", 1)
 
             x, y, z = map(int, coordinates.split(","))
-            galaxy = universe.get_galaxy(x, y, z)
+            galaxy = get_universe().get_galaxy(x, y, z)
             session["galaxy"] = {
                 "seed": galaxy.seed,
                 "name": galaxy.name,

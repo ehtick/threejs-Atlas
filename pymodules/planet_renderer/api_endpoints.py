@@ -72,15 +72,12 @@ class PlanetRendererAPI:
                     
             if planet is None:
                 return jsonify({"error": f"Planet {planet_name} not found in system"})
-            
+
             # Get complete rendering data
             rendering_data = self.planet_translator.translate_planet_rendering(planet)
-            
-            # Add system-level context data for proper scaling in frontend
-            # Calculate max orbital radius of all planets in the system
+
             max_orbital_radius = max(p.orbital_radius for p in system.planets.values())
             
-            # Add system context to timing data
             if "timing" not in rendering_data:
                 rendering_data["timing"] = {}
             rendering_data["timing"]["max_orbital_radius"] = max_orbital_radius
@@ -120,11 +117,9 @@ class PlanetRendererAPI:
             galaxy = universe.get_galaxy(*galaxy_data["coordinates"])
             system = galaxy.get_solar_system(system_index)
             
-            # Use cosmic_origin_time from config to ensure consistency
             cosmic_origin_time = config.cosmic_origin_time
             current_time = int(time.time())
             
-            # Calculate system max orbital radius (same logic as planet API)
             max_orbital_radius = max(p.orbital_radius for p in system.planets.values())
             
             # Build complete system data
@@ -133,20 +128,17 @@ class PlanetRendererAPI:
                 "star_system_type": system.star_system_type,
                 "num_planets": system.num_planets,
                 
-                # Stars data
                 "stars": [
                     {
                         "Type": star["Type"],
-                        "Size": str(star.get("Radius Factor", 1.0)),  # Convert to string for parseFloat()  
+                        "Size": str(star.get("Radius Factor", 1.0)),
                         "Color": star["Color"]
                     }
                     for star in system.stars
                 ],
                 
-                # PLANETS with ALL necessary data for positioning
                 "planets": [],
                 
-                # Timing data for the entire system
                 "timing": {
                     "cosmic_origin_time": cosmic_origin_time,
                     "current_time": current_time,
@@ -155,14 +147,10 @@ class PlanetRendererAPI:
                 }
             }
             
-            # Process each planet with complete data
             for planet in system.planets.values():
                 
-                # CRITICAL: Use the SAME initial_orbital_angle that DOM uses
-                # This comes from the planet object itself (calculated in __universe_base.py:256)
                 initial_orbital_angle = planet.initial_orbital_angle
                 
-                # Calculate current orbital angle for verification
                 orbital_period = planet.orbital_period_seconds
                 time_elapsed = current_time - cosmic_origin_time
                 angle_velocity = (2 * math.pi) / orbital_period
@@ -186,11 +174,9 @@ class PlanetRendererAPI:
                     "elements": planet.elements,
                     "eccentricity_factor": getattr(planet, 'eccentricity_factor', 0.1),
                     
-                    # CRITICAL: Positioning data
                     "initial_orbital_angle": initial_orbital_angle,
                     "current_orbital_angle": current_orbital_angle,
                     
-                    # Additional calculated fields
                     "relative_orbital_radius": planet.orbital_radius / max_orbital_radius if max_orbital_radius > 0 else 0
                 }
                 
@@ -211,7 +197,6 @@ class PlanetRendererAPI:
     def _get_individual_planet_rendering_data(self) -> Dict[str, Any]:
         """Get individual planet rendering data for Planet view"""
         try:
-            # Initialize same as System API (that works!)
             if not config.is_initialized:
                 if not config.initialize():
                     return jsonify({"error": "Failed to initialize config"})
@@ -219,7 +204,6 @@ class PlanetRendererAPI:
             constants = PhysicalConstants()
             universe = Universe(config.seed, constants)
             
-            # Get session data
             galaxy_data = session.get("galaxy")
             system_index = session.get("system")
             planet_index = session.get("planet")
@@ -227,28 +211,22 @@ class PlanetRendererAPI:
             if not galaxy_data or system_index is None or planet_index is None:
                 return jsonify({"error": "No galaxy, system, or planet data in session"})
             
-            # FIXED: Use correct method names (same as location_data API)
             galaxy = universe.get_galaxy(*galaxy_data["coordinates"])
             system = galaxy.get_solar_system(system_index)
             planet = system.get_planet(planet_index)
             
-            # FIXED: Use config directly (same as System API)
             cosmic_origin_time = config.cosmic_origin_time
             current_time_seconds = math.floor(time.time())
             elapsed_time = current_time_seconds - cosmic_origin_time
             
-            # Calculate max orbital radius for scaling (same as system)
             max_orbital_radius = max([p.orbital_radius for p in system.planets.values()]) if system.planets else 1.0
             
-            # CRITICAL: Use existing values, don't recalculate!
-            initial_orbital_angle = planet.initial_orbital_angle  # From original generation
+            initial_orbital_angle = planet.initial_orbital_angle
             
-            # Calculate current orbital position (same logic as system)
             orbital_period = planet.orbital_period_seconds
             angle_velocity_orbit = (2 * math.pi) / orbital_period
             current_orbital_angle = (initial_orbital_angle + elapsed_time * angle_velocity_orbit) % (2 * math.pi)
             
-            # Planet data with consistent values
             planet_data = {
                 "name": planet.name,
                 "planet_type": planet.planet_type,
@@ -267,16 +245,13 @@ class PlanetRendererAPI:
                 "elements": planet.elements,
                 "eccentricity_factor": getattr(planet, 'eccentricity_factor', 0.1),
                 
-                # CRITICAL: Positioning data (same as system API)
                 "initial_orbital_angle": initial_orbital_angle,
                 "current_orbital_angle": current_orbital_angle,
                 "relative_orbital_radius": planet.orbital_radius / max_orbital_radius if max_orbital_radius > 0 else 0,
                 
-                # System context for orbital calculations
                 "system_max_orbital_radius": max_orbital_radius
             }
             
-            # Timing info
             timing_data = {
                 "cosmic_origin_time": cosmic_origin_time,
                 "current_time_seconds": current_time_seconds,
@@ -284,11 +259,9 @@ class PlanetRendererAPI:
                 "max_orbital_radius": max_orbital_radius
             }
             
-            # Add translated rendering data for shaders and effects
             try:
                 rendered_data = self.planet_translator.translate_planet_rendering(planet)
             except Exception as e:
-                # Fallback if translation fails
                 rendered_data = {
                     "planet_info": {
                         "name": planet.name,
@@ -302,7 +275,7 @@ class PlanetRendererAPI:
                 "success": True,
                 "planet_name": planet.name,
                 "planet_data": planet_data,
-                "rendering_data": rendered_data,  # Add this for shaders/effects
+                "rendering_data": rendered_data,
                 "timing": timing_data,
                 "coordinates": {
                     "galaxy_coordinates": galaxy_data["coordinates"],

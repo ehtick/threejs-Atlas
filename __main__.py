@@ -18,15 +18,13 @@ from pymodules.__atlas_cache_daemon import start_cache_daemon
 from pymodules.__atlas_config import config
 from pymodules.__atlas_observer import observer
 
-from pymodules.__universe_constants import PhysicalConstants
-from pymodules.__universe_base import Universe
-
 from pymodules.__frontendAPI_location_data import register_location_api
 from pymodules.__frontendAPI_planet_renderer import register_planet_renderer_api
 from pymodules.__frontendAPI_arecibo import register_arecibo_api
 from pymodules.__universe_routes_api import register_universe_routes
 from pymodules.__universe_routes_pages import register_universe_page_routes
 from pymodules.__universe_routes_static import register_static_routes
+from pymodules.__universe_routes_uip import initialize_uip
 
 
 template_folder = os.path.join(os.getcwd(), "atlas-ui", "template")
@@ -43,19 +41,19 @@ register_arecibo_api(app)
 register_static_routes(app)
 
 universe = None
-constants = PhysicalConstants()
+uip = initialize_uip(config)
 
 
 def RunAtlasProtocol():
     global universe
-    if not config.is_initialized:
-        if not config.initialize():
-            return False
+    if uip.initialize_if_needed():
+        universe = uip.universe
+        return True
+    return False
 
-    universe = Universe(config.seed, constants)
-    register_universe_routes(app, universe, config)
-    register_universe_page_routes(app, universe, config)
-    return True
+
+register_universe_routes(app, universe, config)
+register_universe_page_routes(app, universe, config)
 
 
 if __name__ == "__main__":

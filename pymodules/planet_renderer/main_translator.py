@@ -17,6 +17,7 @@ from pymodules.__drawer_cplanet_type import get_planet_color_map
 from .atmosphere_translator import AtmosphereTranslator
 from .rings_translator import RingsTranslator
 from .life_forms_translator import LifeFormsTranslator
+from .moons_translator import MoonsTranslator
 from .shader_utils import ShaderUtils
 from .planet_type_translators import PlanetTypeTranslators
 
@@ -31,6 +32,7 @@ class PlanetRenderingTranslator:
         self.atmosphere_translator = AtmosphereTranslator()
         self.rings_translator = RingsTranslator()
         self.life_forms_translator = LifeFormsTranslator()
+        self.moons_translator = MoonsTranslator()
         self.planet_type_translators = PlanetTypeTranslators()
         
         # Map planet types to their translation methods
@@ -116,7 +118,6 @@ class PlanetRenderingTranslator:
                     planet_radius, rng, config.seed, spaced_planet_name
                 )
         
-        # Si no hay datos específicos, simplemente usar datos básicos
         if not planet_specific_data:
             planet_specific_data = {
                 "type": "basic"
@@ -136,7 +137,14 @@ class PlanetRenderingTranslator:
         life_forms_data = self.life_forms_translator.translate_life_forms(
             planet.life_forms, planet_radius, rng, config.seed, spaced_planet_name
         )
-        
+
+        # Generate moon system data
+        moons_data = None
+        if hasattr(planet, 'moon_system') and planet.moon_system:
+            moons_data = self.moons_translator.translate_moon_system(
+                planet.moon_system, planet, str(config.seed)
+            )
+
         return {
             "planet_info": {
                 "name": spaced_planet_name,
@@ -153,7 +161,7 @@ class PlanetRenderingTranslator:
             },
             "debug": {
                 "visual_debug": VISUAL_DEBUG,
-                "cosmic_origin_time": cosmic_origin_time,  # Use fixed value
+                "cosmic_origin_time": cosmic_origin_time,
                 "initial_angle_rotation": planet.initial_angle_rotation
             },
             "seeds": {
@@ -164,15 +172,16 @@ class PlanetRenderingTranslator:
             "timing": {
                 "current_rotation_angle": angle_rotation,
                 "orbital_angle": orbital_angle,
-                "initial_orbital_angle": planet.initial_orbital_angle,  # AÑADIDO: posición estática inicial
+                "initial_orbital_angle": planet.initial_orbital_angle,
                 "tilt_factor": tilt_factor,
-                "cosmic_origin_time": cosmic_origin_time,  # Use fixed value same as System API
+                "cosmic_origin_time": cosmic_origin_time,
                 "time_elapsed_seconds": time_elapsed_seconds,
-                "elapsed_time": time_elapsed_seconds  # Also as elapsed_time for compatibility
+                "elapsed_time": time_elapsed_seconds
             },
             "surface_elements": planet_specific_data,
             "atmosphere": atmosphere_data,
             "rings": rings_data,
+            "moons": moons_data,
             "life_forms": life_forms_data,
             "shader_uniforms": ShaderUtils.generate_shader_uniforms(
                 planet_type, shape_seed, angle_rotation, base_color, planet_specific_data

@@ -64,6 +64,7 @@ const PlanetLayout: React.FC<PlanetLayoutProps> = ({ planet, system, galaxy, pla
   const [coordinates] = useState<string>(galaxy.coordinates.join(","));
   const [effects, setEffects] = useState<any[]>([]);
   const [effectsControlEnabled, setEffectsControlEnabled] = useState(debugConfig.ENABLE_EFFECTS_CONTROL);
+  const [selectedMoon, setSelectedMoon] = useState<any | null>(null);
 
   useAtlasKeySequence();
 
@@ -73,6 +74,10 @@ const PlanetLayout: React.FC<PlanetLayoutProps> = ({ planet, system, galaxy, pla
 
   const handleToggleEffect = (effectId: string, enabled: boolean) => {
     setEffects((prev) => prev.map((e) => (e.id === effectId ? { ...e, enabled } : e)));
+  };
+
+  const handleMoonSelected = (moon: any | null) => {
+    setSelectedMoon(moon);
   };
 
   useEffect(() => {
@@ -146,13 +151,13 @@ const PlanetLayout: React.FC<PlanetLayoutProps> = ({ planet, system, galaxy, pla
           <div className="bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 mb-8 shadow-2xl p-4 sm:p-6">
             <div className="flex flex-col lg:grid lg:grid-cols-[400px_1fr] gap-6 lg:gap-8 relative">
               <div className="order-1 lg:order-1">
-                <PlanetVisualizationUniversal planetUrl={planet_url} planet={{ ...planet, name: formatPlanetName(planet.name) }} cosmicOriginTime={cosmic_origin_time} initialAngleRotation={initial_angle_rotation} onEffectsCreated={handleEffectsCreated} effects={effects} onToggleEffect={handleToggleEffect} />
+                <PlanetVisualizationUniversal planetUrl={planet_url} planet={{ ...planet, name: formatPlanetName(planet.name) }} cosmicOriginTime={cosmic_origin_time} initialAngleRotation={initial_angle_rotation} onEffectsCreated={handleEffectsCreated} effects={effects} onToggleEffect={handleToggleEffect} onMoonSelected={handleMoonSelected} />
               </div>
 
               <div className="hidden lg:block absolute left-[416px] top-0 bottom-0 w-1 rounded-full bg-white/10 -translate-x-1.5"></div>
 
               <div className="order-2 lg:order-2">
-                <PlanetInfo planet={planet} system={system} galaxy={galaxy} cosmicOriginTime={cosmic_origin_time} initialAngleRotation={initial_angle_rotation} effects={effectsControlEnabled ? effects : undefined} onToggleEffect={effectsControlEnabled ? handleToggleEffect : undefined} />
+                <PlanetInfo planet={planet} system={system} galaxy={galaxy} cosmicOriginTime={cosmic_origin_time} initialAngleRotation={initial_angle_rotation} effects={effectsControlEnabled ? effects : undefined} onToggleEffect={effectsControlEnabled ? handleToggleEffect : undefined} selectedMoon={selectedMoon} />
               </div>
             </div>
           </div>

@@ -228,6 +228,47 @@ const FaqLayout: React.FC<FaqLayoutProps> = ({ version }) => {
       ],
     },
     {
+      title: "Revolutionary Moon System",
+      id: "moon-system",
+      questions: [
+        {
+          question: "Wait... Planets can have moons now?!",
+          answer: "YES! The Atlas has transcended planetary boundaries with the most sophisticated moon simulation ever created. Planets now host intricate lunar systems where each moon isn't just a static object, they're living, breathing celestial bodies with their own complex physics, orbital mechanics, and evolutionary timescales that span cosmic eras.",
+          highlight: true,
+        },
+        {
+          question: "How realistic are the moon physics?",
+          answer: "Absolutely mind-blowing! Each moon experiences real-time tidal locking with precise libration effects (like our Moon's gentle wobble), authentic orbital mechanics with variable eccentricity and inclination, and revolutionary hydrostatic relaxation physics that gradually transforms irregular rocky chunks into perfect spheres over millions of years. The physics calculations run in real-time, meaning a moon that's jagged today might be perfectly round in your universe's future.",
+          highlight: true,
+        },
+        {
+          question: "What is hydrostatic relaxation and why is it incredible?",
+          answer: "This is where The Atlas becomes pure cosmic poetry! Hydrostatic relaxation simulates how gravity slowly reshapes celestial bodies over astronomical time. Small asteroids stay irregular forever, but larger moons gradually become spherical as their gravity overcomes structural resistance. The system calculates viscosity based on moon composition (ice vs rock), tidal heating effects, and internal temperature. A captured asteroid might take 10 billion years to become round, while a large icy moon with tidal heating could relax in just millions of years. You're witnessing cosmic sculpture in real-time!",
+        },
+        {
+          question: "How do moons evolve beyond The Atlas's 1.9 million year maximum?",
+          answer: "Here's the cosmic breakthrough! While The Atlas universe reaches maximum galactic development in 1.9 million years, moon evolution operates on geological timescales that extend far beyond. The system extrapolates millions, even billions of years into the future to show how moons would appear after cosmic ages. You might see an irregular captured moon in year 1 that would become perfectly spherical after 500 million years of evolution, and The Atlas shows you both states depending on your temporal perspective!",
+          highlight: true,
+        },
+        {
+          question: "What types of moons exist in The Atlas?",
+          answer: "Four distinct lunar categories, each with unique characteristics: ICY moons (like Europa/Enceladus) with varied brightness from super-bright clean ice to contaminated darker surfaces, featuring dramatic color variations from cyan to pink to violet based on composition. ROCKY moons (like our Moon) with realistic brown-gray surfaces and proper crater formation. ASTEROIDAL moons, irregular captured objects that never achieve spherical shape. CAPTURED moons with mixed composition showing their chaotic formation history. Each type has distinct orbital behavior, surface features, and evolutionary timelines.",
+        },
+        {
+          question: "How do the orbital mechanics actually work?",
+          answer: "Pure astronomical precision! Each moon follows elliptical orbits calculated using real Kepler's laws with proper eccentric anomaly solutions. Orbital elements include semi-major axis, eccentricity, inclination, argument of periapsis (which precesses over time due to planetary oblateness), and longitude of ascending node. Tidal forces are calculated based on distance and planetary mass. The orbital lines appear and fade dynamically as you move the camera, and every moon's position is calculated in real-time based on the cosmic time elapsed since the universe's origin.",
+        },
+        {
+          question: "What makes the visual system so revolutionary?",
+          answer: "The Atlas creates procedural surface displacement using 3D noise algorithms that generate realistic terrain features unique to each moon type. Ice moons get crystal shimmer effects and dramatic color diversity inspired by real solar system moons like Europa's blue ice and Triton's pink surfaces. Asteroidal moons show chaotic, irregular terrain with extreme surface roughness. Every moon receives procedural texture generation with UV seam elimination, dynamic material properties that respond to lighting, and size-based LOD (Level of Detail) optimization for performance. You're seeing real-time 3D worlds, not simple spheres!",
+        },
+        {
+          question: "How many moons can a single planet have?",
+          answer: "The possibilities are astronomically vast! Planets can host multiple moons of different types and sizes, each with unique orbital parameters, rotation periods, and evolutionary states. The system respects real astronomical constraints like the Roche limit (inside which moons would be torn apart) and Hill sphere (beyond which moons would escape). Large gas giants might host dozens of moons ranging from tiny captured asteroids to massive ice worlds larger than Mercury. Every moon system is procedurally generated but follows real celestial mechanics.",
+        },
+      ],
+    },
+    {
       title: "Comprehension-defying Numbers",
       id: "mind-bending-scale",
       questions: [
