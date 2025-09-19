@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.6.12] - 2025-01-19
+
+- Implemented native SSL/HTTPS support through Hypercorn with automatic certificate detection at `./ssl/` directory (works with self-signed certificates).
+- Added SSL certificate information display at startup showing validity period, issuer organization, and certificate version.
+- Created modular SSL handling system in `pymodules/__atlas_ssl.py` with certificate validation and info extraction functions.
+- Integrated automatic protocol switching where same port serves HTTP when no certificates present or HTTPS when SSL certificates detected.
+- Added AsyncioWSGIMiddleware wrapper for improved request handling with 1GB max body size limit.
+- Implemented certificate file checking for `cert.pem`, `privkey.pem`, `fullchain.pem`, and `chain.pem` requirements.
+- Configured Hypercorn SSL context with certificate chain, private key, and CA certificates when SSL enabled.
+- Added protocol detection variable to determine HTTP vs HTTPS operation mode based on certificate availability.
+- Simplified server initialization by removing unnecessary signal handlers and HTTP redirector components.
+- Updated Docker Compose volume mapping for SSL certificates mounting flexibility.
+
 ## [2.6.10] - 2025-09-19
 
 - Fixed Atlas Initialization Protocol broken after `__main__.py` refactor that moved endpoints to `pymodules/universe_routes*.py`, using `pymodules/__universe_routes_uip.py`.

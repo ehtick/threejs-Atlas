@@ -4,9 +4,9 @@ import os
 import sys
 import asyncio
 
-
 from hypercorn.asyncio import serve
 from hypercorn.config import Config
+from hypercorn.middleware import AsyncioWSGIMiddleware
 
 from flask import Flask, g
 from flask_compress import Compress
@@ -17,6 +17,7 @@ from pymodules.__atlas_fixed_vars import PORT, RUN
 from pymodules.__atlas_cache_daemon import start_cache_daemon
 from pymodules.__atlas_config import config
 from pymodules.__atlas_observer import observer
+from pymodules.__atlas_ssl import ssl_enabled, get_ssl_cert_info
 
 from pymodules.__frontendAPI_location_data import register_location_api
 from pymodules.__frontendAPI_planet_renderer import register_planet_renderer_api
@@ -87,9 +88,42 @@ if __name__ == "__main__":
         if config.enable_cache:
             start_cache_daemon()
 
+    ssl_enabled_var = ssl_enabled()
+    protocol = "https" if ssl_enabled_var else "http"
+
+    print(f" * SSL Enabled: {ssl_enabled_var}")
+    print(f" * Development Mode: {RUN == 'DEV'}")
+    print()
+
+    if ssl_enabled_var:
+        cert_path = os.path.join(os.getcwd(), "ssl", "fullchain.pem")
+        cert_info = get_ssl_cert_info(cert_path)
+        print(" » SSL Certificate Information:")
+        if "error" in cert_info:
+            print(f'           └─ Error: {cert_info["error"]}')
+        else:
+            print(f'           ├─ Valid Until: {cert_info["notAfter"]}')
+            print(f'           └─ Issuer: {cert_info["issuerO"]} V{cert_info["version"]} ({cert_info["issuerCN"]})')
+        print()
+
+    print()
+
     if RUN == "DEV":
         app.run(host="0.0.0.0", port=PORT, debug=True, use_reloader=True, threaded=True)
     else:
-        HyperCornfig = Config()
-        HyperCornfig.bind = [f"0.0.0.0:{PORT}"]
-        asyncio.run(serve(app, HyperCornfig))
+        hypercorn_config = Config()
+        hypercorn_config.loglevel = "WARNING"
+        hypercorn_config.include_server_header = False
+        hypercorn_config.bind = [f"0.0.0.0:{PORT}"]
+
+        if ssl_enabled_var:
+            ssl_dir = os.path.join(os.getcwd(), "ssl")
+            hypercorn_config.certfile = os.path.join(ssl_dir, "fullchain.pem")
+            hypercorn_config.keyfile = os.path.join(ssl_dir, "privkey.pem")
+            hypercorn_config.ca_certs = os.path.join(ssl_dir, "chain.pem")
+
+        async def atlas_app_asgi(scope, receive, send):
+            app_asgi = AsyncioWSGIMiddleware(app, max_body_size=1 * 1024 * 1024 * 1024)
+            await app_asgi(scope, receive, send)
+
+        asyncio.run(serve(atlas_app_asgi, hypercorn_config))
