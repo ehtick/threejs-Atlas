@@ -6,3 +6,5 @@ __pycache__
 *.git
 *.gitignore
 atlas.ini
+venv
+node_modules

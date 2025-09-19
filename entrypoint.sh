@@ -6,6 +6,6 @@ find /app -mindepth 1 ! -name 'atlas.ini' ! -path '/app/ssl' ! -path '/app/ssl/*
 
 echo "Copying fresh contents from /app_defaults..."
 cp -r /app_defaults/* /app/
-chown -R $(id -u):$(id -g) /app
+find /app -mindepth 1 ! -path '/app/ssl' ! -path '/app/ssl/*' -exec chown $(id -u):$(id -g) {} +
 
 exec "$@"
