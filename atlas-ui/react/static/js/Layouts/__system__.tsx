@@ -74,7 +74,7 @@ const SystemLayout: React.FC<SystemLayoutProps> = ({ system, galaxy, system_url,
   };
 
   return (
-    <div className="w-full h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white overflow-auto">
+    <div className="w-full min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
       <div
         className="absolute inset-0 opacity-20"
         style={{

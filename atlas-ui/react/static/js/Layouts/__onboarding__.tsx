@@ -76,7 +76,7 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({ version }) => {
         </div>
       )}
 
-      <div className={`w-full h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white overflow-auto transition-opacity duration-500 ${animationState !== "selection" ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
+      <div className={`w-full min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white transition-opacity duration-500 ${animationState !== "selection" ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
         <div
           className="absolute inset-0 opacity-20"
           style={{
