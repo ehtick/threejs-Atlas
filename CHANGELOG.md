@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.6.14] - 2025-01-19
+
+- Minor changes on Dockerfile, image and compose to handle properly SSL permissions and settings.
+
 ## [2.6.12] - 2025-01-19
 
 - Implemented native SSL/HTTPS support through Hypercorn with automatic certificate detection at `./ssl/` directory (works with self-signed certificates).

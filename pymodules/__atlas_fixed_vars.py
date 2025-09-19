@@ -5,7 +5,7 @@ import hashlib
 
 PORT = 5000
 RUN = "PROD"
-VERSION = "2.6.12"
+VERSION = "2.6.14"
 VERSION_HASH = hashlib.sha256(VERSION.encode("utf-8")).hexdigest()
 MAX_PILLOW_WORKERS = 2
 VISUAL_DEBUG = False
