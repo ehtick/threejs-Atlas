@@ -123,7 +123,6 @@ export const removeItem = (key: string): void => {
 
 export const migrateToEncoded = (): void => {
   if (!ENCODING_ENABLED) {
-    console.log("Encoding disabled - skipping migration");
     return;
   }
 

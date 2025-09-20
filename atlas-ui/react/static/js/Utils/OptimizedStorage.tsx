@@ -138,7 +138,6 @@ export class OptimizedAtlasStorage {
 
     if (!data.gv[galaxyHash]) {
       data.gv[galaxyHash] = true;
-      console.log(`🌌 Galaxy marked as visited: ${coordinates} (hash: ${galaxyHash})`);
       this.saveData(data);
 
       DailyChallengesManager.updateProgress();

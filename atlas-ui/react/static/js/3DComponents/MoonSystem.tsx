@@ -439,8 +439,6 @@ export class MoonSystem {
 
     const displacementAmount = physicsAdjustedDisplacement * elevationFactor;
 
-    console.log(`🌙 Creating moon ${moonData.name}: type=${moonData.properties.type}, ` + `relaxationFactor=${relaxationFactor.toFixed(8)}, ` + `baseDisplacement=${((baseDisplacementAmount / moonRadius) * 100).toFixed(1)}% of radius, ` + `finalDisplacement=${((displacementAmount / moonRadius) * 100).toFixed(1)}% of radius, ` + `cosmicOriginTime=${this.cosmicOriginTime}`);
-
     for (let i = 0; i < positions.length; i += 3) {
       const x = positions[i];
       const y = positions[i + 1];
@@ -880,20 +878,6 @@ export class MoonSystem {
 
     const tidalPower = moonData.tidal_heating?.tidal_power_watts || 0;
     const tidalFlux = tidalPower / (4 * Math.PI * radius_m * radius_m);
-    console.log(`🔬 RELAXATION DEBUG for ${moonData.name}:
-      - Type: ${moonData.properties.type}
-      - Radius: ${radius_m / 1000}km
-      - Tidal heating: ${tidalPower.toExponential(2)} watts
-      - Tidal flux: ${tidalFlux.toExponential(2)} W/m²
-      - Viscosity: ${viscosity.toExponential(2)} Pa·s
-      - Density: ${density_kg_m3} kg/m³
-      - Surface gravity: ${surface_gravity.toFixed(2)} m/s²
-      - Relaxation timescale: ${relaxation_timescale_years.toExponential(2)} years
-      - Cosmic age: ${cosmic_age_years.toFixed(2)} years (${cosmic_age_seconds} seconds)
-      - CosmicOriginTime: ${this.cosmicOriginTime}
-      - Current time: ${Date.now() / 1000}
-      - Progress ratio: ${(cosmic_age_seconds / relaxation_timescale).toExponential(4)}
-      - Relaxation factor: ${relaxation_factor.toFixed(8)}`);
 
     if (!this.lastRelaxationSummary) this.lastRelaxationSummary = 0;
     if (this.lastRelaxationSummary < Date.now() - 5000) {

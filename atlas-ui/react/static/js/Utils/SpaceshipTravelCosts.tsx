@@ -23,8 +23,6 @@ export class SpaceshipTravelManager {
       deuterium: Math.floor(cost.deuterium / upgrade.efficiency),
     };
 
-    console.log("[DEBUG executeTravel] Distance:", distance, "Base cost:", cost, "Efficiency:", upgrade.efficiency, "Actual cost:", actualCost, "Resources:", resources);
-
     const resourcePercentages = [resources.antimatter / actualCost.antimatter, resources.element115 / actualCost.element115, resources.deuterium / actualCost.deuterium];
 
     const minPercentage = Math.min(...resourcePercentages);
