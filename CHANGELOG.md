@@ -1,6 +1,10 @@
 # Changelog
 
-## [2.8.42] - 2025-09-29
+## [2.8.44] - 2025-09-29
+
+- Updated pip requests to 2.32.4 to address CVE-2024-47081.
+
+## [2.8.44] - 2025-09-29
 
 - Implemented complete multiverse context model allowing exploration of infinite parallel universes through an integrated peer-to-peer seed sharing networking system.
 - Added multiverse navigation interface with seamless transitions between different universe contexts, providing users with unprecedented ability to traverse multiple realities.
