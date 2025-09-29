@@ -1,4 +1,5 @@
 // atlas-ui/react/static/js/Components/SpaceshipPanel.tsx
+
 import React, { useState, useEffect, useRef } from "react";
 import { getStorageStats } from "../Utils/VisitHistory.tsx";
 import { LocationBookmarks, SavedLocation } from "../Utils/LocationBookmarks.tsx";
@@ -12,6 +13,7 @@ import ProgressBar from "./ProgressBar.tsx";
 import AntimatterIcon from "../Icons/AntimatterIcon.tsx";
 import DeuteriumIcon from "../Icons/DeuteriumIcon.tsx";
 import Element115Icon from "../Icons/Element115Icon.tsx";
+import { UniverseDetection } from "../Utils/UniverseDetection.tsx";
 
 interface SpaceshipPanelProps {
   currentLocation?: {
@@ -41,6 +43,7 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
   const [, forceUpdate] = useState({});
   const [importError, setImportError] = useState<string | null>(null);
   const [importSuccess, setImportSuccess] = useState<boolean>(false);
+  const [isRemoteUniverse, setIsRemoteUniverse] = useState<boolean>(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const collectionModalRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -64,7 +67,20 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
 
       const baseGenerationInfo = SpaceshipResourceManager.calculatePassiveGeneration();
       setBaseGeneration(baseGenerationInfo);
+
+      setIsRemoteUniverse(UniverseDetection.isRemoteUniverse());
     }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const checkUniverseType = () => {
+      setIsRemoteUniverse(UniverseDetection.isRemoteUniverse());
+    };
+
+    const interval = setInterval(checkUniverseType, 1000);
+    return () => clearInterval(interval);
   }, [isOpen]);
 
   useEffect(() => {
@@ -652,7 +668,42 @@ const SpaceshipPanel: React.FC<SpaceshipPanelProps> = ({ currentLocation }) => {
                         const cleanUrl = stargateIndex !== -1 ? location.stargateUrl.substring(stargateIndex) : location.stargateUrl;
                         const fullUrl = `${window.location.origin}${cleanUrl}`;
 
-                        return (
+                        return isRemoteUniverse ? (
+                          <div key={location.id} className="block bg-red-500/10 rounded p-1.5 border border-red-500/30 opacity-60 cursor-not-allowed" title="Cannot travel to saved locations from remote universes - return to local universe first">
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center space-x-1">
+                                  <div className="text-[8px]">
+                                    {location.type === "galaxy" && "🌌"}
+                                    {location.type === "system" && "⭐"}
+                                    {location.type === "planet" && "🪐"}
+                                  </div>
+                                  <div className="text-red-300 text-[10px] font-medium truncate">{formatLocationName(location.name)}</div>
+                                  <div className="text-red-400 text-[8px] shrink-0">REMOTE</div>
+                                </div>
+                              </div>
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleRemoveLocation(e, location.id);
+                                }}
+                                className="text-gray-400 hover:text-red-400 transition-all duration-200 ml-1 p-0.5"
+                                title="Remove location"
+                              >
+                                <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            </div>
+                            <div className="text-[8px] text-red-400 flex items-center gap-1">
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L5.636 5.636" />
+                              </svg>
+                              Navigation disabled in remote universe
+                            </div>
+                          </div>
+                        ) : (
                           <a key={location.id} href={fullUrl} className="block bg-white/5 hover:bg-white/10 rounded p-1.5 border border-white/10 hover:border-white/20 transition-all duration-200 hover:text-blue-300" title={`Navigate to ${formatLocationName(location.name)}`}>
                             <div className="flex items-center justify-between mb-1">
                               <div className="flex-1 min-w-0">

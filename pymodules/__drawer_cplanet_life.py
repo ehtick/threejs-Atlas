@@ -5,9 +5,7 @@ import math
 from PIL import Image, ImageDraw, ImageFilter
 
 
-def draw_intelligent_life(
-    life_form_draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name, img_size
-):
+def draw_intelligent_life(life_form_draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name, img_size):
     num_satellites = rng.randint(1, 5)
     for i in range(num_satellites):
         satellite_distance = planet_radius + rng.randint(20, 40)
@@ -23,9 +21,7 @@ def draw_intelligent_life(
             start_y = center_y + satellite_distance * math.sin(start_angle)
             end_x = center_x + satellite_distance * math.cos(end_angle)
             end_y = center_x + satellite_distance * math.sin(end_angle)
-            life_form_draw.line(
-                (start_x, start_y, end_x, end_y), fill=(255, 255, 255, 100), width=1
-            )
+            life_form_draw.line((start_x, start_y, end_x, end_y), fill=(255, 255, 255, 100), width=1)
 
         life_form_draw.ellipse(
             (satellite_x - 2, satellite_y - 2, satellite_x + 2, satellite_y + 2),
@@ -33,9 +29,7 @@ def draw_intelligent_life(
         )
 
 
-def draw_silicon_based_life(
-    life_form_draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name, img_size
-):
+def draw_silicon_based_life(life_form_draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name, img_size):
     num_crystals = rng.randint(2, 4)
     for i in range(num_crystals):
         crystal_distance = planet_radius + rng.randint(20, 60)

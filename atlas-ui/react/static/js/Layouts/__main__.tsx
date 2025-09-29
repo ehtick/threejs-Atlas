@@ -8,9 +8,15 @@ import VersionFooter from "../Components/VersionFooter.tsx";
 import SpaceshipPanel from "../Components/SpaceshipPanel.tsx";
 import FuelBars from "../Components/FuelBars.tsx";
 import StarfieldWarpReveal from "../Components/StarfieldWarpReveal.tsx";
+import MultiverseBanner from "../Components/MultiverseBanner.jsx";
 import { UnifiedSpaceshipStorage } from "../Utils/UnifiedSpaceshipStorage.tsx";
 import { SpaceshipTravelManager } from "../Utils/SpaceshipTravelCosts.tsx";
 import { SpaceshipResourceManager } from "../Utils/SpaceshipResources.tsx";
+import { UniverseDetection } from "../Utils/UniverseDetection.tsx";
+import { SeedSanitizer } from "../Utils/SeedSanitizer.tsx";
+import NodeIdIcon from "../Icons/NodeIdIcon.tsx";
+import SeedIcon from "../Icons/SeedIcon.tsx";
+import BitBangIcon from "../Icons/BitBangIcon.tsx";
 
 interface MainLayoutProps {
   error: string | null;
@@ -44,9 +50,35 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
     cosmic_origin_time?: number;
     cosmic_origin_datetime?: string;
   } | null>(null);
+  const [isRemoteUniverse, setIsRemoteUniverse] = useState(false);
+  const [universeConfig, setUniverseConfig] = useState<{
+    remote: boolean;
+    seed_name: string;
+    node_id: string;
+    seed_str: string;
+    cosmic_origin_time: number;
+  } | null>(null);
 
   useEffect(() => {
     UnifiedSpaceshipStorage.migrateFromOldStorage();
+
+    const checkUniverseType = () => {
+      const remote = UniverseDetection.isRemoteUniverse();
+      setIsRemoteUniverse(remote);
+
+      const configElement = document.getElementById("data-universe-config");
+      if (configElement) {
+        try {
+          const config = JSON.parse(configElement.textContent || "{}");
+          setUniverseConfig(config);
+        } catch (error) {
+          console.error("Error parsing universe config:", error);
+        }
+      }
+    };
+
+    checkUniverseType();
+    const interval = setInterval(checkUniverseType, 1000);
 
     const hasSeenIntro = localStorage.getItem("atlasIntroSeen");
     if (!hasSeenIntro) {
@@ -70,6 +102,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
 
       localStorage.setItem("atlasIntroSeen", "true");
     }
+
+    return () => clearInterval(interval);
   }, []);
 
   const handleWarpRevealComplete = () => {
@@ -196,6 +230,18 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
     return value.toString();
   };
 
+  const formatCosmicTime = (timestamp: number): string => {
+    if (!timestamp) return "Unknown Origin";
+    const date = new Date(timestamp * 1000);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    const seconds = String(date.getSeconds()).padStart(2, "0");
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  };
+
   const handleSubmit = () => {
     const distance = Math.floor(Math.sqrt(Math.pow(currentCoordinates.x - 1000000, 2) + Math.pow(currentCoordinates.y - 1000000, 2) + Math.pow(currentCoordinates.z - 1000000, 2)) / 10000);
 
@@ -227,8 +273,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
   return (
     <>
       {showWarpReveal && <StarfieldWarpReveal seedData={seedData} onComplete={handleWarpRevealComplete} />}
+      <MultiverseBanner />
 
-      <div className="w-full min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
+      <div className="w-full min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white flex flex-col">
         <div
           className="absolute inset-0 opacity-20"
           style={{
@@ -238,14 +285,50 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
 
         <FuelBars />
 
-        <div className="relative z-10 pt-1">
+        <div className="relative z-10 pt-1 flex-1 flex flex-col">
           <Header />
 
-          <div className="w-full px-2 sm:px-4 lg:px-6 py-4 sm:py-8 relative">
+          <div className="w-full px-2 sm:px-4 lg:px-6 py-4 sm:py-8 relative flex-1">
             <div className="text-center mb-12 relative min-h-[200px] flex items-center justify-center">
               <div className={`absolute inset-0 flex flex-col items-center justify-center transition-all duration-700 ease-in-out transform ${showNavigationText ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 translate-y-2"}`} style={{ pointerEvents: showNavigationText ? "auto" : "none" }}>
-                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-4">Atlas Navigation System</h1>
-                <p className="text-lg sm:text-xl text-gray-300 max-w-4xl mx-auto px-4">Navigate through infinite galaxies, solar systems, and planets. Enter coordinates to begin your journey across the universe.</p>
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-4">{isRemoteUniverse ? "Atlas Multiverse Protocol" : "Atlas Navigation System"}</h1>
+                {isRemoteUniverse && universeConfig ? (
+                  <div className="space-y-3">
+                    <div className="w-full px-4">
+                      {/* Desktop: una línea */}
+                      <div className="hidden sm:flex items-center justify-center gap-2">
+                        <NodeIdIcon className="w-5 h-5 text-purple-400 flex-shrink-0" />
+                        <span className="text-lg sm:text-xl text-purple-200">Exploring</span>
+                        <span className="text-lg sm:text-xl text-purple-300 font-mono truncate">{universeConfig.node_id}</span>
+                      </div>
+
+                      {/* Mobile: dos líneas */}
+                      <div className="flex sm:hidden flex-col items-center justify-center gap-1">
+                        <div className="flex items-center gap-2">
+                          <NodeIdIcon className="w-5 h-5 text-purple-400 flex-shrink-0" />
+                          <span className="text-lg text-purple-200">Exploring</span>
+                        </div>
+                        <div className="text-sm text-purple-300 font-mono text-center w-full" style={{ wordBreak: "break-all", overflowWrap: "anywhere" }}>
+                          {universeConfig.node_id}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-sm text-gray-400 space-y-2 max-w-full px-4">
+                      <div className="flex items-center justify-center gap-2 flex-wrap text-xs sm:text-sm">
+                        <SeedIcon className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                        <span className="text-gray-400">Seed:</span>
+                        <span className="text-blue-400 font-mono truncate max-w-xs">{SeedSanitizer.sanitizeForDisplay(universeConfig.seed_str)}</span>
+                      </div>
+                      <div className="flex items-center justify-center gap-2 flex-wrap text-xs sm:text-sm">
+                        <BitBangIcon className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+                        <span className="text-gray-400">Remote Bit Bang:</span>
+                        <span className="text-cyan-400 font-mono">{formatCosmicTime(universeConfig.cosmic_origin_time)}</span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-lg sm:text-xl text-gray-300 max-w-4xl mx-auto px-4">Navigate through infinite galaxies, solar systems, and planets. Enter coordinates to begin your journey across the universe.</p>
+                )}
               </div>
 
               <div className={`absolute inset-0 flex items-center justify-center transition-all duration-700 ease-in-out transform ${show3DViewer ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 -translate-y-2"}`} style={{ pointerEvents: show3DViewer ? "auto" : "none" }}>

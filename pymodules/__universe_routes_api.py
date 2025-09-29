@@ -1,6 +1,11 @@
 # pymodules/__universe_routes.py
 
 import random
+import json
+import os
+import time
+import html
+from pathlib import Path
 
 from flask import jsonify, request, redirect, url_for, session, render_template
 
@@ -96,3 +101,83 @@ def register_universe_routes(app, universe, config):
 
         except Exception as e:
             return render_template("error.html", message=f"Random jump failed: {str(e)}", run_mode=RUN)
+
+    @app.route("/api/multiverse/peers")
+    def get_multiverse_peers():
+
+        try:
+            peers_file = Path("internal_data/p2p/known_peers.json")
+
+            if not peers_file.exists():
+                return jsonify({"success": False, "error": "Peers data not available", "peers": []}), 404
+
+            with open(peers_file, "r") as f:
+                data = json.load(f)
+
+            sanitized_peers = []
+
+            if "peers" in data:
+                peers_data = data.get("peers", [])
+            elif "known_peers" in data:
+                peers_data = list(data.get("known_peers", {}).values())
+            else:
+                peers_data = []
+
+            for peer in peers_data:
+                try:
+                    peer_id = peer.get("peer_id") or peer.get("node_id", "unknown")
+                    seed_value = peer.get("seed", 0)
+
+                    seed_value = str(seed_value)
+
+                    last_seen = peer.get("last_seen") or peer.get("last_connected", 0)
+                    cosmic_origin = peer.get("cosmic_origin_time", 0)
+
+                    status = peer.get("status", "unknown").upper()
+                    if status == "ACTIVE":
+                        status = "ACTIVE"
+                    else:
+                        status = "INACTIVE"
+
+                    sanitized_peer = {"peer_id": html.escape(str(peer_id)[:100]), "seed": seed_value, "cosmic_origin_time": float(cosmic_origin), "last_seen": int(last_seen), "status": status}
+
+                    if seed_value == "1.618033988749895":
+                        sanitized_peer["seed_name"] = "Core Continuum"
+                    else:
+                        sanitized_peer["seed_name"] = "Atlas Multiverse"
+
+                    valid_statuses = ["ACTIVE", "INACTIVE", "STALE", "ARCHIVED"]
+                    if sanitized_peer["status"] not in valid_statuses:
+                        sanitized_peer["status"] = "UNKNOWN"
+
+                    sanitized_peers.append(sanitized_peer)
+
+                except (ValueError, TypeError) as e:
+                    continue
+
+            seed_groups = {}
+            for peer in sanitized_peers:
+                seed = peer["seed"]
+                if seed not in seed_groups:
+                    seed_groups[seed] = []
+                seed_groups[seed].append(peer)
+
+            processed_groups = []
+            for seed, peers in seed_groups.items():
+                peers.sort(key=lambda x: x["cosmic_origin_time"])
+
+                group_data = {"seed": seed, "seed_name": peers[0]["seed_name"], "cosmic_origin_time": peers[0]["cosmic_origin_time"], "count": len(peers), "peers": peers}
+                processed_groups.append(group_data)
+
+            def sort_key(group):
+                if group["seed_name"] == "Core Continuum":
+                    return (0, -max(p["last_seen"] for p in group["peers"]))
+                else:
+                    return (1, -max(p["last_seen"] for p in group["peers"]))
+
+            processed_groups.sort(key=sort_key)
+
+            return jsonify({"success": True, "groups": processed_groups, "total_peers": len(sanitized_peers), "timestamp": int(time.time())})
+
+        except Exception as e:
+            return jsonify({"success": False, "error": f"Failed to retrieve peer data: {str(e)}", "peers": []}), 500

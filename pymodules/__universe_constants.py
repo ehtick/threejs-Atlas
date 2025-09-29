@@ -13,6 +13,7 @@ class PhysicalConstants:
         sun_mass=1.989e30,  # Masa del Sol en kg
         tidal_dissipation_number=100,  # Q_PLANET, número de disipación tidal
         love_number=0.3,  # K2_PLANET, número de Love
+        
         # Moon generation parameters
         moon_density_rocky=3000,  # kg/m³ for rocky satellites
         moon_density_icy=1000,  # kg/m³ for icy satellites
@@ -29,6 +30,7 @@ class PhysicalConstants:
         self.M_SUN = sun_mass  # Masa del Sol
         self.Q_PLANET = tidal_dissipation_number  # Número de disipación tidal (Q)
         self.K2_PLANET = love_number  # Número de Love (K2)
+
         # Moon generation constants
         self.MOON_DENSITY_ROCKY = moon_density_rocky
         self.MOON_DENSITY_ICY = moon_density_icy

@@ -60,7 +60,6 @@ from pymodules.__drawer_cplanet_life import (
 def generate_planet_image(planet):
     spaced_planet_name = planet.name.replace("_", " ")
     planet_type = planet.planet_type.replace("_", " ")
-    
 
     img_size = 800
     image = Image.new("RGBA", (img_size, img_size), "black")
@@ -75,19 +74,13 @@ def generate_planet_image(planet):
     time_elapsed_seconds = current_time - config.cosmic_origin_time
 
     angle_velocity_rotation = 2 * math.pi / planet.rotation_period_seconds
-    angle_rotation = (
-        planet.initial_angle_rotation + time_elapsed_seconds * angle_velocity_rotation
-    ) % (2 * math.pi)
+    angle_rotation = (planet.initial_angle_rotation + time_elapsed_seconds * angle_velocity_rotation) % (2 * math.pi)
 
     angle_velocity_orbit = 2 * math.pi / planet.orbital_period_seconds
-    orbital_angle = (
-        planet.initial_orbital_angle + time_elapsed_seconds * angle_velocity_orbit
-    ) % (2 * math.pi)
+    orbital_angle = (planet.initial_orbital_angle + time_elapsed_seconds * angle_velocity_orbit) % (2 * math.pi)
 
     tilt_factor = math.sin(math.radians(planet.axial_tilt))
-    shape_seed = consistent_hash(
-        f"{config.seed}-{spaced_planet_name}-{planet_type}-{planet.diameter}-{planet.density}-{planet.gravity}-_safe_shaper"
-    )
+    shape_seed = consistent_hash(f"{config.seed}-{spaced_planet_name}-{planet_type}-{planet.diameter}-{planet.density}-{planet.gravity}-_safe_shaper")
     planet_radius = int(200 * (planet.diameter / max(planet.diameter, 1)))
 
     rng = random.Random(shape_seed)
@@ -102,9 +95,7 @@ def generate_planet_image(planet):
     except IOError:
         font = ImageFont.load_default()
 
-    planet_surface.paste(
-        rndback, (center_x - planet_radius, center_y - planet_radius), rndback
-    )
+    planet_surface.paste(rndback, (center_x - planet_radius, center_y - planet_radius), rndback)
 
     draw_functions = {
         "Gas Giant": draw_gas_giant_elements,
@@ -184,7 +175,6 @@ def generate_planet_image(planet):
     ring_inner_radius = planet_radius + rng.randint(120, 160)
     ring_outer_radius = ring_inner_radius + rng.randint(20, 40)
 
-    
     if planet.planet_rings:
         draw_full_ring(
             image,
@@ -330,16 +320,12 @@ def generate_planet_image(planet):
         line_y1 = center_y + planet_radius * math.sin(angle_rotation) / 64
         line_x2 = center_x - planet_radius * math.cos(angle_rotation)
         line_y2 = center_y - planet_radius * math.sin(angle_rotation)
-        draw_main.line(
-            (line_x1, line_y1, line_x2, line_y2), fill=(138, 138, 138), width=2
-        )
+        draw_main.line((line_x1, line_y1, line_x2, line_y2), fill=(138, 138, 138), width=2)
 
     text_x = center_x
     text_y = center_y + planet_radius + 60
     draw = ImageDraw.Draw(image)
-    draw.text(
-        (text_x, text_y), spaced_planet_name, font=font, fill="white", anchor="mm"
-    )
+    draw.text((text_x, text_y), spaced_planet_name, font=font, fill="white", anchor="mm")
 
     generate_watermark(image)
 

@@ -29,9 +29,7 @@ def draw_full_ring(
         x = int(center_x + distance * math.cos(angle))
         y = int(center_y + distance * tilt_factor * math.sin(angle))
 
-        point_size = rng.choices(
-            [0.5, 1.0, 1.5, 2.0], weights=[0.4, 0.3, 0.2, 0.1], k=1
-        )[0]
+        point_size = rng.choices([0.5, 1.0, 1.5, 2.0], weights=[0.4, 0.3, 0.2, 0.1], k=1)[0]
         opacity = 255
         gray_value = rng.randint(20, 50)
         color = (gray_value, gray_value, gray_value, opacity)
@@ -86,9 +84,7 @@ def draw_ontop_ring(
         x = int(center_x + distance * math.cos(angle))
         y = int(center_y + distance * tilt_factor * math.sin(angle))
 
-        point_size = rng.choices(
-            [0.5, 1.0, 1.5, 2.0], weights=[0.4, 0.3, 0.2, 0.1], k=1
-        )[0]
+        point_size = rng.choices([0.5, 1.0, 1.5, 2.0], weights=[0.4, 0.3, 0.2, 0.1], k=1)[0]
         opacity = 255
         gray_value = rng.randint(20, 50)
         color = (gray_value, gray_value, gray_value, opacity)

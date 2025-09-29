@@ -1,4 +1,5 @@
 // atlas-ui/react/static/js/Icons/DeuteriumIcon.tsx
+
 import React from "react";
 
 interface DeuteriumIconProps {

@@ -1,4 +1,5 @@
 // atlas-ui/react/static/js/Icons/AntimatterIcon.tsx
+
 import React from "react";
 
 interface AntimatterIconProps {

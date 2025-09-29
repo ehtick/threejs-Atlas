@@ -16,6 +16,10 @@
     <div class="text-red-400 text-center p-4 bg-red-900/20 border border-red-800 rounded-lg m-4">{{ error }}</div>
     {% endif %}
 
+    <script type="application/json" id="data-universe-config">
+      {{ universe_config | tojson }}
+    </script>
+
     <div id="atlas-react-root" class="w-full h-full"></div>
 
     {{ vitejs('__main__') | safe }}

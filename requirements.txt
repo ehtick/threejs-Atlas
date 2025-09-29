@@ -1,5 +1,10 @@
 Flask==3.0.3
 Flask-Compress==1.13
-pillow==10.4.0
+pillow==11.3.0
 Hypercorn==0.17.3
 vite-fusion==0.0.9
+cryptography==46.0.1
+aiofiles==24.1.0
+bencodepy==0.9.5
+requests==2.32.3
+psutil==7.1.0

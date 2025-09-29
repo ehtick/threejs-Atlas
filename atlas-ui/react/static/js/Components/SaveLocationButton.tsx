@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { LocationBookmarks } from "../Utils/LocationBookmarks.tsx";
 import { StargateGenerator } from "../Utils/StargateGenerator.tsx";
+import { UniverseDetection } from "../Utils/UniverseDetection.tsx";
 
 interface SaveLocationButtonProps {
   type: "galaxy" | "system" | "planet";
@@ -16,6 +17,7 @@ const SaveLocationButton: React.FC<SaveLocationButtonProps> = ({ type, name, coo
   const [isSaved, setIsSaved] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isDifferentPage, setIsDifferentPage] = useState(false);
+  const [isRemoteUniverse, setIsRemoteUniverse] = useState(false);
 
   const generateStargateUrl = (): string => {
     try {
@@ -51,6 +53,17 @@ const SaveLocationButton: React.FC<SaveLocationButtonProps> = ({ type, name, coo
     setIsSaved(exists);
     setIsDifferentPage(differentPage);
   }, [coordinates, systemIndex, planetName, type]);
+
+  useEffect(() => {
+    const checkUniverseType = () => {
+      setIsRemoteUniverse(UniverseDetection.isRemoteUniverse());
+    };
+
+    checkUniverseType();
+    const interval = setInterval(checkUniverseType, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSaveLocation = async () => {
     try {
@@ -90,19 +103,44 @@ const SaveLocationButton: React.FC<SaveLocationButtonProps> = ({ type, name, coo
       `}</style>
       <button
         onClick={handleSaveLocation}
-        disabled={isSaved || isLoading}
-        className={`inline-flex items-center space-x-1 px-1.5 py-0.5 rounded transition-all duration-200 text-[10px] font-medium h-[21px] box-border ${isSaved ? "bg-green-500/20 border border-green-500/50 text-green-400 cursor-default" : isLoading ? "bg-blue-500/20 border border-blue-500/50 text-blue-400 cursor-wait" : isDifferentPage ? "bg-white/10 hover:bg-white/20 border text-white hover:text-green-300 border-green-500/60 hover:border-green-400/80" : "bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-white hover:text-blue-300"} ${className}`}
+        disabled={isSaved || isLoading || isRemoteUniverse}
+        className={`inline-flex items-center space-x-1 px-1.5 py-0.5 rounded transition-all duration-200 text-[10px] font-medium h-[21px] box-border ${
+          isRemoteUniverse
+            ? "bg-red-500/20 border border-red-500/50 text-red-400 cursor-not-allowed opacity-60"
+            : isSaved
+            ? "bg-green-500/20 border border-green-500/50 text-green-400 cursor-default"
+            : isLoading
+            ? "bg-blue-500/20 border border-blue-500/50 text-blue-400 cursor-wait"
+            : isDifferentPage
+            ? "bg-white/10 hover:bg-white/20 border text-white hover:text-green-300 border-green-500/60 hover:border-green-400/80"
+            : "bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/40 text-white hover:text-blue-300"
+        } ${className}`}
         style={
-          isDifferentPage
+          isDifferentPage && !isRemoteUniverse
             ? {
                 animation: "border-pulse 2s infinite",
                 borderColor: "rgba(34, 197, 94, 0.6)",
               }
             : {}
         }
-        title={isSaved ? "Location saved" : isDifferentPage ? `Save this page of ${formatName(name)} (you have another page saved)` : `Save ${formatName(name)} to bookmarks`}
+        title={
+          isRemoteUniverse
+            ? "Cannot save locations from remote universes - return to local universe first"
+            : isSaved
+            ? "Location saved"
+            : isDifferentPage
+            ? `Save this page of ${formatName(name)} (you have another page saved)`
+            : `Save ${formatName(name)} to bookmarks`
+        }
       >
-        {isLoading ? (
+        {isRemoteUniverse ? (
+          <>
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L5.636 5.636" />
+            </svg>
+            <span className="text-[10px] uppercase">Remote</span>
+          </>
+        ) : isLoading ? (
           <>
             <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>

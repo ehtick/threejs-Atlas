@@ -1,7 +1,24 @@
 // atlas-ui/react/static/js/Components/Header.tsx
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { UniverseDetection } from "../Utils/UniverseDetection.tsx";
+import { useMultiverseGlitch } from "../Utils/useMultiverseGlitch.tsx";
+import MultiverseHeaderConnectedIcon from "../Icons/MultiverseHeaderConnectedIcon.jsx";
 
 const Header: React.FC = () => {
+  const [isRemoteUniverse, setIsRemoteUniverse] = useState(false);
+  const glitchText = useMultiverseGlitch(isRemoteUniverse);
+
+  useEffect(() => {
+    const checkUniverseType = () => {
+      setIsRemoteUniverse(UniverseDetection.isRemoteUniverse());
+    };
+
+    checkUniverseType();
+    const interval = setInterval(checkUniverseType, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <header className="bg-black/20 backdrop-blur-md border-b border-white/10 px-4 sm:px-6 py-4">
       <div className="w-full flex items-center justify-between">
@@ -14,11 +31,22 @@ const Header: React.FC = () => {
         </a>
 
         <div className="flex items-center space-x-3 sm:space-x-6">
-          <div className="flex items-center space-x-2 text-green-400">
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <span className="text-xs sm:text-sm font-medium">ONLINE</span>
-          </div>
-          <div className="text-xs sm:text-sm text-gray-400 hidden lg:block">Quantum Navigation Ready</div>
+          <a href="/multiverse" className="hover:scale-105 transition-transform">
+            <div className="flex items-center space-x-2 text-green-400 relative">
+              {isRemoteUniverse ? <MultiverseHeaderConnectedIcon className="w-4 h-4" /> : <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>}
+              <div className="relative">
+                <span className="text-xs sm:text-sm font-medium font-mono">{isRemoteUniverse ? glitchText : "MULTIVERSE ONLINE"}</span>
+                {isRemoteUniverse && (
+                  <div className="absolute top-full left-0 w-full h-0.5 bg-green-900 overflow-hidden -mt-0.5 rounded-3xl">
+                    <div className="w-full h-full bg-gradient-to-r from-transparent via-green-400 to-transparent animate-pulse-slow relative">
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-300 to-transparent animate-data-stream"></div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </a>
+          <div className="text-xs sm:text-sm hidden lg:block text-gray-400">Quantum Navigation Ready</div>
         </div>
       </div>
     </header>

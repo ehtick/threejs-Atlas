@@ -54,15 +54,11 @@ def get_planet_color_map():
     }
 
 
-def draw_gas_giant_elements(
-    draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name
-):
+def draw_gas_giant_elements(draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name):
 
     draw_planet_rings(draw, planet_radius, center_x, center_y, rng, color=(0, 0, 0, 20))
 
-    generate_cloud_bands(
-        draw, rng, center_x, center_y, planet_radius, min_num_bands=3, max_num_bands=20
-    )
+    generate_cloud_bands(draw, rng, center_x, center_y, planet_radius, min_num_bands=3, max_num_bands=20)
 
     num_shape_bands = rng.randint(3, 6)
     for i in range(num_shape_bands):
@@ -93,9 +89,7 @@ def draw_gas_giant_elements(
         )
 
 
-def draw_anomaly_elements(
-    draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name
-):
+def draw_anomaly_elements(draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name):
     draw_planet_rings(draw, planet_radius, center_x, center_y, rng)
 
     num_anomalies = rng.randint(8, 14)
@@ -157,9 +151,7 @@ def draw_anomaly_elements(
         )
 
 
-def draw_rocky_elements(
-    draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name
-):
+def draw_rocky_elements(draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name):
 
     draw_planet_rings(draw, planet_radius, center_x, center_y, rng, color=(0, 0, 0, 75))
 
@@ -257,9 +249,7 @@ def draw_rocky_elements(
         )
 
 
-def draw_icy_elements(
-    draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name
-):
+def draw_icy_elements(draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name):
 
     draw_planet_rings(draw, planet_radius, center_x, center_y, rng, color=(0, 0, 0, 60))
 
@@ -336,9 +326,7 @@ def draw_icy_elements(
             crack_x2 = center_x + int(crack_length * math.cos(adjusted_angle + math.pi))
             crack_y2 = center_y + int(crack_length * math.sin(adjusted_angle + math.pi))
 
-            draw.line(
-                (crack_x1, crack_y1, crack_x2, crack_y2), fill=(80, 80, 80, 40), width=1
-            )
+            draw.line((crack_x1, crack_y1, crack_x2, crack_y2), fill=(80, 80, 80, 40), width=1)
 
     num_ice_caps = rng.randint(2, 4)
     for i in range(num_ice_caps):
@@ -356,9 +344,7 @@ def draw_icy_elements(
         )
 
 
-def draw_oceanic_elements(
-    draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name
-):
+def draw_oceanic_elements(draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name):
 
     draw_planet_rings(draw, planet_radius, center_x, center_y, rng, color=(0, 0, 0, 60))
 
@@ -380,15 +366,9 @@ def draw_oceanic_elements(
     base_brown = (92, 58, 0)
 
     patch_color = (
-        rng.randint(
-            min(base_green[0], base_brown[0]), max(base_green[0], base_brown[0])
-        ),
-        rng.randint(
-            min(base_green[1], base_brown[1]), max(base_green[1], base_brown[1])
-        ),
-        rng.randint(
-            min(base_green[2], base_brown[2]), max(base_green[2], base_brown[2])
-        ),
+        rng.randint(min(base_green[0], base_brown[0]), max(base_green[0], base_brown[0])),
+        rng.randint(min(base_green[1], base_brown[1]), max(base_green[1], base_brown[1])),
+        rng.randint(min(base_green[2], base_brown[2]), max(base_green[2], base_brown[2])),
         150,
     )
 
@@ -405,12 +385,8 @@ def draw_oceanic_elements(
         patch_points = []
         for j in range(num_sides):
             angle_offset = 2 * math.pi * j / num_sides
-            point_x = patch_x + patch_size * math.cos(
-                angle_offset + rng.uniform(-0.2, 0.2)
-            )
-            point_y = patch_y + patch_size * math.sin(
-                angle_offset + rng.uniform(-0.2, 0.2)
-            )
+            point_x = patch_x + patch_size * math.cos(angle_offset + rng.uniform(-0.2, 0.2))
+            point_y = patch_y + patch_size * math.sin(angle_offset + rng.uniform(-0.2, 0.2))
             patch_points.append((point_x, point_y))
 
         draw.polygon(patch_points, fill=patch_color)
@@ -432,9 +408,7 @@ def draw_oceanic_elements(
         )
 
 
-def draw_desert_elements(
-    draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name
-):
+def draw_desert_elements(draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name):
 
     draw_planet_rings(draw, planet_radius, center_x, center_y, rng)
 
@@ -516,23 +490,15 @@ def draw_desert_elements(
 
     if rng.random() < 0.2:
         oasis_radius = rng.randint(10, 25)
-        oasis_x = center_x + rng.randint(
-            -planet_radius + oasis_radius, planet_radius - oasis_radius
-        )
-        oasis_y = center_y + rng.randint(
-            -planet_radius + oasis_radius, planet_radius - oasis_radius
-        )
+        oasis_x = center_x + rng.randint(-planet_radius + oasis_radius, planet_radius - oasis_radius)
+        oasis_y = center_y + rng.randint(-planet_radius + oasis_radius, planet_radius - oasis_radius)
 
         num_sides = rng.randint(10, 20)
         angle_step = 2 * math.pi / num_sides
         oasis_points = [
             (
-                oasis_x
-                + rng.uniform(0.8 * oasis_radius, oasis_radius)
-                * math.cos(i * angle_step + rng.uniform(-0.2, 0.2)),
-                oasis_y
-                + rng.uniform(0.8 * oasis_radius, oasis_radius)
-                * math.sin(i * angle_step + rng.uniform(-0.2, 0.2)),
+                oasis_x + rng.uniform(0.8 * oasis_radius, oasis_radius) * math.cos(i * angle_step + rng.uniform(-0.2, 0.2)),
+                oasis_y + rng.uniform(0.8 * oasis_radius, oasis_radius) * math.sin(i * angle_step + rng.uniform(-0.2, 0.2)),
             )
             for i in range(num_sides)
         ]
@@ -581,9 +547,7 @@ def draw_desert_elements(
         )
 
 
-def draw_lava_elements(
-    draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name
-):
+def draw_lava_elements(draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name):
 
     draw_planet_rings(draw, planet_radius, center_x, center_y, rng)
 
@@ -630,13 +594,9 @@ def draw_lava_elements(
     )
 
 
-def draw_arid_elements(
-    draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name
-):
+def draw_arid_elements(draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name):
 
-    draw_planet_rings(
-        draw, planet_radius, center_x, center_y, rng, color=(255, 255, 255, 60)
-    )
+    draw_planet_rings(draw, planet_radius, center_x, center_y, rng, color=(255, 255, 255, 60))
 
     generate_abstract_land(
         draw,
@@ -695,9 +655,7 @@ def draw_arid_elements(
         )
 
     rngopac = rng.randint(40, 80)
-    generate_noise_texture(
-        draw, center_x, center_y, planet_radius, seed, rngopac, spaced_planet_name
-    )
+    generate_noise_texture(draw, center_x, center_y, planet_radius, seed, rngopac, spaced_planet_name)
 
     num_whiteclouds_areas = rng.randint(2, 3)
     for i in range(num_whiteclouds_areas):
@@ -716,9 +674,7 @@ def draw_arid_elements(
         )
 
 
-def draw_swamp_elements(
-    draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name
-):
+def draw_swamp_elements(draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name):
 
     draw_planet_rings(draw, planet_radius, center_x, center_y, rng)
 
@@ -793,9 +749,7 @@ def draw_swamp_elements(
         )
 
 
-def draw_tundra_elements(
-    draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name
-):
+def draw_tundra_elements(draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name):
 
     draw_planet_rings(draw, planet_radius, center_x, center_y, rng)
 
@@ -900,9 +854,7 @@ def draw_tundra_elements(
         )
 
 
-def draw_forest_elements(
-    draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name
-):
+def draw_forest_elements(draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name):
 
     draw_planet_rings(draw, planet_radius, center_x, center_y, rng)
 
@@ -981,9 +933,7 @@ def draw_forest_elements(
         )
 
 
-def draw_savannah_elements(
-    draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name
-):
+def draw_savannah_elements(draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name):
 
     draw_planet_rings(draw, planet_radius, center_x, center_y, rng)
 
@@ -1062,9 +1012,7 @@ def draw_savannah_elements(
         )
 
 
-def draw_cave_elements(
-    draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name
-):
+def draw_cave_elements(draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name):
 
     draw_planet_rings(draw, planet_radius, center_x, center_y, rng)
 
@@ -1157,9 +1105,7 @@ def draw_cave_elements(
         )
 
 
-def draw_crystalline_elements(
-    draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name
-):
+def draw_crystalline_elements(draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name):
 
     draw_planet_rings(draw, planet_radius, center_x, center_y, rng)
 
@@ -1216,12 +1162,8 @@ def draw_crystalline_elements(
                 crystal_y + crystal_base_width * math.sin(angle),
             ),
             (
-                crystal_x
-                + (crystal_base_width // 2) * math.cos(angle)
-                - crystal_height * math.sin(angle),
-                crystal_y
-                + (crystal_base_width // 2) * math.sin(angle)
-                + crystal_height * math.cos(angle),
+                crystal_x + (crystal_base_width // 2) * math.cos(angle) - crystal_height * math.sin(angle),
+                crystal_y + (crystal_base_width // 2) * math.sin(angle) + crystal_height * math.cos(angle),
             ),
         ]
 
@@ -1251,9 +1193,7 @@ def draw_crystalline_elements(
         draw.polygon(points, fill=color_with_opacity)
 
 
-def draw_metallic_elements(
-    draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name
-):
+def draw_metallic_elements(draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name):
 
     draw_planet_rings(draw, planet_radius, center_x, center_y, rng)
 
@@ -1269,12 +1209,8 @@ def draw_metallic_elements(
         cos_angle = math.cos(angle)
         sin_angle = math.sin(angle)
 
-        reflection_x = center_x + int(
-            (planet_edge_distance + reflection_radius // 2) * cos_angle
-        )
-        reflection_y = center_y + int(
-            (planet_edge_distance + reflection_radius // 2) * sin_angle
-        )
+        reflection_x = center_x + int((planet_edge_distance + reflection_radius // 2) * cos_angle)
+        reflection_y = center_y + int((planet_edge_distance + reflection_radius // 2) * sin_angle)
 
         for j in range(reflection_radius, 0, -8):
             num_points = rng.randint(10, 20)
@@ -1347,9 +1283,7 @@ def draw_metallic_elements(
         )
 
 
-def draw_toxic_elements(
-    draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name
-):
+def draw_toxic_elements(draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name):
 
     draw_planet_rings(draw, planet_radius, center_x, center_y, rng)
 
@@ -1416,9 +1350,7 @@ def draw_toxic_elements(
         )
 
 
-def draw_radioactive_elements(
-    draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name
-):
+def draw_radioactive_elements(draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name):
 
     draw_planet_rings(draw, planet_radius, center_x, center_y, rng)
 
@@ -1499,9 +1431,7 @@ def draw_radioactive_elements(
         )
 
 
-def draw_magma_elements(
-    draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name
-):
+def draw_magma_elements(draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name):
 
     draw_planet_rings(draw, planet_radius, center_x, center_y, rng)
 
@@ -1554,9 +1484,7 @@ def draw_magma_elements(
         )
 
 
-def draw_molten_core_elements(
-    draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name
-):
+def draw_molten_core_elements(draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name):
 
     draw_heat_wave_effect(draw, center_x, center_y, planet_radius, rng)
 
@@ -1616,9 +1544,7 @@ def draw_molten_core_elements(
         )
 
 
-def draw_carbon_elements(
-    draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name
-):
+def draw_carbon_elements(draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name):
 
     draw_planet_rings(draw, planet_radius, center_x, center_y, rng)
 
@@ -1708,9 +1634,7 @@ def draw_carbon_elements(
         )
 
 
-def draw_diamond_elements(
-    draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name
-):
+def draw_diamond_elements(draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name):
 
     draw_planet_rings(draw, planet_radius, center_x, center_y, rng)
 
@@ -1792,9 +1716,7 @@ def draw_diamond_elements(
         )
 
 
-def draw_super_earth_elements(
-    draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name
-):
+def draw_super_earth_elements(draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name):
     num_mountains = rng.randint(5, 8)
     for i in range(num_mountains):
         mountain_base_width = rng.randint(4, 8)
@@ -1839,9 +1761,7 @@ def draw_super_earth_elements(
         )
 
 
-def draw_sub_earth_elements(
-    draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name
-):
+def draw_sub_earth_elements(draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name):
     num_hills = rng.randint(5, 10)
     for i in range(num_hills):
         hill_base_width = rng.randint(2, 4)
@@ -1898,9 +1818,7 @@ def draw_sub_earth_elements(
     )
 
 
-def draw_frozen_gas_giant_elements(
-    draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name
-):
+def draw_frozen_gas_giant_elements(draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name):
 
     num_gas_layers = rng.randint(4, 800)
     for i in range(num_gas_layers):
@@ -1941,12 +1859,8 @@ def draw_frozen_gas_giant_elements(
     num_vortices = rng.randint(3, 20)
     for i in range(num_vortices):
         vortex_radius = rng.randint(2, 10)
-        vortex_center_x = center_x + rng.randint(
-            -planet_radius // 2, planet_radius // 2
-        )
-        vortex_center_y = center_y + rng.randint(
-            -planet_radius // 2, planet_radius // 2
-        )
+        vortex_center_x = center_x + rng.randint(-planet_radius // 2, planet_radius // 2)
+        vortex_center_y = center_y + rng.randint(-planet_radius // 2, planet_radius // 2)
         draw.arc(
             [
                 (vortex_center_x - vortex_radius, vortex_center_y - vortex_radius),
@@ -2001,14 +1915,10 @@ def draw_frozen_gas_giant_elements(
         spaced_planet_name + "_ice_storm",
     )
 
-    generate_cloud_bands(
-        draw, rng, center_x, center_y, planet_radius, min_num_bands=3, max_num_bands=6
-    )
+    generate_cloud_bands(draw, rng, center_x, center_y, planet_radius, min_num_bands=3, max_num_bands=6)
 
 
-def draw_nebulous_elements(
-    draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name
-):
+def draw_nebulous_elements(draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name):
     num_nebulae = rng.randint(3, 10)
     for i in range(num_nebulae):
         nebula_radius = rng.randint(30, 40)
@@ -2039,9 +1949,7 @@ def draw_nebulous_elements(
         )
 
 
-def draw_aquifer_elements(
-    draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name
-):
+def draw_aquifer_elements(draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name):
     num_water_patterns = rng.randint(2, 16)
     for i in range(num_water_patterns):
         pattern_radius = rng.randint(2, 10)
@@ -2091,9 +1999,7 @@ def draw_aquifer_elements(
         )
 
 
-def draw_exotic_elements(
-    draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name
-):
+def draw_exotic_elements(draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name):
     num_exotic_shapes = rng.randint(4, 8)
     for i in range(num_exotic_shapes):
         exotic_radius = rng.randint(10, 20)

@@ -1,4 +1,5 @@
 // atlas-ui/react/static/js/Icons/Element115Icon.tsx
+
 import React from "react";
 
 interface Element115IconProps {

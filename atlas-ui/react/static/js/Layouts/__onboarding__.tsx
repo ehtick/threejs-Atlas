@@ -22,6 +22,7 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({ version }) => {
   const [selectedUniverse, setSelectedUniverse] = useState<string>("");
   const [animationState, setAnimationState] = useState<AnimationState>("selection");
   const [animationType, setAnimationType] = useState<AnimationType>(null);
+  const [isInitializing, setIsInitializing] = useState<boolean>(false);
 
   const universeOptions: UniverseOption[] = [
     {
@@ -42,8 +43,9 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({ version }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedUniverse || animationState !== "selection") return;
+    if (!selectedUniverse || animationState !== "selection" || isInitializing) return;
 
+    setIsInitializing(true);
     const formData = new FormData();
     formData.append("universe_type", selectedUniverse);
 
@@ -58,9 +60,11 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({ version }) => {
         setAnimationType(selectedUniverse === "default" ? "core" : "multiverse");
       } else {
         console.error("Server responded with error:", createResponse.status);
+        setIsInitializing(false);
       }
     } catch (error) {
       console.error("Error creating universe:", error);
+      setIsInitializing(false);
     }
   };
 
@@ -76,7 +80,7 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({ version }) => {
         </div>
       )}
 
-      <div className={`w-full min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white transition-opacity duration-500 ${animationState !== "selection" ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
+      <div className={`w-full min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white transition-opacity duration-500 flex flex-col ${animationState !== "selection" ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
         <div
           className="absolute inset-0 opacity-20"
           style={{
@@ -84,7 +88,7 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({ version }) => {
           }}
         ></div>
 
-        <div className="relative z-10">
+        <div className="relative z-10 flex-1 flex flex-col">
           <header className="bg-black/20 backdrop-blur-md border-b border-white/10 px-4 sm:px-6 py-6">
             <div className="w-full flex flex-col items-center space-y-4">
               <img src="/static/atlas-logo.jpg" alt="Atlas Logo" className="h-16 w-16 sm:h-20 sm:w-20 rounded-full border-2 border-cyan-400 shadow-lg animate-pulse" />
@@ -95,7 +99,7 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({ version }) => {
             </div>
           </header>
 
-          <div className="w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12 flex-1">
             <div className="max-w-4xl mx-auto">
               <form onSubmit={handleSubmit} className="space-y-8">
                 <div className="text-center mb-12">
@@ -148,16 +152,26 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({ version }) => {
                 <div className="text-center">
                   <button
                     type="submit"
-                    disabled={!selectedUniverse || animationState !== "selection"}
+                    disabled={!selectedUniverse || animationState !== "selection" || isInitializing}
                     className={`
                       relative overflow-hidden group px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-500 transform
-                      ${selectedUniverse && animationState === "selection" ? "bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 text-white shadow-2xl shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-110 active:scale-95" : "bg-gray-600 text-gray-400 cursor-not-allowed"}
+                      ${selectedUniverse && animationState === "selection" && !isInitializing ? "bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 text-white shadow-2xl shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-110 active:scale-95" : "bg-gray-600 text-gray-400 cursor-not-allowed"}
                     `}
                   >
-                    {selectedUniverse && animationState === "selection" && <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 opacity-20 group-hover:opacity-40 transition-opacity duration-300"></div>}
+                    {selectedUniverse && animationState === "selection" && !isInitializing && <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 opacity-20 group-hover:opacity-40 transition-opacity duration-300"></div>}
 
-                    <span className="relative z-10">
-                      <span>{selectedUniverse ? "Initialize Protocol" : "Select Universe Type"}</span>
+                    <span className="relative z-10 flex items-center justify-center space-x-3">
+                      {isInitializing ? (
+                        <>
+                          <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          <span>Initializing...</span>
+                        </>
+                      ) : (
+                        <span>{selectedUniverse ? "Initialize Protocol" : "Select Universe Type"}</span>
+                      )}
                     </span>
                   </button>
                 </div>

@@ -10,9 +10,7 @@ from PIL import Image, ImageDraw, ImageColor
 
 def generate_rndback(planet_radius, base_color, seed):
     rng = random.Random(seed)
-    gradient_img = Image.new(
-        "RGBA", (2 * planet_radius, 2 * planet_radius), color=(0, 0, 0, 0)
-    )
+    gradient_img = Image.new("RGBA", (2 * planet_radius, 2 * planet_radius), color=(0, 0, 0, 0))
     gradient_draw = ImageDraw.Draw(gradient_img)
 
     base_rgb = ImageColor.getrgb(base_color)
@@ -29,18 +27,14 @@ def generate_rndback(planet_radius, base_color, seed):
 
     opacity = rng.randint(240, 255)
     gradient_color = (*modified_color, opacity)
-    gradient_draw.ellipse(
-        (0, 0, 2 * planet_radius, 2 * planet_radius), fill=gradient_color, outline=None
-    )
+    gradient_draw.ellipse((0, 0, 2 * planet_radius, 2 * planet_radius), fill=gradient_color, outline=None)
 
     return gradient_img
 
 
 def depth_gradient(planet_img, planet_radius, img_size, sun_angle, opacity=255):
     gradient_img_size = int(planet_radius * 2.2)
-    gradient_img = Image.new(
-        "RGBA", (gradient_img_size, gradient_img_size), (0, 0, 0, 0)
-    )
+    gradient_img = Image.new("RGBA", (gradient_img_size, gradient_img_size), (0, 0, 0, 0))
 
     alpha = Image.new("L", (gradient_img_size, gradient_img_size))
     draw = ImageDraw.Draw(alpha)
@@ -56,9 +50,7 @@ def depth_gradient(planet_img, planet_radius, img_size, sun_angle, opacity=255):
 
     gradient_img.putalpha(alpha)
 
-    rotated_gradient = gradient_img.rotate(
-        180 - math.degrees(sun_angle), resample=Image.BICUBIC
-    )
+    rotated_gradient = gradient_img.rotate(180 - math.degrees(sun_angle), resample=Image.BICUBIC)
 
     offset = (
         (img_size // 2) - (gradient_img_size // 2),
@@ -94,14 +86,8 @@ def soft_polar_transform(image, scale_factor=1.0, depth_factor=0.5):
 
                 depth_adjustment = 1 + depth_factor * ((distance / radius) ** 2)
 
-                polar_x = int(
-                    center_x
-                    + distance * math.cos(angle) * scale_factor * depth_adjustment
-                )
-                polar_y = int(
-                    center_y
-                    + distance * math.sin(angle) * scale_factor * depth_adjustment
-                )
+                polar_x = int(center_x + distance * math.cos(angle) * scale_factor * depth_adjustment)
+                polar_y = int(center_y + distance * math.sin(angle) * scale_factor * depth_adjustment)
 
                 if 0 <= polar_x < width and 0 <= polar_y < height:
                     new_image.putpixel((x, y), image.getpixel((polar_x, polar_y)))

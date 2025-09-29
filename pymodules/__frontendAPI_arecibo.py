@@ -1,4 +1,4 @@
-# atlas-ui/react/static/js/Components/AreciboModal.tsx
+# pymodules/__frontendAPI_arecibo.py
 
 from flask import Flask, jsonify, session, request
 

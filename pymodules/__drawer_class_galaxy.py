@@ -48,16 +48,8 @@ def generate_galaxy_image(galaxy):
             arm_angle = i % num_arms * arm_offset
 
             radius = max_radius * math.sqrt(i / num_points)
-            x = (
-                center_x
-                + radius * math.cos(theta + arm_angle + rotation_angle)
-                + rng.uniform(-spread * radius, spread * radius)
-            )
-            y = (
-                center_y
-                + radius * math.sin(theta + arm_angle + rotation_angle)
-                + rng.uniform(-spread * radius, spread * radius)
-            )
+            x = center_x + radius * math.cos(theta + arm_angle + rotation_angle) + rng.uniform(-spread * radius, spread * radius)
+            y = center_y + radius * math.sin(theta + arm_angle + rotation_angle) + rng.uniform(-spread * radius, spread * radius)
 
             draw.point((x, y), fill="white")
 
@@ -221,9 +213,7 @@ def generate_galaxy_image(galaxy):
             size = 1.2 * (i + 1) + size_offset
             temp_image = Image.new("RGBA", (img_size, img_size), (0, 0, 0, 0))
             temp_draw = ImageDraw.Draw(temp_image)
-            temp_draw.ellipse(
-                (x - size, y - size, x + size, y + size), fill=(0, 0, 0, alpha)
-            )
+            temp_draw.ellipse((x - size, y - size, x + size, y + size), fill=(0, 0, 0, alpha))
             image = Image.alpha_composite(image, temp_image)
 
         blue_dot_image = Image.new("RGBA", (img_size, img_size), (0, 0, 0, 0))
@@ -238,12 +228,8 @@ def generate_galaxy_image(galaxy):
         x = rng.randint(0, img_size)
         y = rng.randint(0, img_size)
         pulsars_quasars_draw.ellipse((x, y, x + 5, y + 5), fill="yellow")
-        pulsars_quasars_draw.line(
-            (x - 3, y + 2.5, x + 8, y + 2.5), fill="white", width=1
-        )
-        pulsars_quasars_draw.line(
-            (x + 2.5, y - 3, x + 2.5, y + 8), fill="white", width=1
-        )
+        pulsars_quasars_draw.line((x - 3, y + 2.5, x + 8, y + 2.5), fill="white", width=1)
+        pulsars_quasars_draw.line((x + 2.5, y - 3, x + 2.5, y + 8), fill="white", width=1)
 
     for _ in range(galaxy.quasars):
         x = rng.randint(0, img_size)

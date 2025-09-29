@@ -1,6 +1,7 @@
 # pymodules/__universe_routes_pages.py
 
 import os
+import sys
 from flask import render_template, request, redirect, url_for, session
 from pymodules.__atlas_fixed_vars import VERSION, VERSION_HASH, RUN
 from pymodules.__atlas_stargate import (
@@ -34,13 +35,21 @@ def register_universe_page_routes(app, universe, config):
     @app.route("/")
     def index():
         import __main__
+        from pymodules.__atlas_startup_mode import is_p2p_discovery_enabled, set_startup_complete
 
         if not config.is_initialized or get_universe() is None:
             if os.path.exists("atlas.ini"):
-                __main__.RunAtlasProtocol()
+                if __main__.RunAtlasProtocol():
+                    if not is_p2p_discovery_enabled():
+                        print()
+                        print("✅ \033[1mAtlas Initialization Protocol Finished\033[0m")
+                        print()
+                        set_startup_complete()
             else:
                 return redirect(url_for("onboarding"))
-        return render_template("index.html", version=VERSION, versionHash=VERSION_HASH, run_mode=RUN)
+
+        universe_config = {"remote": config.remote, "seed_name": config.seed_name, "node_id": config.node_id, "seed_str": config.seed_str, "cosmic_origin_time": config.cosmic_origin_time}
+        return render_template("index.html", version=VERSION, versionHash=VERSION_HASH, run_mode=RUN, universe_config=universe_config)
 
     @app.route("/onboarding", methods=["GET", "POST"])
     def onboarding():
@@ -51,6 +60,15 @@ def register_universe_page_routes(app, universe, config):
             universe_type = request.form.get("universe_type")
 
             if config.setup_universe(universe_type):
+                import __main__
+                from pymodules.__atlas_startup_mode import set_startup_complete
+
+                if __main__.RunAtlasProtocol():
+                    print()
+                    print("✅ \033[1mAtlas Initialization Protocol Finished\033[0m")
+                    print()
+                    set_startup_complete()
+
                 return redirect(url_for("index"))
             else:
                 return render_template("onboarding.html", error="Failed to create configuration", run_mode=RUN)
@@ -59,7 +77,13 @@ def register_universe_page_routes(app, universe, config):
 
     @app.route("/universe-faq")
     def universe_faq():
-        return render_template("faq.html", version=VERSION, versionHash=VERSION_HASH, run_mode=RUN)
+        universe_config = {"remote": config.remote, "seed_name": config.seed_name, "node_id": config.node_id, "seed_str": config.seed_str, "cosmic_origin_time": config.cosmic_origin_time}
+        return render_template("faq.html", version=VERSION, versionHash=VERSION_HASH, run_mode=RUN, universe_config=universe_config)
+
+    @app.route("/multiverse")
+    def multiverse():
+        universe_config = {"remote": config.remote, "seed_name": config.seed_name, "node_id": config.node_id, "seed_str": config.seed_str, "cosmic_origin_time": config.cosmic_origin_time}
+        return render_template("multiverse.html", version=VERSION, versionHash=VERSION_HASH, run_mode=RUN, image_url="", universe_config=universe_config)
 
     @app.route("/navigate", methods=["POST"])
     def navigate():
@@ -129,6 +153,8 @@ def register_universe_page_routes(app, universe, config):
 
             galaxy_url = generate_galaxy_url(current_galaxy.coordinates, page)
 
+            universe_config = {"remote": config.remote, "seed_name": config.seed_name, "node_id": config.node_id, "seed_str": config.seed_str, "cosmic_origin_time": config.cosmic_origin_time}
+
             return render_template(
                 "galaxy.html",
                 galaxy=current_galaxy,
@@ -142,6 +168,7 @@ def register_universe_page_routes(app, universe, config):
                 version=VERSION,
                 versionHash=VERSION_HASH,
                 run_mode=RUN,
+                universe_config=universe_config,
             )
         except ValueError as ve:
             return render_template("error.html", message=str(ve), run_mode=RUN)
@@ -201,6 +228,8 @@ def register_universe_page_routes(app, universe, config):
 
                 return jsonify({"system": {"name": current_system.name, "index": current_system.index, "planets": planets_list}, "galaxy": {"name": current_galaxy.name, "coordinates": current_galaxy.coordinates}})
 
+            universe_config = {"remote": config.remote, "seed_name": config.seed_name, "node_id": config.node_id, "seed_str": config.seed_str, "cosmic_origin_time": config.cosmic_origin_time}
+
             return render_template(
                 "system.html",
                 system=current_system,
@@ -214,6 +243,7 @@ def register_universe_page_routes(app, universe, config):
                 run_mode=RUN,
                 page=page,
                 cosmic_origin_time=config.cosmic_origin_time,
+                universe_config=universe_config,
             )
         except ValueError as e:
             return render_template("error.html", message=str(e), run_mode=RUN)
@@ -248,6 +278,8 @@ def register_universe_page_routes(app, universe, config):
                     "Life Forms": planet.life_forms,
                 }
 
+                universe_config = {"remote": config.remote, "seed_name": config.seed_name, "node_id": config.node_id, "seed_str": config.seed_str, "cosmic_origin_time": config.cosmic_origin_time}
+
                 return render_template(
                     "planet.html",
                     planet=planet,
@@ -262,6 +294,7 @@ def register_universe_page_routes(app, universe, config):
                     run_mode=RUN,
                     cosmic_origin_time=config.cosmic_origin_time,
                     initial_angle_rotation=planet.initial_angle_rotation,
+                    universe_config=universe_config,
                 )
 
         return redirect(url_for("view_system", system_index=current_system.index))

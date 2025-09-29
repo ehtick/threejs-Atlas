@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import contentFilter from "../Utils/ContentFilter.jsx";
 
 interface MatrixTextRevealProps {
   seedData?: {
@@ -26,7 +27,8 @@ const MatrixTextReveal: React.FC<MatrixTextRevealProps> = ({ seedData, onComplet
   const titleText = "COSMIC GENESIS PROTOCOL";
   const subtitleText = "Universal Constants Initialization";
 
-  const primordialSeed = seedData?.primordial_seed || "COSMOS-" + Date.now() + "-GENESIS";
+  const rawPrimordialSeed = seedData?.primordial_seed || "COSMOS-" + Date.now() + "-GENESIS";
+  const primordialSeed = contentFilter.getDisplayText(rawPrimordialSeed);
   const sha256Seed =
     seedData?.sha256_seed ||
     Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16))

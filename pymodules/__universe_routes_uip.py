@@ -45,4 +45,14 @@ def get_uip():
 def get_universe():
     if _uip is None:
         return None
+
+    from pymodules.__atlas_config import config
+
+    if config.remote:
+        from pymodules.__universe_constants import PhysicalConstants
+
+        constants = PhysicalConstants()
+        remote_universe = Universe(config.seed, constants)
+        return remote_universe
+
     return _uip.get_universe()

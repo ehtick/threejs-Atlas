@@ -1,6 +1,6 @@
 """
 __atlas_ui_file_delivery.py
-Copyright © 2023-2025 Banshee, All Rights Reserved
+Copyright 2023-2025 Banshee, All Rights Reserved
 https://www.banshee.pro
 """
 

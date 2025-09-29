@@ -23,28 +23,17 @@ def generate_noise_texture(
 ):
 
     size = planet_radius * 2
-    random.seed(
-        f"{seed}-{spaced_planet_name}-{planet_radius}-{opacity}-{blur_radius}-{center_x}-{center_y}"
-    )
+    random.seed(f"{seed}-{spaced_planet_name}-{planet_radius}-{opacity}-{blur_radius}-{center_x}-{center_y}")
 
     noise = [[random.random() for _ in range(size)] for _ in range(size)]
 
     def smooth_noise(x, y):
-        corners = (
-            noise[x - 1][y - 1]
-            + noise[x + 1][y - 1]
-            + noise[x - 1][y + 1]
-            + noise[x + 1][y + 1]
-        ) / 16
-        sides = (
-            noise[x - 1][y] + noise[x + 1][y] + noise[x][y - 1] + noise[x][y + 1]
-        ) / 8
+        corners = (noise[x - 1][y - 1] + noise[x + 1][y - 1] + noise[x - 1][y + 1] + noise[x + 1][y + 1]) / 16
+        sides = (noise[x - 1][y] + noise[x + 1][y] + noise[x][y - 1] + noise[x][y + 1]) / 8
         center = noise[x][y] / 4
         return corners + sides + center
 
-    smooth_noise_data = [
-        [smooth_noise(x, y) for y in range(1, size - 1)] for x in range(1, size - 1)
-    ]
+    smooth_noise_data = [[smooth_noise(x, y) for y in range(1, size - 1)] for x in range(1, size - 1)]
 
     noise_image = Image.new("L", (size, size))
     noise_pixels = noise_image.load()
@@ -56,9 +45,7 @@ def generate_noise_texture(
 
     noise_image = noise_image.filter(ImageFilter.GaussianBlur(blur_radius))
 
-    draw.bitmap(
-        (center_x - planet_radius, center_y - planet_radius), noise_image, fill=None
-    )
+    draw.bitmap((center_x - planet_radius, center_y - planet_radius), noise_image, fill=None)
 
 
 def generate_clouds(draw, center_x, center_y, radius, color, global_seed, planet_name):
@@ -91,9 +78,7 @@ def generate_clouds(draw, center_x, center_y, radius, color, global_seed, planet
     draw.bitmap((0, 0), blurred_image, fill=None)
 
 
-def generate_cloud_bands(
-    draw, rng, center_x, center_y, planet_radius, min_num_bands, max_num_bands
-):
+def generate_cloud_bands(draw, rng, center_x, center_y, planet_radius, min_num_bands, max_num_bands):
     num_bands = rng.randint(min_num_bands, max_num_bands)
 
     rotation_angle = math.radians(rng.uniform(-15, 15))
@@ -102,9 +87,7 @@ def generate_cloud_bands(
 
     for i in range(num_bands):
         band_width = rng.randint(2, 4)
-        band_position_y = rng.randint(
-            center_y - planet_radius, center_y + planet_radius
-        )
+        band_position_y = rng.randint(center_y - planet_radius, center_y + planet_radius)
         cloud_color = (255, 165, 0, 1)
 
         rotated_points = [
@@ -136,9 +119,7 @@ def generate_abstract_land(
     seg_min=1,
     seg_max=3,
 ):
-    planet_seed = consistent_hash(
-        f"{global_seed}-{planet_name}-{radius}-{color}-{points_max}-{points_min}-{seg_min}-{seg_max}-abstract_land"
-    )
+    planet_seed = consistent_hash(f"{global_seed}-{planet_name}-{radius}-{color}-{points_max}-{points_min}-{seg_min}-{seg_max}-abstract_land")
     rng = random.Random(planet_seed)
 
     num_segments = rng.randint(seg_min, seg_max)
@@ -163,9 +144,7 @@ def generate_abstract_land(
         draw.polygon(points, fill=color)
 
 
-def draw_planet_rings(
-    draw, planet_radius, center_x, center_y, rng, color=(0, 0, 0, 100)
-):
+def draw_planet_rings(draw, planet_radius, center_x, center_y, rng, color=(0, 0, 0, 100)):
     linebreaker = rng.randint(30, 60)
     base_opacity = color[3]
 
@@ -475,9 +454,7 @@ def draw_heat_wave_effect(draw, center_x, center_y, planet_radius, rng):
         wave_x = center_x + rng.randint(-planet_radius, planet_radius)
         wave_y = center_y + rng.randint(-planet_radius, planet_radius)
 
-        distance_to_center = (
-            (wave_x - center_x) ** 2 + (wave_y - center_y) ** 2
-        ) ** 0.5
+        distance_to_center = ((wave_x - center_x) ** 2 + (wave_y - center_y) ** 2) ** 0.5
 
         max_distance = planet_radius
         proximity_factor = 1 - (distance_to_center / max_distance)

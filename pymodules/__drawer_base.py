@@ -25,17 +25,11 @@ async def handle_image_generation(objs):
         futures = []
         for obj in objs:
             if isinstance(obj, Planet):
-                futures.append(
-                    loop.run_in_executor(executor, generate_planet_image, obj)
-                )
+                futures.append(loop.run_in_executor(executor, generate_planet_image, obj))
             elif isinstance(obj, SolarSystem):
-                futures.append(
-                    loop.run_in_executor(executor, generate_solar_system_image, obj)
-                )
+                futures.append(loop.run_in_executor(executor, generate_solar_system_image, obj))
             elif isinstance(obj, Galaxy):
-                futures.append(
-                    loop.run_in_executor(executor, generate_galaxy_image, obj)
-                )
+                futures.append(loop.run_in_executor(executor, generate_galaxy_image, obj))
             else:
                 raise ValueError("Unknown object type for image generation, wyd bro?")
 

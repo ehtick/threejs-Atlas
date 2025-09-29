@@ -6,6 +6,7 @@ import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
+import contentFilter from "../Utils/ContentFilter.jsx";
 
 interface StarfieldWarpRevealProps {
   seedData?: {
@@ -50,7 +51,8 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
   const [needsTransparency, setNeedsTransparency] = useState(false);
   const [canvasOpacity, setCanvasOpacity] = useState(1);
   const [blurAmount, setBlurAmount] = useState(0);
-  const primordialSeed = seedData?.primordial_seed || "COSMOS-" + Date.now() + "-GENESIS";
+  const rawPrimordialSeed = seedData?.primordial_seed || "COSMOS-" + Date.now() + "-GENESIS";
+  const primordialSeed = contentFilter.getDisplayText(rawPrimordialSeed);
   const sha256Seed =
     seedData?.sha256_seed ||
     Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16))

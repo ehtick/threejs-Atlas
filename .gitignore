@@ -9,5 +9,9 @@
 /venv
 /node_modules
 
+# Datos internos sensibles (P2P, logs, etc.) - NUNCA sincronizar
+/internal_data/
+/p2p_data/
+
 # Estupideces de macOS es pa reventarlos maemia
 .DS_Store

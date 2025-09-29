@@ -14,7 +14,7 @@ def generate_watermark(image):
     except IOError:
         font = ImageFont.load_default()
 
-    footer_text = f"© {time.strftime('%Y')} The Atlas by Banshee · All Rights Reserved"
+    footer_text = f"Copyright {time.strftime('%Y')} The Atlas by Banshee · All Rights Reserved"
     text_bbox = draw.textbbox((0, 0), footer_text, font=font)
     text_width = text_bbox[2] - text_bbox[0]
     text_x = img_size - text_width - 20

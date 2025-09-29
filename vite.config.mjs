@@ -32,6 +32,7 @@ export default defineConfig(({ mode }) => ({
         __onboarding__: resolve(__dirname, "atlas-ui/react/static/js/MountPoints/__onboarding__.ts"),
         __error__: resolve(__dirname, "atlas-ui/react/static/js/MountPoints/__error__.ts"),
         __faq__: resolve(__dirname, "atlas-ui/react/static/js/MountPoints/__faq__.ts"),
+        __multiverse__: resolve(__dirname, "atlas-ui/react/static/js/MountPoints/__multiverse__.ts"),
       },
       output: {
         chunkFileNames: "atlas_[hash:21].js",

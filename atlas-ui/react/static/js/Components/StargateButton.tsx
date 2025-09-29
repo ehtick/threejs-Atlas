@@ -1,6 +1,8 @@
 // atlas-ui/react/static/js/Components/StargateButton.tsx
+
 import React, { useState, useEffect, useRef } from "react";
 import ShareModal from "./ShareModal";
+import { UniverseDetection } from "../Utils/UniverseDetection.tsx";
 
 interface StargateButtonProps {
   href: string;
@@ -15,6 +17,7 @@ const StargateButton: React.FC<StargateButtonProps> = ({ href, className = "", s
   const [isScaled, setIsScaled] = useState(false);
   const [showShareButton, setShowShareButton] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [isRemoteUniverse, setIsRemoteUniverse] = useState(false);
   const animationShownRef = useRef(false);
 
   const getRandomString = (chars: string, length: number) => {
@@ -55,41 +58,68 @@ const StargateButton: React.FC<StargateButtonProps> = ({ href, className = "", s
   };
 
   useEffect(() => {
-    const animationShown = sessionStorage.getItem("stargateAnimationShown");
+    const checkUniverseType = () => {
+      const remote = UniverseDetection.isRemoteUniverse();
+      setIsRemoteUniverse(remote);
 
-    if (animationShown) {
-      setDisplayText("Stargate Aligned");
-      setShowShareButton(true);
-      animationShownRef.current = true;
-    } else {
-      runAnimation();
-    }
+      if (remote) {
+        setDisplayText("Remote Universe");
+        setShowShareButton(false);
+        return;
+      }
+
+      const animationShown = sessionStorage.getItem("stargateAnimationShown");
+      if (animationShown) {
+        setDisplayText("Stargate Aligned");
+        setShowShareButton(true);
+        animationShownRef.current = true;
+      } else {
+        runAnimation();
+      }
+    };
+
+    checkUniverseType();
+    const interval = setInterval(checkUniverseType, 1000);
+
+    return () => clearInterval(interval);
   }, []);
 
   return (
     <>
       <div
-        className={`stargate ${className} relative inline-flex items-center group inline-block bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 text-gray-200 font-medium text-sm rounded-full border border-slate-600 hover:border-slate-500 shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden ${isScaled ? "scale-110" : ""}`}
+        className={`stargate ${className} relative inline-flex items-center group inline-block ${isRemoteUniverse ? "bg-gradient-to-r from-red-900 via-red-800 to-red-900 text-red-300 border border-red-600 cursor-not-allowed opacity-60" : "bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 text-gray-200 border border-slate-600 hover:border-slate-500 shadow-md hover:shadow-lg"} font-medium text-sm rounded-full transition-all duration-300 overflow-hidden ${isScaled ? "scale-110" : ""}`}
         style={{
           transition: "transform 0.3s ease",
           transform: isScaled ? "scale(1.1)" : "scale(1)",
-          boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)",
+          boxShadow: isRemoteUniverse ? "0 2px 8px rgba(127, 29, 29, 0.3)" : "0 2px 8px rgba(0, 0, 0, 0.3)",
           ...style,
         }}
+        title={isRemoteUniverse ? "Stargate links are disabled in remote universes - return to local universe first" : ""}
       >
         <div className="flex-1 flex items-stretch">
-          <a href={href} className="px-4 py-2 font-mono flex items-center gap-1 text-inherit no-underline w-full h-full rounded-lg hover:bg-slate-700 transition-all duration-200">
-            <svg xmlns="http://www.w3.org/2000/svg" className="mr-1" width={24} height={24} viewBox="0 0 24 24">
-              <g fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth={1.5}>
-                <path d="M14 12a6 6 0 1 1-6-6"></path>
-                <path d="M10 12a6 6 0 1 1 6 6" opacity={0.5}></path>
-              </g>
-            </svg>
-            {displayText}
-          </a>
+          {isRemoteUniverse ? (
+            <div className="px-4 py-2 font-mono flex items-center gap-1 text-inherit w-full h-full rounded-lg cursor-not-allowed">
+              <svg xmlns="http://www.w3.org/2000/svg" className="mr-1" width={24} height={24} viewBox="0 0 24 24">
+                <g fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth={1.5}>
+                  <path d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L5.636 5.636" />
+                </g>
+              </svg>
+              {displayText}
+            </div>
+          ) : (
+            <a href={href} className="px-4 py-2 font-mono flex items-center gap-1 text-inherit no-underline w-full h-full rounded-lg hover:bg-slate-700 transition-all duration-200">
+              <svg xmlns="http://www.w3.org/2000/svg" className="mr-1" width={24} height={24} viewBox="0 0 24 24">
+                <g fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth={1.5}>
+                  <path d="M14 12a6 6 0 1 1-6-6"></path>
+                  <path d="M10 12a6 6 0 1 1 6 6" opacity={0.5}></path>
+                </g>
+              </svg>
+              {displayText}
+            </a>
+          )}
         </div>
 
-        {showShareButton && (
+        {showShareButton && !isRemoteUniverse && (
           <>
             <span className="text-slate-500 self-stretch flex items-center mx-0.5">|</span>
 
