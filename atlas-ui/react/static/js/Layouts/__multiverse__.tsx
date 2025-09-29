@@ -43,7 +43,7 @@ interface MultiverseData {
 const MultiverseLayout: React.FC = () => {
   const API_ENDPOINT = "/api/multiverse/peers";
   const REFRESH_INTERVAL = 30000;
-  const VERSION = "2.8.44";
+  const VERSION = "2.8.46";
 
   const [data, setData] = useState<MultiverseData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -57,6 +57,9 @@ const MultiverseLayout: React.FC = () => {
   const [isReturningHome, setIsReturningHome] = useState<boolean>(false);
   const [transitionTarget, setTransitionTarget] = useState<string | null>(null);
   const [universeConfig, setUniverseConfig] = useState<any>(null);
+  const [showPortMessage, setShowPortMessage] = useState<boolean>(() => {
+    return localStorage.getItem("atlasMultiversePortMessageDismissed") !== "true";
+  });
 
   const formatCosmicTime = (timestamp: number): string => {
     if (!timestamp) return "Unknown Origin";
@@ -197,6 +200,11 @@ const MultiverseLayout: React.FC = () => {
     window.location.href = "/multiverse/exit";
   };
 
+  const dismissPortMessage = () => {
+    localStorage.setItem("atlasMultiversePortMessageDismissed", "true");
+    setShowPortMessage(false);
+  };
+
   useEffect(() => {
     fetchData();
 
@@ -316,6 +324,29 @@ const MultiverseLayout: React.FC = () => {
                 Auto-refresh: {autoRefresh ? "ON" : "OFF"}
               </button>
             </div>
+
+            {showPortMessage && (
+              <div className="mt-4 max-w-4xl mx-auto">
+                <div className="bg-gradient-to-r from-blue-900/40 via-indigo-900/40 to-purple-900/40 backdrop-blur-lg rounded-xl border border-blue-500/40 p-4 shadow-xl relative">
+                  <button onClick={dismissPortMessage} className="absolute top-2 right-2 text-gray-400 hover:text-white transition-colors p-1" aria-label="Dismiss message">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                  <div className="flex items-center gap-3 pr-8">
+                    <div className="flex-1">
+                      <div className="flex items-center justify-center gap-2 mb-1">
+                        <svg className="w-5 h-5 text-blue-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                          <path fill="currentColor" d="m21.17 15.4l-5.91-9.85c-.78-1.3-1.96-2.04-3.26-2.04s-2.48.74-3.26 2.03L2.83 15.4c-.44.73-.66 1.49-.66 2.21c0 .57.14 1.13.42 1.62C3.23 20.35 4.47 21 6 21h12c1.53 0 2.77-.65 3.41-1.77c.28-.49.42-1.02.42-1.58c.01-.74-.21-1.51-.66-2.25M12 8.45c.85 0 1.55.7 1.55 1.55s-.69 1.55-1.55 1.55c-.85 0-1.55-.7-1.55-1.55c0-.86.69-1.55 1.55-1.55m1.69 8.46c-.03.04-.8.92-2.07.92h-.15c-.51-.03-.93-.25-1.18-.63c-.31-.47-.36-1.11-.12-1.82l.41-1.22c.23-.68.01-.79-.11-.85l-.14-.02c-.25 0-.6.15-.71.21c-.1.05-.23.03-.31-.07c-.07-.1-.07-.23.01-.32c.03-.04.87-.99 2.22-.91c.51.03.93.25 1.18.63c.32.47.36 1.11.12 1.83l-.41 1.22c-.23.68-.01.79.11.85l.14.02c.25 0 .6-.15.71-.2c.11-.06.23-.03.31.07c.07.07.07.2-.01.29" strokeWidth="0.5" stroke="currentColor" />
+                        </svg>
+                        <h3 className="text-blue-200 font-semibold text-sm">Private Network Notice</h3>
+                      </div>
+                      <p className="text-gray-300 text-xs leading-relaxed text-center">If you're behind a private connection or firewall, make sure to open the Atlas ports to allow communication with other multiverse instances. This enables P2P connectivity across the network.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {universeConfig?.remote && (

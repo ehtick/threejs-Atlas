@@ -30,7 +30,7 @@ COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 # THE EXPOSE!
-EXPOSE 5000
+EXPOSE 42424
 
 # define and command
 ENTRYPOINT ["/entrypoint.sh"]

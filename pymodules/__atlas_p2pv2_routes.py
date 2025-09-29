@@ -11,7 +11,7 @@ from flask import Flask, request, jsonify, Response
 import requests
 from concurrent.futures import ThreadPoolExecutor
 
-from pymodules.__atlas_fixed_vars import PORT
+from pymodules.__atlas_fixed_vars import PORT, get_external_p2p_port
 from pymodules.__atlas_p2pv2_discovery import AtlasP2PDiscovery, DiscoveredPeer
 from pymodules.__atlas_p2pv2_utils import KnownPeerManager, FailedPeerManager, NetworkUtils, SelfConnectionDetector, FailureType, PeerStatus
 from pymodules.__atlas_p2pv2_logger import get_p2p_logger
@@ -227,10 +227,13 @@ class AtlasP2PRoutes:
                 config = Config()
                 if config.initialize():
                     universe_data = {"cosmic_origin_time": config.cosmic_origin_time, "seed": config.seed_str}
-            except Exception:
-                pass
+                    self.logger.technical_info(f"P2P Handshake: Universe data loaded - seed: {config.seed_str}, cosmic_origin: {config.cosmic_origin_time}")
+                else:
+                    self.logger.technical_info("P2P Handshake: config.initialize() returned False")
+            except Exception as e:
+                self.logger.technical_info(f"P2P Handshake: Config loading failed - {e}")
 
-            handshake_data = {"type": "atlas_handshake_hello", "sender_id": self.node_id, "magic": "ATLAS_P2P_V2", "protocol_version": "2.0", "node_capabilities": ["gossip", "discovery", "messaging"], "timestamp": time.time(), "external_ip": self.external_ip, "listen_port": PORT, "universe_data": universe_data, "integrity_hash": self.main_file_hash}
+            handshake_data = {"type": "atlas_handshake_hello", "sender_id": self.node_id, "magic": "ATLAS_P2P_V2", "protocol_version": "2.0", "node_capabilities": ["gossip", "discovery", "messaging"], "timestamp": time.time(), "external_ip": self.external_ip, "listen_port": get_external_p2p_port(), "universe_data": universe_data, "integrity_hash": self.main_file_hash}
 
             preferred_protocol = self.known_peer_manager.get_preferred_protocol(ip, port)
 
@@ -583,7 +586,7 @@ class AtlasP2PRoutes:
                 is_known = self.known_peer_manager.is_known_peer(remote_ip, PORT)
 
                 if is_known:
-                    self.known_peer_manager.mark_peer_seen(remote_ip, PORT)
+                    self.known_peer_manager.mark_peer_seen(remote_ip, get_external_p2p_port())
 
                 self.logger.handshake_detail(incoming_id, remote_ip, f"Processing handshake (known={is_known})")
 
@@ -612,10 +615,13 @@ class AtlasP2PRoutes:
                     config = Config()
                     if config.initialize():
                         universe_data = {"cosmic_origin_time": config.cosmic_origin_time, "seed": config.seed_str}
-                except Exception:
-                    pass
+                        self.logger.technical_info(f"P2P Response: Universe data loaded - seed: {config.seed_str}, cosmic_origin: {config.cosmic_origin_time}")
+                    else:
+                        self.logger.technical_info("P2P Response: config.initialize() returned False")
+                except Exception as e:
+                    self.logger.technical_info(f"P2P Response: Config loading failed - {e}")
 
-                response_data = {"type": "atlas_handshake_welcome", "sender_id": self.node_id, "magic": "ATLAS_P2P_V2", "protocol_version": "2.0", "node_capabilities": ["gossip", "discovery", "messaging"], "handshake_accepted": True, "timestamp": time.time(), "external_ip": self.external_ip, "listen_port": PORT, "universe_data": universe_data, "integrity_hash": self.main_file_hash}
+                response_data = {"type": "atlas_handshake_welcome", "sender_id": self.node_id, "magic": "ATLAS_P2P_V2", "protocol_version": "2.0", "node_capabilities": ["gossip", "discovery", "messaging"], "handshake_accepted": True, "timestamp": time.time(), "external_ip": self.external_ip, "listen_port": get_external_p2p_port(), "universe_data": universe_data, "integrity_hash": self.main_file_hash}
 
                 remote_node_id = data.get("sender_id", "unknown")
                 received_universe = data.get("universe_data", {})
@@ -626,7 +632,7 @@ class AtlasP2PRoutes:
                 remote_port = data.get("listen_port", PORT)
 
                 self.known_peer_manager.add_known_peer(remote_ip, remote_port, remote_node_id, data.get("protocol_version", "2.0"), data.get("node_capabilities", []), preferred_protocol=incoming_protocol, cosmic_origin_time=cosmic_origin, seed=seed, integrity_hash=integrity_hash)
-                self.known_peer_manager.mark_peer_seen(remote_ip, PORT)
+                self.known_peer_manager.mark_peer_seen(remote_ip, get_external_p2p_port())
 
                 self.stats["messages_sent"] += 1
                 self.stats["handshakes_completed"] += 1
@@ -726,7 +732,7 @@ class AtlasP2PRoutes:
     def get_status(self) -> dict:
         uptime = time.time() - self.start_time if self.running else 0
 
-        return {"running": self.running, "node_id": self.node_id, "uptime": uptime, "external_ip": self.external_ip, "port": PORT, "discovery_enabled": self.discovery is not None and self.discovery.running, "statistics": self.stats, "known_peers": self.known_peer_manager.get_stats(), "failed_peers": self.failed_peer_manager.get_stats(), "discovery_stats": self.discovery.get_stats() if self.discovery else {}}
+        return {"running": self.running, "node_id": self.node_id, "uptime": uptime, "external_ip": self.external_ip, "port": get_external_p2p_port(), "discovery_enabled": self.discovery is not None and self.discovery.running, "statistics": self.stats, "known_peers": self.known_peer_manager.get_stats(), "failed_peers": self.failed_peer_manager.get_stats(), "discovery_stats": self.discovery.get_stats() if self.discovery else {}}
 
 
 _p2p_routes: Optional[AtlasP2PRoutes] = None

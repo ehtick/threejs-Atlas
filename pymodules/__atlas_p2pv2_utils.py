@@ -9,7 +9,7 @@ from typing import Set, List, Optional, Dict, Tuple
 from dataclasses import dataclass, asdict
 from enum import Enum
 
-from pymodules.__atlas_fixed_vars import PORT
+from pymodules.__atlas_fixed_vars import PORT, get_external_p2p_port
 from pymodules.__atlas_p2pv2_logger import get_p2p_logger
 
 
@@ -262,7 +262,7 @@ class SelfConnectionDetector:
         self.listen_ports.add(port)
 
     def is_self_connection(self, ip: str, port: int) -> bool:
-        if port == PORT and ip == self.external_ip:
+        if port == get_external_p2p_port() and ip == self.external_ip:
             return True
 
         if port in self.listen_ports and (ip == self.external_ip or ip in self.local_ips):

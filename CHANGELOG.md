@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.8.46] - 2025-09-29
+
+- Fixed Multiverse P2P handshake Docker issues by implementing environment variable configuration system for Docker deployments.
+- Added `EXTERNAL_P2P_OPEN_PORT` environment variable to properly map external P2P port (42424) for DHT announcements and peer discovery.
+- Added `ENABLE_P2P` environment variable to completely disable P2P functionality when set to false, providing deployment flexibility (works as same as --no-p2p flag).
+- Resolved Multiverse P2P timeout intrusion errors where nodes could discover each other via BitTorrent DHT but failed Atlas handshake due to port mapping conflicts.
+- Enhanced Multiverse P2P system to distinguish between internal container port (previously 5000) and the external accessible port (42424) for DHTP2P Multiverse handshakes and proper peer-to-peer communication.
+- Improved docker-compose.yml and Dockerfile with proper environment variable configuration for seamless multiverse networking across Atlas instances.
+
 ## [2.8.44] - 2025-09-29
 
 - Updated pip requests to 2.32.4 to address CVE-2024-47081.

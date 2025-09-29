@@ -8,7 +8,7 @@ import threading
 from typing import Optional, Dict, Any
 from flask import Flask, request, jsonify
 
-from pymodules.__atlas_fixed_vars import PORT
+from pymodules.__atlas_fixed_vars import PORT, get_external_p2p_port
 from pymodules.__atlas_p2pv2_routes import initialize_p2p_routes, get_p2p_routes, start_p2p_discovery, stop_p2p_discovery
 
 p2p_routes = None
@@ -198,7 +198,7 @@ def register_p2pv2_api(app: Flask):
         try:
             status = p2p_routes.get_status()
 
-            network_info = {"node_id": status.get("node_id", "unknown"), "external_ip": status.get("external_ip", "unknown"), "port": status.get("port", PORT), "discovery_enabled": status.get("discovery_enabled", False), "system_status": "running" if status.get("running", False) else "stopped"}
+            network_info = {"node_id": status.get("node_id", "unknown"), "external_ip": status.get("external_ip", "unknown"), "port": status.get("port", get_external_p2p_port()), "discovery_enabled": status.get("discovery_enabled", False), "system_status": "running" if status.get("running", False) else "stopped"}
 
             return jsonify(network_info)
 

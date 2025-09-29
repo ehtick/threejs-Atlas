@@ -13,7 +13,7 @@ from typing import Dict, List, Tuple, Optional, Set, Callable
 from dataclasses import dataclass
 import bencodepy
 
-from pymodules.__atlas_fixed_vars import PORT, VERSION, VERSION_HASH
+from pymodules.__atlas_fixed_vars import PORT, VERSION, VERSION_HASH, get_external_p2p_port
 from pymodules.__atlas_p2pv2_logger import get_p2p_logger
 
 
@@ -453,11 +453,11 @@ class AtlasP2PDiscovery:
     async def _send_announce_peer(self, ip: str, port: int, infohash: bytes, token: bytes, implied_port: bool = False):
         tid = self._make_tid()
 
-        msg = {b"t": tid, b"y": b"q", b"q": b"announce_peer", b"a": {b"id": self.node_id, b"info_hash": infohash, b"port": PORT if not implied_port else 0, b"token": token, b"implied_port": 1 if implied_port else 0}}
+        msg = {b"t": tid, b"y": b"q", b"q": b"announce_peer", b"a": {b"id": self.node_id, b"info_hash": infohash, b"port": get_external_p2p_port() if not implied_port else 0, b"token": token, b"implied_port": 1 if implied_port else 0}}
 
         self.transactions[tid] = {"type": "announce_peer", "time": time.time(), "infohash": infohash}
 
-        self.logger.discovery_detail(f"DHT announce_peer to {ip}:{port} for infohash {infohash.hex()[:16]}... port={PORT}")
+        self.logger.discovery_detail(f"DHT announce_peer to {ip}:{port} for infohash {infohash.hex()[:16]}... port={get_external_p2p_port()}")
 
         try:
             self.socket.sendto(self._encode(msg), (ip, port))

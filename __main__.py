@@ -54,7 +54,8 @@ p2p_initialized = False
 def ensure_p2p_initialized():
     global p2p_initialized
 
-    if p2p_initialized or "--no-p2p" in sys.argv or universe is None:
+    enable_p2p = os.getenv("ENABLE_P2P", "true").lower() == "true"
+    if p2p_initialized or "--no-p2p" in sys.argv or universe is None or not enable_p2p:
         return
 
     try:
@@ -151,7 +152,8 @@ register_universe_routes(app, universe, config)
 register_universe_page_routes(app, universe, config)
 register_multiverse_routes(app)
 
-if "--no-p2p" not in sys.argv:
+enable_p2p = os.getenv("ENABLE_P2P", "true").lower() == "true"
+if "--no-p2p" not in sys.argv and enable_p2p:
     try:
         from pymodules.__atlas_p2pv2_routes import AtlasP2PRoutes
         from pymodules.__atlas_p2pv2_integration import register_p2pv2_api
