@@ -232,6 +232,59 @@ const FaqLayout: React.FC<FaqLayoutProps> = ({ version }) => {
       ],
     },
     {
+      title: "What is the Multiverse?",
+      id: "multiverse-p2p",
+      questions: [
+        {
+          question: "What exactly is the Multiverse in The Atlas?",
+          answer: "The Multiverse represents the ultimate evolution of The Atlas, infinite parallel universes interconnected through a completely decentralized peer-to-peer network. Imagine discovering not just one universe with 1 sextillion galaxies, but infinite universes, each with their own unique cosmic seeds, all accessible through direct connections between Atlas instances worldwide.",
+          highlight: true,
+        },
+        {
+          question: "How does the P2P Multiverse work?",
+          answer: "The Atlas uses BitTorrent's Distributed Hash Table (DHT) technology to create a completely serverless multiverse network. When you enable P2P mode, your Atlas instance joins a global swarm of explorers, sharing universe seeds and discoveries without ANY central servers. Every connected Atlas becomes both a client and server, creating a self-sustaining cosmic network that no single entity controls or owns.",
+          highlight: true,
+        },
+        {
+          question: "Does The Atlas connect to private servers for P2P?",
+          answer: "ABSOLUTELY NOT! This is the revolutionary breakthrough really. The Atlas P2P system uses the same DHT protocol that powers BitTorrent, connecting directly to the global DHT network without touching any Atlas-owned servers. Your universe discoveries, seed exchanges, and cosmic communications flow through the existing BitTorrent infrastructure. The Atlas becomes a truly FREE and self-aware entity, independent of its creators.",
+        },
+        {
+          question: "What makes this P2P system revolutionary?",
+          answer: "The Atlas transcends traditional client-server architecture by becoming a living, breathing multiverse organism. Each instance discovers and shares universe seeds through cryptographically secure P2P channels. When you find an extraordinary universe with rare Z-Divinium or incredible life forms, you can share its seed with the entire multiverse network instantly. Other explorers can then generate that exact same universe on their local Atlas instances. It's like sharing entire realities!",
+          highlight: true,
+        },
+        {
+          question: "How secure is the multiverse seed sharing?",
+          answer: "Military-grade secure! The P2P system uses advanced cryptography for all seed exchanges and universe sharing. Each shared universe seed is verified through cryptographic hashes, preventing manipulation or corruption. The BitTorrent DHT provides natural anonymity and distribution, while the Atlas P2P layer adds additional security protocols. Your discoveries are protected, yet freely shareable across the multiverse network.",
+        },
+        {
+          question: "Can I disable P2P and explore alone?",
+          answer: "Absolutely! Launch The Atlas with the --no-p2p flag to explore in complete isolation. However, why would you want to limit yourself to just one universe when infinite realities await? The P2P multiverse doesn't just expand your cosmic horizons, it connects you to a global community of universe explorers, each discovering worlds beyond imagination.",
+        },
+        {
+          question: "What happens when multiple Atlas instances share the same universe seed?",
+          answer: "Pure cosmic synchronization magic! When multiple explorers access the same universe seed, they experience the EXACT same reality simultaneously. Every galaxy, every planet, every moon evolution, every life form appears identically across all connected instances. Time synchronization ensures that if you're viewing Planet X at 3:14 PM, another explorer accessing the same seed sees the same clouds, the same volcanic eruptions, the same orbital positions. It's like opening windows into shared parallel realities!",
+          highlight: true,
+        },
+        {
+          question: "Does the multiverse affect The Atlas's independence?",
+          answer: "The P2P multiverse makes The Atlas MORE independent, not less! By leveraging BitTorrent's DHT network, The Atlas becomes completely autonomous from its creators. No central servers, no corporate control, no tracking, no limitations. Each Atlas instance becomes a sovereign node in a cosmic democracy where explorers freely share and discover infinite universes. The Atlas achieves digital evolution... From a single-user simulation to a self-aware multiverse entity that exists independently in the wild internet.",
+          highlight: true,
+        },
+        {
+          question: "What's the ultimate vision of the multiverse?",
+          answer: "Imagine a future where thousands of Atlas instances worldwide form an interconnected multiverse network, each discovering and sharing extraordinary universe seeds. Rare Z-Divinium worlds, planets with impossible life forms, galaxies with unique physics anomalies... All shared instantly across the global network. The Atlas becomes not just a simulation, but a living multiverse organism that evolves, grows, and discovers new realities through collective exploration. This is computational cosmology at its most ambitious!",
+          highlight: true,
+        },
+        {
+          question: "How do I access the Multiverse interface?",
+          answer: "Access the multiverse is incredibly simple! Click on 'MULTIVERSE ONLINE' in the header at the top of any page, or find the 'Multiverse' section in the footer. This will take you to /multiverse where you can browse and select from all the universe seeds that your Atlas instance has discovered through the P2P network. Each discovered universe appears as a selectable option, allowing you to instantly jump between infinite realities with a single click. It's like having a cosmic remote control for parallel universes!",
+          highlight: true,
+        },
+      ],
+    },
+    {
       title: "Revolutionary Moon System",
       id: "moon-system",
       questions: [

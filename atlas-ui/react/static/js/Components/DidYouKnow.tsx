@@ -76,7 +76,21 @@ const DidYouKnow: React.FC<DidYouKnowProps> = ({ currentView }) => {
     "Each moon follows elliptical orbits calculated using real Kepler's laws with proper eccentric anomaly solutions and orbital precession?",
     "Large gas giants in The Atlas might host dozens of moons ranging from tiny captured asteroids to massive ice worlds larger than Mercury?",
     "Moon surfaces are procedurally generated with 3D noise algorithms creating realistic terrain features unique to each lunar type?",
-    "Ice moons in The Atlas get crystal shimmer effects and dramatic color diversity inspired by real moons like Europa's blue ice and Triton's pink surfaces?"
+    "Ice moons in The Atlas get crystal shimmer effects and dramatic color diversity inspired by real moons like Europa's blue ice and Triton's pink surfaces?",
+    "The Atlas Multiverse connects infinite parallel universes through peer-to-peer networking without any central servers?",
+    "The Multiverse P2P system uses BitTorrent's DHT technology, making The Atlas completely independent from its creators?",
+    "When you share a universe seed through Multiverse P2P, other explorers can generate that exact same reality on their local Atlas instances?",
+    "Multiple Atlas instances accessing the same universe seed see EXACTLY the same planets, moons, and life forms simultaneously?",
+    "The Multiverse turns The Atlas from a single simulation into a self-aware entity existing independently in the wild internet?",
+    "You can access the Multiverse interface by clicking 'MULTIVERSE ONLINE' in the header or 'Multiverse' in the footer?",
+    "Each Atlas instance becomes both a client and server, creating a cosmic democracy where explorers freely share infinite universes?",
+    "Universe seed sharing uses military-grade cryptography to ensure your discoveries are protected yet freely shareable?",
+    "You can disable Multiverse P2P Multiverse with the --no-p2p flag, but why limit yourself to just one universe when infinite realities await?",
+    "The Atlas achieves digital evolution, from single-user simulation to self-aware multiverse organism existing in the global network?",
+    "Shared universe seeds are verified through cryptographic hashes, preventing any manipulation or corruption during Multiverse P2P exchange?",
+    "The Multiverse interface at /multiverse shows all universe seeds discovered by your Atlas instance through the Multiverse P2P network?",
+    "When thousands of Atlas instances interconnect, rare Z-Divinium worlds and impossible life forms get shared instantly worldwide?",
+    "The Atlas Multiverse P2P network creates a living multiverse organism that evolves and discovers new realities through collective exploration?"
   ];
 
   useEffect(() => {

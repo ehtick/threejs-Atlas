@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.8.42] - 2025-09-29
+
+- Implemented complete multiverse context model allowing exploration of infinite parallel universes through an integrated peer-to-peer seed sharing networking system.
+- Added multiverse navigation interface with seamless transitions between different universe contexts, providing users with unprecedented ability to traverse multiple realities.
+- Created P2P networking stack with discovery, cryptography, and routing capabilities enabling multi-universe communication and data exchange between different Atlas instances.
+- Introduced multiverse layout and UI components including interactive banners, transition canvases, and specialized iconography for enhanced visual experience.
+- Enhanced universe detection and seed management system for intelligent context switching when navigating between different universes.
+- Integrated flexible startup modes and configuration systems supporting multiple initialization scenarios for different multiverse operation modes.
+- Updated API routes and backend infrastructure to support full-stack multiverse operations with dedicated endpoints for multiverse functionality.
+- Added multiverse transition animations and glitch effects providing smooth visual feedback during universe switching operations.
+- Improved content filtering and sanitization systems for secure cross-universe data exchange and validation.
+- Updated build system with new asset generation and optimization for multiverse-compatible caching and performance improvements.
+- Comprehensive debug logging cleanup and optimization across all modules resulting in improved overall system performance.
+- Enhanced template system supporting multiverse-aware rendering with improved error handling for connection scenarios.
+- Added new dependencies for P2P networking functionality including cryptography (46.0.1), aiofiles (24.1.0), bencodepy (0.9.5), requests (2.32.3), and psutil (7.1.0).
+- Added dedicated internal_data and p2p_data directories with proper permission handling for secure data storage across container restarts.
+- You can disable P2P networking by launching it with --no-p2p flag, just in case but it's a non-sense since the current scope is exactly this, proper multiverse interconnection.
+
 ## [2.6.14] - 2025-01-19
 
 - Minor changes on Dockerfile, image and compose to handle properly SSL permissions and settings.
