@@ -2,6 +2,7 @@
 
 import { DailyChallengesManager } from "./DailyChallenges.tsx";
 import { ATLAS_KEYS, getItem, setItem, migrateToEncoded, getUniverseInfo } from "./b64.tsx";
+import * as pako from "pako";
 
 interface OptimizedVisitData {
   g: { [galaxyHash: string]: { [systemIndex: string]: string } };
@@ -227,29 +228,56 @@ export class OptimizedAtlasStorage {
 
     let totalSize = 0;
 
-    const globalKeys = [ATLAS_KEYS.SPACESHIP, ATLAS_KEYS.DAILY_CHALLENGES, ATLAS_KEYS.LOCATIONS];
-    globalKeys.forEach((key) => {
-      const value = getItem(key);
-      if (value) {
-        totalSize += value.length;
+    const decodeStorageData = (encodedValue: string): string | null => {
+      try {
+        if (encodedValue.startsWith("c:") || encodedValue.startsWith("u:")) {
+          const base64ToUint8Array = (base64: string): Uint8Array => {
+            const binary = atob(base64);
+            const len = binary.length;
+            const uint8Array = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+              uint8Array[i] = binary.charCodeAt(i);
+            }
+            return uint8Array;
+          };
+
+          let uint8Array: Uint8Array;
+          if (encodedValue.startsWith("c:")) {
+            const compressed = base64ToUint8Array(encodedValue.slice(2));
+            uint8Array = pako.ungzip(compressed);
+          } else {
+            uint8Array = base64ToUint8Array(encodedValue.slice(2));
+          }
+          return new TextDecoder().decode(uint8Array);
+        }
+        return encodedValue;
+      } catch (err) {
+        console.error("Error decoding storage data:", err);
+        return null;
       }
-    });
+    };
+
+    const processedKeys = new Set<string>();
 
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (key) {
         try {
           const decodedKey = decodeURIComponent(atob(key));
-          if (decodedKey.startsWith(ATLAS_KEYS.ARCHIVE)) {
-            const value = localStorage.getItem(key);
-            if (value) {
-              try {
-                const decompressedValue = getItem(decodedKey.includes("_") ? decodedKey : ATLAS_KEYS.ARCHIVE);
-                if (decompressedValue) {
-                  totalSize += decompressedValue.length;
-                }
-              } catch {
-                totalSize += value.length;
+
+          if (processedKeys.has(decodedKey)) continue;
+          processedKeys.add(decodedKey);
+
+          const isAtlasKey = decodedKey === ATLAS_KEYS.SPACESHIP || decodedKey === ATLAS_KEYS.DAILY_CHALLENGES || decodedKey === ATLAS_KEYS.LOCATIONS || decodedKey === ATLAS_KEYS.ARCHIVE || decodedKey === "_atlasArchive" || decodedKey.startsWith(ATLAS_KEYS.ARCHIVE + "_") || decodedKey.startsWith("_atlasArchive_");
+
+          if (isAtlasKey) {
+            const rawValue = localStorage.getItem(key);
+            if (rawValue) {
+              const decodedValue = decodeStorageData(rawValue);
+              if (decodedValue) {
+                totalSize += decodedValue.length;
+              } else {
+                totalSize += rawValue.length;
               }
             }
           }

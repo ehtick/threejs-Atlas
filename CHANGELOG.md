@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.8.60] - 2025-10-02
+
+- Fixed Daily Challenges to aggregate stats from all universes (local + remote), enabling cross-universe challenge completion.
+- Fixed Atlas Size calculation to sum storage from all universe archives instead of only the current universe.
+- Implemented direct localStorage reading to bypass universe-specific key transformations for global aggregation.
+
 ## [2.8.48] - 2025-10-02
 
 - Implemented universe-specific localStorage key system to prevent exploration data overlap between local and remote universes.

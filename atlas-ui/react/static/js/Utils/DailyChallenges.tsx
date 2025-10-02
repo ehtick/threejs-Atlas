@@ -1,6 +1,8 @@
 // atlas-ui/react/static/js/Utils/DailyChallenges.tsx
+
 import React from "react";
 import { getItem, setItem } from "./b64.tsx";
+import * as pako from "pako";
 
 export interface DailyChallenge {
   type: "galaxies" | "systems" | "planets";
@@ -95,28 +97,87 @@ export class DailyChallengesManager {
 
   private static getCurrentStats(): { galaxies: number; systems: number; planets: number } {
     try {
-      const atlasData = getItem("__atlasArchive");
-      if (!atlasData) return { galaxies: 0, systems: 0, planets: 0 };
-
-      const data = JSON.parse(atlasData);
       let totalSystems = 0;
       let totalPlanets = 0;
+      const allGalaxiesSet = new Set<string>();
 
-      Object.values(data.g || {}).forEach((galaxy: any) => {
-        totalSystems += Object.keys(galaxy).length;
-        Object.values(galaxy).forEach((planetBitmap: any) => {
-          if (typeof planetBitmap === "string") {
-            totalPlanets += (planetBitmap.match(/1/g) || []).length;
+      const decodeArchiveData = (encodedValue: string): string | null => {
+        try {
+          if (encodedValue.startsWith("c:") || encodedValue.startsWith("u:")) {
+            const base64ToUint8Array = (base64: string): Uint8Array => {
+              const binary = atob(base64);
+              const len = binary.length;
+              const uint8Array = new Uint8Array(len);
+              for (let i = 0; i < len; i++) {
+                uint8Array[i] = binary.charCodeAt(i);
+              }
+              return uint8Array;
+            };
+
+            let uint8Array: Uint8Array;
+            if (encodedValue.startsWith("c:")) {
+              const compressed = base64ToUint8Array(encodedValue.slice(2));
+              uint8Array = pako.ungzip(compressed);
+            } else {
+              uint8Array = base64ToUint8Array(encodedValue.slice(2));
+            }
+            return new TextDecoder().decode(uint8Array);
           }
-        });
-      });
+          return encodedValue;
+        } catch (err) {
+          console.error("Error decoding archive:", err);
+          return null;
+        }
+      };
 
-      const galaxiesWithSystems = new Set(Object.keys(data.g || {}));
-      const visitedGalaxies = new Set(Object.keys(data.gv || {}));
-      const allVisitedGalaxies = new Set([...galaxiesWithSystems, ...visitedGalaxies]);
+      const processArchive = (archiveData: string | null) => {
+        if (!archiveData) return;
+
+        try {
+          const data = JSON.parse(archiveData);
+
+          Object.entries(data.g || {}).forEach(([galaxyHash, galaxy]: [string, any]) => {
+            allGalaxiesSet.add(galaxyHash);
+            totalSystems += Object.keys(galaxy).length;
+            Object.values(galaxy).forEach((planetBitmap: any) => {
+              if (typeof planetBitmap === "string") {
+                totalPlanets += (planetBitmap.match(/1/g) || []).length;
+              }
+            });
+          });
+
+          Object.keys(data.gv || {}).forEach((galaxyHash) => {
+            allGalaxiesSet.add(galaxyHash);
+          });
+        } catch (err) {
+          console.error("Error parsing archive data:", err);
+        }
+      };
+
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key) {
+          try {
+            const decodedKey = decodeURIComponent(atob(key));
+            const isArchiveKey = decodedKey === "__atlasArchive" || decodedKey === "_atlasArchive" || decodedKey.startsWith("__atlasArchive_") || decodedKey.startsWith("_atlasArchive_");
+
+            if (isArchiveKey) {
+              const rawValue = localStorage.getItem(key);
+              if (rawValue) {
+                const decodedValue = decodeArchiveData(rawValue);
+                if (decodedValue) {
+                  processArchive(decodedValue);
+                }
+              }
+            }
+          } catch {
+            continue;
+          }
+        }
+      }
 
       return {
-        galaxies: allVisitedGalaxies.size,
+        galaxies: allGalaxiesSet.size,
         systems: totalSystems,
         planets: totalPlanets,
       };
