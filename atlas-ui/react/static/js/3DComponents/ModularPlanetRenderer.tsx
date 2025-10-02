@@ -23,6 +23,55 @@ const calculateExactCameraDistance = (): number => {
   return NORMALIZED_PLANET_RADIUS / (Math.tan(fovRadians / 2) * desiredProportion);
 };
 
+const getOrbitalInclination = (planetName: string): number => {
+  let hash = 0;
+  for (let i = 0; i < planetName.length; i++) {
+    hash = (hash << 5) - hash + planetName.charCodeAt(i);
+    hash = hash & hash;
+  }
+  return ((Math.abs(hash) % 10000) / 10000) * 0.15;
+};
+
+const getAscendingNode = (planetName: string): number => {
+  let hash = 0;
+  for (let i = 0; i < planetName.length; i++) {
+    hash = (hash << 3) - hash + planetName.charCodeAt(i) * 7;
+    hash = hash & hash;
+  }
+  return ((Math.abs(hash) % 10000) / 10000) * Math.PI * 2;
+};
+
+const calculateEllipticalPosition = (angle: number, semiMajorAxis: number, eccentricity: number, inclination: number, ascendingNode: number): THREE.Vector3 => {
+  const r = (semiMajorAxis * (1 - eccentricity * eccentricity)) / (1 + eccentricity * Math.cos(angle));
+
+  const xOrbital = r * Math.cos(angle);
+  const yOrbital = r * Math.sin(angle);
+
+  const x = xOrbital * Math.cos(ascendingNode) - yOrbital * Math.sin(ascendingNode) * Math.cos(inclination);
+  const z = xOrbital * Math.sin(ascendingNode) + yOrbital * Math.cos(ascendingNode) * Math.cos(inclination);
+  const y = yOrbital * Math.sin(inclination);
+
+  return new THREE.Vector3(x, y, z);
+};
+
+const STAR_COLORS: Record<string, number> = {
+  red: 0xff3300,
+  yellow: 0xffffaa,
+  blue: 0x88ccff,
+  orange: 0xffaa44,
+  white: 0xffffff,
+  purple: 0xbb88ff,
+};
+
+const STAR_BASE_INTENSITIES: Record<string, number> = {
+  "Red Dwarf": 1.0,
+  "Yellow Dwarf": 2.0,
+  "Blue Giant": 8.0,
+  "Red Giant": 3.0,
+  "White Dwarf": 2.5,
+  "Neutron Star": 1.5,
+};
+
 interface ModularPlanetRendererProps {
   planetName: string;
   containerClassName?: string;
@@ -151,6 +200,7 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
   const [error, setError] = useState<string | null>(null);
   const [renderingData, setRenderingData] = useState<PlanetRenderingData | null>(null);
   const [effects, setEffects] = useState<EffectInstance[]>([]);
+  const [debugMode, setDebugMode] = useState(false);
   const [stats, setStats] = useState<RendererStats>({
     activeEffects: 0,
     enabledEffects: 0,
@@ -340,13 +390,6 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
     isGeneratingImage,
   }));
 
-  const realCurrentTime = Math.floor(Date.now() / 1000);
-  const [timeOffset, setTimeOffset] = useState(0);
-  const baseCosmicOriginTime = cosmicOriginTime || renderingData?.timing?.cosmic_origin_time || Date.now() / 1000 - 3600;
-  const currentTime = realCurrentTime - baseCosmicOriginTime + timeOffset;
-
-  currentTimeRef.current = currentTime;
-
   const handleResize = useCallback(() => {
     if (!mountRef.current || !rendererRef.current || !cameraRef.current) return;
 
@@ -518,18 +561,26 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
       return explicitSunAngle;
     }
 
-    const orbitalAngle = planetData.timing?.current_orbital_angle || planetData.timing?.orbital_angle;
+    const orbitalAngle = planetData.timing?.current_orbital_angle || planetData.original_planet_data?.current_orbital_angle || planetData.current_orbital_angle || planetData.timing?.orbital_angle;
+
     if (orbitalAngle === undefined || orbitalAngle === null) {
+      console.warn("[ModularPlanetRenderer] No orbital angle found in planetData:", {
+        timing: planetData.timing,
+        original_planet_data: planetData.original_planet_data,
+        planetData_keys: Object.keys(planetData),
+      });
       return 0;
     }
 
     return orbitalAngle;
   };
 
-  const sunLightRef = useRef<THREE.DirectionalLight | null>(null);
+  const starLightsRef = useRef<THREE.DirectionalLight[]>([]);
+  const starDataRef = useRef<any[]>([]);
   const fillLightRef = useRef<THREE.DirectionalLight | null>(null);
   const sunSphereRef = useRef<THREE.Mesh | null>(null);
   const orbitLineRef = useRef<THREE.Line | null>(null);
+  const debugSunMeshRef = useRef<THREE.Mesh | null>(null);
 
   const setupShadowProperties = (light: THREE.DirectionalLight) => {
     light.castShadow = true;
@@ -544,36 +595,73 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
   };
 
   const updateLightingWithRealData = (planetData: any) => {
-    if (!sunLightRef.current || !sceneRef.current) {
+    if (starLightsRef.current.length === 0 || !sceneRef.current) {
       return;
     }
 
-    const sunAngle = calculateSunAngle(planetData);
-    const sunDistance = 10;
-    const actualSunAngle = sunAngle + Math.PI;
+    const apiData = planetData?.original_planet_data || planetData;
+    const initialOrbitalAngle = apiData?.initial_orbital_angle || 0;
+    const orbitalPeriod = apiData?.orbital_period_seconds || 365.25 * 24 * 3600;
+    const angleVelocityOrbit = (2 * Math.PI) / orbitalPeriod;
 
-    const orbitalVariationY = Math.sin(sunAngle) * 5;
+    const sunAngle = (initialOrbitalAngle + currentTimeRef.current * angleVelocityOrbit) % (2 * Math.PI);
 
-    const sunX = sunDistance * Math.cos(actualSunAngle);
-    const sunY = orbitalVariationY;
-    const sunZ = sunDistance * Math.sin(actualSunAngle);
+    const planetName = planetData?.planet_info?.name || planetData?.name || planetData?.original_planet_data?.name || "unknown_planet";
 
-    sunLightRef.current.position.set(sunX, sunY, sunZ);
-    sunLightRef.current.target.position.set(0, 0, 0);
-    if (!sceneRef.current.children.includes(sunLightRef.current.target)) {
-      sceneRef.current.add(sunLightRef.current.target);
-    }
+    const eccentricity = apiData?.eccentricity_factor || 0.1;
+
+    const inclination = getOrbitalInclination(planetName);
+    const ascendingNode = getAscendingNode(planetName);
+
+    const actualOrbitalRadius = planetData?.planet_info?.orbital_radius || apiData?.orbital_radius || 1.0;
+    const systemMaxOrbitalRadius = planetData?.timing?.max_orbital_radius || apiData?.system_max_orbital_radius || 1.0;
+    const relativeOrbitRadius = actualOrbitalRadius / systemMaxOrbitalRadius;
+    const scaleFactor = 80;
+    const semiMajorAxis = 20 + relativeOrbitRadius * scaleFactor;
+
+    const planetPosition = calculateEllipticalPosition(sunAngle, semiMajorAxis, eccentricity, inclination, ascendingNode);
+    const distance = Math.sqrt(planetPosition.x ** 2 + planetPosition.y ** 2 + planetPosition.z ** 2);
+
+    const LIGHT_DISTANCE = 200;
+
+    starLightsRef.current.forEach((starLight, index) => {
+      const star = starDataRef.current[index];
+      const starDirection = new THREE.Vector3(-planetPosition.x, -planetPosition.y, -planetPosition.z);
+
+      if (index > 0) {
+        const offset = index * 30;
+        starDirection.x += offset * Math.cos(index);
+        starDirection.z += offset * Math.sin(index);
+      }
+
+      starDirection.normalize();
+      const starPosition = starDirection.multiplyScalar(LIGHT_DISTANCE);
+
+      if (star) {
+        const starType = star.Type || "Yellow Dwarf";
+        const baseIntensity = STAR_BASE_INTENSITIES[starType] || 2.0;
+        const rawIntensity = (baseIntensity * 300) / (distance * distance);
+        const intensity = Math.min(3.0, Math.max(0.05, rawIntensity));
+        starLight.intensity = intensity;
+      }
+
+      starLight.position.copy(starPosition);
+      starLight.target.position.set(0, 0, 0);
+      if (!sceneRef.current!.children.includes(starLight.target)) {
+        sceneRef.current!.add(starLight.target);
+      }
+    });
 
     if (fillLightRef.current) {
-      fillLightRef.current.position.set(-sunX * 0.5, 0, -sunZ * 0.5);
+      fillLightRef.current.position.set(planetPosition.x * 0.5, 0, planetPosition.z * 0.5);
     }
 
-    if (planetLayerSystemRef.current && sunLightRef.current) {
-      planetLayerSystemRef.current.updateFromThreeLight(sunLightRef.current);
+    if (planetLayerSystemRef.current && starLightsRef.current[0]) {
+      planetLayerSystemRef.current.updateFromThreeLight(starLightsRef.current[0]);
     }
 
-    if (sunLightRef.current) {
-      effectRegistry.updateLightForAllEffects(sunLightRef.current);
+    if (starLightsRef.current[0]) {
+      effectRegistry.updateLightForAllEffects(starLightsRef.current[0]);
     }
   };
 
@@ -586,7 +674,7 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
       setupShadowProperties(defaultSunLight);
       scene.add(defaultSunLight);
       scene.add(defaultSunLight.target);
-      sunLightRef.current = defaultSunLight;
+      starLightsRef.current = [defaultSunLight];
 
       const defaultFillLight = new THREE.DirectionalLight(0xffffff, 0.01);
       defaultFillLight.position.set(8, -3, -5);
@@ -606,38 +694,97 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
     }
 
     const sunAngle = calculateSunAngle(planetData);
-    const sunDistance = 10;
 
-    const actualSunAngle = sunAngle + Math.PI;
+    const planetName = planetData?.planet_info?.name || planetData?.name || planetData?.original_planet_data?.name || "unknown_planet";
 
-    const sunLight = new THREE.DirectionalLight(0xffffff, 2.0);
-    const orbitalVariationY = Math.sin(sunAngle) * 5;
+    const eccentricity = planetData?.eccentricity_factor || planetData?.original_planet_data?.eccentricity_factor || 0.1;
 
-    const sunX = sunDistance * Math.cos(actualSunAngle);
-    const sunY = orbitalVariationY;
-    const sunZ = sunDistance * Math.sin(actualSunAngle);
+    const inclination = getOrbitalInclination(planetName);
+    const ascendingNode = getAscendingNode(planetName);
 
-    sunLight.position.set(sunX, sunY, sunZ);
-    sunLight.target.position.set(0, 0, 0);
-    scene.add(sunLight.target);
-    setupShadowProperties(sunLight);
-    scene.add(sunLight);
-    sunLightRef.current = sunLight;
+    const actualOrbitalRadius = planetData?.planet_info?.orbital_radius || planetData?.original_planet_data?.orbital_radius || 1.0;
+    const systemMaxOrbitalRadius = planetData?.timing?.max_orbital_radius || planetData?.timing?.system_max_orbital_radius || 1.0;
+    const relativeOrbitRadius = actualOrbitalRadius / systemMaxOrbitalRadius;
+    const scaleFactor = 80;
+    const semiMajorAxis = 20 + relativeOrbitRadius * scaleFactor;
+
+    const planetPosition = calculateEllipticalPosition(sunAngle, semiMajorAxis, eccentricity, inclination, ascendingNode);
+
+    const stars = planetData?.stellar_composition?.stars || [];
+    starDataRef.current = stars;
+
+    starLightsRef.current.forEach((light) => {
+      scene.remove(light);
+      scene.remove(light.target);
+      light.dispose();
+    });
+    starLightsRef.current = [];
+
+    const LIGHT_DISTANCE = 200;
+    const distance = Math.sqrt(planetPosition.x ** 2 + planetPosition.y ** 2 + planetPosition.z ** 2);
+
+    if (stars.length === 0) {
+      const starDirection = new THREE.Vector3(-planetPosition.x, -planetPosition.y, -planetPosition.z);
+      starDirection.normalize();
+      const starPosition = starDirection.multiplyScalar(LIGHT_DISTANCE);
+
+      const rawIntensity = 600 / (distance * distance);
+      const intensity = Math.min(3.0, Math.max(0.05, rawIntensity));
+      const sunLight = new THREE.DirectionalLight(0xffffff, intensity);
+      sunLight.position.copy(starPosition);
+      sunLight.target.position.set(0, 0, 0);
+      scene.add(sunLight.target);
+      setupShadowProperties(sunLight);
+      scene.add(sunLight);
+      starLightsRef.current.push(sunLight);
+    } else {
+      stars.forEach((star: any, index: number) => {
+        const starDirection = new THREE.Vector3(-planetPosition.x, -planetPosition.y, -planetPosition.z);
+
+        if (index > 0) {
+          const offset = index * 30;
+          starDirection.x += offset * Math.cos(index);
+          starDirection.z += offset * Math.sin(index);
+        }
+
+        starDirection.normalize();
+        const starPosition = starDirection.multiplyScalar(LIGHT_DISTANCE);
+
+        const starType = star.Type || "Yellow Dwarf";
+        const starColor = star.Color || "yellow";
+        const baseIntensity = STAR_BASE_INTENSITIES[starType] || 2.0;
+        const rawIntensity = (baseIntensity * 300) / (distance * distance);
+        const intensity = Math.min(3.0, Math.max(0.05, rawIntensity));
+
+        const color = STAR_COLORS[starColor.toLowerCase()] || 0xffffff;
+        const starLight = new THREE.DirectionalLight(color, intensity);
+        starLight.position.copy(starPosition);
+        starLight.target.position.set(0, 0, 0);
+        scene.add(starLight.target);
+
+        if (index === 0) {
+          setupShadowProperties(starLight);
+        }
+
+        scene.add(starLight);
+        starLightsRef.current.push(starLight);
+      });
+    }
 
     const fillLight = new THREE.DirectionalLight(0xffffff, 0.005);
-    fillLight.position.set(-sunX * 0.5, 0, -sunZ * 0.5);
+    fillLight.position.set(planetPosition.x * 0.5, 0, planetPosition.z * 0.5);
     scene.add(fillLight);
     fillLightRef.current = fillLight;
 
     if (!scene.children.find((child) => child instanceof THREE.AmbientLight)) {
     }
 
-    if (planetLayerSystemRef.current && sunLight) {
-      planetLayerSystemRef.current.updateFromThreeLight(sunLight);
+    if (planetLayerSystemRef.current && starLightsRef.current[0]) {
+      planetLayerSystemRef.current.updateFromThreeLight(starLightsRef.current[0]);
     }
 
-    if (sunLight) {
-      effectRegistry.updateLightForAllEffects(sunLight);
+    if (starLightsRef.current[0]) {
+      effectRegistry.updateLightForAllEffects(starLightsRef.current[0]);
     }
   };
 
@@ -661,6 +808,10 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
       const defaultCosmicOriginTime = 514080000;
       moonSystemRef.current = new MoonSystem(scene, NORMALIZED_PLANET_RADIUS, cameraRef.current, new THREE.Vector3(0, 0, 0), defaultCosmicOriginTime);
     }
+
+    const axesHelper = new THREE.AxesHelper(20);
+    axesHelper.visible = false;
+    scene.add(axesHelper);
   };
 
   const handleMouseDown = useCallback((event: MouseEvent) => {
@@ -1118,6 +1269,10 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
     const currentTime = performance.now();
     const deltaTime = clockRef.current.getDelta();
 
+    const realCurrentTime = Date.now() / 1000;
+    const cosmicOriginTime = renderingDataRef.current?.timing?.cosmic_origin_time || 514080000;
+    currentTimeRef.current = realCurrentTime - cosmicOriginTime;
+
     if (cameraAnimationRef.current?.isAnimating && cameraRef.current && controlsRef.current) {
       const animation = cameraAnimationRef.current;
       const elapsed = currentTime - animation.startTime;
@@ -1149,20 +1304,13 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
     } catch (error) {}
 
     if (planetMeshRef.current && renderingDataRef.current) {
-      const currentPlanetName = renderingDataRef.current.planet_info?.name || planetName;
-
+      const currentPlanetName = (renderingDataRef.current.planet_info?.name || planetName).replace(/ /g, "_");
       const apiData = renderingDataRef.current.original_planet_data;
       const orbitalPeriod = apiData?.orbital_period_seconds || 365.25 * 24 * 3600;
-
       const initialOrbitalAngle = renderingDataRef.current.timing?.initial_orbital_angle || 0;
-
-      const currentCosmicOriginTime = cosmicOriginTime || renderingDataRef.current.timing?.cosmic_origin_time || Date.now() / 1000 - 3600;
       const axialTilt = apiData?.axial_tilt || 0;
-
       const angleVelocityOrbit = (2 * Math.PI) / orbitalPeriod;
-
       const angleOrbit = (initialOrbitalAngle + currentTimeRef.current * angleVelocityOrbit) % (2 * Math.PI);
-
       const systemMaxOrbitalRadius = renderingDataRef.current.timing?.max_orbital_radius || renderingDataRef.current.timing?.system_max_orbital_radius;
       const actualOrbitalRadius = apiData?.orbital_radius;
 
@@ -1173,18 +1321,144 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
       const relativeOrbitRadius = actualOrbitalRadius / systemMaxOrbitalRadius;
       const scaleFactor = 80;
       const orbitRadius = 20 + relativeOrbitRadius * scaleFactor;
-
       const eccentricity = apiData?.eccentricity_factor || 0.1;
       const semiMajorAxis = orbitRadius;
-      const semiMinorAxis = semiMajorAxis * Math.sqrt(1 - eccentricity * eccentricity);
 
       planetMeshRef.current.position.set(0, 0, 0);
 
       const rotationPeriod = apiData?.rotation_period_seconds || 86400;
       const angleVelocityRotation = (2 * Math.PI) / rotationPeriod;
       planetMeshRef.current.rotation.y = (currentTimeRef.current * angleVelocityRotation) % (2 * Math.PI);
-
       planetMeshRef.current.rotation.z = axialTilt * (Math.PI / 180);
+
+      if (starLightsRef.current.length > 0) {
+        const inclination = getOrbitalInclination(currentPlanetName);
+        const ascendingNode = getAscendingNode(currentPlanetName);
+        const planetPosition = calculateEllipticalPosition(angleOrbit, semiMajorAxis, eccentricity, inclination, ascendingNode);
+        const distance = Math.sqrt(planetPosition.x ** 2 + planetPosition.y ** 2 + planetPosition.z ** 2);
+
+        const distanceKepler = (semiMajorAxis * (1 - eccentricity * eccentricity)) / (1 + eccentricity * Math.cos(angleOrbit));
+
+        if (currentTime - lastFrameTimeRef.current > 5000) {
+          console.log(`[${currentPlanetName}] Orbital Debug:`);
+          console.log(`  Angle: ${angleOrbit.toFixed(4)} rad (${((angleOrbit * 180) / Math.PI).toFixed(2)}°)`);
+          console.log(`  Semi-major axis: ${actualOrbitalRadius.toFixed(4)} AU (scene: ${semiMajorAxis.toFixed(2)})`);
+          console.log(`  Eccentricity: ${eccentricity.toFixed(4)}`);
+          console.log(`  Distance (Kepler 2D): ${distanceKepler.toFixed(4)} scene units`);
+          console.log(`  Distance (3D rotated): ${distance.toFixed(4)} scene units`);
+          console.log(`  Difference: ${Math.abs(distance - distanceKepler).toFixed(6)} (${((Math.abs(distance - distanceKepler) / distanceKepler) * 100).toFixed(3)}%)`);
+        }
+
+        const STAR_DISTANCE_FROM_ORIGIN = 200;
+        const starPositions: THREE.Vector3[] = [];
+
+        starLightsRef.current.forEach((starLight, index) => {
+          let starWorldPosition: THREE.Vector3;
+
+          if (index === 0) {
+            starWorldPosition = new THREE.Vector3(0, 0, 0);
+          } else {
+            const separationDistance = 50;
+            const angle = (index / starLightsRef.current.length) * Math.PI * 2;
+            starWorldPosition = new THREE.Vector3(
+              separationDistance * Math.cos(angle),
+              0,
+              separationDistance * Math.sin(angle)
+            );
+          }
+
+          starPositions.push(starWorldPosition);
+        });
+
+        let totalIntensity = 0;
+        const starIntensities: number[] = [];
+
+        starLightsRef.current.forEach((starLight, index) => {
+          const star = starDataRef.current[index];
+          const starWorldPosition = starPositions[index];
+
+          const distanceToPlanet = Math.sqrt(
+            (planetPosition.x - starWorldPosition.x) ** 2 +
+            (planetPosition.y - starWorldPosition.y) ** 2 +
+            (planetPosition.z - starWorldPosition.z) ** 2
+          );
+
+          let starIntensity = 0;
+          if (star) {
+            const starType = star.Type || "Yellow Dwarf";
+            const baseIntensity = STAR_BASE_INTENSITIES[starType] || 2.0;
+            const rawIntensity = (baseIntensity * 300) / (distanceToPlanet * distanceToPlanet);
+            starIntensity = Math.min(3.0, Math.max(0.05, rawIntensity));
+          } else {
+            const rawIntensity = 600 / (distanceToPlanet * distanceToPlanet);
+            starIntensity = Math.min(3.0, Math.max(0.05, rawIntensity));
+          }
+
+          starIntensities.push(starIntensity);
+          totalIntensity += starIntensity;
+        });
+
+        totalIntensity = Math.min(3.0, totalIntensity);
+
+        starLightsRef.current.forEach((starLight, index) => {
+          const starWorldPosition = starPositions[index];
+          const directionToPlanet = new THREE.Vector3(
+            planetPosition.x - starWorldPosition.x,
+            planetPosition.y - starWorldPosition.y,
+            planetPosition.z - starWorldPosition.z
+          );
+
+          directionToPlanet.normalize();
+          const lightPosition = directionToPlanet.clone().multiplyScalar(-STAR_DISTANCE_FROM_ORIGIN);
+
+          if (index === 0) {
+            starLight.intensity = totalIntensity;
+          } else {
+            starLight.intensity = 0;
+          }
+
+          starLight.position.copy(lightPosition);
+          starLight.target.position.set(0, 0, 0);
+
+          if (index === 0 && sceneRef.current) {
+            if (!debugSunMeshRef.current) {
+              const sunGeometry = new THREE.SphereGeometry(1, 16, 16);
+              const sunMaterial = new THREE.MeshBasicMaterial({
+                color: 0xffff00,
+                transparent: true,
+                opacity: 0.8,
+              });
+              debugSunMeshRef.current = new THREE.Mesh(sunGeometry, sunMaterial);
+              debugSunMeshRef.current.visible = false;
+              sceneRef.current.add(debugSunMeshRef.current);
+
+              const lineGeometry = new THREE.BufferGeometry();
+              const lineMaterial = new THREE.LineBasicMaterial({
+                color: 0xffff00,
+                transparent: true,
+                opacity: 0.3,
+              });
+              const debugLineRef = new THREE.Line(lineGeometry, lineMaterial);
+              debugLineRef.visible = false;
+              (debugSunMeshRef.current as any).debugLine = debugLineRef;
+              sceneRef.current.add(debugLineRef);
+            }
+
+            debugSunMeshRef.current.position.copy(lightPosition);
+
+            const line = (debugSunMeshRef.current as any).debugLine;
+            if (line) {
+              const positions = new Float32Array([lightPosition.x, lightPosition.y, lightPosition.z, 0, 0, 0]);
+              line.geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+              line.geometry.attributes.position.needsUpdate = true;
+            }
+          }
+        });
+
+        if (planetLayerSystemRef.current && starLightsRef.current[0]) {
+          planetLayerSystemRef.current.updateFromThreeLight(starLightsRef.current[0]);
+        }
+      }
     }
 
     activeEffectsRef.current.forEach((effectInstance) => {
@@ -1198,8 +1472,8 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
     if (toxicPostProcessingRef.current && toxicPostProcessingEnabled) {
       toxicPostProcessingRef.current.update(deltaTime);
 
-      if (sunLightRef.current) {
-        toxicPostProcessingRef.current.updateLightPosition(sunLightRef.current.position, cameraRef.current!);
+      if (starLightsRef.current[0]) {
+        toxicPostProcessingRef.current.updateLightPosition(starLightsRef.current[0].position, cameraRef.current!);
       }
     }
 
@@ -1337,6 +1611,19 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
         orbitLineRef.current = null;
       }
 
+      if (debugSunMeshRef.current && sceneRef.current) {
+        const debugLine = (debugSunMeshRef.current as any).debugLine;
+        if (debugLine) {
+          sceneRef.current.remove(debugLine);
+          debugLine.geometry.dispose();
+          (debugLine.material as THREE.LineBasicMaterial).dispose();
+        }
+        sceneRef.current.remove(debugSunMeshRef.current);
+        debugSunMeshRef.current.geometry.dispose();
+        (debugSunMeshRef.current.material as THREE.MeshBasicMaterial).dispose();
+        debugSunMeshRef.current = null;
+      }
+
       if (rendererRef.current && mountRef.current) {
         try {
           if (mountRef.current.contains(rendererRef.current.domElement)) {
@@ -1345,6 +1632,42 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
           rendererRef.current.dispose();
         } catch (error) {}
       }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (debugSunMeshRef.current) {
+      debugSunMeshRef.current.visible = debugMode;
+      const debugLine = (debugSunMeshRef.current as any).debugLine;
+      if (debugLine) {
+        debugLine.visible = debugMode;
+      }
+    }
+
+    if (sceneRef.current) {
+      sceneRef.current.children.forEach((child) => {
+        if (child instanceof THREE.AxesHelper) {
+          child.visible = debugMode;
+        }
+      });
+    }
+  }, [debugMode]);
+
+  useEffect(() => {
+    let keyBuffer = "";
+    const handleKeyPress = (e: KeyboardEvent) => {
+      keyBuffer += e.key.toLowerCase();
+      if (keyBuffer.length > 5) keyBuffer = keyBuffer.slice(-5);
+      if (keyBuffer === "atlas") {
+        setDebugMode((prev) => !prev);
+        keyBuffer = "";
+      }
+    };
+
+    window.addEventListener("keypress", handleKeyPress);
+
+    return () => {
+      window.removeEventListener("keypress", handleKeyPress);
     };
   }, []);
 
@@ -1360,14 +1683,6 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
 
     return () => clearInterval(interval);
   }, []);
-
-  useEffect(() => {
-    if (renderingData) {
-      if (sceneRef.current && planetMeshRef.current) {
-        updatePlanetPositionWithAPIData();
-      }
-    }
-  }, [renderingData, updatePlanetPositionWithAPIData]);
 
   useEffect(() => {
     if (renderingData && (renderingData as any).pendingMoonData && moonSystemRef.current) {

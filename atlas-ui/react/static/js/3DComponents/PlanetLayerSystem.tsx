@@ -569,21 +569,23 @@ export class PlanetLayerSystem {
         return n;
       }
       
-      float iceCracks(vec2 p) {
-        vec2 n = floor(p);
-        vec2 f = fract(p);
-        
+      float iceCracks(vec3 p) {
+        vec3 n = floor(p);
+        vec3 f = fract(p);
+
         float minDist = 1.0;
-        
+
         for(int i = -1; i <= 1; i++) {
           for(int j = -1; j <= 1; j++) {
-            vec2 neighbor = vec2(float(i), float(j));
-            vec2 point = neighbor + hash(vec3(n + neighbor, 0.0)) - f;
-            float dist = length(point);
-            minDist = min(minDist, dist);
+            for(int k = -1; k <= 1; k++) {
+              vec3 neighbor = vec3(float(i), float(j), float(k));
+              vec3 point = neighbor + hash(n + neighbor) - f;
+              float dist = length(point);
+              minDist = min(minDist, dist);
+            }
           }
         }
-        
+
         return minDist;
       }
       
@@ -610,7 +612,7 @@ export class PlanetLayerSystem {
         float dotNL = dot(normal, lightDir);
         float dayNight = smoothstep(-0.3, 0.1, dotNL);
         
-        float cracks = iceCracks(vUv * crackIntensity * 4.0);
+        float cracks = iceCracks(vWorldPosition * crackIntensity * 4.0);
         cracks = pow(cracks, 1.5);
         
         float scale1 = crystalScale * 0.8;
@@ -1066,6 +1068,17 @@ export class PlanetLayerSystem {
 
     const direction = light.target.position.clone().sub(light.position).normalize();
     this.updateLightDirection(direction);
+
+    if (this.baseMaterial.uniforms.lightIntensity) {
+      this.baseMaterial.uniforms.lightIntensity.value = light.intensity;
+    }
+
+    if (this.baseMaterial.uniforms.ambientStrength) {
+      const normalizedIntensity = Math.min(1.0, light.intensity / 3.0);
+      const minAmbient = 0.02;
+      const maxAmbient = 0.15;
+      this.baseMaterial.uniforms.ambientStrength.value = minAmbient + normalizedIntensity * (maxAmbient - minAmbient);
+    }
   }
 
   applyHoleShader(holeShader: THREE.ShaderMaterial): void {
@@ -1450,30 +1463,38 @@ export class PlanetLayerSystem {
       varying vec2 vUv;
       varying float vLavaHeight;
       
-      float random(vec2 st) {
-        return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
+      float random3D(vec3 st) {
+        return fract(sin(dot(st.xyz, vec3(12.9898, 78.233, 54.321))) * 43758.5453123);
       }
-      
-      float noise(vec2 st) {
-        vec2 i = floor(st);
-        vec2 f = fract(st);
-        
-        float a = random(i);
-        float b = random(i + vec2(1.0, 0.0));
-        float c = random(i + vec2(0.0, 1.0));
-        float d = random(i + vec2(1.0, 1.0));
-        
-        vec2 u = f * f * (3.0 - 2.0 * f);
-        
-        return mix(a, b, u.x) + (c - a)* u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
+
+      float noise3D(vec3 st) {
+        vec3 i = floor(st);
+        vec3 f = fract(st);
+
+        f = f * f * (3.0 - 2.0 * f);
+
+        float a = random3D(i);
+        float b = random3D(i + vec3(1.0, 0.0, 0.0));
+        float c = random3D(i + vec3(0.0, 1.0, 0.0));
+        float d = random3D(i + vec3(1.0, 1.0, 0.0));
+        float e = random3D(i + vec3(0.0, 0.0, 1.0));
+        float f2 = random3D(i + vec3(1.0, 0.0, 1.0));
+        float g = random3D(i + vec3(0.0, 1.0, 1.0));
+        float h = random3D(i + vec3(1.0, 1.0, 1.0));
+
+        return mix(
+          mix(mix(a, b, f.x), mix(c, d, f.x), f.y),
+          mix(mix(e, f2, f.x), mix(g, h, f.x), f.y),
+          f.z
+        );
       }
-      
-      float fbm(vec2 st) {
+
+      float fbm3D(vec3 st) {
         float value = 0.0;
         float amplitude = 0.5;
-        
+
         for (int i = 0; i < 5; i++) {
-          value += amplitude * noise(st);
+          value += amplitude * noise3D(st);
           st *= 2.0;
           amplitude *= 0.5;
         }
@@ -1496,13 +1517,12 @@ export class PlanetLayerSystem {
         float rimLight = 1.0 - abs(dotNL);
         rimLight = pow(rimLight, 3.0) * 0.1;
         
-        vec2 lavaUv = vUv;
-        lavaUv.x += time * 0.02;
-        lavaUv.y += time * 0.01;
-        
-        float lavaTexture1 = fbm(lavaUv * 4.0);
-        float lavaTexture2 = fbm(lavaUv * 8.0 + vec2(time * 0.03));
-        float lavaTexture3 = fbm(lavaUv * 16.0 + vec2(time * 0.05));
+        vec3 lavaPos = vWorldPosition;
+        vec3 flowDirection = vec3(time * 0.02, time * 0.01, 0.0);
+
+        float lavaTexture1 = fbm3D(lavaPos * 4.0 + flowDirection);
+        float lavaTexture2 = fbm3D(lavaPos * 8.0 + vec3(time * 0.03, time * 0.02, 0.0));
+        float lavaTexture3 = fbm3D(lavaPos * 16.0 + vec3(time * 0.05, time * 0.03, 0.0));
         
         float combinedTexture = lavaTexture1 * 0.5 + lavaTexture2 * 0.3 + lavaTexture3 * 0.2;
         

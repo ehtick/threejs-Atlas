@@ -1,7 +1,9 @@
 // atlas-ui/react/static/js/Components/SolarSystem3DViewer.tsx
+
 import React, { useRef, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import SolarSystem3DViewerFullscreen from "./SolarSystem3DViewerFullscreen.tsx";
 
 interface Planet {
@@ -31,6 +33,34 @@ interface SolarSystem3DViewerProps {
   cosmicOriginTime: number;
 }
 
+const getOrbitalInclination = (planetName: string): number => {
+  let hash = 0;
+  for (let i = 0; i < planetName.length; i++) {
+    hash = (hash << 5) - hash + planetName.charCodeAt(i);
+    hash = hash & hash;
+  }
+  return ((Math.abs(hash) % 10000) / 10000) * 0.15;
+};
+
+const getAscendingNode = (planetName: string): number => {
+  let hash = 0;
+  for (let i = 0; i < planetName.length; i++) {
+    hash = (hash << 3) - hash + planetName.charCodeAt(i) * 7;
+    hash = hash & hash;
+  }
+  return ((Math.abs(hash) % 10000) / 10000) * Math.PI * 2;
+};
+
+const calculateEllipticalPosition = (angle: number, semiMajorAxis: number, eccentricity: number, inclination: number, ascendingNode: number): THREE.Vector3 => {
+  const r = (semiMajorAxis * (1 - eccentricity * eccentricity)) / (1 + eccentricity * Math.cos(angle));
+  const xOrbital = r * Math.cos(angle);
+  const yOrbital = r * Math.sin(angle);
+  const x = xOrbital * Math.cos(ascendingNode) - yOrbital * Math.sin(ascendingNode) * Math.cos(inclination);
+  const z = xOrbital * Math.sin(ascendingNode) + yOrbital * Math.cos(ascendingNode) * Math.cos(inclination);
+  const y = yOrbital * Math.sin(inclination);
+  return new THREE.Vector3(x, y, z);
+};
+
 const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({ planets, stars, systemName, cosmicOriginTime }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -40,6 +70,7 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({ planets, star
   const orbitsRef = useRef<THREE.Line[]>([]);
   const planetLabelsRef = useRef<THREE.Sprite[]>([]);
   const currentTimeRef = useRef<number>(0);
+  const controlsRef = useRef<OrbitControls | null>(null);
 
   const realCurrentTime = Math.floor(Date.now() / 1000);
   const [timeOffset, setTimeOffset] = useState(0);
@@ -223,7 +254,7 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({ planets, star
 
     const starGroup = new THREE.Group();
     systemData.stars.forEach((star, index) => {
-      const starRadius = parseFloat(star.Size) * 3;
+      const starRadius = parseFloat(star.Size) * 1.43;
       const starGeometry = new THREE.SphereGeometry(starRadius, 16, 16);
       const starColor = starColors[star.Color] || "#FFFF44";
       const starMaterial = new THREE.MeshBasicMaterial({
@@ -234,14 +265,18 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({ planets, star
 
       const starMesh = new THREE.Mesh(starGeometry, starMaterial);
 
+      const starRadii = systemData.stars.map((s, i) => parseFloat(s.Size) * 1.43);
+      const maxStarRadius = Math.max(...starRadii);
+      const spacing = maxStarRadius * 3;
+
       if (systemData.stars.length === 1) {
         starMesh.position.set(0, 0, 0);
       } else if (systemData.stars.length === 2) {
-        starMesh.position.set(index === 0 ? -starRadius * 2 : starRadius * 2, 0, 0);
+        starMesh.position.set(index === 0 ? -spacing : spacing, 0, 0);
       } else {
-        if (index === 0) starMesh.position.set(-starRadius * 2, 0, 0);
-        else if (index === 1) starMesh.position.set(starRadius * 2, 0, 0);
-        else starMesh.position.set(0, starRadius * 2, 0);
+        if (index === 0) starMesh.position.set(-spacing, 0, 0);
+        else if (index === 1) starMesh.position.set(spacing, 0, 0);
+        else starMesh.position.set(0, spacing, 0);
       }
 
       const glowGeometry = new THREE.SphereGeometry(starRadius * 1.5, 16, 16);
@@ -260,16 +295,21 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({ planets, star
     const maxOrbitalRadius = systemData.timing.max_orbital_radius;
     const scaleFactor = 80;
 
+    const starRadiiForOrbit = systemData.stars.map((s) => parseFloat(s.Size) * 1.43);
+    const maxStarRadiusWithGlow = Math.max(...starRadiiForOrbit) * 1.5;
+    const minOrbitRadius = Math.max(30, maxStarRadiusWithGlow + 10);
+
     (window as any).systemMaxOrbitalRadius = maxOrbitalRadius;
 
     systemData.planets.forEach((planet, index) => {
       const relativeOrbitRadius = planet.orbital_radius / maxOrbitalRadius;
-      const orbitRadius = 20 + relativeOrbitRadius * scaleFactor;
+      const orbitRadius = minOrbitRadius + relativeOrbitRadius * scaleFactor;
 
       const eccentricity = planet.eccentricity_factor;
-
       const semiMajorAxis = orbitRadius;
-      const semiMinorAxis = semiMajorAxis * Math.sqrt(1 - eccentricity * eccentricity);
+
+      const inclination = getOrbitalInclination(planet.name);
+      const ascendingNode = getAscendingNode(planet.name);
 
       const numSegments = 360;
       const dashLength = 2;
@@ -280,9 +320,8 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({ planets, star
         for (let j = k; j < Math.min(k + dashLength, numSegments - 1); j++) {
           const angle = (j / numSegments) * 2 * Math.PI;
 
-          const x = semiMajorAxis * Math.cos(angle);
-          const z = semiMinorAxis * Math.sin(angle);
-          dashPoints.push(new THREE.Vector3(x, 0, z));
+          const pos = calculateEllipticalPosition(angle, semiMajorAxis, eccentricity, inclination, ascendingNode);
+          dashPoints.push(pos);
         }
 
         if (dashPoints.length > 1) {
@@ -299,8 +338,8 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({ planets, star
         }
       }
 
-      const basePlanetRadius = planet.diameter / 15000;
-      const planetRadius = Math.max(Math.min(basePlanetRadius, 4.0), 1.5);
+      const basePlanetRadius = planet.diameter / 12000;
+      const planetRadius = Math.max(Math.min(basePlanetRadius, 5.0), 1.0);
       const planetGeometry = new THREE.SphereGeometry(planetRadius, 16, 16);
       const planetColor = planetColors[planet.planet_type] || "#FFFFFF";
       const planetMaterial = new THREE.MeshBasicMaterial({
@@ -327,7 +366,9 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({ planets, star
       (planetMesh as any).planetData = planet;
       (planetMesh as any).orbitRadius = orbitRadius;
       (planetMesh as any).semiMajorAxis = semiMajorAxis;
-      (planetMesh as any).semiMinorAxis = semiMinorAxis;
+      (planetMesh as any).eccentricity = eccentricity;
+      (planetMesh as any).inclination = inclination;
+      (planetMesh as any).ascendingNode = ascendingNode;
 
       const planetName = planet.name.replace(/_/g, " ");
       const nameSprite = createTextSprite(planetName, "#ffffff");
@@ -349,45 +390,17 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({ planets, star
     pointLight.position.set(0, 0, 0);
     scene.add(pointLight);
 
-    let isMouseDown = false;
-    let mouseX = 0;
-    let mouseY = 0;
-    let autoRotate = false;
-
-    const handleMouseDown = (event: MouseEvent) => {
-      isMouseDown = true;
-      autoRotate = false;
-      mouseX = event.clientX;
-      mouseY = event.clientY;
-    };
-
-    const handleMouseMove = (event: MouseEvent) => {
-      if (!isMouseDown) return;
-
-      const deltaX = event.clientX - mouseX;
-      const deltaY = event.clientY - mouseY;
-
-      const spherical = new THREE.Spherical();
-      spherical.setFromVector3(camera.position);
-
-      spherical.theta -= deltaX * 0.01;
-      spherical.phi += deltaY * 0.01;
-
-      spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));
-
-      camera.position.setFromSpherical(spherical);
-      camera.lookAt(0, 0, 0);
-
-      mouseX = event.clientX;
-      mouseY = event.clientY;
-    };
-
-    const handleMouseUp = () => {
-      isMouseDown = false;
-      setTimeout(() => {
-        if (!isMouseDown) autoRotate = true;
-      }, 3000);
-    };
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.minDistance = 20;
+    controls.maxDistance = 500;
+    controls.autoRotate = false;
+    controls.autoRotateSpeed = 0.5;
+    controls.enablePan = true;
+    controls.enableZoom = true;
+    controls.target.set(0, 0, 0);
+    controlsRef.current = controls;
 
     const handleKeyWheel = (event: WheelEvent) => {
       if (event.ctrlKey) {
@@ -397,54 +410,34 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({ planets, star
         } else {
           setTimeOffset((prev) => prev - 604800);
         }
-      } else {
-        event.preventDefault();
-        const zoomSpeed = 0.1;
-        const currentDistance = camera.position.distanceTo(new THREE.Vector3(0, 0, 0));
-
-        if (event.deltaY > 0 && currentDistance < 500) {
-          camera.position.multiplyScalar(1 + zoomSpeed);
-        } else if (event.deltaY < 0 && currentDistance > 20) {
-          camera.position.multiplyScalar(1 - zoomSpeed);
-        }
       }
     };
 
     const canvas = renderer.domElement;
-    canvas.style.cursor = "grab";
     canvas.style.borderRadius = "8px";
-
-    canvas.addEventListener("mousedown", (e) => {
-      canvas.style.cursor = "grabbing";
-      handleMouseDown(e);
-    });
-    canvas.addEventListener("mousemove", handleMouseMove);
-    canvas.addEventListener("mouseup", () => {
-      canvas.style.cursor = "grab";
-      handleMouseUp();
-    });
-    canvas.addEventListener("mouseleave", () => {
-      canvas.style.cursor = "grab";
-      handleMouseUp();
-    });
     canvas.addEventListener("wheel", handleKeyWheel);
 
     const animate = () => {
       animationIdRef.current = requestAnimationFrame(animate);
 
+      if (controlsRef.current) {
+        controlsRef.current.update();
+      }
+
       planetsRef.current.forEach((planetMesh, index) => {
         const planet = (planetMesh as any).planetData;
         const semiMajorAxis = (planetMesh as any).semiMajorAxis;
-        const semiMinorAxis = (planetMesh as any).semiMinorAxis;
+        const eccentricity = (planetMesh as any).eccentricity;
+        const inclination = (planetMesh as any).inclination;
+        const ascendingNode = (planetMesh as any).ascendingNode;
 
         const orbitalPeriod = planet.orbital_period_seconds;
         const angleVelocityOrbit = (2 * Math.PI) / orbitalPeriod;
 
         const angleOrbit = (planet.initial_orbital_angle + currentTimeRef.current * angleVelocityOrbit) % (2 * Math.PI);
 
-        planetMesh.position.x = semiMajorAxis * Math.cos(angleOrbit);
-        planetMesh.position.z = semiMinorAxis * Math.sin(angleOrbit);
-        planetMesh.position.y = 0;
+        const position = calculateEllipticalPosition(angleOrbit, semiMajorAxis, eccentricity, inclination, ascendingNode);
+        planetMesh.position.copy(position);
 
         const rotationPeriodSeconds = planet.rotation_period_seconds;
         const angleVelocityRotation = (2 * Math.PI) / rotationPeriodSeconds;
@@ -475,12 +468,11 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({ planets, star
 
     return () => {
       window.removeEventListener("resize", handleResize);
-
-      canvas.removeEventListener("mousedown", handleMouseDown);
-      canvas.removeEventListener("mousemove", handleMouseMove);
-      canvas.removeEventListener("mouseup", handleMouseUp);
-      canvas.removeEventListener("mouseleave", handleMouseUp);
       canvas.removeEventListener("wheel", handleKeyWheel);
+
+      if (controlsRef.current) {
+        controlsRef.current.dispose();
+      }
 
       if (animationIdRef.current) {
         cancelAnimationFrame(animationIdRef.current);

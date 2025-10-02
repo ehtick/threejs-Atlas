@@ -1,5 +1,31 @@
 # Changelog
 
+## [2.8.48] - 2025-10-02
+
+- Implemented universe-specific localStorage key system to prevent exploration data overlap between local and remote universes.
+- Added automatic node_id suffix to \_\_atlasArchive keys for remote universes while maintaining global keys for spaceship, daily challenges, and locations.
+- Updated data export system to include all universe archives (local + all remote) in a single export file with universe metadata.
+- Modified data import system to restore archives for all universes simultaneously, preserving exploration progress across multiple universe contexts.
+- Enhanced Atlas Size calculation in Spaceship Control to include storage from all universe archives.
+- Disabled QR code generation in 4K screenshots when in remote universes, as coordinates are universe-specific and not globally valid.
+- Implemented additional planets system with cascade logic allowing up to 10 planets per solar system (6-9 with decreasing probabilities: 35%, 25%, 10%, 5%).
+- Additional planets system uses independent derived seeds that do not affect the generation of the first 6 planets, maintaining complete backward compatibility.
+- Implemented in the frontend the realistic orbital eccentricity calculation send from the backend using modified Rayleigh distribution (~60% planets with e < 0.1, ~30% with 0.1 < e < 0.3, ~10% with e > 0.3).
+- Orbital eccentricity now capped at 0.7 maximum to prevent unstable orbits, with 5% probability of nearly circular orbits (e < 0.05).
+- Added stellar composition information (stellar_composition) to planet rendering API for accurate distance calculations from star to planet surface.
+- Implemented lightning effect system for planets and planetary atmospheres with realistic electrical discharge visualization based on planet's distance from star in AU.
+- Updated planet naming system with support for is_extra parameter to differentiate additional planets.
+- Improved lighting and rendering system in ModularPlanetRenderer for better handling of planet hidden faces.
+- Fixed bug in name generator affecting planet nomenclature breaking determinism (yes, sorry not sorry, but fixed it).
+- Fixed visual seams in Savannah and Rocky terrain 3D Effects through procedural parameter adjustments.
+- Fixed seams in Icy terrain by adjusting opacity values in PlanetLayerSystem.
+- Improved molten lava rendering with elimination of visible seams on planetary surface.
+- Improved lava flows (LavaFlowsEffect.tsx) with seam correction and better visual continuity.
+- Fixed Field of View (FOV) across all solar system views (SolarSystem3DViewer, SolarSystem3DViewerFullscreen, SolarSystem3DViewerLeft).
+- Added EyeOpenIcon and EyeClosedIcon for visibility controls in planet and system lists.
+- Improved user interface in PlanetsList and SystemsList with new visual visibility controls.
+- Performance optimizations in 3D rendering system and orbital calculations.
+
 ## [2.8.46] - 2025-09-29
 
 - Fixed Multiverse P2P handshake Docker issues by implementing environment variable configuration system for Docker deployments.

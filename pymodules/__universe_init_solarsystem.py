@@ -37,6 +37,51 @@ class SolarSystem:
 
             self.planets[i] = Planet(planet_seed, planet_name, self.constants, star_mass)
 
+        extra_planet_probabilities = {
+            6: 0.35,
+            7: 0.25,
+            8: 0.10,
+            9: 0.05,
+        }
+
+        for extra_planet_index, probability in extra_planet_probabilities.items():
+            if self.num_planets != extra_planet_index:
+                break
+
+            extra_seed = int(
+                hashlib.sha256(f"{self.seed}-extra-planet-{extra_planet_index}".encode()).hexdigest(),
+                16,
+            )
+
+            random.seed(extra_seed)
+
+            if random.random() < probability:
+                from pymodules.__universe_init_planet import Planet
+
+                planet_seed = int(
+                    hashlib.sha256(f"{self.seed}-{seedmaster(4)}-{extra_planet_index}".encode()).hexdigest(),
+                    16,
+                )
+                planet_name = generate_name(planet_seed, "planet", is_extra=True)
+
+                star_mass = self.constants.M_SUN
+                if self.stars:
+                    star_type = self.stars[0]["Type"]
+                    mass_factors = {
+                        "Red Dwarf": 0.2,
+                        "Yellow Dwarf": 1.0,
+                        "Blue Giant": 10.0,
+                        "Red Giant": 1.2,
+                        "White Dwarf": 0.6,
+                        "Neutron Star": 1.4,
+                    }
+                    star_mass *= mass_factors.get(star_type, 1.0)
+
+                self.planets[extra_planet_index] = Planet(planet_seed, planet_name, self.constants, star_mass)
+                self.num_planets = extra_planet_index + 1
+            else:
+                break
+
     def determine_star_system_type(self):
         system_type = random.choices(
             ["single", "binary", "tertiary"],

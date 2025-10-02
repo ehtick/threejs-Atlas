@@ -1,6 +1,7 @@
 // atlas-ui/react/static/js/Components/PlanetsList.tsx
 import React, { useEffect, useState } from "react";
 import { getVisitedPlanets, markPlanetAsVisited } from "../Utils/VisitHistory.tsx";
+import EyeOpenIcon from "../Icons/EyeOpenIcon.tsx";
 
 interface Planet {
   name: string;
@@ -84,7 +85,11 @@ const PlanetsList: React.FC<PlanetsListProps> = ({ planets, coordinates, systemI
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
         {planets.map((planet) => (
           <div key={planet.name} className="relative bg-white/10 rounded-lg border border-white/20 hover:bg-white/20 hover:border-white/40 transition-all duration-300 group overflow-hidden">
-            {visitedPlanets.has(planet.name.toLowerCase()) && <div className="absolute top-1 right-1 bg-green-500/20 border border-green-500/50 text-green-400 text-[10px] px-1.5 py-0.5 rounded z-10">VISITED</div>}
+            {visitedPlanets.has(planet.name.toLowerCase()) && (
+              <div className="absolute top-1 right-1 z-10" title="Planet visited">
+                <EyeOpenIcon className="text-green-400" />
+              </div>
+            )}
 
             <div className="absolute -top-3 -left-3 w-8 h-8 rounded-full border border-white/40 shadow-sm z-20 animate-pulse" style={{ backgroundColor: getPlanetColor(planet.planet_type) }}></div>
 

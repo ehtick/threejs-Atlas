@@ -1,5 +1,7 @@
 // atlas-ui/react/static/js/Utils/b64.tsx
+
 import * as pako from "pako";
+
 const ENCODING_ENABLED = true;
 
 const COMPRESSION_THRESHOLD = 100;
@@ -12,6 +14,36 @@ export const ATLAS_KEYS = {
   DAILY_CHALLENGES: "_atlasDailyChallenges",
   LOCATIONS: "_atlasLocations",
 } as const;
+
+const getUniverseIdentifier = (): string | null => {
+  try {
+    const configElement = document.getElementById("data-universe-config");
+    if (configElement) {
+      const config = JSON.parse(configElement.textContent || "{}");
+      if (config.remote === true && config.node_id) {
+        return config.node_id;
+      }
+    }
+    return null;
+  } catch (error) {
+    return null;
+  }
+};
+
+const getUniverseSpecificKey = (key: string): string => {
+  if (key === ATLAS_KEYS.ARCHIVE) {
+    const universeId = getUniverseIdentifier();
+    if (universeId) {
+      return `${key}_${universeId}`;
+    }
+  }
+  return key;
+};
+
+export const getEncodedStorageKey = (key: string): string => {
+  const universeKey = getUniverseSpecificKey(key);
+  return btoa(encodeURIComponent(universeKey));
+};
 
 const uint8ArrayToBase64 = (uint8Array: Uint8Array): string => {
   let binary = "";
@@ -33,8 +65,10 @@ const base64ToUint8Array = (base64: string): Uint8Array => {
 };
 
 export const setItem = (key: string, value: string): void => {
+  const universeKey = getUniverseSpecificKey(key);
+
   if (!ENCODING_ENABLED) {
-    localStorage.setItem(key, value);
+    localStorage.setItem(universeKey, value);
     return;
   }
 
@@ -45,7 +79,7 @@ export const setItem = (key: string, value: string): void => {
       throw new Error("Value exceeds maximum storage size");
     }
 
-    const encodedKey = btoa(encodeURIComponent(key));
+    const encodedKey = btoa(encodeURIComponent(universeKey));
 
     const textEncoder = new TextEncoder();
     const uint8Array = textEncoder.encode(value);
@@ -61,27 +95,27 @@ export const setItem = (key: string, value: string): void => {
 
     const finalSize = new Blob([encodedValue]).size;
     if (finalSize > MAX_STORAGE_SIZE) {
-      console.warn(`Encoded value too large: ${finalSize} bytes exceeds ${MAX_STORAGE_SIZE} bytes limit`);
       throw new Error("Encoded value exceeds maximum storage size");
     }
 
     localStorage.setItem(encodedKey, encodedValue);
   } catch (error) {
-    console.error("Error encoding/compressing:", error);
     if (error instanceof Error && error.message.includes("storage size")) {
       throw error;
     }
-    localStorage.setItem(key, value);
+    localStorage.setItem(universeKey, value);
   }
 };
 
 export const getItem = (key: string): string | null => {
+  const universeKey = getUniverseSpecificKey(key);
+
   if (!ENCODING_ENABLED) {
-    return localStorage.getItem(key);
+    return localStorage.getItem(universeKey);
   }
 
   try {
-    const encodedKey = btoa(encodeURIComponent(key));
+    const encodedKey = btoa(encodeURIComponent(universeKey));
     const encodedValue = localStorage.getItem(encodedKey);
     if (encodedValue === null) return null;
 
@@ -101,23 +135,23 @@ export const getItem = (key: string): string | null => {
     const textDecoder = new TextDecoder();
     return textDecoder.decode(uint8Array);
   } catch (error) {
-    console.error("Error decoding/decompressing:", error);
-    return localStorage.getItem(key);
+    return localStorage.getItem(universeKey);
   }
 };
 
 export const removeItem = (key: string): void => {
+  const universeKey = getUniverseSpecificKey(key);
+
   if (!ENCODING_ENABLED) {
-    localStorage.removeItem(key);
+    localStorage.removeItem(universeKey);
     return;
   }
 
   try {
-    const encodedKey = btoa(encodeURIComponent(key));
+    const encodedKey = btoa(encodeURIComponent(universeKey));
     localStorage.removeItem(encodedKey);
   } catch (error) {
-    console.error("Error removing encoded item:", error);
-    localStorage.removeItem(key);
+    localStorage.removeItem(universeKey);
   }
 };
 
@@ -129,11 +163,32 @@ export const migrateToEncoded = (): void => {
   const keysToMigrate = Object.values(ATLAS_KEYS);
 
   keysToMigrate.forEach((key) => {
+    const encodedKey = getEncodedStorageKey(key);
+    if (localStorage.getItem(encodedKey) !== null) {
+      return;
+    }
+
     const value = localStorage.getItem(key);
     if (value !== null) {
-      setItem(key, value);
+      localStorage.setItem(encodedKey, value);
       localStorage.removeItem(key);
-      console.log(`Migrated ${key} to encoded storage`);
     }
   });
+};
+
+export const getUniverseInfo = (): { isRemote: boolean; nodeId: string | null; seedName?: string } => {
+  try {
+    const configElement = document.getElementById("data-universe-config");
+    if (configElement) {
+      const config = JSON.parse(configElement.textContent || "{}");
+      return {
+        isRemote: config.remote === true,
+        nodeId: config.node_id || null,
+        seedName: config.seed_name,
+      };
+    }
+    return { isRemote: false, nodeId: null };
+  } catch (error) {
+    return { isRemote: false, nodeId: null };
+  }
 };

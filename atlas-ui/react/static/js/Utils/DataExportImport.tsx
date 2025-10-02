@@ -1,18 +1,26 @@
 // atlas-ui/react/static/js/Utils/DataExportImport.tsx
-import { getItem, ATLAS_KEYS } from "./b64.tsx";
+
+import { getItem, ATLAS_KEYS, getEncodedStorageKey, getUniverseInfo } from "./b64.tsx";
 
 export interface ExportData {
   version: string;
   timestamp: number;
+  currentUniverse?: {
+    isRemote: boolean;
+    nodeId: string | null;
+    seedName?: string;
+  };
   data: {
     spaceship?: string | null;
     archive?: string | null;
+    archives?: { [nodeId: string]: string };
     dailyChallenges?: string | null;
     locations?: string | null;
   };
   hashes: {
     spaceship?: string;
     archive?: string;
+    archives?: { [nodeId: string]: string };
     dailyChallenges?: string;
     locations?: string;
   };
@@ -20,7 +28,7 @@ export interface ExportData {
 }
 
 export class DataExportImport {
-  private static readonly VERSION = "2.8.46";
+  private static readonly VERSION = "2.8.48";
 
   private static generateFallbackHash(data: string): string {
     let hash = 0;
@@ -67,20 +75,51 @@ export class DataExportImport {
 
   static async exportAllData(): Promise<string> {
     const timestamp = Date.now();
+    const universeInfo = getUniverseInfo();
 
     const encodedKeys = {
-      spaceship: btoa(encodeURIComponent(ATLAS_KEYS.SPACESHIP)),
-      archive: btoa(encodeURIComponent(ATLAS_KEYS.ARCHIVE)),
-      dailyChallenges: btoa(encodeURIComponent(ATLAS_KEYS.DAILY_CHALLENGES)),
-      locations: btoa(encodeURIComponent(ATLAS_KEYS.LOCATIONS)),
+      spaceship: getEncodedStorageKey(ATLAS_KEYS.SPACESHIP),
+      dailyChallenges: getEncodedStorageKey(ATLAS_KEYS.DAILY_CHALLENGES),
+      locations: getEncodedStorageKey(ATLAS_KEYS.LOCATIONS),
     };
 
-    const rawData = {
+    const archiveKeys: { [nodeId: string]: string } = {};
+    let localArchive: string | null = null;
+
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key) {
+        try {
+          const decodedKey = decodeURIComponent(atob(key));
+          if (decodedKey.startsWith(ATLAS_KEYS.ARCHIVE)) {
+            const value = localStorage.getItem(key);
+            if (value) {
+              if (decodedKey === ATLAS_KEYS.ARCHIVE) {
+                localArchive = value;
+              } else {
+                const nodeId = decodedKey.substring(ATLAS_KEYS.ARCHIVE.length + 1);
+                archiveKeys[nodeId] = value;
+              }
+            }
+          }
+        } catch {
+          continue;
+        }
+      }
+    }
+
+    const rawData: any = {
       spaceship: localStorage.getItem(encodedKeys.spaceship),
-      archive: localStorage.getItem(encodedKeys.archive),
       dailyChallenges: localStorage.getItem(encodedKeys.dailyChallenges),
       locations: localStorage.getItem(encodedKeys.locations),
     };
+
+    if (localArchive) {
+      rawData.archive = localArchive;
+    }
+    if (Object.keys(archiveKeys).length > 0) {
+      rawData.archives = archiveKeys;
+    }
 
     const hashes: any = {};
     if (rawData.spaceship) hashes.spaceship = await this.generateHash(rawData.spaceship);
@@ -88,9 +127,17 @@ export class DataExportImport {
     if (rawData.dailyChallenges) hashes.dailyChallenges = await this.generateHash(rawData.dailyChallenges);
     if (rawData.locations) hashes.locations = await this.generateHash(rawData.locations);
 
+    if (rawData.archives) {
+      hashes.archives = {};
+      for (const [nodeId, archiveData] of Object.entries(rawData.archives)) {
+        hashes.archives[nodeId] = await this.generateHash(archiveData as string);
+      }
+    }
+
     const exportDataWithoutChecksum = {
       version: this.VERSION,
       timestamp,
+      currentUniverse: universeInfo,
       data: rawData,
       hashes,
     };
@@ -186,11 +233,21 @@ export class DataExportImport {
             }
           }
 
+          if (importData.data.archives && importData.hashes.archives) {
+            for (const [nodeId, archiveData] of Object.entries(importData.data.archives)) {
+              if (importData.hashes.archives[nodeId]) {
+                const valid = await this.verifyHash(archiveData as string, importData.hashes.archives[nodeId]);
+                if (!valid) {
+                  throw new Error(`Archive data integrity check failed for universe ${nodeId}`);
+                }
+              }
+            }
+          }
+
           const encodedKeys = {
-            spaceship: btoa(encodeURIComponent(ATLAS_KEYS.SPACESHIP)),
-            archive: btoa(encodeURIComponent(ATLAS_KEYS.ARCHIVE)),
-            dailyChallenges: btoa(encodeURIComponent(ATLAS_KEYS.DAILY_CHALLENGES)),
-            locations: btoa(encodeURIComponent(ATLAS_KEYS.LOCATIONS)),
+            spaceship: getEncodedStorageKey(ATLAS_KEYS.SPACESHIP),
+            dailyChallenges: getEncodedStorageKey(ATLAS_KEYS.DAILY_CHALLENGES),
+            locations: getEncodedStorageKey(ATLAS_KEYS.LOCATIONS),
           };
 
           if (importData.data.spaceship !== undefined) {
@@ -198,14 +255,6 @@ export class DataExportImport {
               localStorage.removeItem(encodedKeys.spaceship);
             } else {
               localStorage.setItem(encodedKeys.spaceship, importData.data.spaceship);
-            }
-          }
-
-          if (importData.data.archive !== undefined) {
-            if (importData.data.archive === null) {
-              localStorage.removeItem(encodedKeys.archive);
-            } else {
-              localStorage.setItem(encodedKeys.archive, importData.data.archive);
             }
           }
 
@@ -222,6 +271,23 @@ export class DataExportImport {
               localStorage.removeItem(encodedKeys.locations);
             } else {
               localStorage.setItem(encodedKeys.locations, importData.data.locations);
+            }
+          }
+
+          if (importData.data.archive !== undefined) {
+            const localArchiveKey = getEncodedStorageKey(ATLAS_KEYS.ARCHIVE);
+            if (importData.data.archive === null) {
+              localStorage.removeItem(localArchiveKey);
+            } else {
+              localStorage.setItem(localArchiveKey, importData.data.archive);
+            }
+          }
+
+          if (importData.data.archives) {
+            for (const [nodeId, archiveData] of Object.entries(importData.data.archives)) {
+              const archiveKey = `${ATLAS_KEYS.ARCHIVE}_${nodeId}`;
+              const encodedArchiveKey = btoa(encodeURIComponent(archiveKey));
+              localStorage.setItem(encodedArchiveKey, archiveData as string);
             }
           }
 

@@ -1,15 +1,10 @@
-#!/usr/bin/env python3
-"""
-Atmosphere Translation Module
-Translates atmosphere data from planet objects to JSON format for ThreeJS rendering.
-"""
+# pymodules/planet_renderer/atmosphere_translator.py
 
 from typing import Dict, Any, Optional
 
 
 class AtmosphereTranslator:
-    """Handles translation of atmosphere data for ThreeJS rendering"""
-    
+
     def __init__(self):
         self.atmosphere_configs = {
             "Breathable": {"color": [144, 238, 144, 150], "width": 13},
@@ -32,20 +27,11 @@ class AtmosphereTranslator:
             "Water Vapor": {"color": [173, 216, 230, 150], "width": 15},
             "Frozen": {"color": [240, 248, 255, 150], "width": 15},
         }
-    
+
     def translate_atmosphere(self, atmosphere_type: str) -> Optional[Dict[str, Any]]:
-        """Translate atmosphere data for ThreeJS rendering"""
         if atmosphere_type == "None":
             return None
-            
-        config = self.atmosphere_configs.get(
-            atmosphere_type, 
-            {"color": [169, 169, 169, 150], "width": 15}
-        )
-        
-        return {
-            "type": atmosphere_type,
-            "color": [c/255.0 for c in config["color"][:3]] + [config["color"][3]/255.0],
-            "width": config["width"],
-            "blur_radius": 5
-        }
+
+        config = self.atmosphere_configs.get(atmosphere_type, {"color": [169, 169, 169, 150], "width": 15})
+
+        return {"type": atmosphere_type, "color": [c / 255.0 for c in config["color"][:3]] + [config["color"][3] / 255.0], "width": config["width"], "blur_radius": 5}

@@ -615,7 +615,20 @@ class Planet:
         return max(min_rotation_period, rotation_period_seconds)
 
     def calculate_eccentricity_factor(self):
-        return random.uniform(0, 0.5)
+        sigma = 0.15
+        u1 = random.random()
+        u2 = random.random()
+
+        z = (-2 * math.log(u1 + 1e-10)) ** 0.5 * math.cos(2 * math.pi * u2)
+
+        rayleigh = abs(z) * sigma
+
+        eccentricity = min(rayleigh, 0.7)
+
+        if random.random() < 0.05:
+            eccentricity = random.uniform(0, 0.05)
+
+        return eccentricity
 
     def decide_planet_rings(self, seed):
         random.seed(seed)

@@ -1,6 +1,8 @@
 // atlas-ui/react/static/js/Components/SystemsList.tsx
 import React, { useEffect, useState } from "react";
 import { getSystemVisitStatus } from "../Utils/VisitHistory.tsx";
+import EyeOpenIcon from "../Icons/EyeOpenIcon.tsx";
+import EyeClosedIcon from "../Icons/EyeClosedIcon.tsx";
 
 interface System {
   index: number;
@@ -42,9 +44,17 @@ const SystemsList: React.FC<SystemsListProps> = ({ systems, coordinates }) => {
             {(() => {
               const visitStatus = systemVisitStates.get(system.index) || "none";
               if (visitStatus === "complete") {
-                return <div className="absolute top-1 right-1 bg-green-500/20 border border-green-500/50 text-green-400 text-[10px] px-1.5 py-0.5 rounded z-10">VISITED</div>;
+                return (
+                  <div className="absolute top-1 right-1 z-10" title="System fully explored">
+                    <EyeOpenIcon className="text-green-400" />
+                  </div>
+                );
               } else if (visitStatus === "partial") {
-                return <div className="absolute top-1 right-1 bg-yellow-500/20 border border-yellow-500/50 text-yellow-400 text-[10px] px-1.5 py-0.5 rounded z-10">PARTIAL</div>;
+                return (
+                  <div className="absolute top-1 right-1 z-10" title="System partially explored">
+                    <EyeClosedIcon className="text-yellow-400" />
+                  </div>
+                );
               }
               return null;
             })()}

@@ -1,6 +1,7 @@
 // atlas-ui/react/static/js/Utils/OptimizedStorage.tsx
+
 import { DailyChallengesManager } from "./DailyChallenges.tsx";
-import { ATLAS_KEYS, getItem, setItem, migrateToEncoded } from "./b64.tsx";
+import { ATLAS_KEYS, getItem, setItem, migrateToEncoded, getUniverseInfo } from "./b64.tsx";
 
 interface OptimizedVisitData {
   g: { [galaxyHash: string]: { [systemIndex: string]: string } };
@@ -225,14 +226,38 @@ export class OptimizedAtlasStorage {
     const data = this.getData();
 
     let totalSize = 0;
-    const atlasKeys = Object.values(ATLAS_KEYS);
 
-    atlasKeys.forEach((key) => {
+    const globalKeys = [ATLAS_KEYS.SPACESHIP, ATLAS_KEYS.DAILY_CHALLENGES, ATLAS_KEYS.LOCATIONS];
+    globalKeys.forEach((key) => {
       const value = getItem(key);
       if (value) {
         totalSize += value.length;
       }
     });
+
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key) {
+        try {
+          const decodedKey = decodeURIComponent(atob(key));
+          if (decodedKey.startsWith(ATLAS_KEYS.ARCHIVE)) {
+            const value = localStorage.getItem(key);
+            if (value) {
+              try {
+                const decompressedValue = getItem(decodedKey.includes("_") ? decodedKey : ATLAS_KEYS.ARCHIVE);
+                if (decompressedValue) {
+                  totalSize += decompressedValue.length;
+                }
+              } catch {
+                totalSize += value.length;
+              }
+            }
+          }
+        } catch {
+          continue;
+        }
+      }
+    }
 
     let totalSystems = 0;
     let totalPlanets = 0;
@@ -257,5 +282,48 @@ export class OptimizedAtlasStorage {
       systems: totalSystems,
       planets: totalPlanets,
     };
+  }
+
+  public static getCurrentUniverseInfo(): { isRemote: boolean; nodeId: string | null; seedName?: string } {
+    return getUniverseInfo();
+  }
+
+  public static debugListAllUniverseKeys(): void {
+    const allKeys: string[] = [];
+
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key) {
+        try {
+          const decodedKey = decodeURIComponent(atob(key));
+          if (decodedKey.includes("atlas") || decodedKey.includes("Atlas")) {
+            allKeys.push(decodedKey);
+          }
+        } catch {
+          if (key.includes("atlas") || key.includes("Atlas")) {
+            allKeys.push(key);
+          }
+        }
+      }
+    }
+
+    console.group("🗄️ All Atlas Storage Keys Across Universes");
+    console.log("Found", allKeys.length, "Atlas-related keys:");
+
+    const grouped: { [prefix: string]: string[] } = {};
+    allKeys.forEach((key) => {
+      const match = key.match(/^(__?atlas\w+)(_.*)?$/);
+      if (match) {
+        const baseKey = match[1];
+        const suffix = match[2] || " (local)";
+        if (!grouped[baseKey]) grouped[baseKey] = [];
+        grouped[baseKey].push(suffix);
+      }
+    });
+
+    Object.entries(grouped).forEach(([baseKey, suffixes]) => {
+      console.log(`  ${baseKey}:`, suffixes);
+    });
+    console.groupEnd();
   }
 }

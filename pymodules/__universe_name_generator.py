@@ -3,7 +3,7 @@
 import random
 
 
-def generate_name(seed, type="galaxy"):
+def generate_name(seed, type="galaxy", is_extra=False):
     random.seed(seed)
 
     galaxy_prefixes = [
@@ -492,43 +492,167 @@ def generate_name(seed, type="galaxy"):
         "Oblivion",
     ]
 
-    # Moon-specific naming components
     moon_prefixes = [
-        "Astra", "Luna", "Selene", "Diana", "Artemis", "Cyn", "Thia", "Rea", "Nyx",
-        "Echo", "Iris", "Hera", "Vesta", "Ceres", "Palla", "Juno", "Hygia", "Eris",
-        "Mira", "Nova", "Lyra", "Vega", "Siria", "Andra", "Orion", "Cassi", "Belka",
-        "Leda", "Europa", "Gany", "Calli", "Iona", "Hima", "Dymo", "Carme", "Anan",
-        "Titan", "Rhea", "Dione", "Tethy", "Encela", "Mimas", "Iapet", "Phoebe",
-        "Ner", "Proto", "Trito", "Naiad", "Tha", "Despi", "Gala", "Hipp", "Lysi",
-        "Oberon", "Miran", "Ariel", "Umbre", "Cordy", "Ophel", "Bianc", "Cress",
-        "Kal", "Neso", "Hali", "Sao", "Psych", "Themis", "Cybele", "Davida", "Syl",
+        "Astra",
+        "Luna",
+        "Selene",
+        "Diana",
+        "Artemis",
+        "Cyn",
+        "Thia",
+        "Rea",
+        "Nyx",
+        "Echo",
+        "Iris",
+        "Hera",
+        "Vesta",
+        "Ceres",
+        "Palla",
+        "Juno",
+        "Hygia",
+        "Eris",
+        "Mira",
+        "Nova",
+        "Lyra",
+        "Vega",
+        "Siria",
+        "Andra",
+        "Orion",
+        "Cassi",
+        "Belka",
+        "Leda",
+        "Europa",
+        "Gany",
+        "Calli",
+        "Iona",
+        "Hima",
+        "Dymo",
+        "Carme",
+        "Anan",
+        "Titan",
+        "Rhea",
+        "Dione",
+        "Tethy",
+        "Encela",
+        "Mimas",
+        "Iapet",
+        "Phoebe",
+        "Ner",
+        "Proto",
+        "Trito",
+        "Naiad",
+        "Tha",
+        "Despi",
+        "Gala",
+        "Hipp",
+        "Lysi",
+        "Oberon",
+        "Miran",
+        "Ariel",
+        "Umbre",
+        "Cordy",
+        "Ophel",
+        "Bianc",
+        "Cress",
+        "Kal",
+        "Neso",
+        "Hali",
+        "Sao",
+        "Psych",
+        "Themis",
+        "Cybele",
+        "Davida",
+        "Syl",
     ]
 
     moon_suffixes = [
-        "nia", "lia", "sis", "dia", "mia", "ria", "tis", "nus", "los", "tos",
-        "kos", "pos", "ros", "tys", "lys", "nys", "eus", "aus", "ous", "ius",
-        "ara", "era", "ira", "ora", "ura", "ala", "ela", "ila", "ola", "ula",
-        "ane", "ene", "ine", "one", "une", "ate", "ete", "ite", "ote", "ute",
-        "ka", "sa", "ta", "da", "ga", "ba", "fa", "ma", "na", "la", "ra",
-        "x", "z", "n", "s", "th", "ph", "ch", "sh", "ps", "ks", "ts",
+        "nia",
+        "lia",
+        "sis",
+        "dia",
+        "mia",
+        "ria",
+        "tis",
+        "nus",
+        "los",
+        "tos",
+        "kos",
+        "pos",
+        "ros",
+        "tys",
+        "lys",
+        "nys",
+        "eus",
+        "aus",
+        "ous",
+        "ius",
+        "ara",
+        "era",
+        "ira",
+        "ora",
+        "ura",
+        "ala",
+        "ela",
+        "ila",
+        "ola",
+        "ula",
+        "ane",
+        "ene",
+        "ine",
+        "one",
+        "une",
+        "ate",
+        "ete",
+        "ite",
+        "ote",
+        "ute",
+        "ka",
+        "sa",
+        "ta",
+        "da",
+        "ga",
+        "ba",
+        "fa",
+        "ma",
+        "na",
+        "la",
+        "ra",
+        "x",
+        "z",
+        "n",
+        "s",
+        "th",
+        "ph",
+        "ch",
+        "sh",
+        "ps",
+        "ks",
+        "ts",
     ]
 
     if type == "system":
 
         name = f"{random.choice(word_list_1)} {random.choice(word_list_2)} {random.choice(word_list_3)}"
 
-        number = (
-            f"{random.choice('abcdefghijklmnopqrstuvwxyz')}{random.randint(1, 999):03}"
-        )
+        number = f"{random.choice('abcdefghijklmnopqrstuvwxyz')}{random.randint(1, 999):03}"
         return f"{name} {number}"
 
     if type == "moon":
-        # Moon names get special treatment
         prefix = random.choice(moon_prefixes)
         suffix = random.choice(moon_suffixes)
     else:
         prefix = random.choice(galaxy_prefixes if type == "galaxy" else planet_prefixes)
         suffix = random.choice(galaxy_suffixes if type == "galaxy" else planet_suffixes)
+
+    if is_extra and type == "planet":
+        suffix_extra = random.choice(galaxy_suffixes if type == "galaxy" else planet_suffixes)
+        letter1 = random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+        letter2 = random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+        letter3 = random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+        num1 = random.randint(0, 9)
+        num2 = random.randint(0, 9)
+        num3 = random.randint(0, 9)
+        return f"{prefix}{suffix}{suffix_extra}_{letter1}{letter2}{letter3}-{num1}{num2}{num3}"
 
     if random.random() < 0.01:
         number = random.choice(
@@ -599,40 +723,150 @@ def generate_name(seed, type="galaxy"):
 
 
 def generate_moon_name(seed, moon_type="rocky", index=0):
-    """Generate a procedural name for a moon based on its type and characteristics"""
     random.seed(seed)
 
     moon_prefixes = [
-        "Astra", "Luna", "Selene", "Diana", "Artemis", "Cyn", "Thia", "Rea", "Nyx",
-        "Echo", "Iris", "Hera", "Vesta", "Ceres", "Palla", "Juno", "Hygia", "Eris",
-        "Mira", "Nova", "Lyra", "Vega", "Siria", "Andra", "Orion", "Cassi", "Belka",
-        "Leda", "Europa", "Gany", "Calli", "Iona", "Hima", "Dymo", "Carme", "Anan",
-        "Titan", "Rhea", "Dione", "Tethy", "Encela", "Mimas", "Iapet", "Phoebe",
-        "Ner", "Proto", "Trito", "Naiad", "Tha", "Despi", "Gala", "Hipp", "Lysi",
-        "Oberon", "Miran", "Ariel", "Umbre", "Cordy", "Ophel", "Bianc", "Cress",
-        "Kal", "Neso", "Hali", "Sao", "Psych", "Themis", "Cybele", "Davida", "Syl",
+        "Astra",
+        "Luna",
+        "Selene",
+        "Diana",
+        "Artemis",
+        "Cyn",
+        "Thia",
+        "Rea",
+        "Nyx",
+        "Echo",
+        "Iris",
+        "Hera",
+        "Vesta",
+        "Ceres",
+        "Palla",
+        "Juno",
+        "Hygia",
+        "Eris",
+        "Mira",
+        "Nova",
+        "Lyra",
+        "Vega",
+        "Siria",
+        "Andra",
+        "Orion",
+        "Cassi",
+        "Belka",
+        "Leda",
+        "Europa",
+        "Gany",
+        "Calli",
+        "Iona",
+        "Hima",
+        "Dymo",
+        "Carme",
+        "Anan",
+        "Titan",
+        "Rhea",
+        "Dione",
+        "Tethy",
+        "Encela",
+        "Mimas",
+        "Iapet",
+        "Phoebe",
+        "Ner",
+        "Proto",
+        "Trito",
+        "Naiad",
+        "Tha",
+        "Despi",
+        "Gala",
+        "Hipp",
+        "Lysi",
+        "Oberon",
+        "Miran",
+        "Ariel",
+        "Umbre",
+        "Cordy",
+        "Ophel",
+        "Bianc",
+        "Cress",
+        "Kal",
+        "Neso",
+        "Hali",
+        "Sao",
+        "Psych",
+        "Themis",
+        "Cybele",
+        "Davida",
+        "Syl",
     ]
 
     moon_suffixes = [
-        "nia", "lia", "sis", "dia", "mia", "ria", "tis", "nus", "los", "tos",
-        "kos", "pos", "ros", "tys", "lys", "nys", "eus", "aus", "ous", "ius",
-        "ara", "era", "ira", "ora", "ura", "ala", "ela", "ila", "ola", "ula",
-        "ane", "ene", "ine", "one", "une", "ate", "ete", "ite", "ote", "ute",
-        "ka", "sa", "ta", "da", "ga", "ba", "fa", "ma", "na", "la", "ra",
-        "x", "z", "n", "s", "th", "ph", "ch", "sh", "ps", "ks", "ts",
+        "nia",
+        "lia",
+        "sis",
+        "dia",
+        "mia",
+        "ria",
+        "tis",
+        "nus",
+        "los",
+        "tos",
+        "kos",
+        "pos",
+        "ros",
+        "tys",
+        "lys",
+        "nys",
+        "eus",
+        "aus",
+        "ous",
+        "ius",
+        "ara",
+        "era",
+        "ira",
+        "ora",
+        "ura",
+        "ala",
+        "ela",
+        "ila",
+        "ola",
+        "ula",
+        "ane",
+        "ene",
+        "ine",
+        "one",
+        "une",
+        "ate",
+        "ete",
+        "ite",
+        "ote",
+        "ute",
+        "ka",
+        "sa",
+        "ta",
+        "da",
+        "ga",
+        "ba",
+        "fa",
+        "ma",
+        "na",
+        "la",
+        "ra",
+        "x",
+        "z",
+        "n",
+        "s",
+        "th",
+        "ph",
+        "ch",
+        "sh",
+        "ps",
+        "ks",
+        "ts",
     ]
 
-    # Type-specific suffix modifiers
-    moon_type_suffixes = {
-        "icy": ["ice", "frost", "cryo", "glaci", "nix", "gel"],
-        "rocky": ["petra", "sax", "litho", "terra", "mont", "rup"],
-        "asteroidal": ["oid", "aster", "frag", "shard", "chunk", "scrap"],
-        "captured": ["cap", "vag", "err", "drift", "rogue", "wand"]
-    }
+    moon_type_suffixes = {"icy": ["ice", "frost", "cryo", "glaci", "nix", "gel"], "rocky": ["petra", "sax", "litho", "terra", "mont", "rup"], "asteroidal": ["oid", "aster", "frag", "shard", "chunk", "scrap"], "captured": ["cap", "vag", "err", "drift", "rogue", "wand"]}
 
     prefix = random.choice(moon_prefixes)
 
-    # 30% chance to add type-specific modifier
     if random.random() < 0.3 and moon_type in moon_type_suffixes:
         type_modifier = random.choice(moon_type_suffixes[moon_type])
         base_name = f"{prefix}{type_modifier}"
@@ -640,17 +874,12 @@ def generate_moon_name(seed, moon_type="rocky", index=0):
         suffix = random.choice(moon_suffixes)
         base_name = f"{prefix}{suffix}"
 
-    # Add numerical/letter designation for ordering
-    if random.random() < 0.05:  # 5% chance for special designation
-        special_designations = [
-            "Prime", "Major", "Minor", "Alpha", "Beta", "Gamma", "Superior", "Inferior"
-        ]
+    if random.random() < 0.05:
+        special_designations = ["Prime", "Major", "Minor", "Alpha", "Beta", "Gamma", "Superior", "Inferior"]
         designation = random.choice(special_designations)
         return f"{base_name} {designation}"
     else:
-        # Use Roman numerals for a classical feel
-        roman_numerals = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X",
-                         "XI", "XII", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX"]
+        roman_numerals = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX"]
         if index < len(roman_numerals):
             return f"{base_name} {roman_numerals[index]}"
         else:

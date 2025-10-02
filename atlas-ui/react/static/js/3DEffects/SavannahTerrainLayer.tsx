@@ -164,8 +164,14 @@ export class SavannahTerrainLayer {
       
       float dotNL = dot(normal, lightDir);
       float lighting = max(0.0, dotNL);
-      
+
       color *= 0.25 + 0.75 * lighting;
+
+      vec3 planetNormal = normalize(vWorldPosition);
+      float planetDotNL = dot(planetNormal, lightDir);
+
+      float shadowDarkness = smoothstep(0.1, -0.2, planetDotNL) * 0.6;
+      color *= (1.0 - shadowDarkness);
       
       float viewDistance = length(vPosition);
       vec3 atmosphereColor = vec3(0.7, 0.75, 0.85);

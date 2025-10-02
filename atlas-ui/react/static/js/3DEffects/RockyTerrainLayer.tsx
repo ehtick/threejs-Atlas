@@ -44,20 +44,24 @@ export class RockyTerrainLayer {
     varying vec3 vPosition;
     varying vec3 vNormal;
     varying vec2 vUv;
+    varying vec3 vWorldPosition;
 
     float noise(vec3 p) {
       return sin(p.x * 4.0) * sin(p.y * 4.0) * sin(p.z * 4.0);
     }
-    
+
     void main() {
       vPosition = position;
       vNormal = normal;
       vUv = uv;
 
+      vec4 worldPos = modelMatrix * vec4(position, 1.0);
+      vWorldPosition = worldPos.xyz;
+
       vec3 deformed = position;
       float noiseValue = noise(position * 3.0);
       deformed += normal * noiseValue * 0.02;
-      
+
       gl_Position = projectionMatrix * modelViewMatrix * vec4(deformed, 1.0);
     }
   `;
@@ -69,10 +73,12 @@ export class RockyTerrainLayer {
     uniform float craterCount;
     uniform float opacity;
     uniform vec3 lightDirection;
-    
+    uniform vec3 lightPosition;
+
     varying vec3 vPosition;
     varying vec3 vNormal;
     varying vec2 vUv;
+    varying vec3 vWorldPosition;
 
     float noise(vec3 p) {
       vec3 i = floor(p);
@@ -130,7 +136,13 @@ export class RockyTerrainLayer {
     void main() {
       vec3 pos = normalize(vPosition);
       vec3 normal = normalize(vNormal);
-      vec3 lightDir = normalize(lightDirection);
+
+      vec3 lightDir;
+      if (length(lightPosition) > 0.0) {
+        lightDir = normalize(lightPosition - vWorldPosition);
+      } else {
+        lightDir = normalize(-lightDirection);
+      }
 
       float rockTexture = fbm(pos * rockDensity);
       rockTexture = pow(rockTexture, roughness);
@@ -149,6 +161,12 @@ export class RockyTerrainLayer {
       vec3 color = baseColor * (0.6 + 0.4 * combinedTexture);
 
       color *= (0.7 + 0.3 * lightInfluence);
+
+      vec3 planetNormal = normalize(vWorldPosition);
+      float planetDotNL = dot(planetNormal, lightDir);
+
+      float shadowDarkness = smoothstep(0.1, -0.2, planetDotNL) * 0.6;
+      color *= (1.0 - shadowDarkness);
 
       float alpha = combinedTexture * opacity;
       
@@ -187,6 +205,7 @@ export class RockyTerrainLayer {
         craterCount: { value: this.params.craterCount },
         opacity: { value: this.params.opacity },
         lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
+        lightPosition: { value: new THREE.Vector3(0, 0, 0) },
       },
       transparent: true,
       side: THREE.FrontSide,
@@ -197,6 +216,17 @@ export class RockyTerrainLayer {
   }
 
   update(deltaTime: number): void {}
+
+  updateFromThreeLight(light: THREE.DirectionalLight): void {
+    if (this.material.uniforms.lightPosition) {
+      this.material.uniforms.lightPosition.value.copy(light.position);
+    }
+
+    const direction = light.target.position.clone().sub(light.position).normalize();
+    if (this.material.uniforms.lightDirection) {
+      this.material.uniforms.lightDirection.value = direction;
+    }
+  }
 
   dispose(): void {}
 }

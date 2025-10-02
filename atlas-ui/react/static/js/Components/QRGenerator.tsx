@@ -1,6 +1,8 @@
 // atlas-ui/react/static/js/Components/QRGenerator.tsx
+
 import QRCode from "qrcode";
 import { StargateGenerator } from "../Utils/StargateGenerator.tsx";
+import { UniverseDetection } from "../Utils/UniverseDetection.tsx";
 
 export interface QRGeneratorOptions {
   url: string;
@@ -51,7 +53,6 @@ export const generateStargateUrlForQR = (context: StargateContext): string => {
     const galaxyCoords = context.coordinates.split(",").map(Number);
     const currentPage = StargateGenerator.getCurrentPage();
 
-    // For QR codes, we need full URLs
     let relativeUrl: string;
     switch (context.type) {
       case "galaxy":
@@ -138,6 +139,10 @@ export const createQRWithLogo = async (options: QRGeneratorOptions): Promise<HTM
 
 export const addQRToScreenshot = async (ctx: CanvasRenderingContext2D, imageWidth: number, imageHeight: number, contextOrUrl: StargateContext | { type: "galaxy" | "system" | "planet"; stargateUrl: string }) => {
   try {
+    if (UniverseDetection.isRemoteUniverse()) {
+      return;
+    }
+
     let url: string;
 
     if ("coordinates" in contextOrUrl) {
