@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.8.62] - 2025-10-21
+
+- No changes, just regular checks and tests on Docker Registry and auto-updates for another Docker based project.
+
 ## [2.8.60] - 2025-10-02
 
 - Fixed Daily Challenges to aggregate stats from all universes (local + remote), enabling cross-universe challenge completion.
