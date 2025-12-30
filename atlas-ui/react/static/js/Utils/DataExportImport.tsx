@@ -28,7 +28,7 @@ export interface ExportData {
 }
 
 export class DataExportImport {
-  private static readonly VERSION = "2.8.66";
+  private static readonly VERSION = "2.8.68";
 
   private static generateFallbackHash(data: string): string {
     let hash = 0;

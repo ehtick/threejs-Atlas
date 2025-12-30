@@ -1,8 +1,9 @@
 // atlas-ui/react/static/js/Layouts/__onboarding__.tsx
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import VersionFooter from "../Components/VersionFooter.tsx";
 import UniverseAnimationCanvas from "../Components/UniverseAnimationCanvas.tsx";
+import contentFilter from "../Utils/ContentFilter.jsx";
 
 interface OnboardingLayoutProps {
   version: string;
@@ -23,6 +24,8 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({ version }) => {
   const [animationState, setAnimationState] = useState<AnimationState>("selection");
   const [animationType, setAnimationType] = useState<AnimationType>(null);
   const [isInitializing, setIsInitializing] = useState<boolean>(false);
+  const [customSeed, setCustomSeed] = useState<string>("");
+  const [seedError, setSeedError] = useState<string>("");
 
   const universeOptions: UniverseOption[] = [
     {
@@ -39,15 +42,43 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({ version }) => {
 
   const handleCardClick = (value: string) => {
     setSelectedUniverse(value);
+    if (value !== "custom") {
+      setCustomSeed("");
+      setSeedError("");
+    }
+  };
+
+  const validateSeed = (seed: string): string => {
+    if (seed.length > 20) {
+      return "Maximum 20 characters allowed";
+    }
+    const filterResult = contentFilter.filterSeed(seed);
+    if (filterResult.isBlocked) {
+      return filterResult.reason || "Invalid content";
+    }
+    return "";
+  };
+
+  const handleSeedChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value.length <= 20) {
+      setCustomSeed(value);
+      const error = validateSeed(value);
+      setSeedError(error);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedUniverse || animationState !== "selection" || isInitializing) return;
+    if (selectedUniverse === "custom" && seedError) return;
 
     setIsInitializing(true);
     const formData = new FormData();
     formData.append("universe_type", selectedUniverse);
+    if (selectedUniverse === "custom" && customSeed.trim()) {
+      formData.append("custom_seed", customSeed.trim());
+    }
 
     try {
       const createResponse = await fetch("/onboarding", {
@@ -135,11 +166,22 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({ version }) => {
                         <div className="space-y-4">
                           <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">{option.title}</h2>
                           <p className="text-gray-300 leading-relaxed text-sm sm:text-base">{option.description}</p>
+
+                          {option.value === "custom" && selectedUniverse === "custom" && (
+                            <div className="mt-4 space-y-2" onClick={(e) => e.stopPropagation()}>
+                              <label className="block text-sm text-gray-400">Custom Seed (optional)</label>
+                              <input type="text" value={customSeed} onChange={handleSeedChange} maxLength={20} placeholder="Leave empty for random" className={`w-full px-4 py-2 bg-slate-900/80 border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 transition-all ${seedError ? "border-red-500 focus:ring-red-500/50" : "border-white/20 focus:ring-cyan-400/50 focus:border-cyan-400"}`} />
+                              <div className="flex justify-between text-xs">
+                                <span className={seedError ? "text-red-400" : "text-transparent"}>{seedError || "."}</span>
+                                <span className="text-gray-500">{customSeed.length}/20</span>
+                              </div>
+                            </div>
+                          )}
                         </div>
 
                         <div
                           className={`
-                          absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300
+                          absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none
                           bg-gradient-to-br from-cyan-500/10 via-blue-500/10 to-purple-500/10
                           ${selectedUniverse === option.value ? "opacity-20" : ""}
                         `}
@@ -152,13 +194,13 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({ version }) => {
                 <div className="text-center">
                   <button
                     type="submit"
-                    disabled={!selectedUniverse || animationState !== "selection" || isInitializing}
+                    disabled={!selectedUniverse || animationState !== "selection" || isInitializing || (selectedUniverse === "custom" && !!seedError)}
                     className={`
                       relative overflow-hidden group px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-500 transform
-                      ${selectedUniverse && animationState === "selection" && !isInitializing ? "bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 text-white shadow-2xl shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-110 active:scale-95" : "bg-gray-600 text-gray-400 cursor-not-allowed"}
+                      ${selectedUniverse && animationState === "selection" && !isInitializing && !(selectedUniverse === "custom" && seedError) ? "bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 text-white shadow-2xl shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-110 active:scale-95" : "bg-gray-600 text-gray-400 cursor-not-allowed"}
                     `}
                   >
-                    {selectedUniverse && animationState === "selection" && !isInitializing && <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 opacity-20 group-hover:opacity-40 transition-opacity duration-300"></div>}
+                    {selectedUniverse && animationState === "selection" && !isInitializing && !(selectedUniverse === "custom" && seedError) && <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 opacity-20 group-hover:opacity-40 transition-opacity duration-300"></div>}
 
                     <span className="relative z-10 flex items-center justify-center space-x-3">
                       {isInitializing ? (

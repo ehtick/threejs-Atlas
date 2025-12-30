@@ -71,12 +71,15 @@ class Config:
         hex_seed = f"0x{random.randint(0, 0xFFFFFFFF):08X}"
         return hex_seed
 
-    def setup_universe(self, universe_type):
+    def setup_universe(self, universe_type, custom_seed=None):
         if universe_type == "default":
             seed_str = "1.618033988749895"
             cosmic_origin_time = 514080000
         else:
-            seed_str = f"{self.generate_hex_seed()}-{self.generate_hex_seed()}-{self.generate_hex_seed()}"
+            if custom_seed and len(custom_seed) <= 20:
+                seed_str = custom_seed
+            else:
+                seed_str = f"{self.generate_hex_seed()}-{self.generate_hex_seed()}-{self.generate_hex_seed()}"
             cosmic_origin_time = int(time.time())
 
         self.create_atlas_ini(seed_str, cosmic_origin_time)

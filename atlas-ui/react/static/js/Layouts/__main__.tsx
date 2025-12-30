@@ -17,6 +17,8 @@ import { SeedSanitizer } from "../Utils/SeedSanitizer.tsx";
 import NodeIdIcon from "../Icons/NodeIdIcon.tsx";
 import SeedIcon from "../Icons/SeedIcon.tsx";
 import BitBangIcon from "../Icons/BitBangIcon.tsx";
+import UniverseAgeIcon from "../Icons/UniverseAgeIcon.tsx";
+import DevelopmentIcon from "../Icons/DevelopmentIcon.tsx";
 
 interface MainLayoutProps {
   error: string | null;
@@ -58,6 +60,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
     seed_str: string;
     cosmic_origin_time: number;
   } | null>(null);
+  const [universeAge, setUniverseAge] = useState<string>("");
+  const [universeDevelopment, setUniverseDevelopment] = useState<string>("");
+
+  const MAX_UNIVERSE_AGE_SECONDS = 1_900_000 * 365.25 * 24 * 60 * 60; // 1.9M years in seconds
 
   useEffect(() => {
     UnifiedSpaceshipStorage.migrateFromOldStorage();
@@ -242,6 +248,46 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   };
 
+  const calculateUniverseAge = (cosmicOriginTime: number): { age: string; development: string } => {
+    const now = Math.floor(Date.now() / 1000);
+    const ageInSeconds = now - cosmicOriginTime;
+
+    if (ageInSeconds < 0) return { age: "Not yet born", development: "0%" };
+
+    const years = Math.floor(ageInSeconds / (365.25 * 24 * 60 * 60));
+    const days = Math.floor((ageInSeconds % (365.25 * 24 * 60 * 60)) / (24 * 60 * 60));
+    const hours = Math.floor((ageInSeconds % (24 * 60 * 60)) / (60 * 60));
+    const minutes = Math.floor((ageInSeconds % (60 * 60)) / 60);
+    const seconds = Math.floor(ageInSeconds % 60);
+
+    const parts: string[] = [];
+    if (years > 0) parts.push(`${years}Y`);
+    if (days > 0) parts.push(`${days}D`);
+    if (hours > 0) parts.push(`${hours}H`);
+    if (minutes > 0) parts.push(`${minutes}M`);
+    parts.push(`${seconds}S`);
+
+    const percentage = (ageInSeconds / MAX_UNIVERSE_AGE_SECONDS) * 100;
+    const development = percentage.toFixed(15).replace(/0+$/, "").replace(/\.$/, "") + "%";
+
+    return { age: parts.join(" "), development };
+  };
+
+  useEffect(() => {
+    if (!universeConfig?.cosmic_origin_time) return;
+
+    const updateAge = () => {
+      const { age, development } = calculateUniverseAge(universeConfig.cosmic_origin_time);
+      setUniverseAge(age);
+      setUniverseDevelopment(development);
+    };
+
+    updateAge();
+    const interval = setInterval(updateAge, 1000);
+
+    return () => clearInterval(interval);
+  }, [universeConfig?.cosmic_origin_time]);
+
   const handleSubmit = () => {
     const distance = Math.floor(Math.sqrt(Math.pow(currentCoordinates.x - 1000000, 2) + Math.pow(currentCoordinates.y - 1000000, 2) + Math.pow(currentCoordinates.z - 1000000, 2)) / 10000);
 
@@ -313,10 +359,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
                         </div>
                       </div>
                     </div>
-                    <div className="text-sm text-gray-400 space-y-2 max-w-full px-4">
+                    <div className="text-sm text-gray-400 space-y-1 max-w-full px-4">
                       <div className="flex items-center justify-center gap-2 flex-wrap text-xs sm:text-sm">
                         <SeedIcon className="w-4 h-4 text-blue-400 flex-shrink-0" />
-                        <span className="text-gray-400">Seed:</span>
+                        <span className="text-gray-400">Remote Seed:</span>
                         <span className="text-blue-400 font-mono truncate max-w-xs">{SeedSanitizer.sanitizeForDisplay(universeConfig.seed_str)}</span>
                       </div>
                       <div className="flex items-center justify-center gap-2 flex-wrap text-xs sm:text-sm">
@@ -324,10 +370,54 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
                         <span className="text-gray-400">Remote Bit Bang:</span>
                         <span className="text-cyan-400 font-mono">{formatCosmicTime(universeConfig.cosmic_origin_time)}</span>
                       </div>
+                      {universeAge && (
+                        <div className="flex items-center justify-center gap-2 flex-wrap text-xs sm:text-sm">
+                          <UniverseAgeIcon className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                          <span className="text-gray-400">Time since Bit Bang:</span>
+                          <span className="text-emerald-400 font-mono">{universeAge}</span>
+                        </div>
+                      )}
+                      {universeDevelopment && (
+                        <div className="flex items-center justify-center gap-2 flex-wrap text-xs sm:text-sm">
+                          <DevelopmentIcon className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                          <span className="text-gray-400">Universe Development:</span>
+                          <span className="text-amber-400 font-mono">{universeDevelopment}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ) : (
-                  <p className="text-lg sm:text-xl text-gray-300 max-w-4xl mx-auto px-4">Navigate through infinite galaxies, solar systems, and planets. Enter coordinates to begin your journey across the universe.</p>
+                  <div className="space-y-3">
+                    <p className="text-lg sm:text-xl text-gray-300 max-w-4xl mx-auto px-4">Navigate through infinite galaxies, solar systems, and planets. Enter coordinates to begin your journey across the universe.</p>
+                    {universeConfig && (
+                      <div className="text-sm text-gray-400 space-y-1 max-w-full px-4">
+                        <div className="flex items-center justify-center gap-2 flex-wrap text-xs sm:text-sm">
+                          <SeedIcon className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                          <span className="text-gray-400">Local Seed:</span>
+                          <span className="text-blue-400 font-mono truncate max-w-xs">{SeedSanitizer.sanitizeForDisplay(universeConfig.seed_str)}</span>
+                        </div>
+                        <div className="flex items-center justify-center gap-2 flex-wrap text-xs sm:text-sm">
+                          <BitBangIcon className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+                          <span className="text-gray-400">Local Bit Bang:</span>
+                          <span className="text-cyan-400 font-mono">{formatCosmicTime(universeConfig.cosmic_origin_time)}</span>
+                        </div>
+                        {universeAge && (
+                          <div className="flex items-center justify-center gap-2 flex-wrap text-xs sm:text-sm">
+                            <UniverseAgeIcon className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                            <span className="text-gray-400">Time since Bit Bang:</span>
+                            <span className="text-emerald-400 font-mono">{universeAge}</span>
+                          </div>
+                        )}
+                        {universeDevelopment && (
+                          <div className="flex items-center justify-center gap-2 flex-wrap text-xs sm:text-sm">
+                            <DevelopmentIcon className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                            <span className="text-gray-400">Universe Development:</span>
+                            <span className="text-amber-400 font-mono">{universeDevelopment}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
 

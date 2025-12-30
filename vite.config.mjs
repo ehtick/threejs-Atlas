@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => ({
   },
   server: {
     cors: {
-      origin: "http://localhost",
+      origin: "http://localhost:42424",
       credentials: true,
     },
     allowedHosts: ["localhost"],

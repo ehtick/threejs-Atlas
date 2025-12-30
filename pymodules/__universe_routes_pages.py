@@ -58,8 +58,9 @@ def register_universe_page_routes(app, universe, config):
 
         if request.method == "POST":
             universe_type = request.form.get("universe_type")
+            custom_seed = request.form.get("custom_seed")
 
-            if config.setup_universe(universe_type):
+            if config.setup_universe(universe_type, custom_seed):
                 import __main__
                 from pymodules.__atlas_startup_mode import set_startup_complete
 

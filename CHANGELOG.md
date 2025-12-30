@@ -1,6 +1,15 @@
 # Changelog
 
-## [2.8.66] - 2025-10-21
+## [2.8.68] - 2025-12-30
+
+- Just maintenance and some simple fixes and changes.
+- Added custom seed input during onboarding when selecting "Design the Multiverse", allowing users to define their own universe seed (max 20 characters) with ContentFilter validation.
+- If no custom seed is provided, the system generates a random hex seed in the format `0xXXXXXXXX-0xXXXXXXXX-0xXXXXXXXX`.
+- Added universe information display on main navigation screen showing Local/Remote Seed, Bit Bang timestamp, Time since Bit Bang (real-time counter), and Universe Development percentage.
+- Implemented Universe Development calculation showing progress towards the 1.9M year universe lifespan as a percentage.
+- Updated deps for security ish.
+
+## [2.8.68] - 2025-10-21
 
 - No changes, just regular checks and tests on Docker Registry and auto-updates for another Docker based project.
 
