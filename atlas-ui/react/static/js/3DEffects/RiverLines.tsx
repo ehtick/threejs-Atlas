@@ -169,7 +169,11 @@ export class RiverLinesEffect {
     scene.add(this.riverGroup);
   }
 
-  update(deltaTime: number): void {}
+  update(deltaTime: number, planetRotation?: number): void {
+    if (planetRotation !== undefined) {
+      this.riverGroup.rotation.y = planetRotation;
+    }
+  }
 
   updateParams(newParams: Partial<RiverLinesParams>): void {
     this.params = { ...this.params, ...newParams };

@@ -325,7 +325,11 @@ export class LandMassesEffect {
     scene.add(this.landGroup);
   }
 
-  update(deltaTime: number): void {}
+  update(deltaTime: number, planetRotation?: number): void {
+    if (planetRotation !== undefined) {
+      this.landGroup.rotation.y = planetRotation;
+    }
+  }
 
   getObject3D(): THREE.Group {
     return this.landGroup;

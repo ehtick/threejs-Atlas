@@ -2,6 +2,7 @@
 
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom.tsx";
+import { getUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime";
 
 export interface MagmaFlowsParams {
   magmaLakes?: any[];
@@ -578,9 +579,8 @@ export class MagmaFlowsEffect {
     scene.add(this.magmaGroup);
   }
 
-  update(): void {
-    const currentTimeSeconds = Date.now() / 1000;
-    const timeSinceCosmicOrigin = currentTimeSeconds - this.cosmicOriginTime;
+  update(_deltaTime?: number, planetRotation?: number): void {
+    const timeSinceCosmicOrigin = getUniverseTime(this.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME);
     const animTime = (timeSinceCosmicOrigin + this.cosmicOffset) * this.params.timeSpeed!;
     const windowedTime = animTime % 10000;
 
@@ -588,6 +588,10 @@ export class MagmaFlowsEffect {
       const material = mesh.material as THREE.ShaderMaterial;
       material.uniforms.time.value = windowedTime;
     });
+
+    if (planetRotation !== undefined) {
+      this.magmaGroup.rotation.y = planetRotation;
+    }
   }
 
   updateLightPosition(position: THREE.Vector3): void {

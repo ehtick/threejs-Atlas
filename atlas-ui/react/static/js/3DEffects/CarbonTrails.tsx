@@ -2,7 +2,7 @@
 
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom.tsx";
-import { getAnimatedUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime.tsx";
+import { getAnimatedUniverseTime, getUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime.tsx";
 
 export interface CarbonTrailsParams {
   trailCount?: number;
@@ -308,8 +308,8 @@ export class CarbonTrailsEffect {
       return 1;
     }
 
-    const cosmicOriginTime = this.params.cosmicOriginTime || 514080000;
-    const currentTimeSeconds = Date.now() / 1000 - cosmicOriginTime;
+    const cosmicOriginTime = this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME;
+    const currentTimeSeconds = getUniverseTime(cosmicOriginTime);
     const currentTime = currentTimeSeconds / (365.25 * 24 * 3600);
 
     const cycleProgress = (currentTime % this.params.orbitalData.cycle_duration_years) / this.params.orbitalData.cycle_duration_years;

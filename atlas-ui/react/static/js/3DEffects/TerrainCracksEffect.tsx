@@ -63,13 +63,26 @@ export class TerrainCracksEffect {
 
     this.material = new THREE.ShaderMaterial({
       vertexShader: `
+        uniform float rotationAngle;
+
         varying vec2 vUv;
         varying vec3 vPosition;
         varying vec3 vNormal;
-        
+
+        vec3 rotateY(vec3 p, float angle) {
+          float c = cos(angle);
+          float s = sin(angle);
+          return vec3(c * p.x + s * p.z, p.y, -s * p.x + c * p.z);
+        }
+
         void main() {
-          vUv = uv;
-          vPosition = position;
+          vec3 rotatedPos = rotateY(position, -rotationAngle);
+
+          float theta = atan(rotatedPos.x, rotatedPos.z);
+          float phi = acos(rotatedPos.y / length(rotatedPos));
+          vUv = vec2((theta + 3.14159) / (2.0 * 3.14159), phi / 3.14159);
+
+          vPosition = rotatedPos;
           vNormal = normalize(normalMatrix * normal);
           gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }
@@ -184,6 +197,7 @@ export class TerrainCracksEffect {
         crackGlow: { value: (this.params.internalReflections || 0.7) * 3.0 },
         planetSeed: { value: this.params.seed || 123456 },
         lineDrawPercentage: { value: this.params.lineDrawPercentage || 0.66 },
+        rotationAngle: { value: 0.0 },
       },
       transparent: true,
       depthWrite: false,
@@ -204,9 +218,12 @@ export class TerrainCracksEffect {
     scene.remove(this.crackMesh);
   }
 
-  update(deltaTime: number): void {
+  update(deltaTime: number, planetRotation?: number): void {
     if (this.material.uniforms.time) {
       this.material.uniforms.time.value += deltaTime * this.params.animationSpeed!;
+    }
+    if (planetRotation !== undefined && this.material.uniforms.rotationAngle) {
+      this.material.uniforms.rotationAngle.value = planetRotation;
     }
   }
 

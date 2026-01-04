@@ -29,6 +29,7 @@ interface ModularPlanetRendererProps {
   };
   cosmicOriginTime?: number;
   initialAngleRotation?: number;
+  timeOffset?: number;
   onDataLoaded?: (data: any) => void;
   onError?: (error: string) => void;
   onEffectsCreated?: (effects: any[]) => void;

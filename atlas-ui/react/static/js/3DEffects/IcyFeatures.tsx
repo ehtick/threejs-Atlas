@@ -313,7 +313,11 @@ export class IcyFeaturesEffect {
     scene.add(this.featuresGroup);
   }
 
-  update(): void {}
+  update(_deltaTime?: number, planetRotation?: number): void {
+    if (planetRotation !== undefined) {
+      this.featuresGroup.rotation.y = planetRotation;
+    }
+  }
 
   getObject3D(): THREE.Group {
     return this.featuresGroup;

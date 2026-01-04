@@ -1,6 +1,7 @@
 // atlas-ui/react/static/js/Components/Planet3DViewerFullscreen.tsx
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { ModularPlanetRendererWrapper } from "../3DComponents/ModularPlanetRendererWrapper";
+import { VerticalTimeSlider, sliderToTimeOffset, timeOffsetToSlider, formatTimeOffset } from "./VerticalTimeSlider";
 
 interface Planet {
   name: string;
@@ -28,6 +29,11 @@ interface Planet3DViewerFullscreenProps {
 }
 
 const Planet3DViewerFullscreen: React.FC<Planet3DViewerFullscreenProps> = ({ planet, cosmicOriginTime, initialAngleRotation, onEffectsCreated }) => {
+  const [sliderPosition, setSliderPosition] = useState(0); // -100 to 100
+  const [timeOffset, setTimeOffset] = useState(0); // actual seconds
+
+  const minTimeOffset = cosmicOriginTime !== undefined ? cosmicOriginTime - Date.now() / 1000 : undefined;
+
   const handleKeyDown = (event: KeyboardEvent) => {
     if (event.key === "Escape") {
       document.dispatchEvent(new CustomEvent("planet-close-fullscreen"));
@@ -42,8 +48,20 @@ const Planet3DViewerFullscreen: React.FC<Planet3DViewerFullscreenProps> = ({ pla
     };
   }, []);
 
+  const handleSliderChange = (newPosition: number) => {
+    const minSliderPos = minTimeOffset !== undefined ? Math.max(-100, timeOffsetToSlider(minTimeOffset)) : -100;
+    const clampedPosition = Math.max(minSliderPos, Math.min(100, newPosition));
+    setSliderPosition(clampedPosition);
+    setTimeOffset(sliderToTimeOffset(clampedPosition));
+  };
+
+  const resetToNow = () => {
+    setSliderPosition(0);
+    setTimeOffset(0);
+  };
+
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full relative">
       <ModularPlanetRendererWrapper
         planetName={planet.name}
         containerClassName="w-full h-full"
@@ -69,7 +87,10 @@ const Planet3DViewerFullscreen: React.FC<Planet3DViewerFullscreenProps> = ({ pla
         }}
         cosmicOriginTime={cosmicOriginTime}
         initialAngleRotation={initialAngleRotation}
+        timeOffset={timeOffset}
       />
+
+      <VerticalTimeSlider sliderPosition={sliderPosition} timeOffset={timeOffset} onSliderChange={handleSliderChange} onReset={resetToNow} minTimeOffset={minTimeOffset} />
     </div>
   );
 };

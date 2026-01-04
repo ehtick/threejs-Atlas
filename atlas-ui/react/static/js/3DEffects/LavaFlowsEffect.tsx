@@ -2,6 +2,7 @@
 
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom.tsx";
+import { getUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime";
 
 export interface LavaFlowsParams {
   flowCount?: number;
@@ -379,7 +380,7 @@ export class LavaFlowsEffect {
   }
 
   update(deltaTime: number): void {
-    const rawTime = this.startTime + (Date.now() / 1000) * this.params.timeSpeed!;
+    const rawTime = this.startTime + getUniverseTime(DEFAULT_COSMIC_ORIGIN_TIME) * this.params.timeSpeed!;
     const currentTime = rawTime % 1000;
 
     this.lavaFlows.forEach((flow) => {

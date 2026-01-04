@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.9.328] - 2026-01-04
+
+- Implemented universal time offset system allowing time manipulation across the entire 3D rendering pipeline with synchronized planet, moon, and effect animations.
+- Added new `VerticalTimeSlider` component for intuitive temporal navigation control in planet and solar system viewers.
+- Updated `ModularPlanetRenderer` with `timeOffset` prop and global time offset synchronization via `setGlobalTimeOffset()`.
+- Integrated time offset support in `MoonSystem` for synchronized lunar orbital calculations.
+- Refactored 30+ 3D effects to use centralized `getUniverseTime()` instead of direct `Date.now()` calls, ensuring consistent time behavior across all visual effects.
+- Robbed from here and there on `EffectRegistry` with new methods `updateLightForAllEffects()` and `updateOrbitalPositionForAllEffects()` for unified lighting and orbital position updates.
+- Improved `CrystallineSurfaceEffect` with proper day/night modulation for both crystal materials and inner glow effects.
+- Added planetary rotation synchronization to multiple effects: `CaveSurfaceHoles`, `AtmosphericStreaks`, `StarField`, and `IcyTerrainLayer`, which... Weren't. Sorry not sorry.
+- Fixed ice terrain shader in `PlanetLayerSystem` to properly rotate with planet using vertex shader rotation.
+- Enhanced `StarField` effect with light direction updates and orbital position tracking for realistic stellar illumination.
+- Updated "Primordial 4D Torus Hypothesis" paper to v4 (DOI: 10.5281/zenodo.18136117).
+- Added static papers (01.pdf, 02.pdf) to `/static/papers/` directory.
+- Minor FAQ layout improvements mostly to show the papers bro.
+
 ## [2.8.68] - 2025-12-30
 
 - Just maintenance and some simple fixes and changes.
@@ -9,7 +25,7 @@
 - Implemented Universe Development calculation showing progress towards the 1.9M year universe lifespan as a percentage.
 - Updated deps for security ish.
 
-## [2.8.68] - 2025-10-21
+## [2.8.66] - 2025-10-21
 
 - No changes, just regular checks and tests on Docker Registry and auto-updates for another Docker based project.
 

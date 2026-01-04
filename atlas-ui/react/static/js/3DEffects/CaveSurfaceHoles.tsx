@@ -102,19 +102,27 @@ export class CaveSurfaceHolesEffect {
       uniform vec3 holePositions[${maxHoles}];
       uniform float holeRadii[${maxHoles}];
       uniform int numHoles;
-      
+      uniform float rotationAngle;
+
       varying vec3 vPosition;
       varying vec3 vNormal;
       varying vec3 vWorldPosition;
       varying vec3 vWorldNormal;
       varying vec2 vUv;
-      
+
+      vec3 rotateY(vec3 p, float angle) {
+        float c = cos(angle);
+        float s = sin(angle);
+        return vec3(c * p.x + s * p.z, p.y, -s * p.x + c * p.z);
+      }
+
       void main() {
-        vec3 worldPos = normalize(vWorldPosition);
+        vec3 rotatedWorldPos = rotateY(vWorldPosition, -rotationAngle);
+        vec3 worldPos = normalize(rotatedWorldPos);
 
         for(int i = 0; i < ${maxHoles}; i++) {
           if(i >= numHoles) break;
-          
+
           vec3 holePos = normalize(holePositions[i]);
           float dist = distance(worldPos, holePos);
           float holeRadius = holeRadii[i];
@@ -162,6 +170,7 @@ export class CaveSurfaceHolesEffect {
         holePositions: { value: holePositions },
         holeRadii: { value: holeRadii },
         numHoles: { value: maxHoles },
+        rotationAngle: { value: 0.0 },
       },
       side: THREE.FrontSide,
     });
@@ -267,7 +276,14 @@ export class CaveSurfaceHolesEffect {
     this.group.add(coneMesh);
   }
 
-  update(_deltaTime: number): void {}
+  update(_deltaTime: number, planetRotation?: number): void {
+    if (planetRotation !== undefined) {
+      this.group.rotation.y = planetRotation;
+      if (this.planetShader && this.planetShader.uniforms.rotationAngle) {
+        this.planetShader.uniforms.rotationAngle.value = planetRotation;
+      }
+    }
+  }
 
   updateLightDirection(direction: THREE.Vector3): void {
     if (this.planetShader) {
@@ -290,7 +306,7 @@ export class CaveSurfaceHolesEffect {
 
   applyToPlanetSystem(planetSystem: any, baseColor: THREE.Color): void {
     const holeShader = this.createPlanetHoleShader(baseColor);
-    
+
     // Copy lighting uniforms from the original planet material to match its lighting
     if (planetSystem.baseMaterial && planetSystem.baseMaterial.uniforms) {
       const originalUniforms = planetSystem.baseMaterial.uniforms;
@@ -307,7 +323,7 @@ export class CaveSurfaceHolesEffect {
         holeShader.uniforms.lightIntensity.value = originalUniforms.lightIntensity.value;
       }
     }
-    
+
     planetSystem.applyHoleShader(holeShader);
     this.planetShader = holeShader;
     this.planetSystem = planetSystem;

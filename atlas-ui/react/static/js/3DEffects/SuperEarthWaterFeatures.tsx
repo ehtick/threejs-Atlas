@@ -508,7 +508,7 @@ export class SuperEarthWaterFeaturesEffect {
     }
   }
 
-  update(deltaTime: number): void {
+  update(deltaTime: number, planetRotation?: number): void {
     this.animationTime += deltaTime;
 
     if (this.waterMaterial && this.waterMaterial.uniforms) {
@@ -531,6 +531,10 @@ export class SuperEarthWaterFeaturesEffect {
       this.foamMap.offset.x += deltaTime * 0.025;
       this.foamMap.offset.y += deltaTime * 0.018;
       this.foamMap.needsUpdate = true;
+    }
+
+    if (planetRotation !== undefined) {
+      this.waterGroup.rotation.y = planetRotation;
     }
   }
 

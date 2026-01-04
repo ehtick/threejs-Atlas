@@ -14,6 +14,7 @@ import { getPlanetBaseColor } from "../3DEffects/PlanetColorBase";
 import { PlanetLayerSystem } from "./PlanetLayerSystem";
 import { MoonSystem } from "./MoonSystem";
 import { ToxicPostProcessingEffect, createToxicPostProcessingFromPythonData } from "../3DEffects/ToxicPostProcessing";
+import { setGlobalTimeOffset } from "../Utils/UniverseTime";
 
 const NORMALIZED_PLANET_RADIUS = 2.5;
 
@@ -98,6 +99,7 @@ interface ModularPlanetRendererProps {
   };
   cosmicOriginTime?: number;
   initialAngleRotation?: number;
+  timeOffset?: number;
   onDataLoaded?: (data: any) => void;
   onEffectsCreated?: (effects: EffectInstance[]) => void;
   onError?: (error: string) => void;
@@ -183,7 +185,7 @@ interface RendererStats {
   renderTime: number;
 }
 
-export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void }, ModularPlanetRendererProps>(({ planetName, containerClassName = "", width = 800, height = 600, autoRotate = true, enableControls = true, showDebugInfo = false, planetData, cosmicOriginTime, initialAngleRotation, onDataLoaded, onEffectsCreated, onError, onMoonSelected, planetUrl }, ref) => {
+export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void }, ModularPlanetRendererProps>(({ planetName, containerClassName = "", width = 800, height = 600, autoRotate = true, enableControls = true, showDebugInfo = false, planetData, cosmicOriginTime, initialAngleRotation, timeOffset = 0, onDataLoaded, onEffectsCreated, onError, onMoonSelected, planetUrl }, ref) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -195,6 +197,7 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
 
   const currentTimeRef = useRef<number>(0);
   const renderingDataRef = useRef<PlanetRenderingData | null>(null);
+  const timeOffsetRef = useRef<number>(timeOffset);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1270,8 +1273,12 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
     const deltaTime = clockRef.current.getDelta();
 
     const realCurrentTime = Date.now() / 1000;
-    const cosmicOriginTime = renderingDataRef.current?.timing?.cosmic_origin_time || 514080000;
-    currentTimeRef.current = realCurrentTime - cosmicOriginTime;
+    const cosmicOriginTimeValue = renderingDataRef.current?.timing?.cosmic_origin_time || 514080000;
+    currentTimeRef.current = realCurrentTime - cosmicOriginTimeValue + timeOffsetRef.current;
+
+    if (moonSystemRef.current) {
+      moonSystemRef.current.setTimeOffset(timeOffsetRef.current);
+    }
 
     if (cameraAnimationRef.current?.isAnimating && cameraRef.current && controlsRef.current) {
       const animation = cameraAnimationRef.current;
@@ -1300,7 +1307,7 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
     }
 
     try {
-      effectRegistry.updateAllEffects(deltaTime, planetMeshRef.current?.rotation.y, cameraRef.current || undefined);
+      effectRegistry.updateAllEffects(deltaTime, planetMeshRef.current?.rotation.y, cameraRef.current || undefined, currentTimeRef.current);
     } catch (error) {}
 
     if (planetMeshRef.current && renderingDataRef.current) {
@@ -1337,18 +1344,6 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
         const planetPosition = calculateEllipticalPosition(angleOrbit, semiMajorAxis, eccentricity, inclination, ascendingNode);
         const distance = Math.sqrt(planetPosition.x ** 2 + planetPosition.y ** 2 + planetPosition.z ** 2);
 
-        const distanceKepler = (semiMajorAxis * (1 - eccentricity * eccentricity)) / (1 + eccentricity * Math.cos(angleOrbit));
-
-        if (currentTime - lastFrameTimeRef.current > 5000) {
-          console.log(`[${currentPlanetName}] Orbital Debug:`);
-          console.log(`  Angle: ${angleOrbit.toFixed(4)} rad (${((angleOrbit * 180) / Math.PI).toFixed(2)}°)`);
-          console.log(`  Semi-major axis: ${actualOrbitalRadius.toFixed(4)} AU (scene: ${semiMajorAxis.toFixed(2)})`);
-          console.log(`  Eccentricity: ${eccentricity.toFixed(4)}`);
-          console.log(`  Distance (Kepler 2D): ${distanceKepler.toFixed(4)} scene units`);
-          console.log(`  Distance (3D rotated): ${distance.toFixed(4)} scene units`);
-          console.log(`  Difference: ${Math.abs(distance - distanceKepler).toFixed(6)} (${((Math.abs(distance - distanceKepler) / distanceKepler) * 100).toFixed(3)}%)`);
-        }
-
         const STAR_DISTANCE_FROM_ORIGIN = 200;
         const starPositions: THREE.Vector3[] = [];
 
@@ -1360,11 +1355,7 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
           } else {
             const separationDistance = 50;
             const angle = (index / starLightsRef.current.length) * Math.PI * 2;
-            starWorldPosition = new THREE.Vector3(
-              separationDistance * Math.cos(angle),
-              0,
-              separationDistance * Math.sin(angle)
-            );
+            starWorldPosition = new THREE.Vector3(separationDistance * Math.cos(angle), 0, separationDistance * Math.sin(angle));
           }
 
           starPositions.push(starWorldPosition);
@@ -1377,11 +1368,7 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
           const star = starDataRef.current[index];
           const starWorldPosition = starPositions[index];
 
-          const distanceToPlanet = Math.sqrt(
-            (planetPosition.x - starWorldPosition.x) ** 2 +
-            (planetPosition.y - starWorldPosition.y) ** 2 +
-            (planetPosition.z - starWorldPosition.z) ** 2
-          );
+          const distanceToPlanet = Math.sqrt((planetPosition.x - starWorldPosition.x) ** 2 + (planetPosition.y - starWorldPosition.y) ** 2 + (planetPosition.z - starWorldPosition.z) ** 2);
 
           let starIntensity = 0;
           if (star) {
@@ -1402,11 +1389,7 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
 
         starLightsRef.current.forEach((starLight, index) => {
           const starWorldPosition = starPositions[index];
-          const directionToPlanet = new THREE.Vector3(
-            planetPosition.x - starWorldPosition.x,
-            planetPosition.y - starWorldPosition.y,
-            planetPosition.z - starWorldPosition.z
-          );
+          const directionToPlanet = new THREE.Vector3(planetPosition.x - starWorldPosition.x, planetPosition.y - starWorldPosition.y, planetPosition.z - starWorldPosition.z);
 
           directionToPlanet.normalize();
           const lightPosition = directionToPlanet.clone().multiplyScalar(-STAR_DISTANCE_FROM_ORIGIN);
@@ -1458,6 +1441,12 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
         if (planetLayerSystemRef.current && starLightsRef.current[0]) {
           planetLayerSystemRef.current.updateFromThreeLight(starLightsRef.current[0]);
         }
+
+        if (starLightsRef.current[0]) {
+          effectRegistry.updateLightForAllEffects(starLightsRef.current[0]);
+        }
+
+        effectRegistry.updateOrbitalPositionForAllEffects(planetPosition);
       }
     }
 
@@ -1634,6 +1623,15 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
       }
     };
   }, []);
+
+  useEffect(() => {
+    timeOffsetRef.current = timeOffset;
+    setGlobalTimeOffset(timeOffset);
+
+    return () => {
+      setGlobalTimeOffset(0);
+    };
+  }, [timeOffset]);
 
   useEffect(() => {
     if (debugSunMeshRef.current) {

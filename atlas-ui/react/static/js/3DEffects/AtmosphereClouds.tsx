@@ -1,6 +1,7 @@
 // atlas-ui/react/static/js/3DEffects/AtmosphereClouds.tsx
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom.tsx";
+import { getUniverseTime } from "../Utils/UniverseTime";
 
 export interface AtmosphereCloudsParams {
   color?: THREE.Color | number;
@@ -335,8 +336,7 @@ export class AtmosphereCloudsEffect {
   }
 
   update(deltaTime: number, camera?: THREE.Camera): void {
-    const currentTimeSeconds = Date.now() / 1000;
-    const timeSinceCosmicOrigin = currentTimeSeconds - this.cosmicOriginTime;
+    const timeSinceCosmicOrigin = getUniverseTime(this.cosmicOriginTime);
     const animTime = (timeSinceCosmicOrigin + this.cosmicOffset) * this.params.timeSpeed!;
 
     const windowedTime = animTime % 10000;

@@ -2913,7 +2913,6 @@ export class EffectRegistry {
         }
       }
 
-      // Life Forms Processing
       if (pythonData.original_planet_data && pythonData.original_planet_data.life_forms === "Intelligent Life") {
         const intelligentLifeEffect = this.createEffectFromPythonData(EffectType.LIFE_FORM_INTELLIGENT_LIFE, pythonData, planetRadius, mesh, 10);
         if (intelligentLifeEffect) {
@@ -3057,7 +3056,7 @@ export class EffectRegistry {
     }
   }
 
-  updateAllEffects(deltaTime: number, planetRotation?: number, camera?: THREE.Camera): void {
+  updateAllEffects(deltaTime: number, planetRotation?: number, camera?: THREE.Camera, cosmicTime?: number): void {
     if (this.layerSystem) {
       this.layerSystem.update(deltaTime, planetRotation);
     }
@@ -3067,6 +3066,9 @@ export class EffectRegistry {
         try {
           if (instance.type === "star_field" && camera && "updateWithCamera" in instance.effect) {
             (instance.effect as any).updateWithCamera(deltaTime, camera);
+          } else if (cosmicTime !== undefined && "setCosmicTime" in instance.effect) {
+            (instance.effect as any).setCosmicTime(cosmicTime);
+            instance.effect.update(deltaTime, planetRotation);
           } else {
             instance.effect.update(deltaTime, planetRotation);
           }
@@ -3084,6 +3086,16 @@ export class EffectRegistry {
       if (instance.enabled && instance.effect.updateFromThreeLight) {
         try {
           instance.effect.updateFromThreeLight(light);
+        } catch (error) {}
+      }
+    }
+  }
+
+  updateOrbitalPositionForAllEffects(orbitalPosition: THREE.Vector3): void {
+    for (const instance of this.effects.values()) {
+      if (instance.enabled && instance.effect.updateOrbitalPosition) {
+        try {
+          instance.effect.updateOrbitalPosition(orbitalPosition);
         } catch (error) {}
       }
     }

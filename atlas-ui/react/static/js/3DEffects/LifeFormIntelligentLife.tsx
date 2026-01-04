@@ -1,7 +1,7 @@
 // atlas-ui/react/static/js/3DEffects/LifeFormIntelligentLife.tsx
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom.tsx";
-import { DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime.tsx";
+import { getUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime.tsx";
 
 const PROCEDURAL_RANGES = {
   SATELLITE_COUNT: { min: 1, max: 10 },
@@ -149,8 +149,7 @@ export class LifeFormIntelligentLifeEffect {
   }
 
   public update(_deltaTime?: number): void {
-    const currentTimeSeconds = Date.now() / 1000;
-    const timeSinceCosmicOrigin = currentTimeSeconds - (this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME);
+    const timeSinceCosmicOrigin = getUniverseTime(this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME);
     const animTime = (timeSinceCosmicOrigin + this.cosmicOffset) * (this.params.orbitalSpeed || 1.0);
 
     this.satellites.forEach((satellite, index) => {
@@ -171,8 +170,7 @@ export class LifeFormIntelligentLifeEffect {
     const satellite = this.satellites[satelliteIndex];
     const userData = satellite.userData;
 
-    const currentTimeSeconds = Date.now() / 1000;
-    const timeSinceCosmicOrigin = currentTimeSeconds - (this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME);
+    const timeSinceCosmicOrigin = getUniverseTime(this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME);
     const animTime = (timeSinceCosmicOrigin + this.cosmicOffset) * (this.params.orbitalSpeed || 1.0);
     const currentAngle = userData.initialAngle + animTime * userData.orbitalSpeed * 0.1;
 

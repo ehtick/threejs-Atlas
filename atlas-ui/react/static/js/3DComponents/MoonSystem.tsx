@@ -105,6 +105,7 @@ export class MoonSystem {
 
   private camera: THREE.Camera;
   private planetPosition: THREE.Vector3;
+  private timeOffset: number = 0;
 
   private orbitalLinesFadeEnabled: boolean = true;
   private orbitalLinesVisible: boolean = true;
@@ -1178,6 +1179,14 @@ export class MoonSystem {
     ctx.shadowBlur = 0;
   }
 
+  public setTimeOffset(offset: number): void {
+    this.timeOffset = offset;
+  }
+
+  public getTimeOffset(): number {
+    return this.timeOffset;
+  }
+
   public update(): void {
     if (!this.moonData) return;
 
@@ -1192,7 +1201,7 @@ export class MoonSystem {
       return;
     }
 
-    const cosmicTimeElapsed = currentTime - this.cosmicOriginTime;
+    const cosmicTimeElapsed = currentTime - this.cosmicOriginTime + this.timeOffset;
 
     if (!isFinite(cosmicTimeElapsed)) {
       return;

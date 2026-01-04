@@ -518,7 +518,26 @@ const FaqLayout: React.FC<FaqLayoutProps> = ({ version }) => {
                 </div>
               ))}
 
-              <div className="bg-gradient-to-r from-purple-900/50 to-blue-900/50 backdrop-blur-lg rounded-2xl border border-white/10 p-8 text-center mt-12">
+              <div className="bg-gradient-to-r from-cyan-900/30 to-purple-900/30 backdrop-blur-lg rounded-2xl border border-cyan-400/20 p-8 text-center mt-12">
+                <h3 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent mb-4">Check Our Latest Findings</h3>
+                <p className="text-gray-300 mb-6">Explore our published research papers on procedural universe theory and cosmology.</p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <a href="/papers/01.pdf" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 text-cyan-300 font-medium rounded-xl transition-all duration-300 border border-cyan-400/30 hover:border-cyan-400/50">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    The Procedural Universe
+                  </a>
+                  <a href="/papers/02.pdf" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 text-cyan-300 font-medium rounded-xl transition-all duration-300 border border-cyan-400/30 hover:border-cyan-400/50">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Primordial 4D Torus Hypothesis
+                  </a>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-r from-purple-900/50 to-blue-900/50 backdrop-blur-lg rounded-2xl border border-white/10 p-8 text-center mt-8">
                 <h3 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent mb-4">Ready to Explore the Infinite?</h3>
                 <p className="text-gray-300 mb-6 text-lg">Begin your journey through the most vast procedural universe ever created.</p>
                 <a href="/" className="inline-block px-8 py-4 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg">

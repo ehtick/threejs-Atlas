@@ -2,6 +2,7 @@
 
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom.tsx";
+import { getUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime";
 
 export interface VegetationParams {
   vegetationPatches?: any[];
@@ -509,9 +510,8 @@ export class VegetationEffect {
     scene.add(this.vegetationGroup);
   }
 
-  update(): void {
-    const currentTimeSeconds = Date.now() / 1000;
-    const timeSinceCosmicOrigin = currentTimeSeconds - this.cosmicOriginTime;
+  update(_deltaTime?: number, planetRotation?: number): void {
+    const timeSinceCosmicOrigin = getUniverseTime(this.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME);
     const animTime = (timeSinceCosmicOrigin + this.cosmicOffset) * this.params.timeSpeed!;
     const windowedTime = animTime % 10000;
 
@@ -519,6 +519,11 @@ export class VegetationEffect {
       const material = mesh.material as THREE.ShaderMaterial;
       material.uniforms.time.value = windowedTime;
     });
+
+    // Rotate with planet
+    if (planetRotation !== undefined) {
+      this.vegetationGroup.rotation.y = planetRotation;
+    }
   }
 
   updateLightPosition(position: THREE.Vector3): void {

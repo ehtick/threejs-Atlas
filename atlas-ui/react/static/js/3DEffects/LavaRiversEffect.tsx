@@ -1,7 +1,7 @@
 // atlas-ui/react/static/js/3DEffects/LavaRiversEffect.tsx
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom.tsx";
-import { getAnimatedUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime.tsx";
+import { getAnimatedUniverseTime, getUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime.tsx";
 
 export interface LavaRiverParams {
   networkDensity?: number;
@@ -372,7 +372,7 @@ export class LavaRiversEffect {
     }
 
     const cosmicOriginTime = this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME;
-    const currentTimeSeconds = Date.now() / 1000 - cosmicOriginTime;
+    const currentTimeSeconds = getUniverseTime(cosmicOriginTime);
     const currentTime = currentTimeSeconds / (365.25 * 24 * 3600);
 
     const cycleProgress = (currentTime % this.params.orbitalData.cycle_duration_years) / this.params.orbitalData.cycle_duration_years;
@@ -393,7 +393,7 @@ export class LavaRiversEffect {
     return 0;
   }
 
-  update(_deltaTime: number): void {
+  update(_deltaTime: number, planetRotation?: number): void {
     const cosmicOriginTime = this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME;
     const currentTime = getAnimatedUniverseTime(cosmicOriginTime, this.params.timeSpeed, this.startTime);
 
@@ -412,6 +412,10 @@ export class LavaRiversEffect {
       this.channelMeshes.forEach((mesh) => {
         mesh.visible = false;
       });
+    }
+
+    if (planetRotation !== undefined) {
+      this.networkGroup.rotation.y = planetRotation;
     }
   }
 

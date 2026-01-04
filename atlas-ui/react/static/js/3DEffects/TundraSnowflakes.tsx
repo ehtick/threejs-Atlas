@@ -1,7 +1,7 @@
 // atlas-ui/react/static/js/3DEffects/TundraSnowflakes.tsx
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom.tsx";
-import { getAnimatedUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime.tsx";
+import { getAnimatedUniverseTime, getUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime.tsx";
 
 export interface TundraSnowflakesParams {
   particleCount?: number;
@@ -210,7 +210,7 @@ export class TundraSnowflakesEffect {
     const cosmicOriginTime = DEFAULT_COSMIC_ORIGIN_TIME;
     const currentTime = getAnimatedUniverseTime(cosmicOriginTime, this.timeSpeed, this.startTime);
 
-    const realTime = Date.now() / 1000;
+    const realTime = getUniverseTime(DEFAULT_COSMIC_ORIGIN_TIME);
     const burstTime = (realTime + this.burstStartOffset) % this.burstCycleDuration;
     let burstIntensity = 0;
 
@@ -272,10 +272,10 @@ export class TundraSnowflakesEffect {
 
       mesh.geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
 
-      const realTime = Date.now() / 1000;
+      const gustTime = getUniverseTime(DEFAULT_COSMIC_ORIGIN_TIME);
       const gustCycle = this.gustCycles[index];
       const gustPhase = this.gustPhases[index];
-      const gustProgress = (realTime / gustCycle + gustPhase) % 1;
+      const gustProgress = (gustTime / gustCycle + gustPhase) % 1;
 
       let gustIntensity = 0;
       if (gustProgress < 0.3) {

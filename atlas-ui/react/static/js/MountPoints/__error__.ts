@@ -8,7 +8,7 @@ const versionHashMeta = document.querySelector('meta[name="atlas-version-hash"]'
 const messageMeta = document.querySelector('meta[name="error-message"]');
 
 const atlasConfig = {
-  version: (versionMeta && versionMeta.getAttribute("content")) || "2.8.68",
+  version: (versionMeta && versionMeta.getAttribute("content")) || "2.9.328",
   versionHash: (versionHashMeta && versionHashMeta.getAttribute("content")) || "",
   message: (messageMeta && messageMeta.getAttribute("content")) || "An unexpected error occurred",
 };

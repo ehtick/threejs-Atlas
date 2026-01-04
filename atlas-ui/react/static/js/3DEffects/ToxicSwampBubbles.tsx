@@ -1,6 +1,7 @@
 // atlas-ui/react/static/js/3DEffects/ToxicSwampBubbles.tsx
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom.tsx";
+import { getUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime";
 
 export interface ToxicSwampBubblesParams {
   bubbleCount?: number;
@@ -209,8 +210,7 @@ export class ToxicSwampBubblesEffect {
   }
 
   private getCurrentCosmicTime(): number {
-    const currentTimeSeconds = Date.now() / 1000;
-    const timeSinceCosmicOrigin = currentTimeSeconds - this.params.cosmicOriginTime;
+    const timeSinceCosmicOrigin = getUniverseTime(this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME);
     return timeSinceCosmicOrigin * this.params.timeSpeed;
   }
 
@@ -289,11 +289,15 @@ export class ToxicSwampBubblesEffect {
     (bubble.mesh.material as THREE.MeshBasicMaterial).opacity = Math.max(0, opacity);
   }
 
-  public update(deltaTime: number): void {
+  public update(deltaTime: number, planetRotation?: number): void {
     const cosmicTime = this.getCurrentCosmicTime();
 
     for (const bubble of this.bubbles) {
       this.calculateBubbleState(bubble, cosmicTime);
+    }
+
+    if (planetRotation !== undefined) {
+      this.bubbleGroup.rotation.y = planetRotation;
     }
   }
 

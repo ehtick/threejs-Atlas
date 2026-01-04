@@ -1,6 +1,7 @@
 // atlas-ui/react/static/js/3DEffects/RingSystem.tsx
 
 import * as THREE from "three";
+import { getUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime.tsx";
 
 export interface RingSystemParams {
   full_ring?: { particles: any[] };
@@ -210,11 +211,10 @@ export class RingSystemEffect {
     if (!this.ringSystem || !planetData) return;
 
     const rotationPeriod = planetData.rotation_period_seconds || 86400;
-    const cosmicOriginTime = planetData.cosmicOriginTime || Date.now() / 1000;
+    const cosmicOriginTime = planetData.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME;
     const initialAngleRotation = planetData.initialAngleRotation || 0;
 
-    const currentTime = Date.now() / 1000;
-    const timeElapsedSeconds = currentTime - cosmicOriginTime;
+    const timeElapsedSeconds = getUniverseTime(cosmicOriginTime);
     const angleVelocityRotation = (2 * Math.PI) / rotationPeriod;
     const angleRotation = (initialAngleRotation + timeElapsedSeconds * angleVelocityRotation) % (2 * Math.PI);
 

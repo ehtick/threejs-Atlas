@@ -447,6 +447,10 @@ export class ExoticDoodlesEffect {
     });
   }
 
+  setCosmicTime(cosmicTimeSeconds: number): void {
+    this.currentTimeYears = cosmicTimeSeconds / (365.25 * 24 * 3600);
+  }
+
   private calculateOrbitalVisibility(): number {
     if (!this.orbitalData || !this.orbitalData.enabled) {
       return 1.0;

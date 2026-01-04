@@ -1,6 +1,7 @@
 // atlas-ui/react/static/js/3DEffects/CrystallineSurfaceEffect.tsx
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom.tsx";
+import { getUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime";
 
 export interface CrystallineSurfaceParams {
   crystallinePatches?: any[];
@@ -168,9 +169,6 @@ export class CrystallineSurfaceEffect {
     return crystals;
   }
 
-  /**
-   * Crear formación cristalina individual con efectos avanzados
-   */
   private createCrystalFormation(crystalData: any, index: number): void {
     const surfaceNormal = new THREE.Vector3(crystalData.position_3d[0], crystalData.position_3d[1], crystalData.position_3d[2]).normalize();
 
@@ -189,7 +187,9 @@ export class CrystallineSurfaceEffect {
         roughness: { value: crystalData.roughness },
         ior: { value: crystalData.ior },
         transmission: { value: 0.2 },
-        lightPosition: { value: new THREE.Vector3(1000, 1000, 1000) },
+        // Initialize to (0,0,0) - same as PlanetLayerSystem for consistency
+        lightPosition: { value: new THREE.Vector3(0, 0, 0) },
+        lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
       },
       vertexShader: `
         varying vec3 vNormal;
@@ -213,19 +213,26 @@ export class CrystallineSurfaceEffect {
         uniform float ior;
         uniform float transmission;
         uniform vec3 lightPosition;
-        
+        uniform vec3 lightDirection;
+
         varying vec3 vNormal;
         varying vec3 vPosition;
         varying vec3 vWorldNormal;
         varying vec3 vWorldPosition;
-        
+
         void main() {
           vec3 normal = normalize(vWorldNormal);
           vec3 viewDir = normalize(cameraPosition - vWorldPosition);
 
-          vec3 lightDir = normalize(lightPosition - vWorldPosition);
+          vec3 lightDir;
+          if (length(lightPosition) > 0.0) {
+            lightDir = normalize(lightPosition - vWorldPosition);
+          } else {
+            lightDir = normalize(-lightDirection);
+          }
+
           float NdotL = dot(normal, lightDir);
-          float dayNightFactor = smoothstep(-0.5, 0.2, NdotL);
+          float dayNightFactor = smoothstep(-0.3, 0.1, NdotL);
 
           float NdotV = max(dot(normal, viewDir), 0.0);
           float F0 = pow((1.0 - ior) / (1.0 + ior), 2.0);
@@ -373,17 +380,10 @@ export class CrystallineSurfaceEffect {
     geometry.computeVertexNormals();
   }
 
-  /**
-   * Función de ruido simple para patrones fractales
-   */
   private simpleNoise(x: number, y: number, z: number): number {
     return (Math.sin(x * 0.1) * Math.cos(y * 0.1) * Math.sin(z * 0.1) + Math.sin(x * 0.05) * Math.cos(y * 0.05) * 0.5 + Math.sin(x * 0.2) * Math.sin(z * 0.15) * 0.3) * 0.5;
   }
 
-  /**
-   * Crear reflexiones procedurales y deterministas de las partículas del StarField
-   * Cada cristal refleja estrellas basándose en su geometría real y posición
-   */
   private createStarFieldReflections(): void {
     if (!this.starField || !this.starField.getObject3D) return;
 
@@ -572,9 +572,6 @@ export class CrystallineSurfaceEffect {
     return faceNormals;
   }
 
-  /**
-   * Crear efecto de brillo interno con ShaderMaterial
-   */
   private createInnerGlow(parentMesh: THREE.Mesh, crystalData: any, _index: number): void {
     const glowGeometry = parentMesh.geometry.clone();
 
@@ -583,14 +580,22 @@ export class CrystallineSurfaceEffect {
         time: { value: 0 },
         glowColor: { value: new THREE.Color(crystalData.color[0], crystalData.color[1], crystalData.color[2]) },
         glowIntensity: { value: crystalData.glowIntensity || 0.5 },
+        // Add light uniforms for day/night modulation - sync with crystal shader
+        lightPosition: { value: new THREE.Vector3(0, 0, 0) },
+        lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
       },
       vertexShader: `
         varying vec3 vNormal;
         varying vec3 vPositionNormal;
-        
+        varying vec3 vWorldPosition;
+        varying vec3 vWorldNormal;
+
         void main() {
           vNormal = normalize(normalMatrix * normal);
+          vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);
           vPositionNormal = normalize((modelViewMatrix * vec4(position, 1.0)).xyz);
+          vec4 worldPos = modelMatrix * vec4(position, 1.0);
+          vWorldPosition = worldPos.xyz;
           gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }
       `,
@@ -598,16 +603,32 @@ export class CrystallineSurfaceEffect {
         uniform float time;
         uniform vec3 glowColor;
         uniform float glowIntensity;
-        
+        uniform vec3 lightPosition;
+        uniform vec3 lightDirection;
+
         varying vec3 vNormal;
         varying vec3 vPositionNormal;
-        
+        varying vec3 vWorldPosition;
+        varying vec3 vWorldNormal;
+
         void main() {
+          vec3 worldNormal = normalize(vWorldNormal);
+          vec3 lightDir;
+          if (length(lightPosition) > 0.0) {
+            lightDir = normalize(lightPosition - vWorldPosition);
+          } else {
+            lightDir = normalize(-lightDirection);
+          }
+          float NdotL = dot(worldNormal, lightDir);
+          float dayNightFactor = smoothstep(-0.3, 0.1, NdotL);
+
           float intensity = pow(0.4 - dot(vNormal, vPositionNormal), 2.0);
           intensity *= (0.8 + 0.2 * sin(time * 2.0));
-          
-          vec3 glow = glowColor * intensity * glowIntensity;
-          gl_FragColor = vec4(glow, intensity * 0.6);
+
+          float glowVisibility = 0.15 + 0.85 * dayNightFactor;
+
+          vec3 glow = glowColor * intensity * glowIntensity * glowVisibility;
+          gl_FragColor = vec4(glow, intensity * 0.6 * glowVisibility);
         }
       `,
       side: THREE.BackSide,
@@ -624,48 +645,57 @@ export class CrystallineSurfaceEffect {
     this.crystallineGroup.add(glowMesh);
   }
 
-  /**
-   * Actualizar animaciones de brillo y reflexiones
-   */
-  public update(): void {
-    const currentTime = Date.now();
-    const elapsed = (currentTime - (this.params.cosmicOriginTime || 0)) * 0.001 * this.animationSpeed;
+  public update(_deltaTime?: number, planetRotation?: number): void {
+    const cosmicOriginTime = this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME;
+    const elapsed = getUniverseTime(cosmicOriginTime) * this.animationSpeed;
 
     this.glowMeshes.forEach((mesh) => {
       if (mesh.material instanceof THREE.ShaderMaterial) {
         mesh.material.uniforms.time.value = elapsed;
       }
     });
+
+    if (planetRotation !== undefined) {
+      this.crystallineGroup.rotation.y = planetRotation;
+    }
   }
 
-  /**
-   * Actualizar dirección de luz para seguir el sistema de iluminación
-   */
   public updateLightDirection(lightDirection: THREE.Vector3): void {
     if (this.starFieldMaterial) {
       this.starFieldMaterial.uniforms.lightDirection.value.copy(lightDirection);
     }
+
+    this.crystallineFormations.forEach((mesh) => {
+      if (mesh.material instanceof THREE.ShaderMaterial && mesh.material.uniforms.lightDirection) {
+        mesh.material.uniforms.lightDirection.value.copy(lightDirection);
+      }
+    });
+
+    this.glowMeshes.forEach((mesh) => {
+      if (mesh.material instanceof THREE.ShaderMaterial && mesh.material.uniforms.lightDirection) {
+        mesh.material.uniforms.lightDirection.value.copy(lightDirection);
+      }
+    });
   }
 
-  /**
-   * Actualizar posición de luz para modulación día/noche de los cristales
-   */
   public updateLightPosition(lightPosition: THREE.Vector3): void {
     if (this.starFieldMaterial) {
       this.starFieldMaterial.uniforms.lightPosition.value.copy(lightPosition);
     }
 
     this.crystallineFormations.forEach((mesh) => {
-      if (mesh.material instanceof THREE.ShaderMaterial) {
+      if (mesh.material instanceof THREE.ShaderMaterial && mesh.material.uniforms.lightPosition) {
+        mesh.material.uniforms.lightPosition.value.copy(lightPosition);
+      }
+    });
+
+    this.glowMeshes.forEach((mesh) => {
+      if (mesh.material instanceof THREE.ShaderMaterial && mesh.material.uniforms.lightPosition) {
         mesh.material.uniforms.lightPosition.value.copy(lightPosition);
       }
     });
   }
 
-  /**
-   * Actualizar desde una DirectionalLight de Three.js
-   * IMPORTANTE: Usa SOLO la luz del sistema planetario, no las luces por defecto de Three.js
-   */
   public updateFromThreeLight(light: THREE.DirectionalLight): void {
     this.updateLightPosition(light.position);
 
@@ -673,9 +703,6 @@ export class CrystallineSurfaceEffect {
     this.updateLightDirection(direction);
   }
 
-  /**
-   * Método para establecer o actualizar el StarField de manera determinista
-   */
   public setStarField(starField: any): void {
     this.starField = starField;
 
@@ -692,24 +719,15 @@ export class CrystallineSurfaceEffect {
     }
   }
 
-  /**
-   * Añadir efecto a la escena
-   */
   public addToScene(scene: THREE.Scene, position: THREE.Vector3): void {
     this.crystallineGroup.position.copy(position);
     scene.add(this.crystallineGroup);
   }
 
-  /**
-   * Remover efecto de la escena
-   */
   public removeFromScene(scene: THREE.Scene): void {
     scene.remove(this.crystallineGroup);
   }
 
-  /**
-   * Cleanup de recursos
-   */
   public dispose(): void {
     this.crystallineFormations.forEach((mesh) => {
       if (mesh.geometry) mesh.geometry.dispose();
@@ -734,16 +752,10 @@ export class CrystallineSurfaceEffect {
     this.starFieldMaterial = null;
   }
 
-  /**
-   * Obtener grupo principal
-   */
   public getGroup(): THREE.Group {
     return this.crystallineGroup;
   }
 
-  /**
-   * Obtener objeto 3D para el sistema de efectos (compatibilidad con EffectRegistry)
-   */
   public getObject3D(): THREE.Group {
     return this.crystallineGroup;
   }

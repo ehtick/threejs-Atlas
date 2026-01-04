@@ -1,7 +1,7 @@
 // atlas-ui/react/static/js/3DEffects/LifeFormSiliconBasedLife.tsx
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom.tsx";
-import { DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime.tsx";
+import { getUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime.tsx";
 
 const PROCEDURAL_RANGES = {
   CRYSTAL_COUNT: { min: 10, max: 40 },
@@ -246,8 +246,7 @@ export class LifeFormSiliconBasedLifeEffect {
   }
 
   public update(_deltaTime?: number): void {
-    const currentTimeSeconds = Date.now() / 1000;
-    const timeSinceCosmicOrigin = currentTimeSeconds - (this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME);
+    const timeSinceCosmicOrigin = getUniverseTime(this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME);
     const animTime = (timeSinceCosmicOrigin + this.cosmicOffset) * (this.params.orbitalSpeed || 1.0);
 
     this.crystals.forEach((crystal) => {

@@ -509,19 +509,28 @@ export class PlanetLayerSystem {
 
   createIcyTerrainLayerMaterial(params: Record<string, unknown>): THREE.ShaderMaterial {
     const vertexShader = `
+      uniform float rotationAngle;
+
       varying vec3 vPosition;
       varying vec3 vNormal;
       varying vec3 vWorldPosition;
       varying vec3 vWorldNormal;
       varying vec2 vUv;
-      
+
+      vec3 rotateY(vec3 p, float angle) {
+        float c = cos(angle);
+        float s = sin(angle);
+        return vec3(c * p.x + s * p.z, p.y, -s * p.x + c * p.z);
+      }
+
       void main() {
-        vPosition = position;
+        vec3 rotatedPosition = rotateY(position, -rotationAngle);
+        vPosition = rotatedPosition;
         vNormal = normalMatrix * normal;
         vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);
         vUv = uv;
         vec4 worldPos = modelMatrix * vec4(position, 1.0);
-        vWorldPosition = worldPos.xyz;
+        vWorldPosition = rotateY(worldPos.xyz, -rotationAngle);
         gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
       }
     `;
@@ -676,6 +685,7 @@ export class PlanetLayerSystem {
       fragmentShader,
       uniforms: {
         time: { value: 0 },
+        rotationAngle: { value: 0 },
         iceColor: { value: params.color || new THREE.Color(0xb0e0e6) },
         iceReflectivity: { value: params.iceReflectivity || 0.8 },
         frostDensity: { value: params.frostDensity || 0.5 },
@@ -1032,8 +1042,8 @@ export class PlanetLayerSystem {
         } catch (error) {}
       }
 
-      if (layer.mesh) {
-        layer.mesh.rotation.copy(this.baseMesh.rotation);
+      if (layer.mesh && planetRotation !== undefined) {
+        layer.mesh.rotation.y = planetRotation;
       }
     });
   }

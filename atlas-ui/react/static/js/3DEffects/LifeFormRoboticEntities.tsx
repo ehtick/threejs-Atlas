@@ -1,7 +1,7 @@
 // atlas-ui/react/static/js/3DEffects/LifeFormRoboticEntities.tsx
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom.tsx";
-import { DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime.tsx";
+import { getUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime.tsx";
 
 const PROCEDURAL_RANGES = {
   COMPONENT_COUNT: { min: 32, max: 200 },
@@ -429,8 +429,7 @@ export class LifeFormRoboticEntitiesEffect {
   }
 
   private getCurrentCosmicTime(): number {
-    const currentTimeSeconds = Date.now() / 1000;
-    return currentTimeSeconds - (this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME);
+    return getUniverseTime(this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME);
   }
 
   public update(_deltaTime?: number): void {

@@ -25,3 +25,7 @@ def register_static_routes(app):
     @app.route("/static/<path:filename>", endpoint="static")
     def send_static_files(filename):
         return send_from_directory("static", filename)
+
+    @app.route("/papers/<path:filename>")
+    def send_papers(filename):
+        return send_from_directory("static/papers", filename)

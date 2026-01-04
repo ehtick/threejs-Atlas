@@ -206,6 +206,11 @@ export class PolarHexagonEffect {
     }
   }
 
+  setCosmicTime(cosmicTimeSeconds: number): void {
+    const cosmicTimeYears = cosmicTimeSeconds / (365.25 * 24 * 3600);
+    this.params.currentTime = cosmicTimeYears;
+  }
+
   update(deltaTime: number): void {
     const cosmicOriginTime = DEFAULT_COSMIC_ORIGIN_TIME;
     const currentTime = getAnimatedUniverseTime(cosmicOriginTime, this.proceduralParams.timeSpeed, this.startTime);

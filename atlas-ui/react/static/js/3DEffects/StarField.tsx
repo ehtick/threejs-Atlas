@@ -2,7 +2,7 @@
 
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom.tsx";
-import { getAnimatedUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime.tsx";
+import { getAnimatedUniverseTime, getUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime.tsx";
 
 export interface StarFieldParams {
   color?: THREE.Color | number;
@@ -18,18 +18,20 @@ export interface StarFieldParams {
   variableChance?: number;
   cosmicOriginTime?: number;
   timeSpeed?: number;
+  orbitalParallaxStrength?: number; // How much stars shift based on orbital position
 }
 
 const PROCEDURAL_RANGES = {
   STAR_COUNT: { min: 650, max: 1500 },
   MIN_BRIGHTNESS: { min: 0.6, max: 0.8 },
   MAX_BRIGHTNESS: { min: 0.9, max: 1.0 },
-  MIN_SIZE: { min: 1, max: 1.2 },
-  MAX_SIZE: { min: 2.5, max: 4.0 },
-  DISTANCE: { min: 250, max: 450 },
+  MIN_SIZE: { min: 4, max: 4.8 }, // 4x original (was 1-1.2)
+  MAX_SIZE: { min: 10, max: 16.0 }, // 4x original (was 2.5-4.0)
+  DISTANCE: { min: 1000, max: 1800 }, // 4x original (was 250-450)
   TWINKLE_SPEED: { min: 1.0, max: 2.0 },
   PARALLAX_STRENGTH: { min: 1.0, max: 3.0 },
   VARIABLE_CHANCE: { min: 0.002, max: 0.005 },
+  ORBITAL_PARALLAX_STRENGTH: { min: 0.15, max: 0.35 }, // Subtle orbital parallax effect
 };
 
 export class StarFieldEffect {
@@ -49,20 +51,22 @@ export class StarFieldEffect {
     attribute float starType;
     attribute float distanceLayer;
     attribute vec3 originalPosition;
-    
+
     uniform float time;
     uniform float twinkleSpeed;
     uniform vec3 cameraOffset;
     uniform float parallaxStrength;
-    
+    uniform vec3 orbitalPosition;
+    uniform float orbitalParallaxStrength;
+
     varying float vBrightness;
     varying float vTwinkle;
     varying float vStarType;
-    
+
     void main() {
       vBrightness = brightness;
       vStarType = starType;
-      
+
       float baseTwinkle;
       if (starType > 0.5) {
         float pulse = sin(time * twinkleSpeed * 1.0 + twinklePhase);
@@ -72,13 +76,15 @@ export class StarFieldEffect {
         baseTwinkle = (1.0 - intensity) + intensity * sin(time * twinkleSpeed + twinklePhase);
       }
       vTwinkle = baseTwinkle;
-      
+
       vec3 parallaxOffset = cameraOffset * parallaxStrength * (0.5 / distanceLayer);
-      vec3 adjustedPosition = originalPosition + parallaxOffset;
-      
+      vec3 orbitalParallax = orbitalPosition * orbitalParallaxStrength * (1.0 / distanceLayer);
+
+      vec3 adjustedPosition = originalPosition + parallaxOffset + orbitalParallax;
+
       vec4 mvPosition = modelViewMatrix * vec4(adjustedPosition, 1.0);
       gl_Position = projectionMatrix * mvPosition;
-      
+
       float sizeMultiplier = starType > 0.5 ? 1.2 : 1.0;
       gl_PointSize = size * sizeMultiplier * (300.0 / -mvPosition.z);
     }
@@ -136,10 +142,11 @@ export class StarFieldEffect {
       variableChance: params.variableChance !== undefined ? params.variableChance : rng.uniform(PROCEDURAL_RANGES.VARIABLE_CHANCE.min, PROCEDURAL_RANGES.VARIABLE_CHANCE.max),
       cosmicOriginTime: params.cosmicOriginTime,
       timeSpeed: params.timeSpeed !== undefined ? params.timeSpeed : 1.0,
+      orbitalParallaxStrength: params.orbitalParallaxStrength !== undefined ? params.orbitalParallaxStrength : rng.uniform(PROCEDURAL_RANGES.ORBITAL_PARALLAX_STRENGTH.min, PROCEDURAL_RANGES.ORBITAL_PARALLAX_STRENGTH.max),
     };
 
     const cosmicOriginTime = this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME;
-    this.startTime = Date.now() / 1000 - cosmicOriginTime;
+    this.startTime = getUniverseTime(cosmicOriginTime);
 
     this.starCount = this.params.starCount!;
     this.geometry = new THREE.BufferGeometry();
@@ -218,6 +225,8 @@ export class StarFieldEffect {
         twinkleSpeed: { value: this.params.twinkleSpeed },
         cameraOffset: { value: new THREE.Vector3(0, 0, 0) },
         parallaxStrength: { value: this.params.parallaxStrength },
+        orbitalPosition: { value: new THREE.Vector3(0, 0, 0) },
+        orbitalParallaxStrength: { value: this.params.orbitalParallaxStrength },
       },
       transparent: true,
       blending: THREE.AdditiveBlending,
@@ -268,6 +277,14 @@ export class StarFieldEffect {
     if (newParams.parallaxStrength !== undefined) {
       this.material.uniforms.parallaxStrength.value = newParams.parallaxStrength;
     }
+
+    if (newParams.orbitalParallaxStrength !== undefined) {
+      this.material.uniforms.orbitalParallaxStrength.value = newParams.orbitalParallaxStrength;
+    }
+  }
+
+  updateOrbitalPosition(position: THREE.Vector3): void {
+    this.material.uniforms.orbitalPosition.value.copy(position);
   }
 
   getObject3D(): THREE.Points {

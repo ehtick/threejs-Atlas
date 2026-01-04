@@ -2,6 +2,7 @@
 
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom.tsx";
+import { getUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime";
 
 export interface MagmaEruptionParams {
   magmaLakes?: any[];
@@ -259,8 +260,7 @@ export class MagmaEruptionsEffect {
   private createSplash(position: THREE.Vector3, size: number): void {}
 
   update(deltaTime?: number, planetRotation?: number): void {
-    const currentTimeSeconds = Date.now() / 1000;
-    const timeSinceCosmicOrigin = currentTimeSeconds - this.cosmicOriginTime;
+    const timeSinceCosmicOrigin = getUniverseTime(this.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME);
     const animTime = (timeSinceCosmicOrigin + this.cosmicOffset) * this.params.timeSpeed!;
     const windowedTime = animTime % 10000;
 
@@ -270,6 +270,10 @@ export class MagmaEruptionsEffect {
       const material = mesh.material as THREE.ShaderMaterial;
       material.uniforms.time.value = windowedTime;
     });
+
+    if (planetRotation !== undefined) {
+      this.eruptionsGroup.rotation.y = planetRotation;
+    }
   }
 
   private calculateCurrentProjectiles(animTime: number): void {

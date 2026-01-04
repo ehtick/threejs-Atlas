@@ -1,7 +1,7 @@
 // atlas-ui/react/static/js/3DEffects/LifeFormGod.tsx
 import * as THREE from "three";
 import { SeededRandom } from "../Utils/SeededRandom.tsx";
-import { DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime.tsx";
+import { getUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime.tsx";
 
 const PROCEDURAL_RANGES = {
   SACRED_SYMBOL_COUNT: { min: 12, max: 24 },
@@ -1308,8 +1308,7 @@ export class LifeFormGodEffect {
   }
 
   public update(_deltaTime?: number): void {
-    const currentTimeSeconds = Date.now() / 1000;
-    const timeSinceCosmicOrigin = currentTimeSeconds - (this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME);
+    const timeSinceCosmicOrigin = getUniverseTime(this.params.cosmicOriginTime || DEFAULT_COSMIC_ORIGIN_TIME);
     const animTime = timeSinceCosmicOrigin + this.cosmicOffset;
 
     if (this.digitalGodSphere) {

@@ -153,12 +153,16 @@ export class AtmosphericStreaksEffect {
     scene.add(this.particleSystem);
   }
 
-  update(deltaTime: number): void {
+  update(deltaTime: number, planetRotation?: number): void {
     this.time += deltaTime;
     this.material.uniforms.time.value = this.time;
 
     const pulsation = 0.9 + 0.1 * Math.sin(this.time * 2);
     this.material.uniforms.opacity.value = this.params.opacity! * pulsation;
+
+    if (planetRotation !== undefined) {
+      this.particleSystem.rotation.y = planetRotation;
+    }
   }
 
   updateParams(newParams: Partial<AtmosphericStreaksParams>): void {

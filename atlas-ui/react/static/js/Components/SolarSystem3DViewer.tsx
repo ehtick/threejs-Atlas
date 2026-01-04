@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import SolarSystem3DViewerFullscreen from "./SolarSystem3DViewerFullscreen.tsx";
+import { VerticalTimeSlider, sliderToTimeOffset, timeOffsetToSlider } from "./VerticalTimeSlider";
 
 interface Planet {
   name: string;
@@ -77,7 +78,22 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({ planets, star
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [isEntering, setIsEntering] = useState(false);
-  const [sliderTimeOffset, setSliderTimeOffset] = useState(0);
+  const [sliderPosition, setSliderPosition] = useState(0); // -100 to 100 for vertical slider
+  const [sliderTimeOffset, setSliderTimeOffset] = useState(0); // actual seconds
+
+  const minTimeOffset = cosmicOriginTime ? cosmicOriginTime - Date.now() / 1000 : undefined;
+
+  const handleSliderChange = (newPosition: number) => {
+    const minSliderPos = minTimeOffset !== undefined ? Math.max(-100, timeOffsetToSlider(minTimeOffset)) : -100;
+    const clampedPosition = Math.max(minSliderPos, Math.min(100, newPosition));
+    setSliderPosition(clampedPosition);
+    setSliderTimeOffset(sliderToTimeOffset(clampedPosition));
+  };
+
+  const resetSliderToNow = () => {
+    setSliderPosition(0);
+    setSliderTimeOffset(0);
+  };
 
   const [systemData, setSystemData] = useState<any>(null);
   const [loadingAPI, setLoadingAPI] = useState(true);
@@ -583,44 +599,20 @@ const SolarSystem3DViewer: React.FC<SolarSystem3DViewerProps> = ({ planets, star
                 </button>
               </div>
 
-              <div className="mb-2 sm:mb-4 px-2 sm:px-4">
-                <div className="flex items-center gap-2 sm:gap-4">
-                  <span className="text-xs sm:text-sm text-gray-400 min-w-fit">-100y</span>
-                  <div className="flex-1 relative">
-                    <input
-                      type="range"
-                      min={-100 * 365.25 * 24 * 3600}
-                      max={100 * 365.25 * 24 * 3600}
-                      step={604800}
-                      value={sliderTimeOffset}
-                      onChange={(e) => {
-                        const newValue = Number(e.target.value);
-                        const maxPastTime = -(realCurrentTime - cosmicOriginTime);
-                        setSliderTimeOffset(Math.max(newValue, maxPastTime));
-                      }}
-                      className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer
-                               [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5
-                               [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-400
-                               [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-blue-600
-                               [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-lg"
-                    />
-                    <div
-                      className="absolute top-0 transform -translate-x-1/2 w-0.5 h-2 bg-yellow-400 rounded"
-                      style={{
-                        left: `${((0 - -100 * 365.25 * 24 * 3600) / (100 * 365.25 * 24 * 3600 - -100 * 365.25 * 24 * 3600)) * 100}%`,
-                      }}
-                    ></div>
-                  </div>
-                  <span className="text-xs sm:text-sm text-gray-400 min-w-fit">+100y</span>
-                  <button onClick={() => setSliderTimeOffset(0)} className="px-2 py-1 text-xs bg-gray-600 hover:bg-gray-500 text-white rounded transition-colors duration-200" title="Reset to current time">
-                    Now
-                  </button>
-                </div>
-                <div className="text-center text-xs text-gray-500 mt-1">Time Travel: {sliderTimeOffset === 0 ? "Present" : sliderTimeOffset > 0 ? `+${Math.abs(sliderTimeOffset / (365.25 * 24 * 3600)).toFixed(1)} years` : `-${Math.abs(sliderTimeOffset / (365.25 * 24 * 3600)).toFixed(1)} years`} • Range: 200 years</div>
-              </div>
-
-              <div className="flex-1 border border-white/20 rounded-lg bg-black/20 overflow-hidden min-h-0">
-                <SolarSystem3DViewerFullscreen planets={systemData?.planets || planets} stars={systemData?.stars || stars} systemName={systemName} cosmicOriginTime={cosmicOriginTime} currentTime={realCurrentTime - cosmicOriginTime + sliderTimeOffset} onTimeOffsetChange={(delta) => setSliderTimeOffset((prev) => prev + delta)} />
+              <div className="flex-1 border border-white/20 rounded-lg bg-black/20 overflow-hidden min-h-0 relative">
+                <SolarSystem3DViewerFullscreen
+                  planets={systemData?.planets || planets}
+                  stars={systemData?.stars || stars}
+                  systemName={systemName}
+                  cosmicOriginTime={cosmicOriginTime}
+                  currentTime={realCurrentTime - cosmicOriginTime + sliderTimeOffset}
+                  onTimeOffsetChange={(delta) => {
+                    const newTimeOffset = sliderTimeOffset + delta;
+                    const newSliderPos = timeOffsetToSlider(newTimeOffset);
+                    handleSliderChange(newSliderPos);
+                  }}
+                />
+                <VerticalTimeSlider sliderPosition={sliderPosition} timeOffset={sliderTimeOffset} onSliderChange={handleSliderChange} onReset={resetSliderToNow} minTimeOffset={minTimeOffset} />
               </div>
 
               <div className="mt-2 sm:mt-4 text-center text-xs sm:text-sm text-gray-400">
