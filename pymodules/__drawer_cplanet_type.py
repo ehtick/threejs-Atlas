@@ -1,6 +1,7 @@
 # pymodules\__drawer_cplanet_type.py
 
 import math
+import colorsys
 
 from PIL import Image, ImageDraw, ImageFilter, ImageColor
 
@@ -52,6 +53,67 @@ def get_planet_color_map():
         "Aquifer": "#00FFFF",
         "Exotic": "#FF00FF",
     }
+
+
+PROCEDURAL_COLOR_TYPES = {
+    "Metallic": {"hue_range": 0.15, "sat_range": 0.4, "light_range": 0.25},
+    "Crystalline": {"hue_range": 0.25, "sat_range": 0.3, "light_range": 0.2},
+    "Gas Giant": {"hue_range": 0.12, "sat_range": 0.35, "light_range": 0.2},
+    "Frozen Gas Giant": {"hue_range": 0.22, "sat_range": 0.3, "light_range": 0.15},
+    "Nebulous": {"hue_range": 0.33, "sat_range": 0.25, "light_range": 0.2},
+    "Exotic": {"hue_range": 0.11, "sat_range": 0.3, "light_range": 0.25},
+    "Anomaly": {"hue_range": 0.51, "sat_range": 0.4, "light_range": 0.3},
+    "Icy": {"hue_range": 0.34, "sat_range": 0.25, "light_range": 0.15},
+    "Diamond": {"hue_range": 0.21, "sat_range": 0.35, "light_range": 0.2},
+    "Toxic": {"hue_range": 0.15, "sat_range": 0.3, "light_range": 0.2},
+}
+
+
+def _seeded_random(seed):
+    """Simple seeded random generator for deterministic results."""
+    s = abs(seed) if seed else 1
+    def next_random():
+        nonlocal s
+        s = (s * 1664525 + 1013904223) % 4294967296
+        return s / 4294967296
+    return next_random
+
+
+def _hex_to_hsl(hex_color):
+    hex_color = hex_color.lstrip("#")
+    r = int(hex_color[0:2], 16) / 255
+    g = int(hex_color[2:4], 16) / 255
+    b = int(hex_color[4:6], 16) / 255
+    h, l, s = colorsys.rgb_to_hls(r, g, b)
+    return h, s, l
+
+
+def _hsl_to_hex(h, s, l):
+    r, g, b = colorsys.hls_to_rgb(h, l, s)
+    return "#{:02x}{:02x}{:02x}".format(int(r * 255), int(g * 255), int(b * 255))
+
+
+DEFAULT_COLOR_VARIATION = {"hue_range": 0.05, "sat_range": 0.15, "light_range": 0.1}
+
+
+def get_procedural_planet_color(base_color, planet_type, seed):
+    config = PROCEDURAL_COLOR_TYPES.get(planet_type, DEFAULT_COLOR_VARIATION)
+
+    random = _seeded_random(seed)
+    h, s, l = _hex_to_hsl(base_color)
+
+    hue_shift = (random() - 0.5) * 2 * config["hue_range"]
+    new_hue = (h + hue_shift) % 1.0
+    if new_hue < 0:
+        new_hue += 1.0
+
+    sat_shift = (random() - 0.5) * 2 * config["sat_range"]
+    new_sat = max(0.05, min(1.0, s + sat_shift))
+
+    light_shift = (random() - 0.5) * 2 * config["light_range"]
+    new_light = max(0.1, min(0.9, l + light_shift))
+
+    return _hsl_to_hex(new_hue, new_sat, new_light)
 
 
 def draw_gas_giant_elements(draw, center_x, center_y, planet_radius, rng, seed, spaced_planet_name):

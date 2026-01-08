@@ -385,7 +385,10 @@ export class EffectRegistry {
 
     this.registerEffect(EffectType.CRYSTALLINE_SURFACE, {
       create: (params, planetRadius, layerSystem) => new CrystallineSurfaceEffect(planetRadius, params),
-      fromPythonData: (data, planetRadius, layerSystem) => createCrystallineSurfaceFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed, data.timing?.cosmic_origin_time),
+      fromPythonData: (data, planetRadius, layerSystem) => {
+        const baseColor = getPlanetBaseColor(data);
+        return createCrystallineSurfaceFromPythonData(planetRadius, data.surface_elements || {}, data.seeds?.planet_seed, data.timing?.cosmic_origin_time, undefined, baseColor);
+      },
     });
 
     this.registerEffect(EffectType.TOXIC_SWAMP_BUBBLES, {

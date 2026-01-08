@@ -873,15 +873,29 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
         onMoonSelected(clickedMoon);
       }
 
+      const moonRelativeSize = clickedMoon.visuals?.relative_size || 0.1;
+      const moonVisualRadius = NORMALIZED_PLANET_RADIUS * moonRelativeSize;
+      const minZoomDistance = Math.max(moonVisualRadius * 3, NORMALIZED_PLANET_RADIUS * 0.15);
+
+      if (controlsRef.current) {
+        controlsRef.current.minDistance = minZoomDistance;
+      }
+
       const moonPosition = moonSystemRef.current.getMoonPosition(clickedMoon.name);
       if (moonPosition) {
-        const focusDistance = NORMALIZED_PLANET_RADIUS * 8;
-        const targetPosition = new THREE.Vector3(moonPosition.x, moonPosition.y + focusDistance * 0.3, moonPosition.z + focusDistance);
+        const focusDistance = Math.max(moonVisualRadius * 6, NORMALIZED_PLANET_RADIUS * 0.5);
+        const directionToMoon = moonPosition.clone().normalize();
+        const targetPosition = moonPosition.clone().add(directionToMoon.multiplyScalar(focusDistance));
 
         animateCameraToTarget(targetPosition, moonPosition);
       }
     } else {
       const planetIntersects = raycasterRef.current.intersectObject(planetMeshRef.current || new THREE.Object3D(), true);
+
+      if (controlsRef.current) {
+        const exactDistance = calculateExactCameraDistance();
+        controlsRef.current.minDistance = exactDistance * 0.5;
+      }
 
       if (planetIntersects.length > 0) {
         setSelectedMoon(null);

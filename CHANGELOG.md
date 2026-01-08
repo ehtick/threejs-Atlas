@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.9.2052] - 2026-01-08
+
+- Implemented realistic moon scaling system, removing artificial size multipliers to display moons at their true relative scale.
+- Added moon collision detection and resolution system with physics-based outcomes: low-velocity impacts result in moon fusion (mass and volume conservation), high-velocity impacts destroy the smaller moon (may be buggy, we still haven't found any collision since moons now are at their true scale).
+- Introduced pulsating green indicator rings for small moons (< 15% relative size), synchronized with orbital line visibility for easy localization.
+- Added invisible hit area behind moon indicators enabling full-circle click detection for improved mobile usability.
+- Implemented dynamic camera zoom limits when selecting moons, minimum distance now scales proportionally to moon size, allowing much closer inspection of small moons.
+- Camera focus distance when selecting a moon now proportional to moon size, making small moons appear similar in size to the planet view.
+- Improved moon geometry with increased base segments (64, up from 32) and inverse size scaling, smaller moons get proportionally more segments for smoother appearance.
+- Enhanced procedural moon surface noise with adaptive scaling inversely proportional to moon radius for better texture definition on small moons.
+- Implemented procedural planet color variation system in backend, generating unique color variations based on planet seed for supported types.
+- Added procedural color variation for planet types: Metallic, Crystalline, Gas Giant, Frozen Gas Giant, Nebulous, Exotic, Anomaly, Icy, Diamond, and Toxic with type-specific hue/saturation/lightness ranges.
+- Default subtle color variation now applied to all planet types not in the specific list.
+- Fixed Crystalline Surface effect to inherit planet base color instead of using hardcoded cyan, enabling proper color variation for crystalline planets.
+
 ## [2.9.328] - 2026-01-04
 
 - Implemented universal time offset system allowing time manipulation across the entire 3D rendering pipeline with synchronized planet, moon, and effect animations.

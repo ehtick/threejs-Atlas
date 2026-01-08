@@ -8,7 +8,7 @@ from typing import Dict, List, Any, Optional, Tuple
 from pymodules.__atlas_config import config
 from pymodules.__atlas_seedmaster import consistent_hash
 from pymodules.__atlas_fixed_vars import VISUAL_DEBUG
-from pymodules.__drawer_cplanet_type import get_planet_color_map
+from pymodules.__drawer_cplanet_type import get_planet_color_map, get_procedural_planet_color
 
 from .atmosphere_translator import AtmosphereTranslator
 from .rings_translator import RingsTranslator
@@ -80,6 +80,7 @@ class PlanetRenderingTranslator:
 
         planet_color_map = get_planet_color_map()
         base_color = planet_color_map.get(planet.planet_type, "#FFFFFF")
+        base_color = get_procedural_planet_color(base_color, planet.planet_type, planet.seed)
 
         planet_specific_data = {}
         if planet_type in self.planet_types:

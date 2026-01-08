@@ -139,13 +139,12 @@ export class CrystallineSurfaceEffect {
     });
   }
 
-  /**
-   * Generar datos procedurales de cristales
-   */
   private generateProceduralCrystals(): any[] {
     const rng = this.seededRng || new SeededRandom(this.params.seed || 42);
     const crystalCount = rng.randint(PROCEDURAL_RANGES.CRYSTAL_COUNT.min, PROCEDURAL_RANGES.CRYSTAL_COUNT.max);
     const crystals = [];
+
+    const baseColor = this.params.baseColor instanceof THREE.Color ? this.params.baseColor : new THREE.Color(this.params.baseColor || 0x00ccff);
 
     for (let i = 0; i < crystalCount; i++) {
       const theta = rng.random() * Math.PI * 2;
@@ -153,10 +152,13 @@ export class CrystallineSurfaceEffect {
 
       const position_3d = [Math.sin(phi) * Math.cos(theta), Math.sin(phi) * Math.sin(theta), Math.cos(phi)];
 
+      const colorVariation = 0.8 + rng.random() * 0.2;
+      const crystalColor = baseColor.clone().multiplyScalar(colorVariation);
+
       crystals.push({
         position_3d,
         size: rng.uniform(PROCEDURAL_RANGES.SIZE.min, PROCEDURAL_RANGES.SIZE.max),
-        color: [0.0, 0.8 + rng.random() * 0.2, 1.0, 0.9],
+        color: [crystalColor.r, crystalColor.g, crystalColor.b, 0.9],
         height: rng.uniform(PROCEDURAL_RANGES.HEIGHT.min, PROCEDURAL_RANGES.HEIGHT.max),
         sides: 6 + Math.floor(rng.random() * 6),
         transmission: rng.uniform(PROCEDURAL_RANGES.TRANSMISSION.min, PROCEDURAL_RANGES.TRANSMISSION.max),
@@ -538,9 +540,6 @@ export class CrystallineSurfaceEffect {
     this.crystallineGroup.add(this.starFieldReflections);
   }
 
-  /**
-   * Generar caras deterministas basadas en la geometría del cristal
-   */
   private generateDeterministicFaceNormals(crystalData: any, crystalIndex: number): THREE.Vector3[] {
     const rng = new SeededRandom((this.params.seed || 42) + crystalIndex * 1000);
     const faceNormals: THREE.Vector3[] = [];
@@ -580,7 +579,6 @@ export class CrystallineSurfaceEffect {
         time: { value: 0 },
         glowColor: { value: new THREE.Color(crystalData.color[0], crystalData.color[1], crystalData.color[2]) },
         glowIntensity: { value: crystalData.glowIntensity || 0.5 },
-        // Add light uniforms for day/night modulation - sync with crystal shader
         lightPosition: { value: new THREE.Vector3(0, 0, 0) },
         lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
       },
@@ -761,13 +759,14 @@ export class CrystallineSurfaceEffect {
   }
 }
 
-export function createCrystallineSurfaceFromPythonData(planetRadius: number, surfaceData: any, seed: number, cosmicOriginTime?: number, starField?: any): CrystallineSurfaceEffect | null {
+export function createCrystallineSurfaceFromPythonData(planetRadius: number, surfaceData: any, seed: number, cosmicOriginTime?: number, starField?: any, baseColor?: THREE.Color): CrystallineSurfaceEffect | null {
+  const color = baseColor || new THREE.Color(0.0, 0.8, 1.0);
   return new CrystallineSurfaceEffect(
     planetRadius,
     {
       seed,
       cosmicOriginTime,
-      baseColor: new THREE.Color(0.0, 0.8, 1.0),
+      baseColor: color,
       transmission: 0.2,
       ior: 1.6,
       roughness: 0.01,
