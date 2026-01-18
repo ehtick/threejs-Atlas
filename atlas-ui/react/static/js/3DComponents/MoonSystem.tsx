@@ -103,8 +103,6 @@ export class MoonSystem {
   private lastRelaxationSummary: number = 0;
 
   private moonMaterials: Map<string, THREE.MeshStandardMaterial> = new Map();
-  private destroyedMoons: Set<number> = new Set();
-  private onMoonCollision?: (destroyed: MoonData, survivor: MoonData, type: "fusion" | "destruction") => void;
 
   private camera: THREE.Camera;
   private planetPosition: THREE.Vector3;
@@ -151,7 +149,7 @@ export class MoonSystem {
         roughness: 0.9,
         metalness: 0.1,
         normalScale: new THREE.Vector2(0.8, 0.8),
-      })
+      }),
     );
 
     this.moonMaterials.set(
@@ -161,7 +159,7 @@ export class MoonSystem {
         roughness: 0.3,
         metalness: 0.05,
         normalScale: new THREE.Vector2(0.4, 0.4),
-      })
+      }),
     );
 
     this.moonMaterials.set(
@@ -171,7 +169,7 @@ export class MoonSystem {
         roughness: 0.95,
         metalness: 0.15,
         normalScale: new THREE.Vector2(1.2, 1.2),
-      })
+      }),
     );
 
     this.moonMaterials.set(
@@ -181,7 +179,7 @@ export class MoonSystem {
         roughness: 0.8,
         metalness: 0.08,
         normalScale: new THREE.Vector2(0.9, 0.9),
-      })
+      }),
     );
   }
 
@@ -370,38 +368,36 @@ export class MoonSystem {
 
     this.createOrbitalTrail(moonData, index);
 
-    if (relativeSize < 0.15) {
-      const indicatorRadius = Math.max(moonRadius * 4, this.planetRadius * 0.04);
+    const indicatorRadius = Math.max(moonRadius * 2, this.planetRadius * 0.04);
 
-      const hitAreaGeometry = new THREE.CircleGeometry(indicatorRadius, 32);
-      const hitAreaMaterial = new THREE.MeshBasicMaterial({
-        side: THREE.DoubleSide,
-        depthTest: false,
-        depthWrite: false,
-        colorWrite: false,
-      });
-      const hitAreaMesh = new THREE.Mesh(hitAreaGeometry, hitAreaMaterial);
-      hitAreaMesh.name = `moon-indicator-hitarea-${moonData.name}`;
-      hitAreaMesh.renderOrder = 998;
-      hitAreaMesh.userData = { isMoonIndicator: true, moonData: moonData };
-      moonGroup.add(hitAreaMesh);
+    const hitAreaGeometry = new THREE.CircleGeometry(indicatorRadius, 32);
+    const hitAreaMaterial = new THREE.MeshBasicMaterial({
+      side: THREE.DoubleSide,
+      depthTest: false,
+      depthWrite: false,
+      colorWrite: false,
+    });
+    const hitAreaMesh = new THREE.Mesh(hitAreaGeometry, hitAreaMaterial);
+    hitAreaMesh.name = `moon-indicator-hitarea-${moonData.name}`;
+    hitAreaMesh.renderOrder = 998;
+    hitAreaMesh.userData = { isMoonIndicator: true, moonData: moonData };
+    moonGroup.add(hitAreaMesh);
 
-      const ringGeometry = new THREE.RingGeometry(indicatorRadius * 0.85, indicatorRadius, 48);
-      const ringMaterial = new THREE.MeshBasicMaterial({
-        color: 0x00ff44,
-        transparent: true,
-        opacity: 0.0,
-        side: THREE.DoubleSide,
-        depthTest: false,
-      });
-      const ringMesh = new THREE.Mesh(ringGeometry, ringMaterial);
-      ringMesh.name = `moon-indicator-${moonData.name}`;
-      ringMesh.renderOrder = 999;
-      ringMesh.userData = { isMoonIndicator: true, moonData: moonData };
-      moonGroup.add(ringMesh);
-      this.smallMoonIndicators.push(ringMesh);
-      this.smallMoonIndicators.push(hitAreaMesh);
-    }
+    const ringGeometry = new THREE.RingGeometry(indicatorRadius * 0.85, indicatorRadius, 48);
+    const ringMaterial = new THREE.MeshBasicMaterial({
+      color: 0x00ff44,
+      transparent: true,
+      opacity: 0.0,
+      side: THREE.DoubleSide,
+      depthTest: false,
+    });
+    const ringMesh = new THREE.Mesh(ringGeometry, ringMaterial);
+    ringMesh.name = `moon-indicator-${moonData.name}`;
+    ringMesh.renderOrder = 999;
+    ringMesh.userData = { isMoonIndicator: true, moonData: moonData };
+    moonGroup.add(ringMesh);
+    this.smallMoonIndicators.push(ringMesh);
+    this.smallMoonIndicators.push(hitAreaMesh);
 
     if (moonData.visuals.has_atmosphere && moonData.visuals.atmosphere_color) {
       const atmosphereGeometry = new THREE.SphereGeometry(moonRadius * 1.05, 16, 8);
@@ -1202,119 +1198,6 @@ export class MoonSystem {
     return this.timeOffset;
   }
 
-  public setCollisionCallback(callback: (destroyed: MoonData, survivor: MoonData, type: "fusion" | "destruction") => void): void {
-    this.onMoonCollision = callback;
-  }
-
-  private checkMoonCollisions(): void {
-    if (!this.moonData || this.moonData.moons.length < 2) return;
-
-    const moons = this.moonData.moons;
-    const positions: THREE.Vector3[] = this.moonMeshes.map((mesh) => mesh.position.clone());
-
-    for (let i = 0; i < moons.length; i++) {
-      if (this.destroyedMoons.has(i)) continue;
-
-      for (let j = i + 1; j < moons.length; j++) {
-        if (this.destroyedMoons.has(j)) continue;
-
-        const moonA = moons[i];
-        const moonB = moons[j];
-
-        const visualRadiusA = this.planetRadius * moonA.visuals.relative_size;
-        const visualRadiusB = this.planetRadius * moonB.visuals.relative_size;
-        const collisionDistance = visualRadiusA + visualRadiusB;
-
-        const distance = positions[i].distanceTo(positions[j]);
-
-        // Debug: log closest approach
-        if (distance < collisionDistance * 3) {
-          console.log(`[Collision Check] ${moonA.name} <-> ${moonB.name}: distance=${distance.toFixed(4)}, collisionDist=${collisionDistance.toFixed(4)}, ratio=${(distance / collisionDistance).toFixed(2)}`);
-        }
-
-        if (distance < collisionDistance) {
-          const massA = moonA.properties.mass_kg;
-          const massB = moonB.properties.mass_kg;
-          const physicalRadiusA = moonA.properties.radius_km;
-          const physicalRadiusB = moonB.properties.radius_km;
-
-          const velocityA = this.calculateOrbitalVelocity(moonA);
-          const velocityB = this.calculateOrbitalVelocity(moonB);
-          const relativeVelocity = Math.abs(velocityA - velocityB);
-
-          const escapeVelocity = Math.sqrt((2 * 6.674e-11 * (massA + massB)) / ((physicalRadiusA + physicalRadiusB) * 1000));
-
-          const destroyedIndex = massA < massB ? i : j;
-          const survivorIndex = massA < massB ? j : i;
-
-          if (relativeVelocity < escapeVelocity * 0.5) {
-            this.fuseMoons(destroyedIndex, survivorIndex);
-            if (this.onMoonCollision) {
-              this.onMoonCollision(moons[destroyedIndex], moons[survivorIndex], "fusion");
-            }
-          } else {
-            this.destroyMoon(destroyedIndex);
-            if (this.onMoonCollision) {
-              this.onMoonCollision(moons[destroyedIndex], moons[survivorIndex], "destruction");
-            }
-          }
-        }
-      }
-    }
-  }
-
-  private calculateOrbitalVelocity(moon: MoonData): number {
-    const semiMajorAxis = moon.orbit.semi_major_axis_km * 1000;
-    const period = moon.orbit.orbital_period_seconds;
-    return (2 * Math.PI * semiMajorAxis) / period;
-  }
-
-  private fuseMoons(destroyedIndex: number, survivorIndex: number): void {
-    if (!this.moonData) return;
-
-    const destroyed = this.moonData.moons[destroyedIndex];
-    const survivor = this.moonData.moons[survivorIndex];
-
-    survivor.properties.mass_kg += destroyed.properties.mass_kg;
-
-    const newVolume = (4 / 3) * Math.PI * (Math.pow(survivor.properties.radius_km, 3) + Math.pow(destroyed.properties.radius_km, 3));
-    survivor.properties.radius_km = Math.pow((3 * newVolume) / (4 * Math.PI), 1 / 3);
-
-    survivor.visuals.relative_size = Math.pow(Math.pow(survivor.visuals.relative_size, 3) + Math.pow(destroyed.visuals.relative_size, 3), 1 / 3);
-
-    this.destroyMoon(destroyedIndex);
-    this.updateSurvivorMesh(survivorIndex);
-  }
-
-  private destroyMoon(index: number): void {
-    this.destroyedMoons.add(index);
-
-    if (index < this.moonMeshes.length) {
-      const moonGroup = this.moonMeshes[index];
-      moonGroup.visible = false;
-    }
-
-    if (index < this.orbitalLines.length) {
-      const orbitalLine = this.orbitalLines[index];
-      orbitalLine.visible = false;
-    }
-  }
-
-  private updateSurvivorMesh(index: number): void {
-    if (!this.moonData || index >= this.moonMeshes.length) return;
-
-    const moonData = this.moonData.moons[index];
-    const moonGroup = this.moonMeshes[index];
-
-    const moonMesh = moonGroup.children.find((child) => child instanceof THREE.Mesh && child.name.startsWith("moon-mesh-")) as THREE.Mesh | undefined;
-
-    if (moonMesh && moonMesh.geometry) {
-      const newRadius = this.planetRadius * moonData.visuals.relative_size;
-      moonMesh.geometry.dispose();
-      moonMesh.geometry = new THREE.SphereGeometry(newRadius, 32, 16);
-    }
-  }
-
   public update(): void {
     if (!this.moonData) return;
 
@@ -1340,8 +1223,6 @@ export class MoonSystem {
     }
 
     this.moonData.moons.forEach((moonData, index) => {
-      if (this.destroyedMoons.has(index)) return;
-
       if (index < this.moonMeshes.length) {
         this.updateMoonPosition(this.moonMeshes[index], moonData, cosmicTimeElapsed, index);
 
@@ -1351,7 +1232,6 @@ export class MoonSystem {
       }
     });
 
-    this.checkMoonCollisions();
     this.updateLOD();
   }
 

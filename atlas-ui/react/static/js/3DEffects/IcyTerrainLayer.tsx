@@ -72,6 +72,10 @@ export class IcyTerrainLayer {
     }
   }
 
+  getObject3D(): THREE.Object3D | undefined {
+    return this.layerMesh;
+  }
+
   dispose(): void {}
 }
 

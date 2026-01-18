@@ -1,5 +1,22 @@
 # Changelog
 
+## [2.9.2224] - 2026-01-18
+
+- Refactored `EffectRegistry` from global singleton to instance-based pattern, each renderer now has its own isolated effect registry for better encapsulation.
+- Removed moon collision detection and resolution system (fusion/destruction mechanics) as it was unreliable at realistic moon scales, this will need its own module in a near future.
+- Extended moon click indicators (hit area + ring) to ALL moons, previously only small moons (<15% relative size) had indicators, improving mobile usability across all moon sizes.
+- Completely rewrote `LandMassesEffect` with cluster-based generation using Union-Find algorithm to merge nearby/overlapping land patches into unified landmasses, now they don't look as Lego pieces.
+- Implemented metaball-style implicit field for organic landmass shapes with smooth edge interpolation and Laplacian smoothing on borders.
+- Added edge fade-out system in land masses to prevent visual cuts at grid boundaries.
+- Major overhaul of `RingSystemEffect` with 25 concentric lines rendered as visual ring structure alongside particles.
+- Implemented realistic planet shadow with penumbra on ring particles and concentric lines using cone-based shadow projection.
+- Added light direction support in ring system for accurate solar illumination matching planet lighting.
+- Refactored backend `rings_translator.py` to generate multiple concentric ring bands (2-4) with gaps between them for more realistic ring structures.
+- Increased `StarField` density significantly (from ~1000 to ~6000 stars), with 8x larger sizes and distances for more immersive background.
+- Added `toggleEffect` method to `ModularPlanetRenderer` public interface for external effect control.
+- Added `getObject3D()` method to `IcyTerrainLayer` for consistency with other effects.
+- Darkened ring particle colors for more subtle, realistic appearance.
+
 ## [2.9.2052] - 2026-01-08
 
 - Implemented realistic moon scaling system, removing artificial size multipliers to display moons at their true relative scale.

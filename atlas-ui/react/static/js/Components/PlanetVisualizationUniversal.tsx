@@ -3,7 +3,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ModularPlanetRendererWrapper } from "../3DComponents/ModularPlanetRendererWrapper";
-import { effectRegistry } from "../3DEffects/EffectRegistry";
 import Planet3DViewerFullscreen from "./Planet3DViewerFullscreen.tsx";
 import DownloadIcon from "../Icons/DownloadIcon";
 import ExportingOverlay from "./ExportingOverlay";
@@ -44,7 +43,7 @@ interface PlanetVisualizationUniversalProps {
 
 const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> = ({ planetUrl, planet, cosmicOriginTime, initialAngleRotation, onEffectsCreated, effects, onToggleEffect, onMoonSelected }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const planetRendererRef = useRef<{ captureScreenshot: () => void; isGeneratingImage: boolean } | null>(null);
+  const planetRendererRef = useRef<{ captureScreenshot: () => void; isGeneratingImage: boolean; toggleEffect: (effectId: string, enabled: boolean) => void } | null>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [canvasHidden, setCanvasHidden] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -62,9 +61,9 @@ const PlanetVisualizationUniversal: React.FC<PlanetVisualizationUniversalProps> 
   };
 
   useEffect(() => {
-    if (effects && onToggleEffect) {
+    if (effects && onToggleEffect && planetRendererRef.current) {
       effects.forEach((effect) => {
-        effectRegistry.toggleEffect(effect.id, effect.enabled);
+        planetRendererRef.current?.toggleEffect(effect.id, effect.enabled);
       });
     }
   }, [effects]);

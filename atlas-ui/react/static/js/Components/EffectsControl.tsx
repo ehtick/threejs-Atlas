@@ -1,6 +1,5 @@
 // atlas-ui/react/static/js/Components/EffectsControl.tsx
 import React, { useState, useEffect } from "react";
-import { effectRegistry } from "../3DEffects/EffectRegistry";
 
 interface EffectInfo {
   id: string;

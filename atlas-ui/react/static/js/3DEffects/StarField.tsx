@@ -18,20 +18,20 @@ export interface StarFieldParams {
   variableChance?: number;
   cosmicOriginTime?: number;
   timeSpeed?: number;
-  orbitalParallaxStrength?: number; // How much stars shift based on orbital position
+  orbitalParallaxStrength?: number;
 }
 
 const PROCEDURAL_RANGES = {
-  STAR_COUNT: { min: 650, max: 1500 },
+  STAR_COUNT: { min: 4500, max: 7500 },
   MIN_BRIGHTNESS: { min: 0.6, max: 0.8 },
   MAX_BRIGHTNESS: { min: 0.9, max: 1.0 },
-  MIN_SIZE: { min: 4, max: 4.8 }, // 4x original (was 1-1.2)
-  MAX_SIZE: { min: 10, max: 16.0 }, // 4x original (was 2.5-4.0)
-  DISTANCE: { min: 1000, max: 1800 }, // 4x original (was 250-450)
+  MIN_SIZE: { min: 8, max: 9.6 }, // 8x original
+  MAX_SIZE: { min: 20, max: 32.0 }, // 8x original
+  DISTANCE: { min: 2000, max: 3600 }, // 8x original
   TWINKLE_SPEED: { min: 1.0, max: 2.0 },
   PARALLAX_STRENGTH: { min: 1.0, max: 3.0 },
   VARIABLE_CHANCE: { min: 0.002, max: 0.005 },
-  ORBITAL_PARALLAX_STRENGTH: { min: 0.15, max: 0.35 }, // Subtle orbital parallax effect
+  ORBITAL_PARALLAX_STRENGTH: { min: 0.15, max: 0.35 },
 };
 
 export class StarFieldEffect {

@@ -678,9 +678,9 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
             >
               <div className={`px-3 sm:px-6 py-3 border-b border-green-400/50 flex items-center justify-between transition-all duration-500 ${isMatrixMode ? "bg-green-900/30" : "bg-green-500/20 border-green-300"}`}>
                 <div className={`text-xs sm:text-sm font-mono uppercase tracking-wider transition-colors duration-500 break-words sm:break-normal overflow-hidden ${isMatrixMode ? "text-green-400" : "text-green-300"}`}>
-                  <span className="hidden lg:inline">&gt; ATLAS INITIALIZATION PROTOCOL v2.9.2052 &lt;</span>
-                  <span className="hidden sm:inline lg:hidden">&gt; ATLAS INIT PROTOCOL v2.9.2052 &lt;</span>
-                  <span className="sm:hidden">&gt; ATLAS INIT v2.9.2052 &lt;</span>
+                  <span className="hidden lg:inline">&gt; ATLAS INITIALIZATION PROTOCOL v2.9.2224 &lt;</span>
+                  <span className="hidden sm:inline lg:hidden">&gt; ATLAS INIT PROTOCOL v2.9.2224 &lt;</span>
+                  <span className="sm:hidden">&gt; ATLAS INIT v2.9.2224 &lt;</span>
                 </div>
                 <div className="flex gap-1 items-center">
                   <div className={`w-2 h-2 transition-colors duration-500 ${isMatrixMode ? "bg-green-400 animate-pulse" : "bg-green-300"}`}></div>

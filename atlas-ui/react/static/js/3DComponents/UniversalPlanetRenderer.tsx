@@ -1,7 +1,7 @@
 // atlas-ui/react/static/js/3DComponents/UniversalPlanetRenderer.tsx
 
 import * as THREE from "three";
-import { effectRegistry } from "../3DEffects/EffectRegistry";
+import { EffectRegistry } from "../3DEffects/EffectRegistry";
 
 interface PlanetRenderingData {
   planet_info: {
@@ -19,10 +19,12 @@ interface PlanetRenderingData {
 export class UniversalPlanetRenderer {
   private scene: THREE.Scene;
   private planetMesh: THREE.Mesh;
+  private effectRegistry: EffectRegistry;
 
   constructor(scene: THREE.Scene, planetMesh: THREE.Mesh) {
     this.scene = scene;
     this.planetMesh = planetMesh;
+    this.effectRegistry = new EffectRegistry();
   }
 
   async loadPlanetData(planetName: string): Promise<void> {
@@ -53,7 +55,7 @@ export class UniversalPlanetRenderer {
         this.planetMesh.material = newMaterial;
       }
 
-      const effects = effectRegistry.createEffectsFromPythonPlanetData(data, 1, this.planetMesh, this.scene);
+      const effects = this.effectRegistry.createEffectsFromPythonPlanetData(data, 1, this.planetMesh, this.scene);
 
       if (data.atmosphere) {
       }
@@ -66,10 +68,10 @@ export class UniversalPlanetRenderer {
   }
 
   private applyDefaultRendering(): void {
-    const defaultEffects = effectRegistry.createEffectsFromList([], 1, this.planetMesh);
+    const defaultEffects = this.effectRegistry.createEffectsFromList([], 1, this.planetMesh);
   }
 
   dispose(): void {
-    effectRegistry.clearAllEffects();
+    this.effectRegistry.clearAllEffects();
   }
 }

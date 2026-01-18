@@ -1,7 +1,6 @@
 // atlas-ui/react/static/js/3DEffects/index.ts
 
 import type { EffectCreationData } from "./EffectRegistry";
-import { effectRegistry } from "./EffectRegistry";
 
 export { RingSystemEffect, createRingSystemFromPythonData } from "./RingSystem";
 export type { RingSystemParams } from "./RingSystem";
@@ -75,7 +74,7 @@ export type { RadiationRingsParams } from "./RadiationRings";
 export { SuperEarthWaterFeaturesEffect, createSuperEarthWaterFeaturesFromPythonData } from "./SuperEarthWaterFeatures";
 export type { SuperEarthWaterFeaturesParams } from "./SuperEarthWaterFeatures";
 
-export { EffectRegistry, effectRegistry, EffectType } from "./EffectRegistry";
+export { EffectRegistry, EffectType } from "./EffectRegistry";
 export type { EffectInstance, EffectCreationData, EffectCreator } from "./EffectRegistry";
 
 export const AVAILABLE_EFFECTS = ["cloud_bands", "cloud_gyros", "atmosphere", "atmosphere_glow", "atmosphere_clouds", "atmospheric_streaks", "ring_system", "fragmentation", "rocky_terrain", "icy_terrain", "lava_flows", "lava_rivers", "crystal_formations", "cloud_layers", "storm_systems", "volcanic_activity", "aurora", "magnetic_field", "city_lights", "bioluminescence", "thermal_emissions", "tundra_snowflakes", "toxic_post_processing", "river_lines", "cave_surface_holes", "radiation_pulse", "radiation_rings", "super_earth_water_features", "anomaly_phase_matter", "pulsating_cube", "planet_rays"] as const;
@@ -185,7 +184,7 @@ export function createPlanetEffectConfig(planetType: string): EffectCreationData
             particleCount: 100,
           },
           priority: 20,
-        }
+        },
       );
       break;
 
@@ -213,7 +212,7 @@ export function createPlanetEffectConfig(planetType: string): EffectCreationData
           type: "atmosphere_glow",
           params: DEFAULT_EFFECT_CONFIGS.atmosphere_glow,
           priority: 20,
-        }
+        },
       );
       break;
 
@@ -281,8 +280,6 @@ export const EffectsLogger = {
     }
   },
 };
-
-export { effectRegistry as Effects };
 
 export const EFFECTS_LIBRARY_VERSION = "1.0.0";
 export const EFFECTS_LIBRARY_NAME = "Atlas Planet Effects Library";

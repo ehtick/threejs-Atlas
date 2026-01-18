@@ -2,45 +2,88 @@
 
 import math
 import random
-from typing import Dict, Any
+from typing import Dict, Any, List, Tuple
 
 
 class RingsTranslator:
 
+    def _generate_bands(self, planet_radius: int, rng: random.Random) -> List[Tuple[float, float]]:
+        num_bands = rng.randint(2, 4)
+
+        first_inner = planet_radius + rng.randint(80, 120)
+        total_extent = planet_radius * rng.uniform(0.8, 1.2) 
+
+        bands = []
+        current_pos = first_inner
+
+        for i in range(num_bands):
+            band_width = rng.randint(30, 70) * (1.0 - i * 0.15)
+            band_inner = current_pos
+            band_outer = current_pos + band_width
+
+            bands.append((band_inner, band_outer))
+
+            gap = rng.randint(15, 40)
+            current_pos = band_outer + gap
+
+        return bands
+
     def translate_rings(self, planet, planet_radius: int, rng: random.Random, tilt_factor: float, angle_rotation: float) -> Dict[str, Any]:
-        ring_inner_radius = planet_radius + rng.randint(120, 160)
-        ring_outer_radius = ring_inner_radius + rng.randint(20, 40)
+        bands = self._generate_bands(planet_radius, rng)
 
-        base_num_full_ring_points = rng.randint(500, 1500)
-        num_full_ring_points = int(base_num_full_ring_points * 1.5)
+        ring_inner_radius = bands[0][0]
+        ring_outer_radius = bands[-1][1]
+
+        base_num_points_per_band = rng.randint(600, 1200)
+
         full_ring_particles = []
-
-        for _ in range(num_full_ring_points):
-            angle = rng.uniform(math.pi, 2 * math.pi)
-            distance = rng.uniform(ring_inner_radius, ring_outer_radius)
-
-            x = distance * math.cos(angle)
-            y = distance * tilt_factor * math.sin(angle)
-
-            point_size = rng.choices([0.5, 1.0, 1.5, 2.0], weights=[0.4, 0.3, 0.2, 0.1], k=1)[0]
-            gray_value = rng.randint(20, 50)
-
-            full_ring_particles.append({"x": x, "y": y, "z": 0, "size": point_size, "color": [gray_value / 255.0, gray_value / 255.0, gray_value / 255.0, 1.0], "angle": angle, "distance": distance})
-
-        base_num_ontop_ring_points = rng.randint(500, 1500)
-        num_ontop_ring_points = int(base_num_ontop_ring_points * 1.5)
         ontop_ring_particles = []
 
-        for _ in range(num_ontop_ring_points):
-            angle = rng.uniform(0, math.pi)
-            distance = rng.uniform(ring_inner_radius, ring_outer_radius)
+        for band_inner, band_outer in bands:
+            num_points = int(base_num_points_per_band * 1.5)
 
-            x = distance * math.cos(angle)
-            y = distance * tilt_factor * math.sin(angle)
+            for _ in range(num_points):
+                angle = rng.uniform(math.pi, 2 * math.pi)
+                distance = rng.uniform(band_inner, band_outer)
 
-            point_size = rng.choices([0.5, 1.0, 1.5, 2.0], weights=[0.4, 0.3, 0.2, 0.1], k=1)[0]
-            gray_value = rng.randint(20, 50)
+                x = distance * math.cos(angle)
+                y = distance * tilt_factor * math.sin(angle)
 
-            ontop_ring_particles.append({"x": x, "y": y, "z": 0, "size": point_size, "color": [gray_value / 255.0, gray_value / 255.0, gray_value / 255.0, 1.0], "angle": angle, "distance": distance})
+                point_size = rng.choices([0.5, 1.0, 1.5, 2.0], weights=[0.4, 0.3, 0.2, 0.1], k=1)[0]
+                gray_value = rng.randint(20, 50)
 
-        return {"has_rings": True, "inner_radius": ring_inner_radius, "outer_radius": ring_outer_radius, "tilt_factor": tilt_factor, "rotation_angle": angle_rotation, "full_ring": {"num_particles": num_full_ring_points, "particles": full_ring_particles}, "ontop_ring": {"num_particles": num_ontop_ring_points, "particles": ontop_ring_particles}}
+                full_ring_particles.append({
+                    "x": x, "y": y, "z": 0,
+                    "size": point_size,
+                    "color": [gray_value / 255.0, gray_value / 255.0, gray_value / 255.0, 1.0],
+                    "angle": angle,
+                    "distance": distance
+                })
+
+            for _ in range(num_points):
+                angle = rng.uniform(0, math.pi)
+                distance = rng.uniform(band_inner, band_outer)
+
+                x = distance * math.cos(angle)
+                y = distance * tilt_factor * math.sin(angle)
+
+                point_size = rng.choices([0.5, 1.0, 1.5, 2.0], weights=[0.4, 0.3, 0.2, 0.1], k=1)[0]
+                gray_value = rng.randint(20, 50)
+
+                ontop_ring_particles.append({
+                    "x": x, "y": y, "z": 0,
+                    "size": point_size,
+                    "color": [gray_value / 255.0, gray_value / 255.0, gray_value / 255.0, 1.0],
+                    "angle": angle,
+                    "distance": distance
+                })
+
+        return {
+            "has_rings": True,
+            "inner_radius": ring_inner_radius,
+            "outer_radius": ring_outer_radius,
+            "tilt_factor": tilt_factor,
+            "rotation_angle": angle_rotation,
+            "full_ring": {"num_particles": len(full_ring_particles), "particles": full_ring_particles},
+            "ontop_ring": {"num_particles": len(ontop_ring_particles), "particles": ontop_ring_particles}
+        }

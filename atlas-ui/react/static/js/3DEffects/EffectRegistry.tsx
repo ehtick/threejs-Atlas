@@ -162,27 +162,16 @@ export interface EffectCreator {
 }
 
 export class EffectRegistry {
-  private static instance: EffectRegistry;
   private creators: Map<string, EffectCreator> = new Map();
   private effects: Map<string, EffectInstance> = new Map();
   private nextId: number = 1;
   private layerSystem?: PlanetLayerSystem;
   private baseColor?: THREE.Color;
 
-  private constructor() {
+  constructor() {
     this.registerDefaultEffects();
   }
 
-  static getInstance(): EffectRegistry {
-    if (!EffectRegistry.instance) {
-      EffectRegistry.instance = new EffectRegistry();
-    }
-    return EffectRegistry.instance;
-  }
-
-  /**
-   * Registra todos los efectos por defecto
-   */
   private registerDefaultEffects(): void {
     this.registerEffect(EffectType.ATMOSPHERE_GLOW, {
       create: (params, planetRadius) => new AtmosphereGlowEffect(planetRadius, params),
@@ -494,10 +483,6 @@ export class EffectRegistry {
     return instances;
   }
 
-  /**
-   * Interpreta datos completos de Python y crea todos los efectos necesarios
-   * ACTUALIZADO: Usa PlanetLayerSystem existente
-   */
   createEffectsFromPythonPlanetData(pythonData: any, planetRadius: number, mesh: THREE.Mesh, scene: THREE.Scene, existingLayerSystem?: PlanetLayerSystem): EffectInstance[] {
     const effects: EffectInstance[] = [];
 
@@ -564,7 +549,7 @@ export class EffectRegistry {
                   base_color: baseColor,
                   turbulence: pythonData.turbulence || surface.turbulence,
                 },
-                pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed || pythonData.seeds?.planet_seed
+                pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed || pythonData.seeds?.planet_seed,
               );
 
               const cloudGyrosLayer = createCloudGyrosLayerFromPythonData(
@@ -574,7 +559,7 @@ export class EffectRegistry {
                   base_color: baseColor,
                   storm_intensity: pythonData.storm_intensity || surface.storm_intensity,
                 },
-                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 1000
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 1000,
               );
 
               const bandsInstance: EffectInstance = {
@@ -671,7 +656,7 @@ export class EffectRegistry {
                   turbulence: pythonData.turbulence || surface.turbulence,
                   icy_tint: true,
                 },
-                pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed
+                pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed,
               );
 
               const frozenBandsInstance: EffectInstance = {
@@ -859,7 +844,7 @@ export class EffectRegistry {
                   storm_intensity: surface.nebula_density || 0.6,
                   color_variance: surface.color_variance || 0.2,
                 },
-                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 2000
+                (pythonData.seeds?.shape_seed || pythonData.seeds?.planet_seed) + 2000,
               );
 
               const nebulaGyrosInstance: EffectInstance = {
@@ -3143,5 +3128,3 @@ export class EffectRegistry {
     return Array.from(this.creators.keys());
   }
 }
-
-export const effectRegistry = EffectRegistry.getInstance();

@@ -7,7 +7,7 @@ import { addQRToScreenshot } from "../Components/QRGenerator";
 import { addCopyrightWatermark } from "../Components/CopyrightWatermark";
 import ExportingOverlay from "../Components/ExportingOverlay";
 
-import { effectRegistry, EffectInstance } from "../3DEffects/EffectRegistry";
+import { EffectRegistry, EffectInstance } from "../3DEffects/EffectRegistry";
 import { createPlanetEffectConfig, EffectsLogger } from "../3DEffects";
 import { DebugPlanetData, useDebugPlanetData } from "../Utils/DebugPlanetData.tsx";
 import { getPlanetBaseColor } from "../3DEffects/PlanetColorBase";
@@ -212,6 +212,7 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
   });
 
   const activeEffectsRef = useRef<EffectInstance[]>([]);
+  const effectRegistryRef = useRef<EffectRegistry>(new EffectRegistry());
   const lastFrameTimeRef = useRef<number>(0);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const planetLayerSystemRef = useRef<PlanetLayerSystem | null>(null);
@@ -354,7 +355,7 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
                     }
                   },
                   "image/jpeg",
-                  1.0
+                  1.0,
                 );
               };
 
@@ -387,10 +388,13 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
           setIsGeneratingImage(false);
         },
         "image/jpeg",
-        1.0
+        1.0,
       );
     },
     isGeneratingImage,
+    toggleEffect: (effectId: string, enabled: boolean) => {
+      effectRegistryRef.current.toggleEffect(effectId, enabled);
+    },
   }));
 
   const handleResize = useCallback(() => {
@@ -424,7 +428,7 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
       const baseColor = getPlanetBaseColor(planetData);
       planetLayerSystemRef.current.updateBaseColor(baseColor);
 
-      const newEffects = effectRegistry.createEffectsFromPythonPlanetData(planetData, NORMALIZED_PLANET_RADIUS, planetMeshRef.current, sceneRef.current, planetLayerSystemRef.current);
+      const newEffects = effectRegistryRef.current.createEffectsFromPythonPlanetData(planetData, NORMALIZED_PLANET_RADIUS, planetMeshRef.current, sceneRef.current, planetLayerSystemRef.current);
 
       const planetType = planetData.planet_info?.type || (planetData.surface_elements as any)?.planet_type || (planetData as any).planet_type;
       if ((planetType === "toxic" || planetType === "Toxic") && sceneRef.current && cameraRef.current && rendererRef.current) {
@@ -439,7 +443,7 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
               toxic_intensity: 0.8,
               atmosphere_thickness: 0.6,
             },
-            planetData.seeds?.planet_seed
+            planetData.seeds?.planet_seed,
           );
 
           if (toxicPostProcessing) {
@@ -460,7 +464,7 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
               name: "Toxic Post-Processing (Bloom + Godrays + Chromatic Aberration)",
             };
 
-            (effectRegistry as any).effects.set(toxicPostProcessingInstance.id, toxicPostProcessingInstance);
+            (effectRegistryRef.current as any).effects.set(toxicPostProcessingInstance.id, toxicPostProcessingInstance);
             newEffects.push(toxicPostProcessingInstance);
 
             EffectsLogger.log("Created toxic post-processing effects");
@@ -664,7 +668,7 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
     }
 
     if (starLightsRef.current[0]) {
-      effectRegistry.updateLightForAllEffects(starLightsRef.current[0]);
+      effectRegistryRef.current.updateLightForAllEffects(starLightsRef.current[0]);
     }
   };
 
@@ -689,7 +693,7 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
           planetLayerSystemRef.current.updateFromThreeLight(defaultSunLight);
         }
         if (defaultSunLight) {
-          effectRegistry.updateLightForAllEffects(defaultSunLight);
+          effectRegistryRef.current.updateLightForAllEffects(defaultSunLight);
         }
       }, 50);
 
@@ -787,7 +791,7 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
     }
 
     if (starLightsRef.current[0]) {
-      effectRegistry.updateLightForAllEffects(starLightsRef.current[0]);
+      effectRegistryRef.current.updateLightForAllEffects(starLightsRef.current[0]);
     }
   };
 
@@ -1223,7 +1227,7 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
         applyFallbackEffects();
       }
     },
-    [renderingData]
+    [renderingData],
   );
 
   const applyFallbackEffects = () => {
@@ -1242,7 +1246,7 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
       try {
         const fallbackConfig = createPlanetEffectConfig("generic");
 
-        const fallbackEffects = effectRegistry.createEffectsFromList(fallbackConfig, NORMALIZED_PLANET_RADIUS, planetMeshRef.current);
+        const fallbackEffects = effectRegistryRef.current.createEffectsFromList(fallbackConfig, NORMALIZED_PLANET_RADIUS, planetMeshRef.current);
 
         fallbackEffects.forEach((effect) => {
           if (effect.effect.addToScene && sceneRef.current && planetMeshRef.current) {
@@ -1263,7 +1267,7 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
   const clearActiveEffects = () => {
     activeEffectsRef.current.forEach((effect) => {
       try {
-        effectRegistry.removeEffect(effect.id);
+        effectRegistryRef.current.removeEffect(effect.id);
 
         if (effect.effect.dispose) {
           effect.effect.dispose();
@@ -1321,7 +1325,7 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
     }
 
     try {
-      effectRegistry.updateAllEffects(deltaTime, planetMeshRef.current?.rotation.y, cameraRef.current || undefined, currentTimeRef.current);
+      effectRegistryRef.current.updateAllEffects(deltaTime, planetMeshRef.current?.rotation.y, cameraRef.current || undefined, currentTimeRef.current);
     } catch (error) {}
 
     if (planetMeshRef.current && renderingDataRef.current) {
@@ -1457,10 +1461,10 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
         }
 
         if (starLightsRef.current[0]) {
-          effectRegistry.updateLightForAllEffects(starLightsRef.current[0]);
+          effectRegistryRef.current.updateLightForAllEffects(starLightsRef.current[0]);
         }
 
-        effectRegistry.updateOrbitalPositionForAllEffects(planetPosition);
+        effectRegistryRef.current.updateOrbitalPositionForAllEffects(planetPosition);
       }
     }
 
@@ -1470,7 +1474,7 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
       }
     });
 
-    const toxicPostProcessingEffect = Array.from((effectRegistry as any).effects.values()).find((effect: any) => effect.type === "toxic_post_processing");
+    const toxicPostProcessingEffect = Array.from((effectRegistryRef.current as any).effects.values()).find((effect: any) => effect.type === "toxic_post_processing");
     const toxicPostProcessingEnabled = (toxicPostProcessingEffect as any)?.enabled || false;
     if (toxicPostProcessingRef.current && toxicPostProcessingEnabled) {
       toxicPostProcessingRef.current.update(deltaTime);
@@ -1509,7 +1513,7 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
   }, []);
 
   const updateStats = useCallback(() => {
-    const registryStats = effectRegistry.getStats();
+    const registryStats = effectRegistryRef.current.getStats();
     setStats((prevStats) => ({
       ...prevStats,
       activeEffects: registryStats.activeEffects,
@@ -1685,7 +1689,7 @@ export const ModularPlanetRenderer = forwardRef<{ captureScreenshot: () => void 
 
   useEffect(() => {
     const interval = setInterval(() => {
-      const registryStats = effectRegistry.getStats();
+      const registryStats = effectRegistryRef.current.getStats();
       setStats((prevStats) => ({
         ...prevStats,
         activeEffects: registryStats.activeEffects,

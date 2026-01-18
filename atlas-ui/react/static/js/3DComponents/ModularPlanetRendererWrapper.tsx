@@ -66,7 +66,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
   }
 }
 
-export const ModularPlanetRendererWrapper = forwardRef<{ captureScreenshot: () => void; isGeneratingImage: boolean }, ModularPlanetRendererProps>((props, ref) => {
+export const ModularPlanetRendererWrapper = forwardRef<{ captureScreenshot: () => void; isGeneratingImage: boolean; toggleEffect: (effectId: string, enabled: boolean) => void }, ModularPlanetRendererProps>((props, ref) => {
   return (
     <ErrorBoundary>
       <ModularPlanetRenderer ref={ref} {...props} />
