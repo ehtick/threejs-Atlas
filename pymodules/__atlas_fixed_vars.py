@@ -6,7 +6,7 @@ import os
 
 PORT = 42424
 RUN = "PROD"
-VERSION = "2.9.2224"
+VERSION = "2.9.2226"
 VERSION_HASH = hashlib.sha256(VERSION.encode("utf-8")).hexdigest()
 MAX_PILLOW_WORKERS = 2
 VISUAL_DEBUG = False

@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.9.2226] - 2026-01-20
+
+- Moved ring system generation logic from backend to frontend, ring parameters (count, gaps, colors, particle density) are now calculated client-side based on planet seed, significantly reducing API response times and making rendering faster.
+
 ## [2.9.2224] - 2026-01-18
 
 - Refactored `EffectRegistry` from global singleton to instance-based pattern, each renderer now has its own isolated effect registry for better encapsulation.

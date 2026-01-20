@@ -34,49 +34,8 @@ class RingsTranslator:
         ring_inner_radius = bands[0][0]
         ring_outer_radius = bands[-1][1]
 
-        base_num_points_per_band = rng.randint(600, 1200)
-
-        full_ring_particles = []
-        ontop_ring_particles = []
-
-        for band_inner, band_outer in bands:
-            num_points = int(base_num_points_per_band * 1.5)
-
-            for _ in range(num_points):
-                angle = rng.uniform(math.pi, 2 * math.pi)
-                distance = rng.uniform(band_inner, band_outer)
-
-                x = distance * math.cos(angle)
-                y = distance * tilt_factor * math.sin(angle)
-
-                point_size = rng.choices([0.5, 1.0, 1.5, 2.0], weights=[0.4, 0.3, 0.2, 0.1], k=1)[0]
-                gray_value = rng.randint(20, 50)
-
-                full_ring_particles.append({
-                    "x": x, "y": y, "z": 0,
-                    "size": point_size,
-                    "color": [gray_value / 255.0, gray_value / 255.0, gray_value / 255.0, 1.0],
-                    "angle": angle,
-                    "distance": distance
-                })
-
-            for _ in range(num_points):
-                angle = rng.uniform(0, math.pi)
-                distance = rng.uniform(band_inner, band_outer)
-
-                x = distance * math.cos(angle)
-                y = distance * tilt_factor * math.sin(angle)
-
-                point_size = rng.choices([0.5, 1.0, 1.5, 2.0], weights=[0.4, 0.3, 0.2, 0.1], k=1)[0]
-                gray_value = rng.randint(20, 50)
-
-                ontop_ring_particles.append({
-                    "x": x, "y": y, "z": 0,
-                    "size": point_size,
-                    "color": [gray_value / 255.0, gray_value / 255.0, gray_value / 255.0, 1.0],
-                    "angle": angle,
-                    "distance": distance
-                })
+        num_particles_per_band = rng.randint(600, 1200)
+        shape_seed = rng.randint(0, 2147483647)
 
         return {
             "has_rings": True,
@@ -84,6 +43,8 @@ class RingsTranslator:
             "outer_radius": ring_outer_radius,
             "tilt_factor": tilt_factor,
             "rotation_angle": angle_rotation,
-            "full_ring": {"num_particles": len(full_ring_particles), "particles": full_ring_particles},
-            "ontop_ring": {"num_particles": len(ontop_ring_particles), "particles": ontop_ring_particles}
+            "planet_radius": planet_radius,
+            "shape_seed": shape_seed,
+            "num_particles_per_band": num_particles_per_band,
+            "bands": [{"inner": b[0], "outer": b[1]} for b in bands]
         }

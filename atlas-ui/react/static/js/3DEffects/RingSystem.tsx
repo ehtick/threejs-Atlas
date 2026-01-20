@@ -3,14 +3,19 @@
 import * as THREE from "three";
 import { getUniverseTime, DEFAULT_COSMIC_ORIGIN_TIME } from "../Utils/UniverseTime.tsx";
 
+export interface RingBand {
+  inner: number;
+  outer: number;
+}
+
 export interface RingSystemParams {
-  full_ring?: { particles: any[] };
-  ontop_ring?: { particles: any[] };
-  ring_inner_radius?: number;
-  ring_outer_radius?: number;
+  inner_radius?: number;
+  outer_radius?: number;
   tilt_factor?: number;
   planet_radius?: number;
   shape_seed?: number;
+  num_particles_per_band?: number;
+  bands?: RingBand[];
 }
 
 class VisualRNG {
@@ -54,110 +59,80 @@ export class RingSystemEffect {
     this.createConcentricLines();
   }
 
-  private createRingSystemFromAPI(ringsData: RingSystemParams): void {
-    const { full_ring, ontop_ring, ring_inner_radius, ring_outer_radius, tilt_factor, planet_radius, shape_seed } = ringsData;
+  private weightedChoice(options: number[], weights: number[], rng: VisualRNG): number {
+    const r = rng.uniform(0, 1);
+    let cumulative = 0;
+    for (let i = 0; i < weights.length; i++) {
+      cumulative += weights[i];
+      if (r < cumulative) return options[i];
+    }
+    return options[options.length - 1];
+  }
 
-    if (!full_ring || !ontop_ring) {
+  private createRingSystemFromAPI(ringsData: RingSystemParams): void {
+    const { inner_radius, outer_radius, tilt_factor, planet_radius, shape_seed, num_particles_per_band, bands } = ringsData;
+
+    if (!bands || bands.length === 0) {
       return;
     }
 
-    const allParticles = [...full_ring.particles, ...ontop_ring.particles];
-    const totalParticles = allParticles.length;
-
     this.scale = this.planetRadius / (planet_radius || 200);
     this.tiltAngle = Math.asin((tilt_factor || 0.2) * 0.5);
+    this.actualInnerRadius = (inner_radius || 200) * this.scale;
+    this.actualOuterRadius = (outer_radius || 400) * this.scale;
 
-    let minDist = Infinity;
-    let maxDist = 0;
-    for (const p of allParticles) {
-      if (p.distance < minDist) minDist = p.distance;
-      if (p.distance > maxDist) maxDist = p.distance;
-    }
-    this.actualInnerRadius = minDist * this.scale;
-    this.actualOuterRadius = maxDist * this.scale;
+    const rng = new VisualRNG(shape_seed || 12345);
+    const numPerBand = Math.floor((num_particles_per_band || 800) * 1.5);
+    const totalParticles = bands.length * numPerBand * 2; // full_ring + ontop_ring
 
-    const visualRNG = new VisualRNG(shape_seed || 12345);
-
-    const particles = new THREE.BufferGeometry();
+    const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(totalParticles * 3);
     const colors = new Float32Array(totalParticles * 3);
     const sizes = new Float32Array(totalParticles);
 
-    const grayVariations = [
-      { baseGray: 0.12, variation: 0.03, name: "dark" },
-      { baseGray: 0.18, variation: 0.04, name: "medium" },
-      { baseGray: 0.22, variation: 0.05, name: "light" },
-      { baseGray: 0.16, variation: 0.04, name: "mixed" },
-    ];
+    const sizeWeights = [0.4, 0.3, 0.2, 0.1];
+    const sizeOptions = [0.5, 1.0, 1.5, 2.0];
 
-    const chosenGrayVariation = visualRNG.choice(grayVariations);
+    let idx = 0;
+    for (const band of bands) {
+      for (let i = 0; i < numPerBand; i++) {
+        const angle = rng.uniform(Math.PI, 2 * Math.PI);
+        const distance = rng.uniform(band.inner, band.outer) * this.scale;
+        const grayValue = rng.uniform(20, 50) / 255;
+        const size = this.weightedChoice(sizeOptions, sizeWeights, rng);
 
-    for (let i = 0; i < totalParticles; i++) {
-      const particle = allParticles[i];
+        positions[idx * 3] = distance * Math.cos(angle);
+        positions[idx * 3 + 1] = distance * Math.sin(this.tiltAngle) * Math.sin(angle) - this.planetRadius * 0.07;
+        positions[idx * 3 + 2] = distance * Math.cos(this.tiltAngle) * Math.sin(angle);
 
-      const scale = this.scale;
+        colors[idx * 3] = grayValue;
+        colors[idx * 3 + 1] = grayValue;
+        colors[idx * 3 + 2] = grayValue;
+        sizes[idx] = size * 0.25;
+        idx++;
+      }
 
-      const particleSeed = (shape_seed || 12345) + i;
-      const particleRNG = new VisualRNG(particleSeed);
+      for (let i = 0; i < numPerBand; i++) {
+        const angle = rng.uniform(0, Math.PI);
+        const distance = rng.uniform(band.inner, band.outer) * this.scale;
+        const grayValue = rng.uniform(20, 50) / 255;
+        const size = this.weightedChoice(sizeOptions, sizeWeights, rng);
 
-      const distance = particle.distance * scale;
-      const angle = particle.angle;
+        positions[idx * 3] = distance * Math.cos(angle);
+        positions[idx * 3 + 1] = distance * Math.sin(this.tiltAngle) * Math.sin(angle) - this.planetRadius * 0.07;
+        positions[idx * 3 + 2] = distance * Math.cos(this.tiltAngle) * Math.sin(angle);
 
-      const baseX = distance * Math.cos(angle);
-      const baseZ = distance * Math.sin(angle);
-      const baseY = 0;
-
-      const tiltAngle = Math.asin((tilt_factor || 0.2) * 0.5);
-      const tiltedY = baseZ * Math.sin(tiltAngle);
-      const tiltedZ = baseZ * Math.cos(tiltAngle);
-
-      const ringThickness = ((ring_outer_radius || 400) - (ring_inner_radius || 200)) * scale * 0.4;
-
-      const ySpread = particleRNG.uniform(-ringThickness * 0.8, ringThickness * 0.8);
-      const radialSpread = particleRNG.uniform(-ringThickness * 0.3, ringThickness * 0.3);
-      const angularSpread = particleRNG.uniform(-0.08, 0.08);
-
-      const finalDistance = distance + radialSpread;
-      const finalAngle = angle + angularSpread;
-
-      positions[i * 3] = finalDistance * Math.cos(finalAngle);
-      positions[i * 3 + 1] = tiltedY + ySpread + this.planetRadius * 0.15;
-      positions[i * 3 + 2] = tiltedZ + particleRNG.uniform(-ringThickness * 0.4, ringThickness * 0.4);
-
-      const pythonGrayValue = particle.color[0] / 255;
-
-      const distanceFromCenter = particle.distance;
-      const normalizedDistance = (distanceFromCenter - (ring_inner_radius || 200)) / ((ring_outer_radius || 400) - (ring_inner_radius || 200));
-
-      const baseGray = chosenGrayVariation.baseGray;
-      const variation = chosenGrayVariation.variation;
-
-      const grayVariation = particleRNG.uniform(-variation, variation);
-      const finalGray = Math.max(0.08, Math.min(0.3, baseGray + grayVariation));
-
-      const distanceGradient = 0.8 + normalizedDistance * 0.4;
-
-      const brightnessVariation = particleRNG.uniform(0.85, 1.15);
-
-      const sparkleChance = particleRNG.uniform(0, 1);
-      const sparkleMultiplier = sparkleChance < 0.03 ? particleRNG.uniform(1.1, 1.3) : 1.0;
-
-      const finalGrayValue = finalGray * distanceGradient * brightnessVariation * sparkleMultiplier;
-
-      const clampedGrayValue = Math.max(0.06, Math.min(0.35, finalGrayValue));
-      colors[i * 3] = clampedGrayValue;
-      colors[i * 3 + 1] = clampedGrayValue;
-      colors[i * 3 + 2] = clampedGrayValue;
-
-      const sizeScale = 0.25;
-      const baseSizeMultiplier = particleRNG.uniform(0.3, 0.8);
-      const sparkleSize = sparkleChance < 0.1 ? particleRNG.uniform(1.05, 1.2) : 1.0;
-      sizes[i] = particle.size * sizeScale * baseSizeMultiplier * sparkleSize;
+        colors[idx * 3] = grayValue;
+        colors[idx * 3 + 1] = grayValue;
+        colors[idx * 3 + 2] = grayValue;
+        sizes[idx] = size * 0.25;
+        idx++;
+      }
     }
 
-    particles.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    particles.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-    particles.setAttribute("size", new THREE.BufferAttribute(sizes, 1));
+    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    geometry.setAttribute("size", new THREE.BufferAttribute(sizes, 1));
 
     this.material = new THREE.ShaderMaterial({
       uniforms: {
@@ -245,7 +220,7 @@ export class RingSystemEffect {
       blending: THREE.NormalBlending,
     });
 
-    this.ringSystem = new THREE.Points(particles, this.material);
+    this.ringSystem = new THREE.Points(geometry, this.material);
 
     this.ringSystem.position.set(0, 0, 0);
 
@@ -448,13 +423,13 @@ export class RingSystemEffect {
 
 export function createRingSystemFromPythonData(ringsData: any, planetRadius: number): RingSystemEffect {
   const params: RingSystemParams = {
-    full_ring: ringsData.full_ring,
-    ontop_ring: ringsData.ontop_ring,
-    ring_inner_radius: ringsData.ring_inner_radius,
-    ring_outer_radius: ringsData.ring_outer_radius,
+    inner_radius: ringsData.inner_radius,
+    outer_radius: ringsData.outer_radius,
     tilt_factor: ringsData.tilt_factor,
     planet_radius: ringsData.planet_radius,
     shape_seed: ringsData.shape_seed,
+    num_particles_per_band: ringsData.num_particles_per_band,
+    bands: ringsData.bands,
   };
 
   return new RingSystemEffect(planetRadius, params);
