@@ -7,6 +7,8 @@ import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
 import contentFilter from "../Utils/ContentFilter.jsx";
+import PhotosensitivityWarning from "./PhotosensitivityWarning";
+import PhotosensitivePlaceholder from "./PhotosensitivePlaceholder";
 
 interface StarfieldWarpRevealProps {
   seedData?: {
@@ -26,6 +28,9 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const composerRef = useRef<EffectComposer | null>(null);
   const animationIdRef = useRef<number | null>(null);
+  const [showWarning, setShowWarning] = useState(true);
+  const [canStartAnimation, setCanStartAnimation] = useState(false);
+  const [showPlaceholder, setShowPlaceholder] = useState(false);
   const [showDataOverlay, setShowDataOverlay] = useState(false);
   const [dataOpacity, setDataOpacity] = useState(0);
   const [decryptedPrimordial, setDecryptedPrimordial] = useState("");
@@ -543,7 +548,28 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
     }
   }, [canvasOpacity]);
 
+  const handleWarningProceed = () => {
+    setShowWarning(false);
+    setCanStartAnimation(true);
+  };
+
+  const handleWarningSkip = () => {
+    setShowWarning(false);
+    setShowPlaceholder(true);
+  };
+
+  const handlePlaceholderComplete = () => {
+    setShowPlaceholder(false);
+    if (onComplete) {
+      onComplete();
+    }
+  };
+
   useEffect(() => {
+    if (!canStartAnimation) {
+      return;
+    }
+
     initScene();
 
     return () => {
@@ -555,7 +581,7 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
         rendererRef.current.dispose();
       }
     };
-  }, []);
+  }, [canStartAnimation]);
 
   useEffect(() => {
     if (!canStartTextDecryption) return;
@@ -578,7 +604,7 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
                 }
                 return chars[Math.floor(Math.random() * chars.length)];
               })
-              .join("")
+              .join(""),
           );
 
           if (iteration >= terminalText.length) {
@@ -647,6 +673,18 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
     return () => clearInterval(matrixInterval);
   }, [isMatrixMode]);
 
+  if (showWarning) {
+    return (
+      <PhotosensitivityWarning onProceed={handleWarningProceed} onSkip={handleWarningSkip}>
+        {null}
+      </PhotosensitivityWarning>
+    );
+  }
+
+  if (showPlaceholder) {
+    return <PhotosensitivePlaceholder onComplete={handlePlaceholderComplete} duration={3000} />;
+  }
+
   return (
     <div
       className={`fixed inset-0 z-[9999] overflow-hidden ${isFadingOut ? "animate-fadeOut" : "animate-fadeIn"}`}
@@ -678,9 +716,9 @@ const StarfieldWarpReveal: React.FC<StarfieldWarpRevealProps> = ({ seedData, onC
             >
               <div className={`px-3 sm:px-6 py-3 border-b border-green-400/50 flex items-center justify-between transition-all duration-500 ${isMatrixMode ? "bg-green-900/30" : "bg-green-500/20 border-green-300"}`}>
                 <div className={`text-xs sm:text-sm font-mono uppercase tracking-wider transition-colors duration-500 break-words sm:break-normal overflow-hidden ${isMatrixMode ? "text-green-400" : "text-green-300"}`}>
-                  <span className="hidden lg:inline">&gt; ATLAS INITIALIZATION PROTOCOL v2.9.2226 &lt;</span>
-                  <span className="hidden sm:inline lg:hidden">&gt; ATLAS INIT PROTOCOL v2.9.2226 &lt;</span>
-                  <span className="sm:hidden">&gt; ATLAS INIT v2.9.2226 &lt;</span>
+                  <span className="hidden lg:inline">&gt; ATLAS INITIALIZATION PROTOCOL v2.10.424 &lt;</span>
+                  <span className="hidden sm:inline lg:hidden">&gt; ATLAS INIT PROTOCOL v2.10.424 &lt;</span>
+                  <span className="sm:hidden">&gt; ATLAS INIT v2.10.424 &lt;</span>
                 </div>
                 <div className="flex gap-1 items-center">
                   <div className={`w-2 h-2 transition-colors duration-500 ${isMatrixMode ? "bg-green-400 animate-pulse" : "bg-green-300"}`}></div>

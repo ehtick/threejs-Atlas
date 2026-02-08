@@ -6,6 +6,7 @@ import DownloadIcon from "../Icons/DownloadIcon";
 import { addQRToScreenshot } from "./QRGenerator";
 import { addCopyrightWatermark } from "./CopyrightWatermark";
 import ExportingOverlay from "./ExportingOverlay";
+import AdaptivePreloadCanvas from "./AdaptivePreloadCanvas.tsx";
 
 interface Galaxy3DViewerProps {
   galaxyType: string;
@@ -26,7 +27,6 @@ const Galaxy3DViewer = forwardRef<{ captureScreenshot: () => void; isGeneratingI
   const animationIdRef = useRef<number | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const galaxyGroupRef = useRef<THREE.Group | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const decelerateRef = useRef(false);
   const [sceneLoaded, setSceneLoaded] = useState(false);
   const [canvasHidden, setCanvasHidden] = useState(false);
@@ -73,100 +73,6 @@ const Galaxy3DViewer = forwardRef<{ captureScreenshot: () => void; isGeneratingI
       return Math.floor(this.uniform(min, max + 1));
     }
   }
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    let stars: Array<{ x: number; y: number; z: number; o: number }> = [];
-    const numStars = 800;
-    let centerX: number, centerY: number;
-    const maxCanvasSize = 800;
-    let animationId: number;
-    let speed = 0.5;
-
-    function resizeCanvas() {
-      const container = canvas?.parentElement;
-      if (!container || !canvas) return;
-
-      const containerWidth = container.clientWidth;
-      const containerHeight = container.clientHeight;
-
-      canvas.width = Math.min(containerWidth, maxCanvasSize);
-      canvas.height = Math.min(containerHeight, maxCanvasSize);
-
-      centerX = canvas.width / 2;
-      centerY = canvas.height / 2;
-    }
-
-    function init() {
-      resizeCanvas();
-      stars = [];
-
-      for (let i = 0; i < numStars; i++) {
-        stars.push({
-          x: Math.random() * (canvas?.width || 800),
-          y: Math.random() * (canvas?.height || 800),
-          z: Math.random() * (canvas?.width || 800),
-          o: Math.random(),
-        });
-      }
-
-      animate();
-    }
-
-    function animate() {
-      if (!canvas || !ctx) return;
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      stars.forEach((star) => {
-        star.z -= speed;
-
-        if (star.z <= 0) {
-          star.z = canvas.width;
-          star.x = Math.random() * canvas.width;
-          star.y = Math.random() * canvas.height;
-          star.o = Math.random();
-        }
-
-        const k = canvas.width / star.z;
-        const x = (star.x - centerX) * k + centerX;
-        const y = (star.y - centerY) * k + centerY;
-        const r = 2 * k;
-
-        ctx.beginPath();
-        ctx.fillStyle = `rgba(255, 255, 255, ${star.o})`;
-        ctx.arc(x, y, r, 0, 2 * Math.PI);
-        ctx.fill();
-      });
-
-      if (!decelerateRef.current && speed < 60) {
-        speed += 1;
-      }
-
-      if (decelerateRef.current && speed > 2) {
-        speed -= 2;
-      }
-
-      animationId = requestAnimationFrame(animate);
-    }
-
-    init();
-
-    const handleResize = () => resizeCanvas();
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      if (animationId) {
-        cancelAnimationFrame(animationId);
-      }
-    };
-  }, []);
 
   useEffect(() => {
     if (!mountRef.current) return;
@@ -1220,7 +1126,7 @@ const Galaxy3DViewer = forwardRef<{ captureScreenshot: () => void; isGeneratingI
                   }
                 },
                 "image/jpeg",
-                1.0
+                1.0,
               );
             };
 
@@ -1251,13 +1157,13 @@ const Galaxy3DViewer = forwardRef<{ captureScreenshot: () => void; isGeneratingI
         setIsGeneratingImage(false);
       },
       "image/jpeg",
-      1.0
+      1.0,
     );
   };
 
   return (
     <div className="relative w-full h-full bg-black rounded">
-      <canvas ref={canvasRef} className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[2500ms] ${canvasHidden ? "opacity-0" : "opacity-100"}`} style={{ filter: canvasHidden ? "blur(50px)" : "none" }} />
+      <AdaptivePreloadCanvas hidden={canvasHidden} decelerateRef={decelerateRef} />
 
       <div className={`absolute inset-0 w-full h-full transition-all duration-500 ${sceneLoaded ? "opacity-100 blur-0" : "opacity-0 blur-[25px]"}`}>
         <div ref={mountRef} className="w-full h-full border border-white/20 rounded bg-black/20" />

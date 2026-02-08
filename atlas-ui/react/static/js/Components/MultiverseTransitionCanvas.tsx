@@ -6,6 +6,8 @@ import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
+import PhotosensitivityWarning from "./PhotosensitivityWarning";
+import PhotosensitivePlaceholder from "./PhotosensitivePlaceholder";
 
 interface MultiverseTransitionCanvasProps {
   isActive: boolean;
@@ -20,6 +22,9 @@ const MultiverseTransitionCanvas: React.FC<MultiverseTransitionCanvasProps> = ({
   const composerRef = useRef<EffectComposer | null>(null);
   const animationIdRef = useRef<number | null>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [showWarning, setShowWarning] = useState(true);
+  const [canStartAnimation, setCanStartAnimation] = useState(false);
+  const [showPlaceholder, setShowPlaceholder] = useState(false);
   const fadeOverlayRef = useRef<HTMLDivElement | null>(null);
 
   const TRANSITION_DURATION = 3.0;
@@ -899,14 +904,31 @@ const MultiverseTransitionCanvas: React.FC<MultiverseTransitionCanvasProps> = ({
     }
   };
 
+  const handleWarningProceed = () => {
+    setShowWarning(false);
+    setCanStartAnimation(true);
+  };
+
+  const handleWarningSkip = () => {
+    setShowWarning(false);
+    setShowPlaceholder(true);
+  };
+
+  const handlePlaceholderComplete = () => {
+    setShowPlaceholder(false);
+    if (onTransitionComplete) {
+      onTransitionComplete();
+    }
+  };
+
   useEffect(() => {
-    if (isActive && !isVisible) {
+    if (isActive && !isVisible && canStartAnimation) {
       setIsVisible(true);
       setTimeout(() => {
         initScene();
       }, 100);
     }
-  }, [isActive, isVisible]);
+  }, [isActive, isVisible, canStartAnimation]);
 
   useEffect(() => {
     return () => {
@@ -919,6 +941,18 @@ const MultiverseTransitionCanvas: React.FC<MultiverseTransitionCanvasProps> = ({
       }
     };
   }, []);
+
+  if (showWarning) {
+    return (
+      <PhotosensitivityWarning onProceed={handleWarningProceed} onSkip={handleWarningSkip}>
+        {null}
+      </PhotosensitivityWarning>
+    );
+  }
+
+  if (showPlaceholder) {
+    return <PhotosensitivePlaceholder onComplete={handlePlaceholderComplete} duration={3000} />;
+  }
 
   if (!isVisible) {
     return null;

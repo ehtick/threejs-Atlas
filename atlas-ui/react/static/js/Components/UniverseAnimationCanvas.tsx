@@ -5,6 +5,8 @@ import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
+import PhotosensitivityWarning from "./PhotosensitivityWarning";
+import PhotosensitivePlaceholder from "./PhotosensitivePlaceholder";
 
 interface UniverseAnimationCanvasProps {
   animationType: "core" | "multiverse" | "processing" | null;
@@ -19,6 +21,9 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
   const composerRef = useRef<EffectComposer | null>(null);
   const animationIdRef = useRef<number | null>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [showWarning, setShowWarning] = useState(true);
+  const [canStartAnimation, setCanStartAnimation] = useState(false);
+  const [showPlaceholder, setShowPlaceholder] = useState(false);
   const fadeOverlayRef = useRef<HTMLDivElement | null>(null);
 
   const createCircleTexture = () => {
@@ -380,7 +385,7 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
             opacity: 0,
             wireframe: true,
             blending: THREE.AdditiveBlending,
-          })
+          }),
         );
         shockwaves.push(wave);
         scene.add(wave);
@@ -397,7 +402,7 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
             transparent: true,
             opacity: 0,
             blending: THREE.AdditiveBlending,
-          })
+          }),
         );
 
         particle.userData = {
@@ -666,15 +671,32 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
     } catch (error) {}
   };
 
+  const handleWarningProceed = () => {
+    setShowWarning(false);
+    setCanStartAnimation(true);
+  };
+
+  const handleWarningSkip = () => {
+    setShowWarning(false);
+    setShowPlaceholder(true);
+  };
+
+  const handlePlaceholderComplete = () => {
+    setShowPlaceholder(false);
+    if (onAnimationComplete) {
+      onAnimationComplete();
+    }
+  };
+
   useEffect(() => {
-    if (animationType && !isVisible) {
+    if (animationType && !isVisible && canStartAnimation) {
       setIsVisible(true);
 
       setTimeout(() => {
         initScene();
       }, 100);
     }
-  }, [animationType, isVisible]);
+  }, [animationType, isVisible, canStartAnimation]);
 
   useEffect(() => {
     return () => {
@@ -687,6 +709,18 @@ const UniverseAnimationCanvas: React.FC<UniverseAnimationCanvasProps> = ({ anima
       }
     };
   }, []);
+
+  if (showWarning) {
+    return (
+      <PhotosensitivityWarning onProceed={handleWarningProceed} onSkip={handleWarningSkip}>
+        {null}
+      </PhotosensitivityWarning>
+    );
+  }
+
+  if (showPlaceholder) {
+    return <PhotosensitivePlaceholder onComplete={handlePlaceholderComplete} duration={3000} />;
+  }
 
   if (!isVisible) {
     return null;

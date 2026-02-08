@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.10.424] - 2026-02-08
+
+- Implemented comprehensive photosensitivity warning system with 10-second countdown before all 3D animations (CHOOSE YOUR UNIVERSE, IMMERSION WARP JUMP GNOSIS, Explore Multiverse). **Thanks @dbtech for the hint!**
+- Added photosensitive mode with localStorage persistence, users can enable safe mode to replace intense 3D animations with gentle planet placeholder (3-second rotation with fade).
+- Created `PhotosensitivityWarning` component with mobile-responsive design, supports screens from 320px to desktop.
+- Created `PhotosensitivePlaceholder` component featuring animated blue planet with rotating clouds, atmosphere pulse, and smooth fade transitions.
+- Added photosensitive mode toggle switch in footer for easy access and preference management.
+- Moved animation keyframes (planetRotate, cloudRotate, atmospherePulse) to global.css for better performance and maintainability.
+- First-time users see warning with auto-proceed after countdown, preference saved for future visits.
+- Happy (and safe) exploration!
+
 ## [2.9.2226] - 2026-01-20
 
 - Moved ring system generation logic from backend to frontend, ring parameters (count, gaps, colors, particle density) are now calculated client-side based on planet seed, significantly reducing API response times and making rendering faster.
