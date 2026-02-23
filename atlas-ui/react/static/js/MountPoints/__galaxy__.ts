@@ -36,7 +36,8 @@ document.addEventListener('DOMContentLoaded', () => {
         num_systems: galaxyData.num_systems || 0,
         black_holes: galaxyData.black_holes || 0,
         pulsars: galaxyData.pulsars || 0,
-        quasars: galaxyData.quasars || 0
+        quasars: galaxyData.quasars || 0,
+        seed: galaxyData.seed || 12345
       },
       systems: systemsData,
       galaxy_url: navigationData.galaxy_url || '#',
@@ -61,7 +62,8 @@ document.addEventListener('DOMContentLoaded', () => {
         num_systems: 0,
         black_holes: 0,
         pulsars: 0,
-        quasars: 0
+        quasars: 0,
+        seed: 12345
       },
       systems: [],
       galaxy_url: '#',

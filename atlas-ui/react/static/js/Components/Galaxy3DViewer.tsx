@@ -74,6 +74,16 @@ const Galaxy3DViewer = forwardRef<{ captureScreenshot: () => void; isGeneratingI
     }
   }
 
+  const scaleGalaxyParams = (numSystems: number, baseMax: number, absoluteMaxPoints: number, baseRadius: number, maxAllowedRadius: number): { numPoints: number; maxRadius: number } => {
+    if (numSystems <= baseMax) {
+      return { numPoints: numSystems, maxRadius: baseRadius };
+    }
+    const excess = numSystems - baseMax;
+    const numPoints = Math.min(Math.floor(baseMax + Math.sqrt(excess)), absoluteMaxPoints);
+    const maxRadius = Math.min(baseRadius + Math.cbrt(excess) * 0.05, maxAllowedRadius);
+    return { numPoints, maxRadius };
+  };
+
   useEffect(() => {
     if (!mountRef.current) return;
 
@@ -140,11 +150,11 @@ const Galaxy3DViewer = forwardRef<{ captureScreenshot: () => void; isGeneratingI
     const colors: number[] = [];
     const sizes: number[] = [];
 
-    const maxRadius = 200;
+    let maxRadius = 300;
     let numPoints = numSystems;
 
     if (galaxyType === "Spiral") {
-      numPoints = Math.min(numSystems, 50000);
+      ({ numPoints, maxRadius } = scaleGalaxyParams(numSystems, 50000, 350000, 300, 600));
 
       const numArms = 4;
       const armOffset = (2 * Math.PI) / numArms;
@@ -210,7 +220,7 @@ const Galaxy3DViewer = forwardRef<{ captureScreenshot: () => void; isGeneratingI
         sizes.push(Math.min(finalSize * 1.3, 8));
       }
     } else if (galaxyType === "Elliptical") {
-      numPoints = Math.min(numSystems, 100000);
+      ({ numPoints, maxRadius } = scaleGalaxyParams(numSystems, 100000, 350000, 300, 600));
 
       for (let i = 0; i < numPoints; i++) {
         const angle = rng.uniform(0, 2 * Math.PI);
@@ -247,22 +257,7 @@ const Galaxy3DViewer = forwardRef<{ captureScreenshot: () => void; isGeneratingI
         sizes.push(Math.min(finalSize * 1.4, 7));
       }
     } else if (galaxyType === "Dwarf") {
-      let scaleFactor: number;
-
-      if (numSystems <= 1500) {
-        scaleFactor = 1;
-      } else if (numSystems <= 5000) {
-        const progress = (numSystems - 1500) / (5000 - 1500);
-        scaleFactor = 1 + progress * 9;
-      } else if (numSystems <= 15000) {
-        const progress = (numSystems - 5000) / (15000 - 5000);
-        scaleFactor = 10 + progress * 40;
-      } else {
-        const progress = Math.min((numSystems - 15000) / (50000 - 15000), 1);
-        scaleFactor = 50 + progress * 50;
-      }
-
-      numPoints = Math.min(Math.floor(numSystems / scaleFactor), 10000);
+      ({ numPoints, maxRadius } = scaleGalaxyParams(numSystems, 30000, 150000, 150, 300));
 
       for (let i = 0; i < numPoints; i++) {
         const angle = rng.uniform(0, 2 * Math.PI);
@@ -286,7 +281,7 @@ const Galaxy3DViewer = forwardRef<{ captureScreenshot: () => void; isGeneratingI
         if (isGiant) finalSize *= 2.5 + sizeRng.uniform(0, 1);
         if (isDwarf) finalSize *= 0.5 + sizeRng.uniform(0, 0.3);
 
-        sizes.push(Math.min(finalSize * 1.2, 5));
+        sizes.push(Math.min(finalSize * 1.6, 8));
       }
     } else if (galaxyType === "Singularity Void") {
       numPoints = 10000;
@@ -687,8 +682,8 @@ const Galaxy3DViewer = forwardRef<{ captureScreenshot: () => void; isGeneratingI
             const t = j / (numCurvePoints - 1);
             const nextT = (j + 1) / (numCurvePoints - 1);
 
-            const currentOpacity = 1 - t * tidalStrength * 0.6;
-            const nextOpacity = 1 - nextT * tidalStrength * 0.6;
+            const currentOpacity = Math.pow(t, 0.5) * (1 - t * tidalStrength * 0.3);
+            const nextOpacity = Math.pow(nextT, 0.5) * (1 - nextT * tidalStrength * 0.3);
 
             const currentRedshift = redshift * (0.5 + t * 0.5);
             const nextRedshift = redshift * (0.5 + nextT * 0.5);
@@ -712,15 +707,66 @@ const Galaxy3DViewer = forwardRef<{ captureScreenshot: () => void; isGeneratingI
       starsGeometry.setAttribute("color", new THREE.Float32BufferAttribute(processedColors, 3));
       starsGeometry.setAttribute("size", new THREE.Float32BufferAttribute(processedSizes, 1));
 
+      const bhPosVectors: THREE.Vector3[] = [];
+      for (let bi = 0; bi < Math.min(blackHolePositions.length, 20); bi++) {
+        const bh = blackHolePositions[bi];
+        bhPosVectors.push(new THREE.Vector3(bh.x, bh.y, bh.z));
+      }
+      while (bhPosVectors.length < 20) {
+        bhPosVectors.push(new THREE.Vector3(99999, 99999, 99999));
+      }
+
       const starMaterial = new THREE.ShaderMaterial({
-        uniforms: {},
+        uniforms: {
+          viewportHeight: { value: size },
+          bhPositions: { value: bhPosVectors },
+          bhCount: { value: Math.min(blackHolePositions.length, 20) },
+          cameraPos: { value: camera.position.clone() },
+        },
         vertexShader: `
           attribute float size;
           varying vec3 vColor;
+          uniform float viewportHeight;
+          uniform vec3 bhPositions[20];
+          uniform int bhCount;
+          uniform vec3 cameraPos;
           void main() {
             vColor = color;
-            vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-            gl_PointSize = size * (400.0 / -mvPosition.z);
+            vec3 pos = position;
+            for (int i = 0; i < 20; i++) {
+              if (i >= bhCount) break;
+              vec3 diff = pos - bhPositions[i];
+              float dist = length(diff);
+              float lensRadius = 10.0;
+              if (dist < lensRadius && dist > 0.5) {
+                float strength = pow(1.0 - dist / lensRadius, 2.0);
+                pos += normalize(diff) * strength * 5.0;
+              }
+            }
+            for (int i = 0; i < 20; i++) {
+              if (i >= bhCount) break;
+              vec3 toBH = bhPositions[i] - pos;
+              float distToBH = length(toBH);
+              float redshiftRadius = 15.0;
+              if (distToBH < redshiftRadius && distToBH > 0.5) {
+                vec3 toCamera = normalize(cameraPos - pos);
+                vec3 toBHDir = normalize(toBH);
+                float behindFactor = dot(toCamera, toBHDir);
+                float proximity = 1.0 - distToBH / redshiftRadius;
+                float shift = behindFactor * proximity;
+                if (shift > 0.0) {
+                  vColor.r += shift * 0.6;
+                  vColor.g *= 1.0 - shift * 0.3;
+                  vColor.b *= 1.0 - shift * 0.5;
+                } else {
+                  vColor.b += abs(shift) * 0.4;
+                  vColor.g += abs(shift) * 0.1;
+                  vColor.r *= 1.0 - abs(shift) * 0.3;
+                }
+              }
+            }
+            vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+            gl_PointSize = size * (viewportHeight / -mvPosition.z);
             gl_Position = projectionMatrix * mvPosition;
           }
         `,
@@ -785,6 +831,39 @@ const Galaxy3DViewer = forwardRef<{ captureScreenshot: () => void; isGeneratingI
       galaxyGroup.add(stars);
     }
 
+    const accDiskVertexShader = `
+      varying vec2 vLocalPos;
+      void main() {
+        vLocalPos = position.xy;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `;
+    const makeAccDiskFragShader = (alphaBase: string, swirlPhase: string = "0.0") => `
+      uniform float time;
+      uniform float innerRadius;
+      uniform float outerRadius;
+      uniform float flareIntensity;
+      varying vec2 vLocalPos;
+      void main() {
+        float radius = length(vLocalPos);
+        float t = clamp((radius - innerRadius) / (outerRadius - innerRadius), 0.0, 1.0);
+        float angle = atan(vLocalPos.y, vLocalPos.x);
+        float intensity = pow(1.0 - t, 1.5);
+        float doppler = 1.0 + sin(angle) * 0.4;
+        float swirl = 1.0 + sin(angle * 3.0 - time * 2.0 + ${swirlPhase}) * 0.1;
+        vec3 hotColor = vec3(1.0, 0.9, 0.7);
+        vec3 warmColor = vec3(1.0, 0.4, 0.0);
+        vec3 coldColor = vec3(0.3, 0.0, 0.0);
+        vec3 color = t < 0.5
+          ? mix(hotColor, warmColor, t * 2.0)
+          : mix(warmColor, coldColor, (t - 0.5) * 2.0);
+        float flare = 1.0 + flareIntensity * pow(1.0 - t, 3.0);
+        color *= intensity * doppler * swirl * flare;
+        float alpha = intensity * ${alphaBase} * min(flare, 1.5);
+        gl_FragColor = vec4(color, alpha);
+      }
+    `;
+
     for (let i = 0; i < blackHoles; i++) {
       const blackHoleGroup = new THREE.Group();
 
@@ -803,40 +882,109 @@ const Galaxy3DViewer = forwardRef<{ captureScreenshot: () => void; isGeneratingI
       const bhGeometry = new THREE.SphereGeometry(0.8 * sizeMultiplier, 16, 16);
       const bhMaterial = new THREE.MeshBasicMaterial({
         color: 0x000000,
-        transparent: true,
-        opacity: 0.9,
       });
       const bhMesh = new THREE.Mesh(bhGeometry, bhMaterial);
       blackHoleGroup.add(bhMesh);
 
-      const diskRings = [
-        { innerRadius: 1.2 * sizeMultiplier, outerRadius: 1.5 * sizeMultiplier, color: 0xffffff, opacity: 0.8, emissive: 0xffffcc },
-        { innerRadius: 1.5 * sizeMultiplier, outerRadius: 1.8 * sizeMultiplier, color: 0xffaa00, opacity: 0.7, emissive: 0xff8800 },
-        { innerRadius: 1.8 * sizeMultiplier, outerRadius: 2.2 * sizeMultiplier, color: 0xff4400, opacity: 0.6, emissive: 0xff2200 },
-        { innerRadius: 2.2 * sizeMultiplier, outerRadius: 2.8 * sizeMultiplier, color: 0xaa0000, opacity: 0.5, emissive: 0x660000 },
-        { innerRadius: 2.8 * sizeMultiplier, outerRadius: 3.5 * sizeMultiplier, color: 0x440000, opacity: 0.3, emissive: 0x220000 },
-      ];
-
-      diskRings.forEach((ring, index) => {
-        const ringGeometry = new THREE.RingGeometry(ring.innerRadius, ring.outerRadius, 32);
-        const ringMaterial = new THREE.MeshStandardMaterial({
-          color: ring.color,
-          transparent: true,
-          opacity: ring.opacity,
-          emissive: ring.emissive,
-          emissiveIntensity: 0.3,
-          side: THREE.DoubleSide,
-        });
-
-        const ringMesh = new THREE.Mesh(ringGeometry, ringMaterial);
-        ringMesh.rotation.x = Math.PI / 2;
-        ringMesh.rotation.z = rng.uniform(0, Math.PI * 2);
-
-        (ringMesh as any).isAccretionRing = true;
-        (ringMesh as any).rotationSpeed = 0.002 + index * 0.0005;
-
-        blackHoleGroup.add(ringMesh);
+      const photonRingGeometry = new THREE.TorusGeometry(1.0 * sizeMultiplier, 0.06 * sizeMultiplier, 16, 64);
+      const photonRingMaterial = new THREE.MeshBasicMaterial({
+        color: 0xffcc66,
+        transparent: true,
+        opacity: 0.9,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
       });
+      const photonRing = new THREE.Mesh(photonRingGeometry, photonRingMaterial);
+      photonRing.rotation.x = Math.PI / 2;
+      (photonRing as any).isAccretionRing = true;
+      (photonRing as any).rotationSpeed = 0.003;
+      blackHoleGroup.add(photonRing);
+
+      const glowCanvas = document.createElement("canvas");
+      glowCanvas.width = 64;
+      glowCanvas.height = 64;
+      const glowCtx = glowCanvas.getContext("2d")!;
+      const glowGradient = glowCtx.createRadialGradient(32, 32, 0, 32, 32, 32);
+      glowGradient.addColorStop(0, "rgba(255, 200, 120, 0.5)");
+      glowGradient.addColorStop(0.2, "rgba(255, 150, 50, 0.3)");
+      glowGradient.addColorStop(0.5, "rgba(255, 80, 0, 0.1)");
+      glowGradient.addColorStop(1, "rgba(0, 0, 0, 0)");
+      glowCtx.fillStyle = glowGradient;
+      glowCtx.fillRect(0, 0, 64, 64);
+      const glowTexture = new THREE.CanvasTexture(glowCanvas);
+      const glowMaterial = new THREE.SpriteMaterial({
+        map: glowTexture,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      });
+      const glowSprite = new THREE.Sprite(glowMaterial);
+      glowSprite.scale.set(8 * sizeMultiplier, 8 * sizeMultiplier, 1);
+      blackHoleGroup.add(glowSprite);
+
+      const accDiskGeometry = new THREE.RingGeometry(1.2 * sizeMultiplier, 3.5 * sizeMultiplier, 64);
+      const accDiskMaterial = new THREE.ShaderMaterial({
+        uniforms: {
+          time: { value: 0 },
+          innerRadius: { value: 1.2 * sizeMultiplier },
+          outerRadius: { value: 3.5 * sizeMultiplier },
+          flareIntensity: { value: 0 },
+        },
+        vertexShader: accDiskVertexShader,
+        fragmentShader: makeAccDiskFragShader("0.7"),
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      });
+      const accDisk = new THREE.Mesh(accDiskGeometry, accDiskMaterial);
+      accDisk.rotation.x = Math.PI / 2;
+      (accDisk as any).isAccretionDisk = true;
+      blackHoleGroup.add(accDisk);
+
+      const accDisk2 = new THREE.Mesh(
+        new THREE.RingGeometry(1.3 * sizeMultiplier, 3.2 * sizeMultiplier, 64),
+        new THREE.ShaderMaterial({
+          uniforms: {
+            time: { value: 0 },
+            innerRadius: { value: 1.3 * sizeMultiplier },
+            outerRadius: { value: 3.2 * sizeMultiplier },
+            flareIntensity: { value: 0 },
+          },
+          vertexShader: accDiskVertexShader,
+          fragmentShader: makeAccDiskFragShader("0.4", "1.0"),
+          transparent: true,
+          blending: THREE.AdditiveBlending,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+        }),
+      );
+      accDisk2.rotation.x = Math.PI / 2 + 0.15;
+      accDisk2.rotation.z = 0.3;
+      (accDisk2 as any).isAccretionDisk = true;
+      blackHoleGroup.add(accDisk2);
+
+      const accDisk3 = new THREE.Mesh(
+        new THREE.RingGeometry(1.4 * sizeMultiplier, 3.0 * sizeMultiplier, 64),
+        new THREE.ShaderMaterial({
+          uniforms: {
+            time: { value: 0 },
+            innerRadius: { value: 1.4 * sizeMultiplier },
+            outerRadius: { value: 3.0 * sizeMultiplier },
+            flareIntensity: { value: 0 },
+          },
+          vertexShader: accDiskVertexShader,
+          fragmentShader: makeAccDiskFragShader("0.3", "2.0"),
+          transparent: true,
+          blending: THREE.AdditiveBlending,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+        }),
+      );
+      accDisk3.rotation.x = Math.PI / 2 - 0.12;
+      accDisk3.rotation.z = -0.2;
+      (accDisk3 as any).isAccretionDisk = true;
+      blackHoleGroup.add(accDisk3);
 
       blackHoleGroup.position.set(x, y, z);
       galaxyGroup.add(blackHoleGroup);
@@ -948,6 +1096,10 @@ const Galaxy3DViewer = forwardRef<{ captureScreenshot: () => void; isGeneratingI
           if (material.uniforms && material.uniforms.time) {
             material.uniforms.time.value = time;
           }
+          if (material.uniforms?.flareIntensity) {
+            const flareWave = Math.sin(time * 7.3 + child.id) * Math.sin(time * 13.1 + child.id * 0.7);
+            material.uniforms.flareIntensity.value = Math.max(0, flareWave) * 2.0;
+          }
           child.rotation.z += 0.002;
         }
 
@@ -971,6 +1123,10 @@ const Galaxy3DViewer = forwardRef<{ captureScreenshot: () => void; isGeneratingI
               if (material.uniforms && material.uniforms.time) {
                 material.uniforms.time.value = time;
               }
+              if (material.uniforms?.flareIntensity) {
+                const flareWave = Math.sin(time * 7.3 + subchild.id) * Math.sin(time * 13.1 + subchild.id * 0.7);
+                material.uniforms.flareIntensity.value = Math.max(0, flareWave) * 2.0;
+              }
               subchild.rotation.z += 0.002;
             }
 
@@ -986,6 +1142,12 @@ const Galaxy3DViewer = forwardRef<{ captureScreenshot: () => void; isGeneratingI
               subchild.scale.setScalar(1 + Math.sin(time * 2) * 0.1);
             }
           });
+        }
+      });
+
+      galaxyGroup.traverse((obj: any) => {
+        if (obj.isPoints && obj.material?.uniforms?.cameraPos) {
+          obj.material.uniforms.cameraPos.value.copy(camera.position);
         }
       });
 
@@ -1011,6 +1173,11 @@ const Galaxy3DViewer = forwardRef<{ captureScreenshot: () => void; isGeneratingI
       renderer.setSize(size, size);
       camera.aspect = 1;
       camera.updateProjectionMatrix();
+      galaxyGroup.traverse((obj: any) => {
+        if (obj.isPoints && obj.material?.uniforms?.viewportHeight) {
+          obj.material.uniforms.viewportHeight.value = size;
+        }
+      });
     };
 
     window.addEventListener("resize", handleResize);

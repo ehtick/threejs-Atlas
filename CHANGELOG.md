@@ -1,5 +1,26 @@
 # Changelog
 
+## [2.10.426] - 2026-02-23
+
+- Larger galaxies now appear visibly bigger and denser: both the number of rendered stars and the physical size of the galaxy scale with the number of systems using diminishing returns curves, so a galaxy with 37B systems looks noticeably larger than one with 7B.
+- Unified the scaling logic across all galaxy types (Spiral, Elliptical, Dwarf).
+- Increased base galaxy size for all types, giving them more visual presence.
+- Dwarf galaxies no longer look empty: more stars, a more compact shape, and larger star sizes make them feel appropriately dense instead of sparse.
+- Fixed galaxies looking different in fullscreen vs normal viewer: star sizes now scale correctly with the viewport instead of using a fixed value, so both views look identical.
+- Fixed black hole positions being inconsistent in fullscreen for Singularity Void galaxies.
+- Black hole accretion disks now have volume: 3 layered disks at slight tilts give a sense of thickness and turbulence instead of a flat plane.
+- Accretion disks now have sporadic brightness flares near the center, simulating bursts of matter falling into the black hole.
+- Stars near black holes now shift red or blue depending on the viewer's perspective: stars behind the black hole appear redshifted, stars in front appear blueshifted, and the effect updates in real time as you rotate the camera.
+- Fixed galaxy seed not reaching the 3D renderer, so each galaxy now looks unique instead of all sharing the same layout.
+- Updated `pillow` from 11.3.0 to 12.1.1 to fix out-of-bounds write when loading PSD images (CVE-2026-25990, High).
+- Updated `cryptography` from 46.0.1 to 46.0.5 to fix subgroup attack due to missing subgroup validation for SECT curves (CVE-2026-26007, High).
+- Updated `Flask` from 3.0.3 to 3.1.3 to fix missing `Vary: Cookie` header when session is accessed in some ways (CVE-2026-27205, Low).
+- Updated `react` and `react-dom` from 19.1.1 to 19.2.4.
+- Updated `three` from 0.179.1 to 0.183.1 and `@types/three` from 0.178.1 to 0.183.1.
+- Updated `vite` from 7.0.5 to 7.3.1 and `@vitejs/plugin-react` from 4.7.0 to 5.1.4.
+- Updated `tailwindcss` from 3.4.3 to 3.4.19, `autoprefixer` from 10.4.21 to 10.4.24.
+- Updated `@types/node` from 24.2.0 to 25.3.0 and `@types/react` from 19.1.9 to 19.2.14.
+
 ## [2.10.424] - 2026-02-08
 
 - Implemented comprehensive photosensitivity warning system with 10-second countdown before all 3D animations (CHOOSE YOUR UNIVERSE, IMMERSION WARP JUMP GNOSIS, Explore Multiverse). **Thanks @dbtech for the hint!**

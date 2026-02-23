@@ -15,9 +15,10 @@ interface GalaxyVisualizationProps {
   pulsars?: number;
   quasars?: number;
   galaxyName?: string;
+  seed?: number;
 }
 
-const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, galaxyType = "Spiral", numSystems = 10000, blackHoles = 5, pulsars = 10, quasars = 3, galaxyName }) => {
+const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, galaxyType = "Spiral", numSystems = 10000, blackHoles = 5, pulsars = 10, quasars = 3, galaxyName, seed }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [isEntering, setIsEntering] = useState(false);
@@ -114,6 +115,7 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, ga
           blackHoles={blackHoles}
           pulsars={pulsars}
           quasars={quasars}
+          seed={seed}
           galaxyName={galaxyName}
           galaxyUrl={galaxyUrl}
           onExpandClick={() => {
@@ -170,7 +172,7 @@ const GalaxyVisualization: React.FC<GalaxyVisualizationProps> = ({ galaxyUrl, ga
               </div>
 
               <div className="flex-1 border border-white/20 rounded-lg bg-black/20 overflow-hidden min-h-0">
-                <Galaxy3DViewerFullscreen galaxyType={galaxyType} numSystems={numSystems} blackHoles={blackHoles} pulsars={pulsars} quasars={quasars} galaxyName={galaxyName} />
+                <Galaxy3DViewerFullscreen galaxyType={galaxyType} numSystems={numSystems} blackHoles={blackHoles} pulsars={pulsars} quasars={quasars} seed={seed} galaxyName={galaxyName} />
               </div>
 
               <div className="mt-2 sm:mt-4 text-center text-xs sm:text-sm text-gray-400">
