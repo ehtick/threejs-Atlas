@@ -297,7 +297,7 @@ export class EffectRegistry {
 
     this.registerEffect(EffectType.STAR_FIELD, {
       create: (params, planetRadius) => new StarFieldEffect(planetRadius, params),
-      fromPythonData: (data, planetRadius) => createStarFieldFromPythonData(planetRadius, data.seeds?.planet_seed || data.planet_seed),
+      fromPythonData: (data, planetRadius) => createStarFieldFromPythonData(planetRadius, data.seeds?.planet_seed || data.planet_seed, data.atmosphere),
     });
 
     this.registerEffect(EffectType.TUNDRA_SNOWFLAKES, {

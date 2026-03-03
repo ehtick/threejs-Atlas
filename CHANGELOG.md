@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.10.428] - 2026-03-03
+
+- Stars in the StarField now physically interact with planet atmospheres instead of rendering unaffected through them.
+- Added atmospheric attenuation: a BackSide sphere with custom subtractive blending (ZeroFactor/OneMinusSrcAlphaFactor) dims starlight based on Beer-Lambert optical depth, without adding color or affecting the planet surface.
+- Added atmospheric refraction: stars near the atmosphere limb are displaced radially outward in NDC space with animated wobble, simulating lenticular shimmer.
+- Added atmospheric turbulence: multi-frequency sinusoidal modulation intensifies star twinkling within the atmosphere zone.
+- Added atmospheric seeing: stars bloom larger (gl_PointSize boost) and become diffuse (softer radial falloff in fragment shader) as they pass deeper through the atmosphere.
+- Added differential refraction: stars are tangentially elongated via elliptical gl_PointCoord distortion, simulating the physical stretching caused by refractive index gradients.
+- All atmospheric effects use dual smoothstep transitions at both the outer atmosphere edge and inner planet surface, ensuring elastic entry/exit with no hard boundary jumps during camera movement.
+- Atmosphere data (type, color, width, density) is passed from EffectRegistry to StarField via createStarFieldFromPythonData, with density=0 fully bypassing all new code for backward compatibility.
+
 ## [2.10.426] - 2026-02-23
 
 - Larger galaxies now appear visibly bigger and denser: both the number of rendered stars and the physical size of the galaxy scale with the number of systems using diminishing returns curves, so a galaxy with 37B systems looks noticeably larger than one with 7B.
