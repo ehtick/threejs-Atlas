@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.10.430] - 2026-03-09
+
+- Fixed dependabot dep vulnerabilities
+- Redesigned footer with props
+
 ## [2.10.428] - 2026-03-03
 
 - Stars in the StarField now physically interact with planet atmospheres instead of rendering unaffected through them.

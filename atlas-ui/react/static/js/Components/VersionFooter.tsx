@@ -67,17 +67,20 @@ const VersionFooter: React.FC<VersionFooterProps> = ({ version }) => {
   };
 
   return (
-    <footer className="group bg-black/30 backdrop-blur-md border-t border-white/10 mt-8 sm:mt-16 py-6 sm:py-8 w-full">
-      <div className="w-full px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col space-y-6">
-          <div className="flex flex-col lg:flex-row items-center justify-between space-y-4 lg:space-y-0">
-            <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-6">
+    <footer className="bg-black/30 backdrop-blur-md border-t border-white/10 mt-8 w-full">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-4">
+        <div className="flex flex-col">
+          {/* Row 1: version + links */}
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-3 mb-3">
+            <div className="flex flex-row items-center gap-3">
               <div className="flex items-center space-x-3">
                 <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
                 <span className="text-sm font-medium text-gray-300">Atlas v{version}</span>
               </div>
-              <span className="text-gray-600 hidden sm:inline">•</span>
-              <span className="text-sm text-gray-400">Universal Navigation System</span>
+              <span className="text-gray-600">•</span>
+              <span className="text-xs text-gray-500">
+                Created by <span className="text-gray-400 font-medium">SurceBeats</span>
+              </span>
             </div>
 
             <div className="flex items-center flex-wrap justify-center gap-3">
@@ -85,27 +88,22 @@ const VersionFooter: React.FC<VersionFooterProps> = ({ version }) => {
                 <GitHubIcon />
                 <span className="text-sm text-gray-400 group-hover:text-white">Atlas</span>
               </a>
-
               <a href="https://x.com/SurceBeats" target="_blank" rel="noopener noreferrer" className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 transition-all duration-200 group" title="Follow on Twitter/X">
                 <TwitterIcon />
                 <span className="text-sm text-gray-400 group-hover:text-white">Twitter</span>
               </a>
-
               <a href="https://www.linkedin.com/in/claudio-gonzalez-medina/" target="_blank" rel="noopener noreferrer" className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 transition-all duration-200 group" title="Connect on LinkedIn">
                 <LinkedInIcon />
                 <span className="text-sm text-gray-400 group-hover:text-white">LinkedIn</span>
               </a>
-
               <a href="https://www.banshee.pro" target="_blank" rel="noopener noreferrer" className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 transition-all duration-200 group" title="Visit Banshee Technologies">
                 <WebIcon />
                 <span className="text-sm text-gray-400 group-hover:text-white">Banshee</span>
               </a>
-
               <a href="/multiverse" className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 transition-all duration-200 group" title="Explore the Multiverse">
                 <MultiverseIcon />
                 <span className="text-sm text-gray-400 group-hover:text-white">Multiverse</span>
               </a>
-
               <a href="/universe-faq" className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 transition-all duration-200 group" title="Universe FAQ">
                 <FAQIcon />
                 <span className="text-sm text-gray-400 group-hover:text-white">F.A.Q.</span>
@@ -113,9 +111,8 @@ const VersionFooter: React.FC<VersionFooterProps> = ({ version }) => {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-between space-y-3 sm:space-y-0 pt-4 border-t border-white/5">
-            <div className="text-xs text-gray-500 text-center sm:text-left">Quantum-powered navigation across infinite galactic coordinates</div>
-
+          {/* Row 2: photosensitive centered */}
+          <div className="flex justify-center border-t border-white/5 py-3">
             <div className="flex items-center space-x-3 px-4 py-2 rounded-lg bg-gray-800/50 border border-gray-700/50">
               <div className="flex items-center space-x-2">
                 <svg className={`w-5 h-5 transition-colors duration-200 ${isPhotosensitivityEnabled ? "text-orange-400" : "text-gray-500"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -127,23 +124,14 @@ const VersionFooter: React.FC<VersionFooterProps> = ({ version }) => {
                 <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${isPhotosensitivityEnabled ? "translate-x-6" : "translate-x-1"}`} />
               </button>
             </div>
-
-            <div className="text-xs text-gray-500 text-center sm:text-right">
-              Created by <span className="text-gray-400 font-medium">Claudio González (SurceBeats)</span> at Banshee Technologies
-            </div>
           </div>
 
-          <div className="transition-all duration-300 opacity-0 max-h-0 overflow-hidden group-hover:opacity-100 group-hover:max-h-32 border-t border-white/5 bg-black/50 rounded-lg group-hover:p-3 group-hover:mt-4">
-            <div className="text-[10px] text-gray-500 text-center leading-relaxed">
-              Built using{" "}
-              <a href="https://github.com/BansheeTech/vite_fusion" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors duration-200 font-medium">
-                vite-fusion
-              </a>
-              , a core pip package created to connect Vite with Python/Flask, initially developed for{" "}
-              <a href="https://github.com/BansheeTech/HomeDockOS" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors duration-200 font-medium">
-                HomeDock OS
-              </a>
-            </div>
+          {/* Row 3: GOAT badge */}
+          <div className="flex flex-col items-center gap-2 pt-3 border-t border-white/5">
+            <span className="text-[10px] text-gray-600 tracking-wide uppercase">Running it on elsewhereOS?</span>
+            <a href="https://github.com/BansheeTech/HomeDockOS" target="_blank" rel="noopener noreferrer" className="opacity-50 hover:opacity-100 transition-opacity duration-500">
+              <img src="static/TheAtlasDarkBadge.svg" />
+            </a>
           </div>
         </div>
       </div>
