@@ -4,6 +4,7 @@ import { PhotosensitivityManager } from "../Utils/PhotosensitivityManager";
 
 interface VersionFooterProps {
   version: string;
+  showBadge?: boolean;
 }
 
 const GitHubIcon = () => (
@@ -45,7 +46,7 @@ const LinkedInIcon = () => (
   </svg>
 );
 
-const VersionFooter: React.FC<VersionFooterProps> = ({ version }) => {
+const VersionFooter: React.FC<VersionFooterProps> = ({ version, showBadge = false }) => {
   const [isPhotosensitivityEnabled, setIsPhotosensitivityEnabled] = useState(false);
 
   useEffect(() => {
@@ -127,12 +128,14 @@ const VersionFooter: React.FC<VersionFooterProps> = ({ version }) => {
           </div>
 
           {/* Row 3: GOAT badge */}
-          <div className="flex flex-col items-center gap-1 pt-3 border-t border-white/5">
-            <span className="text-[9px] text-gray-600 tracking-wide uppercase">Running it on elsewhereOS?</span>
-            <a href="https://github.com/BansheeTech/HomeDockOS" target="_blank" rel="noopener noreferrer" className="opacity-80 hover:opacity-100 transition-opacity duration-500">
-              <img src="static/HDOSDarkSmallBadge.svg" />
-            </a>
-          </div>
+          {showBadge && (
+            <div className="flex flex-col items-center gap-1 pt-3 border-t border-white/5">
+              <span className="text-[9px] text-gray-600 tracking-wide uppercase">Running it on elsewhereOS?</span>
+              <a href="https://github.com/BansheeTech/HomeDockOS" target="_blank" rel="noopener noreferrer" className="opacity-80 hover:opacity-100 transition-opacity duration-500">
+                <img src="/static/HDOSDarkSmallBadge.svg" />
+              </a>
+            </div>
+          )}
         </div>
       </div>
     </footer>

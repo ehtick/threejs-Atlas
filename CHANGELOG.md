@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.10.434] - 2026-03-09
+
+- Minor fixes
+
 ## [2.10.432] - 2026-03-09
 
 - Minor fixes

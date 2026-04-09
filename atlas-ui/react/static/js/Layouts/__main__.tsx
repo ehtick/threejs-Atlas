@@ -449,7 +449,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ error, version }) => {
             </div>
           </div>
 
-          <VersionFooter version={version} />
+          <VersionFooter version={version} showBadge />
         </div>
 
         <SpaceshipPanel />
