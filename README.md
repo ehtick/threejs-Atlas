@@ -198,6 +198,14 @@ Alternatively, you can install all dependencies by running: `pip install -r requ
 
 Directly Docker pull **bansheetech/atlas:latest**
 
+### HomeDock OS
+
+Download [HomeDock OS](https://github.com/BansheeTech/HomeDockOS) and install it from the App Store.
+
+<p>
+  <a href="https://github.com/BansheeTech/HomeDockOS"><img src="static/HDOSDarkBigBadge.svg" alt="Install on HomeDock OS" /></a>
+</p>
+
 ---
 
 ## 👾 Security Vulnerabilities
