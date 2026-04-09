@@ -5,7 +5,7 @@ import os
 
 
 PORT = 42424
-RUN = "DEV"
+RUN = "PROD"
 VERSION = "2.10.432"
 VERSION_HASH = hashlib.sha256(VERSION.encode("utf-8")).hexdigest()
 MAX_PILLOW_WORKERS = 2
